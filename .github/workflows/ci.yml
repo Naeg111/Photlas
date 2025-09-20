@@ -2,7 +2,7 @@ name: CI/CD Pipeline for TDD
 
 on:
   push:
-    branches: [ main ]
+    # すべてのブランチでのプッシュでCI実行（TDD開発のため）
   pull_request:
     branches: [ main ]
 
