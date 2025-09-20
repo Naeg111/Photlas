@@ -6,7 +6,7 @@
  */
 function PostButton() {
   return (
-    <button className="rounded-full post-button">
+    <button className="bg-blue-500 hover:bg-blue-600 text-white shadow-lg rounded-full w-14 h-14 flex items-center justify-center text-2xl font-bold transition-colors">
       +
     </button>
   );

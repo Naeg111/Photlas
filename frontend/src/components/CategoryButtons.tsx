@@ -8,11 +8,11 @@ function CategoryButtons() {
   const categories = ['風景', '建築', 'ストリート', 'ポートレート', '乗り物'];
 
   return (
-    <div role="group" data-testid="category-buttons" className="category-buttons">
+    <div role="group" data-testid="category-buttons" className="flex space-x-2 overflow-x-auto">
       {categories.map((category) => (
         <button
           key={category}
-          className="category-button"
+          className="bg-white shadow-md rounded-full px-3 py-1 whitespace-nowrap hover:bg-blue-50 transition-colors border text-sm"
         >
           {category}
         </button>
