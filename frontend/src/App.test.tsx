@@ -56,7 +56,7 @@ describe('App', () => {
       </MemoryRouter>
     )
     
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('登録完了')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('登録ありがとうございます！')
   })
 
   it('renders 404 page for unknown routes', () => {
