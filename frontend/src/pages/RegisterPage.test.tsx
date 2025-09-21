@@ -94,8 +94,6 @@ describe('RegisterPage', () => {
         </MemoryRouter>
       )
       
-      const imageInput = screen.getByRole('button', { name: '画像を選択' })
-      
       // ファイル選択をシミュレート
       const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
       const hiddenInput = document.querySelector('input[type="file"]') as HTMLInputElement
@@ -340,7 +338,6 @@ describe('RegisterPage', () => {
       fireEvent.click(submitButton)
       
       await waitFor(() => {
-        const nameInput = screen.getByLabelText('表示名')
         const errorElement = screen.getByText('表示名を入力してください')
         
         // エラーメッセージが対応する入力欄の近くに表示される

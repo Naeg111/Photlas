@@ -1,5 +1,5 @@
 import { render, screen, cleanup } from '@testing-library/react'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import RegisterSuccessPage from './RegisterSuccessPage'
 
