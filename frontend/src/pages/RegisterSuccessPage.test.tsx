@@ -10,9 +10,10 @@ import RegisterSuccessPage from './RegisterSuccessPage'
  * TDD Red段階: 実装前のテストケース定義
  */
 describe('RegisterSuccessPage', () => {
-  // 各テスト後にDOMをクリーンアップ
   afterEach(() => {
+    // 確実なDOMクリーンアップ
     cleanup()
+    document.body.innerHTML = ''
   })
 
   describe('Basic Layout', () => {

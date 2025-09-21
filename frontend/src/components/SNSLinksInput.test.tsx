@@ -1,5 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import SNSLinksInput from './SNSLinksInput'
 
 /**
@@ -14,6 +14,13 @@ describe('SNSLinksInput', () => {
   beforeEach(() => {
     mockOnLinksChange.mockClear()
   })
+
+  afterEach(() => {
+    // 確実なDOMクリーンアップ
+    cleanup()
+    document.body.innerHTML = ''
+  })
+
 
   describe('Initial State', () => {
     it('renders only first SNS link input initially', () => {

@@ -1,7 +1,17 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import RegisterPage from './RegisterPage'
+
+// useNavigate をモック化
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>()
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
 
 /**
  * RegisterPage コンポーネントのテスト
@@ -13,7 +23,15 @@ describe('RegisterPage', () => {
   beforeEach(() => {
     // 各テスト前にlocalStorageをクリア
     localStorage.clear()
+    mockNavigate.mockClear()
   })
+
+  afterEach(() => {
+    // 確実なDOMクリーンアップ
+    cleanup()
+    document.body.innerHTML = ''
+  })
+
 
   describe('Basic Layout', () => {
     it('renders all required form elements', () => {

@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { render, screen, cleanup } from '@testing-library/react'
+import { describe, it, expect, afterEach } from 'vitest'
 import CategoryButtons from './CategoryButtons'
 
 /**
@@ -12,6 +12,10 @@ import CategoryButtons from './CategoryButtons'
  * - 複数カテゴリのボタン（風景、建築等）
  */
 describe('CategoryButtons', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it('renders category buttons container', () => {
     // Red: このテストは最初失敗する（CategoryButtonsコンポーネントが存在しないため）
     render(<CategoryButtons />)
