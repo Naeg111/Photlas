@@ -1,9 +1,12 @@
+import { Routes, Route } from 'react-router-dom'
 import FilterButton from './components/FilterButton'
 import CategoryButtons from './components/CategoryButtons'
 import PostButton from './components/PostButton'
 import MenuButton from './components/MenuButton'
+import RegisterPage from './pages/RegisterPage'
+import RegisterSuccessPage from './pages/RegisterSuccessPage'
 
-function App() {
+function HomePage() {
   return (
     <div className="relative w-full h-screen overflow-hidden">
       {/* 地図表示用のコンテナ - Issue#1要件 */}
@@ -36,6 +39,28 @@ function App() {
         <PostButton />
       </div>
     </div>
+  )
+}
+
+function NotFoundPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-700 mb-4">ページが見つかりません</h1>
+        <p className="text-gray-500">お探しのページは存在しません。</p>
+      </div>
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/register/success" element={<RegisterSuccessPage />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   )
 }
 

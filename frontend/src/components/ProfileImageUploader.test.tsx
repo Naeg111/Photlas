@@ -13,6 +13,8 @@ describe('ProfileImageUploader', () => {
 
   beforeEach(() => {
     mockOnImageSelect.mockClear()
+    // FileReader モックをリセット
+    global.FileReader = FileReader
   })
 
   describe('Initial State', () => {
@@ -60,6 +62,7 @@ describe('ProfileImageUploader', () => {
       Object.defineProperty(fileInput, 'files', {
         value: [file],
         writable: false,
+        configurable: true,
       })
       
       fireEvent.change(fileInput)
@@ -78,6 +81,7 @@ describe('ProfileImageUploader', () => {
       Object.defineProperty(fileInput, 'files', {
         value: [file],
         writable: false,
+        configurable: true,
       })
       
       fireEvent.change(fileInput)
@@ -98,6 +102,7 @@ describe('ProfileImageUploader', () => {
       Object.defineProperty(fileInput, 'files', {
         value: [largeFile],
         writable: false,
+        configurable: true,
       })
       
       fireEvent.change(fileInput)
@@ -129,6 +134,7 @@ describe('ProfileImageUploader', () => {
       Object.defineProperty(fileInput, 'files', {
         value: [file],
         writable: false,
+        configurable: true,
       })
       
       fireEvent.change(fileInput)
@@ -163,6 +169,7 @@ describe('ProfileImageUploader', () => {
       Object.defineProperty(fileInput, 'files', {
         value: [file],
         writable: false,
+        configurable: true,
       })
       
       fireEvent.change(fileInput)
@@ -187,6 +194,7 @@ describe('ProfileImageUploader', () => {
       Object.defineProperty(fileInput, 'files', {
         value: [file1],
         writable: false,
+        configurable: true,
       })
       fireEvent.change(fileInput)
       
@@ -195,6 +203,7 @@ describe('ProfileImageUploader', () => {
       Object.defineProperty(fileInput, 'files', {
         value: [file2],
         writable: false,
+        configurable: true,
       })
       fireEvent.change(fileInput)
       
@@ -217,6 +226,7 @@ describe('ProfileImageUploader', () => {
       Object.defineProperty(fileInput, 'files', {
         value: [invalidFile],
         writable: false,
+        configurable: true,
       })
       fireEvent.change(fileInput)
       
@@ -229,6 +239,7 @@ describe('ProfileImageUploader', () => {
       Object.defineProperty(fileInput, 'files', {
         value: [validFile],
         writable: false,
+        configurable: true,
       })
       fireEvent.change(fileInput)
       
@@ -246,6 +257,7 @@ describe('ProfileImageUploader', () => {
       Object.defineProperty(fileInput, 'files', {
         value: [invalidFile],
         writable: false,
+        configurable: true,
       })
       fireEvent.change(fileInput)
       
