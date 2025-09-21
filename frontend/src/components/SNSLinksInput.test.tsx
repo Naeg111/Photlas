@@ -170,7 +170,7 @@ describe('SNSLinksInput', () => {
     })
 
     it('maintains input order when middle input is cleared', async () => {
-      const { rerender } = render(<SNSLinksInput links={['first', 'second', 'third']} onLinksChange={mockOnLinksChange} />)
+      render(<SNSLinksInput links={['first', 'second', 'third']} onLinksChange={mockOnLinksChange} />)
       
       // 3つの入力欄が表示されている状態から開始
       expect(screen.getByLabelText('SNSリンク 1')).toHaveValue('first')

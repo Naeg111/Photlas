@@ -9,9 +9,4 @@ afterEach(() => {
   
   // 確実にDOMをクリーンアップ
   document.body.innerHTML = ''
-  
-  // グローバル状態をリセット
-  if (global.gc) {
-    global.gc()
-  }
 })

@@ -21,7 +21,7 @@ describe('ProfileImageUploader', () => {
     document.body.innerHTML = ''
     
     // FileReader モックをリセット
-    global.FileReader = FileReader
+    globalThis.FileReader = FileReader
   })
 
   describe('Initial State', () => {
@@ -136,7 +136,7 @@ describe('ProfileImageUploader', () => {
         onload: null as any
       }
       
-      global.FileReader = vi.fn(() => mockFileReader) as any
+      globalThis.FileReader = vi.fn(() => mockFileReader) as any
       
       Object.defineProperty(fileInput, 'files', {
         value: [file],
@@ -171,7 +171,7 @@ describe('ProfileImageUploader', () => {
         onload: null as any
       }
       
-      global.FileReader = vi.fn(() => mockFileReader) as any
+      globalThis.FileReader = vi.fn(() => mockFileReader) as any
       
       Object.defineProperty(fileInput, 'files', {
         value: [file],
