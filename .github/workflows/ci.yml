@@ -48,7 +48,7 @@ jobs:
     - name: Run tests
       run: |
         cd frontend
-        pnpm test:run --no-coverage
+        pnpm test:run --no-coverage --reporter=verbose --run
         
     - name: Run build check
       run: |

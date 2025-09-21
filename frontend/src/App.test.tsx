@@ -8,9 +8,10 @@ import App from './App'
  * Issue#2 対応: ルーティング機能追加
  */
 describe('App', () => {
-  // 各テスト後にDOMをクリーンアップ
   afterEach(() => {
+    // 確実なDOMクリーンアップ
     cleanup()
+    document.body.innerHTML = ''
   })
 
   it('renders Photlas heading on home page', () => {
