@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { render, screen, cleanup } from '@testing-library/react'
+import { describe, it, expect, afterEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import App from './App'
 
@@ -8,6 +8,11 @@ import App from './App'
  * Issue#2 対応: ルーティング機能追加
  */
 describe('App', () => {
+  // 各テスト後にDOMをクリーンアップ
+  afterEach(() => {
+    cleanup()
+  })
+
   it('renders Photlas heading on home page', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
@@ -62,11 +67,11 @@ describe('App', () => {
 
   it('renders 404 page for unknown routes', () => {
     render(
-      <MemoryRouter initialEntries={['/unknown-route']}>
+      <MemoryRouter initialEntries={['/unknown']}>
         <App />
       </MemoryRouter>
     )
     
-    expect(screen.getByText('ページが見つかりません')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ページが見つかりません')
   })
 })

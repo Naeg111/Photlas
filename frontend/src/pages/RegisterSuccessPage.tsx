@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 /**
  * RegisterSuccessPage コンポーネント
  * Issue#2: ユーザー登録機能 (UI) - 登録完了ページ
@@ -5,11 +7,6 @@
  * TDD Green段階: テストを通すための最小実装
  */
 function RegisterSuccessPage() {
-  const handleTopPageClick = () => {
-    // TODO: ナビゲーション実装（Issue#3 or later）
-    console.log('Navigate to top page')
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
@@ -28,12 +25,12 @@ function RegisterSuccessPage() {
           </div>
 
           {/* トップページへのボタン */}
-          <button
-            onClick={handleTopPageClick}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          <Link
+            to="/"
+            className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 inline-block"
           >
             トップページへ
-          </button>
+          </Link>
         </div>
       </div>
     </div>

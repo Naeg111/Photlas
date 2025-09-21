@@ -17,7 +17,13 @@ export default defineConfig({
     poolOptions: {
       forks: {
         singleFork: process.env.CI === 'true',
+        isolate: true, // テストの完全分離
       }
     },
+    // テスト環境のクリーンアップを強化
+    restoreMocks: true,
+    clearMocks: true,
+    unstubEnvs: true,
+    unstubGlobals: true,
   },
 })
