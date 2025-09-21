@@ -33,7 +33,6 @@ function CategoryButtons() {
   ];
 
   return (
-    {/* === コンテナ要素 === */}
     <div 
       role="group"                    // アクセシビリティ: 関連するボタン群であることを示す
       data-testid="category-buttons"  // テスト用識別子: E2Eテストでの要素特定に使用

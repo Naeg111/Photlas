@@ -136,7 +136,6 @@ function ProfileImageUploader({ onImageSelect }: ProfileImageUploaderProps) {
   }
 
   return (
-    {/* === メインコンテナ === */}
     <div className={
       "flex items-center space-x-4"  // Flexbox: 要素を横並び + 垂直中央揃え + 16px間隔
     }>

@@ -167,7 +167,6 @@ function SNSLinksInput({ links, onLinksChange }: SNSLinksInputProps) {
   }
 
   return (
-    {/* === メインコンテナ === */}
     <div className="space-y-4">  {/* 垂直方向に16pxの間隔で入力欄を配置 */}
       
       {/* === 動的入力欄の生成 === */}
