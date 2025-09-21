@@ -39,9 +39,9 @@ describe('App', () => {
       </MemoryRouter>
     )
     // フローティング要素の確認
-    expect(screen.getByRole('button', { name: 'フィルター' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'メニュー' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '+' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '写真フィルター機能を開く' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'ユーザーメニューを開く' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '新しい写真を投稿する' })).toBeInTheDocument()
     expect(screen.getByTestId('category-buttons')).toBeInTheDocument()
   })
 

@@ -27,7 +27,6 @@ import RegisterSuccessPage from './pages/RegisterSuccessPage'
  */
 function HomePage() {
   return (
-    {/* === ルートコンテナ === */}
     <div className={
       "relative " +           // 相対位置: 子要素のabsolute配置の基準点
       "w-full h-screen " +    // サイズ: 画面全体（幅100%, 高さ100vh）

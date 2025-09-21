@@ -36,7 +36,6 @@ import { Link } from 'react-router-dom';  // SPA内でのナビゲーション�
  */
 function RegisterSuccessPage() {
   return (
-    {/* === 全画面レイアウトコンテナ === */}
     <div className={
       "min-h-screen " +              // 最小高さ: 画面の高さ（100vh）
       "bg-gray-50 " +                // 背景色: 薄いグレー（カード型UIの背景）
