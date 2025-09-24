@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.LoginRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.RegisterResponse;
 import com.photlas.backend.entity.User;
@@ -9,6 +10,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -44,6 +47,27 @@ public class UserService {
         String token = jwtService.generateToken(user.getEmail());
 
         sendWelcomeEmail(user.getEmail(), user.getUsername());
+
+        return new RegisterResponse(
+            new RegisterResponse.UserResponse(user),
+            token
+        );
+    }
+
+    public RegisterResponse loginUser(LoginRequest request) {
+        Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+
+        if (userOptional.isEmpty()) {
+            throw new IllegalArgumentException("Invalid email or password");
+        }
+
+        User user = userOptional.get();
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Invalid email or password");
+        }
+
+        String token = jwtService.generateToken(user.getEmail());
 
         return new RegisterResponse(
             new RegisterResponse.UserResponse(user),
