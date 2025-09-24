@@ -95,4 +95,7 @@ Thumbs.db
 ehthumbs.db
 
 # Documentation (maintained separately)
-documents/
+documents/design/
+documents/forstudy/
+documents/Issues/
+documents/requirements/

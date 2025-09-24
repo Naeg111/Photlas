@@ -1,0 +1,19 @@
+{
+  "name": "photlas-docker-tests",
+  "version": "1.0.0",
+  "description": "Docker environment tests for Photlas application",
+  "scripts": {
+    "test:docker": "jest docker-compose.test.js",
+    "test:docker:watch": "jest docker-compose.test.js --watch"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "pg": "^8.11.3"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 80000,
+    "setupFilesAfterEnv": [],
+    "testMatch": ["**/docker-compose.test.js"]
+  }
+}
