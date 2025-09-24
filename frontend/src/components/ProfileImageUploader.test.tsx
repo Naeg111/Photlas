@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import ProfileImageUploader from './ProfileImageUploader'
 
@@ -145,10 +145,12 @@ describe('ProfileImageUploader', () => {
       })
       
       fireEvent.change(fileInput)
-      
+
       // FileReader onloadを手動で呼び出し
       if (mockFileReader.onload) {
-        mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } } as any)
+        act(() => {
+          mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } } as any)
+        })
       }
       
       await waitFor(() => {
@@ -180,9 +182,11 @@ describe('ProfileImageUploader', () => {
       })
       
       fireEvent.change(fileInput)
-      
+
       if (mockFileReader.onload) {
-        mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } } as any)
+        act(() => {
+          mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } } as any)
+        })
       }
       
       await waitFor(() => {
