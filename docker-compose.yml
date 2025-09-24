@@ -1,0 +1,79 @@
+# Issue#4: Docker環境の導入
+# 3つのサービス: backend, db, nginx
+
+version: '3.8'
+
+services:
+  # Spring Bootバックエンドサービス
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: photlas-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/photlas_dev
+      - SPRING_DATASOURCE_USERNAME=photlas_user
+      - SPRING_DATASOURCE_PASSWORD=photlas_password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - photlas-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL 17データベースサービス
+  db:
+    image: postgres:17-alpine
+    container_name: photlas-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: photlas_dev
+      POSTGRES_USER: photlas_user
+      POSTGRES_PASSWORD: photlas_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - photlas-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U photlas_user -d photlas_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nginxリバースプロキシ
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: photlas-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - photlas-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# 永続化ボリューム
+volumes:
+  postgres_data:
+
+# ネットワーク設定
+networks:
+  photlas-network:
+    driver: bridge

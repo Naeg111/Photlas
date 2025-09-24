@@ -26,6 +26,9 @@ FROM openjdk:21-jre-slim
 
 WORKDIR /app
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user for security
 RUN groupadd -r photlas && useradd -r -g photlas photlas
 
