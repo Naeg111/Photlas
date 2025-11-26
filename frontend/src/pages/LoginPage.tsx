@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import PasswordResetRequestModal from '../components/PasswordResetRequestModal'
 
 interface FormData {
   email: string
@@ -27,6 +28,7 @@ const LoginPage: React.FC = () => {
 
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [isPasswordResetModalOpen, setIsPasswordResetModalOpen] = useState(false)
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
@@ -189,9 +191,13 @@ const LoginPage: React.FC = () => {
 
           <div className="text-center space-y-2">
             <div>
-              <a href="#" className="text-blue-600 hover:text-blue-500 text-sm">
+              <button
+                type="button"
+                onClick={() => setIsPasswordResetModalOpen(true)}
+                className="text-blue-600 hover:text-blue-500 text-sm"
+              >
                 パスワードをお忘れですか？
-              </a>
+              </button>
             </div>
             <div className="text-sm text-gray-600">
               アカウントをお持ちでないですか？{' '}
@@ -201,6 +207,12 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
         </form>
+
+        {/* パスワードリセットモーダル */}
+        <PasswordResetRequestModal
+          open={isPasswordResetModalOpen}
+          onClose={() => setIsPasswordResetModalOpen(false)}
+        />
       </div>
     </div>
   )
