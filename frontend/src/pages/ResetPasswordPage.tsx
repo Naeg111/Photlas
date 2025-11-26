@@ -36,14 +36,20 @@ export default function ResetPasswordPage() {
     e.preventDefault()
     setError('')
 
-    // バリデーション
+    // バリデーション - すべてのエラーを収集
+    const errors: string[] = []
+
     if (!newPassword) {
-      setError('新しいパスワードは必須です')
-      return
+      errors.push('新しいパスワードは必須です')
     }
 
     if (!confirmPassword) {
-      setError('確認用パスワードは必須です')
+      errors.push('確認用パスワードは必須です')
+    }
+
+    // エラーがあれば表示して終了
+    if (errors.length > 0) {
+      setError(errors.join('\n'))
       return
     }
 
@@ -111,7 +117,11 @@ export default function ResetPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit}>
             {error && (
-              <div className="mb-4 text-red-600 text-sm">{error}</div>
+              <div className="mb-4 text-red-600 text-sm">
+                {error.split('\n').map((err, index) => (
+                  <div key={index}>{err}</div>
+                ))}
+              </div>
             )}
 
             <div className="mb-4">
