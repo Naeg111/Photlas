@@ -2,8 +2,10 @@ package com.photlas.backend.controller;
 
 import com.photlas.backend.dto.ErrorResponse;
 import com.photlas.backend.dto.LoginRequest;
+import com.photlas.backend.dto.PasswordResetRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.RegisterResponse;
+import com.photlas.backend.dto.ResetPasswordRequest;
 import com.photlas.backend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -73,6 +77,80 @@ public class AuthController {
         } catch (IllegalArgumentException e) {
             ErrorResponse errorResponse = new ErrorResponse("メールアドレスまたはパスワードが正しくありません");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        } catch (Exception e) {
+            ErrorResponse errorResponse = new ErrorResponse("Internal server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * パスワードリセットリクエスト
+     * Issue#6: パスワードリセット機能
+     *
+     * @param request パスワードリセットリクエスト
+     * @param bindingResult バリデーション結果
+     * @return レスポンス
+     */
+    @PostMapping("/password-reset-request")
+    public ResponseEntity<?> passwordResetRequest(@Valid @RequestBody PasswordResetRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            List<ErrorResponse.FieldError> fieldErrors = bindingResult.getFieldErrors().stream()
+                .map(error -> new ErrorResponse.FieldError(
+                    error.getField(),
+                    error.getRejectedValue(),
+                    error.getDefaultMessage()
+                ))
+                .collect(Collectors.toList());
+
+            ErrorResponse errorResponse = new ErrorResponse("Validation failed", fieldErrors);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+
+        try {
+            userService.requestPasswordReset(request.getEmail());
+
+            // セキュリティ上、メールアドレスが存在するかどうかに関わらず同じレスポンスを返す
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "パスワードリセット用のメールを送信しました。メールをご確認ください。");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            ErrorResponse errorResponse = new ErrorResponse("Internal server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * パスワード再設定
+     * Issue#6: パスワードリセット機能
+     *
+     * @param request パスワード再設定リクエスト
+     * @param bindingResult バリデーション結果
+     * @return レスポンス
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            List<ErrorResponse.FieldError> fieldErrors = bindingResult.getFieldErrors().stream()
+                .map(error -> new ErrorResponse.FieldError(
+                    error.getField(),
+                    error.getRejectedValue(),
+                    error.getDefaultMessage()
+                ))
+                .collect(Collectors.toList());
+
+            ErrorResponse errorResponse = new ErrorResponse("Validation failed", fieldErrors);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+
+        try {
+            userService.resetPassword(request.getToken(), request.getNewPassword(), request.getConfirmPassword());
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "パスワードが正常に再設定されました");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
             ErrorResponse errorResponse = new ErrorResponse("Internal server error");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
