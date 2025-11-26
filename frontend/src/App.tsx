@@ -3,8 +3,11 @@ import FilterButton from './components/FilterButton'
 import CategoryButtons from './components/CategoryButtons'
 import PostButton from './components/PostButton'
 import MenuButton from './components/MenuButton'
+import LogoutButton from './components/LogoutButton'
 import RegisterPage from './pages/RegisterPage'
 import RegisterSuccessPage from './pages/RegisterSuccessPage'
+import LoginPage from './pages/LoginPage'
+import { AuthProvider } from './contexts/AuthContext'
 
 /**
  * HomePage コンポーネント
@@ -85,8 +88,10 @@ function HomePage() {
       {/* === メニューボタン（右上配置） === */}
       <div className={
         "absolute top-4 right-4 " +  // 位置: 上から16px、右から16px
-        "z-10"                       // Z-index: 地図より前面
+        "z-10 " +                    // Z-index: 地図より前面
+        "flex gap-2"                 // Flexbox: ボタン間のスペース
       }>
+        <LogoutButton />
         <MenuButton />
       </div>
 
@@ -114,12 +119,15 @@ function NotFoundPage() {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/register/success" element={<RegisterSuccessPage />} />
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register/success" element={<RegisterSuccessPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </AuthProvider>
   )
 }
 

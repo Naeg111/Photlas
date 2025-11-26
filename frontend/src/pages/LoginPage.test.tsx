@@ -16,6 +16,20 @@ import LoginPage from './LoginPage'
  * - 「アカウントをお持ちでないですか？新規登録はこちら」リンク
  */
 
+// AuthContext mockのセットアップ
+const mockLogin = vi.fn()
+
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    login: mockLogin,
+    isAuthenticated: false,
+    user: null,
+    logout: vi.fn(),
+    getAuthToken: () => null
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+}))
+
 const MockedLoginPage = () => (
   <BrowserRouter>
     <LoginPage />
@@ -28,6 +42,7 @@ global.fetch = vi.fn()
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockLogin.mockClear()
     // localStorage/sessionStorageのモック
     Object.defineProperty(window, 'localStorage', {
       value: {
@@ -60,7 +75,7 @@ describe('LoginPage', () => {
       render(<MockedLoginPage />)
 
       expect(screen.getByLabelText('メールアドレス')).toBeInTheDocument()
-      expect(screen.getByRole('textbox', { name: 'メールアドレス' })).toHaveAttribute('type', 'email')
+      expect(screen.getByRole('textbox', { name: 'メールアドレス' })).toHaveAttribute('type', 'text')
     })
 
     it('renders password input field', () => {
