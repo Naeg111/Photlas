@@ -7,6 +7,7 @@ import LogoutButton from './components/LogoutButton'
 import RegisterPage from './pages/RegisterPage'
 import RegisterSuccessPage from './pages/RegisterSuccessPage'
 import LoginPage from './pages/LoginPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import { AuthProvider } from './contexts/AuthContext'
 
 /**
@@ -125,6 +126,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/register/success" element={<RegisterSuccessPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AuthProvider>
