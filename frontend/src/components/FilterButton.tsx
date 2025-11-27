@@ -1,15 +1,57 @@
 /**
  * FilterButton コンポーネント
- * Issue#1: 基本レイアウトのフィルターボタン
+ * Issue#1: プロジェクトセットアップと基本レイアウト - フィルターボタン
  * 
- * TDD Green段階: テストを通すための最小実装
+ * 【目的】
+ * - 地図上の写真をカテゴリーやタグで絞り込むためのフィルター機能へのエントリーポイント
+ * - UI設計書(08_ui_design.md)に基づく基本レイアウトの一部
+ * - 左上に配置されるフローティングボタン
+ * 
+ * 【将来の拡張予定】
+ * - クリック時にフィルターパネルの表示/非表示切り替え
+ * - フィルター条件の数を示すバッジ表示
+ * - アクティブ状態の視覚的フィードバック
+ * 
+ * 【TDD実装状況】
+ * Green段階: テストを通すための最小実装（現在の状態）
+ * - 基本的な見た目とクリック可能性のみ実装
+ * - 実際のフィルター機能は Issue#3以降で実装予定
  */
 function FilterButton() {
   return (
-    <button className="bg-white shadow-lg rounded-lg px-4 py-2 border hover:bg-gray-50 transition-colors text-sm font-medium">
+    <button 
+      className={
+        // === ベース スタイル ===
+        "bg-white " +           // 背景色: 白色（地図上で視認性を確保）
+        "shadow-lg " +          // ドロップシャドウ: 大きめの影でフローティング感を演出
+        "rounded-lg " +         // 角の丸み: 8px（モダンなUI デザイン）
+        "border " +             // ボーダー: 1px solid（デフォルトのグレー）
+        
+        // === 内側の余白 ===
+        "px-4 py-2 " +          // パディング: 左右16px、上下8px（適度なクリック領域確保）
+        
+        // === インタラクション ===
+        "hover:bg-gray-50 " +   // ホバー時: 薄いグレー背景でフィードバック
+        "transition-colors " +  // アニメーション: 色変化をスムーズに
+        
+        // === テキスト スタイル ===
+        "text-sm " +            // フォントサイズ: 14px（読みやすさと省スペースのバランス）
+        "font-medium"           // フォント太さ: ミディアム（視認性向上）
+      }
+      
+      // === アクセシビリティ ===
+      aria-label="写真フィルター機能を開く"  // スクリーンリーダー対応
+      title="写真の絞り込み条件を設定できます" // ツールチップ表示用
+      
+      // TODO: Issue#3でクリックハンドラーを実装
+      // onClick={handleFilterClick}
+    >
+      {/* ボタンテキスト: シンプルで分かりやすいラベル */}
       フィルター
     </button>
   );
 }
 
+// ES6 モジュールとしてエクスポート
+// 他のコンポーネントから import FilterButton from './FilterButton' でインポート可能
 export default FilterButton;

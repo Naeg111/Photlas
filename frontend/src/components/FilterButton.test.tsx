@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { render, screen, cleanup } from '@testing-library/react'
+import { describe, it, expect, afterEach } from 'vitest'
 import FilterButton from './FilterButton'
 
 /**
@@ -12,6 +12,10 @@ import FilterButton from './FilterButton'
  * - 適切なスタイリング
  */
 describe('FilterButton', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it('renders filter button', () => {
     // Red: このテストは最初失敗する（FilterButtonコンポーネントが存在しないため）
     render(<FilterButton />)
