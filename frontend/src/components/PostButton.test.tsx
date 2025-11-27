@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { render, screen, cleanup } from '@testing-library/react'
+import { describe, it, expect, afterEach } from 'vitest'
 import PostButton from './PostButton'
 
 /**
@@ -12,6 +12,9 @@ import PostButton from './PostButton'
  * - クリック可能
  */
 describe('PostButton', () => {
+  afterEach(() => {
+    cleanup()
+  })
   it('renders post button', () => {
     // Red: このテストは最初失敗する（PostButtonコンポーネントが存在しないため）
     render(<PostButton />)
