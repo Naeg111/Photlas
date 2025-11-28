@@ -118,7 +118,7 @@ describe('PhotoUploadDialog', () => {
       render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
 
       // 位置設定が未設定であることを確認
-      expect(screen.getByText(/位置を設定してください/)).toBeInTheDocument()
+      expect(screen.getByText(/地図で撮影場所を選んでください/)).toBeInTheDocument()
     })
 
     it('has all categories unchecked initially', () => {
@@ -223,7 +223,12 @@ describe('PhotoUploadDialog', () => {
 
       // FileReader をモック
       const mockFileReader = {
-        readAsDataURL: vi.fn(),
+        readAsDataURL: vi.fn(function(this: any) {
+          // readAsDataURL が呼ばれたら即座に onload を実行
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,test' } })
+          }
+        }),
         onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
         result: 'data:image/jpeg;base64,test'
       }
@@ -237,11 +242,6 @@ describe('PhotoUploadDialog', () => {
       })
 
       fireEvent.change(fileInput)
-
-      // FileReader.onload を手動で実行
-      if (mockFileReader.onload) {
-        mockFileReader.onload.call(mockFileReader as any, {} as ProgressEvent<FileReader>)
-      }
 
       await waitFor(() => {
         const preview = screen.getByAltText('写真プレビュー')
@@ -375,7 +375,7 @@ describe('PhotoUploadDialog', () => {
     it('shows location not set message initially', () => {
       render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
 
-      expect(screen.getByText(/位置を設定してください/)).toBeInTheDocument()
+      expect(screen.getByText(/地図で撮影場所を選んでください/)).toBeInTheDocument()
     })
   })
 
