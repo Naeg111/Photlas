@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import heic2any from 'heic2any'
 
 interface PhotoUploadDialogProps {
   open: boolean
@@ -8,6 +9,7 @@ interface PhotoUploadDialogProps {
     photo: File
     categories: string[]
     location?: { lat: number; lng: number }
+    objectKey?: string
   }) => void
 }
 
@@ -19,6 +21,7 @@ interface Location {
 /**
  * 写真投稿フォームダイアログコンポーネント
  * Issue#7: 写真投稿フォーム (UI)
+ * Issue#9: 写真アップロード処理 (API + Frontend)
  */
 export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUploadDialogProps) {
   // フォーム状態
@@ -28,6 +31,12 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [location, setLocation] = useState<Location | null>(null)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+
+  // Issue#9: アップロード関連の状態
+  const [isConvertingHeic, setIsConvertingHeic] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [conversionError, setConversionError] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -43,6 +52,10 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
       setSelectedCategories([])
       setLocation(null)
       setValidationErrors([])
+      setIsConvertingHeic(false)
+      setIsUploading(false)
+      setUploadError(null)
+      setConversionError(null)
     }
   }, [open])
 
@@ -68,19 +81,58 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
   }
 
   // 写真ファイル選択ハンドラー
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    setPhoto(file)
+    setConversionError(null)
 
-    // プレビュー生成
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const result = event.target?.result as string
-      setPhotoPreview(result)
+    // Issue#9: HEIC形式の場合はJPEGに変換
+    if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
+      setIsConvertingHeic(true)
+      try {
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg'
+        })
+
+        // heic2anyはBlobまたはBlob[]を返す可能性がある
+        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob
+
+        // BlobをFileに変換
+        const convertedFile = new File(
+          [blob],
+          file.name.replace(/\.heic$/i, '.jpg'),
+          { type: 'image/jpeg' }
+        )
+
+        setPhoto(convertedFile)
+        setIsConvertingHeic(false)
+
+        // プレビュー生成
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          const result = event.target?.result as string
+          setPhotoPreview(result)
+        }
+        reader.readAsDataURL(convertedFile)
+      } catch (error) {
+        console.error('HEIC conversion error:', error)
+        setIsConvertingHeic(false)
+        setConversionError('画像の変換に失敗しました')
+      }
+    } else {
+      // HEIC以外の場合は通常処理
+      setPhoto(file)
+
+      // プレビュー生成
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const result = event.target?.result as string
+        setPhotoPreview(result)
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
   // カテゴリ選択トグルハンドラー
@@ -130,7 +182,7 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
   }
 
   // 送信ハンドラー
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const errors = validate()
@@ -140,14 +192,59 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
     }
 
     setValidationErrors([])
+    setUploadError(null)
 
-    if (photo && location) {
+    if (!photo || !location) return
+
+    // Issue#9: 写真アップロード処理
+    setIsUploading(true)
+
+    try {
+      // 1. 署名付きURL取得
+      const extension = photo.name.split('.').pop() || 'jpg'
+      const uploadUrlResponse = await fetch('/api/v1/photos/upload-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          extension,
+          contentType: photo.type
+        })
+      })
+
+      if (!uploadUrlResponse.ok) {
+        throw new Error('Failed to get upload URL')
+      }
+
+      const { uploadUrl, objectKey } = await uploadUrlResponse.json()
+
+      // 2. S3に直接アップロード
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': photo.type
+        },
+        body: photo
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload photo to S3')
+      }
+
+      // 3. アップロード成功 - onSubmitを呼び出す
+      setIsUploading(false)
       onSubmit({
         title,
         photo,
         categories: selectedCategories,
-        location
+        location,
+        objectKey
       })
+    } catch (error) {
+      console.error('Upload error:', error)
+      setIsUploading(false)
+      setUploadError('時間をおいて再度お試しください')
     }
   }
 
@@ -176,6 +273,34 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
               </li>
             ))}
           </ul>
+        )}
+
+        {/* Issue#9: HEIC変換エラー */}
+        {conversionError && (
+          <div className="bg-red-50 border border-red-200 rounded p-4 mb-6 text-red-700">
+            {conversionError}
+          </div>
+        )}
+
+        {/* Issue#9: アップロードエラー */}
+        {uploadError && (
+          <div className="bg-red-50 border border-red-200 rounded p-4 mb-6 text-red-700">
+            {uploadError}
+          </div>
+        )}
+
+        {/* Issue#9: HEIC変換中 */}
+        {isConvertingHeic && (
+          <div data-testid="heic-conversion-status" className="bg-blue-50 border border-blue-200 rounded p-4 mb-6 text-blue-700">
+            変換中...
+          </div>
+        )}
+
+        {/* Issue#9: アップロード中 */}
+        {isUploading && (
+          <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-6 text-blue-700">
+            アップロード中...
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
