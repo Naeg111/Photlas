@@ -4,9 +4,10 @@ import PhotoUploadDialog from './PhotoUploadDialog'
 
 /**
  * Issue#7: 写真投稿フォーム (UI) - PhotoUploadDialogコンポーネント テスト
+ * Issue#9: 写真アップロード処理 (API + Frontend) - 追加テスト
  * TDD Red段階: 実装前のテストケース定義
  *
- * UI要件:
+ * UI要件 (Issue#7):
  * - 投稿用ダイアログコンポーネント
  * - タイトル入力欄、写真プレビューエリア、位置設定用地図、カテゴリ選択、投稿ボタン
  * - 初期状態: 全て空/未選択、投稿ボタンはdisabled
@@ -15,6 +16,13 @@ import PhotoUploadDialog from './PhotoUploadDialog'
  * - リアルタイムフィードバック: 文字数カウンター（2〜20文字）
  * - 投稿ボタンの活性化: 全ての必須項目が有効な場合のみ
  * - バリデーション: 必須項目のエラーを箇条書きで表示
+ *
+ * アップロード処理要件 (Issue#9):
+ * - HEIC形式の写真選択時、JPEG形式に自動変換
+ * - 変換処理中のローディング表示
+ * - 投稿時に署名付きURL取得APIを呼び出し
+ * - 署名付きURLを使用してS3に直接アップロード
+ * - アップロード失敗時のエラー表示
  */
 
 describe('PhotoUploadDialog', () => {
@@ -661,6 +669,651 @@ describe('PhotoUploadDialog', () => {
             photo: file,
             categories: ['風景'],
             // location: expect.any(Object) // Issue#8で実装
+          })
+        )
+      })
+    })
+  })
+
+  /**
+   * Issue#9: 写真アップロード処理 (API + Frontend)
+   * TDD Red段階: 実装前のテストケース定義
+   */
+
+  describe('HEIC to JPEG Conversion - HEIC→JPEG変換処理', () => {
+    it('detects HEIC file format when selected', async () => {
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [heicFile],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      // HEIC検出フラグまたはローディング状態が設定されることを確認
+      await waitFor(() => {
+        expect(screen.getByTestId('heic-conversion-status')).toBeInTheDocument()
+      })
+    })
+
+    it('shows loading indicator during HEIC to JPEG conversion', async () => {
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
+
+      // heic2anyのモック
+      const mockHeic2any = vi.fn().mockImplementation(() => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(new Blob(['jpeg-data'], { type: 'image/jpeg' }))
+          }, 100)
+        })
+      })
+
+      vi.stubGlobal('heic2any', mockHeic2any)
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [heicFile],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      // ローディング表示があることを確認
+      await waitFor(() => {
+        expect(screen.getByText(/変換中/)).toBeInTheDocument()
+      })
+
+      vi.unstubAllGlobals()
+    })
+
+    it('converts HEIC file to JPEG format', async () => {
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
+
+      const jpegBlob = new Blob(['jpeg-data'], { type: 'image/jpeg' })
+
+      // heic2anyのモック
+      const mockHeic2any = vi.fn().mockResolvedValue(jpegBlob)
+      vi.stubGlobal('heic2any', mockHeic2any)
+
+      // FileReaderのモック
+      const mockFileReader = {
+        readAsDataURL: vi.fn(function(this: any) {
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,converted' } })
+          }
+        }),
+        onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        result: 'data:image/jpeg;base64,converted'
+      }
+
+      vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [heicFile],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      // heic2anyが呼ばれることを確認
+      await waitFor(() => {
+        expect(mockHeic2any).toHaveBeenCalledWith(
+          expect.objectContaining({
+            blob: heicFile,
+            toType: 'image/jpeg'
+          })
+        )
+      })
+
+      vi.unstubAllGlobals()
+    })
+
+    it('hides loading indicator after conversion completes', async () => {
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
+
+      const jpegBlob = new Blob(['jpeg-data'], { type: 'image/jpeg' })
+      const mockHeic2any = vi.fn().mockResolvedValue(jpegBlob)
+      vi.stubGlobal('heic2any', mockHeic2any)
+
+      const mockFileReader = {
+        readAsDataURL: vi.fn(function(this: any) {
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,converted' } })
+          }
+        }),
+        onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        result: 'data:image/jpeg;base64,converted'
+      }
+
+      vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [heicFile],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      // ローディングが最初に表示される
+      await waitFor(() => {
+        expect(screen.getByText(/変換中/)).toBeInTheDocument()
+      })
+
+      // ローディングが消える
+      await waitFor(() => {
+        expect(screen.queryByText(/変換中/)).not.toBeInTheDocument()
+      })
+
+      vi.unstubAllGlobals()
+    })
+
+    it('displays error message when HEIC conversion fails', async () => {
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
+
+      // heic2anyのエラーモック
+      const mockHeic2any = vi.fn().mockRejectedValue(new Error('Conversion failed'))
+      vi.stubGlobal('heic2any', mockHeic2any)
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [heicFile],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      // エラーメッセージが表示されることを確認
+      await waitFor(() => {
+        expect(screen.getByText(/画像の変換に失敗しました/)).toBeInTheDocument()
+      })
+
+      vi.unstubAllGlobals()
+    })
+
+    it('does not trigger conversion for non-HEIC files', () => {
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const jpegFile = new File(['jpeg-data'], 'test.jpg', { type: 'image/jpeg' })
+
+      const mockHeic2any = vi.fn()
+      vi.stubGlobal('heic2any', mockHeic2any)
+
+      const mockFileReader = {
+        readAsDataURL: vi.fn(function(this: any) {
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,test' } })
+          }
+        }),
+        onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        result: 'data:image/jpeg;base64,test'
+      }
+
+      vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [jpegFile],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      // heic2anyが呼ばれないことを確認
+      expect(mockHeic2any).not.toHaveBeenCalled()
+
+      vi.unstubAllGlobals()
+    })
+  })
+
+  describe('Photo Upload Process - 写真アップロード処理', () => {
+    const mockFetch = vi.fn()
+
+    beforeEach(() => {
+      global.fetch = mockFetch
+      vi.clearAllMocks()
+    })
+
+    it('requests pre-signed URL from API when submit button is clicked', async () => {
+      // 署名付きURL APIのモックレスポンス
+      const mockUploadUrlResponse = {
+        uploadUrl: 'https://s3.amazonaws.com/test-bucket/uploads/user123/photo123.jpg?signature=abc',
+        objectKey: 'uploads/user123/photo123.jpg'
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockUploadUrlResponse
+      })
+
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      // フォームを入力
+      const titleInput = screen.getByLabelText('タイトル')
+      fireEvent.change(titleInput, { target: { value: 'テスト投稿' } })
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+
+      const mockFileReader = {
+        readAsDataURL: vi.fn(function(this: any) {
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,test' } })
+          }
+        }),
+        onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        result: 'data:image/jpeg;base64,test'
+      }
+
+      vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [file],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      if (mockFileReader.onload) {
+        mockFileReader.onload.call(mockFileReader as any, {} as ProgressEvent<FileReader>)
+      }
+
+      const landscapeCheckbox = screen.getByLabelText('風景')
+      fireEvent.click(landscapeCheckbox)
+
+      const locationButton = screen.getByRole('button', { name: /位置を設定/ })
+      fireEvent.click(locationButton)
+
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: '投稿する' })
+        expect(submitButton).not.toBeDisabled()
+      })
+
+      const submitButton = screen.getByRole('button', { name: '投稿する' })
+      fireEvent.click(submitButton)
+
+      // API呼び出しを確認
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          '/api/v1/photos/upload-url',
+          expect.objectContaining({
+            method: 'POST',
+            headers: expect.objectContaining({
+              'Content-Type': 'application/json'
+            }),
+            body: expect.stringContaining('image/jpeg')
+          })
+        )
+      })
+    })
+
+    it('uploads photo to S3 using pre-signed URL', async () => {
+      const mockUploadUrlResponse = {
+        uploadUrl: 'https://s3.amazonaws.com/test-bucket/uploads/user123/photo123.jpg?signature=abc',
+        objectKey: 'uploads/user123/photo123.jpg'
+      }
+
+      // 1回目: 署名付きURL取得
+      // 2回目: S3へのアップロード
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockUploadUrlResponse
+        })
+        .mockResolvedValueOnce({
+          ok: true
+        })
+
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      // フォームを入力
+      const titleInput = screen.getByLabelText('タイトル')
+      fireEvent.change(titleInput, { target: { value: 'テスト投稿' } })
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const file = new File(['test-image-data'], 'test.jpg', { type: 'image/jpeg' })
+
+      const mockFileReader = {
+        readAsDataURL: vi.fn(function(this: any) {
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,test' } })
+          }
+        }),
+        onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        result: 'data:image/jpeg;base64,test'
+      }
+
+      vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [file],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      if (mockFileReader.onload) {
+        mockFileReader.onload.call(mockFileReader as any, {} as ProgressEvent<FileReader>)
+      }
+
+      const landscapeCheckbox = screen.getByLabelText('風景')
+      fireEvent.click(landscapeCheckbox)
+
+      const locationButton = screen.getByRole('button', { name: /位置を設定/ })
+      fireEvent.click(locationButton)
+
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: '投稿する' })
+        expect(submitButton).not.toBeDisabled()
+      })
+
+      const submitButton = screen.getByRole('button', { name: '投稿する' })
+      fireEvent.click(submitButton)
+
+      // S3へのPUTリクエストを確認
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          mockUploadUrlResponse.uploadUrl,
+          expect.objectContaining({
+            method: 'PUT',
+            headers: expect.objectContaining({
+              'Content-Type': 'image/jpeg'
+            }),
+            body: file
+          })
+        )
+      })
+    })
+
+    it('shows loading state during upload', async () => {
+      const mockUploadUrlResponse = {
+        uploadUrl: 'https://s3.amazonaws.com/test-bucket/uploads/user123/photo123.jpg?signature=abc',
+        objectKey: 'uploads/user123/photo123.jpg'
+      }
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockUploadUrlResponse
+        })
+        .mockImplementation(() => {
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              resolve({ ok: true })
+            }, 100)
+          })
+        })
+
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      // フォームを入力
+      const titleInput = screen.getByLabelText('タイトル')
+      fireEvent.change(titleInput, { target: { value: 'テスト投稿' } })
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+
+      const mockFileReader = {
+        readAsDataURL: vi.fn(function(this: any) {
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,test' } })
+          }
+        }),
+        onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        result: 'data:image/jpeg;base64,test'
+      }
+
+      vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [file],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      if (mockFileReader.onload) {
+        mockFileReader.onload.call(mockFileReader as any, {} as ProgressEvent<FileReader>)
+      }
+
+      const landscapeCheckbox = screen.getByLabelText('風景')
+      fireEvent.click(landscapeCheckbox)
+
+      const locationButton = screen.getByRole('button', { name: /位置を設定/ })
+      fireEvent.click(locationButton)
+
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: '投稿する' })
+        expect(submitButton).not.toBeDisabled()
+      })
+
+      const submitButton = screen.getByRole('button', { name: '投稿する' })
+      fireEvent.click(submitButton)
+
+      // アップロード中の表示を確認
+      await waitFor(() => {
+        expect(screen.getByText(/アップロード中/)).toBeInTheDocument()
+      })
+    })
+
+    it('displays error message when pre-signed URL request fails', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500
+      })
+
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      // フォームを入力
+      const titleInput = screen.getByLabelText('タイトル')
+      fireEvent.change(titleInput, { target: { value: 'テスト投稿' } })
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+
+      const mockFileReader = {
+        readAsDataURL: vi.fn(function(this: any) {
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,test' } })
+          }
+        }),
+        onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        result: 'data:image/jpeg;base64,test'
+      }
+
+      vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [file],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      if (mockFileReader.onload) {
+        mockFileReader.onload.call(mockFileReader as any, {} as ProgressEvent<FileReader>)
+      }
+
+      const landscapeCheckbox = screen.getByLabelText('風景')
+      fireEvent.click(landscapeCheckbox)
+
+      const locationButton = screen.getByRole('button', { name: /位置を設定/ })
+      fireEvent.click(locationButton)
+
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: '投稿する' })
+        expect(submitButton).not.toBeDisabled()
+      })
+
+      const submitButton = screen.getByRole('button', { name: '投稿する' })
+      fireEvent.click(submitButton)
+
+      // エラーメッセージの確認
+      await waitFor(() => {
+        expect(screen.getByText(/時間をおいて再度お試しください/)).toBeInTheDocument()
+      })
+    })
+
+    it('displays error message when S3 upload fails', async () => {
+      const mockUploadUrlResponse = {
+        uploadUrl: 'https://s3.amazonaws.com/test-bucket/uploads/user123/photo123.jpg?signature=abc',
+        objectKey: 'uploads/user123/photo123.jpg'
+      }
+
+      // 署名付きURL取得は成功、S3アップロードは失敗
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockUploadUrlResponse
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 403
+        })
+
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      // フォームを入力
+      const titleInput = screen.getByLabelText('タイトル')
+      fireEvent.change(titleInput, { target: { value: 'テスト投稿' } })
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+
+      const mockFileReader = {
+        readAsDataURL: vi.fn(function(this: any) {
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,test' } })
+          }
+        }),
+        onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        result: 'data:image/jpeg;base64,test'
+      }
+
+      vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [file],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      if (mockFileReader.onload) {
+        mockFileReader.onload.call(mockFileReader as any, {} as ProgressEvent<FileReader>)
+      }
+
+      const landscapeCheckbox = screen.getByLabelText('風景')
+      fireEvent.click(landscapeCheckbox)
+
+      const locationButton = screen.getByRole('button', { name: /位置を設定/ })
+      fireEvent.click(locationButton)
+
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: '投稿する' })
+        expect(submitButton).not.toBeDisabled()
+      })
+
+      const submitButton = screen.getByRole('button', { name: '投稿する' })
+      fireEvent.click(submitButton)
+
+      // エラーメッセージの確認
+      await waitFor(() => {
+        expect(screen.getByText(/時間をおいて再度お試しください/)).toBeInTheDocument()
+      })
+    })
+
+    it('passes object key to onSubmit callback after successful upload', async () => {
+      const mockUploadUrlResponse = {
+        uploadUrl: 'https://s3.amazonaws.com/test-bucket/uploads/user123/photo123.jpg?signature=abc',
+        objectKey: 'uploads/user123/photo123.jpg'
+      }
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockUploadUrlResponse
+        })
+        .mockResolvedValueOnce({
+          ok: true
+        })
+
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      // フォームを入力
+      const titleInput = screen.getByLabelText('タイトル')
+      fireEvent.change(titleInput, { target: { value: 'テスト投稿' } })
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+
+      const mockFileReader = {
+        readAsDataURL: vi.fn(function(this: any) {
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,test' } })
+          }
+        }),
+        onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        result: 'data:image/jpeg;base64,test'
+      }
+
+      vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [file],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      if (mockFileReader.onload) {
+        mockFileReader.onload.call(mockFileReader as any, {} as ProgressEvent<FileReader>)
+      }
+
+      const landscapeCheckbox = screen.getByLabelText('風景')
+      fireEvent.click(landscapeCheckbox)
+
+      const locationButton = screen.getByRole('button', { name: /位置を設定/ })
+      fireEvent.click(locationButton)
+
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: '投稿する' })
+        expect(submitButton).not.toBeDisabled()
+      })
+
+      const submitButton = screen.getByRole('button', { name: '投稿する' })
+      fireEvent.click(submitButton)
+
+      // onSubmitにobjectKeyが渡されることを確認
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            objectKey: 'uploads/user123/photo123.jpg'
           })
         )
       })
