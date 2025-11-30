@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import PhotoUploadDialog from './PhotoUploadDialog'
+import heic2any from 'heic2any'
 
 /**
  * Issue#7: 写真投稿フォーム (UI) - PhotoUploadDialogコンポーネント テスト
@@ -617,6 +618,23 @@ describe('PhotoUploadDialog', () => {
     })
 
     it('calls onSubmit with form data when submit button is clicked with valid data', async () => {
+      // Issue#9: fetchのモックを追加（アップロード処理のため）
+      const mockUploadUrlResponse = {
+        uploadUrl: 'https://s3.amazonaws.com/test-bucket/uploads/user123/photo123.jpg?signature=abc',
+        objectKey: 'uploads/user123/photo123.jpg'
+      }
+
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockUploadUrlResponse
+        })
+        .mockResolvedValueOnce({
+          ok: true
+        })
+
+      global.fetch = mockFetch
+
       render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
 
       // すべての必須項目を入力
@@ -661,14 +679,14 @@ describe('PhotoUploadDialog', () => {
       const submitButton = screen.getByRole('button', { name: '投稿する' })
       fireEvent.click(submitButton)
 
-      // onSubmitが呼ばれたことを確認
+      // onSubmitが呼ばれたことを確認（Issue#9でobjectKeyが追加された）
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith(
           expect.objectContaining({
             title: 'テスト投稿',
             photo: file,
             categories: ['風景'],
-            // location: expect.any(Object) // Issue#8で実装
+            objectKey: 'uploads/user123/photo123.jpg'
           })
         )
       })
@@ -682,69 +700,13 @@ describe('PhotoUploadDialog', () => {
 
   describe('HEIC to JPEG Conversion - HEIC→JPEG変換処理', () => {
     it('detects HEIC file format when selected', async () => {
-      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
-
-      const fileInput = screen.getByTestId('photo-file-input')
-      const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
-
-      Object.defineProperty(fileInput, 'files', {
-        value: [heicFile],
-        writable: false,
-        configurable: true,
-      })
-
-      fireEvent.change(fileInput)
-
-      // HEIC検出フラグまたはローディング状態が設定されることを確認
-      await waitFor(() => {
-        expect(screen.getByTestId('heic-conversion-status')).toBeInTheDocument()
-      })
-    })
-
-    it('shows loading indicator during HEIC to JPEG conversion', async () => {
-      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
-
-      const fileInput = screen.getByTestId('photo-file-input')
-      const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
-
       // heic2anyのモック
-      const mockHeic2any = vi.fn().mockImplementation(() => {
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            resolve(new Blob(['jpeg-data'], { type: 'image/jpeg' }))
-          }, 100)
-        })
-      })
+      vi.mocked(heic2any).mockResolvedValue(new Blob(['jpeg-data'], { type: 'image/jpeg' }))
 
-      vi.stubGlobal('heic2any', mockHeic2any)
-
-      Object.defineProperty(fileInput, 'files', {
-        value: [heicFile],
-        writable: false,
-        configurable: true,
-      })
-
-      fireEvent.change(fileInput)
-
-      // ローディング表示があることを確認
-      await waitFor(() => {
-        expect(screen.getByText(/変換中/)).toBeInTheDocument()
-      })
-
-      vi.unstubAllGlobals()
-    })
-
-    it('converts HEIC file to JPEG format', async () => {
       render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
 
       const fileInput = screen.getByTestId('photo-file-input')
       const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
-
-      const jpegBlob = new Blob(['jpeg-data'], { type: 'image/jpeg' })
-
-      // heic2anyのモック
-      const mockHeic2any = vi.fn().mockResolvedValue(jpegBlob)
-      vi.stubGlobal('heic2any', mockHeic2any)
 
       // FileReaderのモック
       const mockFileReader = {
@@ -767,28 +729,87 @@ describe('PhotoUploadDialog', () => {
 
       fireEvent.change(fileInput)
 
+      // HEIC検出フラグまたはローディング状態が設定されることを確認
+      await waitFor(() => {
+        expect(screen.getByTestId('heic-conversion-status')).toBeInTheDocument()
+      })
+    })
+
+    it('shows loading indicator during HEIC to JPEG conversion', async () => {
+      // heic2anyのモックを遅延させる
+      vi.mocked(heic2any).mockImplementation(() => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(new Blob(['jpeg-data'], { type: 'image/jpeg' }))
+          }, 100)
+        })
+      })
+
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [heicFile],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
+      // ローディング表示があることを確認
+      await waitFor(() => {
+        expect(screen.getByText(/変換中/)).toBeInTheDocument()
+      })
+    })
+
+    it('converts HEIC file to JPEG format', async () => {
+      const jpegBlob = new Blob(['jpeg-data'], { type: 'image/jpeg' })
+
+      // heic2anyのモック
+      vi.mocked(heic2any).mockResolvedValue(jpegBlob)
+
+      // FileReaderのモック
+      const mockFileReader = {
+        readAsDataURL: vi.fn(function(this: any) {
+          if (this.onload) {
+            this.onload({ target: { result: 'data:image/jpeg;base64,converted' } })
+          }
+        }),
+        onload: null as ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null,
+        result: 'data:image/jpeg;base64,converted'
+      }
+
+      vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
+
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
+
+      Object.defineProperty(fileInput, 'files', {
+        value: [heicFile],
+        writable: false,
+        configurable: true,
+      })
+
+      fireEvent.change(fileInput)
+
       // heic2anyが呼ばれることを確認
       await waitFor(() => {
-        expect(mockHeic2any).toHaveBeenCalledWith(
+        expect(heic2any).toHaveBeenCalledWith(
           expect.objectContaining({
             blob: heicFile,
             toType: 'image/jpeg'
           })
         )
       })
-
-      vi.unstubAllGlobals()
     })
 
     it('hides loading indicator after conversion completes', async () => {
-      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
-
-      const fileInput = screen.getByTestId('photo-file-input')
-      const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
-
       const jpegBlob = new Blob(['jpeg-data'], { type: 'image/jpeg' })
-      const mockHeic2any = vi.fn().mockResolvedValue(jpegBlob)
-      vi.stubGlobal('heic2any', mockHeic2any)
+      vi.mocked(heic2any).mockResolvedValue(jpegBlob)
 
       const mockFileReader = {
         readAsDataURL: vi.fn(function(this: any) {
@@ -801,6 +822,11 @@ describe('PhotoUploadDialog', () => {
       }
 
       vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
+
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
 
       Object.defineProperty(fileInput, 'files', {
         value: [heicFile],
@@ -819,19 +845,16 @@ describe('PhotoUploadDialog', () => {
       await waitFor(() => {
         expect(screen.queryByText(/変換中/)).not.toBeInTheDocument()
       })
-
-      vi.unstubAllGlobals()
     })
 
     it('displays error message when HEIC conversion fails', async () => {
+      // heic2anyのエラーモック
+      vi.mocked(heic2any).mockRejectedValue(new Error('Conversion failed'))
+
       render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
 
       const fileInput = screen.getByTestId('photo-file-input')
       const heicFile = new File(['heic-data'], 'test.heic', { type: 'image/heic' })
-
-      // heic2anyのエラーモック
-      const mockHeic2any = vi.fn().mockRejectedValue(new Error('Conversion failed'))
-      vi.stubGlobal('heic2any', mockHeic2any)
 
       Object.defineProperty(fileInput, 'files', {
         value: [heicFile],
@@ -845,19 +868,9 @@ describe('PhotoUploadDialog', () => {
       await waitFor(() => {
         expect(screen.getByText(/画像の変換に失敗しました/)).toBeInTheDocument()
       })
-
-      vi.unstubAllGlobals()
     })
 
     it('does not trigger conversion for non-HEIC files', () => {
-      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
-
-      const fileInput = screen.getByTestId('photo-file-input')
-      const jpegFile = new File(['jpeg-data'], 'test.jpg', { type: 'image/jpeg' })
-
-      const mockHeic2any = vi.fn()
-      vi.stubGlobal('heic2any', mockHeic2any)
-
       const mockFileReader = {
         readAsDataURL: vi.fn(function(this: any) {
           if (this.onload) {
@@ -870,6 +883,11 @@ describe('PhotoUploadDialog', () => {
 
       vi.spyOn(globalThis, 'FileReader').mockImplementation(() => mockFileReader as any)
 
+      render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
+
+      const fileInput = screen.getByTestId('photo-file-input')
+      const jpegFile = new File(['jpeg-data'], 'test.jpg', { type: 'image/jpeg' })
+
       Object.defineProperty(fileInput, 'files', {
         value: [jpegFile],
         writable: false,
@@ -879,9 +897,7 @@ describe('PhotoUploadDialog', () => {
       fireEvent.change(fileInput)
 
       // heic2anyが呼ばれないことを確認
-      expect(mockHeic2any).not.toHaveBeenCalled()
-
-      vi.unstubAllGlobals()
+      expect(heic2any).not.toHaveBeenCalled()
     })
   })
 
