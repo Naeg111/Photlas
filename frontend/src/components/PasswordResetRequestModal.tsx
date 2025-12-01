@@ -91,7 +91,7 @@ export default function PasswordResetRequestModal({ open, onClose }: PasswordRes
           </div>
         ) : (
           // フォーム表示
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <p className="mb-4 text-gray-700">登録メールアドレスを入力してください。</p>
 
             {error && (
