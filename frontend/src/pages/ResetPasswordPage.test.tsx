@@ -158,6 +158,9 @@ describe('ResetPasswordPage', () => {
         </MemoryRouter>
       )
 
+      const newPasswordInput = screen.getByLabelText('新しいパスワード')
+      fireEvent.change(newPasswordInput, { target: { value: 'ValidPass123' } })
+
       const submitButton = screen.getByRole('button', { name: '再設定' })
       fireEvent.click(submitButton)
 
