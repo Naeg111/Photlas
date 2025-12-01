@@ -633,7 +633,7 @@ describe('PhotoUploadDialog', () => {
           ok: true
         })
 
-      global.fetch = mockFetch
+      globalThis.fetch = mockFetch as any
 
       render(<PhotoUploadDialog open={true} onClose={mockOnClose} onSubmit={mockOnSubmit} />)
 
@@ -905,7 +905,7 @@ describe('PhotoUploadDialog', () => {
     const mockFetch = vi.fn()
 
     beforeEach(() => {
-      global.fetch = mockFetch
+      globalThis.fetch = mockFetch as any
       vi.clearAllMocks()
     })
 
