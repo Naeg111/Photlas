@@ -17,7 +17,7 @@ import LoginPage from './LoginPage'
  */
 
 // AuthContext mockのセットアップ
-const mockLogin = vi.fn((user, token, remember) => {
+const mockLogin = vi.fn((_user, token, remember) => {
   // モック内でlocalStorage/sessionStorageに保存する
   if (remember) {
     window.localStorage.setItem('auth_token', token)
@@ -44,7 +44,7 @@ const MockedLoginPage = () => (
 )
 
 // fetch APIのモック
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn() as any
 
 describe('LoginPage', () => {
   beforeEach(() => {
