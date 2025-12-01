@@ -17,7 +17,14 @@ import LoginPage from './LoginPage'
  */
 
 // AuthContext mockのセットアップ
-const mockLogin = vi.fn()
+const mockLogin = vi.fn((user, token, remember) => {
+  // モック内でlocalStorage/sessionStorageに保存する
+  if (remember) {
+    window.localStorage.setItem('auth_token', token)
+  } else {
+    window.sessionStorage.setItem('auth_token', token)
+  }
+})
 
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
