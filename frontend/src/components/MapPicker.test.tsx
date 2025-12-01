@@ -18,7 +18,6 @@ import MapPicker from './MapPicker'
 describe('MapPicker', () => {
   const mockOnConfirm = vi.fn()
   const mockOnCancel = vi.fn()
-  const defaultCenter = { lat: 36.5, lng: 138.0 } // 日本全体のデフォルト座標
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -179,7 +178,7 @@ describe('MapPicker', () => {
     it('shows error message when geolocation fails', async () => {
       // Geolocation APIのエラーモック
       const mockGeolocation = {
-        getCurrentPosition: vi.fn((success, error) => {
+        getCurrentPosition: vi.fn((_success, error) => {
           error({ code: 1, message: 'User denied geolocation' })
         })
       }
