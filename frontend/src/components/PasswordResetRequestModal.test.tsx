@@ -16,7 +16,7 @@ import PasswordResetRequestModal from './PasswordResetRequestModal'
  */
 
 // fetch APIのモック
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn() as any
 
 describe('PasswordResetRequestModal', () => {
   const mockOnClose = vi.fn()
