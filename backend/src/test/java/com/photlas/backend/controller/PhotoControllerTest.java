@@ -115,7 +115,7 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath("$.spot.spot_id").exists())
                 .andExpect(jsonPath("$.spot.latitude", is(35.658581)))
                 .andExpect(jsonPath("$.spot.longitude", is(139.745433)))
-                .andExpect(jsonPath("$.user.user_id", is(testUser.getUserId().intValue())))
+                .andExpect(jsonPath("$.user.user_id", is(testUser.getId().intValue())))
                 .andExpect(jsonPath("$.user.username", is("testuser")));
     }
 
@@ -126,7 +126,7 @@ public class PhotoControllerTest {
         Spot existingSpot = new Spot();
         existingSpot.setLatitude(new BigDecimal("35.658500"));  // 約9m離れた位置
         existingSpot.setLongitude(new BigDecimal("139.745400"));
-        existingSpot.setCreatedByUserId(testUser.getUserId());
+        existingSpot.setCreatedByUserId(testUser.getId());
         existingSpot = spotRepository.save(existingSpot);
 
         CreatePhotoRequest request = new CreatePhotoRequest();
