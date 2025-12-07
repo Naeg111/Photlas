@@ -37,6 +37,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/health").permitAll()
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.sendError(401, "Unauthorized");
+                })
+            )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
