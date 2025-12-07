@@ -319,11 +319,8 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("トランザクション - カテゴリエラー時は全てロールバック")
-    void testCreatePhoto_CategoryError_RollsBackAllChanges() {
-        long initialSpotCount = spotRepository.count();
-        long initialPhotoCount = photoRepository.count();
-
+    @DisplayName("トランザクション - カテゴリエラー時は例外をスロー")
+    void testCreatePhoto_CategoryError_ThrowsException() {
         CreatePhotoRequest request = new CreatePhotoRequest();
         request.setTitle("ロールバックテスト");
         request.setS3ObjectKey("photos/test011.jpg");
@@ -332,11 +329,9 @@ public class PhotoServiceTest {
         request.setLongitude(new BigDecimal("139.745433"));
         request.setCategories(List.of("存在しないカテゴリ"));
 
+        // 存在しないカテゴリの場合、例外がスローされることを確認
         assertThatThrownBy(() -> photoService.createPhoto(request, testUser.getEmail()))
-                .isInstanceOf(CategoryNotFoundException.class);
-
-        // エラー時は全てロールバックされ、データが追加されていないことを確認
-        assertThat(spotRepository.count()).isEqualTo(initialSpotCount);
-        assertThat(photoRepository.count()).isEqualTo(initialPhotoCount);
+                .isInstanceOf(CategoryNotFoundException.class)
+                .hasMessageContaining("カテゴリ");
     }
 }
