@@ -110,7 +110,7 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath("$.photo.title", is("東京タワーの夜景")))
                 .andExpect(jsonPath("$.photo.photo_id").exists())
                 .andExpect(jsonPath("$.photo.s3_object_key", is("photos/user123/image001.jpg")))
-                .andExpect(jsonPath("$.photo.shot_at", is("2025-08-15T18:30:00Z")))
+                .andExpect(jsonPath("$.photo.shot_at", is("2025-08-15T18:30:00")))
                 .andExpect(jsonPath("$.photo.weather").exists())
                 .andExpect(jsonPath("$.spot.spot_id").exists())
                 .andExpect(jsonPath("$.spot.latitude", is(35.658581)))
