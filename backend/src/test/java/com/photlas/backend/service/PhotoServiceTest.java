@@ -102,7 +102,7 @@ public class PhotoServiceTest {
         // データベースに保存されたことを確認
         List<Spot> spots = spotRepository.findAll();
         assertThat(spots).hasSize(1);
-        assertThat(spots.get(0).getCreatedByUserId()).isEqualTo(testUser.getUserId());
+        assertThat(spots.get(0).getCreatedByUserId()).isEqualTo(testUser.getId());
     }
 
     @Test
@@ -112,7 +112,7 @@ public class PhotoServiceTest {
         Spot existingSpot = new Spot();
         existingSpot.setLatitude(new BigDecimal("35.658500"));  // 約9m離れた位置
         existingSpot.setLongitude(new BigDecimal("139.745400"));
-        existingSpot.setCreatedByUserId(testUser.getUserId());
+        existingSpot.setCreatedByUserId(testUser.getId());
         existingSpot = spotRepository.save(existingSpot);
 
         CreatePhotoRequest request = new CreatePhotoRequest();
@@ -142,7 +142,7 @@ public class PhotoServiceTest {
         Spot existingSpot = new Spot();
         existingSpot.setLatitude(new BigDecimal("35.658581"));
         existingSpot.setLongitude(new BigDecimal("139.745433"));
-        existingSpot.setCreatedByUserId(testUser.getUserId());
+        existingSpot.setCreatedByUserId(testUser.getId());
         existingSpot = spotRepository.save(existingSpot);
 
         CreatePhotoRequest request = new CreatePhotoRequest();
@@ -171,13 +171,13 @@ public class PhotoServiceTest {
         Spot spot1 = new Spot();
         spot1.setLatitude(new BigDecimal("35.658500"));  // 約9m離れた位置
         spot1.setLongitude(new BigDecimal("139.745400"));
-        spot1.setCreatedByUserId(testUser.getUserId());
+        spot1.setCreatedByUserId(testUser.getId());
         spot1 = spotRepository.save(spot1);
 
         Spot spot2 = new Spot();
         spot2.setLatitude(new BigDecimal("35.658700"));  // 約13m離れた位置
         spot2.setLongitude(new BigDecimal("139.745500"));
-        spot2.setCreatedByUserId(testUser.getUserId());
+        spot2.setCreatedByUserId(testUser.getId());
         spot2 = spotRepository.save(spot2);
 
         CreatePhotoRequest request = new CreatePhotoRequest();
