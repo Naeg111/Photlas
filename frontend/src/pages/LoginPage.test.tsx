@@ -17,11 +17,13 @@ import LoginPage from './LoginPage'
  */
 
 // AuthContext mockのセットアップ
-const mockLogin = vi.fn((user, token, remember) => {
-  // 実際のAuthContextと同じように、localStorage/sessionStorageにトークンを保存
-  const storage = remember ? window.localStorage : window.sessionStorage
-  storage.setItem('auth_token', token)
-  storage.setItem('user', JSON.stringify(user))
+const mockLogin = vi.fn((_user, token, remember) => {
+  // モック内でlocalStorage/sessionStorageに保存する
+  if (remember) {
+    window.localStorage.setItem('auth_token', token)
+  } else {
+    window.sessionStorage.setItem('auth_token', token)
+  }
 })
 
 vi.mock('../contexts/AuthContext', () => ({
@@ -42,7 +44,7 @@ const MockedLoginPage = () => (
 )
 
 // fetch APIのモック
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn() as any
 
 describe('LoginPage', () => {
   beforeEach(() => {
