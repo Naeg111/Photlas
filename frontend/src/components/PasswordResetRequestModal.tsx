@@ -91,7 +91,7 @@ export default function PasswordResetRequestModal({ open, onClose }: PasswordRes
           </div>
         ) : (
           // フォーム表示
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <p className="mb-4 text-gray-700">登録メールアドレスを入力してください。</p>
 
             {error && (
@@ -105,7 +105,7 @@ export default function PasswordResetRequestModal({ open, onClose }: PasswordRes
               <input
                 id="email"
                 name="email"
-                type="text"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
