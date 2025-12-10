@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { BrowserRouter, MemoryRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router-dom'
 import ResetPasswordPage from './ResetPasswordPage'
 
 /**
@@ -17,7 +17,7 @@ import ResetPasswordPage from './ResetPasswordPage'
  */
 
 // fetch APIのモック
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn() as any
 
 // useNavigateのモック
 const mockNavigate = vi.fn()
@@ -157,6 +157,9 @@ describe('ResetPasswordPage', () => {
           <ResetPasswordPage />
         </MemoryRouter>
       )
+
+      const newPasswordInput = screen.getByLabelText('新しいパスワード')
+      fireEvent.change(newPasswordInput, { target: { value: 'ValidPass123' } })
 
       const submitButton = screen.getByRole('button', { name: '再設定' })
       fireEvent.click(submitButton)
