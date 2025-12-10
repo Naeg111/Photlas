@@ -96,3 +96,6 @@ ehthumbs.db
 
 # Documentation (maintained separately)
 documents/
+
+# Design assets backup
+design-backup/
