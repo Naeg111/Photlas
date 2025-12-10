@@ -64,16 +64,29 @@ photlas/
 │   ├── build.gradle            # ビルド設定
 │   └── gradlew                 # Gradleラッパー
 │
-└── frontend/                   # React SPAクライアント
-    ├── src/
-    │   ├── App.tsx             # ルーティングを含むメインコンポーネント
-    │   ├── main.tsx            # エントリーポイント
-    │   ├── components/         # 再利用可能なUIコンポーネント
-    │   └── pages/              # 各ページのコンポーネント
-    ├── package.json
-    ├── vite.config.ts          # Vite設定
-    └── vitest.config.ts        # テスト設定
+├── frontend/                   # React SPAクライアント
+│   ├── src/
+│   │   ├── App.tsx             # ルーティングを含むメインコンポーネント
+│   │   ├── main.tsx            # エントリーポイント
+│   │   ├── components/         # 再利用可能なUIコンポーネント
+│   │   └── pages/              # 各ページのコンポーネント
+│   ├── package.json
+│   ├── vite.config.ts          # Vite設定
+│   └── vitest.config.ts        # テスト設定
+│
+├── design-assets/              # プロジェクトに取り込むフロントエンド資材
+│   └── Photlas/
+│       ├── COMPONENT_MAPPING.md  # コンポーネントとボタン操作の対応表
+│       └── src/                  # Figma Makeで生成されたデザインコード
+│
+└── design-backup/              # フロントエンド資材のバックアップ（git管理対象外）
+    └── [バージョン別バックアップ]  # 資材更新時に差分管理用として保存
 ```
+
+### デザインアセットディレクトリ
+- **design-assets/**: Figma Make等で生成された高品質なUIデザインコードを格納。プロジェクトへの統合前に、ここで内容を確認・検証する。
+  - `COMPONENT_MAPPING.md`: どのコンポーネント名がどのボタンや機能に対応するかを示すマッピングドキュメント
+- **design-backup/**: デザイン資材のバックアップ用ディレクトリ（.gitignoreで除外）。資材を更新するたびに別々に保存し、必要に応じて差分のみを反映できるようにする。
 
 ---
 ## 現在の実装ステータス
