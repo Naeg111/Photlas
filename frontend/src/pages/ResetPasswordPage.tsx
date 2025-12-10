@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 /**
@@ -36,20 +36,14 @@ export default function ResetPasswordPage() {
     e.preventDefault()
     setError('')
 
-    // バリデーション - すべてのエラーを収集
-    const errors: string[] = []
-
+    // バリデーション
     if (!newPassword) {
-      errors.push('新しいパスワードは必須です')
+      setError('新しいパスワードは必須です')
+      return
     }
 
     if (!confirmPassword) {
-      errors.push('確認用パスワードは必須です')
-    }
-
-    // エラーがあれば表示して終了
-    if (errors.length > 0) {
-      setError(errors.join('\n'))
+      setError('確認用パスワードは必須です')
       return
     }
 
@@ -117,11 +111,7 @@ export default function ResetPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit}>
             {error && (
-              <div className="mb-4 text-red-600 text-sm">
-                {error.split('\n').map((err, index) => (
-                  <div key={index}>{err}</div>
-                ))}
-              </div>
+              <div className="mb-4 text-red-600 text-sm">{error}</div>
             )}
 
             <div className="mb-4">
