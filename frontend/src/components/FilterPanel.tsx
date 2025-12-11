@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 import { CategoryIcon } from "./CategoryIcon";
 import { MonthIcons, TimeIcons, WeatherIcons } from "./FilterIcons";
 
