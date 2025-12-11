@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { FilterPanel } from './FilterPanel'
 
 /**
@@ -90,7 +90,7 @@ describe('FilterPanel', () => {
 
   describe('Category Icons', () => {
     it('renders category icons for each category button', () => {
-      const { container } = render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
       // カテゴリアイコンがレンダリングされることを確認
       // SVGまたはアイコンコンポーネントが存在するか
