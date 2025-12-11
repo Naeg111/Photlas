@@ -45,8 +45,13 @@ describe('FilterPanel', () => {
 
       const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 
+      // 各月のボタンが存在することを確認（アイコンと月名を含むボタン）
+      const allButtons = screen.getAllByRole('button')
       months.forEach(month => {
-        expect(screen.getByRole('button', { name: new RegExp(month) })).toBeInTheDocument()
+        const monthButton = allButtons.find(btn =>
+          btn.textContent?.trim() === month
+        )
+        expect(monthButton).toBeTruthy()
       })
     })
 

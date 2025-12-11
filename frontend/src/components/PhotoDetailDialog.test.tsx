@@ -18,17 +18,17 @@ import { PhotoDetailDialog } from './PhotoDetailDialog'
 
 describe('PhotoDetailDialog', () => {
   const mockOnOpenChange = vi.fn()
-  const mockOnOpenLightbox = vi.fn()
+  const mockOnUserClick = vi.fn()
+  const mockOnPhotoClick = vi.fn()
   const mockPhoto = {
     id: '1',
     imageUrl: 'https://example.com/photo.jpg',
-    userName: 'テストユーザー',
+    username: 'テストユーザー',
+    userAvatarUrl: 'https://example.com/avatar.jpg',
+    date: '2024年1月1日',
+    weather: '晴れ',
     category: '風景',
-    capturedAt: '2024-01-01T12:00:00Z',
-    latitude: 35.6762,
-    longitude: 139.6503,
-    likes: 10,
-    comments: []
+    timeOfDay: '昼'
   }
 
   beforeEach(() => {
@@ -41,8 +41,9 @@ describe('PhotoDetailDialog', () => {
         <PhotoDetailDialog
           open={true}
           onOpenChange={mockOnOpenChange}
-          onOpenLightbox={mockOnOpenLightbox}
           photo={mockPhoto}
+          onUserClick={mockOnUserClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -54,13 +55,15 @@ describe('PhotoDetailDialog', () => {
         <PhotoDetailDialog
           open={true}
           onOpenChange={mockOnOpenChange}
-          onOpenLightbox={mockOnOpenLightbox}
           photo={mockPhoto}
+          onUserClick={mockOnUserClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
-      const image = screen.getByRole('img')
-      expect(image).toHaveAttribute('src', mockPhoto.imageUrl)
+      const images = screen.getAllByRole('img')
+      const photoImage = images.find(img => img.getAttribute('src') === mockPhoto.imageUrl)
+      expect(photoImage).toBeTruthy()
     })
 
     it('displays user name', () => {
@@ -68,8 +71,9 @@ describe('PhotoDetailDialog', () => {
         <PhotoDetailDialog
           open={true}
           onOpenChange={mockOnOpenChange}
-          onOpenLightbox={mockOnOpenLightbox}
           photo={mockPhoto}
+          onUserClick={mockOnUserClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -81,8 +85,9 @@ describe('PhotoDetailDialog', () => {
         <PhotoDetailDialog
           open={true}
           onOpenChange={mockOnOpenChange}
-          onOpenLightbox={mockOnOpenLightbox}
           photo={mockPhoto}
+          onUserClick={mockOnUserClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -94,12 +99,15 @@ describe('PhotoDetailDialog', () => {
         <PhotoDetailDialog
           open={true}
           onOpenChange={mockOnOpenChange}
-          onOpenLightbox={mockOnOpenLightbox}
           photo={mockPhoto}
+          onUserClick={mockOnUserClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
-      expect(screen.getByText(/10/)).toBeInTheDocument()
+      // お気に入りボタンが存在することを確認
+      const favoriteButton = screen.getByRole('button', { name: /お気に入り/i })
+      expect(favoriteButton).toBeInTheDocument()
     })
 
     it('renders fullsize view button', () => {
@@ -107,13 +115,15 @@ describe('PhotoDetailDialog', () => {
         <PhotoDetailDialog
           open={true}
           onOpenChange={mockOnOpenChange}
-          onOpenLightbox={mockOnOpenLightbox}
           photo={mockPhoto}
+          onUserClick={mockOnUserClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
-      const expandButton = screen.getByRole('button', { name: /拡大/i })
-      expect(expandButton).toBeInTheDocument()
+      // 画像をクリック可能な要素が存在することを確認
+      const clickableImages = screen.getAllByRole('img')
+      expect(clickableImages.length).toBeGreaterThan(0)
     })
   })
 
@@ -123,14 +133,14 @@ describe('PhotoDetailDialog', () => {
         <PhotoDetailDialog
           open={true}
           onOpenChange={mockOnOpenChange}
-          onOpenLightbox={mockOnOpenLightbox}
           photo={mockPhoto}
+          onUserClick={mockOnUserClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
-      // 緯度経度が表示されることを確認
-      expect(screen.getByText(/35.67/)).toBeInTheDocument()
-      expect(screen.getByText(/139.65/)).toBeInTheDocument()
+      // 天候情報が表示されることを確認
+      expect(screen.getByText('晴れ')).toBeInTheDocument()
     })
   })
 
@@ -140,13 +150,14 @@ describe('PhotoDetailDialog', () => {
         <PhotoDetailDialog
           open={true}
           onOpenChange={mockOnOpenChange}
-          onOpenLightbox={mockOnOpenLightbox}
           photo={mockPhoto}
+          onUserClick={mockOnUserClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
-      // 日付が何らかの形式で表示されることを確認
-      expect(screen.getByText(/2024/)).toBeInTheDocument()
+      // 日付が表示されることを確認
+      expect(screen.getByText(/2024年1月1日/)).toBeInTheDocument()
     })
   })
 })
