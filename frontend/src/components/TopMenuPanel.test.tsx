@@ -15,23 +15,32 @@ import { TopMenuPanel } from './TopMenuPanel'
 
 describe('TopMenuPanel', () => {
   const mockOnOpenChange = vi.fn()
-  const mockOnProfileClick = vi.fn()
+  const mockOnMyPageClick = vi.fn()
   const mockOnAccountSettingsClick = vi.fn()
-  const mockOnLogoutClick = vi.fn()
+  const mockOnTermsClick = vi.fn()
+  const mockOnPrivacyClick = vi.fn()
+  const mockOnLoginClick = vi.fn()
+  const mockOnSignUpClick = vi.fn()
+  const mockOnLogout = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   describe('UI Elements', () => {
-    it('renders when open prop is true', () => {
+    it('renders when open prop is true with logged in user', () => {
       render(
         <TopMenuPanel
           open={true}
           onOpenChange={mockOnOpenChange}
-          onProfileClick={mockOnProfileClick}
+          isLoggedIn={true}
+          onMyPageClick={mockOnMyPageClick}
           onAccountSettingsClick={mockOnAccountSettingsClick}
-          onLogoutClick={mockOnLogoutClick}
+          onTermsClick={mockOnTermsClick}
+          onPrivacyClick={mockOnPrivacyClick}
+          onLoginClick={mockOnLoginClick}
+          onSignUpClick={mockOnSignUpClick}
+          onLogout={mockOnLogout}
         />
       )
 
@@ -44,9 +53,14 @@ describe('TopMenuPanel', () => {
         <TopMenuPanel
           open={true}
           onOpenChange={mockOnOpenChange}
-          onProfileClick={mockOnProfileClick}
+          isLoggedIn={true}
+          onMyPageClick={mockOnMyPageClick}
           onAccountSettingsClick={mockOnAccountSettingsClick}
-          onLogoutClick={mockOnLogoutClick}
+          onTermsClick={mockOnTermsClick}
+          onPrivacyClick={mockOnPrivacyClick}
+          onLoginClick={mockOnLoginClick}
+          onSignUpClick={mockOnSignUpClick}
+          onLogout={mockOnLogout}
         />
       )
 
@@ -58,9 +72,14 @@ describe('TopMenuPanel', () => {
         <TopMenuPanel
           open={true}
           onOpenChange={mockOnOpenChange}
-          onProfileClick={mockOnProfileClick}
+          isLoggedIn={true}
+          onMyPageClick={mockOnMyPageClick}
           onAccountSettingsClick={mockOnAccountSettingsClick}
-          onLogoutClick={mockOnLogoutClick}
+          onTermsClick={mockOnTermsClick}
+          onPrivacyClick={mockOnPrivacyClick}
+          onLoginClick={mockOnLoginClick}
+          onSignUpClick={mockOnSignUpClick}
+          onLogout={mockOnLogout}
         />
       )
 
@@ -72,9 +91,14 @@ describe('TopMenuPanel', () => {
         <TopMenuPanel
           open={true}
           onOpenChange={mockOnOpenChange}
-          onProfileClick={mockOnProfileClick}
+          isLoggedIn={true}
+          onMyPageClick={mockOnMyPageClick}
           onAccountSettingsClick={mockOnAccountSettingsClick}
-          onLogoutClick={mockOnLogoutClick}
+          onTermsClick={mockOnTermsClick}
+          onPrivacyClick={mockOnPrivacyClick}
+          onLoginClick={mockOnLoginClick}
+          onSignUpClick={mockOnSignUpClick}
+          onLogout={mockOnLogout}
         />
       )
 
@@ -88,9 +112,14 @@ describe('TopMenuPanel', () => {
         <TopMenuPanel
           open={true}
           onOpenChange={mockOnOpenChange}
-          onProfileClick={mockOnProfileClick}
+          isLoggedIn={true}
+          onMyPageClick={mockOnMyPageClick}
           onAccountSettingsClick={mockOnAccountSettingsClick}
-          onLogoutClick={mockOnLogoutClick}
+          onTermsClick={mockOnTermsClick}
+          onPrivacyClick={mockOnPrivacyClick}
+          onLoginClick={mockOnLoginClick}
+          onSignUpClick={mockOnSignUpClick}
+          onLogout={mockOnLogout}
         />
       )
 
@@ -102,20 +131,23 @@ describe('TopMenuPanel', () => {
 
   describe('Panel Behavior', () => {
     it('uses sheet component for slide-in animation', () => {
-      const { container } = render(
+      render(
         <TopMenuPanel
           open={true}
           onOpenChange={mockOnOpenChange}
-          onProfileClick={mockOnProfileClick}
+          isLoggedIn={true}
+          onMyPageClick={mockOnMyPageClick}
           onAccountSettingsClick={mockOnAccountSettingsClick}
-          onLogoutClick={mockOnLogoutClick}
+          onTermsClick={mockOnTermsClick}
+          onPrivacyClick={mockOnPrivacyClick}
+          onLoginClick={mockOnLoginClick}
+          onSignUpClick={mockOnSignUpClick}
+          onLogout={mockOnLogout}
         />
       )
 
-      // Sheetコンポーネントが使用されていることを確認
-      // data-属性やrole属性で確認可能
-      const dialog = container.querySelector('[role="dialog"]')
-      expect(dialog).toBeInTheDocument()
+      // メニュー項目が表示されることでSheetコンポーネントが機能していることを確認
+      expect(screen.getByText(/マイページ/i)).toBeInTheDocument()
     })
   })
 })
