@@ -1,3 +1,5 @@
+import type { JSX } from "react";
+
 interface IconProps {
   className?: string;
 }
@@ -7,7 +9,7 @@ export const MonthIcons: Record<
   string,
   (props: IconProps) => JSX.Element
 > = {
-  "1月": ({ className = "w-5 h-5" }) => (
+  "1月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"
@@ -29,7 +31,7 @@ export const MonthIcons: Record<
       </g>
     </svg>
   ),
-  "2月": ({ className = "w-5 h-5" }) => (
+  "2月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"
@@ -106,17 +108,17 @@ export const MonthIcons: Record<
       </g>
     </svg>
   ),
-  "3月": ({ className = "w-5 h-5" }) => (
+  "3月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={className}
+      className={_className}
     >
       {/* 学士帽 */}
       <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
     </svg>
   ),
-  "4月": ({ className = "w-5 h-5" }) => (
+  "4月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 68 68"
@@ -152,7 +154,7 @@ export const MonthIcons: Record<
       </g>
     </svg>
   ),
-  "5月": ({ className = "w-5 h-5" }) => (
+  "5月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"
@@ -184,7 +186,7 @@ export const MonthIcons: Record<
       </g>
     </svg>
   ),
-  "6月": ({ className = "w-5 h-5" }) => (
+  "6月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"
@@ -207,7 +209,7 @@ export const MonthIcons: Record<
       </g>
     </svg>
   ),
-  "7月": ({ className = "w-5 h-5" }) => (
+  "7月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"
@@ -485,7 +487,7 @@ export const MonthIcons: Record<
       </g>
     </svg>
   ),
-  "8月": ({ className = "w-5 h-5" }) => (
+  "8月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"
@@ -578,7 +580,7 @@ export const MonthIcons: Record<
       </g>
     </svg>
   ),
-  "9月": ({ className = "w-5 h-5" }) => (
+  "9月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"
@@ -651,7 +653,7 @@ export const MonthIcons: Record<
       </g>
     </svg>
   ),
-  "10月": ({ className = "w-5 h-5" }) => (
+  "10月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"
@@ -685,7 +687,7 @@ export const MonthIcons: Record<
       </g>
     </svg>
   ),
-  "11月": ({ className = "w-5 h-5" }) => (
+  "11月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 1024 1024"
@@ -714,7 +716,7 @@ export const MonthIcons: Record<
       </g>
     </svg>
   ),
-  "12月": ({ className = "w-5 h-5" }) => (
+  "12月": ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"
@@ -761,21 +763,21 @@ export const TimeIcons: Record<
   string,
   (props: IconProps) => JSX.Element
 > = {
-  朝: ({ className = "w-5 h-5" }) => (
+  朝: ({ className: _className = "w-5 h-5" }) => (
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={className}
+      className={_className}
     >
       {/* 初日の出 */}
       <path d="M12 6c-3.87 0-7 3.13-7 7 0 1.6.54 3.08 1.43 4.27l1.45-1.45C7.33 14.94 7 14 7 13c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1-.33 1.94-.88 2.82l1.45 1.45C18.46 16.08 19 14.6 19 13c0-3.87-3.13-7-7-7zM1 18v2h22v-2H1zm3.55-4.46l-1.41-1.41L1 14.24l1.41 1.41 2.14-2.11zm14.9 0l2.14 2.11 1.41-1.41-2.14-2.11-1.41 1.41zM12 1c-.55 0-1 .45-1 1v3h2V2c0-.55-.45-1-1-1zM5.64 5.64c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41l2.12 2.12c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41L5.64 5.64zm12.72 0l-2.12 2.12c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l2.12-2.12c.39-.39.39-1.02 0-1.41s-1.02-.39-1.41 0z" />
     </svg>
   ),
-  昼: ({ className = "w-5 h-5" }) => (
+  昼: ({ className: _className = "w-5 h-5" }) => (
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={className}
+      className={_className}
     >
       {/* 太陽（周りに三角形の光） */}
       <circle cx="12" cy="12" r="4" />
@@ -790,7 +792,7 @@ export const TimeIcons: Record<
       <path d="M6 6l-2-2-0.5 1.5L6 6z" />
     </svg>
   ),
-  夕方: ({ className = "w-5 h-5" }) => (
+  夕方: ({ className: _className = "w-5 h-5" }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"
@@ -810,11 +812,11 @@ export const TimeIcons: Record<
       </g>
     </svg>
   ),
-  夜: ({ className = "w-5 h-5" }) => (
+  夜: ({ className: _className = "w-5 h-5" }) => (
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={className}
+      className={_className}
     >
       {/* 三日月 */}
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
@@ -827,11 +829,11 @@ export const WeatherIcons: Record<
   string,
   (props: IconProps) => JSX.Element
 > = {
-  晴れ: ({ className = "w-5 h-5" }) => (
+  晴れ: ({ className: _className = "w-5 h-5" }) => (
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={className}
+      className={_className}
     >
       {/* 太陽（周りに三角形の光） - 「昼」と同じ */}
       <circle cx="12" cy="12" r="4" />
@@ -846,21 +848,21 @@ export const WeatherIcons: Record<
       <path d="M6 6l-2-2-0.5 1.5L6 6z" />
     </svg>
   ),
-  曇り: ({ className = "w-5 h-5" }) => (
+  曇り: ({ className: _className = "w-5 h-5" }) => (
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={className}
+      className={_className}
     >
       {/* 雲 */}
       <path d="M18 10c0-3-2-5-5-5-2 0-4 1-5 3-2 0-4 2-4 4 0 2 2 4 4 4h10c2 0 4-2 4-4 0-2-2-4-4-4z" />
     </svg>
   ),
-  雨: ({ className = "w-5 h-5" }) => (
+  雨: ({ className: _className = "w-5 h-5" }) => (
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={className}
+      className={_className}
     >
       {/* 雲と雨 */}
       <path d="M18 10c0-3-2-5-5-5-2 0-4 1-5 3-2 0-4 2-4 4 0 2 2 4 4 4h10c2 0 4-2 4-4 0-2-2-4-4-4z" />
@@ -872,11 +874,11 @@ export const WeatherIcons: Record<
       />
     </svg>
   ),
-  雪: ({ className = "w-5 h-5" }) => (
+  雪: ({ className: _className = "w-5 h-5" }) => (
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={className}
+      className={_className}
     >
       {/* 雲と雪 */}
       <path d="M18 10c0-3-2-5-5-5-2 0-4 1-5 3-2 0-4 2-4 4 0 2 2 4 4 4h10c2 0 4-2 4-4 0-2-2-4-4-4z" />

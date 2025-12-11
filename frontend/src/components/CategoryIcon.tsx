@@ -1,3 +1,5 @@
+import type { JSX } from "react";
+
 interface CategoryIconProps {
   category: string;
   className?: string;
