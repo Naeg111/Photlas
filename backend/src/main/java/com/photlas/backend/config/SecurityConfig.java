@@ -35,6 +35,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/health").permitAll()
+                .requestMatchers("/api/v1/spots").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception

@@ -21,8 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -93,17 +93,17 @@ public class SpotControllerTest {
         Spot spot = new Spot();
         spot.setLatitude(new BigDecimal("35.6585"));
         spot.setLongitude(new BigDecimal("139.7454"));
-        spot.setCreatedByUserId(testUser.getUserId());
+        spot.setCreatedByUserId(testUser.getId());
         spot = spotRepository.save(spot);
 
         Photo photo = new Photo();
         photo.setTitle("Test Photo");
         photo.setS3ObjectKey("test-key");
         photo.setSpotId(spot.getSpotId());
-        photo.setUserId(testUser.getUserId());
+        photo.setUserId(testUser.getId());
         photo.setShotAt(LocalDateTime.of(2025, 12, 15, 12, 0));
         photo.setWeather("Sunny");
-        Set<Category> categories = new HashSet<>();
+        List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
         photoRepository.save(photo);
@@ -173,7 +173,7 @@ public class SpotControllerTest {
         // category1 の写真
         Spot spot1 = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
         Photo photo1 = createPhoto(spot1, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny");
-        Set<Category> categories1 = new HashSet<>();
+        List<Category> categories1 = new ArrayList<>();
         categories1.add(category1);
         photo1.setCategories(categories1);
         photoRepository.save(photo1);
@@ -181,7 +181,7 @@ public class SpotControllerTest {
         // category2 の写真
         Spot spot2 = createSpot(new BigDecimal("35.6586"), new BigDecimal("139.7455"));
         Photo photo2 = createPhoto(spot2, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny");
-        Set<Category> categories2 = new HashSet<>();
+        List<Category> categories2 = new ArrayList<>();
         categories2.add(category2);
         photo2.setCategories(categories2);
         photoRepository.save(photo2);
@@ -373,7 +373,7 @@ public class SpotControllerTest {
         Spot spot = new Spot();
         spot.setLatitude(latitude);
         spot.setLongitude(longitude);
-        spot.setCreatedByUserId(testUser.getUserId());
+        spot.setCreatedByUserId(testUser.getId());
         return spotRepository.save(spot);
     }
 
@@ -382,10 +382,10 @@ public class SpotControllerTest {
         photo.setTitle("Test Photo");
         photo.setS3ObjectKey("test-key-" + System.nanoTime());
         photo.setSpotId(spot.getSpotId());
-        photo.setUserId(testUser.getUserId());
+        photo.setUserId(testUser.getId());
         photo.setShotAt(shotAt);
         photo.setWeather(weather);
-        Set<Category> categories = new HashSet<>();
+        List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
         return photoRepository.save(photo);
