@@ -390,4 +390,58 @@ public class SpotControllerTest {
         photo.setCategories(categories);
         return photoRepository.save(photo);
     }
+
+    /**
+     * Issue#14: スポット写真一覧取得API
+     */
+    @Test
+    @DisplayName("Issue#14 - GET /api/v1/spots/{spotId}/photos - スポットの写真ID一覧を取得")
+    void testGetSpotPhotos_ReturnsPhotoIds() throws Exception {
+        // スポットを作成
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal("35.6585"));
+        spot.setLongitude(new BigDecimal("139.7454"));
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        // 複数の写真を作成
+        Photo photo1 = createPhoto(spot, LocalDateTime.now().minusDays(2), "晴れ");
+        Photo photo2 = createPhoto(spot, LocalDateTime.now().minusDays(1), "曇り");
+        Photo photo3 = createPhoto(spot, LocalDateTime.now(), "雨");
+
+        // APIリクエスト
+        mockMvc.perform(get("/api/v1/spots/" + spot.getSpotId() + "/photos")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json"))
+                .andExpect(jsonPath("$", hasSize(3)))
+                .andExpect(jsonPath("$[0]", is(photo1.getPhotoId().intValue())))
+                .andExpect(jsonPath("$[1]", is(photo2.getPhotoId().intValue())))
+                .andExpect(jsonPath("$[2]", is(photo3.getPhotoId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#14 - GET /api/v1/spots/{spotId}/photos - 存在しないスポットで404")
+    void testGetSpotPhotos_NotFound() throws Exception {
+        mockMvc.perform(get("/api/v1/spots/99999/photos")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Issue#14 - GET /api/v1/spots/{spotId}/photos - 写真がない場合は空配列")
+    void testGetSpotPhotos_EmptyArray() throws Exception {
+        // スポットのみ作成（写真なし）
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal("35.6585"));
+        spot.setLongitude(new BigDecimal("139.7454"));
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        mockMvc.perform(get("/api/v1/spots/" + spot.getSpotId() + "/photos")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json"))
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
 }

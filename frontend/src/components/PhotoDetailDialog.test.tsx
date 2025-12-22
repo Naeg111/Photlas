@@ -1,163 +1,284 @@
-import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { PhotoDetailDialog } from './PhotoDetailDialog'
+import { render, screen, waitFor } from '@testing-library/react'
+import { userEvent } from '@testing-library/user-event'
+import PhotoDetailDialog from './PhotoDetailDialog'
 
 /**
- * Issue#11: フロントエンドデザインのコード導入 - 写真詳細ダイアログ
- * TDD Red段階: 実装前のテストケース定義
- *
- * UI要件:
- * - 写真のサムネイル表示
- * - 投稿者情報の表示
- * - 撮影日時の表示
- * - 位置情報の表示
- * - カテゴリーの表示
- * - いいね・コメント機能
- * - フルサイズ表示への切り替えボタン
+ * Issue#14: 写真詳細表示 (UI + API)
+ * TDD Red段階のテストコード
  */
 
-describe('PhotoDetailDialog', () => {
-  const mockOnOpenChange = vi.fn()
-  const mockOnUserClick = vi.fn()
-  const mockOnPhotoClick = vi.fn()
-  const mockPhoto = {
-    id: '1',
-    imageUrl: 'https://example.com/photo.jpg',
-    username: 'テストユーザー',
-    userAvatarUrl: 'https://example.com/avatar.jpg',
-    date: '2024年1月1日',
-    weather: '晴れ',
-    category: '風景',
-    timeOfDay: '昼'
-  }
+// fetch APIのモック
+global.fetch = vi.fn()
 
+describe('PhotoDetailDialog Component - Issue#14', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  describe('UI Elements', () => {
-    it('renders when open prop is true with photo data', () => {
-      render(
-        <PhotoDetailDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          photo={mockPhoto}
-          onUserClick={mockOnUserClick}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
+  describe('基本表示とAPI連携', () => {
+    it('ダイアログが開かれたとき、スポット写真一覧APIを呼び出す', async () => {
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [1234, 5678, 9012],
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            photoId: 1234,
+            title: 'Test Photo',
+            imageUrls: {
+              thumbnail: 'https://example.com/thumb.jpg',
+              standard: 'https://example.com/standard.jpg',
+              original: 'https://example.com/original.jpg',
+            },
+            shotAt: '2024-01-15T14:30:00',
+            weather: '晴れ',
+            timeOfDay: 'DAY',
+            subjectCategory: 'LANDSCAPE',
+            cameraInfo: {
+              body: 'Canon EOS R5',
+              lens: 'RF 24-70mm f/2.8L',
+              fValue: 'f/2.8',
+              shutterSpeed: '1/1000',
+              iso: '400',
+            },
+            user: {
+              userId: 1,
+              username: 'testuser',
+              profileImageUrl: 'https://example.com/profile.jpg',
+              snsLinks: {
+                twitter: 'https://twitter.com/testuser',
+                instagram: 'https://instagram.com/testuser',
+              },
+            },
+            spot: {
+              spotId: 100,
+            },
+          }),
+        })
+      global.fetch = mockFetch
 
-      expect(screen.getByText('テストユーザー')).toBeInTheDocument()
+      render(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
+
+      await waitFor(() => {
+        // /api/v1/spots/{spotId}/photos が呼ばれる
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/spots/100/photos'),
+          expect.any(Object)
+        )
+      })
+
+      await waitFor(() => {
+        // /api/v1/photos/{photoId} が呼ばれる
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/photos/1234'),
+          expect.any(Object)
+        )
+      })
     })
 
-    it('displays photo thumbnail', () => {
-      render(
-        <PhotoDetailDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          photo={mockPhoto}
-          onUserClick={mockOnUserClick}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
+    it('写真詳細情報が正しく表示される', async () => {
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [1234],
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            photoId: 1234,
+            title: 'Beautiful Landscape',
+            imageUrls: {
+              thumbnail: 'https://example.com/thumb.jpg',
+              standard: 'https://example.com/standard.jpg',
+              original: 'https://example.com/original.jpg',
+            },
+            shotAt: '2024-01-15T14:30:00',
+            weather: '晴れ',
+            timeOfDay: 'DAY',
+            subjectCategory: 'LANDSCAPE',
+            cameraInfo: {
+              body: 'Canon EOS R5',
+              lens: 'RF 24-70mm f/2.8L',
+              fValue: 'f/2.8',
+              shutterSpeed: '1/1000',
+              iso: '400',
+            },
+            user: {
+              userId: 1,
+              username: 'testuser',
+              profileImageUrl: 'https://example.com/profile.jpg',
+            },
+            spot: {
+              spotId: 100,
+            },
+          }),
+        })
+      global.fetch = mockFetch
 
-      const images = screen.getAllByRole('img')
-      const photoImage = images.find(img => img.getAttribute('src') === mockPhoto.imageUrl)
-      expect(photoImage).toBeTruthy()
-    })
+      render(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
 
-    it('displays user name', () => {
-      render(
-        <PhotoDetailDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          photo={mockPhoto}
-          onUserClick={mockOnUserClick}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
+      // 写真タイトルが表示される
+      await waitFor(() => {
+        expect(screen.getByText('Beautiful Landscape')).toBeInTheDocument()
+      })
 
-      expect(screen.getByText('テストユーザー')).toBeInTheDocument()
-    })
+      // カメラ情報が表示される
+      expect(screen.getByText(/Canon EOS R5/)).toBeInTheDocument()
+      expect(screen.getByText(/RF 24-70mm f\/2.8L/)).toBeInTheDocument()
+      expect(screen.getByText(/f\/2.8/)).toBeInTheDocument()
+      expect(screen.getByText(/1\/1000/)).toBeInTheDocument()
+      expect(screen.getByText(/400/)).toBeInTheDocument()
 
-    it('displays category', () => {
-      render(
-        <PhotoDetailDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          photo={mockPhoto}
-          onUserClick={mockOnUserClick}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
-
-      expect(screen.getByText('風景')).toBeInTheDocument()
-    })
-
-    it('displays like count', () => {
-      render(
-        <PhotoDetailDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          photo={mockPhoto}
-          onUserClick={mockOnUserClick}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
-
-      // お気に入りボタンが存在することを確認
-      const favoriteButton = screen.getByRole('button', { name: /お気に入り/i })
-      expect(favoriteButton).toBeInTheDocument()
-    })
-
-    it('renders fullsize view button', () => {
-      render(
-        <PhotoDetailDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          photo={mockPhoto}
-          onUserClick={mockOnUserClick}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
-
-      // 画像をクリック可能な要素が存在することを確認
-      const clickableImages = screen.getAllByRole('img')
-      expect(clickableImages.length).toBeGreaterThan(0)
+      // ユーザー名が表示される
+      expect(screen.getByText('testuser')).toBeInTheDocument()
     })
   })
 
-  describe('Location Display', () => {
-    it('displays location information', () => {
-      render(
-        <PhotoDetailDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          photo={mockPhoto}
-          onUserClick={mockOnUserClick}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
+  describe('カルーセル制御', () => {
+    it('複数の写真がある場合、ドットインジケーターが表示される', async () => {
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [1234, 5678, 9012],
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            photoId: 1234,
+            title: 'Photo 1',
+            imageUrls: {
+              standard: 'https://example.com/photo1.jpg',
+            },
+            user: { userId: 1, username: 'user1' },
+            spot: { spotId: 100 },
+          }),
+        })
+      global.fetch = mockFetch
 
-      // 天候情報が表示されることを確認
-      expect(screen.getByText('晴れ')).toBeInTheDocument()
+      render(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
+
+      await waitFor(() => {
+        const indicators = screen.queryAllByTestId(/^dot-indicator-/)
+        expect(indicators).toHaveLength(3)
+      })
+    })
+
+    it('スワイプ操作で次の写真に移動する', async () => {
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [1234, 5678],
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            photoId: 1234,
+            title: 'Photo 1',
+            imageUrls: { standard: 'https://example.com/photo1.jpg' },
+            user: { userId: 1, username: 'user1' },
+            spot: { spotId: 100 },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            photoId: 5678,
+            title: 'Photo 2',
+            imageUrls: { standard: 'https://example.com/photo2.jpg' },
+            user: { userId: 1, username: 'user1' },
+            spot: { spotId: 100 },
+          }),
+        })
+      global.fetch = mockFetch
+
+      const user = userEvent.setup()
+      render(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Photo 1')).toBeInTheDocument()
+      })
+
+      // 次へボタンまたはスワイプ操作
+      const nextButton = screen.getByLabelText('次の写真')
+      await user.click(nextButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('Photo 2')).toBeInTheDocument()
+      })
+
+      // 2枚目の写真詳細APIが呼ばれたことを確認
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/photos/5678'),
+        expect.any(Object)
+      )
     })
   })
 
-  describe('Capture Date Display', () => {
-    it('displays captured date', () => {
-      render(
-        <PhotoDetailDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          photo={mockPhoto}
-          onUserClick={mockOnUserClick}
-          onPhotoClick={mockOnPhotoClick}
-        />
+  describe('ローディングとエラーハンドリング', () => {
+    it('写真読み込み中はローディングスピナーが表示される', async () => {
+      const mockFetch = vi.fn().mockImplementation(() =>
+        new Promise((resolve) => setTimeout(resolve, 1000))
       )
+      global.fetch = mockFetch
 
-      // 日付が表示されることを確認
-      expect(screen.getByText(/2024年1月1日/)).toBeInTheDocument()
+      render(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
+
+      expect(screen.getByTestId('loading-spinner')).toBeInTheDocument()
+    })
+
+    it('APIエラー時にエラーメッセージが表示される', async () => {
+      const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
+      global.fetch = mockFetch
+
+      render(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(/読み込みに失敗しました/)).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('ダイアログ制御', () => {
+    it('openがfalseの場合、ダイアログは表示されない', () => {
+      render(<PhotoDetailDialog open={false} spotId={100} onClose={() => {}} />)
+
+      expect(screen.queryByTestId('photo-detail-dialog')).not.toBeInTheDocument()
+    })
+
+    it('閉じるボタンをクリックするとonCloseが呼ばれる', async () => {
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [1234],
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            photoId: 1234,
+            title: 'Test',
+            imageUrls: { standard: 'https://example.com/photo.jpg' },
+            user: { userId: 1, username: 'user1' },
+            spot: { spotId: 100 },
+          }),
+        })
+      global.fetch = mockFetch
+
+      const onClose = vi.fn()
+      const user = userEvent.setup()
+
+      render(<PhotoDetailDialog open={true} spotId={100} onClose={onClose} />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Test')).toBeInTheDocument()
+      })
+
+      const closeButton = screen.getByLabelText('閉じる')
+      await user.click(closeButton)
+
+      expect(onClose).toHaveBeenCalled()
     })
   })
 })
