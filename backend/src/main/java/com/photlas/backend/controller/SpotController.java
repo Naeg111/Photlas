@@ -26,13 +26,13 @@ public class SpotController {
             @RequestParam BigDecimal south,
             @RequestParam BigDecimal east,
             @RequestParam BigDecimal west,
-            @RequestParam(required = false) List<Integer> categories,
+            @RequestParam(required = false) List<Integer> subject_categories,
             @RequestParam(required = false) List<Integer> months,
-            @RequestParam(required = false) List<String> times,
+            @RequestParam(required = false) List<String> times_of_day,
             @RequestParam(required = false) List<String> weathers) {
 
-        logger.info("GET /api/v1/spots - north={}, south={}, east={}, west={}, categories={}, months={}, times={}, weathers={}",
-                north, south, east, west, categories, months, times, weathers);
+        logger.info("GET /api/v1/spots - north={}, south={}, east={}, west={}, subject_categories={}, months={}, times_of_day={}, weathers={}",
+                north, south, east, west, subject_categories, months, times_of_day, weathers);
 
         // 範囲パラメータのバリデーション
         if (north == null || south == null || east == null || west == null) {
@@ -40,7 +40,7 @@ public class SpotController {
             return ResponseEntity.badRequest().build();
         }
 
-        List<SpotResponse> spots = spotService.getSpots(north, south, east, west, categories, months, times, weathers);
+        List<SpotResponse> spots = spotService.getSpots(north, south, east, west, subject_categories, months, times_of_day, weathers);
 
         return ResponseEntity.ok(spots);
     }

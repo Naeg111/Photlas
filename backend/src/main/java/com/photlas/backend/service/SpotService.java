@@ -22,13 +22,13 @@ public class SpotService {
 
     @Transactional(readOnly = true)
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
-                                       List<Integer> categories, List<Integer> months,
-                                       List<String> times, List<String> weathers) {
+                                       List<Integer> subjectCategories, List<Integer> months,
+                                       List<String> timesOfDay, List<String> weathers) {
         logger.info("Getting spots within bounds: north={}, south={}, east={}, west={}", north, south, east, west);
 
         // リポジトリから集計結果を取得
         List<Object[]> results = spotRepository.findSpotsWithFilters(
-                north, south, east, west, categories, months, times, weathers
+                north, south, east, west, subjectCategories, months, timesOfDay, weathers
         );
 
         logger.info("Found {} spots", results.size());
