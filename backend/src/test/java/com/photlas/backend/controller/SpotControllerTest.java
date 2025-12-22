@@ -168,8 +168,8 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("正常ケース - フィルター条件でスポットを取得（カテゴリ指定）")
-    void testGetSpots_WithCategoryFilter_ReturnsFilteredSpots() throws Exception {
+    @DisplayName("正常ケース - フィルター条件でスポットを取得（被写体種別指定）")
+    void testGetSpots_WithSubjectCategoryFilter_ReturnsFilteredSpots() throws Exception {
         // category1 の写真
         Spot spot1 = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
         Photo photo1 = createPhoto(spot1, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny");
@@ -191,7 +191,7 @@ public class SpotControllerTest {
                         .param("south", "35.6")
                         .param("east", "139.8")
                         .param("west", "139.7")
-                        .param("categories", String.valueOf(category1.getCategoryId())))
+                        .param("subject_categories", String.valueOf(category1.getCategoryId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].spotId", is(spot1.getSpotId().intValue())));
