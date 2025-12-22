@@ -62,10 +62,10 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                 WHERE p2.spot_id = s.spot_id
                   AND (:months IS NULL OR MONTH(p2.shot_at) IN (:months))
                   AND (:weathers IS NULL OR p2.weather IN (:weathers))
-                  AND (:categories IS NULL OR EXISTS (
+                  AND (:subjectCategories IS NULL OR EXISTS (
                       SELECT 1 FROM photo_categories pc2
                       WHERE pc2.photo_id = p2.photo_id
-                        AND pc2.category_id IN (:categories)
+                        AND pc2.category_id IN (:subjectCategories)
                   ))
                 ORDER BY p2.shot_at DESC
                 LIMIT 1
@@ -76,10 +76,10 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
           AND s.longitude BETWEEN :west AND :east
           AND (:months IS NULL OR MONTH(p.shot_at) IN (:months))
           AND (:weathers IS NULL OR p.weather IN (:weathers))
-          AND (:categories IS NULL OR EXISTS (
+          AND (:subjectCategories IS NULL OR EXISTS (
               SELECT 1 FROM photo_categories pc
               WHERE pc.photo_id = p.photo_id
-                AND pc.category_id IN (:categories)
+                AND pc.category_id IN (:subjectCategories)
           ))
         GROUP BY s.spot_id, s.latitude, s.longitude
         HAVING COUNT(DISTINCT p.photo_id) > 0
@@ -90,9 +90,9 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("south") BigDecimal south,
         @Param("east") BigDecimal east,
         @Param("west") BigDecimal west,
-        @Param("categories") List<Integer> categories,
+        @Param("subjectCategories") List<Integer> subjectCategories,
         @Param("months") List<Integer> months,
-        @Param("times") List<String> times,
+        @Param("timesOfDay") List<String> timesOfDay,
         @Param("weathers") List<String> weathers
     );
 }
