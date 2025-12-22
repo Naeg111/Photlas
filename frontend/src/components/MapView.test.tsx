@@ -19,8 +19,9 @@ const mockMap = {
   })),
   addListener: vi.fn((event: string, callback: () => void) => {
     if (event === 'idle') {
-      // idle イベントをシミュレート
+      // idle イベントをシミュレート（初回と地図移動後）
       setTimeout(callback, 100)
+      setTimeout(callback, 200)
     }
     return { remove: vi.fn() }
   }),
@@ -50,6 +51,7 @@ vi.mock('@react-google-maps/api', () => ({
       onClick={onClick}
     />
   ),
+  OverlayViewF: ({ children }: any) => <div>{children}</div>,
 }))
 
 // fetch APIのモック
@@ -146,8 +148,8 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        const markers = screen.queryAllByTestId('map-marker')
-        expect(markers.length).toBeGreaterThan(0)
+        const pin = screen.queryByTestId('map-pin-1')
+        expect(pin).toBeInTheDocument()
       })
     })
 
@@ -171,8 +173,8 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        const markers = screen.queryAllByTestId('map-marker')
-        expect(markers).toHaveLength(0)
+        const pin = screen.queryByTestId('map-pin-1')
+        expect(pin).not.toBeInTheDocument()
       })
     })
 
