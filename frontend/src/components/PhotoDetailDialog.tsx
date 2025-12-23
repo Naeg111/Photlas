@@ -61,7 +61,7 @@ export function PhotoDetailDialog({
             target="_blank"
             rel="noopener noreferrer"
             className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer block"
-            onClick={(e) => {
+            onClick={() => {
               // onPhotoClick コールバックも実行（既存の互換性維持）
               if (onPhotoClick) {
                 onPhotoClick()
