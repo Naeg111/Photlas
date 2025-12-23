@@ -55,17 +55,25 @@ export function PhotoDetailDialog({
             <span>{photo.username}</span>
           </div>
 
-          {/* 写真表示エリア */}
-          <div
-            className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
-            onClick={onPhotoClick}
+          {/* 写真表示エリア - Issue#15: 新しいタブでフルサイズ表示を開く */}
+          <a
+            href={`/photo-viewer/${photo.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer block"
+            onClick={(e) => {
+              // onPhotoClick コールバックも実行（既存の互換性維持）
+              if (onPhotoClick) {
+                onPhotoClick()
+              }
+            }}
           >
             <ImageWithFallback
               src={photo.imageUrl}
               alt="投稿写真"
               className="w-full h-full object-cover"
             />
-          </div>
+          </a>
 
           {/* 撮影コンテクスト情報ブロック */}
           <div className="space-y-2">

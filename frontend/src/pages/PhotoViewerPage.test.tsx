@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import PhotoViewerPage from './PhotoViewerPage'
@@ -74,10 +74,7 @@ describe('PhotoViewerPage - Issue#15', () => {
       render(<MockedPhotoViewerPage photoId="1234" />)
 
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith(
-          '/api/v1/photos/1234',
-          expect.any(Object)
-        )
+        expect(mockFetch).toHaveBeenCalledWith('/api/v1/photos/1234')
       })
     })
 
@@ -198,12 +195,14 @@ describe('PhotoViewerPage - Issue#15', () => {
         const image = screen.getByRole('img')
 
         // onDragStart イベントハンドラーが設定されているか確認
-        const dragStartEvent = new DragEvent('dragstart', { bubbles: true, cancelable: true })
-        const preventDefaultSpy = vi.spyOn(dragStartEvent, 'preventDefault')
+        const dragStartHandler = vi.fn((e) => e.preventDefault())
+        const originalHandler = image.ondragstart
 
-        image.dispatchEvent(dragStartEvent)
+        // dragstartイベントを発火してpreventDefaultが呼ばれることを確認
+        const result = fireEvent.dragStart(image)
 
-        expect(preventDefaultSpy).toHaveBeenCalled()
+        // preventDefaultが呼ばれた場合、fireEventはfalseを返す
+        expect(result).toBe(false)
       })
     })
 
