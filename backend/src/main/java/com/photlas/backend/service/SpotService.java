@@ -1,6 +1,10 @@
 package com.photlas.backend.service;
 
 import com.photlas.backend.dto.SpotResponse;
+import com.photlas.backend.entity.Photo;
+import com.photlas.backend.entity.Spot;
+import com.photlas.backend.exception.SpotNotFoundException;
+import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +23,9 @@ public class SpotService {
 
     @Autowired
     private SpotRepository spotRepository;
+
+    @Autowired
+    private PhotoRepository photoRepository;
 
     @Transactional(readOnly = true)
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
@@ -72,5 +79,30 @@ public class SpotService {
         } else {
             return "Green";
         }
+    }
+
+    /**
+     * Issue#14: スポットの写真ID一覧を取得
+     *
+     * @param spotId スポットID
+     * @return 写真IDのリスト（撮影日時順）
+     */
+    @Transactional(readOnly = true)
+    public List<Long> getSpotPhotoIds(Long spotId) {
+        logger.info("Getting photo IDs for spot: spotId={}", spotId);
+
+        // スポットの存在確認
+        Spot spot = spotRepository.findById(spotId)
+                .orElseThrow(() -> new SpotNotFoundException("Spot not found"));
+
+        List<Photo> photos = photoRepository.findBySpotIdOrderByShotAtAsc(spotId);
+
+        List<Long> photoIds = photos.stream()
+                .map(Photo::getPhotoId)
+                .collect(Collectors.toList());
+
+        logger.info("Found {} photos for spot {}", photoIds.size(), spotId);
+
+        return photoIds;
     }
 }
