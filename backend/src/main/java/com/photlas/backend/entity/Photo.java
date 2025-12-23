@@ -32,6 +32,27 @@ public class Photo {
     @Column(name = "weather", length = 50)
     private String weather;
 
+    @Column(name = "time_of_day", length = 20)
+    private String timeOfDay;
+
+    @Column(name = "subject_category", length = 50)
+    private String subjectCategory;
+
+    @Column(name = "camera_body", length = 100)
+    private String cameraBody;
+
+    @Column(name = "camera_lens", length = 100)
+    private String cameraLens;
+
+    @Column(name = "f_value", length = 20)
+    private String fValue;
+
+    @Column(name = "shutter_speed", length = 20)
+    private String shutterSpeed;
+
+    @Column(name = "iso", length = 20)
+    private String iso;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -112,6 +133,62 @@ public class Photo {
 
     public void setWeather(String weather) {
         this.weather = weather;
+    }
+
+    public String getTimeOfDay() {
+        return timeOfDay;
+    }
+
+    public void setTimeOfDay(String timeOfDay) {
+        this.timeOfDay = timeOfDay;
+    }
+
+    public String getSubjectCategory() {
+        return subjectCategory;
+    }
+
+    public void setSubjectCategory(String subjectCategory) {
+        this.subjectCategory = subjectCategory;
+    }
+
+    public String getCameraBody() {
+        return cameraBody;
+    }
+
+    public void setCameraBody(String cameraBody) {
+        this.cameraBody = cameraBody;
+    }
+
+    public String getCameraLens() {
+        return cameraLens;
+    }
+
+    public void setCameraLens(String cameraLens) {
+        this.cameraLens = cameraLens;
+    }
+
+    public String getFValue() {
+        return fValue;
+    }
+
+    public void setFValue(String fValue) {
+        this.fValue = fValue;
+    }
+
+    public String getShutterSpeed() {
+        return shutterSpeed;
+    }
+
+    public void setShutterSpeed(String shutterSpeed) {
+        this.shutterSpeed = shutterSpeed;
+    }
+
+    public String getIso() {
+        return iso;
+    }
+
+    public void setIso(String iso) {
+        this.iso = iso;
     }
 
     public LocalDateTime getCreatedAt() {

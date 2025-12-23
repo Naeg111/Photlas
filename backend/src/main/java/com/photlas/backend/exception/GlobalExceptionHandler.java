@@ -32,4 +32,22 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse("入力内容が無効です。", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
+
+    /**
+     * Issue#14: PhotoNotFoundException をハンドリング
+     */
+    @ExceptionHandler(PhotoNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePhotoNotFoundException(PhotoNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * Issue#14: SpotNotFoundException をハンドリング
+     */
+    @ExceptionHandler(SpotNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSpotNotFoundException(SpotNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
 }
