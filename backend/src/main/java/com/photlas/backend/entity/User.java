@@ -33,6 +33,15 @@ public class User {
     @NotNull
     private String role;
 
+    @Column(name = "profile_image_url", length = 2048)
+    private String profileImageUrl;
+
+    @Column(name = "twitter_url", length = 2048)
+    private String twitterUrl;
+
+    @Column(name = "instagram_url", length = 2048)
+    private String instagramUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -89,6 +98,30 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public String getTwitterUrl() {
+        return twitterUrl;
+    }
+
+    public void setTwitterUrl(String twitterUrl) {
+        this.twitterUrl = twitterUrl;
+    }
+
+    public String getInstagramUrl() {
+        return instagramUrl;
+    }
+
+    public void setInstagramUrl(String instagramUrl) {
+        this.instagramUrl = instagramUrl;
     }
 
     public LocalDateTime getCreatedAt() {

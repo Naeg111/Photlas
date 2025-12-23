@@ -2,6 +2,7 @@ package com.photlas.backend.controller;
 
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.dto.ErrorResponse;
+import com.photlas.backend.dto.PhotoDetailResponse;
 import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.exception.CategoryNotFoundException;
 import com.photlas.backend.service.PhotoService;
@@ -40,6 +41,18 @@ public class PhotoController {
         String email = authentication.getName();
         PhotoResponse response = photoService.createPhoto(request, email);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Issue#14: 写真詳細情報を取得
+     *
+     * @param photoId 写真ID
+     * @return 写真詳細情報
+     */
+    @GetMapping("/{photoId}")
+    public ResponseEntity<PhotoDetailResponse> getPhotoDetail(@PathVariable Long photoId) {
+        PhotoDetailResponse response = photoService.getPhotoDetail(photoId);
+        return ResponseEntity.ok(response);
     }
 
     /**
