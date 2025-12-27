@@ -1,3 +1,5 @@
+import plugin from 'tailwindcss/plugin'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -7,5 +9,16 @@ export default {
   theme: {
     extend: {},
   },
-  plugins: [],
+  plugins: [
+    plugin(function({ addUtilities }) {
+      addUtilities({
+        '.touch-callout-none': {
+          '-webkit-touch-callout': 'none',
+        },
+        '.user-drag-none': {
+          '-webkit-user-drag': 'none',
+        },
+      })
+    }),
+  ],
 }
