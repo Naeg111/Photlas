@@ -110,19 +110,13 @@ describe('MapView Component - Issue#13', () => {
 
       render(<MapView />)
 
-      // 初回呼び出しを待つ
-      await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalled()
-      })
-
-      const initialCallCount = mockFetch.mock.calls.length
-
-      // idle イベントの発火を待つ（モックで100ms後に発火）
+      // idle イベント（初回と地図移動）により2回APIが呼ばれることを確認
+      // モックは100msと200msで2回のidleイベントをシミュレートする
       await waitFor(
         () => {
-          expect(mockFetch).toHaveBeenCalledTimes(initialCallCount + 1)
+          expect(mockFetch).toHaveBeenCalledTimes(2)
         },
-        { timeout: 200 }
+        { timeout: 300 }
       )
     })
   })

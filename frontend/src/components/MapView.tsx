@@ -127,6 +127,7 @@ export default function MapView({ filterParams }: MapViewProps) {
 
   // Issue#16: フィルター条件が変更されたときにスポットを再取得
   // 初回マウント時はskip（idleイベントで既に呼ばれるため）
+  // filterParamsのみに依存することで、zoom変更などによる不要な再取得を防ぐ
   useEffect(() => {
     if (initialMountRef.current) {
       initialMountRef.current = false
@@ -136,7 +137,8 @@ export default function MapView({ filterParams }: MapViewProps) {
     if (map) {
       fetchSpots(map)
     }
-  }, [filterParams, map, fetchSpots])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterParams])
 
   // ズームバナーをクリックしたときの処理
   const handleZoomBannerClick = () => {
