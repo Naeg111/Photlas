@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router-dom'
 import FilterButton from './components/FilterButton'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
+import MapView from './components/MapView'
+import type { MapViewFilterParams } from './components/MapView'
 import CategoryButtons from './components/CategoryButtons'
 import PostButton from './components/PostButton'
 import MenuButton from './components/MenuButton'
@@ -40,14 +42,8 @@ function HomePage() {
   // Issue#16: フィルターパネルの開閉状態
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
 
-  // Issue#16: 現在のフィルター条件
-  // TODO: Issue#13との統合時にMapViewコンポーネントで使用
-  const [_currentFilters, setCurrentFilters] = useState<FilterConditions>({
-    categories: [],
-    months: [],
-    timesOfDay: [],
-    weathers: []
-  });
+  // Issue#16: MapView用のフィルター条件（API形式）
+  const [mapFilterParams, setMapFilterParams] = useState<MapViewFilterParams | undefined>(undefined);
 
   // Issue#16: カテゴリー名→IDマッピング
   const [categoryMap, setCategoryMap] = useState<Map<string, number>>(new Map());
@@ -75,31 +71,25 @@ function HomePage() {
 
   /**
    * フィルター適用時のハンドラー
-   * Issue#16: フィルター条件を変換してAPI呼び出しを準備
-   *
-   * TODO: Issue#13との統合 - 地図操作時にもフィルター条件を保持
-   * TODO: Spots API呼び出しの実装
+   * Issue#16: フィルター条件を変換してMapViewに渡す
    */
   const handleApplyFilter = (conditions: FilterConditions) => {
-    // フィルター条件を保存
-    setCurrentFilters(conditions);
-
     // UI値をAPI値に変換
     const transformedCategories = transformCategories(conditions.categories);
     const categoryIds = categoryNamesToIds(transformedCategories, categoryMap);
 
-    const apiParams = {
-      subject_categories: categoryIds,
-      months: transformMonths(conditions.months),
-      times_of_day: transformTimesOfDay(conditions.timesOfDay),
-      weathers: transformWeathers(conditions.weathers)
+    const apiParams: MapViewFilterParams = {
+      subject_categories: categoryIds.length > 0 ? categoryIds : undefined,
+      months: conditions.months.length > 0 ? transformMonths(conditions.months) : undefined,
+      times_of_day: conditions.timesOfDay.length > 0 ? transformTimesOfDay(conditions.timesOfDay) : undefined,
+      weathers: conditions.weathers.length > 0 ? transformWeathers(conditions.weathers) : undefined
     };
 
     console.log('Filter applied:', conditions);
     console.log('Transformed API params:', apiParams);
 
-    // TODO: Spots API呼び出し
-    // fetchSpots(mapBounds, apiParams);
+    // MapView用のフィルター条件を更新
+    setMapFilterParams(apiParams);
 
     // パネルを閉じる (FilterPanel内でonOpenChange(false)が呼ばれる)
   };
@@ -112,26 +102,12 @@ function HomePage() {
     }>
       
       {/* === 地図表示エリア（背景レイヤー） === */}
-      {/* 
-        Issue#1要件: 全画面を覆う地図表示用コンテナ
-        将来的にGoogle Maps Platform APIを統合予定
+      {/*
+        Issue#13: Google Maps Platform統合
+        Issue#16: フィルター機能統合
       */}
-      <div className={
-        "absolute inset-0 " +        // 位置: 親要素全体を覆う（top:0, right:0, bottom:0, left:0）
-        "bg-gray-200 " +             // 背景色: 薄いグレー（地図読み込み前のプレースホルダー）
-        "flex items-center justify-center"  // Flexbox: 中央寄せ（開発中表示用）
-      }>
-        {/* === 開発中表示（プレースホルダー） === */}
-        <div className="text-center text-gray-600">
-          {/* アプリケーション名 */}
-          <h1 className="text-3xl font-bold mb-2">Photlas</h1>
-          
-          {/* 機能説明 */}
-          <p className="text-lg">地図表示エリア (Google Maps Platform)</p>
-          
-          {/* 実装状況 */}
-          <p className="text-sm mt-1">※Issue#1: 基本レイアウト実装完了</p>
-        </div>
+      <div className="absolute inset-0">
+        <MapView filterParams={mapFilterParams} />
       </div>
 
       {/* === フローティングUI要素群（前景レイヤー） === */}
