@@ -368,6 +368,57 @@ public class SpotControllerTest {
                 .andExpect(jsonPath("$", hasSize(0)));
     }
 
+    @Test
+    @DisplayName("正常ケース - フィルター条件でスポットを取得（時間帯指定）")
+    void testGetSpots_WithTimeOfDayFilter_ReturnsFilteredSpots() throws Exception {
+        // MORNING の写真
+        Spot spot1 = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
+        Photo photo1 = createPhotoWithTimeOfDay(spot1, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny", "MORNING");
+
+        // EVENING の写真
+        Spot spot2 = createSpot(new BigDecimal("35.6586"), new BigDecimal("139.7455"));
+        Photo photo2 = createPhotoWithTimeOfDay(spot2, LocalDateTime.of(2025, 12, 15, 18, 0), "Sunny", "EVENING");
+
+        mockMvc.perform(get("/api/v1/spots")
+                        .param("north", "35.7")
+                        .param("south", "35.6")
+                        .param("east", "139.8")
+                        .param("west", "139.7")
+                        .param("times_of_day", "MORNING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].spotId", is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("正常ケース - フィルター条件でスポットを取得（複数の時間帯指定）")
+    void testGetSpots_WithMultipleTimesOfDay_ReturnsFilteredSpots() throws Exception {
+        // MORNING の写真
+        Spot spot1 = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
+        createPhotoWithTimeOfDay(spot1, LocalDateTime.of(2025, 12, 15, 8, 0), "Sunny", "MORNING");
+
+        // DAY の写真
+        Spot spot2 = createSpot(new BigDecimal("35.6586"), new BigDecimal("139.7455"));
+        createPhotoWithTimeOfDay(spot2, LocalDateTime.of(2025, 12, 15, 14, 0), "Sunny", "DAY");
+
+        // EVENING の写真
+        Spot spot3 = createSpot(new BigDecimal("35.6587"), new BigDecimal("139.7456"));
+        createPhotoWithTimeOfDay(spot3, LocalDateTime.of(2025, 12, 15, 18, 0), "Sunny", "EVENING");
+
+        mockMvc.perform(get("/api/v1/spots")
+                        .param("north", "35.7")
+                        .param("south", "35.6")
+                        .param("east", "139.8")
+                        .param("west", "139.7")
+                        .param("times_of_day", "MORNING", "EVENING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[*].spotId", containsInAnyOrder(
+                        spot1.getSpotId().intValue(),
+                        spot3.getSpotId().intValue()
+                )));
+    }
+
     // ヘルパーメソッド
     private Spot createSpot(BigDecimal latitude, BigDecimal longitude) {
         Spot spot = new Spot();
@@ -385,6 +436,21 @@ public class SpotControllerTest {
         photo.setUserId(testUser.getId());
         photo.setShotAt(shotAt);
         photo.setWeather(weather);
+        List<Category> categories = new ArrayList<>();
+        categories.add(category1);
+        photo.setCategories(categories);
+        return photoRepository.save(photo);
+    }
+
+    private Photo createPhotoWithTimeOfDay(Spot spot, LocalDateTime shotAt, String weather, String timeOfDay) {
+        Photo photo = new Photo();
+        photo.setTitle("Test Photo");
+        photo.setS3ObjectKey("test-key-" + System.nanoTime());
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setShotAt(shotAt);
+        photo.setWeather(weather);
+        photo.setTimeOfDay(timeOfDay);
         List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
