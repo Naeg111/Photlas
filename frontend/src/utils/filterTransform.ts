@@ -87,14 +87,15 @@ export function transformCategories(categories: string[]): string[] {
 /**
  * カテゴリー名からカテゴリーIDへの変換
  *
- * TODO: 現在は仮実装。本来は /api/v1/categories エンドポイントから
- * カテゴリー一覧を取得してIDマッピングを行うべき
- *
- * 暫定的に、カテゴリーが作成順に1から12までのIDを持つと仮定
+ * @param categoryNames UI表示のカテゴリー名（日本語）
+ * @param categoryMap カテゴリー名とIDのマッピング（fetchCategories()で取得）
+ * @returns カテゴリーIDの配列
  */
-export function categoryNamesToIds(_categoryNames: string[]): number[] {
-  // TODO: 実装 - Categories API から取得したマッピングを使用
-  // 現時点では空配列を返す（API統合時に実装）
-  console.warn('categoryNamesToIds: Not yet implemented. Categories API endpoint required.');
-  return [];
+export function categoryNamesToIds(
+  categoryNames: string[],
+  categoryMap: Map<string, number>
+): number[] {
+  return categoryNames
+    .map(name => categoryMap.get(name))
+    .filter((id): id is number => id !== undefined);
 }

@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/health").permitAll()
                 .requestMatchers("/api/v1/spots").permitAll()
+                .requestMatchers("/api/v1/categories").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception
