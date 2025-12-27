@@ -14,22 +14,15 @@ describe('App', () => {
     document.body.innerHTML = ''
   })
 
-  it('renders Photlas heading on home page', () => {
+  it('renders MapView component on home page', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
       </MemoryRouter>
     )
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Photlas')
-  })
-
-  it('renders map area description on home page', () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>
-    )
-    expect(screen.getByText('地図表示エリア (Google Maps Platform)')).toBeInTheDocument()
+    // MapViewコンポーネントが地図を表示していることを確認
+    // Google Mapのdata-testidで確認
+    expect(screen.getByTestId('google-map')).toBeInTheDocument()
   })
 
   it('renders all floating UI components on home page', () => {
