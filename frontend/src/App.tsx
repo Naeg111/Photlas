@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import FilterButton from './components/FilterButton'
+import { FilterPanel } from './components/FilterPanel'
+import type { FilterConditions } from './components/FilterPanel'
 import CategoryButtons from './components/CategoryButtons'
 import PostButton from './components/PostButton'
 import MenuButton from './components/MenuButton'
@@ -10,27 +13,70 @@ import LoginPage from './pages/LoginPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import PhotoViewerPage from './pages/PhotoViewerPage'
 import { AuthProvider } from './contexts/AuthContext'
+import { transformMonths, transformTimesOfDay, transformWeathers } from './utils/filterTransform'
 
 /**
  * HomePage コンポーネント
  * Issue#1: プロジェクトセットアップと基本レイアウト - メインページ
- * 
+ * Issue#16: フィルター機能 - フィルター状態管理とUI統合
+ *
  * 【目的】
  * - アプリケーションのメイン画面（ルート path="/" ）
  * - 地図ベースのUIレイアウトを提供
  * - UI設計書(08_ui_design.md)に基づくフローティング要素の配置
- * 
+ *
  * 【レイアウト構成】
  * - 背景: 地図表示エリア（Google Maps Platform統合予定）
  * - 前景: フローティングUI要素群
  * - レスポンシブ対応: モバイル・デスクトップ両対応
- * 
+ *
  * 【設計パターン】
  * - Overlay Pattern: 地図の上にUI要素を重ねる構成
  * - Floating Action Pattern: 主要機能への快適なアクセス
  * - Z-index Layering: 適切な重ね順での要素配置
  */
 function HomePage() {
+  // Issue#16: フィルターパネルの開閉状態
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+
+  // Issue#16: 現在のフィルター条件
+  // TODO: Issue#13との統合時にMapViewコンポーネントで使用
+  const [_currentFilters, setCurrentFilters] = useState<FilterConditions>({
+    categories: [],
+    months: [],
+    timesOfDay: [],
+    weathers: []
+  });
+
+  /**
+   * フィルター適用時のハンドラー
+   * Issue#16: フィルター条件を変換してAPI呼び出しを準備
+   *
+   * TODO: Issue#13との統合 - 地図操作時にもフィルター条件を保持
+   * TODO: Spots API呼び出しの実装
+   */
+  const handleApplyFilter = (conditions: FilterConditions) => {
+    // フィルター条件を保存
+    setCurrentFilters(conditions);
+
+    // UI値をAPI値に変換
+    const apiParams = {
+      // TODO: カテゴリーIDへの変換 (Categories API エンドポイント実装後)
+      // subject_categories: categoryNamesToIds(transformCategories(conditions.categories)),
+      months: transformMonths(conditions.months),
+      times_of_day: transformTimesOfDay(conditions.timesOfDay),
+      weathers: transformWeathers(conditions.weathers)
+    };
+
+    console.log('Filter applied:', conditions);
+    console.log('Transformed API params:', apiParams);
+
+    // TODO: Spots API呼び出し
+    // fetchSpots(mapBounds, apiParams);
+
+    // パネルを閉じる (FilterPanel内でonOpenChange(false)が呼ばれる)
+  };
+
   return (
     <div className={
       "relative " +           // 相対位置: 子要素のabsolute配置の基準点
@@ -73,8 +119,15 @@ function HomePage() {
         "absolute top-4 left-4 " +   // 位置: 上から16px、左から16px
         "z-10"                       // Z-index: 地図より前面（重ね順10）
       }>
-        <FilterButton />
+        <FilterButton onClick={() => setFilterPanelOpen(true)} />
       </div>
+
+      {/* === フィルターパネル === */}
+      <FilterPanel
+        open={filterPanelOpen}
+        onOpenChange={setFilterPanelOpen}
+        onApply={handleApplyFilter}
+      />
 
       {/* === カテゴリーボタン群（上部中央配置） === */}
       <div className={
