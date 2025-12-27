@@ -160,8 +160,9 @@ describe('FilterPanel', () => {
       const landscapeButton = screen.getByRole('button', { name: /風景/ })
       await user.click(landscapeButton)
 
-      const januaryButton = screen.getByRole('button', { name: /1月/ })
-      await user.click(januaryButton)
+      // 月のボタンは複数候補があるため、getAllByRoleとfilterを使用
+      const monthButtons = screen.getAllByRole('button').filter(btn => btn.textContent === '1月')
+      await user.click(monthButtons[0])
 
       const morningButton = screen.getByRole('button', { name: /朝/ })
       await user.click(morningButton)

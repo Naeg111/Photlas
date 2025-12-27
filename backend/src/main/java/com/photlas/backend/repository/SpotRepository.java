@@ -61,6 +61,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                 FROM photos p2
                 WHERE p2.spot_id = s.spot_id
                   AND (:months IS NULL OR MONTH(p2.shot_at) IN (:months))
+                  AND (:timesOfDay IS NULL OR p2.time_of_day IN (:timesOfDay))
                   AND (:weathers IS NULL OR p2.weather IN (:weathers))
                   AND (:subjectCategories IS NULL OR EXISTS (
                       SELECT 1 FROM photo_categories pc2
@@ -75,6 +76,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         WHERE s.latitude BETWEEN :south AND :north
           AND s.longitude BETWEEN :west AND :east
           AND (:months IS NULL OR MONTH(p.shot_at) IN (:months))
+          AND (:timesOfDay IS NULL OR p.time_of_day IN (:timesOfDay))
           AND (:weathers IS NULL OR p.weather IN (:weathers))
           AND (:subjectCategories IS NULL OR EXISTS (
               SELECT 1 FROM photo_categories pc
