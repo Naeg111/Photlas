@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import FilterButton from './components/FilterButton'
 import { FilterPanel } from './components/FilterPanel'
@@ -13,7 +13,8 @@ import LoginPage from './pages/LoginPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import PhotoViewerPage from './pages/PhotoViewerPage'
 import { AuthProvider } from './contexts/AuthContext'
-import { transformMonths, transformTimesOfDay, transformWeathers } from './utils/filterTransform'
+import { transformMonths, transformTimesOfDay, transformWeathers, transformCategories, categoryNamesToIds } from './utils/filterTransform'
+import { fetchCategories } from './utils/apiClient'
 
 /**
  * HomePage コンポーネント
@@ -48,6 +49,30 @@ function HomePage() {
     weathers: []
   });
 
+  // Issue#16: カテゴリー名→IDマッピング
+  const [categoryMap, setCategoryMap] = useState<Map<string, number>>(new Map());
+
+  /**
+   * コンポーネントマウント時にカテゴリー一覧を取得
+   */
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categories = await fetchCategories();
+        const map = new Map<string, number>();
+        categories.forEach(category => {
+          map.set(category.name, category.categoryId);
+        });
+        setCategoryMap(map);
+        console.log('Categories loaded:', categories.length, 'categories');
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
   /**
    * フィルター適用時のハンドラー
    * Issue#16: フィルター条件を変換してAPI呼び出しを準備
@@ -60,9 +85,11 @@ function HomePage() {
     setCurrentFilters(conditions);
 
     // UI値をAPI値に変換
+    const transformedCategories = transformCategories(conditions.categories);
+    const categoryIds = categoryNamesToIds(transformedCategories, categoryMap);
+
     const apiParams = {
-      // TODO: カテゴリーIDへの変換 (Categories API エンドポイント実装後)
-      // subject_categories: categoryNamesToIds(transformCategories(conditions.categories)),
+      subject_categories: categoryIds,
       months: transformMonths(conditions.months),
       times_of_day: transformTimesOfDay(conditions.timesOfDay),
       weathers: transformWeathers(conditions.weathers)
