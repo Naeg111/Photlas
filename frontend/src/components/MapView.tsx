@@ -49,6 +49,7 @@ export default function MapView({ filterParams }: MapViewProps) {
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const [showToast, setShowToast] = useState(false)
   const listenerAddedRef = useRef(false)
+  const initialMountRef = useRef(true)
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
@@ -125,7 +126,13 @@ export default function MapView({ filterParams }: MapViewProps) {
   }, [fetchSpots])
 
   // Issue#16: フィルター条件が変更されたときにスポットを再取得
+  // 初回マウント時はskip（idleイベントで既に呼ばれるため）
   useEffect(() => {
+    if (initialMountRef.current) {
+      initialMountRef.current = false
+      return
+    }
+
     if (map) {
       fetchSpots(map)
     }
