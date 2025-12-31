@@ -5,6 +5,8 @@ import { Button } from "./ui/button";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { Star, Flag, Calendar, Cloud, Tag } from "lucide-react";
 import { Badge } from "./ui/badge";
+import { ReportDialog } from "./ReportDialog";
+import { toast } from "sonner";
 
 interface PhotoDetailDialogProps {
   open: boolean;
@@ -31,9 +33,56 @@ export function PhotoDetailDialog({
   onPhotoClick,
 }: PhotoDetailDialogProps) {
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [isReportLoading, setIsReportLoading] = useState(false);
 
   const handleFavoriteClick = () => {
     setIsFavorited(!isFavorited);
+  };
+
+  const handleReportClick = () => {
+    setIsReportDialogOpen(true);
+  };
+
+  const handleReportSubmit = async (data: {
+    reason: string;
+    details: string;
+  }) => {
+    setIsReportLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("ログインが必要です");
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/photos/${photo.id}/report`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("報告を受け付けました");
+        setIsReportDialogOpen(false);
+      } else if (response.status === 409) {
+        toast.error("この写真はすでに報告済みです");
+        setIsReportDialogOpen(false);
+      } else {
+        toast.error("報告の送信に失敗しました");
+      }
+    } catch (error) {
+      console.error("Report error:", error);
+      toast.error("報告の送信に失敗しました");
+    } finally {
+      setIsReportLoading(false);
+    }
   };
 
   return (
@@ -113,13 +162,20 @@ export function PhotoDetailDialog({
               />
               お気に入り
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleReportClick}>
               <Flag className="w-5 h-5 mr-2" />
               報告
             </Button>
           </div>
         </div>
       </DialogContent>
+
+      <ReportDialog
+        open={isReportDialogOpen}
+        onOpenChange={setIsReportDialogOpen}
+        onSubmit={handleReportSubmit}
+        isLoading={isReportLoading}
+      />
     </Dialog>
   );
 }
