@@ -8,6 +8,7 @@ import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.CategoryNotFoundException;
 import com.photlas.backend.repository.CategoryRepository;
+import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
@@ -31,19 +32,22 @@ public class PhotoService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final WeatherService weatherService;
+    private final FavoriteRepository favoriteRepository;
 
     public PhotoService(
             PhotoRepository photoRepository,
             SpotRepository spotRepository,
             CategoryRepository categoryRepository,
             UserRepository userRepository,
-            WeatherService weatherService
+            WeatherService weatherService,
+            FavoriteRepository favoriteRepository
     ) {
         this.photoRepository = photoRepository;
         this.spotRepository = spotRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.weatherService = weatherService;
+        this.favoriteRepository = favoriteRepository;
     }
 
     /**
@@ -84,8 +88,38 @@ public class PhotoService {
         logger.info("写真を投稿しました: photoId={}, userId={}, spotId={}",
                    savedPhoto.getPhotoId(), user.getId(), spot.getSpotId());
 
-        // 5. レスポンスの構築
-        return buildPhotoResponse(savedPhoto, spot, user);
+        // 5. レスポンスの構築（新規投稿なのでis_favoritedはfalse）
+        return buildPhotoResponse(savedPhoto, spot, user, false);
+    }
+
+    /**
+     * 写真詳細を取得する
+     *
+     * @param photoId 写真ID
+     * @param email ログイン中ユーザーのメールアドレス（未認証の場合はnull）
+     * @return 写真の詳細情報
+     */
+    @Transactional(readOnly = true)
+    public PhotoResponse getPhotoDetail(Long photoId, String email) {
+        Photo photo = photoRepository.findById(photoId)
+                .orElseThrow(() -> new RuntimeException("写真が見つかりません"));
+
+        Spot spot = spotRepository.findById(photo.getSpotId())
+                .orElseThrow(() -> new RuntimeException("スポットが見つかりません"));
+
+        User user = userRepository.findById(photo.getUserId())
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        // お気に入り状態をチェック
+        boolean isFavorited = false;
+        if (email != null) {
+            User currentUser = userRepository.findByEmail(email).orElse(null);
+            if (currentUser != null) {
+                isFavorited = favoriteRepository.findByUserIdAndPhotoId(currentUser.getId(), photoId).isPresent();
+            }
+        }
+
+        return buildPhotoResponse(photo, spot, user, isFavorited);
     }
 
     /**
@@ -137,13 +171,14 @@ public class PhotoService {
     /**
      * PhotoResponseを構築する
      */
-    private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user) {
+    private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited) {
         PhotoResponse.PhotoDTO photoDTO = new PhotoResponse.PhotoDTO(
                 photo.getPhotoId(),
                 photo.getTitle(),
                 photo.getS3ObjectKey(),
                 photo.getShotAt().format(DateTimeFormatter.ISO_DATE_TIME),
-                photo.getWeather()
+                photo.getWeather(),
+                isFavorited
         );
 
         PhotoResponse.SpotDTO spotDTO = new PhotoResponse.SpotDTO(

@@ -9,11 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/photos")
@@ -40,6 +36,23 @@ public class PhotoController {
         String email = authentication.getName();
         PhotoResponse response = photoService.createPhoto(request, email);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * 写真詳細を取得する
+     *
+     * @param photoId 写真ID
+     * @param authentication 認証情報（未認証の場合はnull）
+     * @return 写真の詳細情報
+     */
+    @GetMapping("/{photoId}")
+    public ResponseEntity<PhotoResponse> getPhotoDetail(
+            @PathVariable Long photoId,
+            Authentication authentication
+    ) {
+        String email = authentication != null ? authentication.getName() : null;
+        PhotoResponse response = photoService.getPhotoDetail(photoId, email);
+        return ResponseEntity.ok(response);
     }
 
     /**

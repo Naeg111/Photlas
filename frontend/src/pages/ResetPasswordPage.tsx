@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 /**
@@ -17,6 +17,17 @@ export default function ResetPasswordPage() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  // 成功時のリダイレクト処理
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setTimeout(() => {
+        navigate('/login')
+      }, 3000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [isSuccess, navigate])
 
   // トークンがない場合のエラー表示
   if (!token) {
@@ -84,10 +95,6 @@ export default function ResetPasswordPage() {
 
       if (response.ok) {
         setIsSuccess(true)
-        // 3秒後にログインページへリダイレクト
-        setTimeout(() => {
-          navigate('/login')
-        }, 3000)
       } else {
         const data = await response.json()
         setError(data.message || 'エラーが発生しました')

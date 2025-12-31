@@ -168,7 +168,12 @@ describe('PasswordResetRequestModal', () => {
 
     it('disables submit button during request', async () => {
       const mockFetch = vi.mocked(fetch)
-      mockFetch.mockImplementationOnce(() => new Promise(resolve => setTimeout(resolve, 100)))
+      mockFetch.mockImplementationOnce(() => new Promise(resolve => setTimeout(() => {
+        resolve({
+          ok: true,
+          json: async () => ({ message: 'Success' })
+        } as Response)
+      }, 100)))
 
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 
@@ -179,6 +184,11 @@ describe('PasswordResetRequestModal', () => {
       fireEvent.click(submitButton)
 
       expect(submitButton).toBeDisabled()
+
+      // Wait for the async operation to complete
+      await waitFor(() => {
+        expect(screen.getByText('パスワード再設定用のメールを送信しました。受信トレイをご確認ください。')).toBeInTheDocument()
+      })
     })
 
     it('hides email input and submit button after success, shows only success message', async () => {

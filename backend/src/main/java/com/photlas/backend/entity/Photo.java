@@ -32,6 +32,9 @@ public class Photo {
     @Column(name = "weather", length = 50)
     private String weather;
 
+    @Column(name = "time_of_day", length = 20)
+    private String timeOfDay;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -112,6 +115,14 @@ public class Photo {
 
     public void setWeather(String weather) {
         this.weather = weather;
+    }
+
+    public String getTimeOfDay() {
+        return timeOfDay;
+    }
+
+    public void setTimeOfDay(String timeOfDay) {
+        this.timeOfDay = timeOfDay;
     }
 
     public LocalDateTime getCreatedAt() {

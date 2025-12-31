@@ -59,6 +59,9 @@ public class PhotoResponse {
 
         private String weather;
 
+        @JsonProperty("is_favorited")
+        private Boolean isFavorited;
+
         public PhotoDTO() {
         }
 
@@ -68,6 +71,16 @@ public class PhotoResponse {
             this.s3ObjectKey = s3ObjectKey;
             this.shotAt = shotAt;
             this.weather = weather;
+            this.isFavorited = false; // デフォルトはfalse
+        }
+
+        public PhotoDTO(Long photoId, String title, String s3ObjectKey, String shotAt, String weather, Boolean isFavorited) {
+            this.photoId = photoId;
+            this.title = title;
+            this.s3ObjectKey = s3ObjectKey;
+            this.shotAt = shotAt;
+            this.weather = weather;
+            this.isFavorited = isFavorited;
         }
 
         public Long getPhotoId() {
@@ -108,6 +121,14 @@ public class PhotoResponse {
 
         public void setWeather(String weather) {
             this.weather = weather;
+        }
+
+        public Boolean getIsFavorited() {
+            return isFavorited;
+        }
+
+        public void setIsFavorited(Boolean isFavorited) {
+            this.isFavorited = isFavorited;
         }
     }
 
