@@ -3,9 +3,11 @@ package com.photlas.backend.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.entity.Category;
+import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.CategoryRepository;
+import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
@@ -25,7 +27,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
@@ -53,6 +55,9 @@ public class PhotoControllerTest {
     private CategoryRepository categoryRepository;
 
     @Autowired
+    private FavoriteRepository favoriteRepository;
+
+    @Autowired
     private JwtService jwtService;
 
     private User testUser;
@@ -61,6 +66,7 @@ public class PhotoControllerTest {
     @BeforeEach
     void setUp() {
         // クリーンアップ
+        favoriteRepository.deleteAll();
         photoRepository.deleteAll();
         spotRepository.deleteAll();
         categoryRepository.deleteAll();
@@ -366,5 +372,90 @@ public class PhotoControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("正常ケース - 写真詳細取得（お気に入り未登録）")
+    void testGetPhotoDetail_NotFavorited_ReturnsFalse() throws Exception {
+        // テスト用の写真を作成
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal("35.658581"));
+        spot.setLongitude(new BigDecimal("139.745433"));
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setTitle("Test Photo");
+        photo.setS3ObjectKey("test/photo.jpg");
+        photo.setShotAt(java.time.LocalDateTime.now());
+        photo.setUserId(testUser.getId());
+        photo.setSpotId(spot.getSpotId());
+        photo = photoRepository.save(photo);
+
+        // 写真詳細取得（認証あり、お気に入り未登録）
+        mockMvc.perform(get("/api/v1/photos/" + photo.getPhotoId())
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photo.photo_id").value(photo.getPhotoId()))
+                .andExpect(jsonPath("$.photo.title").value("Test Photo"))
+                .andExpect(jsonPath("$.photo.is_favorited").value(false));
+    }
+
+    @Test
+    @DisplayName("正常ケース - 写真詳細取得（お気に入り登録済み）")
+    void testGetPhotoDetail_Favorited_ReturnsTrue() throws Exception {
+        // テスト用の写真を作成
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal("35.658581"));
+        spot.setLongitude(new BigDecimal("139.745433"));
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setTitle("Test Photo");
+        photo.setS3ObjectKey("test/photo.jpg");
+        photo.setShotAt(java.time.LocalDateTime.now());
+        photo.setUserId(testUser.getId());
+        photo.setSpotId(spot.getSpotId());
+        photo = photoRepository.save(photo);
+
+        // お気に入り登録
+        mockMvc.perform(post("/api/v1/photos/" + photo.getPhotoId() + "/favorite")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        // 写真詳細取得（認証あり、お気に入り登録済み）
+        mockMvc.perform(get("/api/v1/photos/" + photo.getPhotoId())
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photo.photo_id").value(photo.getPhotoId()))
+                .andExpect(jsonPath("$.photo.title").value("Test Photo"))
+                .andExpect(jsonPath("$.photo.is_favorited").value(true));
+    }
+
+    @Test
+    @DisplayName("正常ケース - 写真詳細取得（未認証ユーザー）")
+    void testGetPhotoDetail_Unauthenticated_ReturnsFalse() throws Exception {
+        // テスト用の写真を作成
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal("35.658581"));
+        spot.setLongitude(new BigDecimal("139.745433"));
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setTitle("Test Photo");
+        photo.setS3ObjectKey("test/photo.jpg");
+        photo.setShotAt(java.time.LocalDateTime.now());
+        photo.setUserId(testUser.getId());
+        photo.setSpotId(spot.getSpotId());
+        photo = photoRepository.save(photo);
+
+        // 写真詳細取得（認証なし）
+        mockMvc.perform(get("/api/v1/photos/" + photo.getPhotoId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photo.photo_id").value(photo.getPhotoId()))
+                .andExpect(jsonPath("$.photo.title").value("Test Photo"))
+                .andExpect(jsonPath("$.photo.is_favorited").value(false));
     }
 }
