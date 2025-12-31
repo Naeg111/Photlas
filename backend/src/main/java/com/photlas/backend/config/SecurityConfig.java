@@ -2,6 +2,7 @@ package com.photlas.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -37,6 +38,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/health").permitAll()
                 .requestMatchers("/api/v1/spots").permitAll()
                 .requestMatchers("/api/v1/categories").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/photos/**").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception
