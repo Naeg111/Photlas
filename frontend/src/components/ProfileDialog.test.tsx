@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ProfileDialog from './ProfileDialog'
 
@@ -162,6 +163,8 @@ describe('ProfileDialog', () => {
     })
 
     it('タブを切り替えることができる', async () => {
+      const user = userEvent.setup()
+
       render(
         <ProfileDialog
           open={true}
@@ -174,7 +177,7 @@ describe('ProfileDialog', () => {
       )
 
       const favoritesTab = screen.getByRole('tab', { name: 'お気に入り' })
-      fireEvent.click(favoritesTab)
+      await user.click(favoritesTab)
 
       await waitFor(() => {
         expect(favoritesTab).toHaveAttribute('aria-selected', 'true')
