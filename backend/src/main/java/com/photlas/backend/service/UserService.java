@@ -3,20 +3,27 @@ package com.photlas.backend.service;
 import com.photlas.backend.dto.LoginRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.RegisterResponse;
+import com.photlas.backend.dto.UpdateProfileRequest;
+import com.photlas.backend.dto.UserProfileResponse;
 import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.entity.UserSnsLink;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.repository.UserSnsLinkRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -35,6 +42,12 @@ public class UserService {
 
     @Autowired
     private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Autowired
+    private UserSnsLinkRepository userSnsLinkRepository;
+
+    @Autowired
+    private S3Service s3Service;
 
     public RegisterResponse registerUser(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -215,5 +228,100 @@ public class UserService {
             // Log the error but don't fail registration
             System.err.println("Failed to send welcome email: " + e.getMessage());
         }
+    }
+
+    /**
+     * 自分のユーザー情報を取得（Issue#18）
+     *
+     * @param email ログイン中ユーザーのメールアドレス
+     * @return ユーザープロフィール情報
+     */
+    @Transactional(readOnly = true)
+    public UserProfileResponse getMyProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        List<UserSnsLink> snsLinks = userSnsLinkRepository.findByUserId(user.getId());
+        List<UserProfileResponse.SnsLink> snsLinkDtos = snsLinks.stream()
+                .map(link -> new UserProfileResponse.SnsLink(link.getUrl()))
+                .collect(Collectors.toList());
+
+        String profileImageUrl = s3Service.generateCdnUrl(user.getProfileImageS3Key());
+
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                profileImageUrl,
+                snsLinkDtos
+        );
+    }
+
+    /**
+     * 他ユーザーのプロフィール情報を取得（Issue#18）
+     *
+     * @param userId ユーザーID
+     * @return ユーザープロフィール情報（emailは含まない）
+     */
+    @Transactional(readOnly = true)
+    public UserProfileResponse getUserProfile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        List<UserSnsLink> snsLinks = userSnsLinkRepository.findByUserId(user.getId());
+        List<UserProfileResponse.SnsLink> snsLinkDtos = snsLinks.stream()
+                .map(link -> new UserProfileResponse.SnsLink(link.getUrl()))
+                .collect(Collectors.toList());
+
+        String profileImageUrl = s3Service.generateCdnUrl(user.getProfileImageS3Key());
+
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                null, // emailは含まない
+                profileImageUrl,
+                snsLinkDtos
+        );
+    }
+
+    /**
+     * プロフィール情報を更新（Issue#18）
+     *
+     * @param email ログイン中ユーザーのメールアドレス
+     * @param request 更新リクエスト
+     * @return 更新後のユーザープロフィール情報
+     */
+    @Transactional
+    public UserProfileResponse updateProfile(String email, UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        // ユーザー名重複チェック（自分以外）
+        Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
+        if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("このユーザー名はすでに使用されています");
+        }
+
+        // ユーザー名を更新
+        user.setUsername(request.getUsername());
+
+        // プロフィール画像S3キーを更新
+        if (request.getProfileImageS3Key() != null) {
+            user.setProfileImageS3Key(request.getProfileImageS3Key());
+        }
+
+        userRepository.save(user);
+
+        // SNSリンクを一括置換
+        userSnsLinkRepository.deleteByUserId(user.getId());
+        if (request.getSnsLinks() != null) {
+            for (UpdateProfileRequest.SnsLinkRequest snsLinkRequest : request.getSnsLinks()) {
+                UserSnsLink snsLink = new UserSnsLink(user.getId(), snsLinkRequest.getUrl());
+                userSnsLinkRepository.save(snsLink);
+            }
+        }
+
+        // 更新後のプロフィールを取得して返す
+        return getMyProfile(email);
     }
 }
