@@ -8,17 +8,24 @@ import com.photlas.backend.entity.UserSnsLink;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.repository.UserSnsLinkRepository;
 import com.photlas.backend.service.JwtService;
+import com.photlas.backend.service.S3Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +58,9 @@ public class UserControllerTest {
     @Autowired
     private JwtService jwtService;
 
+    @MockBean
+    private S3Service s3Service;
+
     private User testUser;
     private String jwtToken;
 
@@ -65,6 +75,25 @@ public class UserControllerTest {
 
         // JWTトークンを生成
         jwtToken = jwtService.generateToken(testUser.getEmail());
+
+        // S3Serviceのモック設定
+        when(s3Service.generateCdnUrl(anyString())).thenAnswer(invocation -> {
+            String s3Key = invocation.getArgument(0);
+            if (s3Key == null) {
+                return null;
+            }
+            return "https://test-bucket.s3.us-east-1.amazonaws.com/" + s3Key;
+        });
+
+        when(s3Service.generatePresignedUploadUrl(anyString(), anyLong(), anyString(), anyString()))
+                .thenAnswer(invocation -> {
+                    String folder = invocation.getArgument(0);
+                    Long userId = invocation.getArgument(1);
+                    String extension = invocation.getArgument(2);
+                    String objectKey = String.format("%s/%d/test-uuid.%s", folder, userId, extension);
+                    String uploadUrl = "https://test-bucket.s3.us-east-1.amazonaws.com/" + objectKey + "?signature=test";
+                    return new S3Service.UploadUrlResult(uploadUrl, objectKey);
+                });
     }
 
     // GET /api/v1/users/me のテスト
