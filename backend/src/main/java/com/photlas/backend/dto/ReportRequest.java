@@ -1,5 +1,6 @@
 package com.photlas.backend.dto;
 
+import com.photlas.backend.validation.ValidReportReason;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -9,6 +10,7 @@ import jakarta.validation.constraints.Size;
 public class ReportRequest {
 
     @NotBlank(message = "理由は必須です")
+    @ValidReportReason(message = "不正なレポート理由です")
     private String reason;
 
     @NotBlank(message = "詳細は必須です")
