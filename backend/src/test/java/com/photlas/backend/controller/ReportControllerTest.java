@@ -7,7 +7,7 @@ import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
-// import com.photlas.backend.repository.ReportRepository; // Green段階で有効化
+import com.photlas.backend.repository.ReportRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.JwtService;
@@ -53,9 +53,8 @@ public class ReportControllerTest {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    // ReportRepositoryはまだ存在しないため、Green段階で使用
-    // @Autowired
-    // private ReportRepository reportRepository;
+    @Autowired
+    private ReportRepository reportRepository;
 
     @Autowired
     private JwtService jwtService;
@@ -67,7 +66,7 @@ public class ReportControllerTest {
     @BeforeEach
     void setUp() {
         // クリーンアップ
-        // reportRepository.deleteAll(); // Green段階で有効化
+        reportRepository.deleteAll();
         photoRepository.deleteAll();
         spotRepository.deleteAll();
         categoryRepository.deleteAll();
