@@ -12,12 +12,14 @@ import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.JwtService;
+import com.photlas.backend.service.S3Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,6 +29,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -59,6 +64,9 @@ public class PhotoControllerTest {
 
     @Autowired
     private JwtService jwtService;
+
+    @MockBean
+    private S3Service s3Service;
 
     private User testUser;
     private String token;
@@ -95,6 +103,17 @@ public class PhotoControllerTest {
         Category category3 = new Category();
         category3.setName("建築");
         categoryRepository.save(category3);
+
+        // S3Serviceのモック設定
+        when(s3Service.generatePresignedUploadUrl(anyString(), anyLong(), anyString(), anyString()))
+                .thenAnswer(invocation -> {
+                    String folder = invocation.getArgument(0);
+                    Long userId = invocation.getArgument(1);
+                    String extension = invocation.getArgument(2);
+                    String objectKey = String.format("%s/%d/test-uuid.%s", folder, userId, extension);
+                    String uploadUrl = "https://test-bucket.s3.us-east-1.amazonaws.com/" + objectKey + "?signature=test";
+                    return new S3Service.UploadUrlResult(uploadUrl, objectKey);
+                });
     }
 
     @Test
@@ -457,5 +476,61 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath("$.photo.photo_id").value(photo.getPhotoId()))
                 .andExpect(jsonPath("$.photo.title").value("Test Photo"))
                 .andExpect(jsonPath("$.photo.is_favorited").value(false));
+    }
+
+    // Issue#9: 写真アップロード処理 - 署名付きURL発行API
+    @Test
+    @DisplayName("Issue#9 - 正常ケース: 署名付きURL発行成功")
+    void testGetUploadUrl_ValidRequest_ReturnsUploadUrl() throws Exception {
+        com.photlas.backend.dto.UploadUrlRequest request =
+            new com.photlas.backend.dto.UploadUrlRequest("jpg", "image/jpeg");
+
+        mockMvc.perform(post("/api/v1/photos/upload-url")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.uploadUrl").exists())
+                .andExpect(jsonPath("$.uploadUrl").isString())
+                .andExpect(jsonPath("$.objectKey").exists())
+                .andExpect(jsonPath("$.objectKey").value(startsWith("uploads/" + testUser.getId())));
+    }
+
+    @Test
+    @DisplayName("Issue#9 - 認証エラー: 未認証ユーザーのアクセス")
+    void testGetUploadUrl_Unauthorized_ReturnsUnauthorized() throws Exception {
+        com.photlas.backend.dto.UploadUrlRequest request =
+            new com.photlas.backend.dto.UploadUrlRequest("jpg", "image/jpeg");
+
+        mockMvc.perform(post("/api/v1/photos/upload-url")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Issue#9 - バリデーションエラー: extension必須")
+    void testGetUploadUrl_MissingExtension_ReturnsBadRequest() throws Exception {
+        com.photlas.backend.dto.UploadUrlRequest request =
+            new com.photlas.backend.dto.UploadUrlRequest(null, "image/jpeg");
+
+        mockMvc.perform(post("/api/v1/photos/upload-url")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#9 - バリデーションエラー: contentType必須")
+    void testGetUploadUrl_MissingContentType_ReturnsBadRequest() throws Exception {
+        com.photlas.backend.dto.UploadUrlRequest request =
+            new com.photlas.backend.dto.UploadUrlRequest("jpg", null);
+
+        mockMvc.perform(post("/api/v1/photos/upload-url")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 }
