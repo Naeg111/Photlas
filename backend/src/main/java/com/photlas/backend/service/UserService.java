@@ -8,6 +8,8 @@ import com.photlas.backend.dto.UserProfileResponse;
 import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserSnsLink;
+import com.photlas.backend.exception.UnauthorizedException;
+import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.repository.UserSnsLinkRepository;
@@ -323,5 +325,90 @@ public class UserService {
 
         // 更新後のプロフィールを取得して返す
         return getMyProfile(email);
+    }
+
+    /**
+     * メールアドレス変更（Issue#20）
+     *
+     * @param email ログイン中ユーザーのメールアドレス
+     * @param newEmail 新しいメールアドレス
+     * @param currentPassword 現在のパスワード
+     * @return 更新後のメールアドレス
+     */
+    @Transactional
+    public String updateEmail(String email, String newEmail, String currentPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        // パスワード検証
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new UnauthorizedException("パスワードが正しくありません");
+        }
+
+        // 同じメールアドレスの場合は成功を返す（決定事項）
+        if (email.equals(newEmail)) {
+            return user.getEmail();
+        }
+
+        // メールアドレス重複チェック（自分以外）
+        Optional<User> existingUser = userRepository.findByEmail(newEmail);
+        if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
+            throw new ConflictException("このメールアドレスはすでに使用されています");
+        }
+
+        // メールアドレスを更新
+        user.setEmail(newEmail);
+        userRepository.save(user);
+
+        return user.getEmail();
+    }
+
+    /**
+     * パスワード変更（Issue#20）
+     *
+     * @param email ログイン中ユーザーのメールアドレス
+     * @param currentPassword 現在のパスワード
+     * @param newPassword 新しいパスワード
+     * @param newPasswordConfirm 新しいパスワード（確認用）
+     */
+    @Transactional
+    public void updatePassword(String email, String currentPassword, String newPassword, String newPasswordConfirm) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        // 現在のパスワード検証
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new UnauthorizedException("現在のパスワードが正しくありません");
+        }
+
+        // 新しいパスワードの一致確認
+        if (!newPassword.equals(newPasswordConfirm)) {
+            throw new IllegalArgumentException("新しいパスワードが一致しません");
+        }
+
+        // パスワードをハッシュ化して更新
+        String hashedPassword = passwordEncoder.encode(newPassword);
+        user.setPasswordHash(hashedPassword);
+        userRepository.save(user);
+    }
+
+    /**
+     * アカウント削除（Issue#20）
+     *
+     * @param email ログイン中ユーザーのメールアドレス
+     * @param password パスワード
+     */
+    @Transactional
+    public void deleteAccount(String email, String password) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        // パスワード検証
+        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw new UnauthorizedException("パスワードが正しくありません");
+        }
+
+        // ユーザーを削除（CASCADE設定により関連データも削除される）
+        userRepository.delete(user);
     }
 }

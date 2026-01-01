@@ -6,6 +6,10 @@ import com.photlas.backend.dto.UploadUrlRequest;
 import com.photlas.backend.dto.UploadUrlResponse;
 import com.photlas.backend.dto.UserProfileResponse;
 import com.photlas.backend.dto.PhotoResponse;
+import com.photlas.backend.dto.UpdateEmailRequest;
+import com.photlas.backend.dto.UpdateEmailResponse;
+import com.photlas.backend.dto.UpdatePasswordRequest;
+import com.photlas.backend.dto.DeleteAccountRequest;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.PhotoService;
@@ -130,6 +134,54 @@ public class UserController {
     }
 
     /**
+     * メールアドレス変更（Issue#20）
+     * PUT /api/v1/users/me/email
+     */
+    @PutMapping("/me/email")
+    public ResponseEntity<UpdateEmailResponse> updateEmail(
+            @Valid @RequestBody UpdateEmailRequest request,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        String updatedEmail = userService.updateEmail(email, request.getNewEmail(), request.getCurrentPassword());
+        UpdateEmailResponse response = new UpdateEmailResponse(updatedEmail);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * パスワード変更（Issue#20）
+     * PUT /api/v1/users/me/password
+     */
+    @PutMapping("/me/password")
+    public ResponseEntity<Void> updatePassword(
+            @Valid @RequestBody UpdatePasswordRequest request,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        userService.updatePassword(
+                email,
+                request.getCurrentPassword(),
+                request.getNewPassword(),
+                request.getNewPasswordConfirm()
+        );
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * アカウント削除（Issue#20）
+     * DELETE /api/v1/users/me
+     */
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteAccount(
+            @Valid @RequestBody DeleteAccountRequest request,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        userService.deleteAccount(email, request.getPassword());
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * ユーザーが見つからない場合の例外ハンドリング
      */
     @ExceptionHandler(RuntimeException.class)
@@ -153,5 +205,23 @@ public class UserController {
         }
         ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * Issue#20: 認証エラー（401 Unauthorized）をハンドリング
+     */
+    @ExceptionHandler(com.photlas.backend.exception.UnauthorizedException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedException(com.photlas.backend.exception.UnauthorizedException e) {
+        ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+
+    /**
+     * Issue#20: 競合エラー（409 Conflict）をハンドリング
+     */
+    @ExceptionHandler(com.photlas.backend.exception.ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflictException(com.photlas.backend.exception.ConflictException e) {
+        ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 }
