@@ -268,4 +268,187 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.totalElements").exists())
                 .andExpect(jsonPath("$.totalPages").exists());
     }
+
+    // ============================================================
+    // Issue#20: アカウント設定機能のテスト
+    // ============================================================
+
+    // PUT /api/v1/users/me/email のテスト
+    @Test
+    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - メールアドレス変更成功")
+    void testUpdateEmail_ValidRequest_ReturnsOk() throws Exception {
+        String requestBody = "{\"new_email\":\"newemail@example.com\",\"current_password\":\"password\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/email")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email", is("newemail@example.com")));
+    }
+
+    @Test
+    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - パスワード誤りの場合は401を返す")
+    void testUpdateEmail_WrongPassword_ReturnsUnauthorized() throws Exception {
+        String requestBody = "{\"new_email\":\"newemail@example.com\",\"current_password\":\"wrongpassword\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/email")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", containsString("パスワードが正しくありません")));
+    }
+
+    @Test
+    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - メールアドレス重複の場合は409を返す")
+    void testUpdateEmail_DuplicateEmail_ReturnsConflict() throws Exception {
+        // 別のユーザーを作成
+        User otherUser = new User("otheruser", "other@example.com", passwordEncoder.encode("password"), "USER");
+        userRepository.save(otherUser);
+
+        String requestBody = "{\"new_email\":\"other@example.com\",\"current_password\":\"password\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/email")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", containsString("このメールアドレスはすでに使用されています")));
+    }
+
+    @Test
+    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - 同じメールアドレスの場合は200を返す")
+    void testUpdateEmail_SameEmail_ReturnsOk() throws Exception {
+        String requestBody = "{\"new_email\":\"test@example.com\",\"current_password\":\"password\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/email")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email", is("test@example.com")));
+    }
+
+    @Test
+    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - メール形式不正の場合は400を返す")
+    void testUpdateEmail_InvalidEmailFormat_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"new_email\":\"invalid-email\",\"current_password\":\"password\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/email")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - 未認証の場合は401を返す")
+    void testUpdateEmail_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        String requestBody = "{\"new_email\":\"newemail@example.com\",\"current_password\":\"password\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // PUT /api/v1/users/me/password のテスト
+    @Test
+    @DisplayName("Issue#20 - PUT /api/v1/users/me/password - パスワード変更成功")
+    void testUpdatePassword_ValidRequest_ReturnsOk() throws Exception {
+        String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass123\",\"new_password_confirm\":\"NewPass123\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/password")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Issue#20 - PUT /api/v1/users/me/password - 現在のパスワード誤りの場合は401を返す")
+    void testUpdatePassword_WrongCurrentPassword_ReturnsUnauthorized() throws Exception {
+        String requestBody = "{\"current_password\":\"wrongpassword\",\"new_password\":\"NewPass123\",\"new_password_confirm\":\"NewPass123\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/password")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", containsString("現在のパスワードが正しくありません")));
+    }
+
+    @Test
+    @DisplayName("Issue#20 - PUT /api/v1/users/me/password - パスワード不一致の場合は400を返す")
+    void testUpdatePassword_PasswordMismatch_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass123\",\"new_password_confirm\":\"DifferentPass123\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/password")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("新しいパスワードが一致しません")));
+    }
+
+    @Test
+    @DisplayName("Issue#20 - PUT /api/v1/users/me/password - パスワード形式不正の場合は400を返す")
+    void testUpdatePassword_InvalidPasswordFormat_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"current_password\":\"password\",\"new_password\":\"short\",\"new_password_confirm\":\"short\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/password")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#20 - PUT /api/v1/users/me/password - 未認証の場合は401を返す")
+    void testUpdatePassword_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass123\",\"new_password_confirm\":\"NewPass123\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // DELETE /api/v1/users/me のテスト
+    @Test
+    @DisplayName("Issue#20 - DELETE /api/v1/users/me - アカウント削除成功")
+    void testDeleteAccount_ValidRequest_ReturnsNoContent() throws Exception {
+        String requestBody = "{\"password\":\"password\"}";
+
+        mockMvc.perform(delete("/api/v1/users/me")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("Issue#20 - DELETE /api/v1/users/me - パスワード誤りの場合は401を返す")
+    void testDeleteAccount_WrongPassword_ReturnsUnauthorized() throws Exception {
+        String requestBody = "{\"password\":\"wrongpassword\"}";
+
+        mockMvc.perform(delete("/api/v1/users/me")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", containsString("パスワードが正しくありません")));
+    }
+
+    @Test
+    @DisplayName("Issue#20 - DELETE /api/v1/users/me - 未認証の場合は401を返す")
+    void testDeleteAccount_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        String requestBody = "{\"password\":\"password\"}";
+
+        mockMvc.perform(delete("/api/v1/users/me")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized());
+    }
 }
