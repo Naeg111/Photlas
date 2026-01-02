@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { BrowserRouter } from 'react-router-dom'
 import { AccountSettingsDialog } from './AccountSettingsDialog'
+import { toast } from 'sonner'
 
 /**
  * Issue#20: アカウント設定機能 - AccountSettingsDialog テスト
@@ -347,9 +348,7 @@ describe('AccountSettingsDialog', () => {
       fireEvent.click(submitButton)
 
       // フロントエンドバリデーションでエラーが表示されることを確認
-      await waitFor(() => {
-        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
-      })
+      expect(toast.error).toHaveBeenCalledWith('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')
 
       // API呼び出しは行われないことを確認
       expect(mockFetch).not.toHaveBeenCalled()
@@ -376,9 +375,7 @@ describe('AccountSettingsDialog', () => {
       fireEvent.click(submitButton)
 
       // フロントエンドバリデーションでエラーが表示されることを確認
-      await waitFor(() => {
-        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
-      })
+      expect(toast.error).toHaveBeenCalledWith('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')
 
       // API呼び出しは行われないことを確認
       expect(mockFetch).not.toHaveBeenCalled()
