@@ -104,6 +104,12 @@ export function AccountSettingsDialog({
       return;
     }
 
+    // Issue#21: パスワードバリデーション統一
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z0-9]{8,20}$/.test(newPassword)) {
+      toast.error("パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません");
+      return;
+    }
+
     setIsPasswordLoading(true);
     try {
       const token = localStorage.getItem("token");
