@@ -192,4 +192,38 @@ public class AuthControllerTest {
                 .andExpect(jsonPath("$.errors", hasSize(1)))
                 .andExpect(jsonPath("$.errors[0].field", is("password")));
     }
+
+    // Issue#21: パスワードバリデーション統一 - 記号禁止チェック
+    @Test
+    @DisplayName("バリデーションエラー - password記号禁止")
+    void testRegisterUser_PasswordWithSpecialCharacters_ReturnsBadRequest() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setUsername("testuser");
+        request.setEmail("test@example.com");
+        request.setPassword("Password123!"); // 記号を含む
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors", hasSize(1)))
+                .andExpect(jsonPath("$.errors[0].field", is("password")));
+    }
+
+    // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
+    @Test
+    @DisplayName("バリデーションエラー - password最大文字数超過")
+    void testRegisterUser_PasswordTooLong_ReturnsBadRequest() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setUsername("testuser");
+        request.setEmail("test@example.com");
+        request.setPassword("Password1234567890123"); // 21文字
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors", hasSize(1)))
+                .andExpect(jsonPath("$.errors[0].field", is("password")));
+    }
 }
