@@ -325,6 +325,64 @@ describe('AccountSettingsDialog', () => {
         expect(mockFetch).toHaveBeenCalled()
       })
     })
+
+    // Issue#21: パスワードバリデーション統一 - 記号禁止チェック
+    it('shows error when new password contains special characters', async () => {
+      render(
+        <MockedAccountSettingsDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          currentEmail="test@example.com"
+        />
+      )
+
+      const currentPasswordInput = screen.getByLabelText('現在のパスワード')
+      const newPasswordInput = screen.getByLabelText('新しいパスワード')
+      const confirmPasswordInput = screen.getByLabelText('新しいパスワード（確認）')
+      const submitButton = screen.getByRole('button', { name: 'パスワードを変更' })
+
+      fireEvent.change(currentPasswordInput, { target: { value: 'OldPass123' } })
+      fireEvent.change(newPasswordInput, { target: { value: 'NewPass123!' } })
+      fireEvent.change(confirmPasswordInput, { target: { value: 'NewPass123!' } })
+      fireEvent.click(submitButton)
+
+      // フロントエンドバリデーションでエラーが表示されることを確認
+      await waitFor(() => {
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
+      })
+
+      // API呼び出しは行われないことを確認
+      expect(mockFetch).not.toHaveBeenCalled()
+    })
+
+    // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
+    it('shows error when new password is longer than 20 characters', async () => {
+      render(
+        <MockedAccountSettingsDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          currentEmail="test@example.com"
+        />
+      )
+
+      const currentPasswordInput = screen.getByLabelText('現在のパスワード')
+      const newPasswordInput = screen.getByLabelText('新しいパスワード')
+      const confirmPasswordInput = screen.getByLabelText('新しいパスワード（確認）')
+      const submitButton = screen.getByRole('button', { name: 'パスワードを変更' })
+
+      fireEvent.change(currentPasswordInput, { target: { value: 'OldPass123' } })
+      fireEvent.change(newPasswordInput, { target: { value: 'NewPass1234567890123' } }) // 21文字
+      fireEvent.change(confirmPasswordInput, { target: { value: 'NewPass1234567890123' } })
+      fireEvent.click(submitButton)
+
+      // フロントエンドバリデーションでエラーが表示されることを確認
+      await waitFor(() => {
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
+      })
+
+      // API呼び出しは行われないことを確認
+      expect(mockFetch).not.toHaveBeenCalled()
+    })
   })
 
   describe('Account Deletion', () => {
