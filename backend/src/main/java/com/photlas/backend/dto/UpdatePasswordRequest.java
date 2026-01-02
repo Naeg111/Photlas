@@ -5,9 +5,7 @@ import jakarta.validation.constraints.*;
 
 /**
  * Issue#20: アカウント設定機能 - パスワード変更リクエスト
- *
- * Note: パスワードバリデーションの詳細（8〜20文字、記号禁止）については
- * Issue#21で対応予定。現在は既存の実装を使用。
+ * Issue#21: パスワードバリデーション統一
  */
 public class UpdatePasswordRequest {
     @JsonProperty("current_password")
@@ -17,9 +15,10 @@ public class UpdatePasswordRequest {
     @JsonProperty("new_password")
     @NotNull(message = "New password is required")
     @Size(min = 8, max = 20, message = "Password must be between 8 and 20 characters")
+    // Issue#21: パスワードバリデーション統一 - 記号禁止、英数字のみ
     @Pattern(
-        regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).+$",
-        message = "Password must contain at least one digit, one lowercase letter, and one uppercase letter"
+        regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]+$",
+        message = "Password must contain at least one digit, one lowercase letter, one uppercase letter, and no special characters"
     )
     private String newPassword;
 

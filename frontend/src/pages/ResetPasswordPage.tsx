@@ -63,18 +63,9 @@ export default function ResetPasswordPage() {
       return
     }
 
-    if (newPassword.length < 8) {
-      setError('パスワードは8文字以上で入力してください')
-      return
-    }
-
-    // パスワードの複雑さ要件チェック
-    const hasUppercase = /[A-Z]/.test(newPassword)
-    const hasLowercase = /[a-z]/.test(newPassword)
-    const hasNumber = /\d/.test(newPassword)
-
-    if (!hasUppercase || !hasLowercase || !hasNumber) {
-      setError('パスワードは大文字、小文字、数字を含む必要があります')
+    // Issue#21: パスワードバリデーション統一
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z0-9]{8,20}$/.test(newPassword)) {
+      setError('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')
       return
     }
 

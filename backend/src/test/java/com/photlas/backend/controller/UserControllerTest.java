@@ -422,7 +422,7 @@ public class UserControllerTest {
     @Test
     @DisplayName("Issue#21 - PUT /api/v1/users/me/password - 21文字以上のパスワードの場合は400を返す")
     void testUpdatePassword_PasswordTooLong_ReturnsBadRequest() throws Exception {
-        String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass1234567890123\",\"new_password_confirm\":\"NewPass1234567890123\"}";
+        String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass12345678901234\",\"new_password_confirm\":\"NewPass12345678901234\"}";
 
         mockMvc.perform(put("/api/v1/users/me/password")
                 .header("Authorization", "Bearer " + jwtToken)
