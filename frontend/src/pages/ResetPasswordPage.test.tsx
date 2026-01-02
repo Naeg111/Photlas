@@ -205,7 +205,7 @@ describe('ResetPasswordPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('パスワードは8文字以上で入力してください')).toBeInTheDocument()
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
       })
     })
 
@@ -225,7 +225,7 @@ describe('ResetPasswordPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('パスワードは大文字、小文字、数字を含む必要があります')).toBeInTheDocument()
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
       })
     })
 
@@ -245,7 +245,7 @@ describe('ResetPasswordPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('パスワードは大文字、小文字、数字を含む必要があります')).toBeInTheDocument()
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
       })
     })
 
@@ -265,7 +265,7 @@ describe('ResetPasswordPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('パスワードは大文字、小文字、数字を含む必要があります')).toBeInTheDocument()
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
       })
     })
 
