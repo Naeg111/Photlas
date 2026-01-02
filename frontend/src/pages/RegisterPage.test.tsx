@@ -262,7 +262,7 @@ describe('RegisterPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('パスワードは8文字以上で、数字・小文字・大文字をそれぞれ1文字以上含めてください')).toBeInTheDocument()
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
       })
     })
 
