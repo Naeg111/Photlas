@@ -370,8 +370,8 @@ describe('AccountSettingsDialog', () => {
       const submitButton = screen.getByRole('button', { name: 'パスワードを変更' })
 
       fireEvent.change(currentPasswordInput, { target: { value: 'OldPass123' } })
-      fireEvent.change(newPasswordInput, { target: { value: 'NewPass1234567890123' } }) // 21文字
-      fireEvent.change(confirmPasswordInput, { target: { value: 'NewPass1234567890123' } })
+      fireEvent.change(newPasswordInput, { target: { value: 'NewPass12345678901234' } }) // 21文字
+      fireEvent.change(confirmPasswordInput, { target: { value: 'NewPass12345678901234' } })
       fireEvent.click(submitButton)
 
       // フロントエンドバリデーションでエラーが表示されることを確認
