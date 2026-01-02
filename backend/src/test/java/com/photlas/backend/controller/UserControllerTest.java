@@ -404,6 +404,34 @@ public class UserControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // Issue#21: パスワードバリデーション統一 - 記号禁止チェック
+    @Test
+    @DisplayName("Issue#21 - PUT /api/v1/users/me/password - 記号を含むパスワードの場合は400を返す")
+    void testUpdatePassword_PasswordWithSpecialCharacters_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass123!\",\"new_password_confirm\":\"NewPass123!\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/password")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field", is("newPassword")));
+    }
+
+    // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
+    @Test
+    @DisplayName("Issue#21 - PUT /api/v1/users/me/password - 21文字以上のパスワードの場合は400を返す")
+    void testUpdatePassword_PasswordTooLong_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass1234567890123\",\"new_password_confirm\":\"NewPass1234567890123\"}";
+
+        mockMvc.perform(put("/api/v1/users/me/password")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field", is("newPassword")));
+    }
+
     @Test
     @DisplayName("Issue#20 - PUT /api/v1/users/me/password - 未認証の場合は401を返す")
     void testUpdatePassword_Unauthenticated_ReturnsUnauthorized() throws Exception {

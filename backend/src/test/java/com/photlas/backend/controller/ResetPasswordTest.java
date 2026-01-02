@@ -302,6 +302,40 @@ public class ResetPasswordTest {
                 .andExpect(jsonPath("$.errors[0].field", is("newPassword")));
     }
 
+    // Issue#21: パスワードバリデーション統一 - 記号禁止チェック
+    @Test
+    @DisplayName("バリデーションエラー - パスワード記号禁止")
+    void testResetPassword_PasswordWithSpecialCharacters_ReturnsBadRequest() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("valid-reset-token");
+        request.setNewPassword("Password123!"); // 記号を含む
+        request.setConfirmPassword("Password123!");
+
+        mockMvc.perform(post("/api/v1/auth/reset-password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors", hasSize(1)))
+                .andExpect(jsonPath("$.errors[0].field", is("newPassword")));
+    }
+
+    // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
+    @Test
+    @DisplayName("バリデーションエラー - パスワード最大文字数超過")
+    void testResetPassword_PasswordTooLong_ReturnsBadRequest() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("valid-reset-token");
+        request.setNewPassword("Password1234567890123"); // 21文字
+        request.setConfirmPassword("Password1234567890123");
+
+        mockMvc.perform(post("/api/v1/auth/reset-password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors", hasSize(1)))
+                .andExpect(jsonPath("$.errors[0].field", is("newPassword")));
+    }
+
     @Test
     @DisplayName("同じトークンで2回パスワード再設定できない")
     void testResetPassword_TokenCannotBeReused() throws Exception {
