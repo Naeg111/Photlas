@@ -2,7 +2,6 @@ package com.photlas.backend.config;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Refill;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
@@ -35,9 +34,12 @@ public class RateLimitConfig {
     private static final Duration REFILL_DURATION = Duration.ofMinutes(1);
 
     /**
-     * 指定されたレート制限でBucketを作成する
+     * 指定されたレート制限でToken Bucket を作成する
      *
-     * @param limit 1分あたりのリクエスト上限
+     * Token Bucketアルゴリズムを使用し、指定された制限値でBucketインスタンスを生成します。
+     * Bucketの容量とリフィル数は同じ値に設定され、1分ごとに全トークンが補充されます。
+     *
+     * @param limit 1分あたりのリクエスト上限（Bucketの容量およびリフィル数）
      * @return Bucket4jのBucketインスタンス
      */
     public static Bucket createBucket(int limit) {

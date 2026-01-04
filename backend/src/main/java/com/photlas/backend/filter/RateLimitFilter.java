@@ -28,14 +28,27 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(RateLimitFilter.class);
 
-    /**
-     * Retry-Afterヘッダーの値（秒）
-     */
+    // エンドポイントパス定数
+    private static final String AUTH_REGISTER_PATH = "/api/v1/users/register";
+    private static final String AUTH_LOGIN_PATH = "/api/v1/users/login";
+    private static final String PHOTO_PATH_PREFIX = "/api/v1/photos";
+
+    // ユーザー識別子プレフィックス
+    private static final String USER_PREFIX = "user:";
+    private static final String IP_PREFIX = "ip:";
+    private static final String ANONYMOUS_USER = "anonymousUser";
+
+    // HTTP ヘッダー
+    private static final String X_FORWARDED_FOR_HEADER = "X-Forwarded-For";
+    private static final String RETRY_AFTER_HEADER = "Retry-After";
     private static final String RETRY_AFTER_SECONDS = "60";
+
+    // レスポンスメッセージ
+    private static final String RATE_LIMIT_EXCEEDED_MESSAGE = "Too many requests. Please try again later.";
 
     /**
      * ユーザー/IPごとのBucketを管理するキャッシュ
-     * キー形式: "endpoint_type:user_identifier"
+     * キー形式: "rate_limit:user_identifier"
      */
     private final ConcurrentHashMap<String, Bucket> bucketCache = new ConcurrentHashMap<>();
 
@@ -58,11 +71,26 @@ public class RateLimitFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } else {
             // レート制限超過: HTTP 429を返す
-            logger.warn("レート制限超過: user={}, path={}, limit={}/min", userIdentifier, requestPath, rateLimit);
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.setHeader("Retry-After", RETRY_AFTER_SECONDS);
-            response.getWriter().write("Too many requests. Please try again later.");
+            handleRateLimitExceeded(response, userIdentifier, requestPath, rateLimit);
         }
+    }
+
+    /**
+     * レート制限超過時のレスポンスを処理する
+     *
+     * @param response HTTPレスポンス
+     * @param userIdentifier ユーザー識別子
+     * @param requestPath リクエストパス
+     * @param rateLimit レート制限
+     * @throws IOException IO例外
+     */
+    private void handleRateLimitExceeded(HttpServletResponse response, String userIdentifier,
+                                          String requestPath, int rateLimit) throws IOException {
+        logger.warn("レート制限超過: user={}, path={}, limit={}/min", userIdentifier, requestPath, rateLimit);
+        response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+        response.setHeader(RETRY_AFTER_HEADER, RETRY_AFTER_SECONDS);
+        response.setContentType("text/plain;charset=UTF-8");
+        response.getWriter().write(RATE_LIMIT_EXCEEDED_MESSAGE);
     }
 
     /**
@@ -72,13 +100,33 @@ public class RateLimitFilter extends OncePerRequestFilter {
      * @return レート制限（リクエスト/分）
      */
     private int determineRateLimit(String path) {
-        if (path.startsWith("/api/v1/users/register") || path.startsWith("/api/v1/users/login")) {
+        if (isAuthEndpoint(path)) {
             return RateLimitConfig.AUTH_RATE_LIMIT;
-        } else if (path.startsWith("/api/v1/photos")) {
+        } else if (isPhotoEndpoint(path)) {
             return RateLimitConfig.PHOTO_RATE_LIMIT;
         } else {
             return RateLimitConfig.GENERAL_RATE_LIMIT;
         }
+    }
+
+    /**
+     * 認証エンドポイントかどうかを判定する
+     *
+     * @param path リクエストパス
+     * @return 認証エンドポイントの場合true
+     */
+    private boolean isAuthEndpoint(String path) {
+        return path.startsWith(AUTH_REGISTER_PATH) || path.startsWith(AUTH_LOGIN_PATH);
+    }
+
+    /**
+     * 写真エンドポイントかどうかを判定する
+     *
+     * @param path リクエストパス
+     * @return 写真エンドポイントの場合true
+     */
+    private boolean isPhotoEndpoint(String path) {
+        return path.startsWith(PHOTO_PATH_PREFIX);
     }
 
     /**
@@ -89,23 +137,45 @@ public class RateLimitFilter extends OncePerRequestFilter {
      * @return ユーザー識別子
      */
     private String getUserIdentifier(HttpServletRequest request) {
-        // 認証情報を確認
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()
-                && !"anonymousUser".equals(authentication.getPrincipal())) {
+        if (isAuthenticatedUser()) {
             // 認証済みユーザー: ユーザーIDを使用
-            return "user:" + authentication.getName();
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            return USER_PREFIX + authentication.getName();
         }
 
         // 未認証ユーザー: IPアドレスを使用
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty()) {
-            ip = request.getRemoteAddr();
-        } else {
+        String clientIp = extractClientIp(request);
+        return IP_PREFIX + clientIp;
+    }
+
+    /**
+     * 認証済みユーザーかどうかを判定する
+     *
+     * @return 認証済みユーザーの場合true
+     */
+    private boolean isAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !ANONYMOUS_USER.equals(authentication.getPrincipal());
+    }
+
+    /**
+     * クライアントのIPアドレスを抽出する
+     * X-Forwarded-Forヘッダーを優先し、存在しない場合はリモートアドレスを使用する
+     *
+     * @param request HTTPリクエスト
+     * @return クライアントのIPアドレス
+     */
+    private String extractClientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader(X_FORWARDED_FOR_HEADER);
+
+        if (forwardedFor != null && !forwardedFor.isEmpty()) {
             // X-Forwarded-Forに複数のIPが含まれる場合、最初のIPを使用
-            ip = ip.split(",")[0].trim();
+            return forwardedFor.split(",")[0].trim();
         }
-        return "ip:" + ip;
+
+        return request.getRemoteAddr();
     }
 
     /**
