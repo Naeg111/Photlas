@@ -26,13 +26,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * セキュリティ強化の統合テスト
  * Issue#23: Production Security Hardening
  *
- * TDD Red段階: CSRF保護の実装前テスト
+ * CSRF保護、JWT Secret環境変数化、H2コンソール本番無効化の動作確認テスト
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
 public class SecurityHardeningTest {
+
+    // テストデータ定数
+    private static final String TEST_USERNAME = "testuser";
+    private static final String TEST_EMAIL = "test@example.com";
+    private static final String TEST_PASSWORD = "TestPassword123";
+    private static final String TEST_USER_ROLE = "USER";
+
+    // エンドポイント定数
+    private static final String PHOTOS_ENDPOINT = "/api/v1/photos";
+    private static final String AUTH_LOGIN_ENDPOINT = "/api/v1/auth/login";
+    private static final String AUTH_REGISTER_ENDPOINT = "/api/v1/auth/register";
+    private static final String AUTH_PASSWORD_RESET_REQUEST_ENDPOINT = "/api/v1/auth/password-reset-request";
+    private static final String AUTH_PASSWORD_RESET_CONFIRM_ENDPOINT = "/api/v1/auth/password-reset-confirm";
 
     @Autowired
     private MockMvc mockMvc;
@@ -56,10 +69,10 @@ public class SecurityHardeningTest {
 
         // テストユーザーを作成
         testUser = new User();
-        testUser.setUsername("testuser");
-        testUser.setEmail("test@example.com");
-        testUser.setPasswordHash(passwordEncoder.encode("TestPassword123"));
-        testUser.setRole("USER");
+        testUser.setUsername(TEST_USERNAME);
+        testUser.setEmail(TEST_EMAIL);
+        testUser.setPasswordHash(passwordEncoder.encode(TEST_PASSWORD));
+        testUser.setRole(TEST_USER_ROLE);
         testUser = userRepository.save(testUser);
 
         // JWTトークンを生成
@@ -82,7 +95,7 @@ public class SecurityHardeningTest {
                 """;
 
         // CSRFトークンなしでPOSTリクエストを送信
-        mockMvc.perform(post("/api/v1/photos")
+        mockMvc.perform(post(PHOTOS_ENDPOINT)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
@@ -106,7 +119,7 @@ public class SecurityHardeningTest {
         // CSRFトークンありでPOSTリクエストを送信
         // CSRFはパスするが、S3キーの検証やカテゴリの存在確認で400/404になる可能性がある
         // CSRF保護の観点では403(Forbidden)でなければ成功
-        mockMvc.perform(post("/api/v1/photos")
+        mockMvc.perform(post(PHOTOS_ENDPOINT)
                         .with(csrf())  // Spring SecurityのCSRFトークンを自動追加
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -156,7 +169,7 @@ public class SecurityHardeningTest {
 
         // CSRFトークンなしでログインリクエストを送信
         // CSRF除外なので403(Forbidden)にならなければ成功
-        mockMvc.perform(post("/api/v1/auth/login")
+        mockMvc.perform(post(AUTH_LOGIN_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(loginRequest))
                 .andExpect(status().is(not(403)));
@@ -176,7 +189,7 @@ public class SecurityHardeningTest {
         // CSRFトークンなしでユーザー登録リクエストを送信
         // CSRF除外なので403(Forbidden)にならなければ成功
         // メールサーバー未起動などで500エラーになる可能性があるが、CSRFチェックはパスしている
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post(AUTH_REGISTER_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerRequest))
                 .andExpect(status().is(not(403)));
@@ -193,7 +206,7 @@ public class SecurityHardeningTest {
 
         // CSRFトークンなしでパスワードリセット要求を送信
         // CSRF除外なので403(Forbidden)にならなければ成功
-        mockMvc.perform(post("/api/v1/auth/password-reset-request")
+        mockMvc.perform(post(AUTH_PASSWORD_RESET_REQUEST_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(resetRequest))
                 .andExpect(status().is(not(403)));
@@ -210,7 +223,7 @@ public class SecurityHardeningTest {
                 """;
 
         // CSRFトークンなしでパスワードリセット確認を送信（トークンが無効でもCSRFチェックはパスする）
-        mockMvc.perform(post("/api/v1/auth/password-reset-confirm")
+        mockMvc.perform(post(AUTH_PASSWORD_RESET_CONFIRM_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(resetConfirmRequest))
                 .andExpect(status().is4xxClientError());  // トークン無効でエラーになるが、CSRFチェックはパス
