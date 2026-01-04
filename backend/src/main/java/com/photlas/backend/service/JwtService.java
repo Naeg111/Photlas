@@ -15,7 +15,8 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret:mySecretKeymySecretKeymySecretKeymySecretKey}")
+    // Issue#23: JWT Secretは環境変数またはapplication.propertiesから取得
+    @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds

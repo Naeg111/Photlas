@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -122,6 +123,7 @@ public class ReportControllerTest {
             new com.photlas.backend.dto.ReportRequest("INAPPROPRIATE_CONTENT", "不適切な内容が含まれています");
 
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/report")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -140,6 +142,7 @@ public class ReportControllerTest {
             new com.photlas.backend.dto.ReportRequest("PRIVACY_VIOLATION", "プライバシーの問題があります");
 
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/report")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -147,6 +150,7 @@ public class ReportControllerTest {
 
         // 2回目のレポート作成（重複）
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/report")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -161,6 +165,7 @@ public class ReportControllerTest {
             new com.photlas.backend.dto.ReportRequest("WRONG_LOCATION", "場所が間違っています");
 
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/report")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
@@ -173,6 +178,7 @@ public class ReportControllerTest {
             new com.photlas.backend.dto.ReportRequest(null, "詳細情報");
 
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/report")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -186,6 +192,7 @@ public class ReportControllerTest {
             new com.photlas.backend.dto.ReportRequest("COPYRIGHT_INFRINGEMENT", "");
 
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/report")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -200,6 +207,7 @@ public class ReportControllerTest {
             new com.photlas.backend.dto.ReportRequest("INAPPROPRIATE_CONTENT", longDetails);
 
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/report")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -213,6 +221,7 @@ public class ReportControllerTest {
         String invalidRequest = "{\"reason\":\"INVALID_REASON\",\"details\":\"詳細情報\"}";
 
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/report")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidRequest))
