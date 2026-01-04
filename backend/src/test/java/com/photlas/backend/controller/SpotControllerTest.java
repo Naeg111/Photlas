@@ -4,6 +4,7 @@ import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
@@ -52,6 +53,9 @@ public class SpotControllerTest {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
+
     private User testUser;
     private String token;
     private Category category1;
@@ -59,6 +63,9 @@ public class SpotControllerTest {
 
     @BeforeEach
     void setUp() {
+        // レート制限キャッシュをクリア
+        rateLimitFilter.clearCache();
+
         // クリーンアップ
         photoRepository.deleteAll();
         spotRepository.deleteAll();
