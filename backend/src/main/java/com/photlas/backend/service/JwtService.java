@@ -12,14 +12,25 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * JWT認証サービス
+ * Issue#23: JWT Secretの環境変数化対応
+ */
 @Service
 public class JwtService {
 
-    // Issue#23: JWT Secretは環境変数またはapplication.propertiesから取得
+    /**
+     * JWT署名用秘密鍵
+     * Issue#23: デフォルト値なし（application.propertiesまたは環境変数から必須取得）
+     */
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
+    /**
+     * JWTトークン有効期限（ミリ秒）
+     * デフォルト: 86400000ms = 24時間
+     */
+    @Value("${jwt.expiration:86400000}")
     private int jwtExpiration;
 
     public String extractUsername(String token) {
