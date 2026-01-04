@@ -10,6 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -50,7 +51,7 @@ public class RateLimitFilterTest {
     @Test
     @DisplayName("認証エンドポイント: 10リクエスト/分を超えるとHTTP 429を返す")
     void testRateLimitFilter_AuthEndpoint_ExceedsLimit_Returns429() throws Exception {
-        String registerUrl = "/api/v1/users/register";
+        String registerUrl = "/api/v1/auth/register";
 
         // 10回のリクエストは成功する
         for (int i = 0; i < 10; i++) {
@@ -62,6 +63,7 @@ public class RateLimitFilterTest {
 
         // 11回目のリクエストはレート制限で拒否される
         mockMvc.perform(post(registerUrl)
+                .with(csrf())
                 .contentType("application/json")
                 .content("{}"))
                 .andExpect(status().isTooManyRequests())
@@ -105,17 +107,19 @@ public class RateLimitFilterTest {
     @Test
     @DisplayName("Retry-Afterヘッダーに60秒が設定される")
     void testRateLimitFilter_RetryAfterHeader_Returns60Seconds() throws Exception {
-        String registerUrl = "/api/v1/users/register";
+        String registerUrl = "/api/v1/auth/register";
 
         // レート制限を超えるまでリクエストを送信
         for (int i = 0; i < 10; i++) {
             mockMvc.perform(post(registerUrl)
+                    .with(csrf())
                     .contentType("application/json")
                     .content("{}"));
         }
 
         // レート制限超過時のRetry-Afterヘッダーを確認
         mockMvc.perform(post(registerUrl)
+                .with(csrf())
                 .contentType("application/json")
                 .content("{}"))
                 .andExpect(status().isTooManyRequests())

@@ -3,6 +3,7 @@ package com.photlas.backend.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,9 +37,14 @@ public class AuthControllerTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
+
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
+        // Issue#23: レート制限キャッシュをクリアしてテスト間の干渉を防ぐ
+        rateLimitFilter.clearCache();
     }
 
     @Test

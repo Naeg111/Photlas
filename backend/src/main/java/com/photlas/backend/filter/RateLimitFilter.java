@@ -29,8 +29,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(RateLimitFilter.class);
 
     // エンドポイントパス定数
-    private static final String AUTH_REGISTER_PATH = "/api/v1/users/register";
-    private static final String AUTH_LOGIN_PATH = "/api/v1/users/login";
+    private static final String AUTH_REGISTER_PATH = "/api/v1/auth/register";
+    private static final String AUTH_LOGIN_PATH = "/api/v1/auth/login";
     private static final String PHOTO_PATH_PREFIX = "/api/v1/photos";
 
     // ユーザー識別子プレフィックス
