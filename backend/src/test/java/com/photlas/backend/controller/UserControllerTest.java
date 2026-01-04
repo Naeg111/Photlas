@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -157,6 +158,7 @@ public class UserControllerTest {
         request.setSnsLinks(snsLinks);
 
         mockMvc.perform(put("/api/v1/users/me/profile")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -178,6 +180,7 @@ public class UserControllerTest {
         request.setSnsLinks(new ArrayList<>());
 
         mockMvc.perform(put("/api/v1/users/me/profile")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -192,6 +195,7 @@ public class UserControllerTest {
         request.setSnsLinks(new ArrayList<>());
 
         mockMvc.perform(put("/api/v1/users/me/profile")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -212,6 +216,7 @@ public class UserControllerTest {
         request.setSnsLinks(snsLinks);
 
         mockMvc.perform(put("/api/v1/users/me/profile")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -225,6 +230,7 @@ public class UserControllerTest {
         UploadUrlRequest request = new UploadUrlRequest("jpg", "image/jpeg");
 
         mockMvc.perform(post("/api/v1/users/me/avatar-upload-url")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -240,6 +246,7 @@ public class UserControllerTest {
         UploadUrlRequest request = new UploadUrlRequest("jpg", "image/jpeg");
 
         mockMvc.perform(post("/api/v1/users/me/avatar-upload-url")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
@@ -280,6 +287,7 @@ public class UserControllerTest {
         String requestBody = "{\"new_email\":\"newemail@example.com\",\"current_password\":\"password\"}";
 
         mockMvc.perform(put("/api/v1/users/me/email")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -293,6 +301,7 @@ public class UserControllerTest {
         String requestBody = "{\"new_email\":\"newemail@example.com\",\"current_password\":\"wrongpassword\"}";
 
         mockMvc.perform(put("/api/v1/users/me/email")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -310,6 +319,7 @@ public class UserControllerTest {
         String requestBody = "{\"new_email\":\"other@example.com\",\"current_password\":\"password\"}";
 
         mockMvc.perform(put("/api/v1/users/me/email")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -323,6 +333,7 @@ public class UserControllerTest {
         String requestBody = "{\"new_email\":\"test@example.com\",\"current_password\":\"password\"}";
 
         mockMvc.perform(put("/api/v1/users/me/email")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -336,6 +347,7 @@ public class UserControllerTest {
         String requestBody = "{\"new_email\":\"invalid-email\",\"current_password\":\"password\"}";
 
         mockMvc.perform(put("/api/v1/users/me/email")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -348,6 +360,7 @@ public class UserControllerTest {
         String requestBody = "{\"new_email\":\"newemail@example.com\",\"current_password\":\"password\"}";
 
         mockMvc.perform(put("/api/v1/users/me/email")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isUnauthorized());
@@ -360,6 +373,7 @@ public class UserControllerTest {
         String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass123\",\"new_password_confirm\":\"NewPass123\"}";
 
         mockMvc.perform(put("/api/v1/users/me/password")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -372,6 +386,7 @@ public class UserControllerTest {
         String requestBody = "{\"current_password\":\"wrongpassword\",\"new_password\":\"NewPass123\",\"new_password_confirm\":\"NewPass123\"}";
 
         mockMvc.perform(put("/api/v1/users/me/password")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -385,6 +400,7 @@ public class UserControllerTest {
         String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass123\",\"new_password_confirm\":\"DifferentPass123\"}";
 
         mockMvc.perform(put("/api/v1/users/me/password")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -398,6 +414,7 @@ public class UserControllerTest {
         String requestBody = "{\"current_password\":\"password\",\"new_password\":\"short\",\"new_password_confirm\":\"short\"}";
 
         mockMvc.perform(put("/api/v1/users/me/password")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -411,6 +428,7 @@ public class UserControllerTest {
         String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass123!\",\"new_password_confirm\":\"NewPass123!\"}";
 
         mockMvc.perform(put("/api/v1/users/me/password")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -425,6 +443,7 @@ public class UserControllerTest {
         String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass12345678901234\",\"new_password_confirm\":\"NewPass12345678901234\"}";
 
         mockMvc.perform(put("/api/v1/users/me/password")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -438,6 +457,7 @@ public class UserControllerTest {
         String requestBody = "{\"current_password\":\"password\",\"new_password\":\"NewPass123\",\"new_password_confirm\":\"NewPass123\"}";
 
         mockMvc.perform(put("/api/v1/users/me/password")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isUnauthorized());
@@ -450,6 +470,7 @@ public class UserControllerTest {
         String requestBody = "{\"password\":\"password\"}";
 
         mockMvc.perform(delete("/api/v1/users/me")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -462,6 +483,7 @@ public class UserControllerTest {
         String requestBody = "{\"password\":\"wrongpassword\"}";
 
         mockMvc.perform(delete("/api/v1/users/me")
+                .with(csrf())
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
@@ -475,6 +497,7 @@ public class UserControllerTest {
         String requestBody = "{\"password\":\"password\"}";
 
         mockMvc.perform(delete("/api/v1/users/me")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isUnauthorized());

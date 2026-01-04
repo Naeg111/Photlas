@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -128,6 +129,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("風景", "都市・街並み"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -163,6 +165,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("風景"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -184,6 +187,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("風景"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -204,6 +208,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("風景"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -223,6 +228,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("風景"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -241,6 +247,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("風景"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -259,6 +266,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("風景"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -277,6 +285,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("風景"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -295,6 +304,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("風景"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -313,6 +323,7 @@ public class PhotoControllerTest {
         request.setLongitude(new BigDecimal("139.745433"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -332,6 +343,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of());  // 空リスト
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -351,6 +363,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("存在しないカテゴリ"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -370,6 +383,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("風景"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
@@ -387,6 +401,7 @@ public class PhotoControllerTest {
         request.setCategories(List.of("風景"));
 
         mockMvc.perform(post("/api/v1/photos")
+                .with(csrf())
                 .header("Authorization", "Bearer invalid_token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -440,6 +455,7 @@ public class PhotoControllerTest {
 
         // お気に入り登録
         mockMvc.perform(post("/api/v1/photos/" + photo.getPhotoId() + "/favorite")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
@@ -486,6 +502,7 @@ public class PhotoControllerTest {
             new com.photlas.backend.dto.UploadUrlRequest("jpg", "image/jpeg");
 
         mockMvc.perform(post("/api/v1/photos/upload-url")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -503,6 +520,7 @@ public class PhotoControllerTest {
             new com.photlas.backend.dto.UploadUrlRequest("jpg", "image/jpeg");
 
         mockMvc.perform(post("/api/v1/photos/upload-url")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
@@ -515,6 +533,7 @@ public class PhotoControllerTest {
             new com.photlas.backend.dto.UploadUrlRequest(null, "image/jpeg");
 
         mockMvc.perform(post("/api/v1/photos/upload-url")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -528,6 +547,7 @@ public class PhotoControllerTest {
             new com.photlas.backend.dto.UploadUrlRequest("jpg", null);
 
         mockMvc.perform(post("/api/v1/photos/upload-url")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
