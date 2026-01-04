@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -93,6 +94,7 @@ public class FavoriteControllerTest {
     @DisplayName("正常ケース - お気に入り登録")
     void testAddFavorite_ReturnsNoContent() throws Exception {
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/favorite")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
     }
@@ -102,11 +104,13 @@ public class FavoriteControllerTest {
     void testAddFavorite_Idempotent_ReturnsNoContent() throws Exception {
         // 1回目の登録
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/favorite")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
         // 2回目の登録（冪等性）
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/favorite")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
     }
@@ -114,7 +118,8 @@ public class FavoriteControllerTest {
     @Test
     @DisplayName("認証なし - お気に入り登録が401エラーを返す")
     void testAddFavorite_Unauthorized_Returns401() throws Exception {
-        mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/favorite"))
+        mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/favorite")
+                .with(csrf()))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -123,11 +128,13 @@ public class FavoriteControllerTest {
     void testRemoveFavorite_ReturnsNoContent() throws Exception {
         // まずお気に入り登録
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/favorite")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
         // お気に入り解除
         mockMvc.perform(delete("/api/v1/photos/" + testPhoto.getPhotoId() + "/favorite")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
     }
@@ -137,6 +144,7 @@ public class FavoriteControllerTest {
     void testRemoveFavorite_Idempotent_ReturnsNoContent() throws Exception {
         // お気に入り登録していない状態で解除（冪等性）
         mockMvc.perform(delete("/api/v1/photos/" + testPhoto.getPhotoId() + "/favorite")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
     }
@@ -144,7 +152,8 @@ public class FavoriteControllerTest {
     @Test
     @DisplayName("認証なし - お気に入り解除が401エラーを返す")
     void testRemoveFavorite_Unauthorized_Returns401() throws Exception {
-        mockMvc.perform(delete("/api/v1/photos/" + testPhoto.getPhotoId() + "/favorite"))
+        mockMvc.perform(delete("/api/v1/photos/" + testPhoto.getPhotoId() + "/favorite")
+                .with(csrf()))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -168,6 +177,7 @@ public class FavoriteControllerTest {
     void testGetFavorites_WithOneFavorite_ReturnsOnePage() throws Exception {
         // お気に入り登録
         mockMvc.perform(post("/api/v1/photos/" + testPhoto.getPhotoId() + "/favorite")
+                .with(csrf())
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
