@@ -1,6 +1,7 @@
 package com.photlas.backend.security;
 
 import com.photlas.backend.entity.User;
+import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,12 +45,16 @@ public class SecurityAuditTest {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
+
     private User testUser;
     private String validToken;
 
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
+        rateLimitFilter.clearCache();
 
         testUser = new User();
         testUser.setUsername("testuser");
@@ -113,11 +118,19 @@ public class SecurityAuditTest {
 
         String otherUserToken = jwtService.generateToken(otherUser.getEmail());
 
+        String deleteRequest = """
+                {
+                    "password": "OtherPassword123"
+                }
+                """;
+
         // otherUserのトークンで/meエンドポイントにアクセス
         mockMvc.perform(delete("/api/v1/users/me")
                         .with(csrf())
-                        .header("Authorization", "Bearer " + otherUserToken))
-                .andExpect(status().isOk());  // otherUser自身のアカウント削除（正常）
+                        .header("Authorization", "Bearer " + otherUserToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(deleteRequest))
+                .andExpect(status().isNoContent());  // otherUser自身のアカウント削除（正常）
 
         // testUserが削除されていないことを確認
         assert userRepository.findById(testUser.getId()).isPresent()
