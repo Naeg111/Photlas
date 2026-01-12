@@ -1,14 +1,12 @@
 package com.photlas.backend.service;
 
 import com.photlas.backend.dto.CreatePhotoRequest;
-import com.photlas.backend.dto.PhotoDetailResponse;
 import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.CategoryNotFoundException;
-import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
@@ -131,34 +129,6 @@ public class PhotoService {
         return buildPhotoResponse(photo, spot, user, isFavorited);
     }
 
-    /**
-     * Issue#14: 写真詳細情報を取得
-     *
-     * @param photoId 写真ID
-     * @return 写真詳細情報
-     */
-    @Transactional(readOnly = true)
-    public PhotoDetailResponse getPhotoDetail(Long photoId) {
-        Photo photo = photoRepository.findById(photoId)
-                .orElseThrow(() -> new PhotoNotFoundException("Photo not found"));
-
-        User user = userRepository.findById(photo.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        PhotoDetailResponse response = new PhotoDetailResponse();
-        response.setPhotoId(photo.getPhotoId());
-        response.setTitle(photo.getTitle());
-        response.setImageUrls(createImageUrls(photo.getS3ObjectKey()));
-        response.setShotAt(photo.getShotAt());
-        response.setWeather(photo.getWeather());
-        response.setTimeOfDay(photo.getTimeOfDay());
-        response.setSubjectCategory(photo.getSubjectCategory());
-        response.setCameraInfo(createCameraInfo(photo));
-        response.setUser(createUserInfo(user));
-        response.setSpot(new PhotoDetailResponse.SpotInfo(photo.getSpotId()));
-
-        return response;
-    }
 
     /**
      * スポットを検索または新規作成する
@@ -233,44 +203,4 @@ public class PhotoService {
         return new PhotoResponse(photoDTO, spotDTO, userDTO);
     }
 
-    /**
-     * Issue#14: S3画像URLを生成する
-     */
-    private PhotoDetailResponse.ImageUrls createImageUrls(String s3ObjectKey) {
-        String baseUrl = String.format("https://%s.s3.%s.amazonaws.com/photos", bucketName, region);
-        return new PhotoDetailResponse.ImageUrls(
-            baseUrl + "/thumbnail/" + s3ObjectKey,
-            baseUrl + "/standard/" + s3ObjectKey,
-            baseUrl + "/original/" + s3ObjectKey
-        );
-    }
-
-    /**
-     * Issue#14: カメラ情報オブジェクトを生成する
-     */
-    private PhotoDetailResponse.CameraInfo createCameraInfo(Photo photo) {
-        return new PhotoDetailResponse.CameraInfo(
-            photo.getCameraBody(),
-            photo.getCameraLens(),
-            photo.getFValue(),
-            photo.getShutterSpeed(),
-            photo.getIso()
-        );
-    }
-
-    /**
-     * Issue#14: ユーザー情報オブジェクトを生成する
-     */
-    private PhotoDetailResponse.UserInfo createUserInfo(User user) {
-        PhotoDetailResponse.SnsLinks snsLinks = new PhotoDetailResponse.SnsLinks(
-            user.getTwitterUrl(),
-            user.getInstagramUrl()
-        );
-        return new PhotoDetailResponse.UserInfo(
-            user.getId(),
-            user.getUsername(),
-            user.getProfileImageUrl(),
-            snsLinks
-        );
-    }
 }
