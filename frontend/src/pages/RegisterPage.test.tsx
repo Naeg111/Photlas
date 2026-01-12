@@ -254,15 +254,53 @@ describe('RegisterPage', () => {
           <RegisterPage />
         </MemoryRouter>
       )
-      
+
       const passwordInput = screen.getByLabelText('パスワード')
       fireEvent.change(passwordInput, { target: { value: 'weak' } })
-      
+
       const submitButton = screen.getByRole('button', { name: '登録する' })
       fireEvent.click(submitButton)
-      
+
       await waitFor(() => {
-        expect(screen.getByText('パスワードは8文字以上で、数字・小文字・大文字をそれぞれ1文字以上含めてください')).toBeInTheDocument()
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
+      })
+    })
+
+    // Issue#21: パスワードバリデーション統一 - 記号禁止チェック
+    it('shows error for password with special characters', async () => {
+      render(
+        <MemoryRouter>
+          <RegisterPage />
+        </MemoryRouter>
+      )
+
+      const passwordInput = screen.getByLabelText('パスワード')
+      fireEvent.change(passwordInput, { target: { value: 'Password123!' } })
+
+      const submitButton = screen.getByRole('button', { name: '登録する' })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
+      })
+    })
+
+    // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
+    it('shows error for password longer than 20 characters', async () => {
+      render(
+        <MemoryRouter>
+          <RegisterPage />
+        </MemoryRouter>
+      )
+
+      const passwordInput = screen.getByLabelText('パスワード')
+      fireEvent.change(passwordInput, { target: { value: 'Password1234567890123' } }) // 21文字
+
+      const submitButton = screen.getByRole('button', { name: '登録する' })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
       })
     })
 

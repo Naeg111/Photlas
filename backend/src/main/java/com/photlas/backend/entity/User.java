@@ -33,14 +33,8 @@ public class User {
     @NotNull
     private String role;
 
-    @Column(name = "profile_image_url", length = 2048)
-    private String profileImageUrl;
-
-    @Column(name = "twitter_url", length = 2048)
-    private String twitterUrl;
-
-    @Column(name = "instagram_url", length = 2048)
-    private String instagramUrl;
+    @Column(name = "profile_image_s3_key", length = 512)
+    private String profileImageS3Key;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -100,28 +94,12 @@ public class User {
         this.role = role;
     }
 
-    public String getProfileImageUrl() {
-        return profileImageUrl;
+    public String getProfileImageS3Key() {
+        return profileImageS3Key;
     }
 
-    public void setProfileImageUrl(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
-    }
-
-    public String getTwitterUrl() {
-        return twitterUrl;
-    }
-
-    public void setTwitterUrl(String twitterUrl) {
-        this.twitterUrl = twitterUrl;
-    }
-
-    public String getInstagramUrl() {
-        return instagramUrl;
-    }
-
-    public void setInstagramUrl(String instagramUrl) {
-        this.instagramUrl = instagramUrl;
+    public void setProfileImageS3Key(String profileImageS3Key) {
+        this.profileImageS3Key = profileImageS3Key;
     }
 
     public LocalDateTime getCreatedAt() {
