@@ -44,4 +44,19 @@ public class SpotController {
 
         return ResponseEntity.ok(spots);
     }
+
+    /**
+     * Issue#14: スポットの写真ID一覧を取得
+     *
+     * @param spotId スポットID
+     * @return 写真IDのリスト（撮影日時の新しい順）
+     */
+    @GetMapping("/{spotId}/photos")
+    public ResponseEntity<List<Long>> getSpotPhotoIds(@PathVariable Long spotId) {
+        logger.info("GET /api/v1/spots/{}/photos", spotId);
+
+        List<Long> photoIds = spotService.getSpotPhotoIds(spotId);
+
+        return ResponseEntity.ok(photoIds);
+    }
 }

@@ -1,181 +1,341 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription } from "./ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Button } from "./ui/button";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { Star, Flag, Calendar, Cloud, Tag } from "lucide-react";
-import { Badge } from "./ui/badge";
-import { ReportDialog } from "./ReportDialog";
-import { toast } from "sonner";
+import { useEffect, useState, useCallback } from 'react'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
+import { Button } from './ui/button'
+import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import useEmblaCarousel from 'embla-carousel-react'
+
+// API Endpoints
+const API_SPOTS_PHOTOS = '/api/v1/spots'
+const API_PHOTOS = '/api/v1/photos'
+
+// Test IDs
+const TEST_ID_DIALOG = 'photo-detail-dialog'
+const TEST_ID_LOADING = 'loading-spinner'
+const TEST_ID_DOT_PREFIX = 'dot-indicator-'
+
+// Labels
+const LABEL_CLOSE = '閉じる'
+const LABEL_PREV = '前の写真'
+const LABEL_NEXT = '次の写真'
+
+// Screen reader text
+const SR_TITLE = '写真詳細'
+const SR_DESCRIPTION = '写真の詳細情報と撮影コンテクスト'
+
+// Error messages
+const ERROR_LOAD_FAILED = '読み込みに失敗しました'
+const ERROR_FETCH_IDS = 'Failed to fetch photo IDs'
+const ERROR_FETCH_DETAIL = 'Failed to fetch photo detail'
+
+// Camera info section labels
+const LABEL_CAMERA_INFO = 'カメラ情報'
+const LABEL_BODY = 'ボディ: '
+const LABEL_LENS = 'レンズ: '
+const LABEL_F_VALUE = 'F値: '
+const LABEL_SHUTTER_SPEED = 'シャッタースピード: '
+const LABEL_ISO = 'ISO: '
 
 interface PhotoDetailDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  photo: {
-    id: string;
-    imageUrl: string;
-    username: string;
-    userAvatarUrl?: string;
-    date: string;
-    weather: string;
-    category: string;
-    timeOfDay?: string;
-  };
-  onUserClick: () => void;
-  onPhotoClick: () => void;
+  open: boolean
+  spotId: number
+  onClose: () => void
 }
 
-export function PhotoDetailDialog({
-  open,
-  onOpenChange,
-  photo,
-  onUserClick,
-  onPhotoClick,
-}: PhotoDetailDialogProps) {
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  const [isReportLoading, setIsReportLoading] = useState(false);
-
-  const handleFavoriteClick = () => {
-    setIsFavorited(!isFavorited);
-  };
-
-  const handleReportClick = () => {
-    setIsReportDialogOpen(true);
-  };
-
-  const handleReportSubmit = async (data: {
-    reason: string;
-    details: string;
-  }) => {
-    setIsReportLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("ログインが必要です");
-        return;
-      }
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/photos/${photo.id}/report`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (response.ok) {
-        toast.success("報告を受け付けました");
-        setIsReportDialogOpen(false);
-      } else if (response.status === 409) {
-        toast.error("この写真はすでに報告済みです");
-        setIsReportDialogOpen(false);
-      } else {
-        toast.error("報告の送信に失敗しました");
-      }
-    } catch (error) {
-      console.error("Report error:", error);
-      toast.error("報告の送信に失敗しました");
-    } finally {
-      setIsReportLoading(false);
+interface PhotoDetail {
+  photoId: number
+  title: string
+  imageUrls: {
+    thumbnail: string
+    standard: string
+    original: string
+  }
+  shotAt: string
+  weather?: string
+  timeOfDay?: string
+  subjectCategory?: string
+  cameraInfo?: {
+    body?: string
+    lens?: string
+    fValue?: string
+    shutterSpeed?: string
+    iso?: string
+  }
+  user: {
+    userId: number
+    username: string
+    profileImageUrl?: string
+    snsLinks?: {
+      twitter?: string
+      instagram?: string
     }
-  };
+  }
+  spot: {
+    spotId: number
+  }
+}
+
+// Helper Functions
+function getAuthHeaders(): HeadersInit {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('token')) {
+    return { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  }
+  return {}
+}
+
+async function fetchPhotoIds(spotId: number): Promise<number[]> {
+  const response = await fetch(`${API_SPOTS_PHOTOS}/${spotId}/photos`, {
+    headers: getAuthHeaders(),
+  })
+
+  if (!response.ok) {
+    throw new Error(ERROR_FETCH_IDS)
+  }
+
+  return await response.json()
+}
+
+async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
+  const response = await fetch(`${API_PHOTOS}/${photoId}`, {
+    headers: getAuthHeaders(),
+  })
+
+  if (!response.ok) {
+    throw new Error(ERROR_FETCH_DETAIL)
+  }
+
+  return await response.json()
+}
+
+export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetailDialogProps) {
+  const [photoIds, setPhotoIds] = useState<number[]>([])
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [photoDetails, setPhotoDetails] = useState<Map<number, PhotoDetail>>(new Map())
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [emblaRef, emblaApi] = useEmblaCarousel()
+
+  // スポットの写真ID一覧を取得
+  useEffect(() => {
+    if (!open) {
+      // Reset state when dialog closes
+      setPhotoIds([])
+      setPhotoDetails(new Map())
+      setCurrentIndex(0)
+      setError(null)
+      setLoading(true)
+      return
+    }
+
+    const fetchData = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        // Fetch photo IDs
+        const ids = await fetchPhotoIds(spotId)
+        setPhotoIds(ids)
+        setCurrentIndex(0)
+
+        // Fetch first photo detail
+        if (ids.length > 0) {
+          const detail = await fetchPhotoDetailById(ids[0])
+          setPhotoDetails(new Map().set(ids[0], detail))
+        }
+
+        setLoading(false)
+      } catch (err) {
+        setError(ERROR_LOAD_FAILED)
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [open, spotId])
+
+  // 写真詳細を取得
+  const fetchPhotoDetail = useCallback(async (photoId: number) => {
+    if (photoDetails.has(photoId)) return
+
+    try {
+      const detail = await fetchPhotoDetailById(photoId)
+      setPhotoDetails(prev => new Map(prev).set(photoId, detail))
+    } catch (err) {
+      setError(ERROR_LOAD_FAILED)
+    }
+  }, [photoDetails])
+
+  // カルーセル操作
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev()
+  }, [emblaApi])
+
+  const scrollNext = useCallback(async () => {
+    if (emblaApi) emblaApi.scrollNext()
+    // 次の写真の詳細を事前取得
+    if (currentIndex < photoIds.length - 1) {
+      await fetchPhotoDetail(photoIds[currentIndex + 1])
+    }
+  }, [emblaApi, currentIndex, photoIds, fetchPhotoDetail])
+
+  useEffect(() => {
+    if (!emblaApi) return
+
+    emblaApi.on('select', () => {
+      setCurrentIndex(emblaApi.selectedScrollSnap())
+    })
+  }, [emblaApi])
+
+  const currentPhotoId = photoIds[currentIndex]
+  const currentPhoto = currentPhotoId ? photoDetails.get(currentPhotoId) : null
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogDescription className="sr-only">
-          写真の詳細情報と撮影コンテクスト
-        </DialogDescription>
-        <div className="space-y-4">
-          {/* 投稿者情報ブロッ�� */}
-          <div
-            className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
-            onClick={onUserClick}
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0">
+        <DialogTitle className="sr-only">{SR_TITLE}</DialogTitle>
+        <DialogDescription className="sr-only">{SR_DESCRIPTION}</DialogDescription>
+        <div className="relative h-full">
+          {/* 閉じるボタン */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 z-10"
+            onClick={onClose}
+            aria-label={LABEL_CLOSE}
           >
-            <Avatar>
-              <AvatarImage src={photo.userAvatarUrl} />
-              <AvatarFallback>{photo.username.charAt(0).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <span>{photo.username}</span>
-          </div>
+            <X className="h-4 w-4" />
+          </Button>
 
-          {/* 写真表示エリア - Issue#15: 新しいタブでフルサイズ表示を開く */}
-          <a
-            href={`/photo-viewer/${photo.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer block"
-            onClick={() => {
-              // onPhotoClick コールバックも実行（既存の互換性維持）
-              if (onPhotoClick) {
-                onPhotoClick()
-              }
-            }}
-          >
-            <ImageWithFallback
-              src={photo.imageUrl}
-              alt="投稿写真"
-              className="w-full h-full object-cover"
-            />
-          </a>
-
-          {/* 撮影コンテクスト情報ブロック */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="w-4 h-4" />
-              <span>{photo.date}</span>
+          {loading && (
+            <div className="flex items-center justify-center h-96" data-testid={TEST_ID_LOADING}>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
             </div>
-            {photo.timeOfDay && (
-              <div className="flex items-center gap-2 text-sm">
-                <span>🌅</span>
-                <span>{photo.timeOfDay}</span>
+          )}
+
+          {error && (
+            <div className="flex items-center justify-center h-96">
+              <p className="text-red-500">{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && currentPhoto && (
+            <div className="flex flex-col h-full">
+              {/* カルーセル */}
+              <div className="relative flex-1">
+                <div className="overflow-hidden h-full" ref={emblaRef}>
+                  <div className="flex h-full">
+                    <div className="flex-[0_0_100%] min-w-0">
+                      <img
+                        src={currentPhoto.imageUrls.standard}
+                        alt={currentPhoto.title}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ナビゲーションボタン */}
+                {photoIds.length > 1 && (
+                  <>
+                    {currentIndex > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute left-4 top-1/2 -translate-y-1/2"
+                        onClick={scrollPrev}
+                        aria-label={LABEL_PREV}
+                      >
+                        <ChevronLeft className="h-6 w-6" />
+                      </Button>
+                    )}
+                    {currentIndex < photoIds.length - 1 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-4 top-1/2 -translate-y-1/2"
+                        onClick={scrollNext}
+                        aria-label={LABEL_NEXT}
+                      >
+                        <ChevronRight className="h-6 w-6" />
+                      </Button>
+                    )}
+                  </>
+                )}
               </div>
-            )}
-            <div className="flex items-center gap-2 text-sm">
-              <Cloud className="w-4 h-4" />
-              <span>{photo.weather}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Tag className="w-4 h-4" />
-              <Badge variant="secondary">{photo.category}</Badge>
-            </div>
-          </div>
 
-          {/* 操作ボタンブロック */}
-          <div className="flex gap-2 pt-4">
-            <Button
-              variant="outline"
-              className={`flex-1 ${
-                isFavorited ? "bg-yellow-100 border-yellow-400" : ""
-              }`}
-              onClick={handleFavoriteClick}
-            >
-              <Star
-                className={`w-5 h-5 mr-2 ${
-                  isFavorited ? "fill-yellow-400 text-yellow-400" : ""
-                }`}
-              />
-              お気に入り
-            </Button>
-            <Button variant="outline" onClick={handleReportClick}>
-              <Flag className="w-5 h-5 mr-2" />
-              報告
-            </Button>
-          </div>
+              {/* 写真情報 */}
+              <div className="p-6 space-y-4">
+                <h2 className="text-2xl font-bold">{currentPhoto.title}</h2>
+
+                {/* ユーザー情報 */}
+                <div className="flex items-center gap-3">
+                  {currentPhoto.user.profileImageUrl && (
+                    <img
+                      src={currentPhoto.user.profileImageUrl}
+                      alt={currentPhoto.user.username}
+                      className="w-10 h-10 rounded-full"
+                    />
+                  )}
+                  <span className="font-medium">{currentPhoto.user.username}</span>
+                </div>
+
+                {/* カメラ情報 */}
+                {currentPhoto.cameraInfo && (
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">{LABEL_CAMERA_INFO}</h3>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {currentPhoto.cameraInfo.body && (
+                        <div>
+                          <span className="text-gray-600">{LABEL_BODY}</span>
+                          <span>{currentPhoto.cameraInfo.body}</span>
+                        </div>
+                      )}
+                      {currentPhoto.cameraInfo.lens && (
+                        <div>
+                          <span className="text-gray-600">{LABEL_LENS}</span>
+                          <span>{currentPhoto.cameraInfo.lens}</span>
+                        </div>
+                      )}
+                      {currentPhoto.cameraInfo.fValue && (
+                        <div>
+                          <span className="text-gray-600">{LABEL_F_VALUE}</span>
+                          <span>{currentPhoto.cameraInfo.fValue}</span>
+                        </div>
+                      )}
+                      {currentPhoto.cameraInfo.shutterSpeed && (
+                        <div>
+                          <span className="text-gray-600">{LABEL_SHUTTER_SPEED}</span>
+                          <span>{currentPhoto.cameraInfo.shutterSpeed}</span>
+                        </div>
+                      )}
+                      {currentPhoto.cameraInfo.iso && (
+                        <div>
+                          <span className="text-gray-600">{LABEL_ISO}</span>
+                          <span>{currentPhoto.cameraInfo.iso}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ドットインジケーター */}
+                {photoIds.length > 1 && (
+                  <div className="flex justify-center gap-2">
+                    {photoIds.map((_, index) => (
+                      <div
+                        key={index}
+                        data-testid={`${TEST_ID_DOT_PREFIX}${index}`}
+                        className={`w-2 h-2 rounded-full ${
+                          index === currentIndex ? 'bg-gray-900' : 'bg-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
-
-      <ReportDialog
-        open={isReportDialogOpen}
-        onOpenChange={setIsReportDialogOpen}
-        onSubmit={handleReportSubmit}
-        isLoading={isReportLoading}
-      />
     </Dialog>
-  );
+  )
 }
