@@ -23,15 +23,6 @@ global.Worker = class Worker {
   terminate() {}
 }
 
-// Issue#14: localStorageのモック
-const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-}
-global.localStorage = localStorageMock as any
-
 // Issue#14: matchMediaのモック（embla-carousel用）
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
