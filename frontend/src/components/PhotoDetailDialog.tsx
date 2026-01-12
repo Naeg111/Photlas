@@ -4,6 +4,37 @@ import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 
+// API Endpoints
+const API_SPOTS_PHOTOS = '/api/v1/spots'
+const API_PHOTOS = '/api/v1/photos'
+
+// Test IDs
+const TEST_ID_DIALOG = 'photo-detail-dialog'
+const TEST_ID_LOADING = 'loading-spinner'
+const TEST_ID_DOT_PREFIX = 'dot-indicator-'
+
+// Labels
+const LABEL_CLOSE = '閉じる'
+const LABEL_PREV = '前の写真'
+const LABEL_NEXT = '次の写真'
+
+// Screen reader text
+const SR_TITLE = '写真詳細'
+const SR_DESCRIPTION = '写真の詳細情報と撮影コンテクスト'
+
+// Error messages
+const ERROR_LOAD_FAILED = '読み込みに失敗しました'
+const ERROR_FETCH_IDS = 'Failed to fetch photo IDs'
+const ERROR_FETCH_DETAIL = 'Failed to fetch photo detail'
+
+// Camera info section labels
+const LABEL_CAMERA_INFO = 'カメラ情報'
+const LABEL_BODY = 'ボディ: '
+const LABEL_LENS = 'レンズ: '
+const LABEL_F_VALUE = 'F値: '
+const LABEL_SHUTTER_SPEED = 'シャッタースピード: '
+const LABEL_ISO = 'ISO: '
+
 interface PhotoDetailDialogProps {
   open: boolean
   spotId: number
@@ -43,6 +74,38 @@ interface PhotoDetail {
   }
 }
 
+// Helper Functions
+function getAuthHeaders(): HeadersInit {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('token')) {
+    return { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  }
+  return {}
+}
+
+async function fetchPhotoIds(spotId: number): Promise<number[]> {
+  const response = await fetch(`${API_SPOTS_PHOTOS}/${spotId}/photos`, {
+    headers: getAuthHeaders(),
+  })
+
+  if (!response.ok) {
+    throw new Error(ERROR_FETCH_IDS)
+  }
+
+  return await response.json()
+}
+
+async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
+  const response = await fetch(`${API_PHOTOS}/${photoId}`, {
+    headers: getAuthHeaders(),
+  })
+
+  if (!response.ok) {
+    throw new Error(ERROR_FETCH_DETAIL)
+  }
+
+  return await response.json()
+}
+
 export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetailDialogProps) {
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -69,43 +132,19 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
 
       try {
         // Fetch photo IDs
-        const idsResponse = await fetch(`/api/v1/spots/${spotId}/photos`, {
-          headers: {
-            ...(typeof localStorage !== 'undefined' && localStorage.getItem('token')
-              ? { Authorization: `Bearer ${localStorage.getItem('token')}` }
-              : {}),
-          },
-        })
-
-        if (!idsResponse.ok) {
-          throw new Error('Failed to fetch photo IDs')
-        }
-
-        const ids: number[] = await idsResponse.json()
+        const ids = await fetchPhotoIds(spotId)
         setPhotoIds(ids)
         setCurrentIndex(0)
 
         // Fetch first photo detail
         if (ids.length > 0) {
-          const detailResponse = await fetch(`/api/v1/photos/${ids[0]}`, {
-            headers: {
-              ...(typeof localStorage !== 'undefined' && localStorage.getItem('token')
-                ? { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                : {}),
-            },
-          })
-
-          if (!detailResponse.ok) {
-            throw new Error('Failed to fetch photo detail')
-          }
-
-          const detail: PhotoDetail = await detailResponse.json()
+          const detail = await fetchPhotoDetailById(ids[0])
           setPhotoDetails(new Map().set(ids[0], detail))
         }
 
         setLoading(false)
       } catch (err) {
-        setError('読み込みに失敗しました')
+        setError(ERROR_LOAD_FAILED)
         setLoading(false)
       }
     }
@@ -118,20 +157,10 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
     if (photoDetails.has(photoId)) return
 
     try {
-      const response = await fetch(`/api/v1/photos/${photoId}`, {
-        headers: {
-          ...(typeof localStorage !== 'undefined' && localStorage.getItem('token')
-            ? { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            : {}),
-        },
-      })
-      if (!response.ok) {
-        throw new Error('Failed to fetch photo detail')
-      }
-      const detail: PhotoDetail = await response.json()
+      const detail = await fetchPhotoDetailById(photoId)
       setPhotoDetails(prev => new Map(prev).set(photoId, detail))
     } catch (err) {
-      setError('読み込みに失敗しました')
+      setError(ERROR_LOAD_FAILED)
     }
   }, [photoDetails])
 
@@ -161,9 +190,9 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent data-testid="photo-detail-dialog" className="max-w-4xl max-h-[90vh] p-0">
-        <DialogTitle className="sr-only">写真詳細</DialogTitle>
-        <DialogDescription className="sr-only">写真の詳細情報と撮影コンテクスト</DialogDescription>
+      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0">
+        <DialogTitle className="sr-only">{SR_TITLE}</DialogTitle>
+        <DialogDescription className="sr-only">{SR_DESCRIPTION}</DialogDescription>
         <div className="relative h-full">
           {/* 閉じるボタン */}
           <Button
@@ -171,13 +200,13 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
             size="icon"
             className="absolute top-4 right-4 z-10"
             onClick={onClose}
-            aria-label="閉じる"
+            aria-label={LABEL_CLOSE}
           >
             <X className="h-4 w-4" />
           </Button>
 
           {loading && (
-            <div className="flex items-center justify-center h-96" data-testid="loading-spinner">
+            <div className="flex items-center justify-center h-96" data-testid={TEST_ID_LOADING}>
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
             </div>
           )}
@@ -213,7 +242,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
                         size="icon"
                         className="absolute left-4 top-1/2 -translate-y-1/2"
                         onClick={scrollPrev}
-                        aria-label="前の写真"
+                        aria-label={LABEL_PREV}
                       >
                         <ChevronLeft className="h-6 w-6" />
                       </Button>
@@ -224,7 +253,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
                         size="icon"
                         className="absolute right-4 top-1/2 -translate-y-1/2"
                         onClick={scrollNext}
-                        aria-label="次の写真"
+                        aria-label={LABEL_NEXT}
                       >
                         <ChevronRight className="h-6 w-6" />
                       </Button>
@@ -252,35 +281,35 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
                 {/* カメラ情報 */}
                 {currentPhoto.cameraInfo && (
                   <div className="space-y-2">
-                    <h3 className="font-semibold">カメラ情報</h3>
+                    <h3 className="font-semibold">{LABEL_CAMERA_INFO}</h3>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       {currentPhoto.cameraInfo.body && (
                         <div>
-                          <span className="text-gray-600">ボディ: </span>
+                          <span className="text-gray-600">{LABEL_BODY}</span>
                           <span>{currentPhoto.cameraInfo.body}</span>
                         </div>
                       )}
                       {currentPhoto.cameraInfo.lens && (
                         <div>
-                          <span className="text-gray-600">レンズ: </span>
+                          <span className="text-gray-600">{LABEL_LENS}</span>
                           <span>{currentPhoto.cameraInfo.lens}</span>
                         </div>
                       )}
                       {currentPhoto.cameraInfo.fValue && (
                         <div>
-                          <span className="text-gray-600">F値: </span>
+                          <span className="text-gray-600">{LABEL_F_VALUE}</span>
                           <span>{currentPhoto.cameraInfo.fValue}</span>
                         </div>
                       )}
                       {currentPhoto.cameraInfo.shutterSpeed && (
                         <div>
-                          <span className="text-gray-600">シャッタースピード: </span>
+                          <span className="text-gray-600">{LABEL_SHUTTER_SPEED}</span>
                           <span>{currentPhoto.cameraInfo.shutterSpeed}</span>
                         </div>
                       )}
                       {currentPhoto.cameraInfo.iso && (
                         <div>
-                          <span className="text-gray-600">ISO: </span>
+                          <span className="text-gray-600">{LABEL_ISO}</span>
                           <span>{currentPhoto.cameraInfo.iso}</span>
                         </div>
                       )}
@@ -294,7 +323,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
                     {photoIds.map((_, index) => (
                       <div
                         key={index}
-                        data-testid={`dot-indicator-${index}`}
+                        data-testid={`${TEST_ID_DOT_PREFIX}${index}`}
                         className={`w-2 h-2 rounded-full ${
                           index === currentIndex ? 'bg-gray-900' : 'bg-gray-300'
                         }`}

@@ -8,6 +8,135 @@ import PhotoDetailDialog from './PhotoDetailDialog'
  * TDD Red段階のテストコード
  */
 
+// Test Data Constants
+const TEST_SPOT_ID = 100
+const TEST_PHOTO_ID_1 = 1234
+const TEST_PHOTO_ID_2 = 5678
+const TEST_PHOTO_ID_3 = 9012
+
+// URLs
+const TEST_THUMBNAIL_URL = 'https://example.com/thumb.jpg'
+const TEST_STANDARD_URL = 'https://example.com/standard.jpg'
+const TEST_ORIGINAL_URL = 'https://example.com/original.jpg'
+const TEST_PROFILE_IMAGE_URL = 'https://example.com/profile.jpg'
+
+// Text content
+const TEST_PHOTO_TITLE_1 = 'Test Photo'
+const TEST_PHOTO_TITLE_BEAUTIFUL = 'Beautiful Landscape'
+const TEST_PHOTO_TITLE_2 = 'Photo 1'
+const TEST_PHOTO_TITLE_3 = 'Photo 2'
+const TEST_PHOTO_TITLE_TEST = 'Test'
+
+// User data
+const TEST_USERNAME = 'testuser'
+const TEST_USER_ID = 1
+
+// Camera info
+const TEST_CAMERA_BODY = 'Canon EOS R5'
+const TEST_CAMERA_LENS = 'RF 24-70mm f/2.8L'
+const TEST_F_VALUE = 'f/2.8'
+const TEST_SHUTTER_SPEED = '1/1000'
+const TEST_ISO = '400'
+
+// Dates
+const TEST_SHOT_AT = '2024-01-15T14:30:00'
+
+// Weather/Context
+const TEST_WEATHER = '晴れ'
+const TEST_TIME_OF_DAY = 'DAY'
+const TEST_SUBJECT_CATEGORY = 'LANDSCAPE'
+
+// SNS
+const TEST_TWITTER_URL = 'https://twitter.com/testuser'
+const TEST_INSTAGRAM_URL = 'https://instagram.com/testuser'
+
+// Error messages
+const ERROR_MESSAGE_NETWORK = 'Network error'
+const ERROR_TEXT_LOAD_FAILED = '読み込みに失敗しました'
+
+// Helper Functions
+function createMockImageUrls() {
+  return {
+    thumbnail: TEST_THUMBNAIL_URL,
+    standard: TEST_STANDARD_URL,
+    original: TEST_ORIGINAL_URL,
+  }
+}
+
+function createMockCameraInfo() {
+  return {
+    body: TEST_CAMERA_BODY,
+    lens: TEST_CAMERA_LENS,
+    fValue: TEST_F_VALUE,
+    shutterSpeed: TEST_SHUTTER_SPEED,
+    iso: TEST_ISO,
+  }
+}
+
+function createMockUser(username = TEST_USERNAME) {
+  return {
+    userId: TEST_USER_ID,
+    username,
+    profileImageUrl: TEST_PROFILE_IMAGE_URL,
+    snsLinks: {
+      twitter: TEST_TWITTER_URL,
+      instagram: TEST_INSTAGRAM_URL,
+    },
+  }
+}
+
+function createMockPhotoDetail(overrides?: any) {
+  return {
+    photoId: TEST_PHOTO_ID_1,
+    title: TEST_PHOTO_TITLE_1,
+    imageUrls: createMockImageUrls(),
+    shotAt: TEST_SHOT_AT,
+    weather: TEST_WEATHER,
+    timeOfDay: TEST_TIME_OF_DAY,
+    subjectCategory: TEST_SUBJECT_CATEGORY,
+    cameraInfo: createMockCameraInfo(),
+    user: createMockUser(),
+    spot: {
+      spotId: TEST_SPOT_ID,
+    },
+    ...overrides,
+  }
+}
+
+function setupMockFetch(photoIds: number[], photoDetails: any[]) {
+  const mockFetch = vi.fn()
+
+  // First call: fetch photo IDs
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => photoIds,
+  })
+
+  // Subsequent calls: fetch photo details
+  photoDetails.forEach((detail) => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => detail,
+    })
+  })
+
+  return mockFetch
+}
+
+interface RenderPhotoDetailDialogProps {
+  open?: boolean
+  spotId?: number
+  onClose?: () => void
+}
+
+function renderPhotoDetailDialog({
+  open = true,
+  spotId = TEST_SPOT_ID,
+  onClose = () => {},
+}: RenderPhotoDetailDialogProps = {}) {
+  return render(<PhotoDetailDialog open={open} spotId={spotId} onClose={onClose} />)
+}
+
 describe('PhotoDetailDialog Component - Issue#14', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -15,58 +144,22 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
   describe('基本表示とAPI連携', () => {
     it('ダイアログが開かれたとき、スポット写真一覧APIを呼び出す', async () => {
-      const mockFetch = vi.fn()
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => [1234, 5678, 9012],
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            photoId: 1234,
-            title: 'Test Photo',
-            imageUrls: {
-              thumbnail: 'https://example.com/thumb.jpg',
-              standard: 'https://example.com/standard.jpg',
-              original: 'https://example.com/original.jpg',
-            },
-            shotAt: '2024-01-15T14:30:00',
-            weather: '晴れ',
-            timeOfDay: 'DAY',
-            subjectCategory: 'LANDSCAPE',
-            cameraInfo: {
-              body: 'Canon EOS R5',
-              lens: 'RF 24-70mm f/2.8L',
-              fValue: 'f/2.8',
-              shutterSpeed: '1/1000',
-              iso: '400',
-            },
-            user: {
-              userId: 1,
-              username: 'testuser',
-              profileImageUrl: 'https://example.com/profile.jpg',
-              snsLinks: {
-                twitter: 'https://twitter.com/testuser',
-                instagram: 'https://instagram.com/testuser',
-              },
-            },
-            spot: {
-              spotId: 100,
-            },
-          }),
-        })
+      const photoIds = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2, TEST_PHOTO_ID_3]
+      const photoDetail = createMockPhotoDetail()
+      const mockFetch = setupMockFetch(photoIds, [photoDetail])
+
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
         writable: true,
         configurable: true,
       })
 
-      render(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
+      renderPhotoDetailDialog()
 
       await waitFor(() => {
         // /api/v1/spots/{spotId}/photos が呼ばれる
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/v1/spots/100/photos'),
+          expect.stringContaining(`/api/v1/spots/${TEST_SPOT_ID}/photos`),
           expect.any(Object)
         )
       })
@@ -74,51 +167,24 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await waitFor(() => {
         // /api/v1/photos/{photoId} が呼ばれる
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/v1/photos/1234'),
+          expect.stringContaining(`/api/v1/photos/${TEST_PHOTO_ID_1}`),
           expect.any(Object)
         )
       })
     })
 
     it('写真詳細情報が正しく表示される', async () => {
-      const mockFetch = vi.fn()
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => [1234],
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            photoId: 1234,
-            title: 'Beautiful Landscape',
-            imageUrls: {
-              thumbnail: 'https://example.com/thumb.jpg',
-              standard: 'https://example.com/standard.jpg',
-              original: 'https://example.com/original.jpg',
-            },
-            shotAt: '2024-01-15T14:30:00',
-            weather: '晴れ',
-            timeOfDay: 'DAY',
-            subjectCategory: 'LANDSCAPE',
-            cameraInfo: {
-              body: 'Canon EOS R5',
-              lens: 'RF 24-70mm f/2.8L',
-              fValue: 'f/2.8',
-              shutterSpeed: '1/1000',
-              iso: '400',
-            },
-            user: {
-              userId: 1,
-              username: 'testuser',
-              profileImageUrl: 'https://example.com/profile.jpg',
-            },
-            spot: {
-              spotId: 100,
-            },
-          }),
-        })
+      const photoDetail = createMockPhotoDetail({
+        title: TEST_PHOTO_TITLE_BEAUTIFUL,
+        user: {
+          userId: TEST_USER_ID,
+          username: TEST_USERNAME,
+          profileImageUrl: TEST_PROFILE_IMAGE_URL,
+        },
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
-      const { rerender } = render(<PhotoDetailDialog open={false} spotId={100} onClose={() => {}} />)
+      const { rerender } = render(<PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />)
 
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
@@ -126,46 +192,39 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
 
       // 写真タイトルが表示される
       await waitFor(() => {
-        expect(screen.getByText('Beautiful Landscape')).toBeInTheDocument()
+        expect(screen.getByText(TEST_PHOTO_TITLE_BEAUTIFUL)).toBeInTheDocument()
       })
 
       // カメラ情報が表示される
-      expect(screen.getByText(/Canon EOS R5/)).toBeInTheDocument()
-      expect(screen.getByText(/RF 24-70mm f\/2.8L/)).toBeInTheDocument()
-      expect(screen.getByText('f/2.8')).toBeInTheDocument()
-      expect(screen.getByText('1/1000')).toBeInTheDocument()
-      expect(screen.getByText('400')).toBeInTheDocument()
+      expect(screen.getByText(new RegExp(TEST_CAMERA_BODY))).toBeInTheDocument()
+      expect(screen.getByText(new RegExp(TEST_CAMERA_LENS.replace(/\//g, '\\/')))).toBeInTheDocument()
+      expect(screen.getByText(TEST_F_VALUE)).toBeInTheDocument()
+      expect(screen.getByText(TEST_SHUTTER_SPEED)).toBeInTheDocument()
+      expect(screen.getByText(TEST_ISO)).toBeInTheDocument()
 
       // ユーザー名が表示される
-      expect(screen.getByText('testuser')).toBeInTheDocument()
+      expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
     })
   })
 
   describe('カルーセル制御', () => {
     it('複数の写真がある場合、ドットインジケーターが表示される', async () => {
-      const mockFetch = vi.fn()
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => [1234, 5678, 9012],
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            photoId: 1234,
-            title: 'Photo 1',
-            imageUrls: {
-              standard: 'https://example.com/photo1.jpg',
-            },
-            user: { userId: 1, username: 'user1' },
-            spot: { spotId: 100 },
-          }),
-        })
+      const photoIds = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2, TEST_PHOTO_ID_3]
+      const photoDetail = createMockPhotoDetail({
+        title: TEST_PHOTO_TITLE_2,
+        imageUrls: {
+          standard: TEST_STANDARD_URL,
+        },
+        user: { userId: TEST_USER_ID, username: TEST_USERNAME },
+        spot: { spotId: TEST_SPOT_ID },
+      })
+      const mockFetch = setupMockFetch(photoIds, [photoDetail])
 
-      const { rerender } = render(<PhotoDetailDialog open={false} spotId={100} onClose={() => {}} />)
+      const { rerender } = render(<PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />)
 
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
@@ -173,7 +232,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
 
       await waitFor(() => {
         const indicators = screen.queryAllByTestId(/^dot-indicator-/)
@@ -182,33 +241,24 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
 
     it('スワイプ操作で次の写真に移動する', async () => {
-      const mockFetch = vi.fn()
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => [1234, 5678],
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            photoId: 1234,
-            title: 'Photo 1',
-            imageUrls: { standard: 'https://example.com/photo1.jpg' },
-            user: { userId: 1, username: 'user1' },
-            spot: { spotId: 100 },
-          }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            photoId: 5678,
-            title: 'Photo 2',
-            imageUrls: { standard: 'https://example.com/photo2.jpg' },
-            user: { userId: 1, username: 'user1' },
-            spot: { spotId: 100 },
-          }),
-        })
+      const photoIds = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
+      const photoDetail1 = createMockPhotoDetail({
+        photoId: TEST_PHOTO_ID_1,
+        title: TEST_PHOTO_TITLE_2,
+        imageUrls: { standard: TEST_STANDARD_URL },
+        user: { userId: TEST_USER_ID, username: TEST_USERNAME },
+        spot: { spotId: TEST_SPOT_ID },
+      })
+      const photoDetail2 = createMockPhotoDetail({
+        photoId: TEST_PHOTO_ID_2,
+        title: TEST_PHOTO_TITLE_3,
+        imageUrls: { standard: TEST_STANDARD_URL },
+        user: { userId: TEST_USER_ID, username: TEST_USERNAME },
+        spot: { spotId: TEST_SPOT_ID },
+      })
+      const mockFetch = setupMockFetch(photoIds, [photoDetail1, photoDetail2])
 
-      const { rerender } = render(<PhotoDetailDialog open={false} spotId={100} onClose={() => {}} />)
+      const { rerender } = render(<PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />)
 
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
@@ -217,10 +267,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
 
       const user = userEvent.setup()
-      rerender(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
 
       await waitFor(() => {
-        expect(screen.getByText('Photo 1')).toBeInTheDocument()
+        expect(screen.getByText(TEST_PHOTO_TITLE_2)).toBeInTheDocument()
       })
 
       // 次へボタンをクリック
@@ -230,7 +280,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       // 2枚目の写真詳細APIが呼ばれたことを確認
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/v1/photos/5678'),
+          expect.stringContaining(`/api/v1/photos/${TEST_PHOTO_ID_2}`),
           expect.any(Object)
         )
       })
@@ -248,53 +298,45 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      render(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
+      renderPhotoDetailDialog()
 
       expect(screen.getByTestId('loading-spinner')).toBeInTheDocument()
     })
 
     it('APIエラー時にエラーメッセージが表示される', async () => {
-      const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
+      const mockFetch = vi.fn().mockRejectedValue(new Error(ERROR_MESSAGE_NETWORK))
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
         writable: true,
         configurable: true,
       })
 
-      render(<PhotoDetailDialog open={true} spotId={100} onClose={() => {}} />)
+      renderPhotoDetailDialog()
 
       await waitFor(() => {
-        expect(screen.getByText(/読み込みに失敗しました/)).toBeInTheDocument()
+        expect(screen.getByText(new RegExp(ERROR_TEXT_LOAD_FAILED))).toBeInTheDocument()
       })
     })
   })
 
   describe('ダイアログ制御', () => {
     it('openがfalseの場合、ダイアログは表示されない', () => {
-      render(<PhotoDetailDialog open={false} spotId={100} onClose={() => {}} />)
+      renderPhotoDetailDialog({ open: false })
 
       expect(screen.queryByTestId('photo-detail-dialog')).not.toBeInTheDocument()
     })
 
     it('閉じるボタンをクリックするとonCloseが呼ばれる', async () => {
-      const mockFetch = vi.fn()
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => [1234],
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            photoId: 1234,
-            title: 'Test',
-            imageUrls: { standard: 'https://example.com/photo.jpg' },
-            user: { userId: 1, username: 'user1' },
-            spot: { spotId: 100 },
-          }),
-        })
+      const photoDetail = createMockPhotoDetail({
+        title: TEST_PHOTO_TITLE_TEST,
+        imageUrls: { standard: TEST_STANDARD_URL },
+        user: { userId: TEST_USER_ID, username: TEST_USERNAME },
+        spot: { spotId: TEST_SPOT_ID },
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const onClose = vi.fn()
-      const { rerender } = render(<PhotoDetailDialog open={false} spotId={100} onClose={onClose} />)
+      const { rerender } = render(<PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={onClose} />)
 
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
@@ -303,10 +345,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
 
       const user = userEvent.setup()
-      rerender(<PhotoDetailDialog open={true} spotId={100} onClose={onClose} />)
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={onClose} />)
 
       await waitFor(() => {
-        expect(screen.getByText('Test')).toBeInTheDocument()
+        expect(screen.getByText(TEST_PHOTO_TITLE_TEST)).toBeInTheDocument()
       })
 
       const closeButton = screen.getByLabelText('閉じる')
