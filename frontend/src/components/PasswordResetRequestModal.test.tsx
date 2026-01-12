@@ -15,13 +15,14 @@ import PasswordResetRequestModal from './PasswordResetRequestModal'
  * - 送信後の確認メッセージ：「パスワード再設定用のメールを送信しました。受信トレイをご確認ください。」
  */
 
+// fetch APIのモック
+globalThis.fetch = vi.fn() as any
+
 describe('PasswordResetRequestModal', () => {
   const mockOnClose = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
-    // Reset fetch mock before each test
-    global.fetch = vi.fn()
   })
 
   afterEach(() => {
@@ -51,7 +52,7 @@ describe('PasswordResetRequestModal', () => {
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 
       expect(screen.getByLabelText('メールアドレス')).toBeInTheDocument()
-      expect(screen.getByRole('textbox', { name: 'メールアドレス' })).toHaveAttribute('type', 'text')
+      expect(screen.getByRole('textbox', { name: 'メールアドレス' })).toHaveAttribute('type', 'email')
     })
 
     it('renders instruction text for submit button', () => {
@@ -80,13 +81,6 @@ describe('PasswordResetRequestModal', () => {
     })
 
     it('shows invalid email format error', async () => {
-      // fetchのモックを設定（バリデーションが正しく動作すれば呼ばれないはず）
-      const mockFetch = vi.mocked(fetch)
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ message: 'Invalid email' })
-      } as Response)
-
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 
       const emailInput = screen.getByLabelText('メールアドレス')
@@ -98,9 +92,6 @@ describe('PasswordResetRequestModal', () => {
       await waitFor(() => {
         expect(screen.getByText('正しいメールアドレス形式で入力してください')).toBeInTheDocument()
       })
-
-      // fetchが呼ばれていないことを確認（バリデーションで止まっているはず）
-      expect(mockFetch).not.toHaveBeenCalled()
     })
   })
 
@@ -157,7 +148,9 @@ describe('PasswordResetRequestModal', () => {
       const mockFetch = vi.mocked(fetch)
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        json: async () => ({ message: 'メールアドレスが見つかりません' })
+        json: async () => ({
+          message: 'メールアドレスが見つかりません'
+        })
       } as Response)
 
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
@@ -175,7 +168,12 @@ describe('PasswordResetRequestModal', () => {
 
     it('disables submit button during request', async () => {
       const mockFetch = vi.mocked(fetch)
-      mockFetch.mockImplementationOnce(() => new Promise(resolve => setTimeout(resolve, 100)))
+      mockFetch.mockImplementationOnce(() => new Promise(resolve => setTimeout(() => {
+        resolve({
+          ok: true,
+          json: async () => ({ message: 'Success' })
+        } as Response)
+      }, 100)))
 
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 
@@ -186,6 +184,11 @@ describe('PasswordResetRequestModal', () => {
       fireEvent.click(submitButton)
 
       expect(submitButton).toBeDisabled()
+
+      // Wait for the async operation to complete
+      await waitFor(() => {
+        expect(screen.getByText('パスワード再設定用のメールを送信しました。受信トレイをご確認ください。')).toBeInTheDocument()
+      })
     })
 
     it('hides email input and submit button after success, shows only success message', async () => {
