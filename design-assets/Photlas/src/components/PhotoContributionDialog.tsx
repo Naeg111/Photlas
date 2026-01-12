@@ -1,0 +1,332 @@
+import { useState, useRef } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { CategoryIcon } from "./CategoryIcon";
+import { Checkbox } from "./ui/checkbox";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { Upload, MapPin, X } from "lucide-react";
+import { Progress } from "./ui/progress";
+import { motion, AnimatePresence } from "motion/react";
+
+interface PhotoContributionDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const CATEGORIES = ["風景", "街並み", "植物", "動物", "自動車", "バイク", "鉄道", "飛行機", "食べ物", "ポートレート", "星空", "その他"];
+
+type UploadStatus = "idle" | "uploading" | "success" | "error";
+
+export function PhotoContributionDialog({
+  open,
+  onOpenChange,
+}: PhotoContributionDialogProps) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [title, setTitle] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [pinPosition, setPinPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // ファイルサイズチェック（50MB）
+      if (file.size > 50 * 1024 * 1024) {
+        alert("ファイルサイズは50MB以下にしてください。");
+        return;
+      }
+
+      // ファイル形式チェック
+      const validTypes = ["image/jpeg", "image/png", "image/heic"];
+      if (!validTypes.includes(file.type)) {
+        alert("JPEG、PNG、HEIC形式のファイルのみ対応しています。");
+        return;
+      }
+
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+
+      // TODO: EXIFから位置情報を取得
+      // 仮の位置を設定
+      setPinPosition({ lat: 35.6762, lng: 139.6503 });
+    }
+  };
+
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const handleSubmit = async () => {
+    // バリデーション
+    if (!selectedFile) {
+      alert("写真を選択してください。");
+      return;
+    }
+    if (!title.trim()) {
+      alert("タイトルを入力してください。");
+      return;
+    }
+    if (selectedCategories.length === 0) {
+      alert("カテゴリを1つ以上選択してください。");
+      return;
+    }
+    if (!pinPosition) {
+      alert("位置情報を設定してください。");
+      return;
+    }
+
+    // アップロード処理のシミュレーション
+    setUploadStatus("uploading");
+    setUploadProgress(0);
+
+    // プログレスバーのアニメーション
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 200);
+
+    // 2秒後に完了
+    setTimeout(() => {
+      clearInterval(interval);
+      setUploadProgress(100);
+      setUploadStatus("success");
+
+      // 1.5秒後にダイアログを閉じてリセット
+      setTimeout(() => {
+        setUploadStatus("idle");
+        setUploadProgress(0);
+        onOpenChange(false);
+        // リセット
+        setSelectedFile(null);
+        setPreviewUrl("");
+        setTitle("");
+        setSelectedCategories([]);
+        setPinPosition(null);
+      }, 1500);
+    }, 2000);
+  };
+
+  const canSubmit = selectedFile && title.trim() && selectedCategories.length > 0 && pinPosition;
+
+  return (
+    <Dialog open={open} onOpenChange={uploadStatus === "uploading" ? undefined : onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>写真を投稿</DialogTitle>
+          <DialogDescription className="sr-only">
+            写真とコンテクスト情報を投稿する
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 mt-4">
+          {/* 写真選択 */}
+          <div className="space-y-3">
+            <Label className="text-base">写真 *</Label>
+            <div className="border-2 border-dashed rounded-lg p-6">
+              {previewUrl ? (
+                <div className="relative">
+                  <ImageWithFallback
+                    src={previewUrl}
+                    alt="プレビュー"
+                    className="w-full h-64 object-contain rounded"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2"
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setPreviewUrl("");
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                      }
+                    }}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Upload className="w-12 h-12 text-gray-400 mb-4" />
+                  <Button
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    写真を選択
+                  </Button>
+                  <p className="text-sm text-gray-500 mt-2">
+                    JPEG、PNG、HEIC（最大50MB）
+                  </p>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/heic"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          {/* タイトル */}
+          <div className="space-y-3">
+            <Label htmlFor="title" className="text-base">タイトル *</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="例：夕暮れの東京タワー"
+              maxLength={20}
+              className="mt-2"
+            />
+            <p className="text-sm text-gray-500">{title.length}/20文字</p>
+          </div>
+
+          {/* 位置情報 */}
+          <div className="space-y-3">
+            <Label className="text-base">撮影場所 *</Label>
+            <div className="border rounded-lg overflow-hidden bg-gray-100 h-64 flex items-center justify-center relative">
+              {/* 簡易的な地図プレースホルダー */}
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300">
+                <div className="absolute inset-0 opacity-20"
+                  style={{
+                    backgroundImage: `
+                      linear-gradient(0deg, #999 1px, transparent 1px),
+                      linear-gradient(90deg, #999 1px, transparent 1px)
+                    `,
+                    backgroundSize: '30px 30px'
+                  }}
+                />
+              </div>
+              <div className="relative z-10 text-center">
+                <MapPin className="w-12 h-12 text-red-500 mx-auto mb-2" />
+                {pinPosition ? (
+                  <div>
+                    <p className="text-sm">位置が設定されました</p>
+                    <p className="text-xs text-gray-600">
+                      緯度: {pinPosition.lat.toFixed(4)}, 経度: {pinPosition.lng.toFixed(4)}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    地図をクリックして位置を設定
+                  </p>
+                )}
+              </div>
+            </div>
+            {previewUrl && !pinPosition && (
+              <p className="text-sm text-gray-500">
+                ※ 写真にGPS情報が含まれている場合は自動で設定されます
+              </p>
+            )}
+          </div>
+
+          {/* カテゴリ選択 */}
+          <div className="space-y-3">
+            <Label className="text-base">カテゴリ *（1つ以上選択）</Label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {CATEGORIES.map((category) => (
+                <div
+                  key={category}
+                  className={`flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${
+                    selectedCategories.includes(category)
+                      ? "border-primary bg-primary/5"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                  onClick={() => handleCategoryToggle(category)}
+                >
+                  <Checkbox
+                    id={`category-${category}`}
+                    checked={selectedCategories.includes(category)}
+                    onCheckedChange={() => handleCategoryToggle(category)}
+                  />
+                  <CategoryIcon category={category} className="w-5 h-5" />
+                  <Label
+                    htmlFor={`category-${category}`}
+                    className="cursor-pointer flex-1"
+                  >
+                    {category}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 投稿ボタン */}
+          <div className="flex gap-3 pt-6">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => onOpenChange(false)}
+              disabled={uploadStatus === "uploading"}
+            >
+              キャンセル
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={handleSubmit}
+              disabled={!canSubmit || uploadStatus === "uploading"}
+            >
+              投稿する
+            </Button>
+          </div>
+        </div>
+
+        {/* アップロード状態ダイアログ */}
+        <AnimatePresence>
+          {uploadStatus !== "idle" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed inset-x-0 bottom-0 z-50 p-6"
+            >
+              <div
+                className={`max-w-md mx-auto rounded-lg shadow-2xl p-6 ${
+                  uploadStatus === "error"
+                    ? "bg-red-500"
+                    : uploadStatus === "success"
+                    ? "bg-green-500"
+                    : "bg-white"
+                }`}
+              >
+                <div className="space-y-3">
+                  <p
+                    className={`text-center ${
+                      uploadStatus === "error" || uploadStatus === "success"
+                        ? "text-white"
+                        : "text-gray-900"
+                    }`}
+                  >
+                    {uploadStatus === "uploading" && "送信しています"}
+                    {uploadStatus === "success" && "完了しました"}
+                    {uploadStatus === "error" && "エラー 時間をおいて再度お試しください"}
+                  </p>
+                  {uploadStatus === "uploading" && (
+                    <Progress value={uploadProgress} className="h-2" />
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -3,9 +3,11 @@ package com.photlas.backend.controller;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import com.photlas.backend.config.SecurityConfig;
+import com.photlas.backend.service.JwtService;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -13,7 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * HealthController のテストクラス
  * TDD Red-Green-Refactor サイクルでの開発
- * 
+ *
  * Issue#1 要件:
  * - GET /api/v1/health エンドポイント
  * - 200 OK ステータス
@@ -25,6 +27,9 @@ class HealthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockBean
+    private JwtService jwtService;
 
     @Test
     void healthEndpoint_shouldReturn200OK() throws Exception {

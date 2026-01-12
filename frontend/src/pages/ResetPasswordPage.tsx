@@ -18,6 +18,17 @@ export default function ResetPasswordPage() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
+  // 成功時のリダイレクト処理
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setTimeout(() => {
+        navigate('/login')
+      }, 3000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [isSuccess, navigate])
+
   // トークンがない場合のエラー表示
   if (!token) {
     return (
@@ -36,20 +47,14 @@ export default function ResetPasswordPage() {
     e.preventDefault()
     setError('')
 
-    // バリデーション - すべてのエラーを収集
-    const errors: string[] = []
-
+    // バリデーション
     if (!newPassword) {
-      errors.push('新しいパスワードは必須です')
+      setError('新しいパスワードは必須です')
+      return
     }
 
     if (!confirmPassword) {
-      errors.push('確認用パスワードは必須です')
-    }
-
-    // エラーがあれば表示して終了
-    if (errors.length > 0) {
-      setError(errors.join('\n'))
+      setError('確認用パスワードは必須です')
       return
     }
 
@@ -58,18 +63,9 @@ export default function ResetPasswordPage() {
       return
     }
 
-    if (newPassword.length < 8) {
-      setError('パスワードは8文字以上で入力してください')
-      return
-    }
-
-    // パスワードの複雑さ要件チェック
-    const hasUppercase = /[A-Z]/.test(newPassword)
-    const hasLowercase = /[a-z]/.test(newPassword)
-    const hasNumber = /\d/.test(newPassword)
-
-    if (!hasUppercase || !hasLowercase || !hasNumber) {
-      setError('パスワードは大文字、小文字、数字を含む必要があります')
+    // Issue#21: パスワードバリデーション統一
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z0-9]{8,20}$/.test(newPassword)) {
+      setError('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')
       return
     }
 
@@ -90,10 +86,6 @@ export default function ResetPasswordPage() {
 
       if (response.ok) {
         setIsSuccess(true)
-        // 3秒後にログインページへリダイレクト
-        setTimeout(() => {
-          navigate('/login')
-        }, 3000)
       } else {
         const data = await response.json()
         setError(data.message || 'エラーが発生しました')
@@ -117,11 +109,7 @@ export default function ResetPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit}>
             {error && (
-              <div className="mb-4 text-red-600 text-sm">
-                {error.split('\n').map((err, index) => (
-                  <div key={index}>{err}</div>
-                ))}
-              </div>
+              <div className="mb-4 text-red-600 text-sm">{error}</div>
             )}
 
             <div className="mb-4">

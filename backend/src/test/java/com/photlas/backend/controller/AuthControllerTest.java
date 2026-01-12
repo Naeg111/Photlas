@@ -3,6 +3,7 @@ package com.photlas.backend.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,9 @@ public class AuthControllerTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
+
     // テストデータ定数
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_EMAIL = "test@example.com";
@@ -46,6 +50,8 @@ public class AuthControllerTest {
     private static final String INVALID_EMAIL = "invalid-email";
     private static final String INVALID_PASSWORD_SHORT = "Pass1";
     private static final String INVALID_PASSWORD_WEAK = "password";
+    private static final String INVALID_PASSWORD_WITH_SPECIAL = "Password123!";
+    private static final String INVALID_PASSWORD_TOO_LONG = "Password1234567890123";
     private static final String INVALID_USERNAME_SHORT = "a";
 
     // エンドポイント定数
@@ -69,6 +75,8 @@ public class AuthControllerTest {
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
+        // Issue#23: レート制限キャッシュをクリアしてテスト間の干渉を防ぐ
+        rateLimitFilter.clearCache();
     }
 
     /**
@@ -208,6 +216,34 @@ public class AuthControllerTest {
     @DisplayName("バリデーションエラー - password複雑さ要件")
     void testRegisterUser_InvalidPasswordComplexity_ReturnsBadRequest() throws Exception {
         RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, INVALID_PASSWORD_WEAK);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_PASSWORD)));
+    }
+
+    // Issue#21: パスワードバリデーション統一 - 記号禁止チェック
+    @Test
+    @DisplayName("バリデーションエラー - password記号禁止")
+    void testRegisterUser_PasswordWithSpecialCharacters_ReturnsBadRequest() throws Exception {
+        RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, INVALID_PASSWORD_WITH_SPECIAL);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_PASSWORD)));
+    }
+
+    // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
+    @Test
+    @DisplayName("バリデーションエラー - password最大文字数超過")
+    void testRegisterUser_PasswordTooLong_ReturnsBadRequest() throws Exception {
+        RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, INVALID_PASSWORD_TOO_LONG);
 
         mockMvc.perform(post(REGISTER_ENDPOINT)
                 .contentType(MediaType.APPLICATION_JSON)

@@ -33,6 +33,9 @@ public class User {
     @NotNull
     private String role;
 
+    @Column(name = "profile_image_s3_key", length = 512)
+    private String profileImageS3Key;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -89,6 +92,14 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getProfileImageS3Key() {
+        return profileImageS3Key;
+    }
+
+    public void setProfileImageS3Key(String profileImageS3Key) {
+        this.profileImageS3Key = profileImageS3Key;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -2,7 +2,6 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { BrowserRouter } from 'react-router-dom'
 import LogoutButton from './LogoutButton'
-import { AuthProvider } from '../contexts/AuthContext'
 
 /**
  * Issue#5: ログイン・ログアウト機能 - ログアウトボタン コンポーネント テスト
@@ -65,7 +64,7 @@ describe('LogoutButton', () => {
     it('does not render when user is not authenticated', () => {
       // 未認証状態のモック
       mockUseAuth.isAuthenticated = false
-      mockUseAuth.user = null
+      mockUseAuth.user = null as any
 
       render(<MockedLogoutButton />)
 
