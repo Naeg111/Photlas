@@ -18,6 +18,181 @@ interface Location {
   lng: number
 }
 
+// ========================================
+// 定数
+// ========================================
+
+// バリデーションルール
+const VALIDATION_RULES = {
+  TITLE_MIN_LENGTH: 2,
+  TITLE_MAX_LENGTH: 20,
+} as const
+
+// カテゴリー一覧
+const CATEGORIES = ['風景', '建築', 'ストリート', 'ポートレート', '乗り物'] as const
+
+// エラーメッセージ
+const ERROR_MESSAGES = {
+  TITLE_REQUIRED: 'タイトルを入力してください',
+  TITLE_LENGTH: 'タイトルは2文字以上20文字以内で入力してください',
+  PHOTO_REQUIRED: '写真を選択してください',
+  LOCATION_REQUIRED: '撮影位置を設定してください',
+  CATEGORY_REQUIRED: 'カテゴリを選択してください',
+  HEIC_CONVERSION_ERROR: '画像の変換に失敗しました',
+  UPLOAD_ERROR: '時間をおいて再度お試しください',
+} as const
+
+// APIエンドポイント
+const API_ENDPOINTS = {
+  UPLOAD_URL: '/api/v1/photos/upload-url',
+} as const
+
+// フォームのデフォルト値
+const DEFAULT_FORM_VALUES = {
+  title: '',
+  photo: null,
+  photoPreview: null,
+  categories: [] as string[],
+  location: null,
+} as const
+
+// モック位置情報（Issue#8で地図ピッカー実装予定）
+const MOCK_LOCATION = {
+  lat: 35.6762,
+  lng: 139.6503,
+} as const
+
+// ========================================
+// ヘルパー関数
+// ========================================
+
+/**
+ * 画像ファイルのプレビューURLを生成
+ */
+const createImagePreview = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const result = event.target?.result as string
+      resolve(result)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+/**
+ * HEICファイルをJPEGに変換
+ */
+const convertHeicToJpeg = async (file: File): Promise<File> => {
+  const convertedBlob = await heic2any({
+    blob: file,
+    toType: 'image/jpeg'
+  })
+
+  // heic2anyはBlobまたはBlob[]を返す可能性がある
+  const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob
+
+  // BlobをFileに変換
+  return new File(
+    [blob],
+    file.name.replace(/\.heic$/i, '.jpg'),
+    { type: 'image/jpeg' }
+  )
+}
+
+/**
+ * ファイルがHEIC形式かどうかを判定
+ */
+const isHeicFile = (file: File): boolean => {
+  return file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')
+}
+
+/**
+ * フォームバリデーション
+ */
+interface ValidationResult {
+  isValid: boolean
+  errors: string[]
+}
+
+const validateForm = (
+  title: string,
+  photo: File | null,
+  location: Location | null,
+  categories: string[]
+): ValidationResult => {
+  const errors: string[] = []
+
+  if (!title) {
+    errors.push(ERROR_MESSAGES.TITLE_REQUIRED)
+  } else if (title.length < VALIDATION_RULES.TITLE_MIN_LENGTH || title.length > VALIDATION_RULES.TITLE_MAX_LENGTH) {
+    errors.push(ERROR_MESSAGES.TITLE_LENGTH)
+  }
+
+  if (!photo) {
+    errors.push(ERROR_MESSAGES.PHOTO_REQUIRED)
+  }
+
+  if (!location) {
+    errors.push(ERROR_MESSAGES.LOCATION_REQUIRED)
+  }
+
+  if (categories.length === 0) {
+    errors.push(ERROR_MESSAGES.CATEGORY_REQUIRED)
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+/**
+ * 署名付きURLを取得
+ */
+const getPresignedUploadUrl = async (
+  extension: string,
+  contentType: string
+): Promise<{ uploadUrl: string; objectKey: string }> => {
+  const response = await fetch(API_ENDPOINTS.UPLOAD_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      extension,
+      contentType
+    })
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to get upload URL')
+  }
+
+  return await response.json()
+}
+
+/**
+ * S3に写真をアップロード
+ */
+const uploadPhotoToS3 = async (
+  uploadUrl: string,
+  photo: File
+): Promise<void> => {
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': photo.type
+    },
+    body: photo
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to upload photo to S3')
+  }
+}
+
 /**
  * 写真投稿フォームダイアログコンポーネント
  * Issue#7: 写真投稿フォーム (UI)
@@ -40,17 +215,14 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // カテゴリ一覧
-  const categories = ['風景', '建築', 'ストリート', 'ポートレート', '乗り物']
-
   // モーダルが開かれたときにフォームをリセット
   useEffect(() => {
     if (open) {
-      setTitle('')
-      setPhoto(null)
-      setPhotoPreview(null)
-      setSelectedCategories([])
-      setLocation(null)
+      setTitle(DEFAULT_FORM_VALUES.title)
+      setPhoto(DEFAULT_FORM_VALUES.photo)
+      setPhotoPreview(DEFAULT_FORM_VALUES.photoPreview)
+      setSelectedCategories(DEFAULT_FORM_VALUES.categories)
+      setLocation(DEFAULT_FORM_VALUES.location)
       setValidationErrors([])
       setIsConvertingHeic(false)
       setIsUploading(false)
@@ -61,7 +233,7 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
 
   // タイトル文字数
   const titleLength = title.length
-  const isTitleValid = titleLength >= 2 && titleLength <= 20
+  const isTitleValid = titleLength >= VALIDATION_RULES.TITLE_MIN_LENGTH && titleLength <= VALIDATION_RULES.TITLE_MAX_LENGTH
 
   // 投稿ボタンの活性化条件
   const isFormValid = isTitleValid && photo !== null && location !== null && selectedCategories.length > 0
@@ -88,50 +260,28 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
     setConversionError(null)
 
     // Issue#9: HEIC形式の場合はJPEGに変換
-    if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
+    if (isHeicFile(file)) {
       setIsConvertingHeic(true)
       try {
-        const convertedBlob = await heic2any({
-          blob: file,
-          toType: 'image/jpeg'
-        })
-
-        // heic2anyはBlobまたはBlob[]を返す可能性がある
-        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob
-
-        // BlobをFileに変換
-        const convertedFile = new File(
-          [blob],
-          file.name.replace(/\.heic$/i, '.jpg'),
-          { type: 'image/jpeg' }
-        )
-
+        const convertedFile = await convertHeicToJpeg(file)
         setPhoto(convertedFile)
         setIsConvertingHeic(false)
 
         // プレビュー生成
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          const result = event.target?.result as string
-          setPhotoPreview(result)
-        }
-        reader.readAsDataURL(convertedFile)
+        const previewUrl = await createImagePreview(convertedFile)
+        setPhotoPreview(previewUrl)
       } catch (error) {
         console.error('HEIC conversion error:', error)
         setIsConvertingHeic(false)
-        setConversionError('画像の変換に失敗しました')
+        setConversionError(ERROR_MESSAGES.HEIC_CONVERSION_ERROR)
       }
     } else {
       // HEIC以外の場合は通常処理
       setPhoto(file)
 
       // プレビュー生成
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const result = event.target?.result as string
-        setPhotoPreview(result)
-      }
-      reader.readAsDataURL(file)
+      const previewUrl = await createImagePreview(file)
+      setPhotoPreview(previewUrl)
     }
   }
 
@@ -152,42 +302,16 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
 
   // 位置設定ハンドラー（Issue#8で地図ピッカーを実装予定）
   const handleLocationSet = () => {
-    // モック: 東京の座標を設定
-    setLocation({ lat: 35.6762, lng: 139.6503 })
-  }
-
-  // バリデーション
-  const validate = (): string[] => {
-    const errors: string[] = []
-
-    if (!title) {
-      errors.push('タイトルを入力してください')
-    } else if (titleLength < 2 || titleLength > 20) {
-      errors.push('タイトルは2文字以上20文字以内で入力してください')
-    }
-
-    if (!photo) {
-      errors.push('写真を選択してください')
-    }
-
-    if (!location) {
-      errors.push('撮影位置を設定してください')
-    }
-
-    if (selectedCategories.length === 0) {
-      errors.push('カテゴリを選択してください')
-    }
-
-    return errors
+    setLocation(MOCK_LOCATION)
   }
 
   // 送信ハンドラー
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const errors = validate()
-    if (errors.length > 0) {
-      setValidationErrors(errors)
+    const validation = validateForm(title, photo, location, selectedCategories)
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors)
       return
     }
 
@@ -202,35 +326,10 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
     try {
       // 1. 署名付きURL取得
       const extension = photo.name.split('.').pop() || 'jpg'
-      const uploadUrlResponse = await fetch('/api/v1/photos/upload-url', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          extension,
-          contentType: photo.type
-        })
-      })
-
-      if (!uploadUrlResponse.ok) {
-        throw new Error('Failed to get upload URL')
-      }
-
-      const { uploadUrl, objectKey } = await uploadUrlResponse.json()
+      const { uploadUrl, objectKey } = await getPresignedUploadUrl(extension, photo.type)
 
       // 2. S3に直接アップロード
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': photo.type
-        },
-        body: photo
-      })
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload photo to S3')
-      }
+      await uploadPhotoToS3(uploadUrl, photo)
 
       // 3. アップロード成功 - onSubmitを呼び出す
       setIsUploading(false)
@@ -244,7 +343,7 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
     } catch (error) {
       console.error('Upload error:', error)
       setIsUploading(false)
-      setUploadError('時間をおいて再度お試しください')
+      setUploadError(ERROR_MESSAGES.UPLOAD_ERROR)
     }
   }
 
@@ -318,10 +417,10 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
             />
             <div
               className={`text-sm mt-1 ${
-                titleLength < 2 || titleLength > 20 ? 'text-red-500' : 'text-gray-500'
+                titleLength < VALIDATION_RULES.TITLE_MIN_LENGTH || titleLength > VALIDATION_RULES.TITLE_MAX_LENGTH ? 'text-red-500' : 'text-gray-500'
               }`}
             >
-              {titleLength} / 20
+              {titleLength} / {VALIDATION_RULES.TITLE_MAX_LENGTH}
             </div>
           </div>
 
@@ -389,7 +488,7 @@ export default function PhotoUploadDialog({ open, onClose, onSubmit }: PhotoUplo
               data-testid="category-selection"
               className="grid grid-cols-2 gap-3"
             >
-              {categories.map(category => (
+              {CATEGORIES.map(category => (
                 <label
                   key={category}
                   className="flex items-center space-x-2 cursor-pointer"
