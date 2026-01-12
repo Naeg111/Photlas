@@ -14,6 +14,7 @@ import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,12 @@ public class PhotoService {
     private final UserRepository userRepository;
     private final WeatherService weatherService;
     private final FavoriteRepository favoriteRepository;
+
+    @Value("${aws.s3.bucket-name:photlas-photos}")
+    private String bucketName;
+
+    @Value("${aws.s3.region:ap-northeast-1}")
+    private String region;
 
     public PhotoService(
             PhotoRepository photoRepository,
@@ -122,6 +129,7 @@ public class PhotoService {
         return buildPhotoResponse(photo, spot, user, isFavorited);
     }
 
+
     /**
      * スポットを検索または新規作成する
      * 半径200m以内に既存スポットがあれば最も近いものを返し、なければ新規作成する
@@ -194,4 +202,5 @@ public class PhotoService {
 
         return new PhotoResponse(photoDTO, spotDTO, userDTO);
     }
+
 }
