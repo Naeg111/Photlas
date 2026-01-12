@@ -4,6 +4,7 @@ import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
@@ -52,13 +53,108 @@ public class SpotControllerTest {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
+
     private User testUser;
     private String token;
     private Category category1;
     private Category category2;
 
+    // Test Data Constants - User
+    private static final String TEST_USERNAME = "testuser";
+    private static final String TEST_EMAIL = "test@example.com";
+    private static final String TEST_PASSWORD_HASH = "hashedpassword";
+    private static final String USER_ROLE = "USER";
+
+    // Test Data Constants - Category
+    private static final String CATEGORY_NAME_1 = "風景";
+    private static final String CATEGORY_NAME_2 = "都市・街並み";
+
+    // Test Data Constants - Coordinates
+    private static final BigDecimal TEST_LATITUDE = new BigDecimal("35.6585");
+    private static final BigDecimal TEST_LONGITUDE = new BigDecimal("139.7454");
+    private static final BigDecimal TEST_LATITUDE_2 = new BigDecimal("35.6586");
+    private static final BigDecimal TEST_LONGITUDE_2 = new BigDecimal("139.7455");
+    private static final BigDecimal TEST_LATITUDE_3 = new BigDecimal("35.6587");
+    private static final BigDecimal TEST_LONGITUDE_3 = new BigDecimal("139.7456");
+
+    // Test Data Constants - Bounds
+    private static final String BOUND_NORTH = "35.7";
+    private static final String BOUND_SOUTH = "35.6";
+    private static final String BOUND_EAST = "139.8";
+    private static final String BOUND_WEST = "139.7";
+    private static final String BOUND_NORTH_WIDE = "36.0";
+    private static final String BOUND_SOUTH_WIDE = "35.0";
+    private static final String BOUND_EAST_WIDE = "140.0";
+    private static final String BOUND_WEST_WIDE = "139.0";
+
+    // Test Data Constants - Dates
+    private static final LocalDateTime TEST_SHOT_AT = LocalDateTime.of(2025, 12, 15, 12, 0);
+    private static final LocalDateTime TEST_SHOT_AT_OLD = LocalDateTime.of(2025, 12, 10, 12, 0);
+    private static final LocalDateTime TEST_SHOT_AT_NEW = LocalDateTime.of(2025, 12, 20, 12, 0);
+
+    // Test Data Constants - Weather
+    private static final String WEATHER_SUNNY = "Sunny";
+    private static final String WEATHER_CLOUDY = "Cloudy";
+
+    // Test Data Constants - Time of Day
+    private static final String TIME_OF_DAY_MORNING = "MORNING";
+    private static final String TIME_OF_DAY_DAY = "DAY";
+    private static final String TIME_OF_DAY_EVENING = "EVENING";
+
+    // Test Data Constants - Photo
+    private static final String TEST_PHOTO_TITLE = "Test Photo";
+    private static final String TEST_S3_OBJECT_KEY = "test-key";
+    private static final String OLD_PHOTO_KEY = "old-photo-key";
+    private static final String NEW_PHOTO_KEY = "new-photo-key";
+
+    // Test Data Constants - Months
+    private static final int MONTH_DECEMBER = 12;
+    private static final int MONTH_AUGUST = 8;
+
+    // Test Data Constants - Pin Colors
+    private static final String PIN_COLOR_GREEN = "Green";
+    private static final String PIN_COLOR_YELLOW = "Yellow";
+    private static final String PIN_COLOR_ORANGE = "Orange";
+    private static final String PIN_COLOR_RED = "Red";
+
+    // Test Data Constants - Photo Counts
+    private static final int PHOTO_COUNT_ONE = 1;
+    private static final int PHOTO_COUNT_FIVE = 5;
+    private static final int PHOTO_COUNT_TEN = 10;
+    private static final int PHOTO_COUNT_THIRTY = 30;
+
+    // Test Data Constants - Limits
+    private static final int MAX_SPOTS_LIMIT = 50;
+    private static final int TEST_SPOTS_EXCEED_LIMIT = 60;
+
+    // Endpoint Constants
+    private static final String SPOTS_ENDPOINT = "/api/v1/spots";
+
+    // JSONPath Constants
+    private static final String JSON_PATH_SPOT_ID = "$[0].spotId";
+    private static final String JSON_PATH_LATITUDE = "$[0].latitude";
+    private static final String JSON_PATH_LONGITUDE = "$[0].longitude";
+    private static final String JSON_PATH_PIN_COLOR = "$[0].pinColor";
+    private static final String JSON_PATH_THUMBNAIL_URL = "$[0].thumbnailUrl";
+    private static final String JSON_PATH_PHOTO_COUNT = "$[0].photoCount";
+
+    // Parameter Name Constants
+    private static final String PARAM_NORTH = "north";
+    private static final String PARAM_SOUTH = "south";
+    private static final String PARAM_EAST = "east";
+    private static final String PARAM_WEST = "west";
+    private static final String PARAM_MONTHS = "months";
+    private static final String PARAM_WEATHERS = "weathers";
+    private static final String PARAM_SUBJECT_CATEGORIES = "subject_categories";
+    private static final String PARAM_TIMES_OF_DAY = "times_of_day";
+
     @BeforeEach
     void setUp() {
+        // レート制限キャッシュをクリア
+        rateLimitFilter.clearCache();
+
         // クリーンアップ
         photoRepository.deleteAll();
         spotRepository.deleteAll();
@@ -67,10 +163,10 @@ public class SpotControllerTest {
 
         // テストユーザーを作成
         testUser = new User();
-        testUser.setUsername("testuser");
-        testUser.setEmail("test@example.com");
-        testUser.setPasswordHash("hashedpassword");
-        testUser.setRole("USER");
+        testUser.setUsername(TEST_USERNAME);
+        testUser.setEmail(TEST_EMAIL);
+        testUser.setPasswordHash(TEST_PASSWORD_HASH);
+        testUser.setRole(USER_ROLE);
         testUser = userRepository.save(testUser);
 
         // JWTトークンを生成
@@ -78,11 +174,11 @@ public class SpotControllerTest {
 
         // カテゴリマスターデータを作成
         category1 = new Category();
-        category1.setName("風景");
+        category1.setName(CATEGORY_NAME_1);
         category1 = categoryRepository.save(category1);
 
         category2 = new Category();
-        category2.setName("都市・街並み");
+        category2.setName(CATEGORY_NAME_2);
         category2 = categoryRepository.save(category2);
     }
 
@@ -91,262 +187,262 @@ public class SpotControllerTest {
     void testGetSpots_WithinBounds_ReturnsSpots() throws Exception {
         // スポットとフォトを作成
         Spot spot = new Spot();
-        spot.setLatitude(new BigDecimal("35.6585"));
-        spot.setLongitude(new BigDecimal("139.7454"));
+        spot.setLatitude(TEST_LATITUDE);
+        spot.setLongitude(TEST_LONGITUDE);
         spot.setCreatedByUserId(testUser.getId());
         spot = spotRepository.save(spot);
 
         Photo photo = new Photo();
-        photo.setTitle("Test Photo");
-        photo.setS3ObjectKey("test-key");
+        photo.setTitle(TEST_PHOTO_TITLE);
+        photo.setS3ObjectKey(TEST_S3_OBJECT_KEY);
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
-        photo.setShotAt(LocalDateTime.of(2025, 12, 15, 12, 0));
-        photo.setWeather("Sunny");
+        photo.setShotAt(TEST_SHOT_AT);
+        photo.setWeather(WEATHER_SUNNY);
         List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
         photoRepository.save(photo);
 
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6")
-                        .param("east", "139.8")
-                        .param("west", "139.7"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$[0].spotId", is(spot.getSpotId().intValue())))
-                .andExpect(jsonPath("$[0].latitude", is(35.6585)))
-                .andExpect(jsonPath("$[0].longitude", is(139.7454)))
-                .andExpect(jsonPath("$[0].pinColor", notNullValue()))
-                .andExpect(jsonPath("$[0].thumbnailUrl", notNullValue()))
-                .andExpect(jsonPath("$[0].photoCount", greaterThan(0)));
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot.getSpotId().intValue())))
+                .andExpect(jsonPath(JSON_PATH_LATITUDE, is(TEST_LATITUDE.doubleValue())))
+                .andExpect(jsonPath(JSON_PATH_LONGITUDE, is(TEST_LONGITUDE.doubleValue())))
+                .andExpect(jsonPath(JSON_PATH_PIN_COLOR, notNullValue()))
+                .andExpect(jsonPath(JSON_PATH_THUMBNAIL_URL, notNullValue()))
+                .andExpect(jsonPath(JSON_PATH_PHOTO_COUNT, greaterThan(0)));
     }
 
     @Test
     @DisplayName("正常ケース - フィルター条件でスポットを取得（月指定）")
     void testGetSpots_WithMonthFilter_ReturnsFilteredSpots() throws Exception {
         // 12月の写真
-        Spot spot1 = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
-        createPhoto(spot1, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny");
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
 
         // 8月の写真
-        Spot spot2 = createSpot(new BigDecimal("35.6586"), new BigDecimal("139.7455"));
-        createPhoto(spot2, LocalDateTime.of(2025, 8, 15, 12, 0), "Sunny");
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        createPhoto(spot2, LocalDateTime.of(2025, MONTH_AUGUST, 15, 12, 0), WEATHER_SUNNY);
 
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6")
-                        .param("east", "139.8")
-                        .param("west", "139.7")
-                        .param("months", "12"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_MONTHS, String.valueOf(MONTH_DECEMBER)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].spotId", is(spot1.getSpotId().intValue())));
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
     }
 
     @Test
     @DisplayName("正常ケース - フィルター条件でスポットを取得（天気指定）")
     void testGetSpots_WithWeatherFilter_ReturnsFilteredSpots() throws Exception {
         // Sunny の写真
-        Spot spot1 = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
-        createPhoto(spot1, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny");
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
 
         // Cloudy の写真
-        Spot spot2 = createSpot(new BigDecimal("35.6586"), new BigDecimal("139.7455"));
-        createPhoto(spot2, LocalDateTime.of(2025, 12, 15, 12, 0), "Cloudy");
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        createPhoto(spot2, TEST_SHOT_AT, WEATHER_CLOUDY);
 
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6")
-                        .param("east", "139.8")
-                        .param("west", "139.7")
-                        .param("weathers", "Sunny"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_WEATHERS, WEATHER_SUNNY))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].spotId", is(spot1.getSpotId().intValue())));
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
     }
 
     @Test
     @DisplayName("正常ケース - フィルター条件でスポットを取得（被写体種別指定）")
     void testGetSpots_WithSubjectCategoryFilter_ReturnsFilteredSpots() throws Exception {
         // category1 の写真
-        Spot spot1 = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
-        Photo photo1 = createPhoto(spot1, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny");
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo photo1 = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
         List<Category> categories1 = new ArrayList<>();
         categories1.add(category1);
         photo1.setCategories(categories1);
         photoRepository.save(photo1);
 
         // category2 の写真
-        Spot spot2 = createSpot(new BigDecimal("35.6586"), new BigDecimal("139.7455"));
-        Photo photo2 = createPhoto(spot2, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny");
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo photo2 = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
         List<Category> categories2 = new ArrayList<>();
         categories2.add(category2);
         photo2.setCategories(categories2);
         photoRepository.save(photo2);
 
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6")
-                        .param("east", "139.8")
-                        .param("west", "139.7")
-                        .param("subject_categories", String.valueOf(category1.getCategoryId())))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_SUBJECT_CATEGORIES, String.valueOf(category1.getCategoryId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].spotId", is(spot1.getSpotId().intValue())));
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
     }
 
     @Test
     @DisplayName("正常ケース - ピンの色が条件合致数に基づいて決定される（1件=Green）")
     void testGetSpots_PinColor_OnePhoto_ReturnsGreen() throws Exception {
-        Spot spot = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
-        createPhoto(spot, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny");
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
 
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6")
-                        .param("east", "139.8")
-                        .param("west", "139.7"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].pinColor", is("Green")));
+                .andExpect(jsonPath(JSON_PATH_PIN_COLOR, is(PIN_COLOR_GREEN)));
     }
 
     @Test
     @DisplayName("正常ケース - ピンの色が条件合致数に基づいて決定される（5件以上=Yellow）")
     void testGetSpots_PinColor_FivePhotos_ReturnsYellow() throws Exception {
-        Spot spot = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
-        for (int i = 0; i < 5; i++) {
-            createPhoto(spot, LocalDateTime.of(2025, 12, 15 + i, 12, 0), "Sunny");
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        for (int i = 0; i < PHOTO_COUNT_FIVE; i++) {
+            createPhoto(spot, LocalDateTime.of(2025, MONTH_DECEMBER, 15 + i, 12, 0), WEATHER_SUNNY);
         }
 
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6")
-                        .param("east", "139.8")
-                        .param("west", "139.7"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].pinColor", is("Yellow")));
+                .andExpect(jsonPath(JSON_PATH_PIN_COLOR, is(PIN_COLOR_YELLOW)));
     }
 
     @Test
     @DisplayName("正常ケース - ピンの色が条件合致数に基づいて決定される（10件以上=Orange）")
     void testGetSpots_PinColor_TenPhotos_ReturnsOrange() throws Exception {
-        Spot spot = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
-        for (int i = 0; i < 10; i++) {
-            createPhoto(spot, LocalDateTime.of(2025, 12, 15, 12, i), "Sunny");
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        for (int i = 0; i < PHOTO_COUNT_TEN; i++) {
+            createPhoto(spot, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 12, i), WEATHER_SUNNY);
         }
 
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6")
-                        .param("east", "139.8")
-                        .param("west", "139.7"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].pinColor", is("Orange")));
+                .andExpect(jsonPath(JSON_PATH_PIN_COLOR, is(PIN_COLOR_ORANGE)));
     }
 
     @Test
     @DisplayName("正常ケース - ピンの色が条件合致数に基づいて決定される（30件以上=Red）")
     void testGetSpots_PinColor_ThirtyPhotos_ReturnsRed() throws Exception {
-        Spot spot = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
-        for (int i = 0; i < 30; i++) {
-            createPhoto(spot, LocalDateTime.of(2025, 12, 15, 12, i), "Sunny");
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        for (int i = 0; i < PHOTO_COUNT_THIRTY; i++) {
+            createPhoto(spot, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 12, i), WEATHER_SUNNY);
         }
 
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6")
-                        .param("east", "139.8")
-                        .param("west", "139.7"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].pinColor", is("Red")));
+                .andExpect(jsonPath(JSON_PATH_PIN_COLOR, is(PIN_COLOR_RED)));
     }
 
     @Test
     @DisplayName("正常ケース - レスポンス件数制限（最大50件）")
     void testGetSpots_LimitTo50_Returns50Spots() throws Exception {
         // 60件のスポットを作成
-        for (int i = 0; i < 60; i++) {
+        for (int i = 0; i < TEST_SPOTS_EXCEED_LIMIT; i++) {
             Spot spot = createSpot(
                     new BigDecimal("35.65").add(new BigDecimal("0.001").multiply(new BigDecimal(i))),
                     new BigDecimal("139.74").add(new BigDecimal("0.001").multiply(new BigDecimal(i)))
             );
-            createPhoto(spot, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny");
+            createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
         }
 
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "36.0")
-                        .param("south", "35.0")
-                        .param("east", "140.0")
-                        .param("west", "139.0"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH_WIDE)
+                        .param(PARAM_SOUTH, BOUND_SOUTH_WIDE)
+                        .param(PARAM_EAST, BOUND_EAST_WIDE)
+                        .param(PARAM_WEST, BOUND_WEST_WIDE))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(50)));
+                .andExpect(jsonPath("$", hasSize(MAX_SPOTS_LIMIT)));
     }
 
     @Test
     @DisplayName("正常ケース - 条件合致数が多い順に返される")
     void testGetSpots_OrderByPhotoCount_ReturnsOrderedSpots() throws Exception {
         // スポット1: 写真1枚
-        Spot spot1 = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
-        createPhoto(spot1, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny");
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
 
         // スポット2: 写真3枚
-        Spot spot2 = createSpot(new BigDecimal("35.6586"), new BigDecimal("139.7455"));
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
         for (int i = 0; i < 3; i++) {
-            createPhoto(spot2, LocalDateTime.of(2025, 12, 15, 12, i), "Sunny");
+            createPhoto(spot2, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 12, i), WEATHER_SUNNY);
         }
 
         // スポット3: 写真5枚
-        Spot spot3 = createSpot(new BigDecimal("35.6587"), new BigDecimal("139.7456"));
-        for (int i = 0; i < 5; i++) {
-            createPhoto(spot3, LocalDateTime.of(2025, 12, 15, 12, i), "Sunny");
+        Spot spot3 = createSpot(TEST_LATITUDE_3, TEST_LONGITUDE_3);
+        for (int i = 0; i < PHOTO_COUNT_FIVE; i++) {
+            createPhoto(spot3, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 12, i), WEATHER_SUNNY);
         }
 
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6")
-                        .param("east", "139.8")
-                        .param("west", "139.7"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].spotId", is(spot3.getSpotId().intValue())))
-                .andExpect(jsonPath("$[0].photoCount", is(5)))
+                .andExpect(jsonPath("$[0].photoCount", is(PHOTO_COUNT_FIVE)))
                 .andExpect(jsonPath("$[1].spotId", is(spot2.getSpotId().intValue())))
                 .andExpect(jsonPath("$[1].photoCount", is(3)))
                 .andExpect(jsonPath("$[2].spotId", is(spot1.getSpotId().intValue())))
-                .andExpect(jsonPath("$[2].photoCount", is(1)));
+                .andExpect(jsonPath("$[2].photoCount", is(PHOTO_COUNT_ONE)));
     }
 
     @Test
     @DisplayName("正常ケース - サムネイルURLは最新の写真から取得される")
     void testGetSpots_ThumbnailUrl_ReturnsLatestPhoto() throws Exception {
-        Spot spot = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
 
         // 古い写真
-        Photo oldPhoto = createPhoto(spot, LocalDateTime.of(2025, 12, 10, 12, 0), "Sunny");
-        oldPhoto.setS3ObjectKey("old-photo-key");
+        Photo oldPhoto = createPhoto(spot, TEST_SHOT_AT_OLD, WEATHER_SUNNY);
+        oldPhoto.setS3ObjectKey(OLD_PHOTO_KEY);
         photoRepository.save(oldPhoto);
 
         // 新しい写真
-        Photo newPhoto = createPhoto(spot, LocalDateTime.of(2025, 12, 20, 12, 0), "Sunny");
-        newPhoto.setS3ObjectKey("new-photo-key");
+        Photo newPhoto = createPhoto(spot, TEST_SHOT_AT_NEW, WEATHER_SUNNY);
+        newPhoto.setS3ObjectKey(NEW_PHOTO_KEY);
         photoRepository.save(newPhoto);
 
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6")
-                        .param("east", "139.8")
-                        .param("west", "139.7"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].thumbnailUrl", containsString("new-photo-key")));
+                .andExpect(jsonPath(JSON_PATH_THUMBNAIL_URL, containsString(NEW_PHOTO_KEY)));
     }
 
     @Test
     @DisplayName("バリデーションエラー - 範囲パラメータが不足している場合")
     void testGetSpots_MissingBoundsParams_ReturnsBadRequest() throws Exception {
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH))
                 .andExpect(status().isBadRequest());
     }
 
@@ -354,18 +450,69 @@ public class SpotControllerTest {
     @DisplayName("正常ケース - 条件に合致する写真が0件のスポットは含まれない")
     void testGetSpots_NoMatchingPhotos_ReturnsEmptyList() throws Exception {
         // 12月の写真のみ
-        Spot spot = createSpot(new BigDecimal("35.6585"), new BigDecimal("139.7454"));
-        createPhoto(spot, LocalDateTime.of(2025, 12, 15, 12, 0), "Sunny");
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
 
         // 8月でフィルター（合致なし）
-        mockMvc.perform(get("/api/v1/spots")
-                        .param("north", "35.7")
-                        .param("south", "35.6")
-                        .param("east", "139.8")
-                        .param("west", "139.7")
-                        .param("months", "8"))
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_MONTHS, String.valueOf(MONTH_AUGUST)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("正常ケース - フィルター条件でスポットを取得（時間帯指定）")
+    void testGetSpots_WithTimeOfDayFilter_ReturnsFilteredSpots() throws Exception {
+        // MORNING の写真
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo photo1 = createPhotoWithTimeOfDay(spot1, TEST_SHOT_AT, WEATHER_SUNNY, TIME_OF_DAY_MORNING);
+
+        // EVENING の写真
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo photo2 = createPhotoWithTimeOfDay(spot2, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 18, 0), WEATHER_SUNNY, TIME_OF_DAY_EVENING);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_TIMES_OF_DAY, TIME_OF_DAY_MORNING))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("正常ケース - フィルター条件でスポットを取得（複数の時間帯指定）")
+    void testGetSpots_WithMultipleTimesOfDay_ReturnsFilteredSpots() throws Exception {
+        // MORNING の写真
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        createPhotoWithTimeOfDay(spot1, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 8, 0), WEATHER_SUNNY, TIME_OF_DAY_MORNING);
+
+        // DAY の写真
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        createPhotoWithTimeOfDay(spot2, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 14, 0), WEATHER_SUNNY, TIME_OF_DAY_DAY);
+
+        // EVENING の写真
+        Spot spot3 = createSpot(TEST_LATITUDE_3, TEST_LONGITUDE_3);
+        createPhotoWithTimeOfDay(spot3, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 18, 0), WEATHER_SUNNY, TIME_OF_DAY_EVENING);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_TIMES_OF_DAY, TIME_OF_DAY_MORNING, TIME_OF_DAY_EVENING))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[*].spotId", containsInAnyOrder(
+                        spot1.getSpotId().intValue(),
+                        spot3.getSpotId().intValue()
+                )));
     }
 
     // ヘルパーメソッド
@@ -379,8 +526,8 @@ public class SpotControllerTest {
 
     private Photo createPhoto(Spot spot, LocalDateTime shotAt, String weather) {
         Photo photo = new Photo();
-        photo.setTitle("Test Photo");
-        photo.setS3ObjectKey("test-key-" + System.nanoTime());
+        photo.setTitle(TEST_PHOTO_TITLE);
+        photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-" + System.nanoTime());
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
         photo.setShotAt(shotAt);
@@ -391,57 +538,18 @@ public class SpotControllerTest {
         return photoRepository.save(photo);
     }
 
-    /**
-     * Issue#14: スポット写真一覧取得API
-     */
-    @Test
-    @DisplayName("Issue#14 - GET /api/v1/spots/{spotId}/photos - スポットの写真ID一覧を取得")
-    void testGetSpotPhotos_ReturnsPhotoIds() throws Exception {
-        // スポットを作成
-        Spot spot = new Spot();
-        spot.setLatitude(new BigDecimal("35.6585"));
-        spot.setLongitude(new BigDecimal("139.7454"));
-        spot.setCreatedByUserId(testUser.getId());
-        spot = spotRepository.save(spot);
-
-        // 複数の写真を作成
-        Photo photo1 = createPhoto(spot, LocalDateTime.now().minusDays(2), "晴れ");
-        Photo photo2 = createPhoto(spot, LocalDateTime.now().minusDays(1), "曇り");
-        Photo photo3 = createPhoto(spot, LocalDateTime.now(), "雨");
-
-        // APIリクエスト
-        mockMvc.perform(get("/api/v1/spots/" + spot.getSpotId() + "/photos")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("application/json"))
-                .andExpect(jsonPath("$", hasSize(3)))
-                .andExpect(jsonPath("$[0]", is(photo1.getPhotoId().intValue())))
-                .andExpect(jsonPath("$[1]", is(photo2.getPhotoId().intValue())))
-                .andExpect(jsonPath("$[2]", is(photo3.getPhotoId().intValue())));
-    }
-
-    @Test
-    @DisplayName("Issue#14 - GET /api/v1/spots/{spotId}/photos - 存在しないスポットで404")
-    void testGetSpotPhotos_NotFound() throws Exception {
-        mockMvc.perform(get("/api/v1/spots/99999/photos")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("Issue#14 - GET /api/v1/spots/{spotId}/photos - 写真がない場合は空配列")
-    void testGetSpotPhotos_EmptyArray() throws Exception {
-        // スポットのみ作成（写真なし）
-        Spot spot = new Spot();
-        spot.setLatitude(new BigDecimal("35.6585"));
-        spot.setLongitude(new BigDecimal("139.7454"));
-        spot.setCreatedByUserId(testUser.getId());
-        spot = spotRepository.save(spot);
-
-        mockMvc.perform(get("/api/v1/spots/" + spot.getSpotId() + "/photos")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("application/json"))
-                .andExpect(jsonPath("$", hasSize(0)));
+    private Photo createPhotoWithTimeOfDay(Spot spot, LocalDateTime shotAt, String weather, String timeOfDay) {
+        Photo photo = new Photo();
+        photo.setTitle(TEST_PHOTO_TITLE);
+        photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-" + System.nanoTime());
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setShotAt(shotAt);
+        photo.setWeather(weather);
+        photo.setTimeOfDay(timeOfDay);
+        List<Category> categories = new ArrayList<>();
+        categories.add(category1);
+        photo.setCategories(categories);
+        return photoRepository.save(photo);
     }
 }

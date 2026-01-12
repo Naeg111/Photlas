@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { GoogleMap, useLoadScript, OverlayViewF } from '@react-google-maps/api'
 
 /**
  * Issue#13: 地図検索機能のインタラクション改善とピン表示制御
+ * Issue#16: フィルター機能統合
  * TDD Green段階: テストをパスする実装
  */
 
@@ -14,6 +15,14 @@ interface SpotResponse {
   pinColor: 'Green' | 'Yellow' | 'Orange' | 'Red'
   thumbnailUrl: string
   photoCount: number
+}
+
+// フィルター条件の型定義（Issue#16）
+export interface MapViewFilterParams {
+  subject_categories?: number[]
+  months?: number[]
+  times_of_day?: string[]
+  weathers?: string[]
 }
 
 // ピンの色をTailwindクラスにマッピング
@@ -29,19 +38,25 @@ const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 const DEFAULT_ZOOM = 11
 const MIN_ZOOM_FOR_PINS = 11
 
-export default function MapView() {
+// MapViewコンポーネントのProps（Issue#16）
+interface MapViewProps {
+  filterParams?: MapViewFilterParams
+}
+
+export default function MapView({ filterParams }: MapViewProps) {
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const [showToast, setShowToast] = useState(false)
   const listenerAddedRef = useRef(false)
+  const initialMountRef = useRef(true)
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
   })
 
-  // スポットデータを取得（mapInstanceをパラメータで受け取る）
-  const fetchSpots = async (mapInstance: google.maps.Map) => {
+  // スポットデータを取得（mapInstanceとフィルター条件をパラメータで受け取る）
+  const fetchSpots = useCallback(async (mapInstance: google.maps.Map) => {
     try {
       const bounds = mapInstance.getBounds()
       if (!bounds) return
@@ -55,6 +70,22 @@ export default function MapView() {
         east: ne.lng().toString(),
         west: sw.lng().toString(),
       })
+
+      // Issue#16: フィルター条件を追加
+      if (filterParams) {
+        if (filterParams.subject_categories && filterParams.subject_categories.length > 0) {
+          filterParams.subject_categories.forEach(id => params.append('subject_categories', id.toString()))
+        }
+        if (filterParams.months && filterParams.months.length > 0) {
+          filterParams.months.forEach(month => params.append('months', month.toString()))
+        }
+        if (filterParams.times_of_day && filterParams.times_of_day.length > 0) {
+          filterParams.times_of_day.forEach(time => params.append('times_of_day', time))
+        }
+        if (filterParams.weathers && filterParams.weathers.length > 0) {
+          filterParams.weathers.forEach(weather => params.append('weathers', weather))
+        }
+      }
 
       const response = await fetch(`/api/v1/spots?${params}`, {
         method: 'GET',
@@ -74,7 +105,7 @@ export default function MapView() {
       setShowToast(true)
       setTimeout(() => setShowToast(false), 3000)
     }
-  }
+  }, [filterParams])
 
   // 地図が読み込まれたときの処理
   const handleLoad = useCallback((mapInstance: google.maps.Map) => {
@@ -92,7 +123,22 @@ export default function MapView() {
         fetchSpots(mapInstance)
       })
     }
-  }, [])
+  }, [fetchSpots])
+
+  // Issue#16: フィルター条件が変更されたときにスポットを再取得
+  // 初回マウント時はskip（idleイベントで既に呼ばれるため）
+  // filterParamsのみに依存することで、zoom変更などによる不要な再取得を防ぐ
+  useEffect(() => {
+    if (initialMountRef.current) {
+      initialMountRef.current = false
+      return
+    }
+
+    if (map) {
+      fetchSpots(map)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterParams])
 
   // ズームバナーをクリックしたときの処理
   const handleZoomBannerClick = () => {
