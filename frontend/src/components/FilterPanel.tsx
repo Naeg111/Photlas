@@ -4,9 +4,17 @@ import { Button } from "./ui/button";
 import { CategoryIcon } from "./CategoryIcon";
 import { MonthIcons, TimeIcons, WeatherIcons } from "./FilterIcons";
 
+export interface FilterConditions {
+  categories: string[];
+  months: string[];
+  timesOfDay: string[];
+  weathers: string[];
+}
+
 interface FilterPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onApply?: (conditions: FilterConditions) => void;
 }
 
 const MONTHS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
@@ -17,7 +25,7 @@ const WEATHER = ["晴れ", "曇り", "雨", "雪"];
 
 const CATEGORIES = ["風景", "街並み", "植物", "動物", "自動車", "バイク", "鉄道", "飛行機", "食べ物", "ポートレート", "星空", "その他"];
 
-export function FilterPanel({ open, onOpenChange }: FilterPanelProps) {
+export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
@@ -145,7 +153,20 @@ export function FilterPanel({ open, onOpenChange }: FilterPanelProps) {
             >
               クリア
             </Button>
-            <Button className="flex-1" onClick={() => onOpenChange(false)}>
+            <Button
+              className="flex-1"
+              onClick={() => {
+                if (onApply) {
+                  onApply({
+                    categories: selectedCategories,
+                    months: selectedMonths,
+                    timesOfDay: selectedTimes,
+                    weathers: selectedWeather
+                  });
+                }
+                onOpenChange(false);
+              }}
+            >
               適用
             </Button>
           </div>

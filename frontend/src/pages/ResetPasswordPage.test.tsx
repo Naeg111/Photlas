@@ -205,7 +205,7 @@ describe('ResetPasswordPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('パスワードは8文字以上で入力してください')).toBeInTheDocument()
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
       })
     })
 
@@ -225,7 +225,7 @@ describe('ResetPasswordPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('パスワードは大文字、小文字、数字を含む必要があります')).toBeInTheDocument()
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
       })
     })
 
@@ -245,7 +245,7 @@ describe('ResetPasswordPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('パスワードは大文字、小文字、数字を含む必要があります')).toBeInTheDocument()
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
       })
     })
 
@@ -265,7 +265,49 @@ describe('ResetPasswordPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('パスワードは大文字、小文字、数字を含む必要があります')).toBeInTheDocument()
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
+      })
+    })
+
+    // Issue#21: パスワードバリデーション統一 - 記号禁止チェック
+    it('shows error for password with special characters', async () => {
+      render(
+        <MemoryRouter initialEntries={['/reset-password?token=valid-token']}>
+          <ResetPasswordPage />
+        </MemoryRouter>
+      )
+
+      const newPasswordInput = screen.getByLabelText('新しいパスワード')
+      const confirmPasswordInput = screen.getByLabelText('新しいパスワード（確認用）')
+      const submitButton = screen.getByRole('button', { name: '再設定' })
+
+      fireEvent.change(newPasswordInput, { target: { value: 'Password123!' } })
+      fireEvent.change(confirmPasswordInput, { target: { value: 'Password123!' } })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
+      })
+    })
+
+    // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
+    it('shows error for password longer than 20 characters', async () => {
+      render(
+        <MemoryRouter initialEntries={['/reset-password?token=valid-token']}>
+          <ResetPasswordPage />
+        </MemoryRouter>
+      )
+
+      const newPasswordInput = screen.getByLabelText('新しいパスワード')
+      const confirmPasswordInput = screen.getByLabelText('新しいパスワード（確認用）')
+      const submitButton = screen.getByRole('button', { name: '再設定' })
+
+      fireEvent.change(newPasswordInput, { target: { value: 'Password1234567890123' } }) // 21文字
+      fireEvent.change(confirmPasswordInput, { target: { value: 'Password1234567890123' } })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません')).toBeInTheDocument()
       })
     })
   })

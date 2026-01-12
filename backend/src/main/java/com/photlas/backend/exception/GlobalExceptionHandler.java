@@ -34,20 +34,20 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Issue#14: PhotoNotFoundException をハンドリング
+     * Issue#20: 認証エラー（401 Unauthorized）をハンドリング
      */
-    @ExceptionHandler(PhotoNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handlePhotoNotFoundException(PhotoNotFoundException ex) {
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException ex) {
         ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
     /**
-     * Issue#14: SpotNotFoundException をハンドリング
+     * Issue#19, Issue#20: 競合エラー（409 Conflict）をハンドリング
      */
-    @ExceptionHandler(SpotNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleSpotNotFoundException(SpotNotFoundException ex) {
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
         ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 }
