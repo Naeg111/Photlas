@@ -15,7 +15,6 @@ const LogoutButton: React.FC = () => {
       logout()
       navigate('/')
     } catch (error) {
-      console.error('Logout error:', error)
       // エラーが発生してもナビゲーションは実行
       navigate('/')
     }
