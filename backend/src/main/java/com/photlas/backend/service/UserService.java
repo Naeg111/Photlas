@@ -13,7 +13,8 @@ import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.repository.UserSnsLinkRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,29 +28,40 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * ユーザーサービス
+ * ユーザー登録、認証、プロフィール管理などのビジネスロジックを提供します。
+ */
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+    private static final int PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES = 30;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final JavaMailSender mailSender;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final UserSnsLinkRepository userSnsLinkRepository;
+    private final S3Service s3Service;
 
-    @Autowired
-    private JwtService jwtService;
-
-    @Autowired
-    private JavaMailSender mailSender;
-
-    @Autowired
-    private PasswordResetTokenRepository passwordResetTokenRepository;
-
-    @Autowired
-    private UserSnsLinkRepository userSnsLinkRepository;
-
-    @Autowired
-    private S3Service s3Service;
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            JavaMailSender mailSender,
+            PasswordResetTokenRepository passwordResetTokenRepository,
+            UserSnsLinkRepository userSnsLinkRepository,
+            S3Service s3Service) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.mailSender = mailSender;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.userSnsLinkRepository = userSnsLinkRepository;
+        this.s3Service = s3Service;
+    }
 
     public RegisterResponse registerUser(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -122,7 +134,7 @@ public class UserService {
 
         // 新しいトークンを生成
         String token = generateSecureToken();
-        Date expiryDate = new Date(System.currentTimeMillis() + 30 * 60 * 1000); // 30分後
+        Date expiryDate = new Date(System.currentTimeMillis() + PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES * 60 * 1000);
 
         // トークンを保存
         PasswordResetToken resetToken = new PasswordResetToken(user.getId(), token, expiryDate);
@@ -210,7 +222,7 @@ public class UserService {
             mailSender.send(message);
         } catch (Exception e) {
             // Log the error but don't fail the request
-            System.err.println("Failed to send password reset email: " + e.getMessage());
+            logger.error("Failed to send password reset email: {}", e.getMessage());
         }
     }
 
@@ -228,7 +240,7 @@ public class UserService {
             mailSender.send(message);
         } catch (Exception e) {
             // Log the error but don't fail registration
-            System.err.println("Failed to send welcome email: " + e.getMessage());
+            logger.error("Failed to send welcome email: {}", e.getMessage());
         }
     }
 

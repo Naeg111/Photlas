@@ -11,6 +11,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * グローバル例外ハンドラー
+ * アプリケーション全体の例外を一元的に処理します。
+ * Issue#19, Issue#20
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

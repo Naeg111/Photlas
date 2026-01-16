@@ -2,6 +2,10 @@ package com.photlas.backend.entity;
 
 import jakarta.persistence.*;
 
+/**
+ * カテゴリエンティティ
+ * 写真の被写体カテゴリ（風景、建物、人物など）を表します。
+ */
 @Entity
 @Table(name = "categories")
 public class Category {

@@ -10,6 +10,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+/**
+ * お気に入りリポジトリ
+ * ユーザーのお気に入り写真情報のデータアクセスを提供します。
+ */
 @Repository
 public interface FavoriteRepository extends JpaRepository<Favorite, Favorite.FavoriteId> {
 

@@ -3,6 +3,10 @@ package com.photlas.backend.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * エラーレスポンスDTO
+ * APIエラー発生時にクライアントに返却される情報を格納します。
+ */
 public class ErrorResponse {
     private String message;
     private List<FieldError> errors;
@@ -48,6 +52,10 @@ public class ErrorResponse {
         this.timestamp = timestamp;
     }
 
+    /**
+     * フィールドレベルのエラー情報
+     * バリデーションエラーが発生したフィールドの詳細を格納します。
+     */
     public static class FieldError {
         private String field;
         private Object rejectedValue;
