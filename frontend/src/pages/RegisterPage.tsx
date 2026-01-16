@@ -148,19 +148,9 @@ function RegisterPage() {
 
     // エラーがない場合のみ登録処理を実行
     if (Object.keys(newErrors).length === 0) {
-      // === 登録成功時の処理 ===
-      // Issue#3でAPI呼び出し実装予定
-      // TODO: 
-      // 1. POST /api/v1/auth/register への API呼び出し
-      // 2. ローディング状態の管理
-      // 3. 成功時に /register/success への遷移
-      // 4. エラー時のエラーハンドリング
-      console.log('Registration data:', formData)
-      
-      // 現在は開発用ログ出力のみ
-      // 実際のAPI連携時はここで axios や fetch を使用
+      // バリデーション通過
+      // TODO: API呼び出し実装予定
     }
-    // エラーがある場合は何もしない（エラーメッセージが表示される）
   }
 
   // === 汎用入力フィールド変更ハンドラー ===
