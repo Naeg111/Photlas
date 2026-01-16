@@ -9,14 +9,24 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * スポットリポジトリ
+ * 撮影スポット情報のデータアクセスを提供します。
+ */
 @Repository
 public interface SpotRepository extends JpaRepository<Spot, Long> {
 
     /**
      * 指定された緯度経度から半径200m以内のスポットを検索し、距離が近い順に返す
-     * Haversine公式を使用して距離を計算
      *
-     * 注意: H2データベースではRADIANS関数が使えないため、簡易的な計算を使用
+     * Haversine公式を使用して2点間の距離を計算します:
+     * - 地球の半径: 6371000m (平均半径)
+     * - 円周率: 3.14159265358979323846 (π)
+     * - 検索範囲: 200m
+     *
+     * @param latitude 緯度
+     * @param longitude 経度
+     * @return 距離が近い順のスポットリスト
      */
     @Query(value = """
         SELECT s.* FROM spots s

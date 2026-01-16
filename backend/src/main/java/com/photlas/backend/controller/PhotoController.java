@@ -7,6 +7,7 @@ import com.photlas.backend.dto.UploadUrlRequest;
 import com.photlas.backend.dto.UploadUrlResponse;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.CategoryNotFoundException;
+import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.PhotoService;
 import com.photlas.backend.service.S3Service;
@@ -79,7 +80,7 @@ public class PhotoController {
     ) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
         S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(
                 "uploads",

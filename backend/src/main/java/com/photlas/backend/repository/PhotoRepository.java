@@ -6,6 +6,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+/**
+ * 写真リポジトリ
+ * 写真情報のデータアクセスを提供します。
+ */
 @Repository
 public interface PhotoRepository extends JpaRepository<Photo, Long> {
 

@@ -5,6 +5,10 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * 写真投稿リクエストDTO
+ * 写真の投稿に必要な情報を格納します。
+ */
 public class CreatePhotoRequest {
 
     @NotBlank(message = "タイトルは必須です")

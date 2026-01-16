@@ -16,16 +16,26 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * スポットサービス
+ * スポットの検索・取得などのビジネスロジックを提供します。
+ */
 @Service
 public class SpotService {
 
     private static final Logger logger = LoggerFactory.getLogger(SpotService.class);
+    private static final int PHOTO_COUNT_THRESHOLD_RED = 30;
+    private static final int PHOTO_COUNT_THRESHOLD_ORANGE = 10;
+    private static final int PHOTO_COUNT_THRESHOLD_YELLOW = 5;
+    private static final int MAX_SPOTS_LIMIT = 50;
 
-    @Autowired
-    private SpotRepository spotRepository;
+    private final SpotRepository spotRepository;
+    private final PhotoRepository photoRepository;
 
-    @Autowired
-    private PhotoRepository photoRepository;
+    public SpotService(SpotRepository spotRepository, PhotoRepository photoRepository) {
+        this.spotRepository = spotRepository;
+        this.photoRepository = photoRepository;
+    }
 
     @Transactional(readOnly = true)
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
@@ -45,9 +55,9 @@ public class SpotService {
                 .map(this::convertToSpotResponse)
                 .collect(Collectors.toList());
 
-        // 最大50件に制限
-        if (spotResponses.size() > 50) {
-            spotResponses = spotResponses.subList(0, 50);
+        // 最大件数に制限
+        if (spotResponses.size() > MAX_SPOTS_LIMIT) {
+            spotResponses = spotResponses.subList(0, MAX_SPOTS_LIMIT);
         }
 
         return spotResponses;
@@ -70,11 +80,11 @@ public class SpotService {
     }
 
     private String determinePinColor(Integer photoCount) {
-        if (photoCount >= 30) {
+        if (photoCount >= PHOTO_COUNT_THRESHOLD_RED) {
             return "Red";
-        } else if (photoCount >= 10) {
+        } else if (photoCount >= PHOTO_COUNT_THRESHOLD_ORANGE) {
             return "Orange";
-        } else if (photoCount >= 5) {
+        } else if (photoCount >= PHOTO_COUNT_THRESHOLD_YELLOW) {
             return "Yellow";
         } else {
             return "Green";

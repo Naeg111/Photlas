@@ -5,6 +5,7 @@ import com.photlas.backend.dto.ReportRequest;
 import com.photlas.backend.dto.ReportResponse;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.ReportService;
 import jakarta.validation.Valid;
@@ -44,7 +45,7 @@ public class ReportController {
     ) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
         ReportResponse response = reportService.createReport(photoId, request, user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);

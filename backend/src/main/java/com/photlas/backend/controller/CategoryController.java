@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * カテゴリー一覧APIを提供するコントローラー
  * Issue#16: カテゴリー一覧API
  * フロントエンドでカテゴリー名からIDへのマッピングを行うために使用
  */
@@ -24,8 +25,11 @@ public class CategoryController {
 
     private static final Logger logger = LoggerFactory.getLogger(CategoryController.class);
 
-    @Autowired
-    private CategoryRepository categoryRepository;
+    private final CategoryRepository categoryRepository;
+
+    public CategoryController(CategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
+    }
 
     /**
      * 全カテゴリーを取得（IDの昇順）

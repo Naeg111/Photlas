@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 撮影スポットエンティティ
+ * 写真が撮影された地理的位置を表します。
+ * 半径200m以内の写真は同じスポットとして集約されます。
+ */
 @Entity
 @Table(name = "spots")
 public class Spot {

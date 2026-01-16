@@ -5,6 +5,11 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * お気に入りエンティティ
+ * ユーザーが写真をお気に入り登録した情報を表します。
+ * 複合主キー（userId, photoId）により、同じ組み合わせの重複を防止します。
+ */
 @Entity
 @Table(name = "favorites")
 @IdClass(Favorite.FavoriteId.class)

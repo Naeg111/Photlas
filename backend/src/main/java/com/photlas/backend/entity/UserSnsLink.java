@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+/**
+ * ユーザーSNSリンクエンティティ
+ * ユーザーのプロフィールに表示するSNSリンク（X、Instagram等）を表します。
+ */
 @Entity
 @Table(name = "user_sns_links")
 public class UserSnsLink {

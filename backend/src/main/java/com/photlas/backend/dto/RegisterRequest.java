@@ -2,6 +2,10 @@ package com.photlas.backend.dto;
 
 import jakarta.validation.constraints.*;
 
+/**
+ * ユーザー登録リクエストDTO
+ * Issue#21: パスワードバリデーション統一
+ */
 public class RegisterRequest {
     @NotNull(message = "Username is required")
     @Size(min = 2, max = 12, message = "Username must be between 2 and 12 characters")

@@ -8,6 +8,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * ユーザーエンティティ
+ * Photlasアプリケーションのユーザー情報を表します。
+ */
 @Entity
 @Table(name = "users")
 public class User {

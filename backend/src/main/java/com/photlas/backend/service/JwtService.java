@@ -33,23 +33,55 @@ public class JwtService {
     @Value("${jwt.expiration:86400000}")
     private int jwtExpiration;
 
+    /**
+     * トークンからユーザー名（email）を抽出
+     *
+     * @param token JWTトークン
+     * @return ユーザー名（email）
+     */
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
+    /**
+     * トークンから特定のクレームを抽出
+     *
+     * @param token JWTトークン
+     * @param claimsResolver クレーム解決関数
+     * @param <T> クレームの型
+     * @return 抽出されたクレーム
+     */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
+    /**
+     * ユーザー名からJWTトークンを生成
+     *
+     * @param username ユーザー名（email）
+     * @return 生成されたJWTトークン
+     */
     public String generateToken(String username) {
         return generateToken(new HashMap<>(), username);
     }
 
+    /**
+     * ユーザー名と追加クレームからJWTトークンを生成
+     *
+     * @param extraClaims 追加クレーム
+     * @param username ユーザー名（email）
+     * @return 生成されたJWTトークン
+     */
     public String generateToken(Map<String, Object> extraClaims, String username) {
         return buildToken(extraClaims, username, jwtExpiration);
     }
 
+    /**
+     * トークンの有効期限を取得
+     *
+     * @return 有効期限（ミリ秒）
+     */
     public long getExpirationTime() {
         return jwtExpiration;
     }
@@ -69,6 +101,13 @@ public class JwtService {
                 .compact();
     }
 
+    /**
+     * トークンの有効性を検証
+     *
+     * @param token JWTトークン
+     * @param username ユーザー名（email）
+     * @return トークンが有効でユーザー名が一致する場合true
+     */
     public boolean isTokenValid(String token, String username) {
         final String tokenUsername = extractUsername(token);
         return (tokenUsername.equals(username)) && !isTokenExpired(token);

@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * お気に入り機能を提供するコントローラー
+ */
 @RestController
 @RequestMapping("/api/v1")
 public class FavoriteController {
@@ -20,6 +23,10 @@ public class FavoriteController {
 
     /**
      * お気に入りに登録する
+     *
+     * @param photoId 写真ID
+     * @param authentication 認証情報
+     * @return 204 No Content
      */
     @PostMapping("/photos/{photoId}/favorite")
     public ResponseEntity<Void> addFavorite(
@@ -33,6 +40,10 @@ public class FavoriteController {
 
     /**
      * お気に入りを解除する
+     *
+     * @param photoId 写真ID
+     * @param authentication 認証情報
+     * @return 204 No Content
      */
     @DeleteMapping("/photos/{photoId}/favorite")
     public ResponseEntity<Void> removeFavorite(
@@ -46,6 +57,11 @@ public class FavoriteController {
 
     /**
      * お気に入り一覧を取得する
+     *
+     * @param page ページ番号（デフォルト: 0）
+     * @param size ページサイズ（デフォルト: 20）
+     * @param authentication 認証情報
+     * @return お気に入り一覧のページネーションレスポンス
      */
     @GetMapping("/users/me/favorites")
     public ResponseEntity<Map<String, Object>> getFavorites(
