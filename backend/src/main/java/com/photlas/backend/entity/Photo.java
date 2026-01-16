@@ -5,6 +5,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 写真エンティティ
+ * ユーザーが投稿した写真の情報を表します。
+ * 撮影スポット、カテゴリ、撮影情報などを含みます。
+ */
 @Entity
 @Table(name = "photos")
 public class Photo {

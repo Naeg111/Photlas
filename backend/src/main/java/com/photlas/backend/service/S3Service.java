@@ -12,8 +12,14 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import java.time.Duration;
 import java.util.UUID;
 
+/**
+ * S3サービス
+ * AWS S3への画像アップロード用の署名付きURL生成とCDN URL生成を提供します。
+ */
 @Service
 public class S3Service {
+
+    private static final int PRESIGNED_URL_EXPIRATION_MINUTES = 10;
 
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
@@ -49,7 +55,7 @@ public class S3Service {
                     .build();
 
             PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
-                    .signatureDuration(Duration.ofMinutes(10))
+                    .signatureDuration(Duration.ofMinutes(PRESIGNED_URL_EXPIRATION_MINUTES))
                     .putObjectRequest(putObjectRequest)
                     .build();
 

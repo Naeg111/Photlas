@@ -5,6 +5,7 @@ import com.photlas.backend.entity.Favorite;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
@@ -21,6 +22,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * お気に入りサービス
+ * お気に入りの追加・削除・一覧取得などのビジネスロジックを提供します。
+ */
 @Service
 public class FavoriteService {
 
@@ -49,7 +54,7 @@ public class FavoriteService {
     @Transactional
     public void addFavorite(Long photoId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new RuntimeException("写真が見つかりません"));
@@ -74,7 +79,7 @@ public class FavoriteService {
     @Transactional
     public void removeFavorite(Long photoId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
         favoriteRepository.findByUserIdAndPhotoId(user.getId(), photoId)
                 .ifPresentOrElse(
@@ -92,7 +97,7 @@ public class FavoriteService {
     @Transactional(readOnly = true)
     public Map<String, Object> getFavorites(String email, int page, int size) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
         Pageable pageable = PageRequest.of(page, size);
         Page<Favorite> favoritePage = favoriteRepository.findByUserId(user.getId(), pageable);

@@ -7,6 +7,9 @@ import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.CategoryNotFoundException;
+import com.photlas.backend.exception.PhotoNotFoundException;
+import com.photlas.backend.exception.SpotNotFoundException;
+import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
@@ -23,6 +26,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 写真サービス
+ * 写真の投稿・取得などのビジネスロジックを提供します。
+ */
 @Service
 public class PhotoService {
 
@@ -68,7 +75,7 @@ public class PhotoService {
     public PhotoResponse createPhoto(CreatePhotoRequest request, String email) {
         // ユーザー情報を取得
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
         // 1. スポットの集約と作成
         Spot spot = findOrCreateSpot(request, user);
@@ -109,13 +116,13 @@ public class PhotoService {
     @Transactional(readOnly = true)
     public PhotoResponse getPhotoDetail(Long photoId, String email) {
         Photo photo = photoRepository.findById(photoId)
-                .orElseThrow(() -> new RuntimeException("写真が見つかりません"));
+                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
 
         Spot spot = spotRepository.findById(photo.getSpotId())
-                .orElseThrow(() -> new RuntimeException("スポットが見つかりません"));
+                .orElseThrow(() -> new SpotNotFoundException("スポットが見つかりません"));
 
         User user = userRepository.findById(photo.getUserId())
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
         // お気に入り状態をチェック
         boolean isFavorited = false;

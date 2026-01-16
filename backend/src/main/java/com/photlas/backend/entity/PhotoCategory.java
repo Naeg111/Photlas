@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
+/**
+ * 写真カテゴリ中間テーブルエンティティ
+ * 写真とカテゴリの多対多の関係を表します。
+ * 複合主キー（photoId, categoryId）により、同じ組み合わせの重複を防止します。
+ */
 @Entity
 @Table(name = "photo_categories")
 @IdClass(PhotoCategory.PhotoCategoryId.class)

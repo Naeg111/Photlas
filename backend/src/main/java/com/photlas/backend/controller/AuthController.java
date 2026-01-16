@@ -19,26 +19,50 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 認証関連のエンドポイントを提供するコントローラー
+ * Issue#6: パスワードリセット機能
+ */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
+    public AuthController(UserService userService) {
+        this.userService = userService;
+    }
+
+    /**
+     * バリデーションエラーをレスポンスに変換するヘルパーメソッド
+     *
+     * @param bindingResult バリデーション結果
+     * @return エラーレスポンス
+     */
+    private ResponseEntity<?> buildValidationErrorResponse(BindingResult bindingResult) {
+        List<ErrorResponse.FieldError> fieldErrors = bindingResult.getFieldErrors().stream()
+            .map(error -> new ErrorResponse.FieldError(
+                error.getField(),
+                error.getRejectedValue(),
+                error.getDefaultMessage()
+            ))
+            .collect(Collectors.toList());
+
+        ErrorResponse errorResponse = new ErrorResponse("Validation failed", fieldErrors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * ユーザー登録エンドポイント
+     *
+     * @param request 登録リクエスト
+     * @param bindingResult バリデーション結果
+     * @return 登録レスポンス
+     */
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            List<ErrorResponse.FieldError> fieldErrors = bindingResult.getFieldErrors().stream()
-                .map(error -> new ErrorResponse.FieldError(
-                    error.getField(),
-                    error.getRejectedValue(),
-                    error.getDefaultMessage()
-                ))
-                .collect(Collectors.toList());
-
-            ErrorResponse errorResponse = new ErrorResponse("Validation failed", fieldErrors);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            return buildValidationErrorResponse(bindingResult);
         }
 
         try {
@@ -56,19 +80,17 @@ public class AuthController {
         }
     }
 
+    /**
+     * ログインエンドポイント
+     *
+     * @param request ログインリクエスト
+     * @param bindingResult バリデーション結果
+     * @return ログインレスポンス
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            List<ErrorResponse.FieldError> fieldErrors = bindingResult.getFieldErrors().stream()
-                .map(error -> new ErrorResponse.FieldError(
-                    error.getField(),
-                    error.getRejectedValue(),
-                    error.getDefaultMessage()
-                ))
-                .collect(Collectors.toList());
-
-            ErrorResponse errorResponse = new ErrorResponse("Validation failed", fieldErrors);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            return buildValidationErrorResponse(bindingResult);
         }
 
         try {
@@ -94,16 +116,7 @@ public class AuthController {
     @PostMapping("/password-reset-request")
     public ResponseEntity<?> passwordResetRequest(@Valid @RequestBody PasswordResetRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            List<ErrorResponse.FieldError> fieldErrors = bindingResult.getFieldErrors().stream()
-                .map(error -> new ErrorResponse.FieldError(
-                    error.getField(),
-                    error.getRejectedValue(),
-                    error.getDefaultMessage()
-                ))
-                .collect(Collectors.toList());
-
-            ErrorResponse errorResponse = new ErrorResponse("Validation failed", fieldErrors);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            return buildValidationErrorResponse(bindingResult);
         }
 
         try {
@@ -130,16 +143,7 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            List<ErrorResponse.FieldError> fieldErrors = bindingResult.getFieldErrors().stream()
-                .map(error -> new ErrorResponse.FieldError(
-                    error.getField(),
-                    error.getRejectedValue(),
-                    error.getDefaultMessage()
-                ))
-                .collect(Collectors.toList());
-
-            ErrorResponse errorResponse = new ErrorResponse("Validation failed", fieldErrors);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            return buildValidationErrorResponse(bindingResult);
         }
 
         try {
