@@ -1,124 +1,34 @@
-// === React Router DOM インポート ===
-import { Link } from 'react-router-dom';  // SPA内でのナビゲーション用
+import { Link } from 'react-router-dom'
 
 /**
  * RegisterSuccessPage コンポーネント
  * Issue#2: ユーザー登録機能 (UI) - 登録完了ページ
- * 
- * 【目的】
- * - ユーザー登録が正常に完了したことを明確に伝える
- * - 次のステップ（メール確認）を分かりやすく案内
- * - トップページへの自然な導線を提供
- * 
- * 【UIデザイン】
- * - 成功体験を重視したポジティブなメッセージング
- * - 緑色のアクセントで成功感を演出
- * - カード型レイアウトで重要な情報を際立たせ
- * 
- * 【ユーザージャーニー】
- * 1. RegisterPage での登録フォーム送信
- * 2. 当ページで成功メッセージ表示
- * 3. メール確認（外部アクション）
- * 4. メール内リンクでアカウント有効化（Issue#3で実装予定）
- * 
- * 【アクセス経路】
- * - URL: /register/success
- * - 前ページ: RegisterPage（登録フォーム）
- * - 次ページ: HomePage（トップページ）
- * 
- * 【将来の拡張予定】
- * - メール再送信機能
- * - SNS連携アカウント作成の案内
- * - 初回ログイン誘導
- * 
- * 【TDD実装状況】
- * Green段階: テストを通すための最小実装（現在の状態）
+ *
+ * ユーザー登録が正常に完了したことを伝え、メール確認の案内を表示する。
  */
 function RegisterSuccessPage() {
   return (
-    <div className={
-      "min-h-screen " +              // 最小高さ: 画面の高さ（100vh）
-      "bg-gray-50 " +                // 背景色: 薄いグレー（カード型UIの背景）
-      "flex items-center justify-center " +  // Flexbox: 垂直・水平中央揃え
-      "py-12 " +                     // 垂直パディング: 48px（上下余白確保）
-      "px-4 sm:px-6 lg:px-8"         // 水平パディング: レスポンシブ（16px → 24px → 32px）
-    }>
-      
-      {/* === カード型コンテナ === */}
-      <div className={
-        "max-w-md w-full " +          // 最大幅: 448px、幅: 100%（親に収まる範囲）
-        "bg-white " +                 // 背景色: 白（カード効果）
-        "rounded-lg shadow-md " +     // 角丸: 8px、影: 中程度（カード効果）
-        "p-8"                         // 内側パディング: 32px（十分な余白）
-      }>
-        
-        {/* === コンテンツ中央揃えコンテナ === */}
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
         <div className="text-center">
-          
-          {/* === ページタイトル === */}
-          <h1 className={
-            "text-2xl font-bold " +    // フォント: 24px、太字
-            "text-gray-900 " +         // 文字色: 濃いグレー（メインテキスト）
-            "mb-6"                     // マージン下: 24px（次の要素との間隔）
-          }>
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">
             登録完了
           </h1>
-          
-          {/* === 成功メッセージセクション === */}
-          <div className="mb-8">      {/* マージン下: 32px（ボタンとの間隔） */}
-            
-            {/* === 感謝メッセージ === */}
-            <h2 className={
-              "text-xl font-semibold " +   // フォント: 20px、セミボールド
-              "text-green-600 " +          // 文字色: 緑色（成功・ポジティブ感）
-              "mb-4"                       // マージン下: 16px
-            }>
+
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-green-600 mb-4">
               登録ありがとうございます！
             </h2>
-            
-            {/* === 次ステップの案内 === */}
-            <p className={
-              "text-gray-600 " +           // 文字色: 中程度のグレー（説明文）
-              "leading-relaxed"            // 行間: ゆったり（1.625、読みやすさ向上）
-            }>
-              {/* 
-                メール確認の案内文
-                - 具体的なアクション（メール内リンクをクリック）を明示
-                - 専門用語を避けた分かりやすい表現
-                - ユーザーの不安を解消する丁寧な説明
-              */}
+
+            <p className="text-gray-600 leading-relaxed">
               ご登録のメールアドレスに確認メールを送信しました。メール内のリンクをクリックして、登録を完了してください。
             </p>
           </div>
 
-          {/* === ナビゲーションボタン === */}
           <Link
-            to="/"                     // 遷移先: ホームページ（ルートパス）
-            className={
-              // === ベーススタイル ===
-              "bg-blue-500 " +         // 背景色: 青色（ブランドカラー）
-              "hover:bg-blue-600 " +   // ホバー時: より濃い青色
-              "text-white " +          // 文字色: 白色（高コントラスト）
-              "font-medium " +         // フォント太さ: ミディアム
-              
-              // === サイズと余白 ===
-              "py-3 px-6 " +           // パディング: 上下12px、左右24px
-              "rounded-md " +          // 角丸: 6px
-              
-              // === インタラクション ===
-              "transition-colors " +   // アニメーション: 色変化をスムーズに
-              
-              // === アクセシビリティ ===
-              "focus:outline-none " +  // デフォルトアウトライン無効化
-              "focus:ring-2 " +        // フォーカス時リング表示
-              "focus:ring-offset-2 " + // リングオフセット: 2px
-              "focus:ring-blue-500 " + // リング色: 青色
-              
-              // === 表示形式 ===
-              "inline-block"           // インラインブロック（リンクだがボタン風）
-            }
+            to="/"
+            className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 inline-block"
           >
-            {/* ボタンテキスト: 明確で分かりやすいアクション */}
             トップページへ
           </Link>
         </div>
@@ -127,8 +37,6 @@ function RegisterSuccessPage() {
   )
 }
 
-// ES6 モジュールとしてエクスポート
-// App.tsx のルーティングで /register/success パスに配置
 export default RegisterSuccessPage
 
 

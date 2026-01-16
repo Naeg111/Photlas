@@ -93,8 +93,7 @@ const LoginPage: React.FC = () => {
           general: errorData.message || 'メールアドレスまたはパスワードが正しくありません'
         })
       }
-    } catch (error) {
-      console.error('Login error:', error)
+    } catch {
       setErrors({
         general: 'ネットワークエラーが発生しました。再度お試しください。'
       })
