@@ -101,7 +101,6 @@ export default function MapView({ filterParams }: MapViewProps) {
       const data = await response.json()
       setSpots(data)
     } catch (error) {
-      console.error('Failed to fetch spots:', error)
       setShowToast(true)
       setTimeout(() => setShowToast(false), 3000)
     }

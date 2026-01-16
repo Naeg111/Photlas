@@ -1,86 +1,23 @@
 /**
  * CategoryButtons コンポーネント
- * Issue#1: プロジェクトセットアップと基本レイアウト - カテゴリボタン群
- * 
- * 【目的】
- * - 写真カテゴリーの選択・切り替え機能を提供
- * - 上部中央に配置される横スクロール可能なボタン群
- * - UI設計書(08_ui_design.md)に基づく基本レイアウトの実装
- * 
- * 【機能仕様】
- * - 複数カテゴリーの同時選択可能（将来実装）
- * - レスポンシブ対応（狭い画面では横スクロール）
- * - 視覚的フィードバック（ホバー、選択状態）
- * 
- * 【将来の拡張予定】
- * - アクティブ状態の管理
- * - 動的カテゴリ読み込み（API連携）
- * - 選択状態の永続化
- * 
- * 【TDD実装状況】
- * Green段階: テストを通すための最小実装（現在の状態）
+ * Issue#1: プロジェクトセットアップと基本レイアウト
+ *
+ * 写真カテゴリーの選択・切り替え機能を提供する横スクロール可能なボタン群。
  */
 function CategoryButtons() {
-  // === カテゴリデータの定義 ===
-  // 写真の分類に使用するカテゴリーの配列
-  // 将来的にはAPIから動的に取得する予定
-  const categories = [
-    '風景',           // 自然風景、都市景観
-    '建築',           // 建物、構造物
-    'ストリート',      // 街角スナップ、日常風景  
-    'ポートレート',    // 人物撮影
-    '乗り物'          // 車、電車、バイクなど
-  ];
+  const categories = ['風景', '建築', 'ストリート', 'ポートレート', '乗り物'];
 
   return (
-    <div 
-      role="group"                    // アクセシビリティ: 関連するボタン群であることを示す
-      data-testid="category-buttons"  // テスト用識別子: E2Eテストでの要素特定に使用
-      className={
-        "flex " +                     // Flexboxレイアウト: 子要素を横並びに配置
-        "space-x-2 " +                // 水平間隔: 子要素間に8pxのマージン
-        "overflow-x-auto"             // 横スクロール: 画面幅を超える場合はスクロール可能
-      }
+    <div
+      role="group"
+      data-testid="category-buttons"
+      className="flex space-x-2 overflow-x-auto"
     >
-      {/* === 動的ボタン生成 === */}
-      {/* 
-        配列のmapメソッドを使用してカテゴリ配列から各ボタンを生成
-        Reactでは配列の各要素を個別のコンポーネントとしてレンダリング可能
-      */}
       {categories.map((category) => (
         <button
-          // === React Key ===
-          // 各要素を一意に識別するためのkey属性
-          // Reactの仮想DOM差分計算で使用（パフォーマンス向上）
           key={category}
-          
-          className={
-            // === ベーススタイル ===
-            "bg-white " +             // 背景色: 白色
-            "shadow-md " +            // ドロップシャドウ: 中程度の影
-            "rounded-full " +         // 角の丸み: 完全な円形（ピル型ボタン）
-            "border " +               // ボーダー: 1px solid
-            
-            // === 内側の余白 ===
-            "px-3 py-1 " +            // パディング: 左右12px、上下4px（コンパクト設計）
-            
-            // === テキスト制御 ===
-            "whitespace-nowrap " +    // テキスト改行禁止: カテゴリ名の途中で改行されない
-            "text-sm " +              // フォントサイズ: 14px
-            
-            // === インタラクション ===
-            "hover:bg-blue-50 " +     // ホバー時: 薄い青色背景
-            "transition-colors"       // アニメーション: 色変化をスムーズに
-          }
-          
-          // TODO: Issue#3でクリックハンドラーとアクティブ状態管理を実装
-          // onClick={() => handleCategoryToggle(category)}
-          // className に active 状態の条件付きスタイルを追加
+          className="bg-white shadow-md rounded-full border px-3 py-1 whitespace-nowrap text-sm hover:bg-blue-50 transition-colors"
         >
-          {/* 
-            カテゴリ名をボタンテキストとして表示
-            JSXの式展開 {} を使用して動的にテキストを挿入
-          */}
           {category}
         </button>
       ))}
@@ -88,6 +25,4 @@ function CategoryButtons() {
   );
 }
 
-// ES6 モジュールとしてエクスポート
-// 親コンポーネント（App.tsx）からインポートして使用
 export default CategoryButtons;
