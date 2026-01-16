@@ -60,8 +60,7 @@ export default function MapPicker({
         setCenter(newCenter)
         setErrorMessage('')
       },
-      (error) => {
-        console.error('Geolocation error:', error)
+      () => {
         setErrorMessage('位置情報の取得に失敗しました')
       }
     )
