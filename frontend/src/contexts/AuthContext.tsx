@@ -34,8 +34,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const parsedUser = JSON.parse(savedUser)
         setUser(parsedUser)
         setIsAuthenticated(true)
-      } catch (error) {
-        console.error('Failed to parse saved user data:', error)
+      } catch {
         logout()
       }
     }

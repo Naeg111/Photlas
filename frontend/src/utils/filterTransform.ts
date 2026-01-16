@@ -12,7 +12,6 @@ export function transformMonths(months: string[]): number[] {
   return months.map(month => {
     const match = month.match(/^(\d+)月$/);
     if (!match) {
-      console.warn(`Invalid month format: ${month}`);
       return 0;
     }
     return parseInt(match[1], 10);
