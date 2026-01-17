@@ -1,4 +1,4 @@
-import { render, screen, cleanup, waitFor, act } from '@testing-library/react'
+import { render, screen, cleanup, act } from '@testing-library/react'
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import App from './App'
@@ -8,6 +8,14 @@ import App from './App'
  * Issue#2 対応: ルーティング機能追加
  * Issue#25 対応: SplashScreen統合
  */
+
+// motion/react のモック（アニメーションを無効化）
+vi.mock('motion/react', () => ({
+  motion: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  },
+  AnimatePresence: ({ children }: any) => <>{children}</>,
+}))
 
 // Google Maps APIのモック
 const mockMap = {
@@ -60,14 +68,29 @@ const sessionStorageMock = {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock })
 Object.defineProperty(window, 'sessionStorage', { value: sessionStorageMock })
 
+/** SplashScreen表示時間（ミリ秒） */
+const SPLASH_SCREEN_DURATION = 2000
+
+/**
+ * SplashScreenをスキップしてメインコンテンツを表示する
+ * fake timersが有効な状態で呼び出す必要がある
+ */
+function skipSplashScreen() {
+  act(() => {
+    vi.advanceTimersByTime(SPLASH_SCREEN_DURATION)
+  })
+}
+
 describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.useFakeTimers()
     localStorageMock.getItem.mockReturnValue(null)
     sessionStorageMock.getItem.mockReturnValue(null)
   })
+
   afterEach(() => {
-    // 確実なDOMクリーンアップ
+    vi.useRealTimers()
     cleanup()
     document.body.innerHTML = ''
   })
@@ -78,8 +101,7 @@ describe('App', () => {
         <App />
       </MemoryRouter>
     )
-    // MapViewコンポーネントが地図を表示していることを確認
-    // Google Mapのdata-testidで確認
+    skipSplashScreen()
     expect(screen.getByTestId('google-map')).toBeInTheDocument()
   })
 
@@ -89,7 +111,7 @@ describe('App', () => {
         <App />
       </MemoryRouter>
     )
-    // フローティング要素の確認
+    skipSplashScreen()
     expect(screen.getByRole('button', { name: '写真フィルター機能を開く' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'ユーザーメニューを開く' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '新しい写真を投稿する' })).toBeInTheDocument()
@@ -102,7 +124,7 @@ describe('App', () => {
         <App />
       </MemoryRouter>
     )
-    
+    skipSplashScreen()
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('アカウント登録')
   })
 
@@ -112,7 +134,7 @@ describe('App', () => {
         <App />
       </MemoryRouter>
     )
-    
+    skipSplashScreen()
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('登録完了')
     expect(screen.getByText('登録ありがとうございます！')).toBeInTheDocument()
   })
@@ -123,7 +145,7 @@ describe('App', () => {
         <App />
       </MemoryRouter>
     )
-
+    skipSplashScreen()
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ページが見つかりません')
   })
 
@@ -132,62 +154,34 @@ describe('App', () => {
    * アプリケーション起動時にSplashScreenを表示し、2秒後に非表示にする
    */
   describe('SplashScreen Integration', () => {
-    beforeEach(() => {
-      vi.useFakeTimers()
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
-    })
-
     it('displays SplashScreen on initial load', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <App />
         </MemoryRouter>
       )
-
-      // SplashScreenが表示されていることを確認
       expect(screen.getByText('Photlas')).toBeInTheDocument()
     })
 
-    it('hides SplashScreen after 2 seconds', async () => {
+    it('hides SplashScreen after 2 seconds', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <App />
         </MemoryRouter>
       )
-
-      // 初期状態ではSplashScreenが表示されている
       expect(screen.getByText('Photlas')).toBeInTheDocument()
-
-      // 2秒経過
-      await act(async () => {
-        vi.advanceTimersByTime(2000)
-      })
-
-      // SplashScreenが非表示になっていることを確認
-      await waitFor(() => {
-        expect(screen.queryByText('Photlas')).not.toBeInTheDocument()
-      })
+      skipSplashScreen()
+      expect(screen.queryByText('Photlas')).not.toBeInTheDocument()
     })
 
-    it('shows main content after SplashScreen disappears', async () => {
+    it('shows main content after SplashScreen disappears', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <App />
         </MemoryRouter>
       )
-
-      // 2秒経過
-      await act(async () => {
-        vi.advanceTimersByTime(2000)
-      })
-
-      // メインコンテンツ（MapView）が表示されていることを確認
-      await waitFor(() => {
-        expect(screen.getByTestId('google-map')).toBeInTheDocument()
-      })
+      skipSplashScreen()
+      expect(screen.getByTestId('google-map')).toBeInTheDocument()
     })
   })
 })
