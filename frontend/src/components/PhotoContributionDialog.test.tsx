@@ -169,15 +169,20 @@ describe('PhotoContributionDialog', () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      // 複数のカテゴリを選択
-      const landscapeCheckbox = screen.getByRole('checkbox', { name: /風景/ })
-      const cityCheckbox = screen.getByRole('checkbox', { name: /街並み/ })
+      // 複数のカテゴリを選択（親divをクリック）
+      const landscapeDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      const cityDiv = screen.getByText('街並み').closest('div[class*="cursor-pointer"]')
 
-      await user.click(landscapeCheckbox)
-      await user.click(cityCheckbox)
+      if (landscapeDiv) await user.click(landscapeDiv)
+      if (cityDiv) await user.click(cityDiv)
 
-      expect(landscapeCheckbox).toBeChecked()
-      expect(cityCheckbox).toBeChecked()
+      // チェックボックスの状態を確認
+      await waitFor(() => {
+        const landscapeCheckbox = screen.getByRole('checkbox', { name: /風景/ })
+        const cityCheckbox = screen.getByRole('checkbox', { name: /街並み/ })
+        expect(landscapeCheckbox).toBeChecked()
+        expect(cityCheckbox).toBeChecked()
+      })
     })
   })
 
@@ -270,7 +275,9 @@ describe('PhotoContributionDialog', () => {
   describe('Upload Status - アップロード状態', () => {
     it('shows uploading message during upload', async () => {
       const user = userEvent.setup()
-      render(<PhotoContributionDialog {...defaultProps} />)
+      // onSubmitを遅延させてアップロード中の状態を確認できるようにする
+      const slowSubmit = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 1000)))
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={slowSubmit} />)
 
       // 全ての必須項目を入力
       const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
@@ -280,12 +287,19 @@ describe('PhotoContributionDialog', () => {
       const titleInput = screen.getByPlaceholderText(/夕暮れの東京タワー/)
       await user.type(titleInput, 'テスト写真')
 
-      const checkbox = screen.getByRole('checkbox', { name: /風景/ })
-      await user.click(checkbox)
+      // カテゴリを選択（親divをクリック）
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
 
       // 位置情報が設定されていることを確認
       await waitFor(() => {
         expect(screen.getByText(/位置が設定されました/)).toBeInTheDocument()
+      })
+
+      // 投稿ボタンが有効になることを確認
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: '投稿する' })
+        expect(submitButton).not.toBeDisabled()
       })
 
       // 投稿ボタンをクリック
