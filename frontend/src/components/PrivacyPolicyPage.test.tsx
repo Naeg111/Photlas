@@ -42,7 +42,9 @@ describe('PrivacyPolicyPage', () => {
       render(<PrivacyPolicyPage {...defaultProps} />)
 
       expect(screen.getByText(/Photlas運営/)).toBeInTheDocument()
-      expect(screen.getByText(/プライバシーポリシー/)).toBeInTheDocument()
+      // プライバシーポリシーという文字列は複数箇所に存在するため、getAllByTextを使用
+      const privacyPolicyElements = screen.getAllByText(/プライバシーポリシー/)
+      expect(privacyPolicyElements.length).toBeGreaterThan(0)
     })
 
     it('renders all required sections', () => {
