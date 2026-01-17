@@ -19,7 +19,7 @@ interface PhotoLightboxProps {
 }
 
 export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxProps) {
-  const [scale, setScale] = useState(LIGHTBOX.INITIAL_SCALE)
+  const [scale, setScale] = useState<number>(LIGHTBOX.INITIAL_SCALE)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
