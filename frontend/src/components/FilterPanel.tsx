@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Button } from "./ui/button";
 import { CategoryIcon } from "./CategoryIcon";
 import { MonthIcons, TimeIcons, WeatherIcons } from "./FilterIcons";
+import { PHOTO_CATEGORIES } from "../utils/constants";
 
 export interface FilterConditions {
   categories: string[];
@@ -22,8 +23,6 @@ const MONTHS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", 
 const TIME_OF_DAY = ["朝", "昼", "夕方", "夜"];
 
 const WEATHER = ["晴れ", "曇り", "雨", "雪"];
-
-const CATEGORIES = ["風景", "街並み", "植物", "動物", "自動車", "バイク", "鉄道", "飛行機", "食べ物", "ポートレート", "星空", "その他"];
 
 export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -57,7 +56,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           {/* 被写体種別 */}
           <div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {CATEGORIES.map((category) => (
+              {PHOTO_CATEGORIES.map((category) => (
                 <Button
                   key={category}
                   variant={selectedCategories.includes(category) ? "default" : "outline"}
