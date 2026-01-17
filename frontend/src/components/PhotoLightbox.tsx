@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { X } from 'lucide-react'
 import { Button } from './ui/button'
 import { ImageWithFallback } from './figma/ImageWithFallback'
+import { LIGHTBOX } from '../utils/constants'
 
 /**
  * PhotoLightbox コンポーネント
@@ -18,22 +19,22 @@ interface PhotoLightboxProps {
 }
 
 export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxProps) {
-  const [scale, setScale] = useState(1)
+  const [scale, setScale] = useState(LIGHTBOX.INITIAL_SCALE)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     if (!open) {
-      setScale(1)
+      setScale(LIGHTBOX.INITIAL_SCALE)
       setPosition({ x: 0, y: 0 })
     }
   }, [open])
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault()
-    const delta = e.deltaY > 0 ? -0.1 : 0.1
-    setScale((prev) => Math.max(0.5, Math.min(3, prev + delta)))
+    const delta = e.deltaY > 0 ? -LIGHTBOX.ZOOM_DELTA : LIGHTBOX.ZOOM_DELTA
+    setScale((prev) => Math.max(LIGHTBOX.MIN_SCALE, Math.min(LIGHTBOX.MAX_SCALE, prev + delta)))
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {

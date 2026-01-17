@@ -9,6 +9,7 @@ import { ImageWithFallback } from './figma/ImageWithFallback'
 import { Upload, MapPin, X } from 'lucide-react'
 import { Progress } from './ui/progress'
 import { motion, AnimatePresence } from 'motion/react'
+import { PHOTO_CATEGORIES, PHOTO_UPLOAD, UPLOAD_STATUS } from '../utils/constants'
 
 /**
  * PhotoContributionDialog コンポーネント
@@ -27,8 +28,6 @@ interface PhotoContributionDialogProps {
     position: { lat: number; lng: number }
   }) => Promise<void>
 }
-
-const CATEGORIES = ['風景', '街並み', '植物', '動物', '自動車', 'バイク', '鉄道', '飛行機', '食べ物', 'ポートレート', '星空', 'その他']
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
 
@@ -49,16 +48,15 @@ export function PhotoContributionDialog({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // ファイルサイズチェック（50MB）
-      if (file.size > 50 * 1024 * 1024) {
-        alert('ファイルサイズは50MB以下にしてください。')
+      // ファイルサイズチェック
+      if (file.size > PHOTO_UPLOAD.MAX_FILE_SIZE) {
+        alert(`ファイルサイズは${PHOTO_UPLOAD.MAX_FILE_SIZE_DISPLAY}以下にしてください。`)
         return
       }
 
       // ファイル形式チェック
-      const validTypes = ['image/jpeg', 'image/png', 'image/heic']
-      if (!validTypes.includes(file.type)) {
-        alert('JPEG、PNG、HEIC形式のファイルのみ対応しています。')
+      if (!PHOTO_UPLOAD.ALLOWED_FILE_TYPES.includes(file.type as typeof PHOTO_UPLOAD.ALLOWED_FILE_TYPES[number])) {
+        alert(`${PHOTO_UPLOAD.ALLOWED_FILE_TYPES_DISPLAY}形式のファイルのみ対応しています。`)
         return
       }
 
@@ -109,9 +107,9 @@ export function PhotoContributionDialog({
           clearInterval(interval)
           return 100
         }
-        return prev + 10
+        return prev + UPLOAD_STATUS.PROGRESS_INCREMENT
       })
-    }, 200)
+    }, UPLOAD_STATUS.PROGRESS_INTERVAL)
 
     try {
       if (onSubmit) {
@@ -131,7 +129,7 @@ export function PhotoContributionDialog({
       setTimeout(() => {
         resetForm()
         onOpenChange(false)
-      }, 1500)
+      }, UPLOAD_STATUS.SUCCESS_CLOSE_DELAY)
     } catch {
       clearInterval(interval)
       setUploadStatus('error')
@@ -140,7 +138,7 @@ export function PhotoContributionDialog({
       setTimeout(() => {
         setUploadStatus('idle')
         setUploadProgress(0)
-      }, 3000)
+      }, UPLOAD_STATUS.ERROR_RESET_DELAY)
     }
   }
 
@@ -207,7 +205,7 @@ export function PhotoContributionDialog({
                     写真を選択
                   </Button>
                   <p className="text-sm text-gray-500 mt-2">
-                    JPEG、PNG、HEIC（最大50MB）
+                    {PHOTO_UPLOAD.ALLOWED_FILE_TYPES_DISPLAY}（最大{PHOTO_UPLOAD.MAX_FILE_SIZE_DISPLAY}）
                   </p>
                 </div>
               )}
@@ -229,10 +227,10 @@ export function PhotoContributionDialog({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="例：夕暮れの東京タワー"
-              maxLength={20}
+              maxLength={PHOTO_UPLOAD.TITLE_MAX_LENGTH}
               className="mt-2"
             />
-            <p className="text-sm text-gray-500">{title.length}/20文字</p>
+            <p className="text-sm text-gray-500">{title.length}/{PHOTO_UPLOAD.TITLE_MAX_LENGTH}文字</p>
           </div>
 
           {/* 位置情報 */}
@@ -278,7 +276,7 @@ export function PhotoContributionDialog({
           <div className="space-y-3">
             <Label className="text-base">カテゴリ *（1つ以上選択）</Label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {CATEGORIES.map((category) => (
+              {PHOTO_CATEGORIES.map((category) => (
                 <div
                   key={category}
                   className={`flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${
