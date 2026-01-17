@@ -43,7 +43,7 @@ describe('LoginDialog', () => {
       render(<LoginDialog {...defaultProps} />)
 
       expect(screen.getByRole('dialog')).toBeInTheDocument()
-      expect(screen.getByText('ログイン')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
     })
 
     it('does not render dialog when open prop is false', () => {
@@ -171,7 +171,7 @@ describe('LoginDialog', () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ email: 'test@example.com', username: 'testuser', token: 'test-token' }),
+        json: () => Promise.resolve({ email: 'test@example.com', username: 'testuser', token: 'test-token', role: 'user' }),
       })
 
       render(<LoginDialog {...defaultProps} />)
@@ -182,7 +182,7 @@ describe('LoginDialog', () => {
 
       await waitFor(() => {
         expect(mockLogin).toHaveBeenCalledWith(
-          { email: 'test@example.com', username: 'testuser' },
+          { email: 'test@example.com', username: 'testuser', role: 'user' },
           'test-token',
           false // rememberMe is false by default
         )

@@ -143,21 +143,21 @@ describe('SignUpDialog', () => {
   })
 
   describe('Validation - バリデーション', () => {
-    it('shows error when display name is empty', async () => {
+    it('disables register button when display name is empty', async () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
-      // 他のフィールドを埋める
+      // 表示名以外のフィールドを埋める
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
       await user.click(screen.getByLabelText('利用規約に同意します'))
-      await user.click(screen.getByRole('button', { name: '登録する' }))
 
-      expect(screen.getByText('表示名を入力してください')).toBeInTheDocument()
+      // 登録ボタンがdisabledであることを確認
+      expect(screen.getByRole('button', { name: '登録する' })).toBeDisabled()
     })
 
-    it('shows error when email is empty', async () => {
+    it('disables register button when email is empty', async () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
@@ -165,9 +165,9 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
       await user.click(screen.getByLabelText('利用規約に同意します'))
-      await user.click(screen.getByRole('button', { name: '登録する' }))
 
-      expect(screen.getByText('メールアドレスを入力してください')).toBeInTheDocument()
+      // 登録ボタンがdisabledであることを確認
+      expect(screen.getByRole('button', { name: '登録する' })).toBeDisabled()
     })
 
     it('shows error when email format is invalid', async () => {
@@ -282,7 +282,7 @@ describe('SignUpDialog', () => {
       expect(screen.getByText('パスワードが一致しません')).toBeInTheDocument()
     })
 
-    it('shows error when terms are not agreed', async () => {
+    it('disables register button when terms are not agreed', async () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
@@ -291,9 +291,9 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
       // 利用規約に同意しない
-      await user.click(screen.getByRole('button', { name: '登録する' }))
 
-      expect(screen.getByText('利用規約に同意してください')).toBeInTheDocument()
+      // 登録ボタンがdisabledであることを確認
+      expect(screen.getByRole('button', { name: '登録する' })).toBeDisabled()
     })
   })
 
