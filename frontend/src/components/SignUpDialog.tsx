@@ -10,6 +10,12 @@ import { ScrollArea } from './ui/scroll-area'
 import { Upload, Eye, EyeOff } from 'lucide-react'
 import { API_V1_URL } from '../config/api'
 import { toast } from 'sonner'
+import {
+  MAX_SNS_LINKS,
+  getPasswordStrength,
+  validatePassword,
+  validateEmail,
+} from '../utils/validation'
 
 /**
  * SignUpDialog コンポーネント
@@ -24,8 +30,6 @@ interface SignUpDialogProps {
   onShowTerms: () => void
   onShowLogin: () => void
 }
-
-type PasswordStrength = 'weak' | 'medium' | 'strong'
 
 export function SignUpDialog({
   open,
@@ -46,20 +50,6 @@ export function SignUpDialog({
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const getPasswordStrength = (pwd: string): PasswordStrength => {
-    if (pwd.length < 8) return 'weak'
-
-    const hasNumber = /[0-9]/.test(pwd)
-    const hasLower = /[a-z]/.test(pwd)
-    const hasUpper = /[A-Z]/.test(pwd)
-
-    const conditions = [hasNumber, hasLower, hasUpper].filter(Boolean).length
-
-    if (conditions === 3 && pwd.length >= 12) return 'strong'
-    if (conditions >= 2) return 'medium'
-    return 'weak'
-  }
-
   const passwordStrength = password ? getPasswordStrength(password) : null
 
   const validateForm = (): boolean => {
@@ -71,27 +61,15 @@ export function SignUpDialog({
     }
 
     // メールアドレス
-    if (!email.trim()) {
-      newErrors.email = 'メールアドレスを入力してください'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = '正しいメールアドレスの形式で入力してください'
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.isValid && emailValidation.errorMessage) {
+      newErrors.email = emailValidation.errorMessage
     }
 
     // パスワード
-    if (!password) {
-      newErrors.password = 'パスワードを入力してください'
-    } else {
-      if (password.length < 8 || password.length > 20) {
-        newErrors.password = 'パスワードは8文字以上20文字以内で入力してください'
-      } else if (!/[0-9]/.test(password)) {
-        newErrors.password = 'パスワードには数字を1文字以上含めてください'
-      } else if (!/[a-z]/.test(password)) {
-        newErrors.password = 'パスワードにはローマ字小文字を1文字以上含めてください'
-      } else if (!/[A-Z]/.test(password)) {
-        newErrors.password = 'パスワードにはローマ字大文字を1文字以上含めてください'
-      } else if (/[^a-zA-Z0-9]/.test(password)) {
-        newErrors.password = 'パスワードに記号を含めることはできません'
-      }
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.isValid && passwordValidation.errorMessage) {
+      newErrors.password = passwordValidation.errorMessage
     }
 
     // パスワード（確認用）
@@ -158,7 +136,7 @@ export function SignUpDialog({
   }
 
   const handleAddSnsLink = () => {
-    if (snsLinks.length < 3) {
+    if (snsLinks.length < MAX_SNS_LINKS) {
       setSnsLinks([...snsLinks, ''])
     }
   }
@@ -324,7 +302,7 @@ export function SignUpDialog({
                 placeholder="https://twitter.com/username"
               />
             ))}
-            {snsLinks.length < 3 && (
+            {snsLinks.length < MAX_SNS_LINKS && (
               <Button
                 variant="outline"
                 onClick={handleAddSnsLink}
