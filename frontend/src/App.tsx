@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { AnimatePresence } from 'motion/react'
+import { SplashScreen } from './components/SplashScreen'
 import FilterButton from './components/FilterButton'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
@@ -103,18 +105,35 @@ function NotFoundPage() {
   )
 }
 
+/**
+ * App コンポーネント
+ * Issue#25: SplashScreen統合
+ * アプリケーション起動時に2秒間SplashScreenを表示
+ */
 function App() {
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <AuthProvider>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/register/success" element={<RegisterSuccessPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/photo-viewer/:photoId" element={<PhotoViewerPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+      <AnimatePresence>
+        {isLoading && <SplashScreen />}
+      </AnimatePresence>
+      {!isLoading && (
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/register/success" element={<RegisterSuccessPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/photo-viewer/:photoId" element={<PhotoViewerPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      )}
     </AuthProvider>
   )
 }
