@@ -1,4 +1,4 @@
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import App from './App'
@@ -6,6 +6,7 @@ import App from './App'
 /**
  * App コンポーネントのテスト
  * Issue#2 対応: ルーティング機能追加
+ * Issue#25 対応: SplashScreen統合
  */
 
 // Google Maps APIのモック
@@ -122,7 +123,71 @@ describe('App', () => {
         <App />
       </MemoryRouter>
     )
-    
+
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ページが見つかりません')
+  })
+
+  /**
+   * Issue#25: SplashScreen統合テスト
+   * アプリケーション起動時にSplashScreenを表示し、2秒後に非表示にする
+   */
+  describe('SplashScreen Integration', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('displays SplashScreen on initial load', () => {
+      render(
+        <MemoryRouter initialEntries={['/']}>
+          <App />
+        </MemoryRouter>
+      )
+
+      // SplashScreenが表示されていることを確認
+      expect(screen.getByText('Photlas')).toBeInTheDocument()
+    })
+
+    it('hides SplashScreen after 2 seconds', async () => {
+      render(
+        <MemoryRouter initialEntries={['/']}>
+          <App />
+        </MemoryRouter>
+      )
+
+      // 初期状態ではSplashScreenが表示されている
+      expect(screen.getByText('Photlas')).toBeInTheDocument()
+
+      // 2秒経過
+      await act(async () => {
+        vi.advanceTimersByTime(2000)
+      })
+
+      // SplashScreenが非表示になっていることを確認
+      await waitFor(() => {
+        expect(screen.queryByText('Photlas')).not.toBeInTheDocument()
+      })
+    })
+
+    it('shows main content after SplashScreen disappears', async () => {
+      render(
+        <MemoryRouter initialEntries={['/']}>
+          <App />
+        </MemoryRouter>
+      )
+
+      // 2秒経過
+      await act(async () => {
+        vi.advanceTimersByTime(2000)
+      })
+
+      // メインコンテンツ（MapView）が表示されていることを確認
+      await waitFor(() => {
+        expect(screen.getByTestId('google-map')).toBeInTheDocument()
+      })
+    })
   })
 })
