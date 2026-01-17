@@ -2,6 +2,7 @@ import { render, screen, cleanup, act } from '@testing-library/react'
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import App from './App'
+import { SPLASH_SCREEN_DURATION_MS } from './config/app'
 
 /**
  * App コンポーネントのテスト
@@ -68,16 +69,13 @@ const sessionStorageMock = {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock })
 Object.defineProperty(window, 'sessionStorage', { value: sessionStorageMock })
 
-/** SplashScreen表示時間（ミリ秒） */
-const SPLASH_SCREEN_DURATION = 2000
-
 /**
  * SplashScreenをスキップしてメインコンテンツを表示する
  * fake timersが有効な状態で呼び出す必要がある
  */
 function skipSplashScreen() {
   act(() => {
-    vi.advanceTimersByTime(SPLASH_SCREEN_DURATION)
+    vi.advanceTimersByTime(SPLASH_SCREEN_DURATION_MS)
   })
 }
 

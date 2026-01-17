@@ -19,6 +19,7 @@ import PhotoViewerPage from './pages/PhotoViewerPage'
 import { AuthProvider } from './contexts/AuthContext'
 import { transformMonths, transformTimesOfDay, transformWeathers, transformCategories, categoryNamesToIds } from './utils/filterTransform'
 import { fetchCategories } from './utils/apiClient'
+import { SPLASH_SCREEN_DURATION_MS } from './config/app'
 
 /**
  * HomePage コンポーネント
@@ -114,7 +115,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 2000)
+    const timer = setTimeout(() => setIsLoading(false), SPLASH_SCREEN_DURATION_MS)
     return () => clearTimeout(timer)
   }, [])
 
