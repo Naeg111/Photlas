@@ -2,7 +2,8 @@
 # TDD Red段階: 実装前のDockerfile定義
 
 # Multi-stage build for optimization
-FROM openjdk:21-jdk-slim AS builder
+# Amazon Corretto 21を使用（EC2/ECSとの相性が良いため）
+FROM amazoncorretto:21 AS builder
 
 WORKDIR /app
 
@@ -22,15 +23,15 @@ COPY src/ src/
 RUN ./gradlew build -x test --no-daemon
 
 # Runtime stage
-FROM openjdk:21-jre-slim
+FROM amazoncorretto:21-alpine
 
 WORKDIR /app
 
 # Install curl for health checks
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
 # Create non-root user for security
-RUN groupadd -r photlas && useradd -r -g photlas photlas
+RUN addgroup -S photlas && adduser -S photlas -G photlas
 
 # Copy jar file from builder stage
 COPY --from=builder /app/build/libs/*.jar app.jar
