@@ -15,6 +15,7 @@ import { AccountSettingsDialog } from './components/AccountSettingsDialog'
 import MapView from './components/MapView'
 import type { MapViewFilterParams } from './components/MapView'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { useDialogState } from './hooks/useDialogState'
 import { transformMonths, transformTimesOfDay, transformWeathers, transformCategories, categoryNamesToIds } from './utils/filterTransform'
 import { fetchCategories } from './utils/apiClient'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
@@ -27,8 +28,14 @@ import { Toaster } from './components/ui/sonner'
  * Issue#28: App.tsx再構築と不要ファイル削除
  *
  * React Routerを削除し、モーダルベースのナビゲーションに移行。
- * 全てのダイアログ状態をApp.tsxで集中管理。
+ * 全てのダイアログ状態をuseDialogStateフックで集中管理。
  */
+
+/** フローティングボタンの共通スタイル */
+const FLOATING_BUTTON_STYLES = {
+  outline: 'bg-white shadow-lg gap-2',
+  fab: 'w-14 h-14 rounded-full shadow-lg',
+} as const
 
 /**
  * MainContent コンポーネント
@@ -36,22 +43,11 @@ import { Toaster } from './components/ui/sonner'
  */
 function MainContent() {
   const { user, logout } = useAuth()
+  const dialog = useDialogState()
 
   // フィルター関連の状態
   const [mapFilterParams, setMapFilterParams] = useState<MapViewFilterParams | undefined>(undefined)
   const [categoryMap, setCategoryMap] = useState<Map<string, number>>(new Map())
-
-  // パネル・ダイアログの状態管理
-  const [filterPanelOpen, setFilterPanelOpen] = useState(false)
-  const [topMenuOpen, setTopMenuOpen] = useState(false)
-  const [loginRequiredOpen, setLoginRequiredOpen] = useState(false)
-  const [loginDialogOpen, setLoginDialogOpen] = useState(false)
-  const [signUpDialogOpen, setSignUpDialogOpen] = useState(false)
-  const [termsOpen, setTermsOpen] = useState(false)
-  const [privacyOpen, setPrivacyOpen] = useState(false)
-  const [passwordResetOpen, setPasswordResetOpen] = useState(false)
-  const [photoContributionOpen, setPhotoContributionOpen] = useState(false)
-  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false)
 
   // カテゴリマップの取得
   useEffect(() => {
@@ -89,46 +85,22 @@ function MainContent() {
   // 投稿ボタンクリックハンドラー
   const handlePostClick = () => {
     if (user) {
-      setPhotoContributionOpen(true)
+      dialog.open('photoContribution')
     } else {
-      setLoginRequiredOpen(true)
+      dialog.open('loginRequired')
     }
   }
 
-  // ダイアログ遷移ハンドラー
-  const handleShowLogin = () => {
-    setLoginDialogOpen(true)
-  }
-
-  const handleShowSignUp = () => {
-    setSignUpDialogOpen(true)
-  }
-
-  const handleShowTerms = () => {
-    setTermsOpen(true)
-  }
-
-  const handleShowPrivacy = () => {
-    setPrivacyOpen(true)
-  }
-
-  const handleShowPasswordReset = () => {
-    setPasswordResetOpen(true)
-  }
-
-  const handleShowAccountSettings = () => {
-    setAccountSettingsOpen(true)
-  }
-
-  const handleShowProfile = () => {
-    // TODO: Issue#28 Refactor段階でプロフィールダイアログを実装
-    // 現在はアカウント設定ダイアログで代替
-    setAccountSettingsOpen(true)
-  }
-
+  // ログアウトハンドラー
   const handleLogout = () => {
     logout()
-    setTopMenuOpen(false)
+    dialog.close('topMenu')
+  }
+
+  // マイページハンドラー（現在はアカウント設定で代替）
+  const handleShowProfile = () => {
+    // TODO: プロフィールダイアログを実装後に修正
+    dialog.open('accountSettings')
   }
 
   return (
@@ -142,8 +114,8 @@ function MainContent() {
       <div className="absolute top-4 left-4 z-10">
         <Button
           variant="outline"
-          className="bg-white shadow-lg gap-2"
-          onClick={() => setFilterPanelOpen(true)}
+          className={FLOATING_BUTTON_STYLES.outline}
+          onClick={() => dialog.open('filterPanel')}
           aria-label="フィルター"
         >
           <SlidersHorizontal className="w-4 h-4" />
@@ -155,8 +127,8 @@ function MainContent() {
       <div className="absolute top-4 right-4 z-10">
         <Button
           variant="outline"
-          className="bg-white shadow-lg gap-2"
-          onClick={() => setTopMenuOpen(true)}
+          className={FLOATING_BUTTON_STYLES.outline}
+          onClick={() => dialog.open('topMenu')}
           aria-label="メニュー"
         >
           <Menu className="w-4 h-4" />
@@ -167,7 +139,7 @@ function MainContent() {
       {/* フローティングUI - 右下: 投稿ボタン (FAB) */}
       <div className="absolute bottom-6 right-6 z-10">
         <Button
-          className="w-14 h-14 rounded-full shadow-lg"
+          className={FLOATING_BUTTON_STYLES.fab}
           onClick={handlePostClick}
           aria-label="投稿"
         >
@@ -177,69 +149,54 @@ function MainContent() {
 
       {/* パネル・ダイアログ群 */}
       <FilterPanel
-        open={filterPanelOpen}
-        onOpenChange={setFilterPanelOpen}
+        {...dialog.getProps('filterPanel')}
         onApply={handleApplyFilter}
       />
 
       <TopMenuPanel
-        open={topMenuOpen}
-        onOpenChange={setTopMenuOpen}
+        {...dialog.getProps('topMenu')}
         isLoggedIn={!!user}
         onMyPageClick={handleShowProfile}
-        onAccountSettingsClick={handleShowAccountSettings}
-        onTermsClick={handleShowTerms}
-        onPrivacyClick={handleShowPrivacy}
-        onLoginClick={handleShowLogin}
-        onSignUpClick={handleShowSignUp}
+        onAccountSettingsClick={() => dialog.open('accountSettings')}
+        onTermsClick={() => dialog.open('terms')}
+        onPrivacyClick={() => dialog.open('privacy')}
+        onLoginClick={() => dialog.open('login')}
+        onSignUpClick={() => dialog.open('signUp')}
         onLogout={handleLogout}
       />
 
       <LoginRequiredDialog
-        open={loginRequiredOpen}
-        onOpenChange={setLoginRequiredOpen}
-        onShowLogin={handleShowLogin}
-        onShowSignUp={handleShowSignUp}
+        {...dialog.getProps('loginRequired')}
+        onShowLogin={() => dialog.open('login')}
+        onShowSignUp={() => dialog.open('signUp')}
       />
 
       <LoginDialog
-        open={loginDialogOpen}
-        onOpenChange={setLoginDialogOpen}
-        onShowSignUp={handleShowSignUp}
-        onShowPasswordReset={handleShowPasswordReset}
+        {...dialog.getProps('login')}
+        onShowSignUp={() => dialog.open('signUp')}
+        onShowPasswordReset={() => dialog.open('passwordReset')}
       />
 
       <SignUpDialog
-        open={signUpDialogOpen}
-        onOpenChange={setSignUpDialogOpen}
-        onShowTerms={handleShowTerms}
-        onShowLogin={handleShowLogin}
+        {...dialog.getProps('signUp')}
+        onShowTerms={() => dialog.open('terms')}
+        onShowLogin={() => dialog.open('login')}
       />
 
-      <TermsOfServicePage
-        open={termsOpen}
-        onOpenChange={setTermsOpen}
-      />
+      <TermsOfServicePage {...dialog.getProps('terms')} />
 
-      <PrivacyPolicyPage
-        open={privacyOpen}
-        onOpenChange={setPrivacyOpen}
-      />
+      <PrivacyPolicyPage {...dialog.getProps('privacy')} />
 
       <PasswordResetRequestModal
-        open={passwordResetOpen}
-        onClose={() => setPasswordResetOpen(false)}
+        open={dialog.isOpen('passwordReset')}
+        onClose={() => dialog.close('passwordReset')}
       />
 
-      <PhotoContributionDialog
-        open={photoContributionOpen}
-        onOpenChange={setPhotoContributionOpen}
-      />
+      <PhotoContributionDialog {...dialog.getProps('photoContribution')} />
 
       {user && (
         <AccountSettingsDialog
-          open={accountSettingsOpen}
-          onOpenChange={setAccountSettingsOpen}
+          {...dialog.getProps('accountSettings')}
           currentEmail={user.email}
         />
       )}
