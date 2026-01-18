@@ -27,4 +27,9 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Favorite.Fav
      */
     @Query("SELECT f FROM Favorite f WHERE f.userId = :userId ORDER BY f.createdAt DESC")
     Page<Favorite> findByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    /**
+     * Issue#30: 写真IDでお気に入り数をカウント
+     */
+    long countByPhotoId(Long photoId);
 }
