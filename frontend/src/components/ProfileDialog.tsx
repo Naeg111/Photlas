@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import { Button } from './ui/button'
@@ -14,6 +14,18 @@ import {
 } from './ui/pagination'
 import { User, X as XIcon } from 'lucide-react'
 import { useProfileEdit } from '../hooks/useProfileEdit'
+import { getAuthHeaders } from '../utils/apiClient'
+
+// API Endpoints
+const API_FAVORITES = '/api/v1/users/me/favorites'
+
+// Test IDs
+const TEST_ID_FAVORITES_LOADING = 'favorites-loading'
+const TEST_ID_FAVORITES_PAGINATION = 'favorites-pagination'
+const TEST_ID_FAVORITE_PHOTO_PREFIX = 'favorite-photo-item-'
+
+// Messages
+const MSG_NO_FAVORITES = 'お気に入りはまだありません'
 
 // SNSプラットフォーム定義
 const SNS_PLATFORMS = [
@@ -46,6 +58,27 @@ interface Photo {
   shotAt: string
   weather: string
   isFavorited: boolean
+}
+
+// Issue#30: お気に入り一覧API用インターフェース
+interface FavoritePhoto {
+  photo: {
+    photo_id: number
+    title: string
+    thumbnail_url: string
+  }
+  favorited_at: string
+}
+
+interface FavoritesResponse {
+  content: FavoritePhoto[]
+  total_elements: number
+  total_pages?: number
+  pageable: {
+    page_number: number
+    page_size: number
+  }
+  last?: boolean
 }
 
 interface ProfileDialogProps {
@@ -100,6 +133,53 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   onPhotoClick,
 }) => {
   const [currentPage, setCurrentPage] = useState(1)
+
+  // Issue#30: お気に入り一覧状態
+  const [favorites, setFavorites] = useState<FavoritePhoto[]>([])
+  const [favoritesLoading, setFavoritesLoading] = useState(false)
+  const [favoritesFetched, setFavoritesFetched] = useState(false)
+  const [favoritesTotalPages, setFavoritesTotalPages] = useState(0)
+  const [favoritesPage, setFavoritesPage] = useState(0)
+
+  // Issue#30: お気に入り一覧を取得
+  const fetchFavorites = useCallback(async (page = 0) => {
+    setFavoritesLoading(true)
+    try {
+      const response = await fetch(`${API_FAVORITES}?page=${page}&size=20`, {
+        headers: getAuthHeaders(),
+      })
+      if (response.ok) {
+        const data: FavoritesResponse = await response.json()
+        setFavorites(data.content)
+        setFavoritesTotalPages(data.total_pages ?? Math.ceil(data.total_elements / 20))
+        setFavoritesPage(data.pageable.page_number)
+        setFavoritesFetched(true)
+      }
+    } catch {
+      // エラー時は空配列のまま
+    } finally {
+      setFavoritesLoading(false)
+    }
+  }, [])
+
+  // Issue#30: お気に入りタブがクリックされた時
+  const handleFavoritesTabClick = useCallback(() => {
+    if (!favoritesFetched) {
+      fetchFavorites()
+    }
+  }, [favoritesFetched, fetchFavorites])
+
+  // Issue#30: お気に入り写真がクリックされた時
+  const handleFavoritePhotoClick = useCallback((favoritePhoto: FavoritePhoto) => {
+    onPhotoClick({
+      photoId: favoritePhoto.photo.photo_id,
+      title: favoritePhoto.photo.title,
+      s3ObjectKey: '',
+      shotAt: '',
+      weather: '',
+      isFavorited: true,
+    })
+  }, [onPhotoClick])
 
   // カスタムフックを使用してプロフィール編集機能を取得
   const {
@@ -298,7 +378,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
               投稿
             </TabsTrigger>
             {isOwnProfile && (
-              <TabsTrigger value="favorites" className="flex-1">
+              <TabsTrigger value="favorites" className="flex-1" onClick={handleFavoritesTabClick}>
                 お気に入り
               </TabsTrigger>
             )}
@@ -368,28 +448,84 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
           {isOwnProfile && (
             <TabsContent value="favorites" className="mt-4">
-              {/* お気に入りタブの内容（投稿タブと同じ構造） */}
-              <div
-                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
-                data-testid="photo-grid"
-              >
-                {currentPhotos
-                  .filter((photo) => photo.isFavorited)
-                  .map((photo) => (
-                    <div
-                      key={photo.photoId}
-                      data-testid={`photo-item-${photo.photoId}`}
-                      onClick={() => onPhotoClick(photo)}
-                      className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                    >
-                      <div className="absolute inset-0 flex items-center justify-center p-2">
-                        <span className="text-xs text-gray-500 text-center line-clamp-2">
-                          {photo.title}
-                        </span>
+              {/* Issue#30: お気に入り一覧 */}
+              {favoritesLoading && (
+                <div
+                  data-testid={TEST_ID_FAVORITES_LOADING}
+                  className="flex items-center justify-center py-8"
+                >
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                </div>
+              )}
+
+              {!favoritesLoading && favoritesFetched && favorites.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  {MSG_NO_FAVORITES}
+                </div>
+              )}
+
+              {!favoritesLoading && favorites.length > 0 && (
+                <>
+                  <div
+                    className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
+                    data-testid="favorites-grid"
+                  >
+                    {favorites.map((favorite) => (
+                      <div
+                        key={favorite.photo.photo_id}
+                        data-testid={`${TEST_ID_FAVORITE_PHOTO_PREFIX}${favorite.photo.photo_id}`}
+                        onClick={() => handleFavoritePhotoClick(favorite)}
+                        className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                      >
+                        <div className="absolute inset-0 flex items-center justify-center p-2">
+                          <span className="text-xs text-gray-500 text-center line-clamp-2">
+                            {favorite.photo.title}
+                          </span>
+                        </div>
                       </div>
+                    ))}
+                  </div>
+
+                  {/* お気に入りページネーション */}
+                  {favoritesTotalPages > 1 && (
+                    <div className="mt-6" data-testid={TEST_ID_FAVORITES_PAGINATION}>
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious
+                              onClick={() => fetchFavorites(Math.max(0, favoritesPage - 1))}
+                              className={
+                                favoritesPage === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                              }
+                            />
+                          </PaginationItem>
+                          {Array.from({ length: favoritesTotalPages }, (_, i) => i).map((page) => (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                onClick={() => fetchFavorites(page)}
+                                isActive={favoritesPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page + 1}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))}
+                          <PaginationItem>
+                            <PaginationNext
+                              onClick={() => fetchFavorites(Math.min(favoritesTotalPages - 1, favoritesPage + 1))}
+                              className={
+                                favoritesPage === favoritesTotalPages - 1
+                                  ? 'pointer-events-none opacity-50'
+                                  : 'cursor-pointer'
+                              }
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
                     </div>
-                  ))}
-              </div>
+                  )}
+                </>
+              )}
             </TabsContent>
           )}
         </Tabs>
