@@ -686,4 +686,225 @@ describe('ProfileDialog', () => {
       })
     })
   })
+
+  // ============================================================
+  // Issue#30: お気に入り一覧表示テスト
+  // ============================================================
+
+  describe('Issue#30: お気に入り一覧表示', () => {
+    it('お気に入りタブをクリックするとお気に入り一覧APIが呼び出される', async () => {
+      const user = userEvent.setup()
+
+      const mockFavoritesResponse = {
+        content: [
+          {
+            photo: {
+              photo_id: 1,
+              title: 'Favorite Photo 1',
+              thumbnail_url: 'https://example.com/thumb1.jpg',
+            },
+            favorited_at: '2025-01-01T00:00:00Z',
+          },
+        ],
+        total_elements: 1,
+        pageable: { page_number: 0, page_size: 20 },
+      }
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockFavoritesResponse),
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const favoritesTab = screen.getByRole('tab', { name: 'お気に入り' })
+      await user.click(favoritesTab)
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/users/me/favorites'),
+          expect.any(Object)
+        )
+      })
+    })
+
+    it('お気に入りが0件の場合、メッセージが表示される', async () => {
+      const user = userEvent.setup()
+
+      const mockEmptyFavoritesResponse = {
+        content: [],
+        total_elements: 0,
+        pageable: { page_number: 0, page_size: 20 },
+      }
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockEmptyFavoritesResponse),
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const favoritesTab = screen.getByRole('tab', { name: 'お気に入り' })
+      await user.click(favoritesTab)
+
+      await waitFor(() => {
+        expect(screen.getByText(/お気に入りはまだありません/i)).toBeInTheDocument()
+      })
+    })
+
+    it('お気に入り写真をクリックするとPhotoDetailDialogが開く', async () => {
+      const user = userEvent.setup()
+
+      const mockFavoritesResponse = {
+        content: [
+          {
+            photo: {
+              photo_id: 999,
+              title: 'Favorite Photo',
+              thumbnail_url: 'https://example.com/thumb.jpg',
+            },
+            favorited_at: '2025-01-01T00:00:00Z',
+          },
+        ],
+        total_elements: 1,
+        pageable: { page_number: 0, page_size: 20 },
+      }
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockFavoritesResponse),
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const favoritesTab = screen.getByRole('tab', { name: 'お気に入り' })
+      await user.click(favoritesTab)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorite-photo-item-999')).toBeInTheDocument()
+      })
+
+      const favoritePhoto = screen.getByTestId('favorite-photo-item-999')
+      await user.click(favoritePhoto)
+
+      expect(mockOnPhotoClick).toHaveBeenCalledWith(
+        expect.objectContaining({ photoId: 999 })
+      )
+    })
+
+    it('お気に入り一覧でページネーションが機能する', async () => {
+      const user = userEvent.setup()
+
+      // 21件以上のお気に入りがある場合（ページネーションが必要）
+      const mockFavoritesPage1 = {
+        content: Array.from({ length: 20 }, (_, i) => ({
+          photo: {
+            photo_id: i + 1,
+            title: `Favorite Photo ${i + 1}`,
+            thumbnail_url: `https://example.com/thumb${i + 1}.jpg`,
+          },
+          favorited_at: '2025-01-01T00:00:00Z',
+        })),
+        total_elements: 25,
+        total_pages: 2,
+        pageable: { page_number: 0, page_size: 20 },
+        last: false,
+      }
+
+      const mockFavoritesPage2 = {
+        content: Array.from({ length: 5 }, (_, i) => ({
+          photo: {
+            photo_id: i + 21,
+            title: `Favorite Photo ${i + 21}`,
+            thumbnail_url: `https://example.com/thumb${i + 21}.jpg`,
+          },
+          favorited_at: '2025-01-01T00:00:00Z',
+        })),
+        total_elements: 25,
+        total_pages: 2,
+        pageable: { page_number: 1, page_size: 20 },
+        last: true,
+      }
+
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockFavoritesPage1),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockFavoritesPage2),
+        })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const favoritesTab = screen.getByRole('tab', { name: 'お気に入り' })
+      await user.click(favoritesTab)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorites-pagination')).toBeInTheDocument()
+      })
+    })
+
+    it('お気に入り一覧の読み込み中はローディング表示される', async () => {
+      const user = userEvent.setup()
+
+      // 永続的にpending状態にする
+      global.fetch = vi.fn().mockImplementation(() => new Promise(() => {}))
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const favoritesTab = screen.getByRole('tab', { name: 'お気に入り' })
+      await user.click(favoritesTab)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorites-loading')).toBeInTheDocument()
+      })
+    })
+  })
 })
