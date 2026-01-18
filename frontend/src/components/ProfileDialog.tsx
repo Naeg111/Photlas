@@ -14,6 +14,7 @@ import {
 } from './ui/pagination'
 import { User, X as XIcon } from 'lucide-react'
 import { useProfileEdit } from '../hooks/useProfileEdit'
+import { getAuthHeaders } from '../utils/apiClient'
 
 // API Endpoints
 const API_FAVORITES = '/api/v1/users/me/favorites'
@@ -78,14 +79,6 @@ interface FavoritesResponse {
     page_size: number
   }
   last?: boolean
-}
-
-// Helper Functions
-function getAuthHeaders(): HeadersInit {
-  if (typeof localStorage !== 'undefined' && localStorage.getItem('token')) {
-    return { Authorization: `Bearer ${localStorage.getItem('token')}` }
-  }
-  return {}
 }
 
 interface ProfileDialogProps {
