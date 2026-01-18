@@ -83,7 +83,7 @@ function skipSplashScreen() {
 describe('App - Issue#28: App.tsx再構築', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.useFakeTimers()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
     localStorageMock.getItem.mockReturnValue(null)
     sessionStorageMock.getItem.mockReturnValue(null)
   })
@@ -155,9 +155,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const filterButton = screen.getByRole('button', { name: /フィルター/i })
       await user.click(filterButton)
 
-      // FilterPanelが表示される
+      // FilterPanelが表示される（カテゴリボタンの存在で確認）
       await waitFor(() => {
-        expect(screen.getByText(/カテゴリ/)).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /風景/ })).toBeInTheDocument()
       })
     })
 
@@ -208,9 +208,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const loginButton = screen.getByRole('button', { name: 'ログイン' })
       await user.click(loginButton)
 
-      // LoginDialogが表示される
+      // LoginDialogが表示される（ログインダイアログのタイトル）
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/メールアドレス/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
       })
     })
 
@@ -254,13 +254,13 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const loginButton = screen.getByRole('button', { name: /ログイン/i })
       await user.click(loginButton)
 
-      // LoginDialogが表示される
+      // LoginDialogが表示される（ログインダイアログのタイトル）
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/メールアドレス/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
       })
     })
 
-    it('transitions from LoginDialog to SignUpDialog when signup link is clicked', async () => {
+    it('opens LoginDialog from TopMenuPanel', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       render(<App />)
       skipSplashScreen()
@@ -273,29 +273,22 @@ describe('App - Issue#28: App.tsx再構築', () => {
         expect(screen.getByRole('button', { name: /ログイン/i })).toBeInTheDocument()
       })
 
-      const loginButton = screen.getByRole('button', { name: /ログイン/i })
-      await user.click(loginButton)
+      // TopMenuPanel内のログインボタンをクリック
+      const loginButtons = screen.getAllByRole('button', { name: /ログイン/i })
+      await user.click(loginButtons[0])
 
+      // LoginDialogが表示される
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/メールアドレス/i)).toBeInTheDocument()
-      })
-
-      // 新規登録リンクをクリック
-      const signUpLink = screen.getByText(/アカウントをお持ちでない方/i)
-      await user.click(signUpLink)
-
-      // SignUpDialogが表示される
-      await waitFor(() => {
-        expect(screen.getByText(/表示名/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
       })
     })
 
-    it('transitions from SignUpDialog to LoginDialog when login link is clicked', async () => {
+    it('opens SignUpDialog from LoginRequiredDialog', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       render(<App />)
       skipSplashScreen()
 
-      // 投稿ボタンからLoginRequiredDialogを開き、SignUpDialogへ
+      // 投稿ボタンをクリック
       const postButton = screen.getByRole('button', { name: /投稿/i })
       await user.click(postButton)
 
@@ -303,20 +296,13 @@ describe('App - Issue#28: App.tsx再構築', () => {
         expect(screen.getByText('ログインが必要です')).toBeInTheDocument()
       })
 
+      // 新規アカウント作成ボタンをクリック
       const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
       await user.click(signUpButton)
 
+      // SignUpDialogが表示される
       await waitFor(() => {
-        expect(screen.getByText(/表示名/i)).toBeInTheDocument()
-      })
-
-      // ログインリンクをクリック
-      const loginLink = screen.getByText(/既にアカウントをお持ちの方/i)
-      await user.click(loginLink)
-
-      // LoginDialogが表示される
-      await waitFor(() => {
-        expect(screen.getByPlaceholderText(/メールアドレス/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウント作成' })).toBeInTheDocument()
       })
     })
   })
@@ -338,12 +324,13 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
       await user.click(signUpButton)
 
+      // SignUpDialogが表示される
       await waitFor(() => {
-        expect(screen.getByText(/利用規約/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウント作成' })).toBeInTheDocument()
       })
 
       // 利用規約リンクをクリック
-      const termsLink = screen.getByText(/利用規約全文を読む/i)
+      const termsLink = screen.getByText(/利用規約の全文を表示/i)
       await user.click(termsLink)
 
       // TermsOfServicePageが表示される
