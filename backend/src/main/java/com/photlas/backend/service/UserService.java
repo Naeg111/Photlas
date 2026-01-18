@@ -4,12 +4,13 @@ import com.photlas.backend.dto.LoginRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.RegisterResponse;
 import com.photlas.backend.dto.UpdateProfileRequest;
+import com.photlas.backend.dto.UpdateSnsLinksRequest;
 import com.photlas.backend.dto.UserProfileResponse;
 import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserSnsLink;
-import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.repository.UserSnsLinkRepository;
@@ -23,8 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -37,6 +40,16 @@ public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private static final int PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES = 30;
+
+    // Issue#29: SNSプラットフォーム定数
+    private static final List<String> ALLOWED_PLATFORMS = List.of("twitter", "instagram", "youtube", "tiktok");
+
+    // Issue#29: エラーメッセージ定数
+    private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
+    private static final String ERROR_USERNAME_ALREADY_EXISTS = "このユーザー名はすでに使用されています";
+    private static final String ERROR_UNSUPPORTED_PLATFORM = "未対応のプラットフォームです: ";
+    private static final String ERROR_DUPLICATE_PLATFORM = "同じプラットフォームが重複しています: ";
+    private static final String ERROR_INVALID_URL_FOR_PLATFORM = "URLがプラットフォームと一致しません";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -468,9 +481,12 @@ public class UserService {
      * @return 更新後のSNSリンクリスト
      */
     @Transactional
-    public List<UserSnsLink> updateSnsLinks(String email, List<com.photlas.backend.dto.UpdateSnsLinksRequest.SnsLinkRequest> snsLinks) {
+    public List<UserSnsLink> updateSnsLinks(String email, List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new RuntimeException(ERROR_USER_NOT_FOUND));
+
+        // バリデーション
+        validateSnsLinks(snsLinks);
 
         // SNSリンクを一括置換
         userSnsLinkRepository.deleteByUserId(user.getId());
@@ -490,6 +506,50 @@ public class UserService {
     }
 
     /**
+     * SNSリンクのバリデーション（Issue#29）
+     *
+     * @param snsLinks バリデーション対象のSNSリンクリスト
+     */
+    private void validateSnsLinks(List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks) {
+        if (snsLinks == null) {
+            return;
+        }
+
+        Set<String> platforms = new HashSet<>();
+        for (UpdateSnsLinksRequest.SnsLinkRequest snsLink : snsLinks) {
+            // プラットフォームのバリデーション
+            if (!ALLOWED_PLATFORMS.contains(snsLink.getPlatform())) {
+                throw new IllegalArgumentException(ERROR_UNSUPPORTED_PLATFORM + snsLink.getPlatform());
+            }
+            // プラットフォーム重複チェック
+            if (!platforms.add(snsLink.getPlatform())) {
+                throw new IllegalArgumentException(ERROR_DUPLICATE_PLATFORM + snsLink.getPlatform());
+            }
+            // URLとプラットフォームの整合性チェック
+            if (!isValidUrlForPlatform(snsLink.getPlatform(), snsLink.getUrl())) {
+                throw new IllegalArgumentException(ERROR_INVALID_URL_FOR_PLATFORM);
+            }
+        }
+    }
+
+    /**
+     * URLとプラットフォームの整合性チェック（Issue#29）
+     *
+     * @param platform プラットフォーム
+     * @param url URL
+     * @return 整合性がある場合true
+     */
+    private boolean isValidUrlForPlatform(String platform, String url) {
+        return switch (platform) {
+            case "twitter" -> url.contains("x.com") || url.contains("twitter.com");
+            case "instagram" -> url.contains("instagram.com");
+            case "youtube" -> url.contains("youtube.com");
+            case "tiktok" -> url.contains("tiktok.com");
+            default -> false;
+        };
+    }
+
+    /**
      * ユーザー名を更新（Issue#29）
      *
      * @param email ログイン中ユーザーのメールアドレス
@@ -499,12 +559,12 @@ public class UserService {
     @Transactional
     public String updateUsername(String email, String username) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new RuntimeException(ERROR_USER_NOT_FOUND));
 
         // ユーザー名重複チェック（自分以外）
         Optional<User> existingUser = userRepository.findByUsername(username);
         if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
-            throw new ConflictException("このユーザー名はすでに使用されています");
+            throw new ConflictException(ERROR_USERNAME_ALREADY_EXISTS);
         }
 
         user.setUsername(username);

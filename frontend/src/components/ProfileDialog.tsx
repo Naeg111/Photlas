@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import { Button } from './ui/button'
@@ -13,13 +13,18 @@ import {
   PaginationPrevious,
 } from './ui/pagination'
 import { User, X as XIcon } from 'lucide-react'
+import { useProfileEdit } from '../hooks/useProfileEdit'
 
+// SNSプラットフォーム定義
 const SNS_PLATFORMS = [
   { value: 'twitter', label: 'X (Twitter)' },
   { value: 'instagram', label: 'Instagram' },
   { value: 'youtube', label: 'YouTube' },
   { value: 'tiktok', label: 'TikTok' },
 ] as const
+
+// ページネーション定数
+const PHOTOS_PER_PAGE = 20
 
 interface SnsLink {
   url: string
@@ -52,8 +57,40 @@ interface ProfileDialogProps {
   onPhotoClick: (photo: Photo) => void
 }
 
-const PHOTOS_PER_PAGE = 20
+/**
+ * SNSアイコンを取得
+ */
+const getSnsIcon = (url: string) => {
+  if (url.includes('x.com') || url.includes('twitter.com')) {
+    return <XIcon className="w-5 h-5" />
+  }
+  if (url.includes('instagram.com')) {
+    return (
+      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+      </svg>
+    )
+  }
+  return null
+}
 
+/**
+ * SNSラベルを取得
+ */
+const getSnsLabel = (url: string) => {
+  if (url.includes('x.com') || url.includes('twitter.com')) {
+    return 'X.com'
+  }
+  if (url.includes('instagram.com')) {
+    return 'Instagram'
+  }
+  return 'Link'
+}
+
+/**
+ * プロフィールダイアログコンポーネント
+ * Issue#29: プロフィール機能強化
+ */
 const ProfileDialog: React.FC<ProfileDialogProps> = ({
   open,
   onClose,
@@ -62,131 +99,28 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   photos,
   onPhotoClick,
 }) => {
-  const [isEditingUsername, setIsEditingUsername] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadSuccess, setUploadSuccess] = useState(false)
-  const [isEditingSnsLinks, setIsEditingSnsLinks] = useState(false)
-  const [editingUsername, setEditingUsername] = useState(userProfile.username)
-  const [usernameError, setUsernameError] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleUsernameEditClick = () => {
-    setIsEditingUsername(true)
-    setEditingUsername(userProfile.username)
-    setUsernameError('')
-  }
-
-  const handleProfileImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    setIsUploading(true)
-    setUploadSuccess(false)
-
-    try {
-      const presignedResponse = await fetch('/api/v1/users/me/profile-image/presigned-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      if (!presignedResponse.ok) {
-        throw new Error('Failed to get presigned URL')
-      }
-
-      const { uploadUrl, objectKey } = await presignedResponse.json()
-
-      await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-      })
-
-      await fetch('/api/v1/users/me/profile-image', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ objectKey }),
-      })
-
-      setUploadSuccess(true)
-    } catch {
-      // エラー時の処理
-    } finally {
-      setIsUploading(false)
-    }
-  }
-
-  const handleDeleteProfileImage = async () => {
-    await fetch('/api/v1/users/me/profile-image', {
-      method: 'DELETE',
-    })
-  }
-
-  const handleSaveSnsLinks = async () => {
-    await fetch('/api/v1/users/me/sns-links', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ snsLinks: userProfile.snsLinks }),
-    })
-  }
-
-  const handleSaveUsername = async () => {
-    setUsernameError('')
-
-    if (!editingUsername || editingUsername.trim() === '') {
-      setUsernameError('ユーザー名を入力してください')
-      return
-    }
-
-    if (editingUsername.length > 30) {
-      setUsernameError('30文字以内で入力してください')
-      return
-    }
-
-    try {
-      const response = await fetch('/api/v1/users/me/username', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: editingUsername }),
-      })
-
-      if (!response.ok) {
-        if (response.status === 409) {
-          const data = await response.json()
-          setUsernameError(data.message)
-          return
-        }
-        throw new Error('Failed to update username')
-      }
-
-      setIsEditingUsername(false)
-    } catch {
-      // エラー時の処理
-    }
-  }
-
-  const getSnsIcon = (url: string) => {
-    if (url.includes('x.com') || url.includes('twitter.com')) {
-      return <XIcon className="w-5 h-5" />
-    }
-    if (url.includes('instagram.com')) {
-      return (
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-        </svg>
-      )
-    }
-    return null
-  }
-
-  const getSnsLabel = (url: string) => {
-    if (url.includes('x.com') || url.includes('twitter.com')) {
-      return 'X.com'
-    }
-    if (url.includes('instagram.com')) {
-      return 'Instagram'
-    }
-    return 'Link'
-  }
+  // カスタムフックを使用してプロフィール編集機能を取得
+  const {
+    isEditingUsername,
+    editingUsername,
+    usernameError,
+    handleUsernameEditClick,
+    handleUsernameChange,
+    handleSaveUsername,
+    isUploading,
+    uploadSuccess,
+    fileInputRef,
+    handleProfileImageSelect,
+    handleDeleteProfileImage,
+    isEditingSnsLinks,
+    setIsEditingSnsLinks,
+    handleSaveSnsLinks,
+  } = useProfileEdit({
+    initialUsername: userProfile.username,
+    snsLinks: userProfile.snsLinks,
+  })
 
   // ページネーション計算
   const totalPages = Math.ceil(photos.length / PHOTOS_PER_PAGE)
@@ -272,7 +206,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                   <Input
                     data-testid="username-input"
                     value={editingUsername}
-                    onChange={(e) => setEditingUsername(e.target.value)}
+                    onChange={(e) => handleUsernameChange(e.target.value)}
                     className="w-48"
                     autoFocus
                   />
@@ -294,9 +228,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                 </Button>
               )}
             </div>
-            {usernameError && (
-              <p className="text-sm text-red-500">{usernameError}</p>
-            )}
+            {usernameError && <p className="text-sm text-red-500">{usernameError}</p>}
           </div>
 
           {/* SNSリンク */}
@@ -348,18 +280,10 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                 <Input placeholder="URL" className="flex-1" />
               </div>
               <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditingSnsLinks(false)}
-                >
+                <Button variant="outline" size="sm" onClick={() => setIsEditingSnsLinks(false)}>
                   キャンセル
                 </Button>
-                <Button
-                  size="sm"
-                  data-testid="save-sns-links-button"
-                  onClick={handleSaveSnsLinks}
-                >
+                <Button size="sm" data-testid="save-sns-links-button" onClick={handleSaveSnsLinks}>
                   保存
                 </Button>
               </div>
@@ -382,7 +306,10 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
           <TabsContent value="posts" className="mt-4">
             {/* 写真グリッド */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" data-testid="photo-grid">
+            <div
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
+              data-testid="photo-grid"
+            >
               {currentPhotos.map((photo) => (
                 <div
                   key={photo.photoId}
@@ -391,7 +318,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                   className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                 >
                   <div className="absolute inset-0 flex items-center justify-center p-2">
-                    <span className="text-xs text-gray-500 text-center line-clamp-2">{photo.title}</span>
+                    <span className="text-xs text-gray-500 text-center line-clamp-2">
+                      {photo.title}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -405,7 +334,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                     <PaginationItem>
                       <PaginationPrevious
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        className={
+                          currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                        }
                       />
                     </PaginationItem>
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -422,7 +353,11 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                     <PaginationItem>
                       <PaginationNext
                         onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        className={
+                          currentPage === totalPages
+                            ? 'pointer-events-none opacity-50'
+                            : 'cursor-pointer'
+                        }
                       />
                     </PaginationItem>
                   </PaginationContent>
@@ -434,7 +369,10 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           {isOwnProfile && (
             <TabsContent value="favorites" className="mt-4">
               {/* お気に入りタブの内容（投稿タブと同じ構造） */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" data-testid="photo-grid">
+              <div
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
+                data-testid="photo-grid"
+              >
                 {currentPhotos
                   .filter((photo) => photo.isFavorited)
                   .map((photo) => (
@@ -445,7 +383,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                       className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                     >
                       <div className="absolute inset-0 flex items-center justify-center p-2">
-                        <span className="text-xs text-gray-500 text-center line-clamp-2">{photo.title}</span>
+                        <span className="text-xs text-gray-500 text-center line-clamp-2">
+                          {photo.title}
+                        </span>
                       </div>
                     </div>
                   ))}
