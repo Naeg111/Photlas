@@ -159,7 +159,7 @@ public class FavoriteControllerTest {
         mockMvc.perform(post(getFavoriteEndpoint(photoId))
                 .with(csrf())
                 .header(HEADER_AUTHORIZATION, getBearerToken(token)))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isCreated());
     }
 
     private void performRemoveFavorite(Long photoId) throws Exception {
@@ -183,23 +183,33 @@ public class FavoriteControllerTest {
                 .andExpect(status().isOk());
     }
 
+    // ============================================================
+    // Issue#30: お気に入り追加API テスト
+    // ============================================================
+
     @Test
-    @DisplayName("正常ケース - お気に入り登録")
-    void testAddFavorite_ReturnsNoContent() throws Exception {
+    @DisplayName("Issue#30 - お気に入り登録成功時は201 Createdを返す")
+    void testAddFavorite_ReturnsCreated() throws Exception {
         mockMvc.perform(post(getFavoriteEndpoint(testPhoto.getPhotoId()))
                 .with(csrf())
                 .header(HEADER_AUTHORIZATION, getBearerToken(token)))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isCreated());
     }
 
     @Test
-    @DisplayName("冪等性 - 同じ写真を2回お気に入り登録してもエラーにならない")
-    void testAddFavorite_Idempotent_ReturnsNoContent() throws Exception {
+    @DisplayName("Issue#30 - 既にお気に入り済みの場合は409 Conflictを返す")
+    void testAddFavorite_AlreadyFavorited_ReturnsConflict() throws Exception {
         // 1回目の登録
-        performAddFavorite(testPhoto.getPhotoId());
+        mockMvc.perform(post(getFavoriteEndpoint(testPhoto.getPhotoId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token)))
+                .andExpect(status().isCreated());
 
-        // 2回目の登録（冪等性）
-        performAddFavorite(testPhoto.getPhotoId());
+        // 2回目の登録（重複）
+        mockMvc.perform(post(getFavoriteEndpoint(testPhoto.getPhotoId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token)))
+                .andExpect(status().isConflict());
     }
 
     @Test
@@ -210,21 +220,34 @@ public class FavoriteControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    // ============================================================
+    // Issue#30: お気に入り削除API テスト
+    // ============================================================
+
     @Test
-    @DisplayName("正常ケース - お気に入り解除")
+    @DisplayName("Issue#30 - お気に入り解除成功時は204 No Contentを返す")
     void testRemoveFavorite_ReturnsNoContent() throws Exception {
         // まずお気に入り登録
-        performAddFavorite(testPhoto.getPhotoId());
+        mockMvc.perform(post(getFavoriteEndpoint(testPhoto.getPhotoId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token)))
+                .andExpect(status().isCreated());
 
         // お気に入り解除
-        performRemoveFavorite(testPhoto.getPhotoId());
+        mockMvc.perform(delete(getFavoriteEndpoint(testPhoto.getPhotoId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token)))
+                .andExpect(status().isNoContent());
     }
 
     @Test
-    @DisplayName("冪等性 - 存在しないお気に入りを解除してもエラーにならない")
-    void testRemoveFavorite_Idempotent_ReturnsNoContent() throws Exception {
-        // お気に入り登録していない状態で解除（冪等性）
-        performRemoveFavorite(testPhoto.getPhotoId());
+    @DisplayName("Issue#30 - お気に入り登録していない写真を解除すると404 Not Foundを返す")
+    void testRemoveFavorite_NotFavorited_ReturnsNotFound() throws Exception {
+        // お気に入り登録していない状態で解除
+        mockMvc.perform(delete(getFavoriteEndpoint(testPhoto.getPhotoId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token)))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -288,5 +311,62 @@ public class FavoriteControllerTest {
     void testGetFavorites_Unauthorized_Returns401() throws Exception {
         mockMvc.perform(get(USER_FAVORITES_ENDPOINT))
                 .andExpect(status().isUnauthorized());
+    }
+
+    // ============================================================
+    // Issue#30: 写真詳細API拡張テスト（favoriteCount）
+    // ============================================================
+
+    private static final String PHOTO_DETAIL_ENDPOINT = "/api/v1/photos/";
+    private static final String JSON_PATH_FAVORITE_COUNT = "$.photo.favorite_count";
+
+    @Test
+    @DisplayName("Issue#30 - 写真詳細APIでfavoriteCountが返される（0件の場合）")
+    void testPhotoDetail_ReturnsFavoriteCount_Zero() throws Exception {
+        mockMvc.perform(get(PHOTO_DETAIL_ENDPOINT + testPhoto.getPhotoId())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(JSON_PATH_FAVORITE_COUNT).value(0));
+    }
+
+    @Test
+    @DisplayName("Issue#30 - 写真詳細APIでfavoriteCountが返される（1件の場合）")
+    void testPhotoDetail_ReturnsFavoriteCount_One() throws Exception {
+        // お気に入り登録
+        performAddFavorite(testPhoto.getPhotoId());
+
+        // 写真詳細取得
+        mockMvc.perform(get(PHOTO_DETAIL_ENDPOINT + testPhoto.getPhotoId())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(JSON_PATH_FAVORITE_COUNT).value(1));
+    }
+
+    @Test
+    @DisplayName("Issue#30 - 写真詳細APIでfavoriteCountが複数ユーザーの合計を返す")
+    void testPhotoDetail_ReturnsFavoriteCount_Multiple() throws Exception {
+        // 1人目のユーザーがお気に入り登録
+        performAddFavorite(testPhoto.getPhotoId());
+
+        // 2人目のユーザーを作成してお気に入り登録
+        User secondUser = new User();
+        secondUser.setUsername("seconduser");
+        secondUser.setEmail("second@example.com");
+        secondUser.setPasswordHash(TEST_PASSWORD_HASH);
+        secondUser.setRole(USER_ROLE);
+        userRepository.save(secondUser);
+
+        String secondToken = jwtService.generateToken(secondUser.getEmail());
+
+        mockMvc.perform(post(getFavoriteEndpoint(testPhoto.getPhotoId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(secondToken)))
+                .andExpect(status().isCreated());
+
+        // 写真詳細取得（favoriteCountが2であること）
+        mockMvc.perform(get(PHOTO_DETAIL_ENDPOINT + testPhoto.getPhotoId())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(JSON_PATH_FAVORITE_COUNT).value(2));
     }
 }
