@@ -12,6 +12,9 @@ import { PrivacyPolicyPage } from './components/PrivacyPolicyPage'
 import PasswordResetRequestModal from './components/PasswordResetRequestModal'
 import { PhotoContributionDialog } from './components/PhotoContributionDialog'
 import { AccountSettingsDialog } from './components/AccountSettingsDialog'
+import ProfileDialog from './components/ProfileDialog'
+import PhotoDetailDialog from './components/PhotoDetailDialog'
+import { PhotoLightbox } from './components/PhotoLightbox'
 import MapView from './components/MapView'
 import type { MapViewFilterParams } from './components/MapView'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -48,6 +51,10 @@ function MainContent() {
   // フィルター関連の状態
   const [mapFilterParams, setMapFilterParams] = useState<MapViewFilterParams | undefined>(undefined)
   const [categoryMap, setCategoryMap] = useState<Map<string, number>>(new Map())
+
+  // 写真詳細・ライトボックス関連の状態
+  const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null)
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('')
 
   // カテゴリマップの取得
   useEffect(() => {
@@ -97,11 +104,24 @@ function MainContent() {
     dialog.close('topMenu')
   }
 
-  // マイページハンドラー（現在はアカウント設定で代替）
+  // マイページハンドラー
   const handleShowProfile = () => {
-    // TODO: プロフィールダイアログを実装後に修正
-    dialog.open('accountSettings')
+    dialog.open('profile')
   }
+
+  // スポットクリックハンドラー（MapViewから呼び出される）
+  // TODO: MapViewにonSpotClickを追加後に有効化
+  // const handleSpotClick = (spotId: number) => {
+  //   setSelectedSpotId(spotId)
+  //   dialog.open('photoDetail')
+  // }
+
+  // ライトボックス表示ハンドラー
+  // TODO: PhotoDetailDialogから呼び出されるように修正後に有効化
+  // const handleShowLightbox = (imageUrl: string) => {
+  //   setSelectedImageUrl(imageUrl)
+  //   dialog.open('lightbox')
+  // }
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
@@ -200,6 +220,50 @@ function MainContent() {
           currentEmail={user.email}
         />
       )}
+
+      {/* ProfileDialog - ユーザープロフィール表示 */}
+      {user && (
+        <ProfileDialog
+          open={dialog.isOpen('profile')}
+          onClose={() => dialog.close('profile')}
+          userProfile={{
+            userId: 0, // TODO: 実際のユーザーIDを取得
+            username: user.username || '',
+            email: user.email,
+            profileImageUrl: null,
+            snsLinks: [],
+          }}
+          isOwnProfile={true}
+          photos={[]}
+          onPhotoClick={() => {
+            // TODO: 写真クリック時の処理
+          }}
+        />
+      )}
+
+      {/* PhotoDetailDialog - 写真詳細表示 */}
+      {selectedSpotId !== null && (
+        <PhotoDetailDialog
+          open={dialog.isOpen('photoDetail')}
+          spotId={selectedSpotId}
+          onClose={() => {
+            dialog.close('photoDetail')
+            setSelectedSpotId(null)
+          }}
+        />
+      )}
+
+      {/* PhotoLightbox - 写真拡大表示 */}
+      <PhotoLightbox
+        open={dialog.isOpen('lightbox')}
+        onOpenChange={(open) => {
+          if (!open) {
+            dialog.close('lightbox')
+            setSelectedImageUrl('')
+          }
+        }}
+        imageUrl={selectedImageUrl}
+      />
     </div>
   )
 }
