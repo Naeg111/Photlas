@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { GoogleMap, useLoadScript, OverlayViewF } from '@react-google-maps/api'
+import { API_V1_URL } from '../config/api'
 
 /**
  * Issue#13: 地図検索機能のインタラクション改善とピン表示制御
@@ -87,7 +88,7 @@ export default function MapView({ filterParams }: MapViewProps) {
         }
       }
 
-      const response = await fetch(`/api/v1/spots?${params}`, {
+      const response = await fetch(`${API_V1_URL}/spots?${params}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -161,6 +162,10 @@ export default function MapView({ filterParams }: MapViewProps) {
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
         onLoad={handleLoad}
+        options={{
+          fullscreenControl: false,
+          mapTypeControl: false,
+        }}
       >
         {/* ズームレベルが11以上の場合のみピンを表示 */}
         {zoom >= MIN_ZOOM_FOR_PINS &&
