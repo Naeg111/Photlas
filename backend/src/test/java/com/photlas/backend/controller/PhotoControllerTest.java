@@ -579,11 +579,11 @@ public class PhotoControllerTest {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
         Photo photo = createPhoto(PHOTO_TITLE_TEST_EN, S3_OBJECT_KEY_TEST, spot.getSpotId());
 
-        // お気に入り登録
+        // お気に入り登録（Issue#30: 201 Created を返す）
         mockMvc.perform(post(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId() + ENDPOINT_FAVORITE)
                 .with(csrf())
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isCreated());
 
         // 写真詳細取得（認証あり、お気に入り登録済み）
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId())
