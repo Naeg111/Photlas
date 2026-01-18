@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight, Heart } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Star } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { getAuthHeaders } from '../utils/apiClient'
 
@@ -307,30 +307,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
 
               {/* 写真情報 */}
               <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">{currentPhoto.title}</h2>
-
-                  {/* Issue#30: お気に入りボタン */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      data-testid={TEST_ID_FAVORITE_BUTTON}
-                      onClick={handleToggleFavorite}
-                      disabled={isFavoriteLoading}
-                      aria-label={isFavorited ? LABEL_REMOVE_FAVORITE : LABEL_ADD_FAVORITE}
-                    >
-                      <Heart
-                        className={`h-6 w-6 ${
-                          isFavorited ? 'fill-red-500 text-red-500' : ''
-                        }`}
-                      />
-                    </Button>
-                    <span data-testid={TEST_ID_FAVORITE_COUNT} className="text-sm text-gray-600">
-                      {favoriteCount}
-                    </span>
-                  </div>
-                </div>
+                <h2 className="text-2xl font-bold">{currentPhoto.title}</h2>
 
                 {/* ユーザー情報 */}
                 <div className="flex items-center gap-3">
@@ -397,6 +374,33 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
                     ))}
                   </div>
                 )}
+
+                {/* Issue#30: お気に入りボタン（design-assets準拠） */}
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    className={`flex-1 ${
+                      isFavorited ? 'bg-yellow-100 border-yellow-400' : ''
+                    }`}
+                    data-testid={TEST_ID_FAVORITE_BUTTON}
+                    onClick={handleToggleFavorite}
+                    disabled={isFavoriteLoading}
+                    aria-label={isFavorited ? LABEL_REMOVE_FAVORITE : LABEL_ADD_FAVORITE}
+                  >
+                    <Star
+                      className={`w-5 h-5 mr-2 ${
+                        isFavorited ? 'fill-yellow-400 text-yellow-400' : ''
+                      }`}
+                    />
+                    お気に入り
+                    <span
+                      data-testid={TEST_ID_FAVORITE_COUNT}
+                      className="ml-1 text-sm text-gray-500"
+                    >
+                      ({favoriteCount})
+                    </span>
+                  </Button>
+                </div>
               </div>
             </div>
           )}
