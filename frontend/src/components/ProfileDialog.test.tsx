@@ -334,4 +334,353 @@ describe('ProfileDialog', () => {
       expect(screen.getByTestId('pagination')).toBeInTheDocument()
     })
   })
+
+  // ============================================================
+  // Issue#29: プロフィール機能強化のテスト
+  // ============================================================
+
+  describe('Issue#29: プロフィール画像アップロード機能', () => {
+    it('画像選択ボタンをクリックするとファイル選択ダイアログが開く', async () => {
+      const user = userEvent.setup()
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const selectButton = screen.getByRole('button', { name: /画像を選択/i })
+      await user.click(selectButton)
+
+      // ファイル入力要素が存在することを確認
+      expect(screen.getByTestId('profile-image-input')).toBeInTheDocument()
+    })
+
+    it('画像を選択するとアップロードが開始される', async () => {
+      const user = userEvent.setup()
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const fileInput = screen.getByTestId('profile-image-input')
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+
+      await user.upload(fileInput, file)
+
+      // アップロード中の状態を確認
+      await waitFor(() => {
+        expect(screen.getByTestId('upload-progress')).toBeInTheDocument()
+      })
+    })
+
+    it('アップロード成功後にプロフィール画像が更新される', async () => {
+      const user = userEvent.setup()
+
+      // API呼び出しをモック
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ uploadUrl: 'https://s3.example.com/upload', objectKey: 'profile-images/123/test.jpg' })
+        })
+        .mockResolvedValueOnce({ ok: true }) // S3アップロード
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ profileImageUrl: 'https://cdn.example.com/profile-images/123/test.jpg' })
+        })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const fileInput = screen.getByTestId('profile-image-input')
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+
+      await user.upload(fileInput, file)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('upload-success')).toBeInTheDocument()
+      })
+    })
+
+    it('プロフィール画像を削除できる', async () => {
+      const user = userEvent.setup()
+
+      global.fetch = vi.fn().mockResolvedValueOnce({ ok: true })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const deleteButton = screen.getByTestId('delete-profile-image-button')
+      await user.click(deleteButton)
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/users/me/profile-image'),
+          expect.objectContaining({ method: 'DELETE' })
+        )
+      })
+    })
+  })
+
+  describe('Issue#29: SNSリンク編集機能', () => {
+    it('SNSリンク編集ボタンが表示される（自分のプロフィール）', () => {
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      expect(screen.getByTestId('edit-sns-links-button')).toBeInTheDocument()
+    })
+
+    it('SNSリンク編集モードでプラットフォーム選択ができる', async () => {
+      const user = userEvent.setup()
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      await user.click(editButton)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sns-platform-select')).toBeInTheDocument()
+      })
+    })
+
+    it('4種類のSNSプラットフォームが選択可能', async () => {
+      const user = userEvent.setup()
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      await user.click(editButton)
+
+      await waitFor(() => {
+        const platformSelect = screen.getByTestId('sns-platform-select')
+        expect(platformSelect).toBeInTheDocument()
+      })
+
+      // プラットフォームオプションを確認
+      expect(screen.getByText('X (Twitter)')).toBeInTheDocument()
+      expect(screen.getByText('Instagram')).toBeInTheDocument()
+      expect(screen.getByText('YouTube')).toBeInTheDocument()
+      expect(screen.getByText('TikTok')).toBeInTheDocument()
+    })
+
+    it('SNSリンクを保存するとAPIが呼び出される', async () => {
+      const user = userEvent.setup()
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          snsLinks: [{ platform: 'twitter', url: 'https://x.com/newuser' }]
+        })
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      await user.click(editButton)
+
+      const saveButton = screen.getByTestId('save-sns-links-button')
+      await user.click(saveButton)
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/users/me/sns-links'),
+          expect.objectContaining({ method: 'PUT' })
+        )
+      })
+    })
+  })
+
+  describe('Issue#29: ユーザー名変更機能', () => {
+    it('ユーザー名を変更して保存するとAPIが呼び出される', async () => {
+      const user = userEvent.setup()
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ username: 'newusername' })
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const changeButton = screen.getByRole('button', { name: /変更/i })
+      await user.click(changeButton)
+
+      const input = screen.getByTestId('username-input')
+      await user.clear(input)
+      await user.type(input, 'newusername')
+
+      const saveButton = screen.getByTestId('save-username-button')
+      await user.click(saveButton)
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/users/me/username'),
+          expect.objectContaining({ method: 'PUT' })
+        )
+      })
+    })
+
+    it('ユーザー名が空の場合はエラーが表示される', async () => {
+      const user = userEvent.setup()
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const changeButton = screen.getByRole('button', { name: /変更/i })
+      await user.click(changeButton)
+
+      const input = screen.getByTestId('username-input')
+      await user.clear(input)
+
+      const saveButton = screen.getByTestId('save-username-button')
+      await user.click(saveButton)
+
+      await waitFor(() => {
+        expect(screen.getByText(/ユーザー名を入力してください/i)).toBeInTheDocument()
+      })
+    })
+
+    it('ユーザー名が30文字を超える場合はエラーが表示される', async () => {
+      const user = userEvent.setup()
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const changeButton = screen.getByRole('button', { name: /変更/i })
+      await user.click(changeButton)
+
+      const input = screen.getByTestId('username-input')
+      await user.clear(input)
+      await user.type(input, 'a'.repeat(31))
+
+      const saveButton = screen.getByTestId('save-username-button')
+      await user.click(saveButton)
+
+      await waitFor(() => {
+        expect(screen.getByText(/30文字以内で入力してください/i)).toBeInTheDocument()
+      })
+    })
+
+    it('ユーザー名が重複している場合はエラーが表示される', async () => {
+      const user = userEvent.setup()
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: () => Promise.resolve({ message: 'このユーザー名はすでに使用されています' })
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const changeButton = screen.getByRole('button', { name: /変更/i })
+      await user.click(changeButton)
+
+      const input = screen.getByTestId('username-input')
+      await user.clear(input)
+      await user.type(input, 'existinguser')
+
+      const saveButton = screen.getByTestId('save-username-button')
+      await user.click(saveButton)
+
+      await waitFor(() => {
+        expect(screen.getByText(/このユーザー名はすでに使用されています/i)).toBeInTheDocument()
+      })
+    })
+  })
 })
