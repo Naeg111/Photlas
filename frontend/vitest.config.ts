@@ -17,5 +17,9 @@ export default defineConfig({
     },
     // ファイル間の完全分離
     isolate: true,
+    // テスト用環境変数
+    env: {
+      VITE_GOOGLE_MAPS_API_KEY: 'test-api-key',
+    },
   },
 })

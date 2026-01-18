@@ -8,6 +8,12 @@ import MapView from './MapView'
  * TDD Red段階のテストコード
  */
 
+// Google Maps APIキーをモック（テスト環境用）
+// import.meta.envをモック
+vi.mock('../config/api', () => ({
+  API_V1_URL: 'http://localhost:3000/api/v1',
+}))
+
 // Google Maps APIのモック
 const mockMap = {
   setZoom: vi.fn(),
