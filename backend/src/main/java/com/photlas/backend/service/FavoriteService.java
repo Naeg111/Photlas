@@ -53,6 +53,7 @@ public class FavoriteService {
     // エラーメッセージ定数
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
     private static final String ERROR_PHOTO_NOT_FOUND = "写真が見つかりません";
+    private static final String ERROR_SPOT_NOT_FOUND = "スポットが見つかりません";
     private static final String ERROR_ALREADY_FAVORITED = "既にお気に入り登録されています";
     private static final String ERROR_NOT_FAVORITED = "お気に入り登録されていません";
 
@@ -115,7 +116,7 @@ public class FavoriteService {
     @Transactional(readOnly = true)
     public Map<String, Object> getFavorites(String email, int page, int size) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         Pageable pageable = PageRequest.of(page, size);
         Page<Favorite> favoritePage = favoriteRepository.findByUserId(user.getId(), pageable);
@@ -123,11 +124,11 @@ public class FavoriteService {
         // 写真詳細情報を取得
         Page<PhotoResponse> photoResponses = favoritePage.map(favorite -> {
             Photo photo = photoRepository.findById(favorite.getPhotoId())
-                    .orElseThrow(() -> new RuntimeException("写真が見つかりません"));
+                    .orElseThrow(() -> new RuntimeException(ERROR_PHOTO_NOT_FOUND));
             Spot spot = spotRepository.findById(photo.getSpotId())
-                    .orElseThrow(() -> new RuntimeException("スポットが見つかりません"));
+                    .orElseThrow(() -> new RuntimeException(ERROR_SPOT_NOT_FOUND));
             User photoUser = userRepository.findById(photo.getUserId())
-                    .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                    .orElseThrow(() -> new RuntimeException(ERROR_USER_NOT_FOUND));
 
             return buildPhotoResponse(photo, spot, photoUser, true);
         });
