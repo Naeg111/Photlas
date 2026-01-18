@@ -130,29 +130,26 @@ function MainContent() {
         <MapView filterParams={mapFilterParams} />
       </div>
 
-      {/* フローティングUI - 左上: フィルターボタン */}
-      <div className="absolute top-4 left-4 z-10">
+      {/* フローティングUI - 左上: フィルターボタン、右上: メニューボタン */}
+      <div className="absolute top-4 left-6 right-6 z-10 flex items-start justify-between gap-3">
         <Button
-          variant="outline"
-          className={FLOATING_BUTTON_STYLES.outline}
+          variant="secondary"
+          size="icon"
+          className="shadow-lg w-18 h-10"
           onClick={() => dialog.open('filterPanel')}
           aria-label="フィルター"
         >
-          <SlidersHorizontal className="w-4 h-4" />
-          フィルター
+          <SlidersHorizontal className="w-5 h-5" />
         </Button>
-      </div>
 
-      {/* フローティングUI - 右上: メニューボタン */}
-      <div className="absolute top-4 right-4 z-10">
         <Button
-          variant="outline"
-          className={FLOATING_BUTTON_STYLES.outline}
+          variant="secondary"
+          size="icon"
+          className="shadow-lg w-18 h-10"
           onClick={() => dialog.open('topMenu')}
           aria-label="メニュー"
         >
-          <Menu className="w-4 h-4" />
-          メニュー
+          <Menu className="w-5 h-5" />
         </Button>
       </div>
 
