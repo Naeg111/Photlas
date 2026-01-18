@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -193,7 +194,6 @@ public class UserController {
     // ============================================================
 
     private static final List<String> ALLOWED_IMAGE_EXTENSIONS = List.of("jpg", "jpeg", "png", "webp");
-    private static final List<String> ALLOWED_PLATFORMS = List.of("twitter", "instagram", "youtube", "tiktok");
 
     /**
      * プロフィール画像アップロード用の署名付きURL発行（Issue#29）
@@ -265,46 +265,15 @@ public class UserController {
     ) {
         String email = authentication.getName();
 
-        // バリデーション
-        if (request.getSnsLinks() != null) {
-            java.util.Set<String> platforms = new java.util.HashSet<>();
-            for (UpdateSnsLinksRequest.SnsLinkRequest snsLink : request.getSnsLinks()) {
-                // プラットフォームのバリデーション
-                if (!ALLOWED_PLATFORMS.contains(snsLink.getPlatform())) {
-                    throw new IllegalArgumentException("未対応のプラットフォームです: " + snsLink.getPlatform());
-                }
-                // プラットフォーム重複チェック
-                if (!platforms.add(snsLink.getPlatform())) {
-                    throw new IllegalArgumentException("同じプラットフォームが重複しています: " + snsLink.getPlatform());
-                }
-                // URLとプラットフォームの整合性チェック
-                if (!isValidUrlForPlatform(snsLink.getPlatform(), snsLink.getUrl())) {
-                    throw new IllegalArgumentException("URLがプラットフォームと一致しません");
-                }
-            }
-        }
-
+        // バリデーションはUserServiceで実行
         List<UserSnsLink> updatedLinks = userService.updateSnsLinks(email, request.getSnsLinks());
 
         List<UpdateSnsLinksResponse.SnsLinkResponse> responseLinkList = updatedLinks.stream()
                 .map(link -> new UpdateSnsLinksResponse.SnsLinkResponse(link.getPlatform(), link.getUrl()))
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
         UpdateSnsLinksResponse response = new UpdateSnsLinksResponse(responseLinkList);
         return ResponseEntity.ok(response);
-    }
-
-    /**
-     * URLとプラットフォームの整合性チェック
-     */
-    private boolean isValidUrlForPlatform(String platform, String url) {
-        return switch (platform) {
-            case "twitter" -> url.contains("x.com") || url.contains("twitter.com");
-            case "instagram" -> url.contains("instagram.com");
-            case "youtube" -> url.contains("youtube.com");
-            case "tiktok" -> url.contains("tiktok.com");
-            default -> false;
-        };
     }
 
     /**
