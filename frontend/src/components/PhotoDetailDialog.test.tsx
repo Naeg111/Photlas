@@ -357,4 +357,233 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(onClose).toHaveBeenCalled()
     })
   })
+
+  // ============================================================
+  // Issue#30: お気に入り機能テスト
+  // ============================================================
+
+  describe('Issue#30: お気に入りボタン', () => {
+    it('お気に入りボタン（ハートアイコン）が表示される', async () => {
+      const photoDetail = createMockPhotoDetail()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
+      })
+    })
+
+    it('お気に入り未登録の場合、枠線ハートが表示される', async () => {
+      const photoDetail = createMockPhotoDetail({ isFavorited: false })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        const favoriteButton = screen.getByTestId('favorite-button')
+        expect(favoriteButton).toBeInTheDocument()
+        expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りに追加')
+      })
+    })
+
+    it('お気に入り済みの場合、塗りつぶしハートが表示される', async () => {
+      const photoDetail = createMockPhotoDetail({ isFavorited: true })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        const favoriteButton = screen.getByTestId('favorite-button')
+        expect(favoriteButton).toBeInTheDocument()
+        expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りから削除')
+      })
+    })
+
+    it('お気に入りボタンをクリックするとAPIが呼び出される', async () => {
+      const photoDetail = createMockPhotoDetail({ isFavorited: false })
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockResolvedValueOnce({ ok: true }) // POST /favorite
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      const user = userEvent.setup()
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
+      })
+
+      const favoriteButton = screen.getByTestId('favorite-button')
+      await user.click(favoriteButton)
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining(`/api/v1/photos/${TEST_PHOTO_ID_1}/favorite`),
+          expect.objectContaining({ method: 'POST' })
+        )
+      })
+    })
+
+    it('お気に入り済みの写真をクリックすると削除APIが呼び出される', async () => {
+      const photoDetail = createMockPhotoDetail({ isFavorited: true })
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockResolvedValueOnce({ ok: true }) // DELETE /favorite
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      const user = userEvent.setup()
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
+      })
+
+      const favoriteButton = screen.getByTestId('favorite-button')
+      await user.click(favoriteButton)
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining(`/api/v1/photos/${TEST_PHOTO_ID_1}/favorite`),
+          expect.objectContaining({ method: 'DELETE' })
+        )
+      })
+    })
+
+    it('API呼び出し中はボタンが無効化される', async () => {
+      const photoDetail = createMockPhotoDetail({ isFavorited: false })
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockImplementationOnce(() => new Promise(() => {})) // 永続的にpending
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      const user = userEvent.setup()
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
+      })
+
+      const favoriteButton = screen.getByTestId('favorite-button')
+      await user.click(favoriteButton)
+
+      await waitFor(() => {
+        expect(favoriteButton).toBeDisabled()
+      })
+    })
+
+    it('成功時にアイコン状態が即時更新される（楽観的UI更新）', async () => {
+      const photoDetail = createMockPhotoDetail({ isFavorited: false })
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockResolvedValueOnce({ ok: true }) // POST /favorite
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      const user = userEvent.setup()
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        const favoriteButton = screen.getByTestId('favorite-button')
+        expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りに追加')
+      })
+
+      const favoriteButton = screen.getByTestId('favorite-button')
+      await user.click(favoriteButton)
+
+      await waitFor(() => {
+        expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りから削除')
+      })
+    })
+
+    it('お気に入り数（favoriteCount）が表示される', async () => {
+      const photoDetail = createMockPhotoDetail({ favoriteCount: 42 })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorite-count')).toHaveTextContent('42')
+      })
+    })
+  })
 })

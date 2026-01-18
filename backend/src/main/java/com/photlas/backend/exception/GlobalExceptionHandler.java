@@ -55,4 +55,13 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
+
+    /**
+     * Issue#30: お気に入りが見つからない（404 Not Found）をハンドリング
+     */
+    @ExceptionHandler(FavoriteNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleFavoriteNotFoundException(FavoriteNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
 }
