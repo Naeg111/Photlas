@@ -12,7 +12,6 @@ import { PrivacyPolicyPage } from './components/PrivacyPolicyPage'
 import PasswordResetRequestModal from './components/PasswordResetRequestModal'
 import { PhotoContributionDialog } from './components/PhotoContributionDialog'
 import { AccountSettingsDialog } from './components/AccountSettingsDialog'
-import ProfileDialog from './components/ProfileDialog'
 import MapView from './components/MapView'
 import type { MapViewFilterParams } from './components/MapView'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -53,7 +52,6 @@ function MainContent() {
   const [passwordResetOpen, setPasswordResetOpen] = useState(false)
   const [photoContributionOpen, setPhotoContributionOpen] = useState(false)
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false)
-  const [profileOpen, setProfileOpen] = useState(false)
 
   // カテゴリマップの取得
   useEffect(() => {
@@ -123,7 +121,9 @@ function MainContent() {
   }
 
   const handleShowProfile = () => {
-    setProfileOpen(true)
+    // TODO: Issue#28 Refactor段階でプロフィールダイアログを実装
+    // 現在はアカウント設定ダイアログで代替
+    setAccountSettingsOpen(true)
   }
 
   const handleLogout = () => {
@@ -237,18 +237,11 @@ function MainContent() {
       />
 
       {user && (
-        <>
-          <AccountSettingsDialog
-            open={accountSettingsOpen}
-            onOpenChange={setAccountSettingsOpen}
-            currentEmail={user.email}
-          />
-
-          <ProfileDialog
-            open={profileOpen}
-            onOpenChange={setProfileOpen}
-          />
-        </>
+        <AccountSettingsDialog
+          open={accountSettingsOpen}
+          onOpenChange={setAccountSettingsOpen}
+          currentEmail={user.email}
+        />
       )}
     </div>
   )
