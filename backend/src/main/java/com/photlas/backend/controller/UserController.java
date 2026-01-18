@@ -10,6 +10,13 @@ import com.photlas.backend.dto.UpdateEmailRequest;
 import com.photlas.backend.dto.UpdateEmailResponse;
 import com.photlas.backend.dto.UpdatePasswordRequest;
 import com.photlas.backend.dto.DeleteAccountRequest;
+import com.photlas.backend.dto.UpdateProfileImageRequest;
+import com.photlas.backend.dto.UpdateProfileImageResponse;
+import com.photlas.backend.dto.UpdateSnsLinksRequest;
+import com.photlas.backend.dto.UpdateSnsLinksResponse;
+import com.photlas.backend.dto.UpdateUsernameRequest;
+import com.photlas.backend.dto.UpdateUsernameResponse;
+import com.photlas.backend.entity.UserSnsLink;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.PhotoService;
@@ -179,6 +186,140 @@ public class UserController {
         String email = authentication.getName();
         userService.deleteAccount(email, request.getPassword());
         return ResponseEntity.noContent().build();
+    }
+
+    // ============================================================
+    // Issue#29: プロフィール機能強化
+    // ============================================================
+
+    private static final List<String> ALLOWED_IMAGE_EXTENSIONS = List.of("jpg", "jpeg", "png", "webp");
+    private static final List<String> ALLOWED_PLATFORMS = List.of("twitter", "instagram", "youtube", "tiktok");
+
+    /**
+     * プロフィール画像アップロード用の署名付きURL発行（Issue#29）
+     * POST /api/v1/users/me/profile-image/presigned-url
+     */
+    @PostMapping("/me/profile-image/presigned-url")
+    public ResponseEntity<UploadUrlResponse> getProfileImagePresignedUrl(
+            @Valid @RequestBody UploadUrlRequest request,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        // 拡張子のバリデーション
+        if (!ALLOWED_IMAGE_EXTENSIONS.contains(request.getExtension().toLowerCase())) {
+            throw new IllegalArgumentException("対応していないファイル形式です");
+        }
+
+        S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(
+                "profile-images",
+                user.getId(),
+                request.getExtension(),
+                request.getContentType()
+        );
+
+        UploadUrlResponse response = new UploadUrlResponse(
+                result.getUploadUrl(),
+                result.getObjectKey()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * プロフィール画像キー登録（Issue#29）
+     * PUT /api/v1/users/me/profile-image
+     */
+    @PutMapping("/me/profile-image")
+    public ResponseEntity<UpdateProfileImageResponse> updateProfileImage(
+            @Valid @RequestBody UpdateProfileImageRequest request,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        String profileImageUrl = userService.updateProfileImage(email, request.getObjectKey());
+        UpdateProfileImageResponse response = new UpdateProfileImageResponse(profileImageUrl);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * プロフィール画像削除（Issue#29）
+     * DELETE /api/v1/users/me/profile-image
+     */
+    @DeleteMapping("/me/profile-image")
+    public ResponseEntity<Void> deleteProfileImage(Authentication authentication) {
+        String email = authentication.getName();
+        userService.deleteProfileImage(email);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * SNSリンク保存（Issue#29）
+     * PUT /api/v1/users/me/sns-links
+     */
+    @PutMapping("/me/sns-links")
+    public ResponseEntity<UpdateSnsLinksResponse> updateSnsLinks(
+            @Valid @RequestBody UpdateSnsLinksRequest request,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+
+        // バリデーション
+        if (request.getSnsLinks() != null) {
+            java.util.Set<String> platforms = new java.util.HashSet<>();
+            for (UpdateSnsLinksRequest.SnsLinkRequest snsLink : request.getSnsLinks()) {
+                // プラットフォームのバリデーション
+                if (!ALLOWED_PLATFORMS.contains(snsLink.getPlatform())) {
+                    throw new IllegalArgumentException("未対応のプラットフォームです: " + snsLink.getPlatform());
+                }
+                // プラットフォーム重複チェック
+                if (!platforms.add(snsLink.getPlatform())) {
+                    throw new IllegalArgumentException("同じプラットフォームが重複しています: " + snsLink.getPlatform());
+                }
+                // URLとプラットフォームの整合性チェック
+                if (!isValidUrlForPlatform(snsLink.getPlatform(), snsLink.getUrl())) {
+                    throw new IllegalArgumentException("URLがプラットフォームと一致しません");
+                }
+            }
+        }
+
+        List<UserSnsLink> updatedLinks = userService.updateSnsLinks(email, request.getSnsLinks());
+
+        List<UpdateSnsLinksResponse.SnsLinkResponse> responseLinkList = updatedLinks.stream()
+                .map(link -> new UpdateSnsLinksResponse.SnsLinkResponse(link.getPlatform(), link.getUrl()))
+                .collect(java.util.stream.Collectors.toList());
+
+        UpdateSnsLinksResponse response = new UpdateSnsLinksResponse(responseLinkList);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * URLとプラットフォームの整合性チェック
+     */
+    private boolean isValidUrlForPlatform(String platform, String url) {
+        return switch (platform) {
+            case "twitter" -> url.contains("x.com") || url.contains("twitter.com");
+            case "instagram" -> url.contains("instagram.com");
+            case "youtube" -> url.contains("youtube.com");
+            case "tiktok" -> url.contains("tiktok.com");
+            default -> false;
+        };
+    }
+
+    /**
+     * ユーザー名変更（Issue#29）
+     * PUT /api/v1/users/me/username
+     */
+    @PutMapping("/me/username")
+    public ResponseEntity<UpdateUsernameResponse> updateUsername(
+            @Valid @RequestBody UpdateUsernameRequest request,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        String username = userService.updateUsername(email, request.getUsername());
+        UpdateUsernameResponse response = new UpdateUsernameResponse(username);
+        return ResponseEntity.ok(response);
     }
 
     /**

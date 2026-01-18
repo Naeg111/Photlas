@@ -423,4 +423,93 @@ public class UserService {
         // ユーザーを削除（CASCADE設定により関連データも削除される）
         userRepository.delete(user);
     }
+
+    // ============================================================
+    // Issue#29: プロフィール機能強化
+    // ============================================================
+
+    /**
+     * プロフィール画像を更新（Issue#29）
+     *
+     * @param email ログイン中ユーザーのメールアドレス
+     * @param objectKey S3オブジェクトキー
+     * @return プロフィール画像URL
+     */
+    @Transactional
+    public String updateProfileImage(String email, String objectKey) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        user.setProfileImageS3Key(objectKey);
+        userRepository.save(user);
+
+        return s3Service.generateCdnUrl(objectKey);
+    }
+
+    /**
+     * プロフィール画像を削除（Issue#29）
+     *
+     * @param email ログイン中ユーザーのメールアドレス
+     */
+    @Transactional
+    public void deleteProfileImage(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        user.setProfileImageS3Key(null);
+        userRepository.save(user);
+    }
+
+    /**
+     * SNSリンクを更新（Issue#29）
+     *
+     * @param email ログイン中ユーザーのメールアドレス
+     * @param snsLinks SNSリンクリスト
+     * @return 更新後のSNSリンクリスト
+     */
+    @Transactional
+    public List<UserSnsLink> updateSnsLinks(String email, List<com.photlas.backend.dto.UpdateSnsLinksRequest.SnsLinkRequest> snsLinks) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        // SNSリンクを一括置換
+        userSnsLinkRepository.deleteByUserId(user.getId());
+
+        if (snsLinks != null) {
+            for (var snsLinkRequest : snsLinks) {
+                UserSnsLink snsLink = new UserSnsLink(
+                        user.getId(),
+                        snsLinkRequest.getPlatform(),
+                        snsLinkRequest.getUrl()
+                );
+                userSnsLinkRepository.save(snsLink);
+            }
+        }
+
+        return userSnsLinkRepository.findByUserId(user.getId());
+    }
+
+    /**
+     * ユーザー名を更新（Issue#29）
+     *
+     * @param email ログイン中ユーザーのメールアドレス
+     * @param username 新しいユーザー名
+     * @return 更新後のユーザー名
+     */
+    @Transactional
+    public String updateUsername(String email, String username) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        // ユーザー名重複チェック（自分以外）
+        Optional<User> existingUser = userRepository.findByUsername(username);
+        if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
+            throw new ConflictException("このユーザー名はすでに使用されています");
+        }
+
+        user.setUsername(username);
+        userRepository.save(user);
+
+        return user.getUsername();
+    }
 }
