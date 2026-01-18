@@ -364,6 +364,9 @@ describe('ProfileDialog', () => {
     it('画像を選択するとアップロードが開始される', async () => {
       const user = userEvent.setup()
 
+      // fetchをモックしてpending状態を維持
+      global.fetch = vi.fn().mockImplementation(() => new Promise(() => {}))
+
       render(
         <ProfileDialog
           open={true}
