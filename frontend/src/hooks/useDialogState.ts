@@ -15,6 +15,9 @@ export type DialogName =
   | 'passwordReset'
   | 'photoContribution'
   | 'accountSettings'
+  | 'profile'
+  | 'photoDetail'
+  | 'lightbox'
 
 /**
  * ダイアログの開閉状態
@@ -56,6 +59,9 @@ const INITIAL_STATE: DialogState = {
   passwordReset: false,
   photoContribution: false,
   accountSettings: false,
+  profile: false,
+  photoDetail: false,
+  lightbox: false,
 }
 
 /**
