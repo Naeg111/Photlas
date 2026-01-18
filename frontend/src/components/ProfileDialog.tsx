@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import { Button } from './ui/button'
@@ -14,8 +14,16 @@ import {
 } from './ui/pagination'
 import { User, X as XIcon } from 'lucide-react'
 
+const SNS_PLATFORMS = [
+  { value: 'twitter', label: 'X (Twitter)' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'tiktok', label: 'TikTok' },
+] as const
+
 interface SnsLink {
   url: string
+  platform?: string
 }
 
 interface UserProfile {
@@ -56,9 +64,104 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 }) => {
   const [isEditingUsername, setIsEditingUsername] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [isEditingSnsLinks, setIsEditingSnsLinks] = useState(false)
+  const [editingUsername, setEditingUsername] = useState(userProfile.username)
+  const [usernameError, setUsernameError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleUsernameEditClick = () => {
     setIsEditingUsername(true)
+    setEditingUsername(userProfile.username)
+    setUsernameError('')
+  }
+
+  const handleProfileImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    setUploadSuccess(false)
+
+    try {
+      const presignedResponse = await fetch('/api/v1/users/me/profile-image/presigned-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!presignedResponse.ok) {
+        throw new Error('Failed to get presigned URL')
+      }
+
+      const { uploadUrl, objectKey } = await presignedResponse.json()
+
+      await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+      })
+
+      await fetch('/api/v1/users/me/profile-image', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ objectKey }),
+      })
+
+      setUploadSuccess(true)
+    } catch {
+      // エラー時の処理
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleDeleteProfileImage = async () => {
+    await fetch('/api/v1/users/me/profile-image', {
+      method: 'DELETE',
+    })
+  }
+
+  const handleSaveSnsLinks = async () => {
+    await fetch('/api/v1/users/me/sns-links', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ snsLinks: userProfile.snsLinks }),
+    })
+  }
+
+  const handleSaveUsername = async () => {
+    setUsernameError('')
+
+    if (!editingUsername || editingUsername.trim() === '') {
+      setUsernameError('ユーザー名を入力してください')
+      return
+    }
+
+    if (editingUsername.length > 30) {
+      setUsernameError('30文字以内で入力してください')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/v1/users/me/username', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: editingUsername }),
+      })
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          const data = await response.json()
+          setUsernameError(data.message)
+          return
+        }
+        throw new Error('Failed to update username')
+      }
+
+      setIsEditingUsername(false)
+    } catch {
+      // エラー時の処理
+    }
   }
 
   const getSnsIcon = (url: string) => {
@@ -120,32 +223,84 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
           {/* 画像を選択ボタン（自分のプロフィールのみ） */}
           {isOwnProfile && (
-            <Button variant="outline" size="sm" className="mb-4">
-              画像を選択
-            </Button>
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleProfileImageSelect}
+                className="hidden"
+                data-testid="profile-image-input"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="mb-2"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                画像を選択
+              </Button>
+              {userProfile.profileImageUrl && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mb-2 text-red-500"
+                  data-testid="delete-profile-image-button"
+                  onClick={handleDeleteProfileImage}
+                >
+                  画像を削除
+                </Button>
+              )}
+              {isUploading && (
+                <div data-testid="upload-progress" className="text-sm text-gray-500">
+                  アップロード中...
+                </div>
+              )}
+              {uploadSuccess && (
+                <div data-testid="upload-success" className="text-sm text-green-500">
+                  アップロード完了
+                </div>
+              )}
+            </>
           )}
 
           {/* ユーザー名 */}
-          <div className="flex items-center gap-2 mb-2">
-            {isEditingUsername ? (
-              <Input
-                data-testid="username-input"
-                defaultValue={userProfile.username}
-                className="w-48"
-                autoFocus
-              />
-            ) : (
-              <h2 className="text-2xl font-bold">{userProfile.username}</h2>
-            )}
-            {isOwnProfile && !isEditingUsername && (
-              <Button size="sm" variant="outline" onClick={handleUsernameEditClick}>
-                変更
-              </Button>
+          <div className="flex flex-col items-center gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              {isEditingUsername ? (
+                <>
+                  <Input
+                    data-testid="username-input"
+                    value={editingUsername}
+                    onChange={(e) => setEditingUsername(e.target.value)}
+                    className="w-48"
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    variant="default"
+                    data-testid="save-username-button"
+                    onClick={handleSaveUsername}
+                  >
+                    保存
+                  </Button>
+                </>
+              ) : (
+                <h2 className="text-2xl font-bold">{userProfile.username}</h2>
+              )}
+              {isOwnProfile && !isEditingUsername && (
+                <Button size="sm" variant="outline" onClick={handleUsernameEditClick}>
+                  変更
+                </Button>
+              )}
+            </div>
+            {usernameError && (
+              <p className="text-sm text-red-500">{usernameError}</p>
             )}
           </div>
 
           {/* SNSリンク */}
-          {userProfile.snsLinks.length > 0 && (
+          {!isEditingSnsLinks && userProfile.snsLinks.length > 0 && (
             <div className="flex gap-4 mt-2">
               {userProfile.snsLinks.map((link, index) => (
                 <a
@@ -160,6 +315,54 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                   {getSnsIcon(link.url)}
                 </a>
               ))}
+            </div>
+          )}
+
+          {/* SNSリンク編集ボタン（自分のプロフィールのみ） */}
+          {isOwnProfile && !isEditingSnsLinks && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2"
+              data-testid="edit-sns-links-button"
+              onClick={() => setIsEditingSnsLinks(true)}
+            >
+              SNSリンクを編集
+            </Button>
+          )}
+
+          {/* SNSリンク編集モード */}
+          {isOwnProfile && isEditingSnsLinks && (
+            <div className="w-full max-w-md mt-4 space-y-4">
+              <div className="flex gap-2">
+                <select
+                  data-testid="sns-platform-select"
+                  className="flex-1 border rounded-md px-3 py-2"
+                >
+                  {SNS_PLATFORMS.map((platform) => (
+                    <option key={platform.value} value={platform.value}>
+                      {platform.label}
+                    </option>
+                  ))}
+                </select>
+                <Input placeholder="URL" className="flex-1" />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingSnsLinks(false)}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  size="sm"
+                  data-testid="save-sns-links-button"
+                  onClick={handleSaveSnsLinks}
+                >
+                  保存
+                </Button>
+              </div>
             </div>
           )}
         </div>
