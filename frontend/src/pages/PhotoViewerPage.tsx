@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { API_V1_URL } from '../config/api'
 
 /**
  * Issue#15: 写真フルサイズ表示 (UI / 専用ビューアー)
@@ -57,7 +58,7 @@ function PhotoViewerPage() {
 
       try {
         setLoading(true)
-        const response = await fetch(`/api/v1/photos/${photoId}`)
+        const response = await fetch(`${API_V1_URL}/photos/${photoId}`)
 
         if (!response.ok) {
           if (response.status === 404) {
