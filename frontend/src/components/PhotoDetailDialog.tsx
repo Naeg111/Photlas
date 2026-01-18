@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dial
 import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Heart } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
+import { getAuthHeaders } from '../utils/apiClient'
 
 // API Endpoints
 const API_SPOTS_PHOTOS = '/api/v1/spots'
@@ -83,13 +84,6 @@ interface PhotoDetail {
 }
 
 // Helper Functions
-function getAuthHeaders(): HeadersInit {
-  if (typeof localStorage !== 'undefined' && localStorage.getItem('token')) {
-    return { Authorization: `Bearer ${localStorage.getItem('token')}` }
-  }
-  return {}
-}
-
 async function fetchPhotoIds(spotId: number): Promise<number[]> {
   const response = await fetch(`${API_SPOTS_PHOTOS}/${spotId}/photos`, {
     headers: getAuthHeaders(),

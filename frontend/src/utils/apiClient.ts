@@ -1,9 +1,23 @@
 /**
  * API Client ユーティリティ
  * Issue#16: フィルター機能 - APIクライアント
+ * Issue#30: 認証ヘッダー取得関数を追加
  */
 
-const API_BASE_URL = '/api/v1';
+import { API_V1_URL } from '../config/api';
+
+const API_BASE_URL = API_V1_URL;
+
+/**
+ * 認証ヘッダーを取得する
+ * @returns 認証ヘッダー（トークンがない場合は空オブジェクト）
+ */
+export function getAuthHeaders(): HeadersInit {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('token')) {
+    return { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  }
+  return {}
+}
 
 /**
  * カテゴリーレスポンスの型定義
