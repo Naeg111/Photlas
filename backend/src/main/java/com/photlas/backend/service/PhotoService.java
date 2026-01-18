@@ -133,7 +133,10 @@ public class PhotoService {
             }
         }
 
-        return buildPhotoResponse(photo, spot, user, isFavorited);
+        // Issue#30: お気に入り数を取得
+        long favoriteCount = favoriteRepository.countByPhotoId(photoId);
+
+        return buildPhotoResponse(photo, spot, user, isFavorited, favoriteCount);
     }
 
 
@@ -187,13 +190,18 @@ public class PhotoService {
      * PhotoResponseを構築する
      */
     private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited) {
+        return buildPhotoResponse(photo, spot, user, isFavorited, 0L);
+    }
+
+    private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited, long favoriteCount) {
         PhotoResponse.PhotoDTO photoDTO = new PhotoResponse.PhotoDTO(
                 photo.getPhotoId(),
                 photo.getTitle(),
                 photo.getS3ObjectKey(),
                 photo.getShotAt().format(DateTimeFormatter.ISO_DATE_TIME),
                 photo.getWeather(),
-                isFavorited
+                isFavorited,
+                favoriteCount
         );
 
         PhotoResponse.SpotDTO spotDTO = new PhotoResponse.SpotDTO(

@@ -1,22 +1,28 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Heart } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 
 // API Endpoints
 const API_SPOTS_PHOTOS = '/api/v1/spots'
 const API_PHOTOS = '/api/v1/photos'
+const API_FAVORITE_PREFIX = '/api/v1/photos/'
+const API_FAVORITE_SUFFIX = '/favorite'
 
 // Test IDs
 const TEST_ID_DIALOG = 'photo-detail-dialog'
 const TEST_ID_LOADING = 'loading-spinner'
 const TEST_ID_DOT_PREFIX = 'dot-indicator-'
+const TEST_ID_FAVORITE_BUTTON = 'favorite-button'
+const TEST_ID_FAVORITE_COUNT = 'favorite-count'
 
 // Labels
 const LABEL_CLOSE = '閉じる'
 const LABEL_PREV = '前の写真'
 const LABEL_NEXT = '次の写真'
+const LABEL_ADD_FAVORITE = 'お気に入りに追加'
+const LABEL_REMOVE_FAVORITE = 'お気に入りから削除'
 
 // Screen reader text
 const SR_TITLE = '写真詳細'
@@ -53,6 +59,8 @@ interface PhotoDetail {
   weather?: string
   timeOfDay?: string
   subjectCategory?: string
+  isFavorited?: boolean
+  favoriteCount?: number
   cameraInfo?: {
     body?: string
     lens?: string
@@ -113,6 +121,11 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [emblaRef, emblaApi] = useEmblaCarousel()
+
+  // Issue#30: お気に入り状態管理
+  const [isFavorited, setIsFavorited] = useState(false)
+  const [favoriteCount, setFavoriteCount] = useState(0)
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false)
 
   // スポットの写真ID一覧を取得
   useEffect(() => {
@@ -187,6 +200,42 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
 
   const currentPhotoId = photoIds[currentIndex]
   const currentPhoto = currentPhotoId ? photoDetails.get(currentPhotoId) : null
+
+  // Issue#30: お気に入り状態を写真詳細から同期
+  useEffect(() => {
+    if (currentPhoto) {
+      setIsFavorited(currentPhoto.isFavorited ?? false)
+      setFavoriteCount(currentPhoto.favoriteCount ?? 0)
+    }
+  }, [currentPhoto])
+
+  // Issue#30: お気に入りトグル処理
+  const handleToggleFavorite = useCallback(async () => {
+    if (!currentPhotoId || isFavoriteLoading) return
+
+    setIsFavoriteLoading(true)
+
+    try {
+      const method = isFavorited ? 'DELETE' : 'POST'
+      const response = await fetch(
+        `${API_FAVORITE_PREFIX}${currentPhotoId}${API_FAVORITE_SUFFIX}`,
+        {
+          method,
+          headers: getAuthHeaders(),
+        }
+      )
+
+      if (response.ok) {
+        // 楽観的UI更新
+        setIsFavorited(!isFavorited)
+        setFavoriteCount(prev => isFavorited ? prev - 1 : prev + 1)
+      }
+    } catch {
+      // エラー時は状態を戻さない（楽観的更新なし）
+    } finally {
+      setIsFavoriteLoading(false)
+    }
+  }, [currentPhotoId, isFavorited, isFavoriteLoading])
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -264,7 +313,30 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
 
               {/* 写真情報 */}
               <div className="p-6 space-y-4">
-                <h2 className="text-2xl font-bold">{currentPhoto.title}</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">{currentPhoto.title}</h2>
+
+                  {/* Issue#30: お気に入りボタン */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      data-testid={TEST_ID_FAVORITE_BUTTON}
+                      onClick={handleToggleFavorite}
+                      disabled={isFavoriteLoading}
+                      aria-label={isFavorited ? LABEL_REMOVE_FAVORITE : LABEL_ADD_FAVORITE}
+                    >
+                      <Heart
+                        className={`h-6 w-6 ${
+                          isFavorited ? 'fill-red-500 text-red-500' : ''
+                        }`}
+                      />
+                    </Button>
+                    <span data-testid={TEST_ID_FAVORITE_COUNT} className="text-sm text-gray-600">
+                      {favoriteCount}
+                    </span>
+                  </div>
+                </div>
 
                 {/* ユーザー情報 */}
                 <div className="flex items-center gap-3">

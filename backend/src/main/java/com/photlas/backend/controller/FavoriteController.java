@@ -22,11 +22,11 @@ public class FavoriteController {
     }
 
     /**
-     * お気に入りに登録する
+     * お気に入りに登録する（Issue#30）
      *
      * @param photoId 写真ID
      * @param authentication 認証情報
-     * @return 204 No Content
+     * @return 201 Created（成功時）, 409 Conflict（既に登録済み）
      */
     @PostMapping("/photos/{photoId}/favorite")
     public ResponseEntity<Void> addFavorite(
@@ -35,15 +35,15 @@ public class FavoriteController {
     ) {
         String email = authentication.getName();
         favoriteService.addFavorite(photoId, email);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     /**
-     * お気に入りを解除する
+     * お気に入りを解除する（Issue#30）
      *
      * @param photoId 写真ID
      * @param authentication 認証情報
-     * @return 204 No Content
+     * @return 204 No Content（成功時）, 404 Not Found（登録されていない）
      */
     @DeleteMapping("/photos/{photoId}/favorite")
     public ResponseEntity<Void> removeFavorite(
