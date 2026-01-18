@@ -5,6 +5,8 @@ import com.photlas.backend.entity.Favorite;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.FavoriteNotFoundException;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
@@ -48,21 +50,28 @@ public class FavoriteService {
         this.userRepository = userRepository;
     }
 
+    // エラーメッセージ定数
+    private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
+    private static final String ERROR_PHOTO_NOT_FOUND = "写真が見つかりません";
+    private static final String ERROR_ALREADY_FAVORITED = "既にお気に入り登録されています";
+    private static final String ERROR_NOT_FAVORITED = "お気に入り登録されていません";
+
     /**
-     * お気に入りに登録する（冪等性）
+     * お気に入りに登録する（Issue#30）
+     * @throws ConflictException 既に登録済みの場合
      */
     @Transactional
     public void addFavorite(Long photoId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         Photo photo = photoRepository.findById(photoId)
-                .orElseThrow(() -> new RuntimeException("写真が見つかりません"));
+                .orElseThrow(() -> new RuntimeException(ERROR_PHOTO_NOT_FOUND));
 
-        // すでに登録済みかチェック（冪等性）
+        // すでに登録済みかチェック
         if (favoriteRepository.findByUserIdAndPhotoId(user.getId(), photoId).isPresent()) {
             logger.info("お気に入りは既に登録済みです: userId={}, photoId={}", user.getId(), photoId);
-            return;
+            throw new ConflictException(ERROR_ALREADY_FAVORITED);
         }
 
         Favorite favorite = new Favorite();
@@ -74,21 +83,30 @@ public class FavoriteService {
     }
 
     /**
-     * お気に入りを解除する（冪等性）
+     * お気に入りを解除する（Issue#30）
+     * @throws FavoriteNotFoundException お気に入り登録されていない場合
      */
     @Transactional
     public void removeFavorite(Long photoId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
-        favoriteRepository.findByUserIdAndPhotoId(user.getId(), photoId)
-                .ifPresentOrElse(
-                        favorite -> {
-                            favoriteRepository.delete(favorite);
-                            logger.info("お気に入りを解除しました: userId={}, photoId={}", user.getId(), photoId);
-                        },
-                        () -> logger.info("お気に入りは登録されていません（冪等性）: userId={}, photoId={}", user.getId(), photoId)
-                );
+        Favorite favorite = favoriteRepository.findByUserIdAndPhotoId(user.getId(), photoId)
+                .orElseThrow(() -> {
+                    logger.info("お気に入りは登録されていません: userId={}, photoId={}", user.getId(), photoId);
+                    return new FavoriteNotFoundException(ERROR_NOT_FAVORITED);
+                });
+
+        favoriteRepository.delete(favorite);
+        logger.info("お気に入りを解除しました: userId={}, photoId={}", user.getId(), photoId);
+    }
+
+    /**
+     * 写真のお気に入り数を取得する（Issue#30）
+     */
+    @Transactional(readOnly = true)
+    public long getFavoriteCount(Long photoId) {
+        return favoriteRepository.countByPhotoId(photoId);
     }
 
     /**
