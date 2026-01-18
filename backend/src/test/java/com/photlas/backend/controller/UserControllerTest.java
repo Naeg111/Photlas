@@ -590,4 +590,294 @@ public class UserControllerTest {
                 .content(requestBody))
                 .andExpect(status().isUnauthorized());
     }
+
+    // ============================================================
+    // Issue#29: プロフィール機能強化のテスト
+    // ============================================================
+
+    // Endpoint Constants for Issue#29
+    private static final String PROFILE_IMAGE_PRESIGNED_URL_ENDPOINT = "/api/v1/users/me/profile-image/presigned-url";
+    private static final String PROFILE_IMAGE_ENDPOINT = "/api/v1/users/me/profile-image";
+    private static final String SNS_LINKS_ENDPOINT = "/api/v1/users/me/sns-links";
+    private static final String USERNAME_ENDPOINT = "/api/v1/users/me/username";
+
+    // SNS Platform Constants
+    private static final String PLATFORM_TWITTER = "twitter";
+    private static final String PLATFORM_INSTAGRAM = "instagram";
+    private static final String PLATFORM_YOUTUBE = "youtube";
+    private static final String PLATFORM_TIKTOK = "tiktok";
+
+    // SNS URL Constants for Issue#29
+    private static final String SNS_URL_YOUTUBE = "https://youtube.com/@testuser";
+    private static final String SNS_URL_TIKTOK = "https://tiktok.com/@testuser";
+
+    // --- プロフィール画像 Presigned URL取得 ---
+    @Test
+    @DisplayName("Issue#29 - POST /api/v1/users/me/profile-image/presigned-url - 署名付きURL発行成功")
+    void testGetProfileImagePresignedUrl_ValidRequest_ReturnsUploadUrl() throws Exception {
+        String requestBody = "{\"extension\":\"jpg\",\"contentType\":\"image/jpeg\"}";
+
+        mockMvc.perform(post(PROFILE_IMAGE_PRESIGNED_URL_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.uploadUrl").exists())
+                .andExpect(jsonPath("$.objectKey").exists());
+    }
+
+    @Test
+    @DisplayName("Issue#29 - POST /api/v1/users/me/profile-image/presigned-url - 未認証の場合は401を返す")
+    void testGetProfileImagePresignedUrl_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        String requestBody = "{\"extension\":\"jpg\",\"contentType\":\"image/jpeg\"}";
+
+        mockMvc.perform(post(PROFILE_IMAGE_PRESIGNED_URL_ENDPOINT)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Issue#29 - POST /api/v1/users/me/profile-image/presigned-url - 不正な拡張子の場合は400を返す")
+    void testGetProfileImagePresignedUrl_InvalidExtension_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"extension\":\"exe\",\"contentType\":\"application/octet-stream\"}";
+
+        mockMvc.perform(post(PROFILE_IMAGE_PRESIGNED_URL_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    // --- プロフィール画像登録 ---
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/profile-image - プロフィール画像キー登録成功")
+    void testUpdateProfileImage_ValidRequest_ReturnsOk() throws Exception {
+        String requestBody = "{\"objectKey\":\"profile-images/1/test-uuid.jpg\"}";
+
+        mockMvc.perform(put(PROFILE_IMAGE_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profileImageUrl").exists());
+    }
+
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/profile-image - 未認証の場合は401を返す")
+    void testUpdateProfileImage_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        String requestBody = "{\"objectKey\":\"profile-images/1/test-uuid.jpg\"}";
+
+        mockMvc.perform(put(PROFILE_IMAGE_ENDPOINT)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // --- プロフィール画像削除 ---
+    @Test
+    @DisplayName("Issue#29 - DELETE /api/v1/users/me/profile-image - プロフィール画像削除成功")
+    void testDeleteProfileImage_ValidRequest_ReturnsNoContent() throws Exception {
+        mockMvc.perform(delete(PROFILE_IMAGE_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken)))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("Issue#29 - DELETE /api/v1/users/me/profile-image - 未認証の場合は401を返す")
+    void testDeleteProfileImage_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        mockMvc.perform(delete(PROFILE_IMAGE_ENDPOINT)
+                .with(csrf()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // --- SNSリンク保存 ---
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - SNSリンク保存成功")
+    void testUpdateSnsLinks_ValidRequest_ReturnsOk() throws Exception {
+        String requestBody = "{\"snsLinks\":[" +
+                "{\"platform\":\"twitter\",\"url\":\"https://x.com/testuser\"}," +
+                "{\"platform\":\"instagram\",\"url\":\"https://instagram.com/testuser\"}" +
+                "]}";
+
+        mockMvc.perform(put(SNS_LINKS_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.snsLinks", hasSize(2)));
+    }
+
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - 4種類のSNSを登録可能")
+    void testUpdateSnsLinks_AllPlatforms_ReturnsOk() throws Exception {
+        String requestBody = "{\"snsLinks\":[" +
+                "{\"platform\":\"twitter\",\"url\":\"https://x.com/testuser\"}," +
+                "{\"platform\":\"instagram\",\"url\":\"https://instagram.com/testuser\"}," +
+                "{\"platform\":\"youtube\",\"url\":\"https://youtube.com/@testuser\"}," +
+                "{\"platform\":\"tiktok\",\"url\":\"https://tiktok.com/@testuser\"}" +
+                "]}";
+
+        mockMvc.perform(put(SNS_LINKS_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.snsLinks", hasSize(4)));
+    }
+
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - 未対応プラットフォームの場合は400を返す")
+    void testUpdateSnsLinks_InvalidPlatform_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"snsLinks\":[" +
+                "{\"platform\":\"facebook\",\"url\":\"https://facebook.com/testuser\"}" +
+                "]}";
+
+        mockMvc.perform(put(SNS_LINKS_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - URLがプラットフォームと不一致の場合は400を返す")
+    void testUpdateSnsLinks_UrlMismatch_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"snsLinks\":[" +
+                "{\"platform\":\"twitter\",\"url\":\"https://instagram.com/testuser\"}" +
+                "]}";
+
+        mockMvc.perform(put(SNS_LINKS_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - 同一プラットフォームが重複している場合は400を返す")
+    void testUpdateSnsLinks_DuplicatePlatform_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"snsLinks\":[" +
+                "{\"platform\":\"twitter\",\"url\":\"https://x.com/testuser1\"}," +
+                "{\"platform\":\"twitter\",\"url\":\"https://x.com/testuser2\"}" +
+                "]}";
+
+        mockMvc.perform(put(SNS_LINKS_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - 未認証の場合は401を返す")
+    void testUpdateSnsLinks_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        String requestBody = "{\"snsLinks\":[]}";
+
+        mockMvc.perform(put(SNS_LINKS_ENDPOINT)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // --- ユーザー名変更 ---
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - ユーザー名変更成功")
+    void testUpdateUsername_ValidRequest_ReturnsOk() throws Exception {
+        String requestBody = "{\"username\":\"newusername\"}";
+
+        mockMvc.perform(put(USERNAME_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username", is("newusername")));
+    }
+
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - ユーザー名が空の場合は400を返す")
+    void testUpdateUsername_EmptyUsername_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"username\":\"\"}";
+
+        mockMvc.perform(put(USERNAME_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - ユーザー名が30文字を超える場合は400を返す")
+    void testUpdateUsername_TooLongUsername_ReturnsBadRequest() throws Exception {
+        String longUsername = "a".repeat(31);
+        String requestBody = "{\"username\":\"" + longUsername + "\"}";
+
+        mockMvc.perform(put(USERNAME_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - ユーザー名が重複している場合は409を返す")
+    void testUpdateUsername_DuplicateUsername_ReturnsConflict() throws Exception {
+        // 別のユーザーを作成
+        createTestUser("existingname", "existing@example.com");
+
+        String requestBody = "{\"username\":\"existingname\"}";
+
+        mockMvc.perform(put(USERNAME_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 未認証の場合は401を返す")
+    void testUpdateUsername_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        String requestBody = "{\"username\":\"newusername\"}";
+
+        mockMvc.perform(put(USERNAME_ENDPOINT)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // --- プロフィール取得（プロフィール画像URL・SNSリンク含む） ---
+    @Test
+    @DisplayName("Issue#29 - GET /api/v1/users/me - プロフィール画像URLが含まれる")
+    void testGetMyProfile_IncludesProfileImageUrl() throws Exception {
+        // プロフィール画像を設定したユーザーでテスト
+        // Note: この時点ではプロフィール画像設定APIが未実装のため、失敗が期待される
+        performGetMyProfile()
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profileImageUrl").exists());
+    }
+
+    @Test
+    @DisplayName("Issue#29 - GET /api/v1/users/{userId} - 他ユーザーのプロフィール画像URLが含まれる")
+    void testGetUserProfile_IncludesProfileImageUrl() throws Exception {
+        performGetUserProfile(testUser.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profileImageUrl").exists());
+    }
 }
