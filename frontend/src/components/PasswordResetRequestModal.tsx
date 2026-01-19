@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_V1_URL } from '../config/api'
 
 interface PasswordResetRequestModalProps {
   open: boolean
@@ -45,7 +46,7 @@ export default function PasswordResetRequestModal({ open, onClose }: PasswordRes
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/v1/auth/password-reset-request', {
+      const response = await fetch(`${API_V1_URL}/auth/password-reset-request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

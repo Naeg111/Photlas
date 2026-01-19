@@ -7,6 +7,7 @@ import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { toast } from "sonner";
+import { API_V1_URL } from "../config/api";
 
 /**
  * Issue#20: アカウント設定ダイアログ
@@ -57,7 +58,7 @@ export function AccountSettingsDialog({
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/users/me/email`,
+        `${API_V1_URL}/users/me/email`,
         {
           method: "PUT",
           headers: {
@@ -119,7 +120,7 @@ export function AccountSettingsDialog({
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/users/me/password`,
+        `${API_V1_URL}/users/me/password`,
         {
           method: "PUT",
           headers: {
@@ -171,7 +172,7 @@ export function AccountSettingsDialog({
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/users/me`,
+        `${API_V1_URL}/users/me`,
         {
           method: "DELETE",
           headers: {
