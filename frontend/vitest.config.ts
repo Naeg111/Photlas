@@ -9,6 +9,8 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    // E2Eテスト（Playwright）を除外
+    exclude: ['**/node_modules/**', '**/e2e/**'],
     // 基本設定のみ
     testTimeout: 10000,
     // 明示的にシーケンシャル実行
