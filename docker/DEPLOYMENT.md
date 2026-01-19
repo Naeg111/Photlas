@@ -25,12 +25,12 @@ GitHub リポジトリの Settings → Secrets and variables → Actions で以�
 
 ### EC2接続情報
 
-| シークレット名 | 説明 | 例 |
-|--------------|------|-----|
-| `STAGING_EC2_HOST` | テスト環境EC2のIPアドレス/ホスト名 | `ec2-xx-xx-xx-xx.ap-northeast-1.compute.amazonaws.com` |
-| `PRODUCTION_EC2_HOST` | 本番環境EC2のIPアドレス/ホスト名 | `ec2-yy-yy-yy-yy.ap-northeast-1.compute.amazonaws.com` |
-| `EC2_USER` | EC2接続ユーザー名 | `ec2-user` |
-| `EC2_SSH_KEY` | EC2接続用SSHプライベートキー | `-----BEGIN RSA PRIVATE KEY-----...` |
+AWS Systems Manager (SSM) を使用するため、SSHキーは不要です。
+EC2インスタンスIDはワークフローファイルに直接記載されています。
+
+**必要な設定:**
+- EC2インスタンスにSSM Agentがインストールされていること
+- EC2インスタンスに`AmazonSSMManagedInstanceCore`ポリシーを含むIAMロールがアタッチされていること
 
 ### データベース接続情報（テスト環境）
 
@@ -125,6 +125,7 @@ aws ecr create-repository --repository-name photlas-backend --region ap-northeas
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "ECRAccess",
       "Effect": "Allow",
       "Action": [
         "ecr:GetAuthorizationToken",
@@ -141,6 +142,16 @@ aws ecr create-repository --repository-name photlas-backend --region ap-northeas
         "ecr:PutImage"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "SSMAccess",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:SendCommand",
+        "ssm:GetCommandInvocation",
+        "ssm:DescribeInstanceInformation"
+      ],
+      "Resource": "*"
     }
   ]
 }
@@ -148,13 +159,16 @@ aws ecr create-repository --repository-name photlas-backend --region ap-northeas
 
 ### 3. セキュリティグループの設定
 
+SSMを使用するため、SSH (ポート22) を外部に公開する必要はありません。
+
 EC2インスタンスのセキュリティグループで以下のインバウンドルールを許可：
 
 | ポート | プロトコル | ソース | 用途 |
 |-------|----------|--------|------|
-| 22 | TCP | GitHub Actions IP範囲 | SSH接続 |
-| 80 | TCP | 0.0.0.0/0 | HTTP |
-| 443 | TCP | 0.0.0.0/0 | HTTPS |
+| 80 | TCP | ALB Security Group | HTTP |
+| 443 | TCP | ALB Security Group | HTTPS |
+
+**注意:** SSMはアウトバウンド接続を使用するため、EC2からインターネットへのアウトバウンド (443) が必要です。
 
 ## トラブルシューティング
 
