@@ -36,5 +36,5 @@ out/
 ### VS Code ###
 .vscode/
 
-### Production environment (contains secrets) ###
-src/main/resources/application-prod.properties
+### Production environment ###
+# Note: application-prod.properties now uses environment variables, not hardcoded secrets
