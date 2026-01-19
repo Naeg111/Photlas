@@ -11,13 +11,14 @@ env:
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-1.amazonaws.com
   FRONTEND_IMAGE: photlas-frontend
   BACKEND_IMAGE: photlas-backend
+  STAGING_INSTANCE_ID: i-075d50b85132855ba
+  PRODUCTION_INSTANCE_ID: i-083e8c40050732b8f
 
 jobs:
   # Dockerイメージをビルドしてプッシュ
   build-and-push:
     name: Build and Push Images
     runs-on: ubuntu-latest
-    # CIワークフローのテストが成功後にのみ実行（ci.ymlが先に実行される）
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
 
@@ -93,40 +94,63 @@ jobs:
       url: https://test.photlas.jp
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Deploy to Staging EC2
-      uses: appleboy/ssh-action@v1.0.3
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        host: ${{ secrets.STAGING_EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          # ECRにログイン
-          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
 
-          # デプロイディレクトリに移動
-          cd /home/${{ secrets.EC2_USER }}/photlas
+    - name: Deploy to Staging EC2 via SSM
+      run: |
+        # SSM経由でコマンドを実行
+        COMMAND_ID=$(aws ssm send-command \
+          --instance-ids "${{ env.STAGING_INSTANCE_ID }}" \
+          --document-name "AWS-RunShellScript" \
+          --parameters "{\"commands\":[
+            \"export AWS_ACCOUNT_ID='${{ secrets.AWS_ACCOUNT_ID }}'\",
+            \"export AWS_REGION='${{ env.AWS_REGION }}'\",
+            \"export IMAGE_TAG='${{ needs.build-and-push.outputs.image_tag }}'\",
+            \"export DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}'\",
+            \"export DATABASE_USER='${{ secrets.STAGING_DATABASE_USER }}'\",
+            \"export DATABASE_PASSWORD='${{ secrets.STAGING_DATABASE_PASSWORD }}'\",
+            \"export JWT_SECRET='${{ secrets.JWT_SECRET }}'\",
+            \"export AWS_S3_BUCKET='${{ secrets.STAGING_S3_BUCKET }}'\",
+            \"export ECR_REGISTRY='${{ env.ECR_REGISTRY }}'\",
+            \"aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}\",
+            \"cd /home/ec2-user/photlas\",
+            \"git fetch origin develop\",
+            \"git checkout origin/develop -- docker/docker-compose.staging.yml docker/nginx/staging.conf\",
+            \"docker compose -f docker/docker-compose.staging.yml pull\",
+            \"docker compose -f docker/docker-compose.staging.yml up -d --remove-orphans\",
+            \"docker image prune -f\"
+          ]}" \
+          --timeout-seconds 300 \
+          --query "Command.CommandId" \
+          --output text)
 
-          # 環境変数を設定
-          export AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}
-          export AWS_REGION=${{ env.AWS_REGION }}
-          export IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}
-          export DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
-          export DATABASE_USER=${{ secrets.STAGING_DATABASE_USER }}
-          export DATABASE_PASSWORD=${{ secrets.STAGING_DATABASE_PASSWORD }}
-          export JWT_SECRET=${{ secrets.JWT_SECRET }}
-          export AWS_S3_BUCKET=${{ secrets.STAGING_S3_BUCKET }}
+        echo "Command ID: $COMMAND_ID"
 
-          # 最新イメージをプル
-          docker compose -f docker/docker-compose.staging.yml pull
+        # コマンドの完了を待機
+        aws ssm wait command-executed \
+          --command-id "$COMMAND_ID" \
+          --instance-id "${{ env.STAGING_INSTANCE_ID }}" || true
 
-          # コンテナを再起動
-          docker compose -f docker/docker-compose.staging.yml up -d --remove-orphans
+        # 結果を取得
+        RESULT=$(aws ssm get-command-invocation \
+          --command-id "$COMMAND_ID" \
+          --instance-id "${{ env.STAGING_INSTANCE_ID }}" \
+          --query "[Status, StandardOutputContent, StandardErrorContent]" \
+          --output text)
 
-          # 古いイメージを削除
-          docker image prune -f
+        echo "Result: $RESULT"
+
+        # ステータスを確認
+        STATUS=$(echo "$RESULT" | awk '{print $1}')
+        if [ "$STATUS" != "Success" ]; then
+          echo "Deployment failed!"
+          exit 1
+        fi
 
     - name: Health check
       run: |
@@ -145,40 +169,63 @@ jobs:
       url: https://photlas.jp
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Deploy to Production EC2
-      uses: appleboy/ssh-action@v1.0.3
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        host: ${{ secrets.PRODUCTION_EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          # ECRにログイン
-          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
 
-          # デプロイディレクトリに移動
-          cd /home/${{ secrets.EC2_USER }}/photlas
+    - name: Deploy to Production EC2 via SSM
+      run: |
+        # SSM経由でコマンドを実行
+        COMMAND_ID=$(aws ssm send-command \
+          --instance-ids "${{ env.PRODUCTION_INSTANCE_ID }}" \
+          --document-name "AWS-RunShellScript" \
+          --parameters "{\"commands\":[
+            \"export AWS_ACCOUNT_ID='${{ secrets.AWS_ACCOUNT_ID }}'\",
+            \"export AWS_REGION='${{ env.AWS_REGION }}'\",
+            \"export IMAGE_TAG='${{ needs.build-and-push.outputs.image_tag }}'\",
+            \"export DATABASE_URL='${{ secrets.PRODUCTION_DATABASE_URL }}'\",
+            \"export DATABASE_USER='${{ secrets.PRODUCTION_DATABASE_USER }}'\",
+            \"export DATABASE_PASSWORD='${{ secrets.PRODUCTION_DATABASE_PASSWORD }}'\",
+            \"export JWT_SECRET='${{ secrets.JWT_SECRET }}'\",
+            \"export AWS_S3_BUCKET='${{ secrets.PRODUCTION_S3_BUCKET }}'\",
+            \"export ECR_REGISTRY='${{ env.ECR_REGISTRY }}'\",
+            \"aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}\",
+            \"cd /home/ec2-user/photlas\",
+            \"git fetch origin main\",
+            \"git checkout origin/main -- docker/docker-compose.prod.yml docker/nginx/prod.conf\",
+            \"docker compose -f docker/docker-compose.prod.yml pull\",
+            \"docker compose -f docker/docker-compose.prod.yml up -d --remove-orphans\",
+            \"docker image prune -f\"
+          ]}" \
+          --timeout-seconds 300 \
+          --query "Command.CommandId" \
+          --output text)
 
-          # 環境変数を設定
-          export AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}
-          export AWS_REGION=${{ env.AWS_REGION }}
-          export IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}
-          export DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }}
-          export DATABASE_USER=${{ secrets.PRODUCTION_DATABASE_USER }}
-          export DATABASE_PASSWORD=${{ secrets.PRODUCTION_DATABASE_PASSWORD }}
-          export JWT_SECRET=${{ secrets.JWT_SECRET }}
-          export AWS_S3_BUCKET=${{ secrets.PRODUCTION_S3_BUCKET }}
+        echo "Command ID: $COMMAND_ID"
 
-          # 最新イメージをプル
-          docker compose -f docker/docker-compose.prod.yml pull
+        # コマンドの完了を待機
+        aws ssm wait command-executed \
+          --command-id "$COMMAND_ID" \
+          --instance-id "${{ env.PRODUCTION_INSTANCE_ID }}" || true
 
-          # コンテナを再起動
-          docker compose -f docker/docker-compose.prod.yml up -d --remove-orphans
+        # 結果を取得
+        RESULT=$(aws ssm get-command-invocation \
+          --command-id "$COMMAND_ID" \
+          --instance-id "${{ env.PRODUCTION_INSTANCE_ID }}" \
+          --query "[Status, StandardOutputContent, StandardErrorContent]" \
+          --output text)
 
-          # 古いイメージを削除
-          docker image prune -f
+        echo "Result: $RESULT"
+
+        # ステータスを確認
+        STATUS=$(echo "$RESULT" | awk '{print $1}')
+        if [ "$STATUS" != "Success" ]; then
+          echo "Deployment failed!"
+          exit 1
+        fi
 
     - name: Health check
       run: |
