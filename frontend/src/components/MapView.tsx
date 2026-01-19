@@ -39,9 +39,40 @@ const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 const DEFAULT_ZOOM = 11
 const MIN_ZOOM_FOR_PINS = 11
 
+// Google Maps APIキー
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+
 // MapViewコンポーネントのProps（Issue#16）
 interface MapViewProps {
   filterParams?: MapViewFilterParams
+}
+
+/**
+ * フォールバック地図UI
+ * APIキーが設定されていない場合に表示
+ */
+function FallbackMapView() {
+  return (
+    <div className="w-full h-screen relative bg-gradient-to-br from-gray-100 to-gray-200">
+      {/* グリッドパターン */}
+      <div
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: `
+            linear-gradient(0deg, #ddd 1px, transparent 1px),
+            linear-gradient(90deg, #ddd 1px, transparent 1px)
+          `,
+          backgroundSize: '50px 50px',
+        }}
+      />
+
+      {/* 中央メッセージ */}
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+        <p className="text-gray-700 font-semibold mb-2">地図を表示できません</p>
+        <p className="text-gray-500 text-sm">Google Maps APIキーが設定されていません</p>
+      </div>
+    </div>
+  )
 }
 
 export default function MapView({ filterParams }: MapViewProps) {
@@ -52,8 +83,9 @@ export default function MapView({ filterParams }: MapViewProps) {
   const listenerAddedRef = useRef(false)
   const initialMountRef = useRef(true)
 
+  // APIキーが空の場合はuseLoadScriptを呼ばない
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   })
 
   // スポットデータを取得（mapInstanceとフィルター条件をパラメータで受け取る）
@@ -147,8 +179,13 @@ export default function MapView({ filterParams }: MapViewProps) {
     }
   }
 
+  // APIキーが空の場合はフォールバックUIを表示
+  if (!GOOGLE_MAPS_API_KEY) {
+    return <FallbackMapView />
+  }
+
   if (loadError) {
-    return <div>地図の読み込みに失敗しました</div>
+    return <FallbackMapView />
   }
 
   if (!isLoaded) {
