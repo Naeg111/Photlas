@@ -55,7 +55,6 @@ GitHub リポジトリの Settings → Secrets and variables → Actions で以�
 | シークレット名 | 説明 | 例 |
 |--------------|------|-----|
 | `JWT_SECRET` | JWT署名用シークレットキー | `your-very-long-secret-key-here` |
-| `GOOGLE_MAPS_API_KEY` | Google Maps APIキー | `AIzaSy...` |
 | `VITE_GOOGLE_MAPS_API_KEY` | フロントエンド用Google Maps APIキー | `AIzaSy...` |
 
 ## EC2 インスタンスの事前準備

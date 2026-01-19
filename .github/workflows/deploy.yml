@@ -118,7 +118,6 @@ jobs:
           export DATABASE_PASSWORD=${{ secrets.STAGING_DATABASE_PASSWORD }}
           export JWT_SECRET=${{ secrets.JWT_SECRET }}
           export AWS_S3_BUCKET=${{ secrets.STAGING_S3_BUCKET }}
-          export GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}
 
           # 最新イメージをプル
           docker compose -f docker/docker-compose.staging.yml pull
@@ -171,7 +170,6 @@ jobs:
           export DATABASE_PASSWORD=${{ secrets.PRODUCTION_DATABASE_PASSWORD }}
           export JWT_SECRET=${{ secrets.JWT_SECRET }}
           export AWS_S3_BUCKET=${{ secrets.PRODUCTION_S3_BUCKET }}
-          export GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}
 
           # 最新イメージをプル
           docker compose -f docker/docker-compose.prod.yml pull
