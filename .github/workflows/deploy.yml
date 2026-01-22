@@ -103,30 +103,58 @@ jobs:
 
     - name: Deploy to Staging EC2 via SSM
       run: |
-        # SSM経由でコマンドを実行
+        # デプロイスクリプトを生成してbase64エンコード
+        DEPLOY_SCRIPT=$(cat <<SCRIPT
+#!/bin/bash
+set -ex
+echo "=== Starting deployment ==="
+export HOME=/root
+export AWS_ACCOUNT_ID='${{ secrets.AWS_ACCOUNT_ID }}'
+export AWS_REGION='${{ env.AWS_REGION }}'
+export IMAGE_TAG='${{ needs.build-and-push.outputs.image_tag }}'
+export DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}'
+export DATABASE_USER='${{ secrets.STAGING_DATABASE_USER }}'
+export DATABASE_PASSWORD='${{ secrets.STAGING_DATABASE_PASSWORD }}'
+export JWT_SECRET='${{ secrets.JWT_SECRET }}'
+export AWS_S3_BUCKET='${{ secrets.STAGING_S3_BUCKET }}'
+export ECR_REGISTRY='${{ env.ECR_REGISTRY }}'
+
+echo "=== Environment variables set ==="
+echo "IMAGE_TAG: \$IMAGE_TAG"
+echo "AWS_REGION: \$AWS_REGION"
+
+echo "=== Git config ==="
+git config --global --add safe.directory /home/ec2-user/photlas
+
+echo "=== ECR Login ==="
+aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin \$ECR_REGISTRY
+
+echo "=== Fetching latest code ==="
+cd /home/ec2-user/photlas
+git fetch origin develop
+git checkout origin/develop -- docker/docker-compose.staging.yml docker/nginx/staging.conf
+
+echo "=== Pulling images ==="
+docker-compose -f docker/docker-compose.staging.yml pull
+
+echo "=== Starting containers ==="
+docker-compose -f docker/docker-compose.staging.yml up -d --remove-orphans
+
+echo "=== Cleanup ==="
+docker image prune -f
+
+echo "=== Deployment completed ==="
+SCRIPT
+        )
+
+        # base64エンコード
+        ENCODED_SCRIPT=$(echo "$DEPLOY_SCRIPT" | base64 -w 0)
+
+        # SSM経由でスクリプトを実行（base64デコードして実行）
         COMMAND_ID=$(aws ssm send-command \
           --instance-ids "${{ env.STAGING_INSTANCE_ID }}" \
           --document-name "AWS-RunShellScript" \
-          --parameters "{\"commands\":[
-            \"export HOME=/root\",
-            \"export AWS_ACCOUNT_ID='${{ secrets.AWS_ACCOUNT_ID }}'\",
-            \"export AWS_REGION='${{ env.AWS_REGION }}'\",
-            \"export IMAGE_TAG='${{ needs.build-and-push.outputs.image_tag }}'\",
-            \"export DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}'\",
-            \"export DATABASE_USER='${{ secrets.STAGING_DATABASE_USER }}'\",
-            \"export DATABASE_PASSWORD='${{ secrets.STAGING_DATABASE_PASSWORD }}'\",
-            \"export JWT_SECRET='${{ secrets.JWT_SECRET }}'\",
-            \"export AWS_S3_BUCKET='${{ secrets.STAGING_S3_BUCKET }}'\",
-            \"export ECR_REGISTRY='${{ env.ECR_REGISTRY }}'\",
-            \"git config --global --add safe.directory /home/ec2-user/photlas\",
-            \"aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}\",
-            \"cd /home/ec2-user/photlas\",
-            \"git fetch origin develop\",
-            \"git checkout origin/develop -- docker/docker-compose.staging.yml docker/nginx/staging.conf\",
-            \"docker-compose -f docker/docker-compose.staging.yml pull\",
-            \"docker-compose -f docker/docker-compose.staging.yml up -d --remove-orphans\",
-            \"docker image prune -f\"
-          ]}" \
+          --parameters "{\"commands\":[\"echo $ENCODED_SCRIPT | base64 -d | bash\"]}" \
           --timeout-seconds 300 \
           --query "Command.CommandId" \
           --output text)
@@ -194,30 +222,58 @@ jobs:
 
     - name: Deploy to Production EC2 via SSM
       run: |
-        # SSM経由でコマンドを実行
+        # デプロイスクリプトを生成してbase64エンコード
+        DEPLOY_SCRIPT=$(cat <<SCRIPT
+#!/bin/bash
+set -ex
+echo "=== Starting production deployment ==="
+export HOME=/root
+export AWS_ACCOUNT_ID='${{ secrets.AWS_ACCOUNT_ID }}'
+export AWS_REGION='${{ env.AWS_REGION }}'
+export IMAGE_TAG='${{ needs.build-and-push.outputs.image_tag }}'
+export DATABASE_URL='${{ secrets.PRODUCTION_DATABASE_URL }}'
+export DATABASE_USER='${{ secrets.PRODUCTION_DATABASE_USER }}'
+export DATABASE_PASSWORD='${{ secrets.PRODUCTION_DATABASE_PASSWORD }}'
+export JWT_SECRET='${{ secrets.JWT_SECRET }}'
+export AWS_S3_BUCKET='${{ secrets.PRODUCTION_S3_BUCKET }}'
+export ECR_REGISTRY='${{ env.ECR_REGISTRY }}'
+
+echo "=== Environment variables set ==="
+echo "IMAGE_TAG: \$IMAGE_TAG"
+echo "AWS_REGION: \$AWS_REGION"
+
+echo "=== Git config ==="
+git config --global --add safe.directory /home/ec2-user/photlas
+
+echo "=== ECR Login ==="
+aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin \$ECR_REGISTRY
+
+echo "=== Fetching latest code ==="
+cd /home/ec2-user/photlas
+git fetch origin main
+git checkout origin/main -- docker/docker-compose.prod.yml docker/nginx/prod.conf
+
+echo "=== Pulling images ==="
+docker-compose -f docker/docker-compose.prod.yml pull
+
+echo "=== Starting containers ==="
+docker-compose -f docker/docker-compose.prod.yml up -d --remove-orphans
+
+echo "=== Cleanup ==="
+docker image prune -f
+
+echo "=== Production deployment completed ==="
+SCRIPT
+        )
+
+        # base64エンコード
+        ENCODED_SCRIPT=$(echo "$DEPLOY_SCRIPT" | base64 -w 0)
+
+        # SSM経由でスクリプトを実行（base64デコードして実行）
         COMMAND_ID=$(aws ssm send-command \
           --instance-ids "${{ env.PRODUCTION_INSTANCE_ID }}" \
           --document-name "AWS-RunShellScript" \
-          --parameters "{\"commands\":[
-            \"export HOME=/root\",
-            \"export AWS_ACCOUNT_ID='${{ secrets.AWS_ACCOUNT_ID }}'\",
-            \"export AWS_REGION='${{ env.AWS_REGION }}'\",
-            \"export IMAGE_TAG='${{ needs.build-and-push.outputs.image_tag }}'\",
-            \"export DATABASE_URL='${{ secrets.PRODUCTION_DATABASE_URL }}'\",
-            \"export DATABASE_USER='${{ secrets.PRODUCTION_DATABASE_USER }}'\",
-            \"export DATABASE_PASSWORD='${{ secrets.PRODUCTION_DATABASE_PASSWORD }}'\",
-            \"export JWT_SECRET='${{ secrets.JWT_SECRET }}'\",
-            \"export AWS_S3_BUCKET='${{ secrets.PRODUCTION_S3_BUCKET }}'\",
-            \"export ECR_REGISTRY='${{ env.ECR_REGISTRY }}'\",
-            \"git config --global --add safe.directory /home/ec2-user/photlas\",
-            \"aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}\",
-            \"cd /home/ec2-user/photlas\",
-            \"git fetch origin main\",
-            \"git checkout origin/main -- docker/docker-compose.prod.yml docker/nginx/prod.conf\",
-            \"docker-compose -f docker/docker-compose.prod.yml pull\",
-            \"docker-compose -f docker/docker-compose.prod.yml up -d --remove-orphans\",
-            \"docker image prune -f\"
-          ]}" \
+          --parameters "{\"commands\":[\"echo $ENCODED_SCRIPT | base64 -d | bash\"]}" \
           --timeout-seconds 300 \
           --query "Command.CommandId" \
           --output text)
