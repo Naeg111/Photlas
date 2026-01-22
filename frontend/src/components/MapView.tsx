@@ -225,7 +225,7 @@ export default function MapView({ filterParams }: MapViewProps) {
       {/* Zoom 10以下の場合、ズームバナーを表示 */}
       {zoom < MIN_ZOOM_FOR_PINS && (
         <div
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-6 py-3 rounded-lg shadow-lg cursor-pointer"
+          className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg cursor-pointer"
           onClick={handleZoomBannerClick}
         >
           <p className="text-center text-gray-700 font-semibold">

@@ -11,7 +11,7 @@ interface FilterButtonProps {
 function FilterButton({ onClick }: FilterButtonProps) {
   return (
     <button
-      className="bg-white shadow-lg rounded-lg border px-4 py-2 hover:bg-gray-50 transition-colors text-sm font-medium"
+      className="bg-white shadow-lg rounded-lg border px-4 py-2 text-sm font-medium"
       aria-label="写真フィルター機能を開く"
       title="写真の絞り込み条件を設定できます"
       onClick={onClick}
