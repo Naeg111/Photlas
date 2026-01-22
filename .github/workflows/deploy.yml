@@ -102,50 +102,57 @@ jobs:
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Deploy to Staging EC2 via SSM
+      env:
+        DEPLOY_AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        DEPLOY_AWS_REGION: ${{ env.AWS_REGION }}
+        DEPLOY_IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+        DEPLOY_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        DEPLOY_DATABASE_USER: ${{ secrets.STAGING_DATABASE_USER }}
+        DEPLOY_DATABASE_PASSWORD: ${{ secrets.STAGING_DATABASE_PASSWORD }}
+        DEPLOY_JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        DEPLOY_AWS_S3_BUCKET: ${{ secrets.STAGING_S3_BUCKET }}
+        DEPLOY_ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
       run: |
         # デプロイスクリプトを生成してbase64エンコード
-        DEPLOY_SCRIPT=$(cat <<SCRIPT
-#!/bin/bash
-set -ex
-echo "=== Starting deployment ==="
-export HOME=/root
-export AWS_ACCOUNT_ID='${{ secrets.AWS_ACCOUNT_ID }}'
-export AWS_REGION='${{ env.AWS_REGION }}'
-export IMAGE_TAG='${{ needs.build-and-push.outputs.image_tag }}'
-export DATABASE_URL='${{ secrets.STAGING_DATABASE_URL }}'
-export DATABASE_USER='${{ secrets.STAGING_DATABASE_USER }}'
-export DATABASE_PASSWORD='${{ secrets.STAGING_DATABASE_PASSWORD }}'
-export JWT_SECRET='${{ secrets.JWT_SECRET }}'
-export AWS_S3_BUCKET='${{ secrets.STAGING_S3_BUCKET }}'
-export ECR_REGISTRY='${{ env.ECR_REGISTRY }}'
+        DEPLOY_SCRIPT="#!/bin/bash
+        set -ex
+        echo '=== Starting deployment ==='
+        export HOME=/root
+        export AWS_ACCOUNT_ID='${DEPLOY_AWS_ACCOUNT_ID}'
+        export AWS_REGION='${DEPLOY_AWS_REGION}'
+        export IMAGE_TAG='${DEPLOY_IMAGE_TAG}'
+        export DATABASE_URL='${DEPLOY_DATABASE_URL}'
+        export DATABASE_USER='${DEPLOY_DATABASE_USER}'
+        export DATABASE_PASSWORD='${DEPLOY_DATABASE_PASSWORD}'
+        export JWT_SECRET='${DEPLOY_JWT_SECRET}'
+        export AWS_S3_BUCKET='${DEPLOY_AWS_S3_BUCKET}'
+        export ECR_REGISTRY='${DEPLOY_ECR_REGISTRY}'
 
-echo "=== Environment variables set ==="
-echo "IMAGE_TAG: \$IMAGE_TAG"
-echo "AWS_REGION: \$AWS_REGION"
+        echo '=== Environment variables set ==='
+        echo \"IMAGE_TAG: \$IMAGE_TAG\"
+        echo \"AWS_REGION: \$AWS_REGION\"
 
-echo "=== Git config ==="
-git config --global --add safe.directory /home/ec2-user/photlas
+        echo '=== Git config ==='
+        git config --global --add safe.directory /home/ec2-user/photlas
 
-echo "=== ECR Login ==="
-aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin \$ECR_REGISTRY
+        echo '=== ECR Login ==='
+        aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin \$ECR_REGISTRY
 
-echo "=== Fetching latest code ==="
-cd /home/ec2-user/photlas
-git fetch origin develop
-git checkout origin/develop -- docker/docker-compose.staging.yml docker/nginx/staging.conf
+        echo '=== Fetching latest code ==='
+        cd /home/ec2-user/photlas
+        git fetch origin develop
+        git checkout origin/develop -- docker/docker-compose.staging.yml docker/nginx/staging.conf
 
-echo "=== Pulling images ==="
-docker-compose -f docker/docker-compose.staging.yml pull
+        echo '=== Pulling images ==='
+        docker-compose -f docker/docker-compose.staging.yml pull
 
-echo "=== Starting containers ==="
-docker-compose -f docker/docker-compose.staging.yml up -d --remove-orphans
+        echo '=== Starting containers ==='
+        docker-compose -f docker/docker-compose.staging.yml up -d --remove-orphans
 
-echo "=== Cleanup ==="
-docker image prune -f
+        echo '=== Cleanup ==='
+        docker image prune -f
 
-echo "=== Deployment completed ==="
-SCRIPT
-        )
+        echo '=== Deployment completed ==='"
 
         # base64エンコード
         ENCODED_SCRIPT=$(echo "$DEPLOY_SCRIPT" | base64 -w 0)
@@ -221,50 +228,57 @@ SCRIPT
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Deploy to Production EC2 via SSM
+      env:
+        DEPLOY_AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        DEPLOY_AWS_REGION: ${{ env.AWS_REGION }}
+        DEPLOY_IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+        DEPLOY_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        DEPLOY_DATABASE_USER: ${{ secrets.PRODUCTION_DATABASE_USER }}
+        DEPLOY_DATABASE_PASSWORD: ${{ secrets.PRODUCTION_DATABASE_PASSWORD }}
+        DEPLOY_JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        DEPLOY_AWS_S3_BUCKET: ${{ secrets.PRODUCTION_S3_BUCKET }}
+        DEPLOY_ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
       run: |
         # デプロイスクリプトを生成してbase64エンコード
-        DEPLOY_SCRIPT=$(cat <<SCRIPT
-#!/bin/bash
-set -ex
-echo "=== Starting production deployment ==="
-export HOME=/root
-export AWS_ACCOUNT_ID='${{ secrets.AWS_ACCOUNT_ID }}'
-export AWS_REGION='${{ env.AWS_REGION }}'
-export IMAGE_TAG='${{ needs.build-and-push.outputs.image_tag }}'
-export DATABASE_URL='${{ secrets.PRODUCTION_DATABASE_URL }}'
-export DATABASE_USER='${{ secrets.PRODUCTION_DATABASE_USER }}'
-export DATABASE_PASSWORD='${{ secrets.PRODUCTION_DATABASE_PASSWORD }}'
-export JWT_SECRET='${{ secrets.JWT_SECRET }}'
-export AWS_S3_BUCKET='${{ secrets.PRODUCTION_S3_BUCKET }}'
-export ECR_REGISTRY='${{ env.ECR_REGISTRY }}'
+        DEPLOY_SCRIPT="#!/bin/bash
+        set -ex
+        echo '=== Starting production deployment ==='
+        export HOME=/root
+        export AWS_ACCOUNT_ID='${DEPLOY_AWS_ACCOUNT_ID}'
+        export AWS_REGION='${DEPLOY_AWS_REGION}'
+        export IMAGE_TAG='${DEPLOY_IMAGE_TAG}'
+        export DATABASE_URL='${DEPLOY_DATABASE_URL}'
+        export DATABASE_USER='${DEPLOY_DATABASE_USER}'
+        export DATABASE_PASSWORD='${DEPLOY_DATABASE_PASSWORD}'
+        export JWT_SECRET='${DEPLOY_JWT_SECRET}'
+        export AWS_S3_BUCKET='${DEPLOY_AWS_S3_BUCKET}'
+        export ECR_REGISTRY='${DEPLOY_ECR_REGISTRY}'
 
-echo "=== Environment variables set ==="
-echo "IMAGE_TAG: \$IMAGE_TAG"
-echo "AWS_REGION: \$AWS_REGION"
+        echo '=== Environment variables set ==='
+        echo \"IMAGE_TAG: \$IMAGE_TAG\"
+        echo \"AWS_REGION: \$AWS_REGION\"
 
-echo "=== Git config ==="
-git config --global --add safe.directory /home/ec2-user/photlas
+        echo '=== Git config ==='
+        git config --global --add safe.directory /home/ec2-user/photlas
 
-echo "=== ECR Login ==="
-aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin \$ECR_REGISTRY
+        echo '=== ECR Login ==='
+        aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin \$ECR_REGISTRY
 
-echo "=== Fetching latest code ==="
-cd /home/ec2-user/photlas
-git fetch origin main
-git checkout origin/main -- docker/docker-compose.prod.yml docker/nginx/prod.conf
+        echo '=== Fetching latest code ==='
+        cd /home/ec2-user/photlas
+        git fetch origin main
+        git checkout origin/main -- docker/docker-compose.prod.yml docker/nginx/prod.conf
 
-echo "=== Pulling images ==="
-docker-compose -f docker/docker-compose.prod.yml pull
+        echo '=== Pulling images ==='
+        docker-compose -f docker/docker-compose.prod.yml pull
 
-echo "=== Starting containers ==="
-docker-compose -f docker/docker-compose.prod.yml up -d --remove-orphans
+        echo '=== Starting containers ==='
+        docker-compose -f docker/docker-compose.prod.yml up -d --remove-orphans
 
-echo "=== Cleanup ==="
-docker image prune -f
+        echo '=== Cleanup ==='
+        docker image prune -f
 
-echo "=== Production deployment completed ==="
-SCRIPT
-        )
+        echo '=== Production deployment completed ==='"
 
         # base64エンコード
         ENCODED_SCRIPT=$(echo "$DEPLOY_SCRIPT" | base64 -w 0)
