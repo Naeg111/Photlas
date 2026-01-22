@@ -8,7 +8,7 @@
 function PostButton() {
   return (
     <button
-      className="bg-blue-500 hover:bg-blue-600 text-white rounded-full w-14 h-14 shadow-lg flex items-center justify-center text-2xl font-bold transition-colors"
+      className="bg-blue-500 text-white rounded-full w-14 h-14 shadow-lg flex items-center justify-center text-2xl font-bold"
       aria-label="新しい写真を投稿する"
       title="写真を投稿"
     >
