@@ -25,7 +25,7 @@ function MenuButton() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="bg-white shadow-lg rounded-lg border px-4 py-2 hover:bg-gray-50 transition-colors text-sm font-medium"
+            className="bg-white shadow-lg rounded-lg border px-4 py-2 text-sm font-medium"
             aria-label="ユーザーメニューを開く"
             title="アカウント設定やその他の機能にアクセス"
           >
