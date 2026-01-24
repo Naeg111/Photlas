@@ -169,6 +169,10 @@ jobs:
         echo '=== Installing dependencies ==='
         which git || yum install -y git || dnf install -y git
         which docker || (dnf install -y docker && systemctl start docker && systemctl enable docker)
+        if ! docker compose version &>/dev/null && ! which docker-compose &>/dev/null; then
+          curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+        fi
 
         echo '=== Git config ==='
         git config --global --add safe.directory /home/ec2-user/photlas
@@ -185,10 +189,10 @@ jobs:
         git checkout origin/develop -- docker/docker-compose.staging.yml docker/nginx/staging.conf
 
         echo '=== Pulling images ==='
-        docker compose -f docker/docker-compose.staging.yml pull
+        docker-compose -f docker/docker-compose.staging.yml pull
 
         echo '=== Starting containers ==='
-        docker compose -f docker/docker-compose.staging.yml up -d --remove-orphans
+        docker-compose -f docker/docker-compose.staging.yml up -d --remove-orphans
 
         echo '=== Cleanup ==='
         docker image prune -f
@@ -348,6 +352,10 @@ jobs:
         echo '=== Installing dependencies ==='
         which git || yum install -y git || dnf install -y git
         which docker || (dnf install -y docker && systemctl start docker && systemctl enable docker)
+        if ! docker compose version &>/dev/null && ! which docker-compose &>/dev/null; then
+          curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+        fi
 
         echo '=== Git config ==='
         git config --global --add safe.directory /home/ec2-user/photlas
@@ -364,10 +372,10 @@ jobs:
         git checkout origin/main -- docker/docker-compose.prod.yml docker/nginx/prod.conf
 
         echo '=== Pulling images ==='
-        docker compose -f docker/docker-compose.prod.yml pull
+        docker-compose -f docker/docker-compose.prod.yml pull
 
         echo '=== Starting containers ==='
-        docker compose -f docker/docker-compose.prod.yml up -d --remove-orphans
+        docker-compose -f docker/docker-compose.prod.yml up -d --remove-orphans
 
         echo '=== Cleanup ==='
         docker image prune -f
