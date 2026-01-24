@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
 import { FilterPanel } from './components/FilterPanel'
@@ -16,13 +16,13 @@ import ProfileDialog from './components/ProfileDialog'
 import PhotoDetailDialog from './components/PhotoDetailDialog'
 import { PhotoLightbox } from './components/PhotoLightbox'
 import MapView from './components/MapView'
-import type { MapViewFilterParams } from './components/MapView'
+import type { MapViewFilterParams, MapViewHandle } from './components/MapView'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useDialogState } from './hooks/useDialogState'
 import { transformMonths, transformTimesOfDay, transformWeathers, transformCategories, categoryNamesToIds } from './utils/filterTransform'
 import { fetchCategories } from './utils/apiClient'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
-import { SlidersHorizontal, Menu, Plus } from 'lucide-react'
+import { SlidersHorizontal, Menu, Plus, LocateFixed } from 'lucide-react'
 import { Button } from './components/ui/button'
 import { Toaster } from './components/ui/sonner'
 
@@ -47,6 +47,7 @@ const FLOATING_BUTTON_STYLES = {
 function MainContent() {
   const { user, logout } = useAuth()
   const dialog = useDialogState()
+  const mapRef = useRef<MapViewHandle>(null)
 
   // フィルター関連の状態
   const [mapFilterParams, setMapFilterParams] = useState<MapViewFilterParams | undefined>(undefined)
@@ -127,7 +128,7 @@ function MainContent() {
     <div className="relative w-full h-screen overflow-hidden isolate">
       {/* MapView - メインコンテンツ（z-0で最下層に配置） */}
       <div className="absolute inset-0 z-0">
-        <MapView filterParams={mapFilterParams} />
+        <MapView ref={mapRef} filterParams={mapFilterParams} />
       </div>
 
       {/* フローティングUI - 左上: フィルターボタン、右上: メニューボタン */}
@@ -153,8 +154,20 @@ function MainContent() {
         </Button>
       </div>
 
-      {/* フローティングUI - 右下: 投稿ボタン (FAB) */}
-      <div className="absolute bottom-6 right-6 z-10">
+      {/* フローティングUI - 右下: 現在位置ボタン + 投稿ボタン (FAB) */}
+      <div className="absolute bottom-6 right-6 z-10 flex flex-col items-center gap-3">
+        {/* 現在位置ボタン（投稿ボタンの75%サイズ） */}
+        <Button
+          variant="secondary"
+          className="w-10.5 h-10.5 rounded-full shadow-lg hover:bg-secondary"
+          style={{ width: '42px', height: '42px' }}
+          onClick={() => mapRef.current?.centerOnUserLocation()}
+          aria-label="現在位置"
+        >
+          <LocateFixed className="w-5 h-5" />
+        </Button>
+
+        {/* 投稿ボタン */}
         <Button
           className={`${FLOATING_BUTTON_STYLES.fab} hover:bg-primary`}
           onClick={handlePostClick}
