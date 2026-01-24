@@ -177,6 +177,9 @@ jobs:
         aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
         echo '=== Fetching latest code ==='
+        if [ ! -d /home/ec2-user/photlas ]; then
+          git clone https://github.com/Naeg111/Photlas.git /home/ec2-user/photlas
+        fi
         cd /home/ec2-user/photlas
         git fetch origin develop
         git checkout origin/develop -- docker/docker-compose.staging.yml docker/nginx/staging.conf
@@ -353,6 +356,9 @@ jobs:
         aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
         echo '=== Fetching latest code ==='
+        if [ ! -d /home/ec2-user/photlas ]; then
+          git clone https://github.com/Naeg111/Photlas.git /home/ec2-user/photlas
+        fi
         cd /home/ec2-user/photlas
         git fetch origin main
         git checkout origin/main -- docker/docker-compose.prod.yml docker/nginx/prod.conf
