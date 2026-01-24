@@ -12,8 +12,10 @@ const localStorageMock = {
   key: vi.fn(),
 }
 
-// @ts-ignore
-global.localStorage = localStorageMock
+Object.defineProperty(global, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+})
 
 // Issue#9: heic2anyのためにWorkerをモック
 // @ts-ignore
