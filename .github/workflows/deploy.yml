@@ -168,6 +168,8 @@ jobs:
 
         echo '=== Installing dependencies ==='
         which git || yum install -y git || dnf install -y git
+        which docker || (dnf install -y docker && systemctl start docker && systemctl enable docker)
+        which docker-compose || dnf install -y docker-compose || curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
 
         echo '=== Git config ==='
         git config --global --add safe.directory /home/ec2-user/photlas
@@ -343,6 +345,8 @@ jobs:
 
         echo '=== Installing dependencies ==='
         which git || yum install -y git || dnf install -y git
+        which docker || (dnf install -y docker && systemctl start docker && systemctl enable docker)
+        which docker-compose || dnf install -y docker-compose || curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
 
         echo '=== Git config ==='
         git config --global --add safe.directory /home/ec2-user/photlas
