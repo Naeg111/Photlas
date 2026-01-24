@@ -62,7 +62,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                   <Button
                     key={category}
                     variant={isSelected ? "default" : "outline"}
-                    className={`flex items-center gap-2 justify-center border border-black ${isSelected ? "[&_svg]:invert" : ""}`}
+                    className={`flex items-center gap-2 justify-center !border-black ${isSelected ? "[&_svg]:invert" : ""}`}
                     onClick={() =>
                       toggleSelection(category, selectedCategories, setSelectedCategories)
                     }
@@ -85,7 +85,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                   <Button
                     key={month}
                     variant={isSelected ? "default" : "outline"}
-                    className={`flex items-center gap-1.5 justify-center px-2 border border-black ${isSelected ? "[&_svg]:invert" : ""}`}
+                    className={`flex items-center gap-1.5 justify-center px-2 !border-black ${isSelected ? "[&_svg]:invert" : ""}`}
                     onClick={() =>
                       toggleSelection(month, selectedMonths, setSelectedMonths)
                     }
@@ -108,7 +108,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                   <Button
                     key={time}
                     variant={isSelected ? "default" : "outline"}
-                    className={`flex items-center gap-2 justify-center border border-black ${isSelected ? "[&_svg]:invert" : ""}`}
+                    className={`flex items-center gap-2 justify-center !border-black ${isSelected ? "[&_svg]:invert" : ""}`}
                     onClick={() =>
                       toggleSelection(time, selectedTimes, setSelectedTimes)
                     }
@@ -131,7 +131,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                   <Button
                     key={weather}
                     variant={isSelected ? "default" : "outline"}
-                    className={`flex items-center gap-2 justify-center border border-black ${isSelected ? "[&_svg]:invert" : ""}`}
+                    className={`flex items-center gap-2 justify-center !border-black ${isSelected ? "[&_svg]:invert" : ""}`}
                     onClick={() =>
                       toggleSelection(weather, selectedWeather, setSelectedWeather)
                     }
@@ -148,7 +148,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           <div className="flex gap-2 pt-4 mt-2.5">
             <Button
               variant="outline"
-              className="flex-1 border border-black"
+              className="flex-1 !border-black"
               onClick={() => {
                 setSelectedCategories([]);
                 setSelectedMonths([]);
@@ -159,7 +159,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
               クリア
             </Button>
             <Button
-              className="flex-1 border border-black"
+              className="flex-1 !border-black"
               onClick={() => {
                 if (onApply) {
                   onApply({
