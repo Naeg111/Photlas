@@ -151,6 +151,7 @@ jobs:
         set -ex
         echo '=== Starting deployment ==='
         export HOME=/root
+        export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
         export AWS_ACCOUNT_ID='__AWS_ACCOUNT_ID__'
         export AWS_REGION='__AWS_REGION__'
         export IMAGE_TAG='__IMAGE_TAG__'
@@ -322,6 +323,7 @@ jobs:
         set -ex
         echo '=== Starting production deployment ==='
         export HOME=/root
+        export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
         export AWS_ACCOUNT_ID='__AWS_ACCOUNT_ID__'
         export AWS_REGION='__AWS_REGION__'
         export IMAGE_TAG='__IMAGE_TAG__'
