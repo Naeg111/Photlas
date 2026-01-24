@@ -135,7 +135,7 @@ function MainContent() {
         <Button
           variant="secondary"
           size="icon"
-          className="shadow-lg w-18 h-10 hover:brightness-100"
+          className="shadow-lg w-18 h-10 hover:bg-secondary"
           onClick={() => dialog.open('filterPanel')}
           aria-label="フィルター"
         >
@@ -145,7 +145,7 @@ function MainContent() {
         <Button
           variant="secondary"
           size="icon"
-          className="shadow-lg w-18 h-10 hover:brightness-100"
+          className="shadow-lg w-18 h-10 hover:bg-secondary"
           onClick={() => dialog.open('topMenu')}
           aria-label="メニュー"
         >
@@ -156,7 +156,7 @@ function MainContent() {
       {/* フローティングUI - 右下: 投稿ボタン (FAB) */}
       <div className="absolute bottom-6 right-6 z-10">
         <Button
-          className={`${FLOATING_BUTTON_STYLES.fab} hover:brightness-100`}
+          className={`${FLOATING_BUTTON_STYLES.fab} hover:bg-primary`}
           onClick={handlePostClick}
           aria-label="投稿"
         >
