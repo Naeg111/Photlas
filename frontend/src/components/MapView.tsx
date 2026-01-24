@@ -1,6 +1,11 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { GoogleMap, useLoadScript, OverlayViewF } from '@react-google-maps/api'
 import { API_V1_URL } from '../config/api'
+
+// MapViewの公開メソッド型定義
+export interface MapViewHandle {
+  centerOnUserLocation: () => void
+}
 
 /**
  * Issue#13: 地図検索機能のインタラクション改善とピン表示制御
@@ -75,13 +80,38 @@ function FallbackMapView() {
   )
 }
 
-export default function MapView({ filterParams }: MapViewProps) {
+const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams }, ref) {
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const [showToast, setShowToast] = useState(false)
+  const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null)
   const listenerAddedRef = useRef(false)
   const initialMountRef = useRef(true)
+
+  // 現在位置に移動するメソッドを公開
+  useImperativeHandle(ref, () => ({
+    centerOnUserLocation: () => {
+      if (!map) return
+
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const newLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            }
+            setUserLocation(newLocation)
+            map.panTo(newLocation)
+          },
+          (error) => {
+            console.error('位置情報の取得に失敗しました:', error)
+          },
+          { enableHighAccuracy: true }
+        )
+      }
+    },
+  }), [map])
 
   // APIキーが空の場合はuseLoadScriptを呼ばない
   const { isLoaded, loadError } = useLoadScript({
@@ -202,6 +232,9 @@ export default function MapView({ filterParams }: MapViewProps) {
         options={{
           fullscreenControl: false,
           mapTypeControl: false,
+          panControl: false,
+          streetViewControl: false,
+          gestureHandling: 'greedy',
         }}
       >
         {/* ズームレベルが11以上の場合のみピンを表示 */}
@@ -220,6 +253,19 @@ export default function MapView({ filterParams }: MapViewProps) {
               </div>
             </OverlayViewF>
           ))}
+
+        {/* 現在地マーカー（青い円） */}
+        {userLocation && (
+          <OverlayViewF
+            position={userLocation}
+            mapPaneName="overlayMouseTarget"
+          >
+            <div
+              data-testid="user-location-marker"
+              className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2"
+            />
+          </OverlayViewF>
+        )}
       </GoogleMap>
 
       {/* Zoom 10以下の場合、ズームバナーを表示 */}
@@ -250,4 +296,6 @@ export default function MapView({ filterParams }: MapViewProps) {
       )}
     </div>
   )
-}
+})
+
+export default MapView

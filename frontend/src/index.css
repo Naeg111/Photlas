@@ -80,9 +80,21 @@
     --ring: oklch(.439 0 0);
   }
 
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* モバイル対応: dvhを使用してアドレスバーの変化に対応 */
+  #root {
+    height: 100dvh;
+    overflow: hidden;
   }
 }
