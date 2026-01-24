@@ -24,6 +24,15 @@ const TIME_OF_DAY = ["朝", "昼", "夕方", "夜"];
 
 const WEATHER = ["晴れ", "曇り", "雨", "雪"];
 
+// アイコンが fill="#000000" でハードコードされているため、選択時に invert が必要なカテゴリ
+const CATEGORIES_NEED_INVERT = ["植物", "バイク", "その他"];
+
+// アイコンが fill="#000000" でハードコードされているため、選択時に invert が必要な月（3月以外）
+const MONTHS_NEED_INVERT = ["1月", "2月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+
+// アイコンが fill="#000000" でハードコードされているため、選択時に invert が必要な時間帯
+const TIMES_NEED_INVERT = ["夕方"];
+
 export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
@@ -56,19 +65,23 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           {/* 被写体種別 */}
           <div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {PHOTO_CATEGORIES.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategories.includes(category) ? "default" : "outline"}
-                  className="flex items-center gap-2 justify-center"
-                  onClick={() =>
-                    toggleSelection(category, selectedCategories, setSelectedCategories)
-                  }
-                >
-                  <CategoryIcon category={category} className="w-5 h-5 shrink-0" />
-                  <span className="truncate">{category}</span>
-                </Button>
-              ))}
+              {PHOTO_CATEGORIES.map((category) => {
+                const isSelected = selectedCategories.includes(category);
+                const needsInvert = CATEGORIES_NEED_INVERT.includes(category);
+                return (
+                  <Button
+                    key={category}
+                    variant={isSelected ? "default" : "outline"}
+                    className={`flex items-center gap-2 justify-center border-gray-300 hover:bg-gray-100 ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
+                    onClick={() =>
+                      toggleSelection(category, selectedCategories, setSelectedCategories)
+                    }
+                  >
+                    <CategoryIcon category={category} className="w-5 h-5 shrink-0" />
+                    <span className="truncate">{category}</span>
+                  </Button>
+                );
+              })}
             </div>
           </div>
 
@@ -77,11 +90,13 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
             <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
               {MONTHS.map((month) => {
                 const Icon = MonthIcons[month];
+                const isSelected = selectedMonths.includes(month);
+                const needsInvert = MONTHS_NEED_INVERT.includes(month);
                 return (
                   <Button
                     key={month}
-                    variant={selectedMonths.includes(month) ? "default" : "outline"}
-                    className="flex items-center gap-1.5 justify-center px-2"
+                    variant={isSelected ? "default" : "outline"}
+                    className={`flex items-center gap-1.5 justify-center px-2 border-gray-300 hover:bg-gray-100 ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
                     onClick={() =>
                       toggleSelection(month, selectedMonths, setSelectedMonths)
                     }
@@ -99,11 +114,13 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {TIME_OF_DAY.map((time) => {
                 const Icon = TimeIcons[time];
+                const isSelected = selectedTimes.includes(time);
+                const needsInvert = TIMES_NEED_INVERT.includes(time);
                 return (
                   <Button
                     key={time}
-                    variant={selectedTimes.includes(time) ? "default" : "outline"}
-                    className="flex items-center gap-2 justify-center"
+                    variant={isSelected ? "default" : "outline"}
+                    className={`flex items-center gap-2 justify-center border-gray-300 hover:bg-gray-100 ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
                     onClick={() =>
                       toggleSelection(time, selectedTimes, setSelectedTimes)
                     }
@@ -121,11 +138,12 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {WEATHER.map((weather) => {
                 const Icon = WeatherIcons[weather];
+                const isSelected = selectedWeather.includes(weather);
                 return (
                   <Button
                     key={weather}
-                    variant={selectedWeather.includes(weather) ? "default" : "outline"}
-                    className="flex items-center gap-2 justify-center"
+                    variant={isSelected ? "default" : "outline"}
+                    className="flex items-center gap-2 justify-center border-gray-300 hover:bg-gray-100"
                     onClick={() =>
                       toggleSelection(weather, selectedWeather, setSelectedWeather)
                     }
@@ -142,7 +160,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           <div className="flex gap-2 pt-4 mt-2.5">
             <Button
               variant="outline"
-              className="flex-1"
+              className="flex-1 border-gray-300 hover:bg-gray-100"
               onClick={() => {
                 setSelectedCategories([]);
                 setSelectedMonths([]);
