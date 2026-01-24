@@ -72,7 +72,8 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                   <Button
                     key={category}
                     variant={isSelected ? "default" : "outline"}
-                    className={`flex items-center gap-2 justify-center border-[#d1d5db] hover:bg-background hover:text-foreground ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
+                    className={`flex items-center gap-2 justify-center ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"} ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
+                    style={{ border: '1px solid #d1d5db' }}
                     onClick={() =>
                       toggleSelection(category, selectedCategories, setSelectedCategories)
                     }
@@ -96,7 +97,8 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                   <Button
                     key={month}
                     variant={isSelected ? "default" : "outline"}
-                    className={`flex items-center gap-1.5 justify-center px-2 border-[#d1d5db] hover:bg-background hover:text-foreground ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
+                    className={`flex items-center gap-1.5 justify-center px-2 ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"} ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
+                    style={{ border: '1px solid #d1d5db' }}
                     onClick={() =>
                       toggleSelection(month, selectedMonths, setSelectedMonths)
                     }
@@ -120,7 +122,8 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                   <Button
                     key={time}
                     variant={isSelected ? "default" : "outline"}
-                    className={`flex items-center gap-2 justify-center border-[#d1d5db] hover:bg-background hover:text-foreground ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
+                    className={`flex items-center gap-2 justify-center ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"} ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
+                    style={{ border: '1px solid #d1d5db' }}
                     onClick={() =>
                       toggleSelection(time, selectedTimes, setSelectedTimes)
                     }
@@ -143,7 +146,8 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                   <Button
                     key={weather}
                     variant={isSelected ? "default" : "outline"}
-                    className="flex items-center gap-2 justify-center border-[#d1d5db] hover:bg-background hover:text-foreground"
+                    className={`flex items-center gap-2 justify-center ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                    style={{ border: '1px solid #d1d5db' }}
                     onClick={() =>
                       toggleSelection(weather, selectedWeather, setSelectedWeather)
                     }
@@ -160,7 +164,8 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           <div className="flex gap-2 pt-4 mt-2.5">
             <Button
               variant="outline"
-              className="flex-1 border-[#d1d5db] hover:bg-background hover:text-foreground"
+              className="flex-1 hover:bg-background hover:text-foreground"
+              style={{ border: '1px solid #d1d5db' }}
               onClick={() => {
                 setSelectedCategories([]);
                 setSelectedMonths([]);
