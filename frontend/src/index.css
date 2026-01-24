@@ -30,6 +30,10 @@
 }
 
 @layer base {
+  * {
+    border-color: var(--border);
+  }
+
   :root {
     --background: #fff;
     --foreground: oklch(.145 0 0);
