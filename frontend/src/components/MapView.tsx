@@ -232,9 +232,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         options={{
           fullscreenControl: false,
           mapTypeControl: false,
-          panControl: false,
           streetViewControl: false,
+          zoomControl: false,
+          rotateControl: false,
+          scaleControl: false,
           gestureHandling: 'greedy',
+          keyboardShortcuts: false,
         }}
       >
         {/* ズームレベルが11以上の場合のみピンを表示 */}
