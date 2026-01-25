@@ -107,10 +107,32 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     return () => window.removeEventListener('deviceorientation', handleOrientation)
   }, [userLocation])
 
+  // デバイスの向き取得の許可をリクエスト（iOS 13+用）
+  const requestOrientationPermission = useCallback(async () => {
+    // DeviceOrientationEventにrequestPermissionメソッドがあるか確認（iOS 13+）
+    const DeviceOrientationEventWithPermission = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+      requestPermission?: () => Promise<'granted' | 'denied' | 'default'>
+    }
+
+    if (typeof DeviceOrientationEventWithPermission.requestPermission === 'function') {
+      try {
+        const permission = await DeviceOrientationEventWithPermission.requestPermission()
+        return permission === 'granted'
+      } catch {
+        return false
+      }
+    }
+    // Android等、許可不要な場合はtrue
+    return true
+  }, [])
+
   // 現在位置に移動するメソッドを公開
   useImperativeHandle(ref, () => ({
-    centerOnUserLocation: () => {
+    centerOnUserLocation: async () => {
       if (!map) return
+
+      // デバイスの向き取得の許可をリクエスト
+      await requestOrientationPermission()
 
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
@@ -129,7 +151,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         )
       }
     },
-  }), [map])
+  }), [map, requestOrientationPermission])
 
   // APIキーが空の場合はuseLoadScriptを呼ばない
   const { isLoaded, loadError } = useLoadScript({
