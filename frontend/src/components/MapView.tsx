@@ -58,7 +58,7 @@ interface MapViewProps {
  */
 function FallbackMapView() {
   return (
-    <div className="w-full h-screen relative bg-gradient-to-br from-gray-100 to-gray-200">
+    <div className="w-full h-full relative bg-gradient-to-br from-gray-100 to-gray-200">
       {/* グリッドパターン */}
       <div
         className="absolute inset-0 opacity-20"
@@ -263,7 +263,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   }
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-full">
       <GoogleMap
         mapContainerStyle={{ width: '100%', height: '100%' }}
         center={DEFAULT_CENTER}
