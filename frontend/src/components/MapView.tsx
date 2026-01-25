@@ -86,8 +86,26 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const [showToast, setShowToast] = useState(false)
   const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null)
+  const [userHeading, setUserHeading] = useState<number | null>(null)
   const listenerAddedRef = useRef(false)
   const initialMountRef = useRef(true)
+
+  // デバイスの向きを取得
+  useEffect(() => {
+    if (!userLocation) return
+
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      // webkitCompassHeading（iOS）またはalpha（Android）を使用
+      const heading = (event as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading
+        ?? (event.alpha !== null ? (360 - event.alpha) % 360 : null)
+      if (heading !== null) {
+        setUserHeading(heading)
+      }
+    }
+
+    window.addEventListener('deviceorientation', handleOrientation)
+    return () => window.removeEventListener('deviceorientation', handleOrientation)
+  }, [userLocation])
 
   // 現在位置に移動するメソッドを公開
   useImperativeHandle(ref, () => ({
@@ -253,7 +271,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
             </OverlayViewF>
           ))}
 
-        {/* 現在地マーカー（青い円） */}
+        {/* 現在地マーカー（パルスエフェクト + ビーム + 青い円） */}
         {userLocation && (
           <OverlayViewF
             position={userLocation}
@@ -261,8 +279,46 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           >
             <div
               data-testid="user-location-marker"
-              className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2"
-            />
+              className="relative"
+              style={{ width: '80px', height: '80px' }}
+            >
+              {/* パルスエフェクト（波紋） */}
+              <div
+                className="location-pulse absolute top-1/2 left-1/2 w-8 h-8 rounded-full bg-blue-400"
+                style={{ transform: 'translate(-50%, -50%)' }}
+              />
+              <div
+                className="location-pulse absolute top-1/2 left-1/2 w-8 h-8 rounded-full bg-blue-400"
+                style={{ transform: 'translate(-50%, -50%)', animationDelay: '0.5s' }}
+              />
+
+              {/* ビーム（方向を示す扇形） */}
+              {userHeading !== null && (
+                <div
+                  className="absolute top-1/2 left-1/2"
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    transform: `translate(-50%, -50%) rotate(${userHeading - 90}deg)`,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      background: 'conic-gradient(from -22.5deg, rgba(59, 130, 246, 0.4) 0deg, rgba(59, 130, 246, 0.4) 45deg, transparent 45deg)',
+                      borderRadius: '50%',
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* 中心の青い円 */}
+              <div
+                className="absolute top-1/2 left-1/2 w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg"
+                style={{ transform: 'translate(-50%, -50%)' }}
+              />
+            </div>
           </OverlayViewF>
         )}
       </GoogleMap>

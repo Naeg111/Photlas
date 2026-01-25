@@ -98,3 +98,19 @@
     overflow: hidden;
   }
 }
+
+/* 現在地マーカーのパルスエフェクト */
+@keyframes location-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3);
+    opacity: 0;
+  }
+}
+
+.location-pulse {
+  animation: location-pulse 2s ease-out infinite;
+}
