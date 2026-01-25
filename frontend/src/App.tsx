@@ -125,7 +125,7 @@ function MainContent() {
   // }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden isolate">
+    <div className="relative w-full h-full overflow-hidden isolate">
       {/* MapView - メインコンテンツ（z-0で最下層に配置） */}
       <div className="absolute inset-0 z-0">
         <MapView ref={mapRef} filterParams={mapFilterParams} />
@@ -155,7 +155,10 @@ function MainContent() {
       </div>
 
       {/* フローティングUI - 右下: 現在位置ボタン + 投稿ボタン (FAB) */}
-      <div className="absolute bottom-6 right-6 z-10 flex flex-col items-center gap-3">
+      <div
+        className="absolute right-6 z-10 flex flex-col items-center gap-3"
+        style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
+      >
         {/* 現在位置ボタン（投稿ボタンの75%サイズ） */}
         <Button
           variant="secondary"
