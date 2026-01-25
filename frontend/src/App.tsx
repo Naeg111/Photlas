@@ -126,8 +126,8 @@ function MainContent() {
 
   return (
     <div className="relative w-full h-full overflow-hidden isolate">
-      {/* MapView - メインコンテンツ（z-0で最下層に配置、画面下端まで表示） */}
-      <div className="absolute inset-0 z-0" style={{ height: '100dvh' }}>
+      {/* MapView - メインコンテンツ（z-0で最下層に配置、画面全体を覆う） */}
+      <div className="fixed inset-0 z-0">
         <MapView ref={mapRef} filterParams={mapFilterParams} />
       </div>
 
