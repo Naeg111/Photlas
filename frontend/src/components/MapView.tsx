@@ -230,12 +230,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         zoom={DEFAULT_ZOOM}
         onLoad={handleLoad}
         options={{
-          fullscreenControl: false,
-          mapTypeControl: false,
-          streetViewControl: false,
-          zoomControl: false,
-          rotateControl: false,
-          scaleControl: false,
+          disableDefaultUI: true,
+          clickableIcons: false,
           gestureHandling: 'greedy',
           keyboardShortcuts: false,
         }}
