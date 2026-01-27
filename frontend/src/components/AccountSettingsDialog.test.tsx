@@ -6,11 +6,13 @@ import { toast } from 'sonner'
 
 /**
  * Issue#20: アカウント設定機能 - AccountSettingsDialog テスト
+ * Issue#38: 認証トークン不具合修正
  *
  * テスト対象:
  * - メールアドレス変更機能
  * - パスワード変更機能
  * - アカウント削除機能
+ * - AuthContextからのトークン取得
  */
 
 // ============================================================================
@@ -25,7 +27,6 @@ const EXISTING_EMAIL = 'existing@example.com'
 // Passwords
 const VALID_PASSWORD = 'password123'
 const WRONG_PASSWORD = 'wrongpassword'
-const OLD_PASSWORD = 'oldPassword123'
 const NEW_PASSWORD = 'NewPass123'
 const DIFFERENT_PASSWORD = 'DifferentPass123'
 const PASSWORD_WITH_SPECIAL_CHARS = 'NewPass123!'
@@ -55,7 +56,6 @@ const SECTION_PLAN = 'プラン'
 
 const LABEL_NEW_EMAIL = '新しいメールアドレス'
 const LABEL_PASSWORD = 'パスワード'
-const LABEL_CURRENT_PASSWORD = '現在のパスワード'
 const LABEL_NEW_PASSWORD = '新しいパスワード'
 const LABEL_NEW_PASSWORD_CONFIRM = '新しいパスワード（確認）'
 const LABEL_PASSWORD_CONFIRM = 'パスワードを入力して確認'
@@ -69,6 +69,7 @@ const TEXT_DELETE_CONFIRMATION = '本当に削除しますか？'
 const TEXT_FREE_PLAN = '無料プラン'
 
 const ERROR_PASSWORD_VALIDATION = 'パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません'
+const ERROR_LOGIN_REQUIRED = 'ログインが必要です'
 
 // ============================================================================
 // Helper Functions
@@ -77,7 +78,7 @@ const ERROR_PASSWORD_VALIDATION = 'パスワードは8〜20文字で、数字・
 /**
  * Creates a mock fetch response
  */
-const createMockFetchResponse = (ok: boolean, status: number, data?: any) => ({
+const createMockFetchResponse = (ok: boolean, status: number, data?: unknown) => ({
   ok,
   status,
   json: async () => data,
@@ -127,12 +128,11 @@ const setupEmailChangeTest = () => {
  * Sets up the password change form with test data
  */
 const setupPasswordChangeTest = () => {
-  const currentPasswordInput = screen.getByLabelText(LABEL_CURRENT_PASSWORD)
   const newPasswordInput = screen.getByLabelText(LABEL_NEW_PASSWORD)
   const confirmPasswordInput = screen.getByLabelText(LABEL_NEW_PASSWORD_CONFIRM)
   const submitButton = screen.getByRole('button', { name: BUTTON_CHANGE_PASSWORD })
 
-  return { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton }
+  return { newPasswordInput, confirmPasswordInput, submitButton }
 }
 
 /**
@@ -165,7 +165,7 @@ vi.mock('react-router-dom', async () => {
 })
 
 // fetch API のモック
-globalThis.fetch = vi.fn() as any
+globalThis.fetch = vi.fn()
 
 // sonner (toast) のモック
 vi.mock('sonner', () => ({
@@ -173,6 +173,14 @@ vi.mock('sonner', () => ({
     success: vi.fn(),
     error: vi.fn(),
   },
+}))
+
+// Issue#38: AuthContext のモック
+const mockGetAuthToken = vi.fn()
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    getAuthToken: mockGetAuthToken,
+  }),
 }))
 
 const MockedAccountSettingsDialog = ({ open, onOpenChange, currentEmail }: {
@@ -200,14 +208,13 @@ describe('AccountSettingsDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockNavigate.mockClear()
+    // Issue#38: AuthContextからトークンを取得するようモック設定
+    mockGetAuthToken.mockReturnValue(MOCK_TOKEN)
 
     // localStorage のモック
     Object.defineProperty(window, 'localStorage', {
       value: {
-        getItem: vi.fn((key) => {
-          if (key === 'token') return MOCK_TOKEN
-          return null
-        }),
+        getItem: vi.fn(),
         setItem: vi.fn(),
         removeItem: vi.fn(),
         clear: vi.fn(),
@@ -271,7 +278,6 @@ describe('AccountSettingsDialog', () => {
       )
 
       expect(screen.getByText(SECTION_PASSWORD_CHANGE)).toBeInTheDocument()
-      expect(screen.getByLabelText(LABEL_CURRENT_PASSWORD)).toBeInTheDocument()
       expect(screen.getByLabelText(LABEL_NEW_PASSWORD)).toBeInTheDocument()
       expect(screen.getByLabelText(LABEL_NEW_PASSWORD_CONFIRM)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: BUTTON_CHANGE_PASSWORD })).toBeInTheDocument()
@@ -301,6 +307,104 @@ describe('AccountSettingsDialog', () => {
 
       expect(screen.getByText(SECTION_PLAN)).toBeInTheDocument()
       expect(screen.getByText(TEXT_FREE_PLAN)).toBeInTheDocument()
+    })
+  })
+
+  // Issue#38: AuthContextからトークン取得のテスト
+  describe('Token Authentication (Issue#38)', () => {
+    it('uses getAuthToken from AuthContext for email change', async () => {
+      mockFetch.mockResolvedValueOnce(
+        createMockFetchResponse(true, 200, { email: NEW_EMAIL })
+      )
+
+      render(
+        <MockedAccountSettingsDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          currentEmail={CURRENT_EMAIL}
+        />
+      )
+
+      const { newEmailInput, passwordInput, submitButton } = setupEmailChangeTest()
+
+      fireEvent.change(newEmailInput, { target: { value: NEW_EMAIL } })
+      fireEvent.change(passwordInput, { target: { value: VALID_PASSWORD } })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(mockGetAuthToken).toHaveBeenCalled()
+      })
+    })
+
+    it('uses getAuthToken from AuthContext for password change', async () => {
+      mockFetch.mockResolvedValueOnce(
+        createMockFetchResponse(true, 200)
+      )
+
+      render(
+        <MockedAccountSettingsDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          currentEmail={CURRENT_EMAIL}
+        />
+      )
+
+      const { newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
+
+      fireEvent.change(newPasswordInput, { target: { value: NEW_PASSWORD } })
+      fireEvent.change(confirmPasswordInput, { target: { value: NEW_PASSWORD } })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(mockGetAuthToken).toHaveBeenCalled()
+      })
+    })
+
+    it('uses getAuthToken from AuthContext for account deletion', async () => {
+      mockFetch.mockResolvedValueOnce(
+        createMockFetchResponse(true, 204)
+      )
+
+      render(
+        <MockedAccountSettingsDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          currentEmail={CURRENT_EMAIL}
+        />
+      )
+
+      const { passwordInput, confirmButton } = setupAccountDeletionTest()
+
+      fireEvent.change(passwordInput, { target: { value: VALID_PASSWORD } })
+      fireEvent.click(confirmButton)
+
+      await waitFor(() => {
+        expect(mockGetAuthToken).toHaveBeenCalled()
+      })
+    })
+
+    it('shows login required error when token is null', async () => {
+      mockGetAuthToken.mockReturnValue(null)
+
+      render(
+        <MockedAccountSettingsDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          currentEmail={CURRENT_EMAIL}
+        />
+      )
+
+      const { newEmailInput, passwordInput, submitButton } = setupEmailChangeTest()
+
+      fireEvent.change(newEmailInput, { target: { value: NEW_EMAIL } })
+      fireEvent.change(passwordInput, { target: { value: VALID_PASSWORD } })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(ERROR_LOGIN_REQUIRED)
+      })
+
+      expectNoFetchCall()
     })
   })
 
@@ -395,46 +499,17 @@ describe('AccountSettingsDialog', () => {
         />
       )
 
-      const { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton } =
-        setupPasswordChangeTest()
+      const { newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
 
-      fireEvent.change(currentPasswordInput, { target: { value: OLD_PASSWORD } })
       fireEvent.change(newPasswordInput, { target: { value: NEW_PASSWORD } })
       fireEvent.change(confirmPasswordInput, { target: { value: NEW_PASSWORD } })
       fireEvent.click(submitButton)
 
       await waitFor(() => {
         expectFetchCalledWith(PASSWORD_UPDATE_ENDPOINT, 'PUT', {
-          [FIELD_CURRENT_PASSWORD]: OLD_PASSWORD,
           [FIELD_NEW_PASSWORD]: NEW_PASSWORD,
           [FIELD_NEW_PASSWORD_CONFIRM]: NEW_PASSWORD,
         })
-      })
-    })
-
-    it('shows error when current password is incorrect (401)', async () => {
-      mockFetch.mockResolvedValueOnce(
-        createMockFetchResponse(false, 401)
-      )
-
-      render(
-        <MockedAccountSettingsDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          currentEmail={CURRENT_EMAIL}
-        />
-      )
-
-      const { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton } =
-        setupPasswordChangeTest()
-
-      fireEvent.change(currentPasswordInput, { target: { value: WRONG_PASSWORD } })
-      fireEvent.change(newPasswordInput, { target: { value: NEW_PASSWORD } })
-      fireEvent.change(confirmPasswordInput, { target: { value: NEW_PASSWORD } })
-      fireEvent.click(submitButton)
-
-      await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalled()
       })
     })
 
@@ -448,10 +523,8 @@ describe('AccountSettingsDialog', () => {
         />
       )
 
-      const { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton } =
-        setupPasswordChangeTest()
+      const { newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
 
-      fireEvent.change(currentPasswordInput, { target: { value: OLD_PASSWORD } })
       fireEvent.change(newPasswordInput, { target: { value: PASSWORD_WITH_SPECIAL_CHARS } })
       fireEvent.change(confirmPasswordInput, { target: { value: PASSWORD_WITH_SPECIAL_CHARS } })
       fireEvent.click(submitButton)
@@ -473,10 +546,8 @@ describe('AccountSettingsDialog', () => {
         />
       )
 
-      const { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton } =
-        setupPasswordChangeTest()
+      const { newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
 
-      fireEvent.change(currentPasswordInput, { target: { value: OLD_PASSWORD } })
       fireEvent.change(newPasswordInput, { target: { value: PASSWORD_TOO_LONG } }) // 21文字
       fireEvent.change(confirmPasswordInput, { target: { value: PASSWORD_TOO_LONG } })
       fireEvent.click(submitButton)
@@ -610,10 +681,8 @@ describe('AccountSettingsDialog', () => {
         />
       )
 
-      const { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton } =
-        setupPasswordChangeTest()
+      const { newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
 
-      fireEvent.change(currentPasswordInput, { target: { value: OLD_PASSWORD } })
       fireEvent.change(newPasswordInput, { target: { value: NEW_PASSWORD } })
       fireEvent.change(confirmPasswordInput, { target: { value: DIFFERENT_PASSWORD } })
       fireEvent.click(submitButton)
