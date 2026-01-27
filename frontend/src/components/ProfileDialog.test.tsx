@@ -499,7 +499,7 @@ describe('ProfileDialog', () => {
       await user.click(editButton)
 
       await waitFor(() => {
-        expect(screen.getByTestId('sns-platform-select')).toBeInTheDocument()
+        expect(screen.getByTestId('sns-platform-select-0')).toBeInTheDocument()
       })
     })
 
@@ -521,15 +521,18 @@ describe('ProfileDialog', () => {
       await user.click(editButton)
 
       await waitFor(() => {
-        const platformSelect = screen.getByTestId('sns-platform-select')
+        const platformSelect = screen.getByTestId('sns-platform-select-0')
         expect(platformSelect).toBeInTheDocument()
       })
 
-      // プラットフォームオプションを確認
-      expect(screen.getByText('X (Twitter)')).toBeInTheDocument()
-      expect(screen.getByText('Instagram')).toBeInTheDocument()
-      expect(screen.getByText('YouTube')).toBeInTheDocument()
-      expect(screen.getByText('TikTok')).toBeInTheDocument()
+      // プラットフォームオプションを確認（最初のselectから取得）
+      const platformSelect = screen.getByTestId('sns-platform-select-0')
+      const options = platformSelect.querySelectorAll('option')
+      const optionTexts = Array.from(options).map((opt) => opt.textContent)
+      expect(optionTexts).toContain('X (Twitter)')
+      expect(optionTexts).toContain('Instagram')
+      expect(optionTexts).toContain('YouTube')
+      expect(optionTexts).toContain('TikTok')
     })
 
     it('SNSリンクを保存するとAPIが呼び出される', async () => {
@@ -565,6 +568,104 @@ describe('ProfileDialog', () => {
           expect.objectContaining({ method: 'PUT' })
         )
       })
+    })
+
+    // Issue#37: SNSリンクURL入力のバインドテスト
+    it('SNSリンクのURLを入力して保存すると、入力内容がAPIに送信される', async () => {
+      const user = userEvent.setup()
+      const newUrl = 'https://x.com/newusername'
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ snsLinks: [] })
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={{ ...mockUserProfile, snsLinks: [] }}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 編集モードを開く
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      await user.click(editButton)
+
+      // URLを入力
+      const urlInput = screen.getByTestId('sns-url-input-0')
+      await user.type(urlInput, newUrl)
+
+      // 保存
+      const saveButton = screen.getByTestId('save-sns-links-button')
+      await user.click(saveButton)
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/users/me/sns-links'),
+          expect.objectContaining({
+            method: 'PUT',
+            body: expect.stringContaining(newUrl)
+          })
+        )
+      })
+    })
+
+    // Issue#37: SNSリンク追加機能テスト
+    it('リンクを追加ボタンで新しいリンク入力欄が追加される', async () => {
+      const user = userEvent.setup()
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={{ ...mockUserProfile, snsLinks: [] }}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 編集モードを開く
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      await user.click(editButton)
+
+      // 追加ボタンをクリック
+      const addButton = screen.getByTestId('add-sns-link-button')
+      await user.click(addButton)
+
+      // 2つ目の入力欄が表示される
+      expect(screen.getByTestId('sns-url-input-1')).toBeInTheDocument()
+    })
+
+    // Issue#37: SNSリンク削除機能テスト
+    it('削除ボタンでリンク入力欄が削除される', async () => {
+      const user = userEvent.setup()
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={{ ...mockUserProfile, snsLinks: [{ url: 'https://x.com/test', platform: 'twitter' }] }}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 編集モードを開く
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      await user.click(editButton)
+
+      // 削除ボタンをクリック
+      const deleteButton = screen.getByTestId('delete-sns-link-0')
+      await user.click(deleteButton)
+
+      // 入力欄が削除される
+      expect(screen.queryByTestId('sns-url-input-0')).not.toBeInTheDocument()
     })
   })
 

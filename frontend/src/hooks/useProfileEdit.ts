@@ -20,6 +20,7 @@ const ERROR_MESSAGES = {
 // バリデーション定数
 const VALIDATION = {
   MAX_USERNAME_LENGTH: 30,
+  MAX_SNS_LINKS: 3,
 } as const
 
 // HTTPステータスコード定数
@@ -56,7 +57,12 @@ interface UseProfileEditReturn {
 
   // SNSリンク
   isEditingSnsLinks: boolean
-  setIsEditingSnsLinks: (value: boolean) => void
+  editingSnsLinks: SnsLink[]
+  handleStartEditSnsLinks: () => void
+  handleCancelEditSnsLinks: () => void
+  handleAddSnsLink: () => void
+  handleRemoveSnsLink: (index: number) => void
+  handleUpdateSnsLink: (index: number, field: 'platform' | 'url', value: string) => void
   handleSaveSnsLinks: () => Promise<void>
 }
 
@@ -82,7 +88,9 @@ export const useProfileEdit = ({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // SNSリンク編集の状態
+  // Issue#37: 編集中のSNSリンクをステートで管理
   const [isEditingSnsLinks, setIsEditingSnsLinks] = useState(false)
+  const [editingSnsLinks, setEditingSnsLinks] = useState<SnsLink[]>([])
 
   /**
    * ユーザー名編集を開始
@@ -210,15 +218,72 @@ export const useProfileEdit = ({
   }, [])
 
   /**
-   * SNSリンクを保存
+   * Issue#37: SNSリンク編集を開始
+   */
+  const handleStartEditSnsLinks = useCallback(() => {
+    // 既存のsnsLinksをコピーして編集用ステートにセット
+    // 空の場合は1つの空エントリを追加
+    const initialLinks = snsLinks.length > 0
+      ? [...snsLinks]
+      : [{ platform: 'twitter', url: '' }]
+    setEditingSnsLinks(initialLinks)
+    setIsEditingSnsLinks(true)
+  }, [snsLinks])
+
+  /**
+   * Issue#37: SNSリンク編集をキャンセル
+   */
+  const handleCancelEditSnsLinks = useCallback(() => {
+    setIsEditingSnsLinks(false)
+    setEditingSnsLinks([])
+  }, [])
+
+  /**
+   * Issue#37: SNSリンクを追加（最大件数まで）
+   */
+  const handleAddSnsLink = useCallback(() => {
+    if (editingSnsLinks.length < VALIDATION.MAX_SNS_LINKS) {
+      setEditingSnsLinks([...editingSnsLinks, { platform: 'twitter', url: '' }])
+    }
+  }, [editingSnsLinks])
+
+  /**
+   * Issue#37: SNSリンクを削除
+   */
+  const handleRemoveSnsLink = useCallback((index: number) => {
+    setEditingSnsLinks(editingSnsLinks.filter((_, i) => i !== index))
+  }, [editingSnsLinks])
+
+  /**
+   * Issue#37: SNSリンクを更新
+   */
+  const handleUpdateSnsLink = useCallback((index: number, field: 'platform' | 'url', value: string) => {
+    const updated = [...editingSnsLinks]
+    updated[index] = { ...updated[index], [field]: value }
+    setEditingSnsLinks(updated)
+  }, [editingSnsLinks])
+
+  /**
+   * Issue#37: SNSリンクを保存（編集内容を送信）
    */
   const handleSaveSnsLinks = useCallback(async () => {
+    // URLが空でないリンクのみ保存
+    const linksToSave = editingSnsLinks.filter(link => link.url.trim() !== '')
+
+    const token = getAuthToken()
+    const headers: HeadersInit = { 'Content-Type': 'application/json' }
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     await fetch(API_ENDPOINTS.SNS_LINKS, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ snsLinks }),
+      headers,
+      body: JSON.stringify({ snsLinks: linksToSave }),
     })
-  }, [snsLinks])
+
+    setIsEditingSnsLinks(false)
+  }, [editingSnsLinks, getAuthToken])
 
   return {
     // ユーザー名編集
@@ -238,7 +303,12 @@ export const useProfileEdit = ({
 
     // SNSリンク
     isEditingSnsLinks,
-    setIsEditingSnsLinks,
+    editingSnsLinks,
+    handleStartEditSnsLinks,
+    handleCancelEditSnsLinks,
+    handleAddSnsLink,
+    handleRemoveSnsLink,
+    handleUpdateSnsLink,
     handleSaveSnsLinks,
   }
 }
