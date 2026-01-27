@@ -1,6 +1,7 @@
 package com.photlas.backend.config;
 
 import com.photlas.backend.filter.RateLimitFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,6 +15,12 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Spring Security設定
@@ -23,6 +30,10 @@ import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    // CORS許可オリジン（環境変数から取得、カンマ区切り）
+    @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
+    private String allowedOriginsConfig;
 
     // エンドポイントパス定数
     private static final String AUTH_ENDPOINT_PATTERN = "/api/v1/auth/**";
@@ -48,9 +59,40 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * CORS設定
+     * フロントエンドからのクロスオリジンリクエストを許可
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // 許可するオリジンを設定（環境変数から取得）
+        List<String> allowedOrigins = Arrays.asList(allowedOriginsConfig.split(","));
+        configuration.setAllowedOrigins(allowedOrigins);
+
+        // 許可するHTTPメソッド
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+
+        // 許可するヘッダー
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        // 認証情報（Cookie、Authorization header等）を許可
+        configuration.setAllowCredentials(true);
+
+        // プリフライトリクエストのキャッシュ時間（1時間）
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // CORS設定を有効化
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             // Issue#23: CSRF保護を有効化（Cookie-based token repository使用）
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
