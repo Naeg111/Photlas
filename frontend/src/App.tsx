@@ -14,6 +14,7 @@ import { PhotoContributionDialog } from './components/PhotoContributionDialog'
 import { AccountSettingsDialog } from './components/AccountSettingsDialog'
 import ProfileDialog from './components/ProfileDialog'
 import PhotoDetailDialog from './components/PhotoDetailDialog'
+import { WantToGoListDialog } from './components/WantToGoListDialog'
 import { PhotoLightbox } from './components/PhotoLightbox'
 import MapView from './components/MapView'
 import type { MapViewFilterParams, MapViewHandle } from './components/MapView'
@@ -114,10 +115,9 @@ function MainContent() {
     dialog.open('profile')
   }
 
-  // 行きたいリスト（お気に入り）ハンドラー
-  const handleShowFavorites = () => {
-    setProfileInitialTab('favorites')
-    dialog.open('profile')
+  // 行きたい場所リストハンドラー
+  const handleShowWantToGoList = () => {
+    dialog.open('wantToGoList')
   }
 
   // スポットクリックハンドラー（MapViewから呼び出される）
@@ -200,7 +200,7 @@ function MainContent() {
         {...dialog.getProps('topMenu')}
         isLoggedIn={!!user}
         onMyPageClick={handleShowProfile}
-        onFavoritesClick={handleShowFavorites}
+        onFavoritesClick={handleShowWantToGoList}
         onAccountSettingsClick={() => dialog.open('accountSettings')}
         onTermsClick={() => dialog.open('terms')}
         onPrivacyClick={() => dialog.open('privacy')}
@@ -237,6 +237,8 @@ function MainContent() {
       />
 
       <PhotoContributionDialog {...dialog.getProps('photoContribution')} />
+
+      <WantToGoListDialog {...dialog.getProps('wantToGoList')} />
 
       {user && (
         <AccountSettingsDialog
