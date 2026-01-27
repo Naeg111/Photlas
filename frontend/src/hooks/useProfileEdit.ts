@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 
 // APIエンドポイント定数
 const API_ENDPOINTS = {
@@ -19,6 +20,7 @@ const ERROR_MESSAGES = {
 // バリデーション定数
 const VALIDATION = {
   MAX_USERNAME_LENGTH: 30,
+  MAX_SNS_LINKS: 3,
 } as const
 
 // HTTPステータスコード定数
@@ -34,6 +36,7 @@ interface SnsLink {
 interface UseProfileEditProps {
   initialUsername: string
   snsLinks: SnsLink[]
+  onUsernameUpdated?: (newUsername: string) => void
 }
 
 interface UseProfileEditReturn {
@@ -49,23 +52,37 @@ interface UseProfileEditReturn {
   isUploading: boolean
   uploadSuccess: boolean
   fileInputRef: React.RefObject<HTMLInputElement | null>
-  handleProfileImageSelect: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>
+  handleProfileImageSelect: (event: React.ChangeEvent<HTMLInputElement>) => void
   handleDeleteProfileImage: () => Promise<void>
+
+  // Issue#35: トリミング機能
+  isCropperOpen: boolean
+  cropperImageSrc: string
+  handleCropComplete: (croppedBlob: Blob) => Promise<void>
+  handleCropCancel: () => void
 
   // SNSリンク
   isEditingSnsLinks: boolean
-  setIsEditingSnsLinks: (value: boolean) => void
+  editingSnsLinks: SnsLink[]
+  handleStartEditSnsLinks: () => void
+  handleCancelEditSnsLinks: () => void
+  handleAddSnsLink: () => void
+  handleRemoveSnsLink: (index: number) => void
+  handleUpdateSnsLink: (index: number, field: 'platform' | 'url', value: string) => void
   handleSaveSnsLinks: () => Promise<void>
 }
 
 /**
  * プロフィール編集機能を提供するカスタムフック
  * Issue#29: プロフィール機能強化
+ * Issue#36: ユーザー名更新時のコールバック追加
  */
 export const useProfileEdit = ({
   initialUsername,
   snsLinks,
+  onUsernameUpdated,
 }: UseProfileEditProps): UseProfileEditReturn => {
+  const { getAuthToken } = useAuth()
   // ユーザー名編集の状態
   const [isEditingUsername, setIsEditingUsername] = useState(false)
   const [editingUsername, setEditingUsername] = useState(initialUsername)
@@ -76,8 +93,14 @@ export const useProfileEdit = ({
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Issue#35: トリミング機能の状態
+  const [isCropperOpen, setIsCropperOpen] = useState(false)
+  const [cropperImageSrc, setCropperImageSrc] = useState('')
+
   // SNSリンク編集の状態
+  // Issue#37: 編集中のSNSリンクをステートで管理
   const [isEditingSnsLinks, setIsEditingSnsLinks] = useState(false)
+  const [editingSnsLinks, setEditingSnsLinks] = useState<SnsLink[]>([])
 
   /**
    * ユーザー名編集を開始
@@ -110,6 +133,7 @@ export const useProfileEdit = ({
 
   /**
    * ユーザー名を保存
+   * Issue#36: 成功時にonUsernameUpdatedコールバックを呼び出す
    */
   const handleSaveUsername = useCallback(async () => {
     setUsernameError('')
@@ -121,9 +145,15 @@ export const useProfileEdit = ({
     }
 
     try {
+      const token = getAuthToken()
+      const headers: HeadersInit = { 'Content-Type': 'application/json' }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch(API_ENDPOINTS.USERNAME, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ username: editingUsername }),
       })
 
@@ -137,21 +167,40 @@ export const useProfileEdit = ({
       }
 
       setIsEditingUsername(false)
+      // Issue#36: 成功時にコールバックを呼び出してAuthContextを更新
+      onUsernameUpdated?.(editingUsername)
     } catch {
       // エラー時の処理
     }
-  }, [editingUsername])
+  }, [editingUsername, getAuthToken, onUsernameUpdated])
 
   /**
-   * プロフィール画像を選択してアップロード
+   * Issue#35: プロフィール画像を選択してトリミングモーダルを開く
    */
   const handleProfileImageSelect = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
+    (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0]
       if (!file) return
 
+      // FileReaderで画像をData URLに変換
+      const reader = new FileReader()
+      reader.onload = () => {
+        setCropperImageSrc(reader.result as string)
+        setIsCropperOpen(true)
+      }
+      reader.readAsDataURL(file)
+    },
+    []
+  )
+
+  /**
+   * Issue#35: トリミング完了後のアップロード処理
+   */
+  const handleCropComplete = useCallback(
+    async (croppedBlob: Blob) => {
       setIsUploading(true)
       setUploadSuccess(false)
+      setIsCropperOpen(false)
 
       try {
         const presignedResponse = await fetch(API_ENDPOINTS.PROFILE_IMAGE_PRESIGNED_URL, {
@@ -167,7 +216,7 @@ export const useProfileEdit = ({
 
         await fetch(uploadUrl, {
           method: 'PUT',
-          body: file,
+          body: croppedBlob,
         })
 
         await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
@@ -187,6 +236,14 @@ export const useProfileEdit = ({
   )
 
   /**
+   * Issue#35: トリミングをキャンセル
+   */
+  const handleCropCancel = useCallback(() => {
+    setIsCropperOpen(false)
+    setCropperImageSrc('')
+  }, [])
+
+  /**
    * プロフィール画像を削除
    */
   const handleDeleteProfileImage = useCallback(async () => {
@@ -196,15 +253,72 @@ export const useProfileEdit = ({
   }, [])
 
   /**
-   * SNSリンクを保存
+   * Issue#37: SNSリンク編集を開始
+   */
+  const handleStartEditSnsLinks = useCallback(() => {
+    // 既存のsnsLinksをコピーして編集用ステートにセット
+    // 空の場合は1つの空エントリを追加
+    const initialLinks = snsLinks.length > 0
+      ? [...snsLinks]
+      : [{ platform: 'twitter', url: '' }]
+    setEditingSnsLinks(initialLinks)
+    setIsEditingSnsLinks(true)
+  }, [snsLinks])
+
+  /**
+   * Issue#37: SNSリンク編集をキャンセル
+   */
+  const handleCancelEditSnsLinks = useCallback(() => {
+    setIsEditingSnsLinks(false)
+    setEditingSnsLinks([])
+  }, [])
+
+  /**
+   * Issue#37: SNSリンクを追加（最大件数まで）
+   */
+  const handleAddSnsLink = useCallback(() => {
+    if (editingSnsLinks.length < VALIDATION.MAX_SNS_LINKS) {
+      setEditingSnsLinks([...editingSnsLinks, { platform: 'twitter', url: '' }])
+    }
+  }, [editingSnsLinks])
+
+  /**
+   * Issue#37: SNSリンクを削除
+   */
+  const handleRemoveSnsLink = useCallback((index: number) => {
+    setEditingSnsLinks(editingSnsLinks.filter((_, i) => i !== index))
+  }, [editingSnsLinks])
+
+  /**
+   * Issue#37: SNSリンクを更新
+   */
+  const handleUpdateSnsLink = useCallback((index: number, field: 'platform' | 'url', value: string) => {
+    const updated = [...editingSnsLinks]
+    updated[index] = { ...updated[index], [field]: value }
+    setEditingSnsLinks(updated)
+  }, [editingSnsLinks])
+
+  /**
+   * Issue#37: SNSリンクを保存（編集内容を送信）
    */
   const handleSaveSnsLinks = useCallback(async () => {
+    // URLが空でないリンクのみ保存
+    const linksToSave = editingSnsLinks.filter(link => link.url.trim() !== '')
+
+    const token = getAuthToken()
+    const headers: HeadersInit = { 'Content-Type': 'application/json' }
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     await fetch(API_ENDPOINTS.SNS_LINKS, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ snsLinks }),
+      headers,
+      body: JSON.stringify({ snsLinks: linksToSave }),
     })
-  }, [snsLinks])
+
+    setIsEditingSnsLinks(false)
+  }, [editingSnsLinks, getAuthToken])
 
   return {
     // ユーザー名編集
@@ -222,9 +336,20 @@ export const useProfileEdit = ({
     handleProfileImageSelect,
     handleDeleteProfileImage,
 
+    // Issue#35: トリミング機能
+    isCropperOpen,
+    cropperImageSrc,
+    handleCropComplete,
+    handleCropCancel,
+
     // SNSリンク
     isEditingSnsLinks,
-    setIsEditingSnsLinks,
+    editingSnsLinks,
+    handleStartEditSnsLinks,
+    handleCancelEditSnsLinks,
+    handleAddSnsLink,
+    handleRemoveSnsLink,
+    handleUpdateSnsLink,
     handleSaveSnsLinks,
   }
 }

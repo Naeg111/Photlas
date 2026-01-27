@@ -5,6 +5,7 @@ import ProfileDialog from './ProfileDialog'
 
 /**
  * Issue#18: マイページ機能 (UI + API)
+ * Issue#36: ユーザー名更新機能
  * TDD Red段階: ProfileDialogコンポーネントのテストケース定義
  *
  * UI要件:
@@ -15,6 +16,37 @@ import ProfileDialog from './ProfileDialog'
  * - 写真グリッド表示
  * - プロフィール編集機能（自分の場合のみ）
  */
+
+// Issue#36: AuthContextのモック
+const mockUpdateUser = vi.fn()
+const mockGetAuthToken = vi.fn(() => 'mock-token')
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    updateUser: mockUpdateUser,
+    getAuthToken: mockGetAuthToken,
+  }),
+}))
+
+// Issue#35: react-easy-cropのモック
+vi.mock('react-easy-crop', () => ({
+  default: ({ onCropComplete }: { onCropComplete: (croppedArea: unknown, croppedAreaPixels: unknown) => void }) => {
+    return (
+      <div data-testid="cropper-component">
+        <button
+          data-testid="mock-crop-trigger"
+          onClick={() =>
+            onCropComplete(
+              { x: 0, y: 0, width: 100, height: 100 },
+              { x: 0, y: 0, width: 300, height: 300 }
+            )
+          }
+        >
+          Mock Crop
+        </button>
+      </div>
+    )
+  },
+}))
 
 describe('ProfileDialog', () => {
   const mockOnClose = vi.fn()
@@ -290,7 +322,7 @@ describe('ProfileDialog', () => {
   })
 
   describe('閉じるボタン', () => {
-    it('閉じるボタンをクリックするとダイアログが閉じる', () => {
+    it('×ボタンをクリックするとダイアログが閉じる', () => {
       render(
         <ProfileDialog
           open={true}
@@ -302,7 +334,8 @@ describe('ProfileDialog', () => {
         />
       )
 
-      const closeButton = screen.getByRole('button', { name: /閉じる/i })
+      // DialogのCloseボタン（×ボタン）をクリック
+      const closeButton = screen.getByRole('button', { name: /Close/i })
       fireEvent.click(closeButton)
 
       expect(mockOnClose).toHaveBeenCalled()
@@ -361,11 +394,9 @@ describe('ProfileDialog', () => {
       expect(screen.getByTestId('profile-image-input')).toBeInTheDocument()
     })
 
-    it('画像を選択するとアップロードが開始される', async () => {
+    // Issue#35: 画像選択後はトリミングモーダルが表示される
+    it('画像を選択するとトリミングモーダルが表示される', async () => {
       const user = userEvent.setup()
-
-      // fetchをモックしてpending状態を維持
-      global.fetch = vi.fn().mockImplementation(() => new Promise(() => {}))
 
       render(
         <ProfileDialog
@@ -383,14 +414,36 @@ describe('ProfileDialog', () => {
 
       await user.upload(fileInput, file)
 
-      // アップロード中の状態を確認
+      // Issue#35: トリミングモーダルが表示される
       await waitFor(() => {
-        expect(screen.getByTestId('upload-progress')).toBeInTheDocument()
+        expect(screen.getByTestId('cropper-modal')).toBeInTheDocument()
       })
     })
 
-    it('アップロード成功後にプロフィール画像が更新される', async () => {
+    // Issue#35: トリミング確定後にアップロードが実行される
+    it('トリミング確定後にアップロードが実行され、成功表示される', async () => {
       const user = userEvent.setup()
+
+      // Canvas APIのモック
+      HTMLCanvasElement.prototype.toBlob = vi.fn((callback: BlobCallback) => {
+        callback(new Blob(['test'], { type: 'image/jpeg' }))
+      }) as unknown as typeof HTMLCanvasElement.prototype.toBlob
+      HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+        drawImage: vi.fn(),
+      })) as unknown as typeof HTMLCanvasElement.prototype.getContext
+
+      // Imageモック
+      Object.defineProperty(global, 'Image', {
+        value: class {
+          crossOrigin = ''
+          src = ''
+          onload: (() => void) | null = null
+          constructor() {
+            setTimeout(() => { if (this.onload) this.onload() }, 0)
+          }
+        },
+        writable: true,
+      })
 
       // API呼び出しをモック
       global.fetch = vi.fn()
@@ -419,6 +472,19 @@ describe('ProfileDialog', () => {
       const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
 
       await user.upload(fileInput, file)
+
+      // トリミングモーダルが表示される
+      await waitFor(() => {
+        expect(screen.getByTestId('cropper-modal')).toBeInTheDocument()
+      })
+
+      // トリミング領域を設定（モックトリガーをクリック）
+      const mockCropTrigger = screen.getByTestId('mock-crop-trigger')
+      await user.click(mockCropTrigger)
+
+      // 確定ボタンをクリック
+      const confirmButton = screen.getByRole('button', { name: /確定/i })
+      await user.click(confirmButton)
 
       await waitFor(() => {
         expect(screen.getByTestId('upload-success')).toBeInTheDocument()
@@ -487,7 +553,7 @@ describe('ProfileDialog', () => {
       await user.click(editButton)
 
       await waitFor(() => {
-        expect(screen.getByTestId('sns-platform-select')).toBeInTheDocument()
+        expect(screen.getByTestId('sns-platform-select-0')).toBeInTheDocument()
       })
     })
 
@@ -509,15 +575,18 @@ describe('ProfileDialog', () => {
       await user.click(editButton)
 
       await waitFor(() => {
-        const platformSelect = screen.getByTestId('sns-platform-select')
+        const platformSelect = screen.getByTestId('sns-platform-select-0')
         expect(platformSelect).toBeInTheDocument()
       })
 
-      // プラットフォームオプションを確認
-      expect(screen.getByText('X (Twitter)')).toBeInTheDocument()
-      expect(screen.getByText('Instagram')).toBeInTheDocument()
-      expect(screen.getByText('YouTube')).toBeInTheDocument()
-      expect(screen.getByText('TikTok')).toBeInTheDocument()
+      // プラットフォームオプションを確認（最初のselectから取得）
+      const platformSelect = screen.getByTestId('sns-platform-select-0')
+      const options = platformSelect.querySelectorAll('option')
+      const optionTexts = Array.from(options).map((opt) => opt.textContent)
+      expect(optionTexts).toContain('X (Twitter)')
+      expect(optionTexts).toContain('Instagram')
+      expect(optionTexts).toContain('YouTube')
+      expect(optionTexts).toContain('TikTok')
     })
 
     it('SNSリンクを保存するとAPIが呼び出される', async () => {
@@ -553,6 +622,104 @@ describe('ProfileDialog', () => {
           expect.objectContaining({ method: 'PUT' })
         )
       })
+    })
+
+    // Issue#37: SNSリンクURL入力のバインドテスト
+    it('SNSリンクのURLを入力して保存すると、入力内容がAPIに送信される', async () => {
+      const user = userEvent.setup()
+      const newUrl = 'https://x.com/newusername'
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ snsLinks: [] })
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={{ ...mockUserProfile, snsLinks: [] }}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 編集モードを開く
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      await user.click(editButton)
+
+      // URLを入力
+      const urlInput = screen.getByTestId('sns-url-input-0')
+      await user.type(urlInput, newUrl)
+
+      // 保存
+      const saveButton = screen.getByTestId('save-sns-links-button')
+      await user.click(saveButton)
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/users/me/sns-links'),
+          expect.objectContaining({
+            method: 'PUT',
+            body: expect.stringContaining(newUrl)
+          })
+        )
+      })
+    })
+
+    // Issue#37: SNSリンク追加機能テスト
+    it('リンクを追加ボタンで新しいリンク入力欄が追加される', async () => {
+      const user = userEvent.setup()
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={{ ...mockUserProfile, snsLinks: [] }}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 編集モードを開く
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      await user.click(editButton)
+
+      // 追加ボタンをクリック
+      const addButton = screen.getByTestId('add-sns-link-button')
+      await user.click(addButton)
+
+      // 2つ目の入力欄が表示される
+      expect(screen.getByTestId('sns-url-input-1')).toBeInTheDocument()
+    })
+
+    // Issue#37: SNSリンク削除機能テスト
+    it('削除ボタンでリンク入力欄が削除される', async () => {
+      const user = userEvent.setup()
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={{ ...mockUserProfile, snsLinks: [{ url: 'https://x.com/test', platform: 'twitter' }] }}
+          isOwnProfile={true}
+          photos={mockPhotos}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 編集モードを開く
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      await user.click(editButton)
+
+      // 削除ボタンをクリック
+      const deleteButton = screen.getByTestId('delete-sns-link-0')
+      await user.click(deleteButton)
+
+      // 入力欄が削除される
+      expect(screen.queryByTestId('sns-url-input-0')).not.toBeInTheDocument()
     })
   })
 

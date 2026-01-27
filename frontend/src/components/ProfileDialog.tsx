@@ -14,7 +14,9 @@ import {
 } from './ui/pagination'
 import { User, X as XIcon } from 'lucide-react'
 import { useProfileEdit } from '../hooks/useProfileEdit'
+import { useAuth } from '../contexts/AuthContext'
 import { getAuthHeaders } from '../utils/apiClient'
+import ProfileImageCropper from './ProfileImageCropper'
 
 // API Endpoints
 const API_FAVORITES = '/api/v1/users/me/favorites'
@@ -37,6 +39,9 @@ const SNS_PLATFORMS = [
 
 // ページネーション定数
 const PHOTOS_PER_PAGE = 20
+
+// Issue#37: SNSリンク編集機能の定数
+const MAX_SNS_LINKS = 3
 
 interface SnsLink {
   url: string
@@ -191,6 +196,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   }, [onPhotoClick])
 
   // カスタムフックを使用してプロフィール編集機能を取得
+  // Issue#36: AuthContextからupdateUserを取得
+  const { updateUser } = useAuth()
+
   const {
     isEditingUsername,
     editingUsername,
@@ -203,12 +211,27 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     fileInputRef,
     handleProfileImageSelect,
     handleDeleteProfileImage,
+    // Issue#35: トリミング機能
+    isCropperOpen,
+    cropperImageSrc,
+    handleCropComplete,
+    handleCropCancel,
+    // Issue#37: SNSリンク編集関連
     isEditingSnsLinks,
-    setIsEditingSnsLinks,
+    editingSnsLinks,
+    handleStartEditSnsLinks,
+    handleCancelEditSnsLinks,
+    handleAddSnsLink,
+    handleRemoveSnsLink,
+    handleUpdateSnsLink,
     handleSaveSnsLinks,
   } = useProfileEdit({
     initialUsername: userProfile.username,
     snsLinks: userProfile.snsLinks,
+    // Issue#36: ユーザー名更新成功時にAuthContextを更新
+    onUsernameUpdated: (newUsername) => {
+      updateUser({ username: newUsername })
+    },
   })
 
   // ページネーション計算
@@ -346,30 +369,58 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
               size="sm"
               className="mt-2"
               data-testid="edit-sns-links-button"
-              onClick={() => setIsEditingSnsLinks(true)}
+              onClick={handleStartEditSnsLinks}
             >
               SNSリンクを編集
             </Button>
           )}
 
-          {/* SNSリンク編集モード */}
+          {/* Issue#37: SNSリンク編集モード */}
           {isOwnProfile && isEditingSnsLinks && (
             <div className="w-full max-w-md mt-4 space-y-4">
-              <div className="flex gap-2">
-                <select
-                  data-testid="sns-platform-select"
-                  className="flex-1 border rounded-md px-3 py-2"
+              {editingSnsLinks.map((link, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <select
+                    data-testid={`sns-platform-select-${index}`}
+                    className="w-32 border rounded-md px-3 py-2"
+                    value={link.platform || 'twitter'}
+                    onChange={(e) => handleUpdateSnsLink(index, 'platform', e.target.value)}
+                  >
+                    {SNS_PLATFORMS.map((platform) => (
+                      <option key={platform.value} value={platform.value}>
+                        {platform.label}
+                      </option>
+                    ))}
+                  </select>
+                  <Input
+                    data-testid={`sns-url-input-${index}`}
+                    placeholder="https://..."
+                    className="flex-1"
+                    value={link.url}
+                    onChange={(e) => handleUpdateSnsLink(index, 'url', e.target.value)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    data-testid={`delete-sns-link-${index}`}
+                    onClick={() => handleRemoveSnsLink(index)}
+                  >
+                    削除
+                  </Button>
+                </div>
+              ))}
+              {editingSnsLinks.length < MAX_SNS_LINKS && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid="add-sns-link-button"
+                  onClick={handleAddSnsLink}
                 >
-                  {SNS_PLATFORMS.map((platform) => (
-                    <option key={platform.value} value={platform.value}>
-                      {platform.label}
-                    </option>
-                  ))}
-                </select>
-                <Input placeholder="URL" className="flex-1" />
-              </div>
+                  リンクを追加
+                </Button>
+              )}
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" size="sm" onClick={() => setIsEditingSnsLinks(false)}>
+                <Button variant="outline" size="sm" onClick={handleCancelEditSnsLinks}>
                   キャンセル
                 </Button>
                 <Button size="sm" data-testid="save-sns-links-button" onClick={handleSaveSnsLinks}>
@@ -539,6 +590,14 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           )}
         </Tabs>
 
+        {/* Issue#35: トリミングモーダル */}
+        {isCropperOpen && (
+          <ProfileImageCropper
+            imageSrc={cropperImageSrc}
+            onCropComplete={handleCropComplete}
+            onCancel={handleCropCancel}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )
