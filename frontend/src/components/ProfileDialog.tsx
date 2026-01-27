@@ -267,7 +267,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         {/* プロフィールセクション */}
         <div className="flex flex-col mb-6">
           {/* プロフィール画像エリア */}
-          <div className="flex items-start gap-4 mb-4">
+          <div className="flex items-start gap-16 mb-4 justify-center">
             {/* 左側：プロフィール画像 */}
             <div className="shrink-0">
               {displayProfileImageUrl ? (
@@ -330,14 +330,15 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
           {/* ユーザー名 */}
           <div className="flex flex-col gap-2 mb-2">
-            <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700">アカウント名</label>
+            <div className="flex items-center justify-between gap-2">
               {isEditingUsername ? (
-                <div className="flex items-center gap-2">
+                <>
                   <Input
                     data-testid="username-input"
                     value={editingUsername}
                     onChange={(e) => handleUsernameChange(e.target.value)}
-                    className="w-48"
+                    className="flex-1"
                     autoFocus
                   />
                   <Button
@@ -348,7 +349,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                   >
                     保存
                   </Button>
-                </div>
+                </>
               ) : (
                 <>
                   <h2 className="text-2xl font-bold">{userProfile.username}</h2>
@@ -384,15 +385,16 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
           {/* SNSリンク編集ボタン（自分のプロフィールのみ） */}
           {isOwnProfile && !isEditingSnsLinks && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-2 self-start"
-              data-testid="edit-sns-links-button"
-              onClick={handleStartEditSnsLinks}
-            >
-              SNSリンクを編集
-            </Button>
+            <div className="flex justify-center mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                data-testid="edit-sns-links-button"
+                onClick={handleStartEditSnsLinks}
+              >
+                SNSリンクを編集
+              </Button>
+            </div>
           )}
 
           {/* Issue#37: SNSリンク編集モード */}
