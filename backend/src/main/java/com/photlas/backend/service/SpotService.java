@@ -43,9 +43,20 @@ public class SpotService {
                                        List<String> timesOfDay, List<String> weathers) {
         logger.info("Getting spots within bounds: north={}, south={}, east={}, west={}", north, south, east, west);
 
+        // null/空リストをセンチネル値に変換（PostgreSQLのIN句で型推論問題を回避）
+        // センチネル値: -1 (Integer) / "__NONE__" (String) - これらが含まれる場合はフィルタをスキップ
+        List<Integer> safeSubjectCategories = (subjectCategories == null || subjectCategories.isEmpty())
+            ? List.of(-1) : subjectCategories;
+        List<Integer> safeMonths = (months == null || months.isEmpty())
+            ? List.of(-1) : months;
+        List<String> safeTimesOfDay = (timesOfDay == null || timesOfDay.isEmpty())
+            ? List.of("__NONE__") : timesOfDay;
+        List<String> safeWeathers = (weathers == null || weathers.isEmpty())
+            ? List.of("__NONE__") : weathers;
+
         // リポジトリから集計結果を取得
         List<Object[]> results = spotRepository.findSpotsWithFilters(
-                north, south, east, west, subjectCategories, months, timesOfDay, weathers
+                north, south, east, west, safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers
         );
 
         logger.info("Found {} spots", results.size());
