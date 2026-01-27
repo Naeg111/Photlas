@@ -52,8 +52,14 @@ interface UseProfileEditReturn {
   isUploading: boolean
   uploadSuccess: boolean
   fileInputRef: React.RefObject<HTMLInputElement | null>
-  handleProfileImageSelect: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>
+  handleProfileImageSelect: (event: React.ChangeEvent<HTMLInputElement>) => void
   handleDeleteProfileImage: () => Promise<void>
+
+  // Issue#35: トリミング機能
+  isCropperOpen: boolean
+  cropperImageSrc: string
+  handleCropComplete: (croppedBlob: Blob) => Promise<void>
+  handleCropCancel: () => void
 
   // SNSリンク
   isEditingSnsLinks: boolean
@@ -86,6 +92,10 @@ export const useProfileEdit = ({
   const [isUploading, setIsUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Issue#35: トリミング機能の状態
+  const [isCropperOpen, setIsCropperOpen] = useState(false)
+  const [cropperImageSrc, setCropperImageSrc] = useState('')
 
   // SNSリンク編集の状態
   // Issue#37: 編集中のSNSリンクをステートで管理
@@ -165,15 +175,32 @@ export const useProfileEdit = ({
   }, [editingUsername, getAuthToken, onUsernameUpdated])
 
   /**
-   * プロフィール画像を選択してアップロード
+   * Issue#35: プロフィール画像を選択してトリミングモーダルを開く
    */
   const handleProfileImageSelect = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
+    (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0]
       if (!file) return
 
+      // FileReaderで画像をData URLに変換
+      const reader = new FileReader()
+      reader.onload = () => {
+        setCropperImageSrc(reader.result as string)
+        setIsCropperOpen(true)
+      }
+      reader.readAsDataURL(file)
+    },
+    []
+  )
+
+  /**
+   * Issue#35: トリミング完了後のアップロード処理
+   */
+  const handleCropComplete = useCallback(
+    async (croppedBlob: Blob) => {
       setIsUploading(true)
       setUploadSuccess(false)
+      setIsCropperOpen(false)
 
       try {
         const presignedResponse = await fetch(API_ENDPOINTS.PROFILE_IMAGE_PRESIGNED_URL, {
@@ -189,7 +216,7 @@ export const useProfileEdit = ({
 
         await fetch(uploadUrl, {
           method: 'PUT',
-          body: file,
+          body: croppedBlob,
         })
 
         await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
@@ -207,6 +234,14 @@ export const useProfileEdit = ({
     },
     []
   )
+
+  /**
+   * Issue#35: トリミングをキャンセル
+   */
+  const handleCropCancel = useCallback(() => {
+    setIsCropperOpen(false)
+    setCropperImageSrc('')
+  }, [])
 
   /**
    * プロフィール画像を削除
@@ -300,6 +335,12 @@ export const useProfileEdit = ({
     fileInputRef,
     handleProfileImageSelect,
     handleDeleteProfileImage,
+
+    // Issue#35: トリミング機能
+    isCropperOpen,
+    cropperImageSrc,
+    handleCropComplete,
+    handleCropCancel,
 
     // SNSリンク
     isEditingSnsLinks,

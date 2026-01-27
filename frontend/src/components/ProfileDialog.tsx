@@ -16,6 +16,7 @@ import { User, X as XIcon } from 'lucide-react'
 import { useProfileEdit } from '../hooks/useProfileEdit'
 import { useAuth } from '../contexts/AuthContext'
 import { getAuthHeaders } from '../utils/apiClient'
+import ProfileImageCropper from './ProfileImageCropper'
 
 // API Endpoints
 const API_FAVORITES = '/api/v1/users/me/favorites'
@@ -210,6 +211,11 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     fileInputRef,
     handleProfileImageSelect,
     handleDeleteProfileImage,
+    // Issue#35: トリミング機能
+    isCropperOpen,
+    cropperImageSrc,
+    handleCropComplete,
+    handleCropCancel,
     // Issue#37: SNSリンク編集関連
     isEditingSnsLinks,
     editingSnsLinks,
@@ -584,6 +590,14 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           )}
         </Tabs>
 
+        {/* Issue#35: トリミングモーダル */}
+        {isCropperOpen && (
+          <ProfileImageCropper
+            imageSrc={cropperImageSrc}
+            onCropComplete={handleCropComplete}
+            onCancel={handleCropCancel}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )
