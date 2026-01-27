@@ -70,7 +70,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                 SELECT p2.s3_object_key
                 FROM photos p2
                 WHERE p2.spot_id = s.spot_id
-                  AND (:months IS NULL OR MONTH(p2.shot_at) IN (:months))
+                  AND (:months IS NULL OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
                   AND (:timesOfDay IS NULL OR p2.time_of_day IN (:timesOfDay))
                   AND (:weathers IS NULL OR p2.weather IN (:weathers))
                   AND (:subjectCategories IS NULL OR EXISTS (
@@ -85,7 +85,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         INNER JOIN photos p ON s.spot_id = p.spot_id
         WHERE s.latitude BETWEEN :south AND :north
           AND s.longitude BETWEEN :west AND :east
-          AND (:months IS NULL OR MONTH(p.shot_at) IN (:months))
+          AND (:months IS NULL OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
           AND (:timesOfDay IS NULL OR p.time_of_day IN (:timesOfDay))
           AND (:weathers IS NULL OR p.weather IN (:weathers))
           AND (:subjectCategories IS NULL OR EXISTS (
