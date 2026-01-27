@@ -233,6 +233,11 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     handleRemoveSnsLink,
     handleUpdateSnsLink,
     handleSaveSnsLinks,
+    // 統一保存機能
+    hasUnsavedChanges,
+    isSaving,
+    handleSaveAllChanges,
+    handleCancelAllChanges,
   } = useProfileEdit({
     initialUsername: userProfile.username,
     snsLinks: userProfile.snsLinks,
@@ -333,23 +338,13 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             <label className="text-sm font-medium text-gray-700">アカウント名</label>
             <div className="flex items-center justify-between gap-2">
               {isEditingUsername ? (
-                <>
-                  <Input
-                    data-testid="username-input"
-                    value={editingUsername}
-                    onChange={(e) => handleUsernameChange(e.target.value)}
-                    className="flex-1"
-                    autoFocus
-                  />
-                  <Button
-                    size="sm"
-                    variant="default"
-                    data-testid="save-username-button"
-                    onClick={handleSaveUsername}
-                  >
-                    保存
-                  </Button>
-                </>
+                <Input
+                  data-testid="username-input"
+                  value={editingUsername}
+                  onChange={(e) => handleUsernameChange(e.target.value)}
+                  className="flex-1"
+                  autoFocus
+                />
               ) : (
                 <>
                   <h2 className="text-2xl font-bold">{userProfile.username}</h2>
@@ -441,14 +436,26 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                   リンクを追加
                 </Button>
               )}
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" size="sm" onClick={handleCancelEditSnsLinks}>
-                  キャンセル
-                </Button>
-                <Button size="sm" data-testid="save-sns-links-button" onClick={handleSaveSnsLinks}>
-                  保存
-                </Button>
-              </div>
+            </div>
+          )}
+
+          {/* 統一保存ボタン（編集中の場合のみ表示） */}
+          {isOwnProfile && hasUnsavedChanges && (
+            <div className="flex justify-center gap-4 mt-4">
+              <Button
+                variant="outline"
+                onClick={handleCancelAllChanges}
+                disabled={isSaving}
+              >
+                キャンセル
+              </Button>
+              <Button
+                data-testid="save-all-changes-button"
+                onClick={handleSaveAllChanges}
+                disabled={isSaving}
+              >
+                {isSaving ? '保存中...' : '保存'}
+              </Button>
             </div>
           )}
         </div>

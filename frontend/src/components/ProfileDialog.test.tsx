@@ -617,7 +617,7 @@ describe('ProfileDialog', () => {
       const editButton = screen.getByTestId('edit-sns-links-button')
       await user.click(editButton)
 
-      const saveButton = screen.getByTestId('save-sns-links-button')
+      const saveButton = screen.getByTestId('save-all-changes-button')
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -658,7 +658,7 @@ describe('ProfileDialog', () => {
       await user.type(urlInput, newUrl)
 
       // 保存
-      const saveButton = screen.getByTestId('save-sns-links-button')
+      const saveButton = screen.getByTestId('save-all-changes-button')
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -754,7 +754,7 @@ describe('ProfileDialog', () => {
       await user.clear(input)
       await user.type(input, 'newusername')
 
-      const saveButton = screen.getByTestId('save-username-button')
+      const saveButton = screen.getByTestId('save-all-changes-button')
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -785,7 +785,7 @@ describe('ProfileDialog', () => {
       const input = screen.getByTestId('username-input')
       await user.clear(input)
 
-      const saveButton = screen.getByTestId('save-username-button')
+      const saveButton = screen.getByTestId('save-all-changes-button')
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -814,7 +814,7 @@ describe('ProfileDialog', () => {
       await user.clear(input)
       await user.type(input, 'a'.repeat(31))
 
-      const saveButton = screen.getByTestId('save-username-button')
+      const saveButton = screen.getByTestId('save-all-changes-button')
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -849,7 +849,7 @@ describe('ProfileDialog', () => {
       await user.clear(input)
       await user.type(input, 'existinguser')
 
-      const saveButton = screen.getByTestId('save-username-button')
+      const saveButton = screen.getByTestId('save-all-changes-button')
       await user.click(saveButton)
 
       await waitFor(() => {

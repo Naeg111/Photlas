@@ -37,7 +37,7 @@ interface UseProfileEditProps {
   initialUsername: string
   snsLinks: SnsLink[]
   onUsernameUpdated?: (newUsername: string) => void
-  onImageUpdated?: (previewUrl: string) => void
+  onImageUpdated?: (previewUrl: string | null) => void
   onSnsLinksUpdated?: (newLinks: SnsLink[]) => void
 }
 
@@ -72,6 +72,12 @@ interface UseProfileEditReturn {
   handleRemoveSnsLink: (index: number) => void
   handleUpdateSnsLink: (index: number, field: 'platform' | 'url', value: string) => void
   handleSaveSnsLinks: () => Promise<void>
+
+  // 統一保存機能
+  hasUnsavedChanges: boolean
+  isSaving: boolean
+  handleSaveAllChanges: () => Promise<void>
+  handleCancelAllChanges: () => void
 }
 
 /**
@@ -105,6 +111,9 @@ export const useProfileEdit = ({
   // Issue#37: 編集中のSNSリンクをステートで管理
   const [isEditingSnsLinks, setIsEditingSnsLinks] = useState(false)
   const [editingSnsLinks, setEditingSnsLinks] = useState<SnsLink[]>([])
+
+  // 統一保存機能の状態
+  const [isSaving, setIsSaving] = useState(false)
 
   /**
    * ユーザー名編集を開始
@@ -255,10 +264,13 @@ export const useProfileEdit = ({
    * プロフィール画像を削除
    */
   const handleDeleteProfileImage = useCallback(async () => {
+    // ローカルステートをクリアして即座にUIを更新
+    onImageUpdated?.(null)
+
     await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
       method: 'DELETE',
     })
-  }, [])
+  }, [onImageUpdated])
 
   /**
    * Issue#37: SNSリンク編集を開始
@@ -333,6 +345,100 @@ export const useProfileEdit = ({
     setIsEditingSnsLinks(false)
   }, [editingSnsLinks, getAuthToken, onSnsLinksUpdated])
 
+  /**
+   * 未保存の変更があるかどうか
+   * ユーザー名編集中またはSNSリンク編集中の場合にtrue
+   */
+  const hasUnsavedChanges = isEditingUsername || isEditingSnsLinks
+
+  /**
+   * 統一保存機能：アカウント名とSNSリンクを一括保存
+   */
+  const handleSaveAllChanges = useCallback(async () => {
+    setIsSaving(true)
+
+    try {
+      const token = getAuthToken()
+      const headers: HeadersInit = { 'Content-Type': 'application/json' }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      // ユーザー名を保存（編集中の場合のみ）
+      if (isEditingUsername) {
+        const validationError = validateUsername(editingUsername)
+        if (validationError) {
+          setUsernameError(validationError)
+          setIsSaving(false)
+          return
+        }
+
+        const usernameResponse = await fetch(API_ENDPOINTS.USERNAME, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ username: editingUsername }),
+        })
+
+        if (!usernameResponse.ok) {
+          if (usernameResponse.status === HTTP_STATUS.CONFLICT) {
+            const data = await usernameResponse.json()
+            setUsernameError(data.message)
+            setIsSaving(false)
+            return
+          }
+          throw new Error(ERROR_MESSAGES.FAILED_TO_UPDATE_USERNAME)
+        }
+
+        setIsEditingUsername(false)
+        onUsernameUpdated?.(editingUsername)
+      }
+
+      // SNSリンクを保存（編集中の場合のみ）
+      if (isEditingSnsLinks) {
+        const linksToSave = editingSnsLinks.filter(link => link.url.trim() !== '')
+
+        const snsResponse = await fetch(API_ENDPOINTS.SNS_LINKS, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ snsLinks: linksToSave }),
+        })
+
+        if (snsResponse.ok) {
+          onSnsLinksUpdated?.(linksToSave)
+        }
+
+        setIsEditingSnsLinks(false)
+      }
+    } catch {
+      // エラー時の処理
+    } finally {
+      setIsSaving(false)
+    }
+  }, [
+    getAuthToken,
+    isEditingUsername,
+    editingUsername,
+    onUsernameUpdated,
+    isEditingSnsLinks,
+    editingSnsLinks,
+    onSnsLinksUpdated,
+  ])
+
+  /**
+   * 全ての編集をキャンセル
+   */
+  const handleCancelAllChanges = useCallback(() => {
+    if (isEditingUsername) {
+      setIsEditingUsername(false)
+      setEditingUsername(initialUsername)
+      setUsernameError('')
+    }
+    if (isEditingSnsLinks) {
+      setIsEditingSnsLinks(false)
+      setEditingSnsLinks([])
+    }
+  }, [isEditingUsername, isEditingSnsLinks, initialUsername])
+
   return {
     // ユーザー名編集
     isEditingUsername,
@@ -364,5 +470,11 @@ export const useProfileEdit = ({
     handleRemoveSnsLink,
     handleUpdateSnsLink,
     handleSaveSnsLinks,
+
+    // 統一保存機能
+    hasUnsavedChanges,
+    isSaving,
+    handleSaveAllChanges,
+    handleCancelAllChanges,
   }
 }
