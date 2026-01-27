@@ -172,8 +172,8 @@ public class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("バリデーションエラー - email重複")
-    void testRegisterUser_DuplicateEmail_ReturnsBadRequest() throws Exception {
+    @DisplayName("コンフリクト - email重複")
+    void testRegisterUser_DuplicateEmail_ReturnsConflict() throws Exception {
         createExistingUser(EXISTING_USERNAME, TEST_EMAIL);
 
         RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
@@ -181,7 +181,7 @@ public class AuthControllerTest {
         mockMvc.perform(post(REGISTER_ENDPOINT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isConflict())
                 .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_EMAIL)));
     }
