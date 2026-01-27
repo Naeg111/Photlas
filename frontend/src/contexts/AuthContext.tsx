@@ -1,3 +1,8 @@
+/**
+ * 認証コンテキスト
+ * Issue#5: ログイン・ログアウト機能
+ * Issue#36: ユーザー情報更新機能追加
+ */
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 
 interface User {
@@ -12,6 +17,7 @@ interface AuthContextType {
   login: (user: User, token: string, remember: boolean) => void
   logout: () => void
   getAuthToken: () => string | null
+  updateUser: (updatedUser: Partial<User>) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -65,12 +71,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
   }
 
+  /**
+   * Issue#36: ユーザー情報を部分更新
+   * ログイン中のユーザー情報を更新し、ストレージにも保存する
+   */
+  const updateUser = (updatedUser: Partial<User>) => {
+    if (!user) return
+
+    const newUser = { ...user, ...updatedUser }
+    setUser(newUser)
+
+    // ストレージも更新（localStorageかsessionStorageのどちらを使っているか確認）
+    const storage = localStorage.getItem('auth_token') ? localStorage : sessionStorage
+    storage.setItem('auth_user', JSON.stringify(newUser))
+  }
+
   const value: AuthContextType = {
     user,
     isAuthenticated,
     login,
     logout,
-    getAuthToken
+    getAuthToken,
+    updateUser
   }
 
   return (
