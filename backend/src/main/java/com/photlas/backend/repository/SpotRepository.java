@@ -70,10 +70,10 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                 SELECT p2.s3_object_key
                 FROM photos p2
                 WHERE p2.spot_id = s.spot_id
-                  AND (:months IS NULL OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
-                  AND (:timesOfDay IS NULL OR p2.time_of_day IN (:timesOfDay))
-                  AND (:weathers IS NULL OR p2.weather IN (:weathers))
-                  AND (:subjectCategories IS NULL OR EXISTS (
+                  AND (-1 IN (:months) OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
+                  AND ('__NONE__' IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
+                  AND ('__NONE__' IN (:weathers) OR p2.weather IN (:weathers))
+                  AND (-1 IN (:subjectCategories) OR EXISTS (
                       SELECT 1 FROM photo_categories pc2
                       WHERE pc2.photo_id = p2.photo_id
                         AND pc2.category_id IN (:subjectCategories)
@@ -85,10 +85,10 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         INNER JOIN photos p ON s.spot_id = p.spot_id
         WHERE s.latitude BETWEEN :south AND :north
           AND s.longitude BETWEEN :west AND :east
-          AND (:months IS NULL OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
-          AND (:timesOfDay IS NULL OR p.time_of_day IN (:timesOfDay))
-          AND (:weathers IS NULL OR p.weather IN (:weathers))
-          AND (:subjectCategories IS NULL OR EXISTS (
+          AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
+          AND ('__NONE__' IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
+          AND ('__NONE__' IN (:weathers) OR p.weather IN (:weathers))
+          AND (-1 IN (:subjectCategories) OR EXISTS (
               SELECT 1 FROM photo_categories pc
               WHERE pc.photo_id = p.photo_id
                 AND pc.category_id IN (:subjectCategories)
