@@ -21,6 +21,8 @@ services:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/photlas-backend:${IMAGE_TAG:-latest}
     container_name: photlas-backend-staging
     restart: unless-stopped
+    ports:
+      - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=staging
       - SPRING_DATASOURCE_URL=${DATABASE_URL}
