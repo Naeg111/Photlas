@@ -212,6 +212,13 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       const uniqueEmail = generateUniqueEmail('flow-token-delete')
       const password = VALID_PASSWORD
 
+      // 前のテストのストレージ状態をクリア
+      await page.goto('/')
+      await page.evaluate(() => {
+        localStorage.clear()
+        sessionStorage.clear()
+      })
+
       // ユーザー作成
       await openSignUpDialog(page)
       await fillValidFormAndSubmit(page, uniqueEmail, password)
@@ -222,12 +229,7 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       // ログイン
       await openLoginDialog(page)
       await performLogin(page, uniqueEmail, password, true)
-      // ログイン成功またはエラーを待つ
-      await expect(
-        page.getByText('ログインしました').or(page.getByText('メールアドレスまたはパスワードが正しくありません'))
-      ).toBeVisible({ timeout: 10000 })
-      // ログインが成功していることを確認
-      await expect(page.getByText('ログインしました')).toBeVisible({ timeout: 1000 })
+      await expect(page.getByText('ログインしました')).toBeVisible({ timeout: 10000 })
 
       // トークンが保存されていることを確認
       let token = await page.evaluate(() => localStorage.getItem('auth_token'))
