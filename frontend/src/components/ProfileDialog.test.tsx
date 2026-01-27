@@ -5,6 +5,7 @@ import ProfileDialog from './ProfileDialog'
 
 /**
  * Issue#18: マイページ機能 (UI + API)
+ * Issue#36: ユーザー名更新機能
  * TDD Red段階: ProfileDialogコンポーネントのテストケース定義
  *
  * UI要件:
@@ -15,6 +16,16 @@ import ProfileDialog from './ProfileDialog'
  * - 写真グリッド表示
  * - プロフィール編集機能（自分の場合のみ）
  */
+
+// Issue#36: AuthContextのモック
+const mockUpdateUser = vi.fn()
+const mockGetAuthToken = vi.fn(() => 'mock-token')
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    updateUser: mockUpdateUser,
+    getAuthToken: mockGetAuthToken,
+  }),
+}))
 
 describe('ProfileDialog', () => {
   const mockOnClose = vi.fn()
