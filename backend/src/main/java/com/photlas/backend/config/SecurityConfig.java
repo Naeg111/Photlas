@@ -27,7 +27,7 @@ public class SecurityConfig {
     // エンドポイントパス定数
     private static final String AUTH_ENDPOINT_PATTERN = "/api/v1/auth/**";
     private static final String HEALTH_ENDPOINT = "/api/v1/health";
-    private static final String SPOTS_ENDPOINT = "/api/v1/spots";
+    private static final String SPOTS_ENDPOINT_PATTERN = "/api/v1/spots/**";
     private static final String CATEGORIES_ENDPOINT = "/api/v1/categories";
     private static final String PHOTOS_ENDPOINT_PATTERN = "/api/v1/photos/**";
     private static final String USER_PROFILE_PATTERN = "/api/v1/users/\\d+";
@@ -62,7 +62,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers(AUTH_ENDPOINT_PATTERN).permitAll()     // 認証エンドポイント
                 .requestMatchers(HEALTH_ENDPOINT).permitAll()            // ヘルスチェック
-                .requestMatchers(SPOTS_ENDPOINT).permitAll()             // スポット一覧
+                .requestMatchers(SPOTS_ENDPOINT_PATTERN).permitAll()     // スポット関連（一覧・詳細）
                 .requestMatchers(CATEGORIES_ENDPOINT).permitAll()        // カテゴリ一覧
                 .requestMatchers(HttpMethod.GET, PHOTOS_ENDPOINT_PATTERN).permitAll()  // 写真閲覧
                 .requestMatchers(new RegexRequestMatcher(USER_PROFILE_PATTERN, HttpMethod.GET.name())).permitAll()  // ユーザープロフィール閲覧
