@@ -56,7 +56,7 @@ export function LoginDialog({
       if (response.ok) {
         const data = await response.json()
         login(
-          { email: data.email, username: data.username, role: data.role || 'user' },
+          { email: data.user.email, username: data.user.username, role: data.user.role || 'user' },
           data.token,
           rememberMe
         )

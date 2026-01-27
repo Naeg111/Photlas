@@ -37,6 +37,8 @@ interface UseProfileEditProps {
   initialUsername: string
   snsLinks: SnsLink[]
   onUsernameUpdated?: (newUsername: string) => void
+  onImageUpdated?: (previewUrl: string) => void
+  onSnsLinksUpdated?: (newLinks: SnsLink[]) => void
 }
 
 interface UseProfileEditReturn {
@@ -81,6 +83,8 @@ export const useProfileEdit = ({
   initialUsername,
   snsLinks,
   onUsernameUpdated,
+  onImageUpdated,
+  onSnsLinksUpdated,
 }: UseProfileEditProps): UseProfileEditReturn => {
   const { getAuthToken } = useAuth()
   // ユーザー名編集の状態
@@ -202,6 +206,10 @@ export const useProfileEdit = ({
       setUploadSuccess(false)
       setIsCropperOpen(false)
 
+      // プレビュー用のBlobURLを即座に生成して表示
+      const previewUrl = URL.createObjectURL(croppedBlob)
+      onImageUpdated?.(previewUrl)
+
       try {
         const presignedResponse = await fetch(API_ENDPOINTS.PROFILE_IMAGE_PRESIGNED_URL, {
           method: 'POST',
@@ -232,7 +240,7 @@ export const useProfileEdit = ({
         setIsUploading(false)
       }
     },
-    []
+    [onImageUpdated]
   )
 
   /**
@@ -311,14 +319,19 @@ export const useProfileEdit = ({
       headers['Authorization'] = `Bearer ${token}`
     }
 
-    await fetch(API_ENDPOINTS.SNS_LINKS, {
+    const response = await fetch(API_ENDPOINTS.SNS_LINKS, {
       method: 'PUT',
       headers,
       body: JSON.stringify({ snsLinks: linksToSave }),
     })
 
+    if (response.ok) {
+      // 保存成功時にコールバックを呼び出し、表示を更新
+      onSnsLinksUpdated?.(linksToSave)
+    }
+
     setIsEditingSnsLinks(false)
-  }, [editingSnsLinks, getAuthToken])
+  }, [editingSnsLinks, getAuthToken, onSnsLinksUpdated])
 
   return {
     // ユーザー名編集

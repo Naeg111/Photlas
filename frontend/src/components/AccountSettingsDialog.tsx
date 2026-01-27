@@ -222,11 +222,11 @@ export function AccountSettingsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
+        <div className="space-y-6 mt-3">
           {/* メールアドレス変更 */}
           <div className="space-y-4">
             <h3 className="font-medium">メールアドレスの変更</h3>
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 mt-5">
               <div>
                 <Label htmlFor="current-email">現在のメールアドレス</Label>
                 <Input
@@ -274,7 +274,7 @@ export function AccountSettingsDialog({
           {/* パスワード変更 */}
           <div className="space-y-4">
             <h3 className="font-medium">パスワードの変更</h3>
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 mt-5">
               <div>
                 <Label htmlFor="new-password">新しいパスワード</Label>
                 <Input

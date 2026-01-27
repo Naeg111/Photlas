@@ -141,6 +141,14 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(1)
 
+  // プロフィール画像とSNSリンクのローカルステート（即時反映用）
+  const [localProfileImageUrl, setLocalProfileImageUrl] = useState<string | null>(null)
+  const [localSnsLinks, setLocalSnsLinks] = useState<SnsLink[] | null>(null)
+
+  // 実際に表示する値（ローカルステートがあればそれを優先）
+  const displayProfileImageUrl = localProfileImageUrl ?? userProfile.profileImageUrl
+  const displaySnsLinks = localSnsLinks ?? userProfile.snsLinks
+
   // Issue#30: お気に入り一覧状態
   const [favorites, setFavorites] = useState<FavoritePhoto[]>([])
   const [favoritesLoading, setFavoritesLoading] = useState(false)
@@ -232,6 +240,14 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     onUsernameUpdated: (newUsername) => {
       updateUser({ username: newUsername })
     },
+    // プロフィール画像更新時にローカルステートを更新
+    onImageUpdated: (previewUrl) => {
+      setLocalProfileImageUrl(previewUrl)
+    },
+    // SNSリンク保存成功時にローカルステートを更新
+    onSnsLinksUpdated: (newLinks) => {
+      setLocalSnsLinks(newLinks)
+    },
   })
 
   // ページネーション計算
@@ -252,9 +268,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         <div className="flex flex-col items-center mb-6">
           {/* プロフィール画像 */}
           <div className="relative mb-4">
-            {userProfile.profileImageUrl ? (
+            {displayProfileImageUrl ? (
               <img
-                src={userProfile.profileImageUrl}
+                src={displayProfileImageUrl}
                 alt={userProfile.username}
                 className="w-28 h-28 rounded-full object-cover"
               />
@@ -286,7 +302,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
               >
                 画像を選択
               </Button>
-              {userProfile.profileImageUrl && (
+              {displayProfileImageUrl && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -344,9 +360,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           </div>
 
           {/* SNSリンク */}
-          {!isEditingSnsLinks && userProfile.snsLinks.length > 0 && (
+          {!isEditingSnsLinks && displaySnsLinks.length > 0 && (
             <div className="flex gap-4 mt-2">
-              {userProfile.snsLinks.map((link, index) => (
+              {displaySnsLinks.map((link, index) => (
                 <a
                   key={index}
                   href={link.url}
@@ -444,7 +460,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             )}
           </TabsList>
 
-          <TabsContent value="posts" className="mt-4">
+          <TabsContent value="posts" className="mt-4 data-[state=inactive]:hidden" forceMount>
             {/* 写真グリッド */}
             <div
               className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
@@ -507,7 +523,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           </TabsContent>
 
           {isOwnProfile && (
-            <TabsContent value="favorites" className="mt-4">
+            <TabsContent value="favorites" className="mt-4 data-[state=inactive]:hidden" forceMount>
               {/* Issue#30: お気に入り一覧 */}
               {favoritesLoading && (
                 <div
