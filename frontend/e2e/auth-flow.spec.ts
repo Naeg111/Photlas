@@ -59,7 +59,8 @@ async function performLogin(
   await page.getByPlaceholder('example@photlas.com').fill(email)
   await page.getByPlaceholder('パスワードを入力').fill(password)
   if (rememberMe) {
-    await page.getByRole('checkbox').check()
+    // ログインダイアログ内の「ログイン状態を保持する」チェックボックスを特定
+    await page.getByLabel('ログイン状態を保持する').check()
   }
   await page.getByRole('button', { name: 'ログイン', exact: true }).click()
 }
