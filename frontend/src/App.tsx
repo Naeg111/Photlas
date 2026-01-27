@@ -57,6 +57,9 @@ function MainContent() {
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null)
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>('')
 
+  // プロフィールダイアログの初期タブ
+  const [profileInitialTab, setProfileInitialTab] = useState<'posts' | 'favorites'>('posts')
+
   // カテゴリマップの取得
   useEffect(() => {
     const loadCategories = async () => {
@@ -107,6 +110,13 @@ function MainContent() {
 
   // マイページハンドラー
   const handleShowProfile = () => {
+    setProfileInitialTab('posts')
+    dialog.open('profile')
+  }
+
+  // 行きたいリスト（お気に入り）ハンドラー
+  const handleShowFavorites = () => {
+    setProfileInitialTab('favorites')
     dialog.open('profile')
   }
 
@@ -190,6 +200,7 @@ function MainContent() {
         {...dialog.getProps('topMenu')}
         isLoggedIn={!!user}
         onMyPageClick={handleShowProfile}
+        onFavoritesClick={handleShowFavorites}
         onAccountSettingsClick={() => dialog.open('accountSettings')}
         onTermsClick={() => dialog.open('terms')}
         onPrivacyClick={() => dialog.open('privacy')}
@@ -251,6 +262,7 @@ function MainContent() {
           onPhotoClick={() => {
             // TODO: 写真クリック時の処理
           }}
+          initialTab={profileInitialTab}
         />
       )}
 
