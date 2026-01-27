@@ -145,7 +145,7 @@ describe('LoginDialog', () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ email: 'test@example.com', username: 'testuser', token: 'test-token' }),
+        json: () => Promise.resolve({ user: { email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
       })
 
       render(<LoginDialog {...defaultProps} />)
@@ -171,7 +171,7 @@ describe('LoginDialog', () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ email: 'test@example.com', username: 'testuser', token: 'test-token', role: 'user' }),
+        json: () => Promise.resolve({ user: { email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
       })
 
       render(<LoginDialog {...defaultProps} />)
@@ -195,7 +195,7 @@ describe('LoginDialog', () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ email: 'test@example.com', username: 'testuser', token: 'test-token' }),
+        json: () => Promise.resolve({ user: { email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
       })
 
       render(<LoginDialog {...defaultProps} />)

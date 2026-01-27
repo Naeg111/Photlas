@@ -27,6 +27,10 @@ vi.mock('../contexts/AuthContext', () => ({
   }),
 }))
 
+// URL.createObjectURLのモック
+const mockCreateObjectURL = vi.fn(() => 'blob:mock-url')
+global.URL.createObjectURL = mockCreateObjectURL
+
 // Issue#35: react-easy-cropのモック
 vi.mock('react-easy-crop', () => ({
   default: ({ onCropComplete }: { onCropComplete: (croppedArea: unknown, croppedAreaPixels: unknown) => void }) => {
