@@ -265,72 +265,74 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         </DialogHeader>
 
         {/* プロフィールセクション */}
-        <div className="flex flex-col items-center mb-6">
-          {/* プロフィール画像 */}
-          <div className="relative mb-4">
-            {displayProfileImageUrl ? (
-              <img
-                src={displayProfileImageUrl}
-                alt={userProfile.username}
-                className="w-28 h-28 rounded-full object-cover"
-              />
-            ) : (
-              <Avatar className="w-28 h-28">
-                <AvatarFallback>
-                  <User data-testid="default-avatar-icon" className="w-14 h-14" />
-                </AvatarFallback>
-              </Avatar>
+        <div className="flex flex-col mb-6">
+          {/* プロフィール画像エリア */}
+          <div className="flex items-start gap-4 mb-4">
+            {/* 左側：プロフィール画像 */}
+            <div className="shrink-0">
+              {displayProfileImageUrl ? (
+                <img
+                  src={displayProfileImageUrl}
+                  alt={userProfile.username}
+                  className="w-28 h-28 rounded-full object-cover"
+                />
+              ) : (
+                <Avatar className="w-28 h-28">
+                  <AvatarFallback>
+                    <User data-testid="default-avatar-icon" className="w-14 h-14" />
+                  </AvatarFallback>
+                </Avatar>
+              )}
+            </div>
+
+            {/* 右側：画像選択・削除ボタン（自分のプロフィールのみ） */}
+            {isOwnProfile && (
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfileImageSelect}
+                  className="hidden"
+                  data-testid="profile-image-input"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  画像を選択
+                </Button>
+                {displayProfileImageUrl && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-500"
+                    data-testid="delete-profile-image-button"
+                    onClick={handleDeleteProfileImage}
+                  >
+                    画像を削除
+                  </Button>
+                )}
+                {isUploading && (
+                  <div data-testid="upload-progress" className="text-sm text-gray-500">
+                    アップロード中...
+                  </div>
+                )}
+                {uploadSuccess && (
+                  <div data-testid="upload-success" className="text-sm text-green-500">
+                    アップロード完了
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
-          {/* 画像を選択ボタン（自分のプロフィールのみ） */}
-          {isOwnProfile && (
-            <>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleProfileImageSelect}
-                className="hidden"
-                data-testid="profile-image-input"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                className="mb-2"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                画像を選択
-              </Button>
-              {displayProfileImageUrl && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mb-2 text-red-500"
-                  data-testid="delete-profile-image-button"
-                  onClick={handleDeleteProfileImage}
-                >
-                  画像を削除
-                </Button>
-              )}
-              {isUploading && (
-                <div data-testid="upload-progress" className="text-sm text-gray-500">
-                  アップロード中...
-                </div>
-              )}
-              {uploadSuccess && (
-                <div data-testid="upload-success" className="text-sm text-green-500">
-                  アップロード完了
-                </div>
-              )}
-            </>
-          )}
-
           {/* ユーザー名 */}
-          <div className="flex flex-col items-center gap-2 mb-2">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 mb-2">
+            <div className="flex items-center justify-between">
               {isEditingUsername ? (
-                <>
+                <div className="flex items-center gap-2">
                   <Input
                     data-testid="username-input"
                     value={editingUsername}
@@ -346,14 +348,16 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                   >
                     保存
                   </Button>
-                </>
+                </div>
               ) : (
-                <h2 className="text-2xl font-bold">{userProfile.username}</h2>
-              )}
-              {isOwnProfile && !isEditingUsername && (
-                <Button size="sm" variant="outline" onClick={handleUsernameEditClick}>
-                  変更
-                </Button>
+                <>
+                  <h2 className="text-2xl font-bold">{userProfile.username}</h2>
+                  {isOwnProfile && (
+                    <Button size="sm" variant="outline" onClick={handleUsernameEditClick}>
+                      変更
+                    </Button>
+                  )}
+                </>
               )}
             </div>
             {usernameError && <p className="text-sm text-red-500">{usernameError}</p>}
@@ -361,7 +365,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
           {/* SNSリンク */}
           {!isEditingSnsLinks && displaySnsLinks.length > 0 && (
-            <div className="flex gap-4 mt-2">
+            <div className="flex gap-4">
               {displaySnsLinks.map((link, index) => (
                 <a
                   key={index}
@@ -383,7 +387,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              className="mt-2"
+              className="mt-2 self-start"
               data-testid="edit-sns-links-button"
               onClick={handleStartEditSnsLinks}
             >

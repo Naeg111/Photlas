@@ -40,22 +40,19 @@ export function CategoryIcon({
     ),
     植物: (
       <svg
-        xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 512 512"
-        width="256"
-        height="256"
+        fill="currentColor"
+        className={className}
       >
-        <g fill="#000000">
-          <circle cx="256" cy="256" r="44" />
-          <circle cx="256" cy="124" r="66" />{" "}
-          <circle cx="256" cy="388" r="66" />{" "}
-          <circle cx="124" cy="256" r="66" />{" "}
-          <circle cx="388" cy="256" r="66" />{" "}
-          <circle cx="179" cy="179" r="55" />{" "}
-          <circle cx="333" cy="179" r="55" />{" "}
-          <circle cx="179" cy="333" r="55" />{" "}
-          <circle cx="333" cy="333" r="55" />{" "}
-        </g>
+        <circle cx="256" cy="256" r="44" />
+        <circle cx="256" cy="124" r="66" />
+        <circle cx="256" cy="388" r="66" />
+        <circle cx="124" cy="256" r="66" />
+        <circle cx="388" cy="256" r="66" />
+        <circle cx="179" cy="179" r="55" />
+        <circle cx="333" cy="179" r="55" />
+        <circle cx="179" cy="333" r="55" />
+        <circle cx="333" cy="333" r="55" />
       </svg>
     ),
     動物: (
@@ -82,24 +79,11 @@ export function CategoryIcon({
     ),
     バイク: (
       <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 512 512"
-        width="256"
-        height="256"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className={className}
       >
-        <g fill="#000000">
-          <path d="M256,50 C280,50 300,60 310,80 L360,60 L420,40 L440,70 L380,90 L440,120 L420,140 L360,110 C380,160 370,200 350,220 L365,280 L355,330 L310,400 C310,460 290,500 275,500 L237,500 C222,500 202,460 202,400 L155,330 L145,280 L160,220 C140,200 130,160 150,110 L90,140 L70,120 L130,90 L70,70 L90,40 L150,60 L200,80 C210,60 230,50 256,50 Z" />
-        </g>
-
-        <g fill="#FFFFFF">
-          <circle cx="256" cy="160" r="50" />
-          <rect x="200" y="240" width="112" height="6" rx="3" />
-          <rect x="210" y="260" width="92" height="6" rx="3" />
-          <rect x="220" y="280" width="72" height="6" rx="3" />
-          <rect x="180" y="340" width="8" height="40" />
-          <rect x="324" y="340" width="8" height="40" />
-          <rect x="254" y="440" width="4" height="60" />
-        </g>
+        <path d="M19.44 9.03L15.41 5H11v2h3.59l2 2H5c-2.8 0-5 2.2-5 5s2.2 5 5 5c2.46 0 4.45-1.69 4.9-4h1.65l2.77-2.77c-.21.54-.32 1.14-.32 1.77 0 2.8 2.2 5 5 5s5-2.2 5-5c0-2.65-1.97-4.77-4.56-4.97zM7.82 15C7.4 16.15 6.28 17 5 17c-1.63 0-3-1.37-3-3s1.37-3 3-3c1.28 0 2.4.85 2.82 2H5v2h2.82zM19 17c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" />
       </svg>
     ),
     鉄道: (
@@ -141,18 +125,13 @@ export function CategoryIcon({
     ),
     その他: (
       <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 512 512"
-        width="256"
-        height="256"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className={className}
       >
-        <circle cx="256" cy="256" r="230" fill="#000000" />
-
-        <g fill="#FFFFFF">
-          <circle cx="156" cy="256" r="28" />
-          <circle cx="256" cy="256" r="28" />
-          <circle cx="356" cy="256" r="28" />
-        </g>
+        <circle cx="6" cy="12" r="2" />
+        <circle cx="12" cy="12" r="2" />
+        <circle cx="18" cy="12" r="2" />
       </svg>
     ),
   };
