@@ -61,8 +61,13 @@ async function performLogin(
   if (rememberMe) {
     // ログインダイアログ内の「ログイン状態を保持する」チェックボックスを特定
     await page.getByLabel('ログイン状態を保持する').check()
+    // チェックボックス操作後に少し待機
+    await page.waitForTimeout(100)
   }
-  await page.getByRole('button', { name: 'ログイン', exact: true }).click()
+  // ログインボタンが有効になっていることを確認してからクリック
+  const loginButton = page.getByRole('button', { name: 'ログイン', exact: true })
+  await expect(loginButton).toBeEnabled()
+  await loginButton.click()
 }
 
 /**
@@ -217,7 +222,12 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       // ログイン
       await openLoginDialog(page)
       await performLogin(page, uniqueEmail, password, true)
-      await expect(page.getByText('ログインしました')).toBeVisible({ timeout: 10000 })
+      // ログイン成功またはエラーを待つ
+      await expect(
+        page.getByText('ログインしました').or(page.getByText('メールアドレスまたはパスワードが正しくありません'))
+      ).toBeVisible({ timeout: 10000 })
+      // ログインが成功していることを確認
+      await expect(page.getByText('ログインしました')).toBeVisible({ timeout: 1000 })
 
       // トークンが保存されていることを確認
       let token = await page.evaluate(() => localStorage.getItem('auth_token'))
