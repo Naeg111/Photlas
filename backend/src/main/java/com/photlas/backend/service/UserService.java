@@ -78,7 +78,7 @@ public class UserService {
 
     public RegisterResponse registerUser(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new ConflictException("このメールアドレスは既に登録されています");
         }
 
         String hashedPassword = passwordEncoder.encode(request.getPassword());

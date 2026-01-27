@@ -101,11 +101,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
      */
     private int determineRateLimit(String path) {
         if (isAuthEndpoint(path)) {
-            return RateLimitConfig.AUTH_RATE_LIMIT;
+            return RateLimitConfig.getAuthRateLimit();
         } else if (isPhotoEndpoint(path)) {
-            return RateLimitConfig.PHOTO_RATE_LIMIT;
+            return RateLimitConfig.getPhotoRateLimit();
         } else {
-            return RateLimitConfig.GENERAL_RATE_LIMIT;
+            return RateLimitConfig.getGeneralRateLimit();
         }
     }
 

@@ -6,6 +6,7 @@ import com.photlas.backend.dto.PasswordResetRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.RegisterResponse;
 import com.photlas.backend.dto.ResetPasswordRequest;
+import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +69,12 @@ public class AuthController {
         try {
             RegisterResponse response = userService.registerUser(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (ConflictException e) {
+            List<ErrorResponse.FieldError> fieldErrors = List.of(
+                new ErrorResponse.FieldError("email", request.getEmail(), e.getMessage())
+            );
+            ErrorResponse errorResponse = new ErrorResponse("Conflict", fieldErrors);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         } catch (IllegalArgumentException e) {
             List<ErrorResponse.FieldError> fieldErrors = List.of(
                 new ErrorResponse.FieldError("email", request.getEmail(), e.getMessage())

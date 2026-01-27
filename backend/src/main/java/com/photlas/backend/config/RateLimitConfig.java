@@ -2,6 +2,7 @@ package com.photlas.backend.config;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
@@ -14,18 +15,50 @@ import java.time.Duration;
 public class RateLimitConfig {
 
     /**
-     * 認証エンドポイントのレート制限: 10リクエスト/分
+     * 認証エンドポイントのレート制限（デフォルト: 10リクエスト/分）
      */
+    private static int authRateLimit = 10;
+
+    /**
+     * 写真エンドポイントのレート制限（デフォルト: 30リクエスト/分）
+     */
+    private static int photoRateLimit = 30;
+
+    /**
+     * 一般エンドポイントのレート制限（デフォルト: 60リクエスト/分）
+     */
+    private static int generalRateLimit = 60;
+
+    @Value("${rate-limit.auth:10}")
+    public void setAuthRateLimit(int limit) {
+        authRateLimit = limit;
+    }
+
+    @Value("${rate-limit.photo:30}")
+    public void setPhotoRateLimit(int limit) {
+        photoRateLimit = limit;
+    }
+
+    @Value("${rate-limit.general:60}")
+    public void setGeneralRateLimit(int limit) {
+        generalRateLimit = limit;
+    }
+
+    public static int getAuthRateLimit() {
+        return authRateLimit;
+    }
+
+    public static int getPhotoRateLimit() {
+        return photoRateLimit;
+    }
+
+    public static int getGeneralRateLimit() {
+        return generalRateLimit;
+    }
+
+    // レガシー定数（後方互換性のため）
     public static final int AUTH_RATE_LIMIT = 10;
-
-    /**
-     * 写真エンドポイントのレート制限: 30リクエスト/分
-     */
     public static final int PHOTO_RATE_LIMIT = 30;
-
-    /**
-     * 一般エンドポイントのレート制限: 60リクエスト/分
-     */
     public static final int GENERAL_RATE_LIMIT = 60;
 
     /**
