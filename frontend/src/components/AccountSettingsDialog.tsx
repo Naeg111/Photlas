@@ -8,9 +8,11 @@ import { Separator } from "./ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { toast } from "sonner";
 import { API_V1_URL } from "../config/api";
+import { useAuth } from "../contexts/AuthContext";
 
 /**
  * Issue#20: アカウント設定ダイアログ
+ * Issue#38: 認証トークン取得をAuthContextから行うよう修正
  */
 
 interface AccountSettingsDialogProps {
@@ -25,6 +27,7 @@ export function AccountSettingsDialog({
   currentEmail,
 }: AccountSettingsDialogProps) {
   const navigate = useNavigate();
+  const { getAuthToken } = useAuth();
 
   // メールアドレス変更
   const [newEmail, setNewEmail] = useState("");
@@ -50,7 +53,8 @@ export function AccountSettingsDialog({
 
     setIsEmailLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      // Issue#38: AuthContextからトークンを取得
+      const token = getAuthToken();
       if (!token) {
         toast.error("ログインが必要です");
         return;
@@ -112,7 +116,8 @@ export function AccountSettingsDialog({
 
     setIsPasswordLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      // Issue#38: AuthContextからトークンを取得
+      const token = getAuthToken();
       if (!token) {
         toast.error("ログインが必要です");
         return;
@@ -162,7 +167,8 @@ export function AccountSettingsDialog({
 
     setIsDeleteLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      // Issue#38: AuthContextからトークンを取得
+      const token = getAuthToken();
       if (!token) {
         toast.error("ログインが必要です");
         return;
