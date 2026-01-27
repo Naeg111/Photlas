@@ -27,6 +27,27 @@ vi.mock('../contexts/AuthContext', () => ({
   }),
 }))
 
+// Issue#35: react-easy-cropのモック
+vi.mock('react-easy-crop', () => ({
+  default: ({ onCropComplete }: { onCropComplete: (croppedArea: unknown, croppedAreaPixels: unknown) => void }) => {
+    return (
+      <div data-testid="cropper-component">
+        <button
+          data-testid="mock-crop-trigger"
+          onClick={() =>
+            onCropComplete(
+              { x: 0, y: 0, width: 100, height: 100 },
+              { x: 0, y: 0, width: 300, height: 300 }
+            )
+          }
+        >
+          Mock Crop
+        </button>
+      </div>
+    )
+  },
+}))
+
 describe('ProfileDialog', () => {
   const mockOnClose = vi.fn()
   const mockOnPhotoClick = vi.fn()
@@ -373,11 +394,9 @@ describe('ProfileDialog', () => {
       expect(screen.getByTestId('profile-image-input')).toBeInTheDocument()
     })
 
-    it('画像を選択するとアップロードが開始される', async () => {
+    // Issue#35: 画像選択後はトリミングモーダルが表示される
+    it('画像を選択するとトリミングモーダルが表示される', async () => {
       const user = userEvent.setup()
-
-      // fetchをモックしてpending状態を維持
-      global.fetch = vi.fn().mockImplementation(() => new Promise(() => {}))
 
       render(
         <ProfileDialog
@@ -395,14 +414,36 @@ describe('ProfileDialog', () => {
 
       await user.upload(fileInput, file)
 
-      // アップロード中の状態を確認
+      // Issue#35: トリミングモーダルが表示される
       await waitFor(() => {
-        expect(screen.getByTestId('upload-progress')).toBeInTheDocument()
+        expect(screen.getByTestId('cropper-modal')).toBeInTheDocument()
       })
     })
 
-    it('アップロード成功後にプロフィール画像が更新される', async () => {
+    // Issue#35: トリミング確定後にアップロードが実行される
+    it('トリミング確定後にアップロードが実行され、成功表示される', async () => {
       const user = userEvent.setup()
+
+      // Canvas APIのモック
+      HTMLCanvasElement.prototype.toBlob = vi.fn((callback: BlobCallback) => {
+        callback(new Blob(['test'], { type: 'image/jpeg' }))
+      }) as unknown as typeof HTMLCanvasElement.prototype.toBlob
+      HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+        drawImage: vi.fn(),
+      })) as unknown as typeof HTMLCanvasElement.prototype.getContext
+
+      // Imageモック
+      Object.defineProperty(global, 'Image', {
+        value: class {
+          crossOrigin = ''
+          src = ''
+          onload: (() => void) | null = null
+          constructor() {
+            setTimeout(() => { if (this.onload) this.onload() }, 0)
+          }
+        },
+        writable: true,
+      })
 
       // API呼び出しをモック
       global.fetch = vi.fn()
@@ -431,6 +472,19 @@ describe('ProfileDialog', () => {
       const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
 
       await user.upload(fileInput, file)
+
+      // トリミングモーダルが表示される
+      await waitFor(() => {
+        expect(screen.getByTestId('cropper-modal')).toBeInTheDocument()
+      })
+
+      // トリミング領域を設定（モックトリガーをクリック）
+      const mockCropTrigger = screen.getByTestId('mock-crop-trigger')
+      await user.click(mockCropTrigger)
+
+      // 確定ボタンをクリック
+      const confirmButton = screen.getByRole('button', { name: /確定/i })
+      await user.click(confirmButton)
 
       await waitFor(() => {
         expect(screen.getByTestId('upload-success')).toBeInTheDocument()
