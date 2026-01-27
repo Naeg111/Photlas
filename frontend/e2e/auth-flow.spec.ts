@@ -213,15 +213,17 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       const password = VALID_PASSWORD
 
       // 前のテストのストレージ状態を完全にクリア
-      // まずabout:blankに移動してからストレージをクリアし、新しいセッションとして/に移動
-      await page.goto('about:blank')
+      // 正しいオリジンでストレージをクリアするために、まず/に移動
+      await page.goto('/')
+      await page.waitForLoadState('domcontentloaded')
+      // ストレージをクリア
       await page.evaluate(() => {
         localStorage.clear()
         sessionStorage.clear()
       })
       // ブラウザコンテキストのクッキーもクリア
       await page.context().clearCookies()
-      // 新しいセッションとしてページに移動
+      // 新しいセッションとしてページを再度読み込む（reloadではなくgotoで完全再初期化）
       await page.goto('/')
       await page.waitForLoadState('networkidle')
       await page.waitForTimeout(3000)
