@@ -188,14 +188,26 @@ jobs:
         git fetch origin develop
         git checkout origin/develop -- docker/docker-compose.staging.yml docker/nginx/staging.conf
 
+        echo '=== Debug: Environment variables ==='
+        echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID"
+        echo "AWS_REGION=$AWS_REGION"
+        echo "IMAGE_TAG=$IMAGE_TAG"
+        echo "ECR_REGISTRY=$ECR_REGISTRY"
+
         echo '=== Stopping old containers ==='
         docker-compose -f docker/docker-compose.staging.yml down || true
 
         echo '=== Pulling images ==='
-        docker-compose -f docker/docker-compose.staging.yml pull
+        docker-compose -f docker/docker-compose.staging.yml pull --ignore-pull-failures || true
+
+        echo '=== Debug: Docker images ==='
+        docker images | grep photlas || true
 
         echo '=== Starting containers ==='
         docker-compose -f docker/docker-compose.staging.yml up -d --remove-orphans
+
+        echo '=== Debug: Running containers ==='
+        docker ps
 
         echo '=== Cleanup ==='
         docker image prune -f
