@@ -290,7 +290,7 @@ describe('ProfileDialog', () => {
   })
 
   describe('閉じるボタン', () => {
-    it('閉じるボタンをクリックするとダイアログが閉じる', () => {
+    it('×ボタンをクリックするとダイアログが閉じる', () => {
       render(
         <ProfileDialog
           open={true}
@@ -302,7 +302,8 @@ describe('ProfileDialog', () => {
         />
       )
 
-      const closeButton = screen.getByRole('button', { name: /閉じる/i })
+      // DialogのCloseボタン（×ボタン）をクリック
+      const closeButton = screen.getByRole('button', { name: /Close/i })
       fireEvent.click(closeButton)
 
       expect(mockOnClose).toHaveBeenCalled()
