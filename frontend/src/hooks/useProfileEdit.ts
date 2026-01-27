@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 
 // APIエンドポイント定数
 const API_ENDPOINTS = {
@@ -34,6 +35,7 @@ interface SnsLink {
 interface UseProfileEditProps {
   initialUsername: string
   snsLinks: SnsLink[]
+  onUsernameUpdated?: (newUsername: string) => void
 }
 
 interface UseProfileEditReturn {
@@ -61,11 +63,14 @@ interface UseProfileEditReturn {
 /**
  * プロフィール編集機能を提供するカスタムフック
  * Issue#29: プロフィール機能強化
+ * Issue#36: ユーザー名更新時のコールバック追加
  */
 export const useProfileEdit = ({
   initialUsername,
   snsLinks,
+  onUsernameUpdated,
 }: UseProfileEditProps): UseProfileEditReturn => {
+  const { getAuthToken } = useAuth()
   // ユーザー名編集の状態
   const [isEditingUsername, setIsEditingUsername] = useState(false)
   const [editingUsername, setEditingUsername] = useState(initialUsername)
@@ -110,6 +115,7 @@ export const useProfileEdit = ({
 
   /**
    * ユーザー名を保存
+   * Issue#36: 成功時にonUsernameUpdatedコールバックを呼び出す
    */
   const handleSaveUsername = useCallback(async () => {
     setUsernameError('')
@@ -121,9 +127,15 @@ export const useProfileEdit = ({
     }
 
     try {
+      const token = getAuthToken()
+      const headers: HeadersInit = { 'Content-Type': 'application/json' }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch(API_ENDPOINTS.USERNAME, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ username: editingUsername }),
       })
 
@@ -137,10 +149,12 @@ export const useProfileEdit = ({
       }
 
       setIsEditingUsername(false)
+      // Issue#36: 成功時にコールバックを呼び出してAuthContextを更新
+      onUsernameUpdated?.(editingUsername)
     } catch {
       // エラー時の処理
     }
-  }, [editingUsername])
+  }, [editingUsername, getAuthToken, onUsernameUpdated])
 
   /**
    * プロフィール画像を選択してアップロード

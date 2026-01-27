@@ -14,6 +14,7 @@ import {
 } from './ui/pagination'
 import { User, X as XIcon } from 'lucide-react'
 import { useProfileEdit } from '../hooks/useProfileEdit'
+import { useAuth } from '../contexts/AuthContext'
 import { getAuthHeaders } from '../utils/apiClient'
 
 // API Endpoints
@@ -191,6 +192,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   }, [onPhotoClick])
 
   // カスタムフックを使用してプロフィール編集機能を取得
+  // Issue#36: AuthContextからupdateUserを取得
+  const { updateUser } = useAuth()
+
   const {
     isEditingUsername,
     editingUsername,
@@ -209,6 +213,10 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   } = useProfileEdit({
     initialUsername: userProfile.username,
     snsLinks: userProfile.snsLinks,
+    // Issue#36: ユーザー名更新成功時にAuthContextを更新
+    onUsernameUpdated: (newUsername) => {
+      updateUser({ username: newUsername })
+    },
   })
 
   // ページネーション計算

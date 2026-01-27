@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from '../contexts/AuthContext'
 
 /**
  * Issue#5: ログイン・ログアウト機能 - 認証コンテキスト テスト
+ * Issue#36: ユーザー情報更新機能追加
  * TDD Red段階: 実装前のテストケース定義
  *
  * 機能要件:
@@ -12,11 +13,12 @@ import { AuthProvider, useAuth } from '../contexts/AuthContext'
  * - JWT トークンの保管・削除
  * - ログアウト機能
  * - ログイン状態の永続化
+ * - ユーザー情報の部分更新 (Issue#36)
  */
 
 // テスト用のコンポーネント
 const TestComponent = () => {
-  const { user, isAuthenticated, login, logout } = useAuth()
+  const { user, isAuthenticated, login, logout, updateUser } = useAuth()
 
   return (
     <div>
@@ -52,6 +54,13 @@ const TestComponent = () => {
       </button>
       <button onClick={logout} data-testid="logout-button">
         Logout
+      </button>
+      {/* Issue#36: updateUser テスト用ボタン */}
+      <button
+        onClick={() => updateUser({ username: 'newusername' })}
+        data-testid="update-username-button"
+      >
+        Update Username
       </button>
     </div>
   )
@@ -309,6 +318,78 @@ describe('AuthProvider', () => {
         )
       }).not.toThrow()
 
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('Not Authenticated')
+    })
+  })
+
+  // Issue#36: ユーザー情報更新機能テスト
+  describe('User Update Functionality (Issue#36)', () => {
+    it('updates username while keeping other user info', async () => {
+      render(
+        <MockedAuthProvider>
+          <TestComponent />
+        </MockedAuthProvider>
+      )
+
+      // まずログイン
+      const loginButton = screen.getByTestId('login-button')
+      fireEvent.click(loginButton)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('username')).toHaveTextContent('testuser')
+      })
+
+      // ユーザー名を更新
+      const updateButton = screen.getByTestId('update-username-button')
+      fireEvent.click(updateButton)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('username')).toHaveTextContent('newusername')
+        // 他の情報は維持される
+        expect(screen.getByTestId('email')).toHaveTextContent('test@example.com')
+        expect(screen.getByTestId('role')).toHaveTextContent('USER')
+      })
+    })
+
+    it('persists updated user info to storage', async () => {
+      render(
+        <MockedAuthProvider>
+          <TestComponent />
+        </MockedAuthProvider>
+      )
+
+      // まずログイン
+      const loginButton = screen.getByTestId('login-button')
+      fireEvent.click(loginButton)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('auth-status')).toHaveTextContent('Authenticated')
+      })
+
+      // ユーザー名を更新
+      const updateButton = screen.getByTestId('update-username-button')
+      fireEvent.click(updateButton)
+
+      await waitFor(() => {
+        expect(window.sessionStorage.setItem).toHaveBeenCalledWith(
+          'auth_user',
+          expect.stringContaining('newusername')
+        )
+      })
+    })
+
+    it('does nothing when user is not logged in', () => {
+      render(
+        <MockedAuthProvider>
+          <TestComponent />
+        </MockedAuthProvider>
+      )
+
+      // ログインせずに更新ボタンをクリック
+      const updateButton = screen.getByTestId('update-username-button')
+      fireEvent.click(updateButton)
+
+      // エラーが発生しないことを確認
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Not Authenticated')
     })
   })
