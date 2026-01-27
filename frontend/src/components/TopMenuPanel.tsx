@@ -8,6 +8,7 @@ interface TopMenuPanelProps {
   onOpenChange: (open: boolean) => void;
   isLoggedIn: boolean;
   onMyPageClick: () => void;
+  onFavoritesClick: () => void;
   onAccountSettingsClick: () => void;
   onTermsClick: () => void;
   onPrivacyClick: () => void;
@@ -21,6 +22,7 @@ export function TopMenuPanel({
   onOpenChange,
   isLoggedIn,
   onMyPageClick,
+  onFavoritesClick,
   onAccountSettingsClick,
   onTermsClick,
   onPrivacyClick,
@@ -52,7 +54,14 @@ export function TopMenuPanel({
                 マイページ
               </Button>
               <Separator />
-              <Button variant="ghost" className="justify-start gap-3">
+              <Button
+                variant="ghost"
+                className="justify-start gap-3"
+                onClick={() => {
+                  onFavoritesClick();
+                  onOpenChange(false);
+                }}
+              >
                 <Heart className="w-5 h-5" />
                 行きたいリスト
               </Button>

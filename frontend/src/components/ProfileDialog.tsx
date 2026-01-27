@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import { Button } from './ui/button'
@@ -88,6 +88,7 @@ interface ProfileDialogProps {
   isOwnProfile: boolean
   photos: Photo[]
   onPhotoClick: (photo: Photo) => void
+  initialTab?: 'posts' | 'favorites'
 }
 
 /**
@@ -131,6 +132,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   isOwnProfile,
   photos,
   onPhotoClick,
+  initialTab = 'posts',
 }) => {
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -168,6 +170,13 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
       fetchFavorites()
     }
   }, [favoritesFetched, fetchFavorites])
+
+  // initialTabがfavoritesの場合、ダイアログが開いたときにお気に入りを取得
+  useEffect(() => {
+    if (open && initialTab === 'favorites' && !favoritesFetched) {
+      fetchFavorites()
+    }
+  }, [open, initialTab, favoritesFetched, fetchFavorites])
 
   // Issue#30: お気に入り写真がクリックされた時
   const handleFavoritePhotoClick = useCallback((favoritePhoto: FavoritePhoto) => {
@@ -372,7 +381,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         </div>
 
         {/* タブUI */}
-        <Tabs defaultValue="posts" className="w-full">
+        <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="w-full">
             <TabsTrigger value="posts" className="flex-1">
               投稿
@@ -530,12 +539,6 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           )}
         </Tabs>
 
-        {/* 閉じるボタン */}
-        <div className="flex justify-end mt-4">
-          <Button variant="outline" onClick={onClose}>
-            閉じる
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   )
