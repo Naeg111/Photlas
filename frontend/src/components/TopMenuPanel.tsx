@@ -63,7 +63,7 @@ export function TopMenuPanel({
                 }}
               >
                 <Heart className="w-5 h-5" />
-                行きたいリスト
+                行きたい場所リスト
               </Button>
               <Separator />
               <Button
