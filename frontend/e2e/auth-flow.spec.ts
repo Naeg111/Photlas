@@ -212,12 +212,14 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       const uniqueEmail = generateUniqueEmail('flow-token-delete')
       const password = VALID_PASSWORD
 
-      // 前のテストのストレージ状態をクリア
+      // 前のテストのストレージ状態をクリアしてリロード
       await page.goto('/')
       await page.evaluate(() => {
         localStorage.clear()
         sessionStorage.clear()
       })
+      await page.reload()
+      await page.waitForTimeout(2000)
 
       // ユーザー作成
       await openSignUpDialog(page)
@@ -225,6 +227,8 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
         timeout: 10000,
       })
+      // 新規登録後、DBへの書き込み完了を待つ
+      await page.waitForTimeout(1000)
 
       // ログイン
       await openLoginDialog(page)
