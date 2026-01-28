@@ -13,7 +13,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -93,11 +92,11 @@ public class SecurityConfig {
         http
             // CORS設定を有効化
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            // Issue#23: CSRF保護を有効化（Cookie-based token repository使用）
-            .csrf(csrf -> csrf
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .ignoringRequestMatchers(AUTH_ENDPOINT_PATTERN) // 認証エンドポイントはCSRF除外
-            )
+            // Issue#23: CSRF保護の設定
+            // JWT認証（stateless）を使用しているためCSRF保護は無効化
+            // 理由: JWTはlocalStorageに保存され、リクエストごとに明示的にAuthorizationヘッダーで
+            // 送信されるため、ブラウザが自動的にCookieを送信するCSRF攻撃の対象にならない
+            .csrf(csrf -> csrf.disable())
             // ステートレスセッション管理（JWT認証使用のため）
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
