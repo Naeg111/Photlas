@@ -140,6 +140,7 @@ export interface CreatePhotoRequest {
   latitude: number
   longitude: number
   categories: string[]
+  weather?: string
 }
 
 /**

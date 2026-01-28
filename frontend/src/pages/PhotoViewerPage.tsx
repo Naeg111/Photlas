@@ -21,15 +21,9 @@ interface PhotoData {
   photo: {
     photo_id: number
     title: string
-    image_urls: {
-      thumbnail: string
-      standard: string
-      original: string
-    }
+    image_url: string
     shot_at: string
     weather: string
-    time_of_day: string
-    subject_category: string
   }
   spot: {
     spot_id: number
@@ -37,8 +31,6 @@ interface PhotoData {
   user: {
     user_id: number
     username: string
-    profile_image_url: string
-    sns_links: Array<{ url: string }>
   }
 }
 
@@ -125,9 +117,14 @@ function PhotoViewerPage() {
       className="w-full h-screen bg-white flex items-center justify-center"
     >
       <img
-        src={photoData.photo.image_urls.original}
+        src={photoData.photo.image_url}
         alt={photoData.photo.title || '写真'}
-        className="object-contain max-w-full max-h-full select-none touch-callout-none user-drag-none"
+        className="object-contain max-w-full max-h-full select-none"
+        style={{
+          WebkitTouchCallout: 'none',
+          userSelect: 'none',
+          WebkitUserDrag: 'none',
+        } as React.CSSProperties}
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       />
