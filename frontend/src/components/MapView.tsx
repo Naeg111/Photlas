@@ -5,6 +5,7 @@ import { API_V1_URL } from '../config/api'
 // MapViewの公開メソッド型定義
 export interface MapViewHandle {
   centerOnUserLocation: () => void
+  refreshSpots: () => void
 }
 
 /**
@@ -126,33 +127,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     return true
   }, [])
 
-  // 現在位置に移動するメソッドを公開
-  useImperativeHandle(ref, () => ({
-    centerOnUserLocation: async () => {
-      if (!map) return
-
-      // デバイスの向き取得の許可をリクエスト
-      await requestOrientationPermission()
-
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const newLocation = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            }
-            setUserLocation(newLocation)
-            map.panTo(newLocation)
-          },
-          (error) => {
-            console.error('位置情報の取得に失敗しました:', error)
-          },
-          { enableHighAccuracy: true }
-        )
-      }
-    },
-  }), [map, requestOrientationPermission])
-
   // APIキーが空の場合はuseLoadScriptを呼ばない
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -208,6 +182,38 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       setTimeout(() => setShowToast(false), 3000)
     }
   }, [filterParams])
+
+  // 現在位置に移動するメソッドとスポット再取得メソッドを公開
+  useImperativeHandle(ref, () => ({
+    centerOnUserLocation: async () => {
+      if (!map) return
+
+      // デバイスの向き取得の許可をリクエスト
+      await requestOrientationPermission()
+
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const newLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            }
+            setUserLocation(newLocation)
+            map.panTo(newLocation)
+          },
+          (error) => {
+            console.error('位置情報の取得に失敗しました:', error)
+          },
+          { enableHighAccuracy: true }
+        )
+      }
+    },
+    refreshSpots: () => {
+      if (map) {
+        fetchSpots(map)
+      }
+    },
+  }), [map, requestOrientationPermission, fetchSpots])
 
   // 地図が読み込まれたときの処理
   const handleLoad = useCallback((mapInstance: google.maps.Map) => {
