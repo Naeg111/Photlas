@@ -33,52 +33,70 @@ const ERROR_LOAD_FAILED = '読み込みに失敗しました'
 const ERROR_FETCH_IDS = 'Failed to fetch photo IDs'
 const ERROR_FETCH_DETAIL = 'Failed to fetch photo detail'
 
-// Camera info section labels
-const LABEL_CAMERA_INFO = 'カメラ情報'
-const LABEL_BODY = 'ボディ: '
-const LABEL_LENS = 'レンズ: '
-const LABEL_F_VALUE = 'F値: '
-const LABEL_SHUTTER_SPEED = 'シャッタースピード: '
-const LABEL_ISO = 'ISO: '
-
 interface PhotoDetailDialogProps {
   open: boolean
   spotId: number
   onClose: () => void
 }
 
+// APIレスポンスの型定義
+interface PhotoApiResponse {
+  photo: {
+    photo_id: number
+    title: string
+    image_url: string
+    shot_at: string
+    weather?: string
+    is_favorited?: boolean
+    favorite_count?: number
+  }
+  spot: {
+    spot_id: number
+    latitude: number
+    longitude: number
+  }
+  user: {
+    user_id: number
+    username: string
+  }
+}
+
+// 内部で使用する型定義
 interface PhotoDetail {
   photoId: number
   title: string
-  imageUrls: {
-    thumbnail: string
-    standard: string
-    original: string
-  }
+  imageUrl: string
   shotAt: string
   weather?: string
-  timeOfDay?: string
-  subjectCategory?: string
   isFavorited?: boolean
   favoriteCount?: number
-  cameraInfo?: {
-    body?: string
-    lens?: string
-    fValue?: string
-    shutterSpeed?: string
-    iso?: string
-  }
   user: {
     userId: number
     username: string
     profileImageUrl?: string
-    snsLinks?: {
-      twitter?: string
-      instagram?: string
-    }
   }
   spot: {
     spotId: number
+  }
+}
+
+// APIレスポンスを内部形式に変換
+function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
+  return {
+    photoId: response.photo.photo_id,
+    title: response.photo.title,
+    imageUrl: response.photo.image_url,
+    shotAt: response.photo.shot_at,
+    weather: response.photo.weather,
+    isFavorited: response.photo.is_favorited,
+    favoriteCount: response.photo.favorite_count,
+    user: {
+      userId: response.user.user_id,
+      username: response.user.username,
+    },
+    spot: {
+      spotId: response.spot.spot_id,
+    },
   }
 }
 
@@ -104,7 +122,8 @@ async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
     throw new Error(ERROR_FETCH_DETAIL)
   }
 
-  return await response.json()
+  const data: PhotoApiResponse = await response.json()
+  return transformApiResponse(data)
 }
 
 export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetailDialogProps) {
@@ -267,7 +286,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
                   <div className="flex h-full">
                     <div className="flex-[0_0_100%] min-w-0">
                       <img
-                        src={currentPhoto.imageUrls.standard}
+                        src={currentPhoto.imageUrl}
                         alt={currentPhoto.title}
                         className="w-full h-full object-contain"
                       />
@@ -310,52 +329,16 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
 
                 {/* ユーザー情報 */}
                 <div className="flex items-center gap-3">
-                  {currentPhoto.user.profileImageUrl && (
-                    <img
-                      src={currentPhoto.user.profileImageUrl}
-                      alt={currentPhoto.user.username}
-                      className="w-10 h-10 rounded-full"
-                    />
-                  )}
+                  <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
+                    {currentPhoto.user.username.charAt(0).toUpperCase()}
+                  </div>
                   <span className="font-medium">{currentPhoto.user.username}</span>
                 </div>
 
-                {/* カメラ情報 */}
-                {currentPhoto.cameraInfo && (
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">{LABEL_CAMERA_INFO}</h3>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      {currentPhoto.cameraInfo.body && (
-                        <div>
-                          <span className="text-gray-600">{LABEL_BODY}</span>
-                          <span>{currentPhoto.cameraInfo.body}</span>
-                        </div>
-                      )}
-                      {currentPhoto.cameraInfo.lens && (
-                        <div>
-                          <span className="text-gray-600">{LABEL_LENS}</span>
-                          <span>{currentPhoto.cameraInfo.lens}</span>
-                        </div>
-                      )}
-                      {currentPhoto.cameraInfo.fValue && (
-                        <div>
-                          <span className="text-gray-600">{LABEL_F_VALUE}</span>
-                          <span>{currentPhoto.cameraInfo.fValue}</span>
-                        </div>
-                      )}
-                      {currentPhoto.cameraInfo.shutterSpeed && (
-                        <div>
-                          <span className="text-gray-600">{LABEL_SHUTTER_SPEED}</span>
-                          <span>{currentPhoto.cameraInfo.shutterSpeed}</span>
-                        </div>
-                      )}
-                      {currentPhoto.cameraInfo.iso && (
-                        <div>
-                          <span className="text-gray-600">{LABEL_ISO}</span>
-                          <span>{currentPhoto.cameraInfo.iso}</span>
-                        </div>
-                      )}
-                    </div>
+                {/* 天気情報 */}
+                {currentPhoto.weather && (
+                  <div className="text-sm text-gray-600">
+                    天気: {currentPhoto.weather}
                   </div>
                 )}
 

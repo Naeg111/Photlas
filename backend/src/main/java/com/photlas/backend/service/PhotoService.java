@@ -41,12 +41,7 @@ public class PhotoService {
     private final UserRepository userRepository;
     private final WeatherService weatherService;
     private final FavoriteRepository favoriteRepository;
-
-    @Value("${aws.s3.bucket-name:photlas-photos}")
-    private String bucketName;
-
-    @Value("${aws.s3.region:ap-northeast-1}")
-    private String region;
+    private final S3Service s3Service;
 
     public PhotoService(
             PhotoRepository photoRepository,
@@ -54,7 +49,8 @@ public class PhotoService {
             CategoryRepository categoryRepository,
             UserRepository userRepository,
             WeatherService weatherService,
-            FavoriteRepository favoriteRepository
+            FavoriteRepository favoriteRepository,
+            S3Service s3Service
     ) {
         this.photoRepository = photoRepository;
         this.spotRepository = spotRepository;
@@ -62,6 +58,7 @@ public class PhotoService {
         this.userRepository = userRepository;
         this.weatherService = weatherService;
         this.favoriteRepository = favoriteRepository;
+        this.s3Service = s3Service;
     }
 
     /**
@@ -194,10 +191,13 @@ public class PhotoService {
     }
 
     private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited, long favoriteCount) {
+        // S3オブジェクトキーからCDN URLを生成
+        String imageUrl = s3Service.generateCdnUrl(photo.getS3ObjectKey());
+
         PhotoResponse.PhotoDTO photoDTO = new PhotoResponse.PhotoDTO(
                 photo.getPhotoId(),
                 photo.getTitle(),
-                photo.getS3ObjectKey(),
+                imageUrl,
                 photo.getShotAt().format(DateTimeFormatter.ISO_DATE_TIME),
                 photo.getWeather(),
                 isFavorited,

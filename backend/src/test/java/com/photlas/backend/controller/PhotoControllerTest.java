@@ -91,7 +91,7 @@ public class PhotoControllerTest {
     // テストデータ定数 - JSONPath
     private static final String JSON_PATH_PHOTO_TITLE = "$.photo.title";
     private static final String JSON_PATH_PHOTO_ID = "$.photo.photo_id";
-    private static final String JSON_PATH_PHOTO_S3_KEY = "$.photo.s3_object_key";
+    private static final String JSON_PATH_PHOTO_IMAGE_URL = "$.photo.image_url";
     private static final String JSON_PATH_PHOTO_SHOT_AT = "$.photo.shot_at";
     private static final String JSON_PATH_PHOTO_WEATHER = "$.photo.weather";
     private static final String JSON_PATH_PHOTO_IS_FAVORITED = "$.photo.is_favorited";
@@ -247,6 +247,13 @@ public class PhotoControllerTest {
                     String uploadUrl = S3_PRESIGNED_URL_BASE + objectKey + S3_PRESIGNED_URL_SUFFIX;
                     return new S3Service.UploadUrlResult(uploadUrl, objectKey);
                 });
+
+        // CDN URL生成のモック（s3ObjectKeyをそのままURLに含める）
+        when(s3Service.generateCdnUrl(anyString()))
+                .thenAnswer(invocation -> {
+                    String s3ObjectKey = invocation.getArgument(0);
+                    return S3_PRESIGNED_URL_BASE + s3ObjectKey;
+                });
     }
 
     @Test
@@ -269,7 +276,7 @@ public class PhotoControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath(JSON_PATH_PHOTO_TITLE, is(PHOTO_TITLE_TOKYO_TOWER)))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists())
-                .andExpect(jsonPath(JSON_PATH_PHOTO_S3_KEY, is(S3_OBJECT_KEY_PREFIX + "001.jpg")))
+                .andExpect(jsonPath(JSON_PATH_PHOTO_IMAGE_URL, containsString(S3_OBJECT_KEY_PREFIX + "001.jpg")))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_SHOT_AT, is(FORMATTED_DATETIME_1)))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_WEATHER).exists())
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID).exists())

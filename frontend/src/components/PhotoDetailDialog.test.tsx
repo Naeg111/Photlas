@@ -31,13 +31,6 @@ const TEST_PHOTO_TITLE_TEST = 'Test'
 const TEST_USERNAME = 'testuser'
 const TEST_USER_ID = 1
 
-// Camera info
-const TEST_CAMERA_BODY = 'Canon EOS R5'
-const TEST_CAMERA_LENS = 'RF 24-70mm f/2.8L'
-const TEST_F_VALUE = 'f/2.8'
-const TEST_SHUTTER_SPEED = '1/1000'
-const TEST_ISO = '400'
-
 // Dates
 const TEST_SHOT_AT = '2024-01-15T14:30:00'
 
@@ -54,53 +47,53 @@ const TEST_INSTAGRAM_URL = 'https://instagram.com/testuser'
 const ERROR_MESSAGE_NETWORK = 'Network error'
 const ERROR_TEXT_LOAD_FAILED = '読み込みに失敗しました'
 
-// Helper Functions
-function createMockImageUrls() {
+// Helper Functions - Create mock API response in the new format
+function createMockApiResponse(overrides?: {
+  photoId?: number
+  title?: string
+  imageUrl?: string
+  weather?: string
+  isFavorited?: boolean
+  favoriteCount?: number
+  userId?: number
+  username?: string
+  spotId?: number
+}) {
   return {
-    thumbnail: TEST_THUMBNAIL_URL,
-    standard: TEST_STANDARD_URL,
-    original: TEST_ORIGINAL_URL,
-  }
-}
-
-function createMockCameraInfo() {
-  return {
-    body: TEST_CAMERA_BODY,
-    lens: TEST_CAMERA_LENS,
-    fValue: TEST_F_VALUE,
-    shutterSpeed: TEST_SHUTTER_SPEED,
-    iso: TEST_ISO,
-  }
-}
-
-function createMockUser(username = TEST_USERNAME) {
-  return {
-    userId: TEST_USER_ID,
-    username,
-    profileImageUrl: TEST_PROFILE_IMAGE_URL,
-    snsLinks: {
-      twitter: TEST_TWITTER_URL,
-      instagram: TEST_INSTAGRAM_URL,
+    photo: {
+      photo_id: overrides?.photoId ?? TEST_PHOTO_ID_1,
+      title: overrides?.title ?? TEST_PHOTO_TITLE_1,
+      image_url: overrides?.imageUrl ?? TEST_STANDARD_URL,
+      shot_at: TEST_SHOT_AT,
+      weather: overrides?.weather ?? TEST_WEATHER,
+      is_favorited: overrides?.isFavorited ?? false,
+      favorite_count: overrides?.favoriteCount ?? 0,
     },
-  }
-}
-
-function createMockPhotoDetail(overrides?: any) {
-  return {
-    photoId: TEST_PHOTO_ID_1,
-    title: TEST_PHOTO_TITLE_1,
-    imageUrls: createMockImageUrls(),
-    shotAt: TEST_SHOT_AT,
-    weather: TEST_WEATHER,
-    timeOfDay: TEST_TIME_OF_DAY,
-    subjectCategory: TEST_SUBJECT_CATEGORY,
-    cameraInfo: createMockCameraInfo(),
-    user: createMockUser(),
     spot: {
-      spotId: TEST_SPOT_ID,
+      spot_id: overrides?.spotId ?? TEST_SPOT_ID,
+      latitude: 35.6762,
+      longitude: 139.6503,
     },
-    ...overrides,
+    user: {
+      user_id: overrides?.userId ?? TEST_USER_ID,
+      username: overrides?.username ?? TEST_USERNAME,
+    },
   }
+}
+
+// Legacy helper - kept for backward compatibility with some tests
+function createMockPhotoDetail(overrides?: any) {
+  return createMockApiResponse({
+    photoId: overrides?.photoId,
+    title: overrides?.title,
+    imageUrl: overrides?.imageUrls?.standard ?? TEST_STANDARD_URL,
+    weather: overrides?.weather,
+    isFavorited: overrides?.isFavorited,
+    favoriteCount: overrides?.favoriteCount,
+    userId: overrides?.user?.userId,
+    username: overrides?.user?.username,
+    spotId: overrides?.spot?.spotId,
+  })
 }
 
 function setupMockFetch(photoIds: number[], photoDetails: any[]) {
@@ -174,13 +167,9 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
 
     it('写真詳細情報が正しく表示される', async () => {
-      const photoDetail = createMockPhotoDetail({
+      const photoDetail = createMockApiResponse({
         title: TEST_PHOTO_TITLE_BEAUTIFUL,
-        user: {
-          userId: TEST_USER_ID,
-          username: TEST_USERNAME,
-          profileImageUrl: TEST_PROFILE_IMAGE_URL,
-        },
+        username: TEST_USERNAME,
       })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
@@ -198,13 +187,6 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await waitFor(() => {
         expect(screen.getByText(TEST_PHOTO_TITLE_BEAUTIFUL)).toBeInTheDocument()
       })
-
-      // カメラ情報が表示される
-      expect(screen.getByText(new RegExp(TEST_CAMERA_BODY))).toBeInTheDocument()
-      expect(screen.getByText(new RegExp(TEST_CAMERA_LENS.replace(/\//g, '\\/')))).toBeInTheDocument()
-      expect(screen.getByText(TEST_F_VALUE)).toBeInTheDocument()
-      expect(screen.getByText(TEST_SHUTTER_SPEED)).toBeInTheDocument()
-      expect(screen.getByText(TEST_ISO)).toBeInTheDocument()
 
       // ユーザー名が表示される
       expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
