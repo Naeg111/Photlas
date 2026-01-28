@@ -31,6 +31,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
       - AWS_REGION=${AWS_REGION}
+      - AWS_CLOUDFRONT_DOMAIN=${AWS_CLOUDFRONT_DOMAIN:-d1017i70km64oy.cloudfront.net}
     networks:
       - photlas-network
     healthcheck:
