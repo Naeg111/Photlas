@@ -31,6 +31,8 @@ public class CreatePhotoRequest {
     @Size(min = 1, message = "カテゴリは1つ以上選択してください")
     private List<String> categories;
 
+    private String weather;
+
     // Getters and Setters
     public String getTitle() {
         return title;
@@ -78,5 +80,13 @@ public class CreatePhotoRequest {
 
     public void setCategories(List<String> categories) {
         this.categories = categories;
+    }
+
+    public String getWeather() {
+        return weather;
+    }
+
+    public void setWeather(String weather) {
+        this.weather = weather;
     }
 }

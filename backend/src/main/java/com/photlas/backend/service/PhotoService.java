@@ -80,9 +80,12 @@ public class PhotoService {
         // 2. カテゴリの変換
         List<Category> categories = convertCategoriesToEntities(request.getCategories());
 
-        // 3. 天気情報の取得
+        // 3. 天気情報の取得（ユーザー入力を優先、なければweatherServiceで取得）
         LocalDateTime takenAt = LocalDateTime.parse(request.getTakenAt(), DateTimeFormatter.ISO_DATE_TIME);
-        String weather = weatherService.getWeather(request.getLatitude(), request.getLongitude(), takenAt);
+        String weather = request.getWeather();
+        if (weather == null || weather.isBlank()) {
+            weather = weatherService.getWeather(request.getLatitude(), request.getLongitude(), takenAt);
+        }
 
         // 4. 写真の保存
         Photo photo = new Photo();
