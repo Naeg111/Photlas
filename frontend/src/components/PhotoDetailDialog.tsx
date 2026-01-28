@@ -4,12 +4,11 @@ import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Star } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { getAuthHeaders } from '../utils/apiClient'
+import { API_V1_URL } from '../config/api'
 
 // API Endpoints
-const API_SPOTS_PHOTOS = '/api/v1/spots'
-const API_PHOTOS = '/api/v1/photos'
-const API_FAVORITE_PREFIX = '/api/v1/photos/'
-const API_FAVORITE_SUFFIX = '/favorite'
+const API_SPOTS_PHOTOS = `${API_V1_URL}/spots`
+const API_PHOTOS = `${API_V1_URL}/photos`
 
 // Test IDs
 const TEST_ID_DIALOG = 'photo-detail-dialog'
@@ -212,7 +211,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
     try {
       const method = isFavorited ? 'DELETE' : 'POST'
       const response = await fetch(
-        `${API_FAVORITE_PREFIX}${currentPhotoId}${API_FAVORITE_SUFFIX}`,
+        `${API_PHOTOS}/${currentPhotoId}/favorite`,
         {
           method,
           headers: getAuthHeaders(),
@@ -233,7 +232,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0">
+      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0" hideCloseButton>
         <DialogTitle className="sr-only">{SR_TITLE}</DialogTitle>
         <DialogDescription className="sr-only">{SR_DESCRIPTION}</DialogDescription>
         <div className="relative h-full">
