@@ -51,8 +51,8 @@ public class PhotoResponse {
 
         private String title;
 
-        @JsonProperty("s3_object_key")
-        private String s3ObjectKey;
+        @JsonProperty("image_url")
+        private String imageUrl;
 
         @JsonProperty("shot_at")
         private String shotAt;
@@ -68,30 +68,30 @@ public class PhotoResponse {
         public PhotoDTO() {
         }
 
-        public PhotoDTO(Long photoId, String title, String s3ObjectKey, String shotAt, String weather) {
+        public PhotoDTO(Long photoId, String title, String imageUrl, String shotAt, String weather) {
             this.photoId = photoId;
             this.title = title;
-            this.s3ObjectKey = s3ObjectKey;
+            this.imageUrl = imageUrl;
             this.shotAt = shotAt;
             this.weather = weather;
             this.isFavorited = false; // デフォルトはfalse
             this.favoriteCount = 0L;
         }
 
-        public PhotoDTO(Long photoId, String title, String s3ObjectKey, String shotAt, String weather, Boolean isFavorited) {
+        public PhotoDTO(Long photoId, String title, String imageUrl, String shotAt, String weather, Boolean isFavorited) {
             this.photoId = photoId;
             this.title = title;
-            this.s3ObjectKey = s3ObjectKey;
+            this.imageUrl = imageUrl;
             this.shotAt = shotAt;
             this.weather = weather;
             this.isFavorited = isFavorited;
             this.favoriteCount = 0L;
         }
 
-        public PhotoDTO(Long photoId, String title, String s3ObjectKey, String shotAt, String weather, Boolean isFavorited, Long favoriteCount) {
+        public PhotoDTO(Long photoId, String title, String imageUrl, String shotAt, String weather, Boolean isFavorited, Long favoriteCount) {
             this.photoId = photoId;
             this.title = title;
-            this.s3ObjectKey = s3ObjectKey;
+            this.imageUrl = imageUrl;
             this.shotAt = shotAt;
             this.weather = weather;
             this.isFavorited = isFavorited;
@@ -114,12 +114,12 @@ public class PhotoResponse {
             this.title = title;
         }
 
-        public String getS3ObjectKey() {
-            return s3ObjectKey;
+        public String getImageUrl() {
+            return imageUrl;
         }
 
-        public void setS3ObjectKey(String s3ObjectKey) {
-            this.s3ObjectKey = s3ObjectKey;
+        public void setImageUrl(String imageUrl) {
+            this.imageUrl = imageUrl;
         }
 
         public String getShotAt() {
