@@ -121,16 +121,23 @@ function MainContent() {
     const extension = data.file.name.split('.').pop()?.toLowerCase() || 'jpg'
     const contentType = data.file.type || 'image/jpeg'
 
+    console.log('[PhotoSubmit] Starting upload...', { extension, contentType, title: data.title })
+
     // 1. Presigned URL取得
+    console.log('[PhotoSubmit] Step 1: Getting presigned URL...')
     const { uploadUrl, objectKey } = await getPhotoUploadUrl({
       extension,
       contentType,
     })
+    console.log('[PhotoSubmit] Step 1 complete:', { objectKey })
 
     // 2. S3へアップロード
+    console.log('[PhotoSubmit] Step 2: Uploading to S3...')
     await uploadFileToS3(uploadUrl, data.file)
+    console.log('[PhotoSubmit] Step 2 complete')
 
     // 3. メタデータ保存
+    console.log('[PhotoSubmit] Step 3: Creating photo metadata...')
     await createPhoto({
       title: data.title,
       s3ObjectKey: objectKey,
@@ -139,9 +146,12 @@ function MainContent() {
       longitude: data.position.lng,
       categories: data.categories,
     })
+    console.log('[PhotoSubmit] Step 3 complete')
 
     // 4. マップ更新
+    console.log('[PhotoSubmit] Step 4: Refreshing map...')
     mapRef.current?.refreshSpots()
+    console.log('[PhotoSubmit] All steps complete!')
   }
 
   // ログアウトハンドラー

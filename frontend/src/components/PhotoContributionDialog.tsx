@@ -6,10 +6,11 @@ import { Label } from './ui/label'
 import { CategoryIcon } from './CategoryIcon'
 import { Checkbox } from './ui/checkbox'
 import { ImageWithFallback } from './figma/ImageWithFallback'
-import { Upload, MapPin, X } from 'lucide-react'
+import { Upload, X } from 'lucide-react'
 import { Progress } from './ui/progress'
 import { motion, AnimatePresence } from 'motion/react'
 import { PHOTO_CATEGORIES, PHOTO_UPLOAD, UPLOAD_STATUS } from '../utils/constants'
+import { InlineMapPicker } from './InlineMapPicker'
 
 /**
  * PhotoContributionDialog コンポーネント
@@ -64,8 +65,11 @@ export function PhotoContributionDialog({
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
 
-      // 位置情報を仮設定（実際の実装ではEXIFから取得）
-      setPinPosition({ lat: 35.6762, lng: 139.6503 })
+      // 位置情報が未設定の場合、デフォルト位置を設定
+      // TODO: 実際の実装ではEXIFから取得
+      if (!pinPosition) {
+        setPinPosition({ lat: 35.6762, lng: 139.6503 })
+      }
     }
   }
 
@@ -236,40 +240,15 @@ export function PhotoContributionDialog({
           {/* 位置情報 */}
           <div className="space-y-3">
             <Label className="text-base">撮影場所 *</Label>
-            <div className="border rounded-lg overflow-hidden bg-gray-100 h-64 flex items-center justify-center relative">
-              {/* 簡易的な地図プレースホルダー */}
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300">
-                <div className="absolute inset-0 opacity-20"
-                  style={{
-                    backgroundImage: `
-                      linear-gradient(0deg, #999 1px, transparent 1px),
-                      linear-gradient(90deg, #999 1px, transparent 1px)
-                    `,
-                    backgroundSize: '30px 30px'
-                  }}
-                />
-              </div>
-              <div className="relative z-10 text-center">
-                <MapPin className="w-12 h-12 text-red-500 mx-auto mb-2" />
-                {pinPosition ? (
-                  <div>
-                    <p className="text-sm">位置が設定されました</p>
-                    <p className="text-xs text-gray-600">
-                      緯度: {pinPosition.lat.toFixed(4)}, 経度: {pinPosition.lng.toFixed(4)}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-600">
-                    地図をクリックして位置を設定
-                  </p>
-                )}
-              </div>
+            <p className="text-sm text-gray-500">
+              地図をドラッグして撮影場所にピンを合わせてください
+            </p>
+            <div className="border rounded-lg overflow-hidden h-64">
+              <InlineMapPicker
+                position={pinPosition}
+                onPositionChange={setPinPosition}
+              />
             </div>
-            {previewUrl && !pinPosition && (
-              <p className="text-sm text-gray-500">
-                ※ 写真にGPS情報が含まれている場合は自動で設定されます
-              </p>
-            )}
           </div>
 
           {/* カテゴリ選択 */}

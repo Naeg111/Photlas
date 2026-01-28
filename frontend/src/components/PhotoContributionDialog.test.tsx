@@ -18,6 +18,30 @@ vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
 
+// @react-google-maps/api のモック
+vi.mock('@react-google-maps/api', () => ({
+  useLoadScript: () => ({
+    isLoaded: true,
+    loadError: null,
+  }),
+  GoogleMap: ({ children, onLoad }: any) => {
+    // onLoadコールバックを呼び出してマップインスタンスをシミュレート
+    if (onLoad) {
+      const mockMap = {
+        getCenter: () => ({ lat: () => 35.6762, lng: () => 139.6503 }),
+        panTo: vi.fn(),
+        addListener: (_event: string, callback: () => void) => {
+          // idle イベントを即座に発火
+          setTimeout(callback, 0)
+          return { remove: vi.fn() }
+        },
+      }
+      setTimeout(() => onLoad(mockMap), 0)
+    }
+    return <div data-testid="google-map-mock">{children}</div>
+  },
+}))
+
 // URL.createObjectURLのモック
 const mockCreateObjectURL = vi.fn(() => 'blob:mock-url')
 const mockRevokeObjectURL = vi.fn()
@@ -291,9 +315,9 @@ describe('PhotoContributionDialog', () => {
       const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
 
-      // 位置情報が設定されていることを確認
+      // InlineMapPickerが表示されていることを確認（Google Mapsモック）
       await waitFor(() => {
-        expect(screen.getByText(/位置が設定されました/)).toBeInTheDocument()
+        expect(screen.getByTestId('google-map-mock')).toBeInTheDocument()
       })
 
       // 投稿ボタンが有効になることを確認
