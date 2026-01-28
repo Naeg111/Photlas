@@ -51,6 +51,7 @@ const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 // MapViewコンポーネントのProps（Issue#16）
 interface MapViewProps {
   filterParams?: MapViewFilterParams
+  onSpotClick?: (spotId: number) => void
 }
 
 /**
@@ -81,7 +82,7 @@ function FallbackMapView() {
   )
 }
 
-const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams }, ref) {
+const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick }, ref) {
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
@@ -293,6 +294,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               <div
                 data-testid={`map-pin-${spot.spotId}`}
                 className={`rounded-full ${PIN_COLOR_MAP[spot.pinColor]} w-8 h-8 flex items-center justify-center text-white text-sm font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2`}
+                onClick={() => onSpotClick?.(spot.spotId)}
               >
                 {spot.photoCount}
               </div>
