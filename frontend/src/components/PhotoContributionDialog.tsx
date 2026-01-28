@@ -19,6 +19,10 @@ import { InlineMapPicker } from './InlineMapPicker'
  * 写真投稿ダイアログ - design-assetsベースでS3 Presigned URL連携を統合
  */
 
+// 天気の選択肢
+const WEATHER_OPTIONS = ['晴れ', '曇り', '雨', '雪'] as const
+type WeatherOption = typeof WEATHER_OPTIONS[number]
+
 interface PhotoContributionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -27,6 +31,7 @@ interface PhotoContributionDialogProps {
     title: string
     categories: string[]
     position: { lat: number; lng: number }
+    weather: string
   }) => Promise<void>
 }
 
@@ -42,6 +47,7 @@ export function PhotoContributionDialog({
   const [title, setTitle] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [pinPosition, setPinPosition] = useState<{ lat: number; lng: number } | null>(null)
+  const [selectedWeather, setSelectedWeather] = useState<WeatherOption | ''>('')
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -99,6 +105,10 @@ export function PhotoContributionDialog({
       alert('位置情報を設定してください。')
       return
     }
+    if (!selectedWeather) {
+      alert('天気を選択してください。')
+      return
+    }
 
     // アップロード処理
     setUploadStatus('uploading')
@@ -122,6 +132,7 @@ export function PhotoContributionDialog({
           title,
           categories: selectedCategories,
           position: pinPosition,
+          weather: selectedWeather,
         })
       }
 
@@ -152,6 +163,7 @@ export function PhotoContributionDialog({
     setTitle('')
     setSelectedCategories([])
     setPinPosition(null)
+    setSelectedWeather('')
     setUploadStatus('idle')
     setUploadProgress(0)
   }
@@ -165,7 +177,7 @@ export function PhotoContributionDialog({
     }
   }
 
-  const canSubmit = selectedFile && title.trim() && selectedCategories.length > 0 && pinPosition
+  const canSubmit = selectedFile && title.trim() && selectedCategories.length > 0 && pinPosition && selectedWeather
 
   return (
     <Dialog open={open} onOpenChange={uploadStatus === 'uploading' ? undefined : onOpenChange}>
@@ -278,6 +290,28 @@ export function PhotoContributionDialog({
                     className="cursor-pointer flex-1"
                   >
                     {category}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 天気選択 */}
+          <div className="space-y-3">
+            <Label className="text-base">天気 *</Label>
+            <div className="grid grid-cols-4 gap-3">
+              {WEATHER_OPTIONS.map((weather) => (
+                <div
+                  key={weather}
+                  className={`flex items-center justify-center border rounded-lg p-3 cursor-pointer transition-colors ${
+                    selectedWeather === weather
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setSelectedWeather(weather)}
+                >
+                  <Label className="cursor-pointer text-center">
+                    {weather}
                   </Label>
                 </div>
               ))}

@@ -34,15 +34,9 @@ describe('PhotoViewerPage - Issue#15', () => {
     photo: {
       photo_id: 1234,
       title: '雨上がりの展望台から',
-      image_urls: {
-        thumbnail: 'https://example.com/thumb_1234.jpg',
-        standard: 'https://example.com/web_1234.jpg',
-        original: 'https://example.com/full_1234.jpg'
-      },
+      image_url: 'https://example.com/full_1234.jpg',
       shot_at: '2025-08-15T18:30:00Z',
       weather: 'Rainy',
-      time_of_day: 'EVENING',
-      subject_category: 'LANDSCAPE',
     },
     spot: {
       spot_id: 201
@@ -50,8 +44,6 @@ describe('PhotoViewerPage - Issue#15', () => {
     user: {
       user_id: 56,
       username: 'TaroPhoto',
-      profile_image_url: 'https://example.com/avatar_56.jpg',
-      sns_links: [{ url: 'https://x.com/TaroPhoto' }]
     }
   }
 
@@ -235,9 +227,8 @@ describe('PhotoViewerPage - Issue#15', () => {
       await waitFor(() => {
         const image = screen.getByRole('img')
 
-        // CSSで -webkit-touch-callout: none が適用されることを確認するため、
-        // カスタムクラスが設定されているかチェック
-        expect(image).toHaveClass('touch-callout-none')
+        // user-select: none がインラインスタイルで適用されているか確認
+        expect(image).toHaveStyle({ userSelect: 'none' })
       })
     })
 
@@ -253,9 +244,8 @@ describe('PhotoViewerPage - Issue#15', () => {
       await waitFor(() => {
         const image = screen.getByRole('img')
 
-        // -webkit-user-drag: none が適用されることを確認するため、
-        // カスタムクラスが設定されているかチェック
-        expect(image).toHaveClass('user-drag-none')
+        // -webkit-user-drag: none がインラインスタイルで適用されているか確認
+        expect(image).toHaveStyle({ WebkitUserDrag: 'none' })
       })
     })
   })

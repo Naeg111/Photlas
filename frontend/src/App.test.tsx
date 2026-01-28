@@ -1,6 +1,7 @@
 import { render, screen, cleanup, act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import App from './App'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
 
@@ -8,7 +9,8 @@ import { SPLASH_SCREEN_DURATION_MS } from './config/app'
  * App コンポーネントのテスト
  * Issue#28: App.tsx再構築と不要ファイル削除
  *
- * React Routerを削除し、モーダルベースのナビゲーションに移行
+ * モーダルベースのナビゲーションを使用しつつ、
+ * Issue#15のPhotoViewerPageのみReact Routerルートを使用
  */
 
 // motion/react のモック（アニメーションを無効化）
@@ -90,6 +92,17 @@ function skipSplashScreen() {
   })
 }
 
+/**
+ * AppをMemoryRouterでラップしてレンダリングする
+ */
+function renderApp(initialEntries: string[] = ['/']) {
+  return render(
+    <MemoryRouter initialEntries={initialEntries}>
+      <App />
+    </MemoryRouter>
+  )
+}
+
 describe('App - Issue#28: App.tsx再構築', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -106,19 +119,19 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
   describe('SplashScreen Integration - スプラッシュ画面', () => {
     it('displays SplashScreen on initial load', () => {
-      render(<App />)
+      renderApp()
       expect(screen.getByText('Photlas')).toBeInTheDocument()
     })
 
     it('hides SplashScreen after 2 seconds', () => {
-      render(<App />)
+      renderApp()
       expect(screen.getByText('Photlas')).toBeInTheDocument()
       skipSplashScreen()
       expect(screen.queryByText('Photlas')).not.toBeInTheDocument()
     })
 
     it('shows main content after SplashScreen disappears', () => {
-      render(<App />)
+      renderApp()
       skipSplashScreen()
       expect(screen.getByTestId('google-map')).toBeInTheDocument()
     })
@@ -126,13 +139,13 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
   describe('Main Layout - メインレイアウト', () => {
     it('renders MapView as main content', () => {
-      render(<App />)
+      renderApp()
       skipSplashScreen()
       expect(screen.getByTestId('google-map')).toBeInTheDocument()
     })
 
     it('renders filter button in top-left area', () => {
-      render(<App />)
+      renderApp()
       skipSplashScreen()
       // Issue#28: フィルターボタンはSlidersHorizontalアイコンを使用
       const filterButton = screen.getByRole('button', { name: /フィルター/i })
@@ -140,7 +153,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
 
     it('renders menu button in top-right area', () => {
-      render(<App />)
+      renderApp()
       skipSplashScreen()
       // Issue#28: メニューボタンはMenuアイコンを使用
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
@@ -148,7 +161,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
 
     it('renders post button (FAB) in bottom-right area', () => {
-      render(<App />)
+      renderApp()
       skipSplashScreen()
       // Issue#28: 投稿ボタンはPlusアイコンを使用
       const postButton = screen.getByRole('button', { name: /投稿/i })
@@ -159,7 +172,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
   describe('Dialog State Management - ダイアログ状態管理', () => {
     it('opens FilterPanel when filter button is clicked', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-      render(<App />)
+      renderApp()
       skipSplashScreen()
 
       const filterButton = screen.getByRole('button', { name: /フィルター/i })
@@ -173,7 +186,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
     it('opens TopMenuPanel when menu button is clicked', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-      render(<App />)
+      renderApp()
       skipSplashScreen()
 
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
@@ -187,7 +200,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
     it('opens LoginRequiredDialog when post button is clicked while not authenticated', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-      render(<App />)
+      renderApp()
       skipSplashScreen()
 
       const postButton = screen.getByRole('button', { name: /投稿/i })
@@ -203,7 +216,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
   describe('Dialog Transitions - ダイアログ間遷移', () => {
     it('transitions from LoginRequiredDialog to LoginDialog when login button is clicked', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-      render(<App />)
+      renderApp()
       skipSplashScreen()
 
       // 投稿ボタンをクリックしてLoginRequiredDialogを開く
@@ -226,7 +239,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
     it('transitions from LoginRequiredDialog to SignUpDialog when signup button is clicked', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-      render(<App />)
+      renderApp()
       skipSplashScreen()
 
       // 投稿ボタンをクリックしてLoginRequiredDialogを開く
@@ -249,7 +262,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
     it('transitions from TopMenuPanel to LoginDialog when login is clicked', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-      render(<App />)
+      renderApp()
       skipSplashScreen()
 
       // メニューボタンをクリック
@@ -272,7 +285,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
     it('opens LoginDialog from TopMenuPanel', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-      render(<App />)
+      renderApp()
       skipSplashScreen()
 
       // メニューからログインダイアログを開く
@@ -295,7 +308,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
     it('opens SignUpDialog from LoginRequiredDialog', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-      render(<App />)
+      renderApp()
       skipSplashScreen()
 
       // 投稿ボタンをクリック
@@ -320,7 +333,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
   describe('Terms and Privacy Dialogs - 利用規約・プライバシーポリシー', () => {
     it('opens TermsOfServicePage when terms link is clicked from SignUpDialog', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-      render(<App />)
+      renderApp()
       skipSplashScreen()
 
       // SignUpDialogを開く
@@ -350,19 +363,19 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
   })
 
-  describe('No React Router - React Router不使用', () => {
-    it('renders without MemoryRouter wrapper', () => {
-      // Issue#28: AppはReact Routerなしで動作する
-      render(<App />)
+  describe('Routing - ルーティング', () => {
+    it('renders main content at root path', () => {
+      // Issue#28, Issue#15: ルートパスでメインコンテンツを表示
+      renderApp(['/'])
       skipSplashScreen()
       expect(screen.getByTestId('google-map')).toBeInTheDocument()
     })
 
-    it('does not use URL-based navigation', () => {
-      render(<App />)
-      skipSplashScreen()
-      // URLが変化しないことを確認（モック環境では常にlocation.pathnameは初期値）
-      expect(window.location.pathname).toBe('/')
+    it('renders PhotoViewerPage at /photo-viewer/:photoId path', () => {
+      // Issue#15: 写真ビューワールートのテスト
+      renderApp(['/photo-viewer/123'])
+      // PhotoViewerPageが表示される（ローディング中のメッセージ）
+      expect(screen.getByText(/読み込み中/i)).toBeInTheDocument()
     })
   })
 })

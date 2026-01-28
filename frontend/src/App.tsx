@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
+import PhotoViewerPage from './pages/PhotoViewerPage'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
 import { TopMenuPanel } from './components/TopMenuPanel'
@@ -116,6 +118,7 @@ function MainContent() {
     title: string
     categories: string[]
     position: { lat: number; lng: number }
+    weather: string
   }) => {
     // ファイル拡張子とContent-Typeを取得
     const extension = data.file.name.split('.').pop()?.toLowerCase() || 'jpg'
@@ -145,6 +148,7 @@ function MainContent() {
       latitude: data.position.lat,
       longitude: data.position.lng,
       categories: data.categories,
+      weather: data.weather,
     })
     console.log('[PhotoSubmit] Step 3 complete')
 
@@ -349,10 +353,9 @@ function MainContent() {
 }
 
 /**
- * App コンポーネント
- * SplashScreenとAuthProviderを管理
+ * メインアプリコンテント（スプラッシュスクリーン付き）
  */
-function App() {
+function MainApp() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -361,12 +364,27 @@ function App() {
   }, [])
 
   return (
-    <AuthProvider>
+    <>
       <AnimatePresence>
         {isLoading && <SplashScreen />}
       </AnimatePresence>
       {!isLoading && <MainContent />}
       <Toaster />
+    </>
+  )
+}
+
+/**
+ * App コンポーネント
+ * ルーティングとAuthProviderを管理
+ */
+function App() {
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/photo-viewer/:photoId" element={<PhotoViewerPage />} />
+        <Route path="*" element={<MainApp />} />
+      </Routes>
     </AuthProvider>
   )
 }

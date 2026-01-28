@@ -288,7 +288,15 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
                       <img
                         src={currentPhoto.imageUrl}
                         alt={currentPhoto.title}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-contain cursor-pointer"
+                        onClick={() => window.open(`/photo-viewer/${currentPhoto.photoId}`, '_blank')}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            window.open(`/photo-viewer/${currentPhoto.photoId}`, '_blank')
+                          }
+                        }}
                       />
                     </div>
                   </div>

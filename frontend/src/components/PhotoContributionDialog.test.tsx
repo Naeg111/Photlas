@@ -315,6 +315,10 @@ describe('PhotoContributionDialog', () => {
       const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
 
+      // 天気を選択
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
       // InlineMapPickerが表示されていることを確認（Google Mapsモック）
       await waitFor(() => {
         expect(screen.getByTestId('google-map-mock')).toBeInTheDocument()
