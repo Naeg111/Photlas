@@ -172,11 +172,10 @@ function MainContent() {
   }
 
   // スポットクリックハンドラー（MapViewから呼び出される）
-  // TODO: MapViewにonSpotClickを追加後に有効化
-  // const handleSpotClick = (spotId: number) => {
-  //   setSelectedSpotId(spotId)
-  //   dialog.open('photoDetail')
-  // }
+  const handleSpotClick = (spotId: number) => {
+    setSelectedSpotId(spotId)
+    dialog.open('photoDetail')
+  }
 
   // ライトボックス表示ハンドラー
   // TODO: PhotoDetailDialogから呼び出されるように修正後に有効化
@@ -189,7 +188,7 @@ function MainContent() {
     <div className="relative w-full h-full overflow-hidden isolate">
       {/* MapView - メインコンテンツ（z-0で最下層に配置、画面全体を覆う） */}
       <div className="fixed inset-0 z-0">
-        <MapView ref={mapRef} filterParams={mapFilterParams} />
+        <MapView ref={mapRef} filterParams={mapFilterParams} onSpotClick={handleSpotClick} />
       </div>
 
       {/* フローティングUI - 左上: フィルターボタン、右上: メニューボタン */}
