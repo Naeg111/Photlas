@@ -70,6 +70,16 @@ const sessionStorageMock = {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock })
 Object.defineProperty(window, 'sessionStorage', { value: sessionStorageMock })
 
+// Image コンストラクタのモック（@radix-ui/react-avatar用）
+class MockImage {
+  src: string = ''
+  onload: (() => void) | null = null
+  onerror: (() => void) | null = null
+  addEventListener = vi.fn()
+  removeEventListener = vi.fn()
+}
+vi.stubGlobal('Image', MockImage)
+
 /**
  * SplashScreenをスキップしてメインコンテンツを表示する
  * fake timersが有効な状態で呼び出す必要がある
