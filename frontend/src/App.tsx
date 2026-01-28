@@ -21,7 +21,7 @@ import type { MapViewFilterParams, MapViewHandle } from './components/MapView'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useDialogState } from './hooks/useDialogState'
 import { transformMonths, transformTimesOfDay, transformWeathers, transformCategories, categoryNamesToIds } from './utils/filterTransform'
-import { fetchCategories } from './utils/apiClient'
+import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto } from './utils/apiClient'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
 import { SlidersHorizontal, Menu, Plus, LocateFixed } from 'lucide-react'
 import { Button } from './components/ui/button'
@@ -101,6 +101,47 @@ function MainContent() {
     } else {
       dialog.open('loginRequired')
     }
+  }
+
+  /**
+   * 写真投稿ハンドラー
+   * Issue#9: 写真アップロード処理
+   * 1. Presigned URL取得
+   * 2. S3へアップロード
+   * 3. メタデータ保存
+   * 4. マップ更新
+   */
+  const handlePhotoSubmit = async (data: {
+    file: File
+    title: string
+    categories: string[]
+    position: { lat: number; lng: number }
+  }) => {
+    // ファイル拡張子とContent-Typeを取得
+    const extension = data.file.name.split('.').pop()?.toLowerCase() || 'jpg'
+    const contentType = data.file.type || 'image/jpeg'
+
+    // 1. Presigned URL取得
+    const { uploadUrl, objectKey } = await getPhotoUploadUrl({
+      extension,
+      contentType,
+    })
+
+    // 2. S3へアップロード
+    await uploadFileToS3(uploadUrl, data.file)
+
+    // 3. メタデータ保存
+    await createPhoto({
+      title: data.title,
+      s3ObjectKey: objectKey,
+      takenAt: new Date().toISOString(),
+      latitude: data.position.lat,
+      longitude: data.position.lng,
+      categories: data.categories,
+    })
+
+    // 4. マップ更新
+    mapRef.current?.refreshSpots()
   }
 
   // ログアウトハンドラー
@@ -236,7 +277,10 @@ function MainContent() {
         onClose={() => dialog.close('passwordReset')}
       />
 
-      <PhotoContributionDialog {...dialog.getProps('photoContribution')} />
+      <PhotoContributionDialog
+        {...dialog.getProps('photoContribution')}
+        onSubmit={handlePhotoSubmit}
+      />
 
       <WantToGoListDialog {...dialog.getProps('wantToGoList')} />
 

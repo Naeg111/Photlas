@@ -10,11 +10,13 @@ const API_BASE_URL = API_V1_URL;
 
 /**
  * 認証ヘッダーを取得する
+ * Issue#9: AuthContextと同じトークンキー(auth_token)を使用
  * @returns 認証ヘッダー（トークンがない場合は空オブジェクト）
  */
 export function getAuthHeaders(): HeadersInit {
-  if (typeof localStorage !== 'undefined' && localStorage.getItem('token')) {
-    return { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+  if (token) {
+    return { Authorization: `Bearer ${token}` }
   }
   return {}
 }
@@ -106,4 +108,123 @@ export async function fetchSpots(params: SpotSearchParams): Promise<SpotResponse
   }
 
   return await response.json();
+}
+
+// ============================================================
+// 写真投稿API（Issue#9: 写真アップロード処理）
+// ============================================================
+
+/**
+ * Presigned URL取得リクエストの型定義
+ */
+export interface UploadUrlRequest {
+  extension: string
+  contentType: string
+}
+
+/**
+ * Presigned URLレスポンスの型定義
+ */
+export interface UploadUrlResponse {
+  uploadUrl: string
+  objectKey: string
+}
+
+/**
+ * 写真メタデータ作成リクエストの型定義
+ */
+export interface CreatePhotoRequest {
+  title: string
+  s3ObjectKey: string
+  takenAt: string
+  latitude: number
+  longitude: number
+  categories: string[]
+}
+
+/**
+ * 写真レスポンスの型定義
+ */
+export interface PhotoResponse {
+  photo: {
+    photoId: number
+    title: string
+    s3ObjectKey: string
+    shotAt: string
+    weather: string | null
+    isFavorited: boolean
+    favoriteCount: number
+  }
+  spot: {
+    spotId: number
+    latitude: number
+    longitude: number
+  }
+  user: {
+    userId: number
+    username: string
+  }
+}
+
+/**
+ * 写真アップロード用のPresigned URLを取得
+ * @param request 拡張子とコンテンツタイプ
+ * @returns Presigned URLとオブジェクトキー
+ */
+export async function getPhotoUploadUrl(request: UploadUrlRequest): Promise<UploadUrlResponse> {
+  const response = await fetch(`${API_BASE_URL}/photos/upload-url`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(request),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to get upload URL: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * S3にファイルをアップロード
+ * @param uploadUrl Presigned URL
+ * @param file アップロードするファイル
+ */
+export async function uploadFileToS3(uploadUrl: string, file: File): Promise<void> {
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    body: file,
+    headers: {
+      'Content-Type': file.type,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to upload file to S3: ${response.status}`)
+  }
+}
+
+/**
+ * 写真メタデータを保存
+ * @param request 写真メタデータ
+ * @returns 作成された写真情報
+ */
+export async function createPhoto(request: CreatePhotoRequest): Promise<PhotoResponse> {
+  const response = await fetch(`${API_BASE_URL}/photos`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(request),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to create photo: ${response.status}`)
+  }
+
+  return response.json()
 }
