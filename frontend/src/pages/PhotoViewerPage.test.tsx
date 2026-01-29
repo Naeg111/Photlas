@@ -130,8 +130,8 @@ describe('PhotoViewerPage - Issue#15', () => {
 
       await waitFor(() => {
         const container = screen.getByTestId('photo-viewer-container')
-        expect(container).toHaveClass('w-full')
-        expect(container).toHaveClass('h-screen')
+        expect(container).toHaveClass('fixed')
+        expect(container).toHaveClass('inset-0')
       })
     })
 
