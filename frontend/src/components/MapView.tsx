@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react'
 import { GoogleMap, useLoadScript, OverlayViewF } from '@react-google-maps/api'
+import Supercluster from 'supercluster'
 import { API_V1_URL } from '../config/api'
 
 // MapViewの公開メソッド型定義
@@ -44,6 +45,26 @@ const PIN_COLOR_MAP: Record<SpotResponse['pinColor'], string> = {
 const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 const DEFAULT_ZOOM = 11
 const MIN_ZOOM_FOR_PINS = 11
+
+// クラスタリング設定（Issue#39）
+const CLUSTER_RADIUS = 60
+const CLUSTER_MAX_ZOOM = 16
+
+/**
+ * 投稿件数からピン色のTailwindクラスを決定
+ * Issue#12のピン色ルールに準拠
+ */
+function determinePinColorClass(count: number): string {
+  if (count >= 30) return PIN_COLOR_MAP.Red
+  if (count >= 10) return PIN_COLOR_MAP.Orange
+  if (count >= 5) return PIN_COLOR_MAP.Yellow
+  return PIN_COLOR_MAP.Green
+}
+
+// supercluster用のプロパティ型
+interface SpotProperties extends SpotResponse {
+  [key: string]: unknown
+}
 
 // Google Maps APIキー
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
@@ -249,6 +270,42 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterParams])
 
+  // Issue#39: supercluster によるクラスタリング
+  const clusterIndex = useMemo(() => {
+    const index = new Supercluster<SpotProperties>({
+      radius: CLUSTER_RADIUS,
+      maxZoom: CLUSTER_MAX_ZOOM,
+    })
+    const points: Supercluster.PointFeature<SpotProperties>[] = spots.map(spot => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [spot.longitude, spot.latitude] },
+      properties: { ...spot },
+    }))
+    index.load(points)
+    return index
+  }, [spots])
+
+  const clusteredFeatures = useMemo(() => {
+    if (!map || zoom < MIN_ZOOM_FOR_PINS) return []
+    const bounds = map.getBounds()
+    if (!bounds) return []
+    const bbox: [number, number, number, number] = [
+      bounds.getSouthWest().lng(),
+      bounds.getSouthWest().lat(),
+      bounds.getNorthEast().lng(),
+      bounds.getNorthEast().lat(),
+    ]
+    return clusterIndex.getClusters(bbox, Math.floor(zoom))
+  }, [clusterIndex, map, zoom])
+
+  /**
+   * クラスタ内の合計投稿件数を取得
+   */
+  const getClusterPhotoCount = useCallback((clusterId: number): number => {
+    const leaves = clusterIndex.getLeaves(clusterId, Infinity)
+    return leaves.reduce((sum, leaf) => sum + (leaf.properties.photoCount || 0), 0)
+  }, [clusterIndex])
+
   // ズームバナーをクリックしたときの処理
   const handleZoomBannerClick = () => {
     if (map) {
@@ -283,23 +340,55 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           keyboardShortcuts: false,
         }}
       >
-        {/* ズームレベルが11以上の場合のみピンを表示 */}
+        {/* Issue#39: クラスタリング対応ピン表示 */}
         {zoom >= MIN_ZOOM_FOR_PINS &&
-          spots.map((spot) => (
-            <OverlayViewF
-              key={spot.spotId}
-              position={{ lat: spot.latitude, lng: spot.longitude }}
-              mapPaneName="overlayMouseTarget"
-            >
-              <div
-                data-testid={`map-pin-${spot.spotId}`}
-                className={`rounded-full ${PIN_COLOR_MAP[spot.pinColor]} w-8 h-8 flex items-center justify-center text-white text-sm font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2`}
-                onClick={() => onSpotClick?.(spot.spotId)}
+          clusteredFeatures.map((feature) => {
+            const [lng, lat] = feature.geometry.coordinates
+            const isCluster = feature.properties.cluster
+
+            if (isCluster) {
+              const clusterId = feature.id as number
+              const totalPhotoCount = getClusterPhotoCount(clusterId)
+              const colorClass = determinePinColorClass(totalPhotoCount)
+              return (
+                <OverlayViewF
+                  key={`cluster-${clusterId}`}
+                  position={{ lat, lng }}
+                  mapPaneName="overlayMouseTarget"
+                >
+                  <div
+                    data-testid={`map-cluster-${clusterId}`}
+                    className={`rounded-full ${colorClass} w-10 h-10 flex items-center justify-center text-white text-sm font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2 border-2 border-white`}
+                    onClick={() => {
+                      const expansionZoom = clusterIndex.getClusterExpansionZoom(clusterId)
+                      map?.setZoom(Math.min(expansionZoom, CLUSTER_MAX_ZOOM + 1))
+                      map?.panTo({ lat, lng })
+                    }}
+                  >
+                    {totalPhotoCount}
+                  </div>
+                </OverlayViewF>
+              )
+            }
+
+            // 個別スポット
+            const spot = feature.properties as SpotProperties
+            return (
+              <OverlayViewF
+                key={spot.spotId}
+                position={{ lat, lng }}
+                mapPaneName="overlayMouseTarget"
               >
-                {spot.photoCount}
-              </div>
-            </OverlayViewF>
-          ))}
+                <div
+                  data-testid={`map-pin-${spot.spotId}`}
+                  className={`rounded-full ${PIN_COLOR_MAP[spot.pinColor]} w-8 h-8 flex items-center justify-center text-white text-sm font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2`}
+                  onClick={() => onSpotClick?.(spot.spotId)}
+                >
+                  {spot.photoCount}
+                </div>
+              </OverlayViewF>
+            )
+          })}
 
         {/* 現在地マーカー（パルスエフェクト + ビーム + 青い円） */}
         {userLocation && (
