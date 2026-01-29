@@ -11,8 +11,7 @@ import java.util.List;
  */
 public class CreatePhotoRequest {
 
-    @NotBlank(message = "タイトルは必須です")
-    @Size(min = 2, max = 20, message = "タイトルは2文字以上20文字以内で入力してください")
+    @Size(max = 20, message = "タイトルは20文字以内で入力してください")
     private String title;
 
     @NotBlank(message = "S3オブジェクトキーは必須です")
