@@ -33,6 +33,7 @@ const WEATHER_LABELS: Record<string, string> = {
   sunny: '晴れ',
   cloudy: '曇り',
   rainy: '雨',
+  snowy: '雪',
 }
 
 // Error messages
