@@ -9,6 +9,24 @@ import { API_V1_URL } from '../config/api';
 const API_BASE_URL = API_V1_URL;
 
 /**
+ * API通信エラー
+ * HTTPステータスコードを保持し、呼び出し元での分岐処理を可能にする
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+
+  get isUnauthorized(): boolean {
+    return this.status === 401
+  }
+}
+
+/**
  * 認証ヘッダーを取得する
  * Issue#9: AuthContextと同じトークンキー(auth_token)を使用
  * @returns 認証ヘッダー（トークンがない場合は空オブジェクト）
@@ -183,7 +201,7 @@ export async function getPhotoUploadUrl(request: UploadUrlRequest): Promise<Uplo
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to get upload URL: ${response.status}`)
+    throw new ApiError(`Failed to get upload URL: ${response.status}`, response.status)
   }
 
   return response.json()
@@ -204,7 +222,7 @@ export async function uploadFileToS3(uploadUrl: string, file: File): Promise<voi
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to upload file to S3: ${response.status}`)
+    throw new ApiError(`Failed to upload file to S3: ${response.status}`, response.status)
   }
 }
 
@@ -224,7 +242,7 @@ export async function createPhoto(request: CreatePhotoRequest): Promise<PhotoRes
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to create photo: ${response.status}`)
+    throw new ApiError(`Failed to create photo: ${response.status}`, response.status)
   }
 
   return response.json()

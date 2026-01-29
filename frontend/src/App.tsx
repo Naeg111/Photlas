@@ -23,7 +23,7 @@ import type { MapViewFilterParams, MapViewHandle } from './components/MapView'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useDialogState } from './hooks/useDialogState'
 import { transformMonths, transformTimesOfDay, transformWeathers, transformCategories, categoryNamesToIds } from './utils/filterTransform'
-import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto } from './utils/apiClient'
+import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto, ApiError } from './utils/apiClient'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
 import { SlidersHorizontal, Menu, Plus, LocateFixed } from 'lucide-react'
 import { Button } from './components/ui/button'
@@ -124,38 +124,38 @@ function MainContent() {
     const extension = data.file.name.split('.').pop()?.toLowerCase() || 'jpg'
     const contentType = data.file.type || 'image/jpeg'
 
-    console.log('[PhotoSubmit] Starting upload...', { extension, contentType, title: data.title })
+    try {
+      // 1. Presigned URL取得
+      const { uploadUrl, objectKey } = await getPhotoUploadUrl({
+        extension,
+        contentType,
+      })
 
-    // 1. Presigned URL取得
-    console.log('[PhotoSubmit] Step 1: Getting presigned URL...')
-    const { uploadUrl, objectKey } = await getPhotoUploadUrl({
-      extension,
-      contentType,
-    })
-    console.log('[PhotoSubmit] Step 1 complete:', { objectKey })
+      // 2. S3へアップロード
+      await uploadFileToS3(uploadUrl, data.file)
 
-    // 2. S3へアップロード
-    console.log('[PhotoSubmit] Step 2: Uploading to S3...')
-    await uploadFileToS3(uploadUrl, data.file)
-    console.log('[PhotoSubmit] Step 2 complete')
+      // 3. メタデータ保存
+      await createPhoto({
+        title: data.title,
+        s3ObjectKey: objectKey,
+        takenAt: new Date().toISOString(),
+        latitude: data.position.lat,
+        longitude: data.position.lng,
+        categories: data.categories,
+        weather: data.weather,
+      })
 
-    // 3. メタデータ保存
-    console.log('[PhotoSubmit] Step 3: Creating photo metadata...')
-    await createPhoto({
-      title: data.title,
-      s3ObjectKey: objectKey,
-      takenAt: new Date().toISOString(),
-      latitude: data.position.lat,
-      longitude: data.position.lng,
-      categories: data.categories,
-      weather: data.weather,
-    })
-    console.log('[PhotoSubmit] Step 3 complete')
-
-    // 4. マップ更新
-    console.log('[PhotoSubmit] Step 4: Refreshing map...')
-    mapRef.current?.refreshSpots()
-    console.log('[PhotoSubmit] All steps complete!')
+      // 4. マップ更新
+      mapRef.current?.refreshSpots()
+    } catch (error) {
+      // 認証エラーの場合はログアウトしてログインダイアログを表示
+      if (error instanceof ApiError && error.isUnauthorized) {
+        logout()
+        dialog.close('photoContribution')
+        dialog.open('loginRequired')
+      }
+      throw error
+    }
   }
 
   // ログアウトハンドラー
