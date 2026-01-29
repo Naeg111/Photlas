@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Star } from 'lucide-react'
@@ -148,15 +148,26 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
   const [favoriteCount, setFavoriteCount] = useState(0)
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false)
 
+  // refで最新のphotoDetailsを参照（依存配列ループ回避）
+  const photoDetailsRef = useRef(photoDetails)
+  photoDetailsRef.current = photoDetails
+
+  // 取得中のphotoIdを追跡（重複リクエスト防止）
+  const fetchingIdsRef = useRef(new Set<number>())
+
+  // 最後に表示した写真情報を保持（点滅防止）
+  const [displayedPhoto, setDisplayedPhoto] = useState<PhotoDetail | null>(null)
+
   // スポットの写真ID一覧を取得
   useEffect(() => {
     if (!open) {
-      // Reset state when dialog closes
       setPhotoIds([])
       setPhotoDetails(new Map())
       setCurrentIndex(0)
       setError(null)
       setLoading(true)
+      setDisplayedPhoto(null)
+      fetchingIdsRef.current.clear()
       return
     }
 
@@ -165,19 +176,18 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
       setError(null)
 
       try {
-        // Fetch photo IDs
         const ids = await fetchPhotoIds(spotId)
         setPhotoIds(ids)
         setCurrentIndex(0)
 
-        // Fetch first photo detail
         if (ids.length > 0) {
           const detail = await fetchPhotoDetailById(ids[0])
           setPhotoDetails(new Map().set(ids[0], detail))
+          setDisplayedPhoto(detail)
         }
 
         setLoading(false)
-      } catch (err) {
+      } catch {
         setError(ERROR_LOAD_FAILED)
         setLoading(false)
       }
@@ -186,36 +196,39 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
     fetchData()
   }, [open, spotId])
 
-  // 写真詳細を取得
+  // 写真詳細を取得（refで依存配列ループを回避、429時にエラー表示しない）
   const fetchPhotoDetail = useCallback(async (photoId: number) => {
-    if (photoDetails.has(photoId)) return
+    if (photoDetailsRef.current.has(photoId)) return
+    if (fetchingIdsRef.current.has(photoId)) return
+
+    fetchingIdsRef.current.add(photoId)
 
     try {
       const detail = await fetchPhotoDetailById(photoId)
       setPhotoDetails(prev => new Map(prev).set(photoId, detail))
-    } catch (err) {
-      setError(ERROR_LOAD_FAILED)
+    } catch {
+      // 429等のエラーは無視（ダイアログ全体をエラーにしない）
+    } finally {
+      fetchingIdsRef.current.delete(photoId)
     }
-  }, [photoDetails])
+  }, [])
 
   // カルーセル操作
-  const scrollPrev = useCallback(async () => {
+  const scrollPrev = useCallback(() => {
     if (!emblaApi) return
     emblaApi.scrollPrev()
-    // 前の写真の詳細を事前取得
     const prevIndex = currentIndex - 1
     if (prevIndex >= 0) {
-      await fetchPhotoDetail(photoIds[prevIndex])
+      fetchPhotoDetail(photoIds[prevIndex])
     }
   }, [emblaApi, currentIndex, photoIds, fetchPhotoDetail])
 
-  const scrollNext = useCallback(async () => {
+  const scrollNext = useCallback(() => {
     if (!emblaApi) return
     emblaApi.scrollNext()
-    // 次の写真の詳細を事前取得
     const nextIndex = currentIndex + 1
     if (nextIndex < photoIds.length) {
-      await fetchPhotoDetail(photoIds[nextIndex])
+      fetchPhotoDetail(photoIds[nextIndex])
     }
   }, [emblaApi, currentIndex, photoIds, fetchPhotoDetail])
 
@@ -226,25 +239,30 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
     const onSelect = () => {
       const selectedIndex = emblaApi.selectedScrollSnap()
       setCurrentIndex(selectedIndex)
-      // 選択されたスライドの写真詳細を取得
-      const selectedPhotoId = photoIds[selectedIndex]
-      if (selectedPhotoId && !photoDetails.has(selectedPhotoId)) {
-        fetchPhotoDetailById(selectedPhotoId).then(detail => {
-          setPhotoDetails(prev => new Map(prev).set(selectedPhotoId, detail))
-        }).catch(() => {
-          setError(ERROR_LOAD_FAILED)
-        })
-      }
     }
 
     emblaApi.on('select', onSelect)
     return () => {
       emblaApi.off('select', onSelect)
     }
-  }, [emblaApi, photoIds, photoDetails])
+  }, [emblaApi])
 
   const currentPhotoId = photoIds[currentIndex]
   const currentPhoto = currentPhotoId ? photoDetails.get(currentPhotoId) : null
+
+  // 現在のスライドの写真詳細を取得
+  useEffect(() => {
+    if (currentPhotoId && !photoDetails.has(currentPhotoId)) {
+      fetchPhotoDetail(currentPhotoId)
+    }
+  }, [currentPhotoId, photoDetails, fetchPhotoDetail])
+
+  // 表示用の写真情報を更新（nullにはしない→点滅防止）
+  useEffect(() => {
+    if (currentPhoto) {
+      setDisplayedPhoto(currentPhoto)
+    }
+  }, [currentPhoto])
 
   // Issue#30: お気に入り状態を写真詳細から同期
   useEffect(() => {
@@ -314,7 +332,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
           {!loading && !error && photoIds.length > 0 && (
             <div className="flex flex-col min-h-0 flex-1">
               {/* カルーセル */}
-              <div className="relative flex-shrink-0 min-h-0 max-h-[60vh] overflow-hidden">
+              <div className="relative flex-shrink-0 min-h-[40vh] max-h-[60vh] overflow-hidden">
                 <div className="overflow-hidden h-full" ref={emblaRef}>
                   <div className="flex h-full">
                     {photoIds.map((photoId) => {
@@ -375,39 +393,39 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
                 )}
               </div>
 
-              {/* 写真情報 */}
-              {currentPhoto && (
+              {/* 写真情報（displayedPhotoで表示し、スライド切替時の点滅を防止） */}
+              {displayedPhoto && (
                 <div className="flex-shrink-0 p-6 space-y-4 overflow-y-auto">
-                  <h2 className="text-2xl font-bold">{currentPhoto.title}</h2>
+                  <h2 className="text-2xl font-bold">{displayedPhoto.title}</h2>
 
                   {/* ユーザー情報 */}
                   <div
                     className="flex items-center gap-3 cursor-pointer hover:opacity-70 transition-opacity"
                     onClick={() => onUserClick?.({
-                      userId: currentPhoto.user.userId,
-                      username: currentPhoto.user.username,
+                      userId: displayedPhoto.user.userId,
+                      username: displayedPhoto.user.username,
                     })}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         onUserClick?.({
-                          userId: currentPhoto.user.userId,
-                          username: currentPhoto.user.username,
+                          userId: displayedPhoto.user.userId,
+                          username: displayedPhoto.user.username,
                         })
                       }
                     }}
                   >
                     <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
-                      {currentPhoto.user.username.charAt(0).toUpperCase()}
+                      {displayedPhoto.user.username.charAt(0).toUpperCase()}
                     </div>
-                    <span className="font-medium">{currentPhoto.user.username}</span>
+                    <span className="font-medium">{displayedPhoto.user.username}</span>
                   </div>
 
                   {/* 天気情報 */}
-                  {currentPhoto.weather && (
+                  {displayedPhoto.weather && (
                     <div className="text-sm text-gray-600">
-                      天気: {WEATHER_LABELS[currentPhoto.weather] ?? currentPhoto.weather}
+                      天気: {WEATHER_LABELS[displayedPhoto.weather] ?? displayedPhoto.weather}
                     </div>
                   )}
 
