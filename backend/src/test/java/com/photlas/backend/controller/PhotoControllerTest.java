@@ -314,8 +314,8 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("バリデーションエラー - title必須")
-    void testCreatePhoto_MissingTitle_ReturnsBadRequest() throws Exception {
+    @DisplayName("正常ケース - タイトルなし(任意項目)で写真投稿")
+    void testCreatePhoto_NullTitle_ReturnsCreated() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 null,
                 S3_OBJECT_KEY_PREFIX + "003.jpg",
@@ -330,30 +330,9 @@ public class PhotoControllerTest {
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.errors[?(@.field == '" + FIELD_TITLE + "')].message").exists());
-    }
-
-    @Test
-    @DisplayName("バリデーションエラー - title文字数制限(2文字未満)")
-    void testCreatePhoto_TitleTooShort_ReturnsBadRequest() throws Exception {
-        CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_SHORT,
-                S3_OBJECT_KEY_PREFIX + "004.jpg",
-                ISO_DATETIME_1,
-                LATITUDE_TOKYO_TOWER,
-                LONGITUDE_TOKYO_TOWER,
-                List.of(CATEGORY_LANDSCAPE)
-        );
-
-        mockMvc.perform(post(ENDPOINT_PHOTOS)
-                .with(csrf())
-                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[?(@.field == '" + FIELD_TITLE + "')].message").exists());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists())
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID).exists());
     }
 
     @Test
