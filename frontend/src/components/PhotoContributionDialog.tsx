@@ -10,6 +10,7 @@ import { Upload, X } from 'lucide-react'
 import { Progress } from './ui/progress'
 import { motion, AnimatePresence } from 'motion/react'
 import { PHOTO_CATEGORIES, PHOTO_UPLOAD, UPLOAD_STATUS } from '../utils/constants'
+import { WeatherIcons } from './FilterIcons'
 import { InlineMapPicker } from './InlineMapPicker'
 
 /**
@@ -193,7 +194,16 @@ export function PhotoContributionDialog({
           {/* 写真選択 */}
           <div className="space-y-3">
             <Label className="text-base">写真 *</Label>
-            <div className="border-2 border-dashed rounded-lg p-6">
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 ${
+                !previewUrl ? 'cursor-pointer hover:border-gray-400 transition-colors' : ''
+              }`}
+              onClick={() => {
+                if (!previewUrl) {
+                  fileInputRef.current?.click()
+                }
+              }}
+            >
               {previewUrl ? (
                 <div className="relative">
                   <ImageWithFallback
@@ -216,7 +226,10 @@ export function PhotoContributionDialog({
                   <Upload className="w-12 h-12 text-gray-400 mb-4" />
                   <Button
                     variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      fileInputRef.current?.click()
+                    }}
                   >
                     写真を選択
                   </Button>
@@ -300,21 +313,25 @@ export function PhotoContributionDialog({
           <div className="space-y-3">
             <Label className="text-base">天気 *</Label>
             <div className="grid grid-cols-4 gap-3">
-              {WEATHER_OPTIONS.map((weather) => (
-                <div
-                  key={weather}
-                  className={`flex items-center justify-center border rounded-lg p-3 cursor-pointer transition-colors ${
-                    selectedWeather === weather
-                      ? 'border-primary bg-primary/5'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedWeather(weather)}
-                >
-                  <Label className="cursor-pointer text-center">
-                    {weather}
-                  </Label>
-                </div>
-              ))}
+              {WEATHER_OPTIONS.map((weather) => {
+                const Icon = WeatherIcons[weather]
+                return (
+                  <div
+                    key={weather}
+                    className={`flex items-center justify-center gap-2 border rounded-lg p-3 cursor-pointer transition-colors ${
+                      selectedWeather === weather
+                        ? 'border-primary bg-primary/5'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setSelectedWeather(weather)}
+                  >
+                    {Icon && <Icon className="w-5 h-5 shrink-0" />}
+                    <Label className="cursor-pointer">
+                      {weather}
+                    </Label>
+                  </div>
+                )
+              })}
             </div>
           </div>
 
