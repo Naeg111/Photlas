@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react'
-import { GoogleMap, useLoadScript } from '@react-google-maps/api'
-import { MapPin, LocateFixed } from 'lucide-react'
+import { useState, useCallback, useRef } from 'react'
+import { GoogleMap, useLoadScript, Autocomplete } from '@react-google-maps/api'
+import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
 
 /**
@@ -22,6 +22,9 @@ const DEFAULT_ZOOM = 15
 // Google Maps APIキー
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 
+// Places ライブラリ（useLoadScriptのlibrariesは定数参照が必要）
+const LIBRARIES: ('places')[] = ['places']
+
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
@@ -37,9 +40,12 @@ const mapOptions: google.maps.MapOptions = {
 
 export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null)
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: LIBRARIES,
   })
 
   const handleLoad = useCallback((mapInstance: google.maps.Map) => {
@@ -56,6 +62,25 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
       }
     })
   }, [onPositionChange])
+
+  const handleAutocompleteLoad = useCallback((autocomplete: google.maps.places.Autocomplete) => {
+    autocompleteRef.current = autocomplete
+  }, [])
+
+  const handlePlaceChanged = useCallback(() => {
+    const autocomplete = autocompleteRef.current
+    if (!autocomplete || !map) return
+
+    const place = autocomplete.getPlace()
+    if (place.geometry?.location) {
+      const newCenter = {
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+      }
+      map.panTo(newCenter)
+      onPositionChange(newCenter)
+    }
+  }, [map, onPositionChange])
 
   const handleCurrentLocation = useCallback(() => {
     if (!navigator.geolocation || !map) return
@@ -103,6 +128,25 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
         options={mapOptions}
         onLoad={handleLoad}
       />
+
+      {/* 検索バー */}
+      <div className="absolute top-3 left-3 right-3 z-10">
+        <Autocomplete
+          onLoad={handleAutocompleteLoad}
+          onPlaceChanged={handlePlaceChanged}
+          options={{ componentRestrictions: { country: 'jp' } }}
+        >
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="場所を検索"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+        </Autocomplete>
+      </div>
 
       {/* 中央固定ピン */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full pointer-events-none z-10">

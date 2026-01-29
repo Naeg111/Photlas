@@ -40,6 +40,7 @@ vi.mock('@react-google-maps/api', () => ({
     }
     return <div data-testid="google-map-mock">{children}</div>
   },
+  Autocomplete: ({ children }: any) => <div data-testid="autocomplete-mock">{children}</div>,
 }))
 
 // URL.createObjectURLのモック
@@ -95,7 +96,7 @@ describe('PhotoContributionDialog', () => {
     it('renders title input field', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      expect(screen.getByText('タイトル *')).toBeInTheDocument()
+      expect(screen.getByText('タイトル')).toBeInTheDocument()
       expect(screen.getByPlaceholderText(/夕暮れの東京タワー/)).toBeInTheDocument()
     })
 
@@ -244,24 +245,6 @@ describe('PhotoContributionDialog', () => {
     it('submit button is disabled when no photo is selected', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      const submitButton = screen.getByRole('button', { name: '投稿する' })
-      expect(submitButton).toBeDisabled()
-    })
-
-    it('submit button is disabled when title is empty', async () => {
-      const user = userEvent.setup()
-      render(<PhotoContributionDialog {...defaultProps} />)
-
-      // 写真を選択
-      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement
-      await user.upload(input, file)
-
-      // カテゴリを選択
-      const checkbox = screen.getByRole('checkbox', { name: /風景/ })
-      await user.click(checkbox)
-
-      // タイトルが空の状態
       const submitButton = screen.getByRole('button', { name: '投稿する' })
       expect(submitButton).toBeDisabled()
     })

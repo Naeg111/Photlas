@@ -37,6 +37,7 @@ interface PhotoDetailDialogProps {
   open: boolean
   spotId: number
   onClose: () => void
+  onUserClick?: (user: { userId: number; username: string }) => void
 }
 
 // APIレスポンスの型定義
@@ -126,7 +127,7 @@ async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
   return transformApiResponse(data)
 }
 
-export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetailDialogProps) {
+export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }: PhotoDetailDialogProps) {
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [photoDetails, setPhotoDetails] = useState<Map<number, PhotoDetail>>(new Map())
@@ -336,7 +337,23 @@ export default function PhotoDetailDialog({ open, spotId, onClose }: PhotoDetail
                 <h2 className="text-2xl font-bold">{currentPhoto.title}</h2>
 
                 {/* ユーザー情報 */}
-                <div className="flex items-center gap-3">
+                <div
+                  className="flex items-center gap-3 cursor-pointer hover:opacity-70 transition-opacity"
+                  onClick={() => onUserClick?.({
+                    userId: currentPhoto.user.userId,
+                    username: currentPhoto.user.username,
+                  })}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      onUserClick?.({
+                        userId: currentPhoto.user.userId,
+                        username: currentPhoto.user.username,
+                      })
+                    }
+                  }}
+                >
                   <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
                     {currentPhoto.user.username.charAt(0).toUpperCase()}
                   </div>

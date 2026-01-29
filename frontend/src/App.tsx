@@ -63,6 +63,9 @@ function MainContent() {
   // プロフィールダイアログの初期タブ
   const [profileInitialTab, setProfileInitialTab] = useState<'posts' | 'favorites'>('posts')
 
+  // 他ユーザーのプロフィール表示用の状態
+  const [viewingUser, setViewingUser] = useState<{ userId: number; username: string } | null>(null)
+
   // カテゴリマップの取得
   useEffect(() => {
     const loadCategories = async () => {
@@ -166,6 +169,7 @@ function MainContent() {
 
   // マイページハンドラー
   const handleShowProfile = () => {
+    setViewingUser(null)
     setProfileInitialTab('posts')
     dialog.open('profile')
   }
@@ -173,6 +177,13 @@ function MainContent() {
   // 行きたい場所リストハンドラー
   const handleShowWantToGoList = () => {
     dialog.open('wantToGoList')
+  }
+
+  // 写真詳細のユーザークリックハンドラー
+  const handleUserClick = (clickedUser: { userId: number; username: string }) => {
+    setViewingUser(clickedUser)
+    setProfileInitialTab('posts')
+    dialog.open('profile')
   }
 
   // スポットクリックハンドラー（MapViewから呼び出される）
@@ -305,18 +316,26 @@ function MainContent() {
       )}
 
       {/* ProfileDialog - ユーザープロフィール表示 */}
-      {user && (
+      {(user || viewingUser) && (
         <ProfileDialog
           open={dialog.isOpen('profile')}
-          onClose={() => dialog.close('profile')}
-          userProfile={{
+          onClose={() => {
+            dialog.close('profile')
+            setViewingUser(null)
+          }}
+          userProfile={viewingUser ? {
+            userId: viewingUser.userId,
+            username: viewingUser.username,
+            profileImageUrl: null,
+            snsLinks: [],
+          } : {
             userId: 0, // TODO: 実際のユーザーIDを取得
-            username: user.username || '',
-            email: user.email,
+            username: user?.username || '',
+            email: user?.email,
             profileImageUrl: null,
             snsLinks: [],
           }}
-          isOwnProfile={true}
+          isOwnProfile={!viewingUser}
           photos={[]}
           onPhotoClick={() => {
             // TODO: 写真クリック時の処理
@@ -334,6 +353,7 @@ function MainContent() {
             dialog.close('photoDetail')
             setSelectedSpotId(null)
           }}
+          onUserClick={handleUserClick}
         />
       )}
 

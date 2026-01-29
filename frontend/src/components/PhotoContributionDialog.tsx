@@ -95,10 +95,6 @@ export function PhotoContributionDialog({
       alert('写真を選択してください。')
       return
     }
-    if (!title.trim()) {
-      alert('タイトルを入力してください。')
-      return
-    }
     if (selectedCategories.length === 0) {
       alert('カテゴリを1つ以上選択してください。')
       return
@@ -189,7 +185,7 @@ export function PhotoContributionDialog({
     }
   }
 
-  const canSubmit = selectedFile && title.trim() && selectedCategories.length > 0 && pinPosition && selectedWeather
+  const canSubmit = selectedFile && selectedCategories.length > 0 && pinPosition && selectedWeather
 
   return (
     <Dialog open={open} onOpenChange={uploadStatus === 'uploading' ? undefined : onOpenChange}>
@@ -261,7 +257,7 @@ export function PhotoContributionDialog({
 
           {/* タイトル */}
           <div className="space-y-3">
-            <Label htmlFor="title" className="text-base">タイトル *</Label>
+            <Label htmlFor="title" className="text-base">タイトル</Label>
             <Input
               id="title"
               value={title}

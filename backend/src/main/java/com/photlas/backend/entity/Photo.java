@@ -28,7 +28,7 @@ public class Photo {
     @Column(name = "s3_object_key", nullable = false, unique = true, length = 255)
     private String s3ObjectKey;
 
-    @Column(name = "title", nullable = false, length = 20)
+    @Column(name = "title", nullable = true, length = 20)
     private String title;
 
     @Column(name = "shot_at")
