@@ -10,6 +10,7 @@ import { Upload, X } from 'lucide-react'
 import { Progress } from './ui/progress'
 import { motion, AnimatePresence } from 'motion/react'
 import { PHOTO_CATEGORIES, PHOTO_UPLOAD, UPLOAD_STATUS } from '../utils/constants'
+import { ApiError } from '../utils/apiClient'
 import { WeatherIcons } from './FilterIcons'
 import { InlineMapPicker } from './InlineMapPicker'
 
@@ -36,7 +37,7 @@ interface PhotoContributionDialogProps {
   }) => Promise<void>
 }
 
-type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
+type UploadStatus = 'idle' | 'uploading' | 'success' | 'error' | 'auth_error'
 
 export function PhotoContributionDialog({
   open,
@@ -146,8 +147,18 @@ export function PhotoContributionDialog({
         resetForm()
         onOpenChange(false)
       }, UPLOAD_STATUS.SUCCESS_CLOSE_DELAY)
-    } catch {
+    } catch (error) {
       clearInterval(interval)
+
+      // 認証エラーの場合はダイアログを閉じる（App側でログイン画面へ遷移）
+      if (error instanceof ApiError && error.isUnauthorized) {
+        setUploadStatus('auth_error')
+        setTimeout(() => {
+          resetForm()
+        }, UPLOAD_STATUS.ERROR_RESET_DELAY)
+        return
+      }
+
       setUploadStatus('error')
 
       // エラー後にリセット
@@ -366,7 +377,7 @@ export function PhotoContributionDialog({
             >
               <div
                 className={`max-w-md mx-auto rounded-lg shadow-2xl p-6 ${
-                  uploadStatus === 'error'
+                  uploadStatus === 'error' || uploadStatus === 'auth_error'
                     ? 'bg-red-500'
                     : uploadStatus === 'success'
                     ? 'bg-green-500'
@@ -376,13 +387,14 @@ export function PhotoContributionDialog({
                 <div className="space-y-3">
                   <p
                     className={`text-center ${
-                      uploadStatus === 'error' || uploadStatus === 'success'
+                      uploadStatus === 'error' || uploadStatus === 'success' || uploadStatus === 'auth_error'
                         ? 'text-white'
                         : 'text-gray-900'
                     }`}
                   >
                     {uploadStatus === 'uploading' && '送信しています'}
                     {uploadStatus === 'success' && '完了しました'}
+                    {uploadStatus === 'auth_error' && 'ログインの有効期限が切れました。再度ログインしてください'}
                     {uploadStatus === 'error' && 'エラー 時間をおいて再度お試しください'}
                   </p>
                   {uploadStatus === 'uploading' && (
