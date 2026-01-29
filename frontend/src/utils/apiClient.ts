@@ -13,12 +13,12 @@ const API_BASE_URL = API_V1_URL;
  * HTTPステータスコードを保持し、呼び出し元での分岐処理を可能にする
  */
 export class ApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
+  readonly status: number
+
+  constructor(message: string, status: number) {
     super(message)
     this.name = 'ApiError'
+    this.status = status
   }
 
   get isUnauthorized(): boolean {
