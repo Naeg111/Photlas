@@ -276,10 +276,10 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0" hideCloseButton>
+      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0 flex flex-col overflow-hidden" hideCloseButton>
         <DialogTitle className="sr-only">{SR_TITLE}</DialogTitle>
         <DialogDescription className="sr-only">{SR_DESCRIPTION}</DialogDescription>
-        <div className="relative h-full">
+        <div className="relative flex flex-col min-h-0 h-full">
           {/* 閉じるボタン */}
           <Button
             variant="ghost"
@@ -304,15 +304,15 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
           )}
 
           {!loading && !error && currentPhoto && (
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col min-h-0 flex-1">
               {/* カルーセル */}
-              <div className="relative flex-1">
+              <div className="relative flex-1 min-h-0 max-h-[60vh]">
                 <div className="overflow-hidden h-full" ref={emblaRef}>
                   <div className="flex h-full">
                     {photoIds.map((photoId) => {
                       const photo = photoDetails.get(photoId)
                       return (
-                        <div key={photoId} className="flex-[0_0_100%] min-w-0">
+                        <div key={photoId} className="flex-[0_0_100%] min-w-0 h-full">
                           {photo ? (
                             <img
                               src={photo.imageUrl}
