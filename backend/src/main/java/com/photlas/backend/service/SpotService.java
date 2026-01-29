@@ -8,11 +8,12 @@ import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,9 @@ public class SpotService {
     private static final int PHOTO_COUNT_THRESHOLD_ORANGE = 10;
     private static final int PHOTO_COUNT_THRESHOLD_YELLOW = 5;
     private static final int MAX_SPOTS_LIMIT = 50;
+
+    @Value("${spot.pin-color.period-hours}")
+    private int pinColorPeriodHours;
 
     private final SpotRepository spotRepository;
     private final PhotoRepository photoRepository;
@@ -54,9 +58,13 @@ public class SpotService {
         List<String> safeWeathers = (weathers == null || weathers.isEmpty())
             ? List.of("__NONE__") : weathers;
 
+        // ピン色判定期間の基準時刻を計算
+        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(pinColorPeriodHours);
+
         // リポジトリから集計結果を取得
         List<Object[]> results = spotRepository.findSpotsWithFilters(
-                north, south, east, west, safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers
+                north, south, east, west, safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
+                cutoffTime
         );
 
         logger.info("Found {} spots", results.size());

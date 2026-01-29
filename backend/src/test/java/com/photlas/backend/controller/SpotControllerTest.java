@@ -89,10 +89,11 @@ public class SpotControllerTest {
     private static final String BOUND_EAST_WIDE = "140.0";
     private static final String BOUND_WEST_WIDE = "139.0";
 
-    // Test Data Constants - Dates
-    private static final LocalDateTime TEST_SHOT_AT = LocalDateTime.of(2025, 12, 15, 12, 0);
-    private static final LocalDateTime TEST_SHOT_AT_OLD = LocalDateTime.of(2025, 12, 10, 12, 0);
-    private static final LocalDateTime TEST_SHOT_AT_NEW = LocalDateTime.of(2025, 12, 20, 12, 0);
+    // Test Data Constants - Dates（期間内に収まるよう現在時刻ベースで算出）
+    private static final LocalDateTime TEST_SHOT_AT = LocalDateTime.now().minusHours(1);
+    private static final LocalDateTime TEST_SHOT_AT_OLD = LocalDateTime.now().minusHours(48);
+    private static final LocalDateTime TEST_SHOT_AT_NEW = LocalDateTime.now().minusMinutes(30);
+    private static final LocalDateTime TEST_SHOT_AT_OUTSIDE_PERIOD = LocalDateTime.now().minusHours(500);
 
     // Test Data Constants - Weather
     private static final String WEATHER_SUNNY = "Sunny";
@@ -222,20 +223,23 @@ public class SpotControllerTest {
     @Test
     @DisplayName("正常ケース - フィルター条件でスポットを取得（月指定）")
     void testGetSpots_WithMonthFilter_ReturnsFilteredSpots() throws Exception {
-        // 12月の写真
+        // 現在月の写真
+        int currentMonth = LocalDateTime.now().getMonthValue();
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
 
-        // 8月の写真
+        // 異なる月の写真（期間内だが月フィルターで除外される）
+        // 現在月と異なる月を算出（現在が1月なら2月、それ以外なら1月）
+        int differentMonth = currentMonth == 1 ? 2 : 1;
         Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
-        createPhoto(spot2, LocalDateTime.of(2025, MONTH_AUGUST, 15, 12, 0), WEATHER_SUNNY);
+        createPhoto(spot2, LocalDateTime.now().withMonth(differentMonth).minusHours(2), WEATHER_SUNNY);
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_MONTHS, String.valueOf(MONTH_DECEMBER)))
+                        .param(PARAM_MONTHS, String.valueOf(currentMonth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -313,7 +317,7 @@ public class SpotControllerTest {
     void testGetSpots_PinColor_FivePhotos_ReturnsYellow() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         for (int i = 0; i < PHOTO_COUNT_FIVE; i++) {
-            createPhoto(spot, LocalDateTime.of(2025, MONTH_DECEMBER, 15 + i, 12, 0), WEATHER_SUNNY);
+            createPhoto(spot, LocalDateTime.now().minusHours(i + 1), WEATHER_SUNNY);
         }
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
@@ -330,7 +334,7 @@ public class SpotControllerTest {
     void testGetSpots_PinColor_TenPhotos_ReturnsOrange() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         for (int i = 0; i < PHOTO_COUNT_TEN; i++) {
-            createPhoto(spot, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 12, i), WEATHER_SUNNY);
+            createPhoto(spot, LocalDateTime.now().minusHours(i + 1), WEATHER_SUNNY);
         }
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
@@ -347,7 +351,7 @@ public class SpotControllerTest {
     void testGetSpots_PinColor_ThirtyPhotos_ReturnsRed() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         for (int i = 0; i < PHOTO_COUNT_THIRTY; i++) {
-            createPhoto(spot, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 12, i), WEATHER_SUNNY);
+            createPhoto(spot, LocalDateTime.now().minusMinutes(i + 1), WEATHER_SUNNY);
         }
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
@@ -381,6 +385,49 @@ public class SpotControllerTest {
     }
 
     @Test
+    @DisplayName("正常ケース - 期間外の投稿はカウントされない")
+    void testGetSpots_PhotoOutsidePeriod_NotCounted() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+
+        // 期間外の写真（500時間前 > 336時間）
+        createPhoto(spot, TEST_SHOT_AT_OUTSIDE_PERIOD, WEATHER_SUNNY);
+
+        // 期間外のみなのでスポットが返されない
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("正常ケース - 期間内の投稿のみがカウントされる")
+    void testGetSpots_MixedPeriodPhotos_OnlyCountsWithinPeriod() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+
+        // 期間内の写真1枚
+        createPhoto(spot, LocalDateTime.now().minusHours(1), WEATHER_SUNNY);
+
+        // 期間外の写真4枚
+        for (int i = 0; i < 4; i++) {
+            createPhoto(spot, TEST_SHOT_AT_OUTSIDE_PERIOD.minusHours(i), WEATHER_SUNNY);
+        }
+
+        // 期間内は1枚のみなのでGreen
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_PIN_COLOR, is(PIN_COLOR_GREEN)))
+                .andExpect(jsonPath(JSON_PATH_PHOTO_COUNT, is(1)));
+    }
+
+    @Test
     @DisplayName("正常ケース - 条件合致数が多い順に返される")
     void testGetSpots_OrderByPhotoCount_ReturnsOrderedSpots() throws Exception {
         // スポット1: 写真1枚
@@ -390,13 +437,13 @@ public class SpotControllerTest {
         // スポット2: 写真3枚
         Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
         for (int i = 0; i < 3; i++) {
-            createPhoto(spot2, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 12, i), WEATHER_SUNNY);
+            createPhoto(spot2, LocalDateTime.now().minusHours(i + 1), WEATHER_SUNNY);
         }
 
         // スポット3: 写真5枚
         Spot spot3 = createSpot(TEST_LATITUDE_3, TEST_LONGITUDE_3);
         for (int i = 0; i < PHOTO_COUNT_FIVE; i++) {
-            createPhoto(spot3, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 12, i), WEATHER_SUNNY);
+            createPhoto(spot3, LocalDateTime.now().minusHours(i + 1), WEATHER_SUNNY);
         }
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
@@ -449,17 +496,19 @@ public class SpotControllerTest {
     @Test
     @DisplayName("正常ケース - 条件に合致する写真が0件のスポットは含まれない")
     void testGetSpots_NoMatchingPhotos_ReturnsEmptyList() throws Exception {
-        // 12月の写真のみ
+        // 現在月の写真のみ
+        int currentMonth = LocalDateTime.now().getMonthValue();
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
 
-        // 8月でフィルター（合致なし）
+        // 異なる月でフィルター（合致なし）
+        int differentMonth = currentMonth == 1 ? 2 : 1;
         mockMvc.perform(get(SPOTS_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_MONTHS, String.valueOf(MONTH_AUGUST)))
+                        .param(PARAM_MONTHS, String.valueOf(differentMonth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
     }
@@ -473,7 +522,7 @@ public class SpotControllerTest {
 
         // EVENING の写真
         Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
-        Photo photo2 = createPhotoWithTimeOfDay(spot2, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 18, 0), WEATHER_SUNNY, TIME_OF_DAY_EVENING);
+        Photo photo2 = createPhotoWithTimeOfDay(spot2, LocalDateTime.now().minusHours(2), WEATHER_SUNNY, TIME_OF_DAY_EVENING);
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
@@ -491,15 +540,15 @@ public class SpotControllerTest {
     void testGetSpots_WithMultipleTimesOfDay_ReturnsFilteredSpots() throws Exception {
         // MORNING の写真
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-        createPhotoWithTimeOfDay(spot1, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 8, 0), WEATHER_SUNNY, TIME_OF_DAY_MORNING);
+        createPhotoWithTimeOfDay(spot1, LocalDateTime.now().minusHours(3), WEATHER_SUNNY, TIME_OF_DAY_MORNING);
 
         // DAY の写真
         Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
-        createPhotoWithTimeOfDay(spot2, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 14, 0), WEATHER_SUNNY, TIME_OF_DAY_DAY);
+        createPhotoWithTimeOfDay(spot2, LocalDateTime.now().minusHours(2), WEATHER_SUNNY, TIME_OF_DAY_DAY);
 
         // EVENING の写真
         Spot spot3 = createSpot(TEST_LATITUDE_3, TEST_LONGITUDE_3);
-        createPhotoWithTimeOfDay(spot3, LocalDateTime.of(2025, MONTH_DECEMBER, 15, 18, 0), WEATHER_SUNNY, TIME_OF_DAY_EVENING);
+        createPhotoWithTimeOfDay(spot3, LocalDateTime.now().minusHours(1), WEATHER_SUNNY, TIME_OF_DAY_EVENING);
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
