@@ -191,25 +191,49 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
   }, [photoDetails])
 
   // カルーセル操作
-  const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev()
-  }, [emblaApi])
-
-  const scrollNext = useCallback(async () => {
-    if (emblaApi) emblaApi.scrollNext()
-    // 次の写真の詳細を事前取得
-    if (currentIndex < photoIds.length - 1) {
-      await fetchPhotoDetail(photoIds[currentIndex + 1])
+  const scrollPrev = useCallback(async () => {
+    if (!emblaApi) return
+    emblaApi.scrollPrev()
+    // 前の写真の詳細を事前取得
+    const prevIndex = currentIndex - 1
+    if (prevIndex >= 0) {
+      await fetchPhotoDetail(photoIds[prevIndex])
     }
   }, [emblaApi, currentIndex, photoIds, fetchPhotoDetail])
 
+  const scrollNext = useCallback(async () => {
+    if (!emblaApi) return
+    emblaApi.scrollNext()
+    // 次の写真の詳細を事前取得
+    const nextIndex = currentIndex + 1
+    if (nextIndex < photoIds.length) {
+      await fetchPhotoDetail(photoIds[nextIndex])
+    }
+  }, [emblaApi, currentIndex, photoIds, fetchPhotoDetail])
+
+  // カルーセルのスライド切り替え時にインデックスを更新し、写真詳細を取得
   useEffect(() => {
     if (!emblaApi) return
 
-    emblaApi.on('select', () => {
-      setCurrentIndex(emblaApi.selectedScrollSnap())
-    })
-  }, [emblaApi])
+    const onSelect = () => {
+      const selectedIndex = emblaApi.selectedScrollSnap()
+      setCurrentIndex(selectedIndex)
+      // 選択されたスライドの写真詳細を取得
+      const selectedPhotoId = photoIds[selectedIndex]
+      if (selectedPhotoId && !photoDetails.has(selectedPhotoId)) {
+        fetchPhotoDetailById(selectedPhotoId).then(detail => {
+          setPhotoDetails(prev => new Map(prev).set(selectedPhotoId, detail))
+        }).catch(() => {
+          setError(ERROR_LOAD_FAILED)
+        })
+      }
+    }
+
+    emblaApi.on('select', onSelect)
+    return () => {
+      emblaApi.off('select', onSelect)
+    }
+  }, [emblaApi, photoIds, photoDetails])
 
   const currentPhotoId = photoIds[currentIndex]
   const currentPhoto = currentPhotoId ? photoDetails.get(currentPhotoId) : null
@@ -285,21 +309,32 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
               <div className="relative flex-1">
                 <div className="overflow-hidden h-full" ref={emblaRef}>
                   <div className="flex h-full">
-                    <div className="flex-[0_0_100%] min-w-0">
-                      <img
-                        src={currentPhoto.imageUrl}
-                        alt={currentPhoto.title}
-                        className="w-full h-full object-contain cursor-pointer"
-                        onClick={() => window.open(`/photo-viewer/${currentPhoto.photoId}`, '_blank')}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            window.open(`/photo-viewer/${currentPhoto.photoId}`, '_blank')
-                          }
-                        }}
-                      />
-                    </div>
+                    {photoIds.map((photoId) => {
+                      const photo = photoDetails.get(photoId)
+                      return (
+                        <div key={photoId} className="flex-[0_0_100%] min-w-0">
+                          {photo ? (
+                            <img
+                              src={photo.imageUrl}
+                              alt={photo.title}
+                              className="w-full h-full object-contain cursor-pointer"
+                              onClick={() => window.open(`/photo-viewer/${photo.photoId}`, '_blank')}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  window.open(`/photo-viewer/${photo.photoId}`, '_blank')
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
 
