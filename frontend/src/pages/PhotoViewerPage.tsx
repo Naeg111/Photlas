@@ -80,7 +80,7 @@ function PhotoViewerPage() {
     return (
       <div
         data-testid="photo-viewer-container"
-        className="w-full h-screen bg-white flex items-center justify-center"
+        className="fixed inset-0 bg-white flex items-center justify-center overflow-hidden"
       >
         <div className="text-gray-600 text-lg">読み込み中...</div>
       </div>
@@ -92,7 +92,7 @@ function PhotoViewerPage() {
     return (
       <div
         data-testid="photo-viewer-container"
-        className="w-full h-screen bg-white flex items-center justify-center"
+        className="fixed inset-0 bg-white flex items-center justify-center overflow-hidden"
       >
         <div className="text-red-600 text-lg">{error}</div>
       </div>
@@ -104,7 +104,7 @@ function PhotoViewerPage() {
     return (
       <div
         data-testid="photo-viewer-container"
-        className="w-full h-screen bg-white flex items-center justify-center"
+        className="fixed inset-0 bg-white flex items-center justify-center overflow-hidden"
       >
         <div className="text-gray-600 text-lg">画像データがありません</div>
       </div>
@@ -114,7 +114,7 @@ function PhotoViewerPage() {
   return (
     <div
       data-testid="photo-viewer-container"
-      className="w-full h-screen bg-white flex items-center justify-center"
+      className="fixed inset-0 bg-white flex items-center justify-center overflow-hidden"
     >
       <img
         src={photoData.photo.image_url}
