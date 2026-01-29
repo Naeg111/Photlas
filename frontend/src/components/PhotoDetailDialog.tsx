@@ -28,6 +28,13 @@ const LABEL_REMOVE_FAVORITE = 'お気に入りから削除'
 const SR_TITLE = '写真詳細'
 const SR_DESCRIPTION = '写真の詳細情報と撮影コンテクスト'
 
+// Weather labels
+const WEATHER_LABELS: Record<string, string> = {
+  sunny: '晴れ',
+  cloudy: '曇り',
+  rainy: '雨',
+}
+
 // Error messages
 const ERROR_LOAD_FAILED = '読み込みに失敗しました'
 const ERROR_FETCH_IDS = 'Failed to fetch photo IDs'
@@ -276,7 +283,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0 flex flex-col overflow-hidden" hideCloseButton>
+      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden" hideCloseButton>
         <DialogTitle className="sr-only">{SR_TITLE}</DialogTitle>
         <DialogDescription className="sr-only">{SR_DESCRIPTION}</DialogDescription>
         <div className="relative flex flex-col min-h-0 h-full">
@@ -303,10 +310,10 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
             </div>
           )}
 
-          {!loading && !error && currentPhoto && (
+          {!loading && !error && photoIds.length > 0 && (
             <div className="flex flex-col min-h-0 flex-1">
               {/* カルーセル */}
-              <div className="relative flex-1 min-h-0 max-h-[60vh]">
+              <div className="relative flex-shrink-0 min-h-0 max-h-[60vh] overflow-hidden">
                 <div className="overflow-hidden h-full" ref={emblaRef}>
                   <div className="flex h-full">
                     {photoIds.map((photoId) => {
@@ -368,82 +375,84 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
               </div>
 
               {/* 写真情報 */}
-              <div className="p-6 space-y-4">
-                <h2 className="text-2xl font-bold">{currentPhoto.title}</h2>
+              {currentPhoto && (
+                <div className="flex-shrink-0 p-6 space-y-4 overflow-y-auto">
+                  <h2 className="text-2xl font-bold">{currentPhoto.title}</h2>
 
-                {/* ユーザー情報 */}
-                <div
-                  className="flex items-center gap-3 cursor-pointer hover:opacity-70 transition-opacity"
-                  onClick={() => onUserClick?.({
-                    userId: currentPhoto.user.userId,
-                    username: currentPhoto.user.username,
-                  })}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      onUserClick?.({
-                        userId: currentPhoto.user.userId,
-                        username: currentPhoto.user.username,
-                      })
-                    }
-                  }}
-                >
-                  <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
-                    {currentPhoto.user.username.charAt(0).toUpperCase()}
+                  {/* ユーザー情報 */}
+                  <div
+                    className="flex items-center gap-3 cursor-pointer hover:opacity-70 transition-opacity"
+                    onClick={() => onUserClick?.({
+                      userId: currentPhoto.user.userId,
+                      username: currentPhoto.user.username,
+                    })}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        onUserClick?.({
+                          userId: currentPhoto.user.userId,
+                          username: currentPhoto.user.username,
+                        })
+                      }
+                    }}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
+                      {currentPhoto.user.username.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="font-medium">{currentPhoto.user.username}</span>
                   </div>
-                  <span className="font-medium">{currentPhoto.user.username}</span>
-                </div>
 
-                {/* 天気情報 */}
-                {currentPhoto.weather && (
-                  <div className="text-sm text-gray-600">
-                    天気: {currentPhoto.weather}
-                  </div>
-                )}
+                  {/* 天気情報 */}
+                  {currentPhoto.weather && (
+                    <div className="text-sm text-gray-600">
+                      天気: {WEATHER_LABELS[currentPhoto.weather] ?? currentPhoto.weather}
+                    </div>
+                  )}
 
-                {/* ドットインジケーター */}
-                {photoIds.length > 1 && (
-                  <div className="flex justify-center gap-2">
-                    {photoIds.map((_, index) => (
-                      <div
-                        key={index}
-                        data-testid={`${TEST_ID_DOT_PREFIX}${index}`}
-                        className={`w-2 h-2 rounded-full ${
-                          index === currentIndex ? 'bg-gray-900' : 'bg-gray-300'
+                  {/* ドットインジケーター */}
+                  {photoIds.length > 1 && (
+                    <div className="flex justify-center gap-2">
+                      {photoIds.map((_, index) => (
+                        <div
+                          key={index}
+                          data-testid={`${TEST_ID_DOT_PREFIX}${index}`}
+                          className={`w-2 h-2 rounded-full ${
+                            index === currentIndex ? 'bg-gray-900' : 'bg-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Issue#30: お気に入りボタン（design-assets準拠） */}
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      variant="outline"
+                      className={`flex-1 ${
+                        isFavorited ? 'bg-yellow-100 border-yellow-400' : ''
+                      }`}
+                      data-testid={TEST_ID_FAVORITE_BUTTON}
+                      onClick={handleToggleFavorite}
+                      disabled={isFavoriteLoading}
+                      aria-label={isFavorited ? LABEL_REMOVE_FAVORITE : LABEL_ADD_FAVORITE}
+                    >
+                      <Star
+                        className={`w-5 h-5 mr-2 ${
+                          isFavorited ? 'fill-yellow-400 text-yellow-400' : ''
                         }`}
                       />
-                    ))}
+                      お気に入り
+                      <span
+                        data-testid={TEST_ID_FAVORITE_COUNT}
+                        className="ml-1 text-sm text-gray-500"
+                      >
+                        ({favoriteCount})
+                      </span>
+                    </Button>
                   </div>
-                )}
-
-                {/* Issue#30: お気に入りボタン（design-assets準拠） */}
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    variant="outline"
-                    className={`flex-1 ${
-                      isFavorited ? 'bg-yellow-100 border-yellow-400' : ''
-                    }`}
-                    data-testid={TEST_ID_FAVORITE_BUTTON}
-                    onClick={handleToggleFavorite}
-                    disabled={isFavoriteLoading}
-                    aria-label={isFavorited ? LABEL_REMOVE_FAVORITE : LABEL_ADD_FAVORITE}
-                  >
-                    <Star
-                      className={`w-5 h-5 mr-2 ${
-                        isFavorited ? 'fill-yellow-400 text-yellow-400' : ''
-                      }`}
-                    />
-                    お気に入り
-                    <span
-                      data-testid={TEST_ID_FAVORITE_COUNT}
-                      className="ml-1 text-sm text-gray-500"
-                    >
-                      ({favoriteCount})
-                    </span>
-                  </Button>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
