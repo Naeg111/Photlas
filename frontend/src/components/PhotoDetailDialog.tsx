@@ -302,7 +302,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden" hideCloseButton>
+      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden border-0" hideCloseButton>
         <DialogTitle className="sr-only">{SR_TITLE}</DialogTitle>
         <DialogDescription className="sr-only">{SR_DESCRIPTION}</DialogDescription>
         <div className="relative flex flex-col min-h-0 h-full">
@@ -318,7 +318,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
           </Button>
 
           {loading && (
-            <div className="flex items-center justify-center h-96" data-testid={TEST_ID_LOADING}>
+            <div className="flex items-center justify-center min-h-[40vh]" data-testid={TEST_ID_LOADING}>
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
             </div>
           )}
@@ -395,7 +395,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
 
               {/* 写真情報（displayedPhotoで表示し、スライド切替時の点滅を防止） */}
               {displayedPhoto && (
-                <div className="flex-shrink-0 p-6 space-y-4 overflow-y-auto">
+                <div className="min-h-0 p-6 pb-8 space-y-4 overflow-y-auto">
                   <h2 className="text-2xl font-bold">{displayedPhoto.title}</h2>
 
                   {/* ユーザー情報 */}
