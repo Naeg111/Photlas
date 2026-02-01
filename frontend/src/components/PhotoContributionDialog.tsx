@@ -6,7 +6,7 @@ import { Label } from './ui/label'
 import { CategoryIcon } from './CategoryIcon'
 import { Checkbox } from './ui/checkbox'
 import { ImageWithFallback } from './figma/ImageWithFallback'
-import { Upload, X, Camera, Compass } from 'lucide-react'
+import { Upload, X, Camera, Compass, Tag } from 'lucide-react'
 import { Progress } from './ui/progress'
 import { motion, AnimatePresence } from 'motion/react'
 import { PHOTO_CATEGORIES, PHOTO_UPLOAD, UPLOAD_STATUS } from '../utils/constants'
@@ -46,6 +46,7 @@ interface PhotoContributionDialogProps {
     file: File
     title: string
     categories: string[]
+    tags: string[]
     position: { lat: number; lng: number }
     weather: string
     takenAt?: string
@@ -80,6 +81,8 @@ export function PhotoContributionDialog({
   const [uploadProgress, setUploadProgress] = useState(0)
   const [exifData, setExifData] = useState<ExifData | null>(null)
   const [shootingDirection, setShootingDirection] = useState<number | undefined>(undefined)
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,6 +130,34 @@ export function PhotoContributionDialog({
     )
   }
 
+  const handleAddTag = (value: string) => {
+    const trimmed = value.trim()
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags((prev) => [...prev, trimmed])
+    }
+    setTagInput('')
+  }
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleAddTag(tagInput)
+    }
+  }
+
+  const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    if (value.endsWith(',')) {
+      handleAddTag(value.slice(0, -1))
+    } else {
+      setTagInput(value)
+    }
+  }
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags((prev) => prev.filter((t) => t !== tagToRemove))
+  }
+
   const handleSubmit = async () => {
     // バリデーション
     if (!selectedFile) {
@@ -163,6 +194,7 @@ export function PhotoContributionDialog({
           file: selectedFile,
           title,
           categories: selectedCategories,
+          tags,
           position: pinPosition,
           weather: selectedWeather,
           takenAt: exifData?.takenAt,
@@ -222,6 +254,8 @@ export function PhotoContributionDialog({
     setUploadProgress(0)
     setExifData(null)
     setShootingDirection(undefined)
+    setTags([])
+    setTagInput('')
   }
 
   const handleRemovePhoto = () => {
@@ -434,6 +468,39 @@ export function PhotoContributionDialog({
               </div>
             </div>
           )}
+
+          {/* タグ入力 */}
+          <div className="space-y-3">
+            <Label className="text-base flex items-center gap-2">
+              <Tag className="w-4 h-4" />
+              タグ
+            </Label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  data-testid="tag-chip"
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="hover:text-red-500"
+                    aria-label={`${tag}を削除`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <Input
+              value={tagInput}
+              onChange={handleTagInputChange}
+              onKeyDown={handleTagKeyDown}
+              placeholder="タグを入力（Enterまたはカンマで追加）"
+            />
+          </div>
 
           {/* カテゴリ選択 */}
           <div className="space-y-3">
