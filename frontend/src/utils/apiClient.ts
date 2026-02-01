@@ -159,6 +159,15 @@ export interface CreatePhotoRequest {
   longitude: number
   categories: string[]
   weather?: string
+  shootingDirection?: number
+  cameraBody?: string
+  cameraLens?: string
+  focalLength35mm?: number
+  fValue?: string
+  shutterSpeed?: string
+  iso?: number
+  imageWidth?: number
+  imageHeight?: number
 }
 
 /**

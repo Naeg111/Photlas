@@ -122,6 +122,18 @@ function MainContent() {
     categories: string[]
     position: { lat: number; lng: number }
     weather: string
+    takenAt?: string
+    shootingDirection?: number
+    exif?: {
+      cameraBody?: string
+      cameraLens?: string
+      focalLength35mm?: number
+      fValue?: string
+      iso?: number
+      shutterSpeed?: string
+      imageWidth?: number
+      imageHeight?: number
+    }
   }) => {
     // ファイル拡張子とContent-Typeを取得
     const extension = data.file.name.split('.').pop()?.toLowerCase() || 'jpg'
@@ -137,15 +149,24 @@ function MainContent() {
       // 2. S3へアップロード
       await uploadFileToS3(uploadUrl, data.file)
 
-      // 3. メタデータ保存
+      // 3. メタデータ保存（EXIF情報を含む）
       await createPhoto({
         title: data.title,
         s3ObjectKey: objectKey,
-        takenAt: new Date().toISOString(),
+        takenAt: data.takenAt || new Date().toISOString(),
         latitude: data.position.lat,
         longitude: data.position.lng,
         categories: data.categories,
         weather: data.weather,
+        shootingDirection: data.shootingDirection,
+        cameraBody: data.exif?.cameraBody,
+        cameraLens: data.exif?.cameraLens,
+        focalLength35mm: data.exif?.focalLength35mm,
+        fValue: data.exif?.fValue,
+        shutterSpeed: data.exif?.shutterSpeed,
+        iso: data.exif?.iso,
+        imageWidth: data.exif?.imageWidth,
+        imageHeight: data.exif?.imageHeight,
       })
 
       // 4. マップ更新
