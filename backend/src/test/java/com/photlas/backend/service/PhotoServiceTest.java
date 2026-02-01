@@ -5,12 +5,14 @@ import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
+import com.photlas.backend.entity.Tag;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.CategoryNotFoundException;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoCategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
+import com.photlas.backend.repository.TagRepository;
 import com.photlas.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +51,9 @@ public class PhotoServiceTest {
     @Autowired
     private PhotoCategoryRepository photoCategoryRepository;
 
+    @Autowired
+    private TagRepository tagRepository;
+
     private User testUser;
     private Category landscapeCategory;
     private Category cityCategory;
@@ -58,6 +63,7 @@ public class PhotoServiceTest {
         // クリーンアップ
         photoCategoryRepository.deleteAll();
         photoRepository.deleteAll();
+        tagRepository.deleteAll();
         spotRepository.deleteAll();
         categoryRepository.deleteAll();
         userRepository.deleteAll();
@@ -559,5 +565,100 @@ public class PhotoServiceTest {
         assertThat(response.getPhoto().getLongitude()).isEqualByComparingTo(new BigDecimal("139.745450"));
         // スポット座標は別途返される
         assertThat(response.getSpot().getLatitude()).isEqualByComparingTo(new BigDecimal("35.658581"));
+    }
+
+    // ===== Issue#43: タグシステムテスト =====
+
+    @Test
+    @DisplayName("Issue#43 - タグ付き写真の投稿が正常に保存される")
+    void testCreatePhoto_WithTags_SavesTagsCorrectly() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("タグ付き写真");
+        request.setS3ObjectKey("photos/tag001.jpg");
+        request.setTakenAt("2026-01-25T10:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setTags(List.of("桜", "夕焼け", "展望台"));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoto().getTags()).hasSize(3);
+        assertThat(response.getPhoto().getTags())
+                .extracting(PhotoResponse.TagDTO::getName)
+                .containsExactlyInAnyOrder("桜", "夕焼け", "展望台");
+    }
+
+    @Test
+    @DisplayName("Issue#43 - タグなしでの投稿が成功する")
+    void testCreatePhoto_WithoutTags_SucceedsWithEmptyTags() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("タグなし写真");
+        request.setS3ObjectKey("photos/notag001.jpg");
+        request.setTakenAt("2026-01-25T11:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        // タグ未設定
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoto().getTags()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#43 - 既存タグが再利用される（新規作成されない）")
+    void testCreatePhoto_ExistingTag_ReusesTag() {
+        // 最初の写真でタグを作成
+        CreatePhotoRequest request1 = new CreatePhotoRequest();
+        request1.setTitle("最初のタグ写真");
+        request1.setS3ObjectKey("photos/tag002.jpg");
+        request1.setTakenAt("2026-01-25T12:00:00Z");
+        request1.setLatitude(new BigDecimal("35.658581"));
+        request1.setLongitude(new BigDecimal("139.745433"));
+        request1.setTags(List.of("桜"));
+
+        photoService.createPhoto(request1, testUser.getEmail());
+
+        long tagCountBefore = tagRepository.count();
+
+        // 同じタグで2枚目の写真を投稿
+        CreatePhotoRequest request2 = new CreatePhotoRequest();
+        request2.setTitle("2枚目のタグ写真");
+        request2.setS3ObjectKey("photos/tag003.jpg");
+        request2.setTakenAt("2026-01-25T13:00:00Z");
+        request2.setLatitude(new BigDecimal("35.660000"));
+        request2.setLongitude(new BigDecimal("139.746000"));
+        request2.setTags(List.of("桜"));
+
+        PhotoResponse response2 = photoService.createPhoto(request2, testUser.getEmail());
+
+        assertThat(response2.getPhoto().getTags()).hasSize(1);
+        // タグが新規作成されていないことを確認
+        assertThat(tagRepository.count()).isEqualTo(tagCountBefore);
+    }
+
+    @Test
+    @DisplayName("Issue#43 - 写真詳細取得でタグが返される")
+    void testGetPhotoDetail_WithTags_ReturnsTagsInResponse() {
+        // タグ付き写真を投稿
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("詳細タグテスト");
+        request.setS3ObjectKey("photos/tagdetail001.jpg");
+        request.setTakenAt("2026-01-25T14:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setTags(List.of("リフレクション", "湖"));
+
+        PhotoResponse createResponse = photoService.createPhoto(request, testUser.getEmail());
+
+        // 詳細取得
+        PhotoResponse detailResponse = photoService.getPhotoDetail(
+                createResponse.getPhoto().getPhotoId(), testUser.getEmail());
+
+        assertThat(detailResponse.getPhoto().getTags()).hasSize(2);
+        assertThat(detailResponse.getPhoto().getTags())
+                .extracting(PhotoResponse.TagDTO::getName)
+                .containsExactlyInAnyOrder("リフレクション", "湖");
     }
 }
