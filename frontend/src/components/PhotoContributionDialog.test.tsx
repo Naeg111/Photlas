@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { PhotoContributionDialog } from './PhotoContributionDialog'
+import { ExifData } from '../utils/extractExif'
 
 /**
  * PhotoContributionDialog コンポーネントのテスト
@@ -43,6 +44,12 @@ vi.mock('@react-google-maps/api', () => ({
   Autocomplete: ({ children }: any) => <div data-testid="autocomplete-mock">{children}</div>,
 }))
 
+// extractExif のモック
+const mockExtractExif = vi.fn()
+vi.mock('../utils/extractExif', () => ({
+  extractExif: (...args: unknown[]) => mockExtractExif(...args),
+}))
+
 // URL.createObjectURLのモック
 const mockCreateObjectURL = vi.fn(() => 'blob:mock-url')
 const mockRevokeObjectURL = vi.fn()
@@ -58,6 +65,7 @@ describe('PhotoContributionDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockExtractExif.mockResolvedValue(null)
   })
 
   describe('UI Elements - UI要素', () => {
@@ -320,6 +328,201 @@ describe('PhotoContributionDialog', () => {
       // アップロード中のメッセージを確認
       await waitFor(() => {
         expect(screen.getByText('送信しています')).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('EXIF Auto-Extraction - EXIF自動抽出 (Issue#41)', () => {
+    const fullExifData: ExifData = {
+      takenAt: '2024-12-25T15:30:00.000Z',
+      latitude: 34.6937,
+      longitude: 135.5023,
+      shootingDirection: 90.0,
+      cameraBody: 'Canon EOS R5',
+      cameraLens: 'RF24-70mm F2.8 L IS USM',
+      focalLength35mm: 50,
+      fValue: 'f/2.8',
+      iso: 400,
+      shutterSpeed: '1/1000',
+      imageWidth: 8192,
+      imageHeight: 5464,
+    }
+
+    it('should display EXIF info section when EXIF data is extracted', async () => {
+      mockExtractExif.mockResolvedValue(fullExifData)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByText('Canon EOS R5')).toBeInTheDocument()
+        expect(screen.getByText('RF24-70mm F2.8 L IS USM')).toBeInTheDocument()
+        expect(screen.getByText('f/2.8')).toBeInTheDocument()
+        expect(screen.getByText('1/1000')).toBeInTheDocument()
+        expect(screen.getByText('ISO 400')).toBeInTheDocument()
+        expect(screen.getByText('50mm')).toBeInTheDocument()
+        expect(screen.getByText('8192 x 5464')).toBeInTheDocument()
+      })
+    })
+
+    it('should not display EXIF info section when no EXIF data available', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'screenshot.png', { type: 'image/png' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+      })
+
+      // EXIF表示エリアが存在しないことを確認
+      expect(screen.queryByText('カメラ情報')).not.toBeInTheDocument()
+    })
+
+    it('should only display available EXIF fields', async () => {
+      const partialExif: ExifData = {
+        cameraBody: 'Sony ILCE-7M4',
+        fValue: 'f/4',
+        iso: 800,
+      }
+      mockExtractExif.mockResolvedValue(partialExif)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByText('Sony ILCE-7M4')).toBeInTheDocument()
+        expect(screen.getByText('f/4')).toBeInTheDocument()
+        expect(screen.getByText('ISO 800')).toBeInTheDocument()
+      })
+
+      // 未取得のフィールドは非表示
+      expect(screen.queryByText(/1\//)).not.toBeInTheDocument() // shutterSpeed
+      expect(screen.queryByText(/mm$/)).not.toBeInTheDocument() // focalLength
+    })
+
+    it('should auto-set map pin position from EXIF GPS data', async () => {
+      mockExtractExif.mockResolvedValue(fullExifData)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      // GPS座標がEXIFから取得されてピンに反映されることを確認
+      await waitFor(() => {
+        // 座標が表示されることを確認（InlineMapPickerに渡される）
+        expect(screen.getByText(/34\.6937/)).toBeInTheDocument()
+        expect(screen.getByText(/135\.5023/)).toBeInTheDocument()
+      })
+    })
+
+    it('should use default position when EXIF has no GPS data', async () => {
+      const noGpsExif: ExifData = {
+        cameraBody: 'Canon EOS R5',
+        fValue: 'f/2.8',
+      }
+      mockExtractExif.mockResolvedValue(noGpsExif)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        // デフォルト位置（新宿）が表示されることを確認
+        expect(screen.getByText(/35\.6762/)).toBeInTheDocument()
+        expect(screen.getByText(/139\.6503/)).toBeInTheDocument()
+      })
+    })
+
+    it('should pass EXIF data to onSubmit callback', async () => {
+      mockExtractExif.mockResolvedValue(fullExifData)
+      const mockSubmit = vi.fn(() => Promise.resolve())
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={mockSubmit} />)
+
+      // 写真を選択
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      // 天気を選択
+      await waitFor(() => {
+        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+      })
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
+      // 投稿ボタンが有効になるのを待ってクリック
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
+      })
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      await waitFor(() => {
+        expect(mockSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            exif: expect.objectContaining({
+              cameraBody: 'Canon EOS R5',
+              cameraLens: 'RF24-70mm F2.8 L IS USM',
+              focalLength35mm: 50,
+              fValue: 'f/2.8',
+              iso: 400,
+              shutterSpeed: '1/1000',
+              imageWidth: 8192,
+              imageHeight: 5464,
+            }),
+            takenAt: '2024-12-25T15:30:00.000Z',
+            shootingDirection: 90.0,
+          })
+        )
+      })
+    })
+
+    it('should submit without EXIF data when not available', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const mockSubmit = vi.fn(() => Promise.resolve())
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={mockSubmit} />)
+
+      // 写真を選択
+      const file = new File(['test'], 'screenshot.png', { type: 'image/png' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      // 天気を選択
+      await waitFor(() => {
+        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+      })
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
+      // 投稿ボタンが有効になるのを待ってクリック
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
+      })
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      await waitFor(() => {
+        expect(mockSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            exif: undefined,
+            takenAt: undefined,
+            shootingDirection: undefined,
+          })
+        )
       })
     })
   })
