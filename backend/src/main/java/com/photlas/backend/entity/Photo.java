@@ -88,6 +88,14 @@ public class Photo {
     )
     private List<Category> categories = new ArrayList<>();
 
+    @ManyToMany
+    @JoinTable(
+        name = "photo_tags",
+        joinColumns = @JoinColumn(name = "photo_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private List<Tag> tags = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -274,5 +282,13 @@ public class Photo {
 
     public void setCategories(List<Category> categories) {
         this.categories = categories;
+    }
+
+    public List<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<Tag> tags) {
+        this.tags = tags;
     }
 }
