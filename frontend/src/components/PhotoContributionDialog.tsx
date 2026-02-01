@@ -6,17 +6,19 @@ import { Label } from './ui/label'
 import { CategoryIcon } from './CategoryIcon'
 import { Checkbox } from './ui/checkbox'
 import { ImageWithFallback } from './figma/ImageWithFallback'
-import { Upload, X } from 'lucide-react'
+import { Upload, X, Camera } from 'lucide-react'
 import { Progress } from './ui/progress'
 import { motion, AnimatePresence } from 'motion/react'
 import { PHOTO_CATEGORIES, PHOTO_UPLOAD, UPLOAD_STATUS } from '../utils/constants'
 import { ApiError } from '../utils/apiClient'
 import { WeatherIcons } from './FilterIcons'
 import { InlineMapPicker } from './InlineMapPicker'
+import { extractExif, type ExifData } from '../utils/extractExif'
 
 /**
  * PhotoContributionDialog コンポーネント
  * Issue#27: パネル・ダイアログ群の移行
+ * Issue#41: EXIF情報の自動抽出
  *
  * 写真投稿ダイアログ - design-assetsベースでS3 Presigned URL連携を統合
  */
@@ -34,6 +36,18 @@ interface PhotoContributionDialogProps {
     categories: string[]
     position: { lat: number; lng: number }
     weather: string
+    takenAt?: string
+    shootingDirection?: number
+    exif?: {
+      cameraBody?: string
+      cameraLens?: string
+      focalLength35mm?: number
+      fValue?: string
+      iso?: number
+      shutterSpeed?: string
+      imageWidth?: number
+      imageHeight?: number
+    }
   }) => Promise<void>
 }
 
@@ -52,9 +66,10 @@ export function PhotoContributionDialog({
   const [selectedWeather, setSelectedWeather] = useState<WeatherOption | ''>('')
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [exifData, setExifData] = useState<ExifData | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       // ファイルサイズチェック
@@ -73,9 +88,14 @@ export function PhotoContributionDialog({
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
 
-      // 位置情報が未設定の場合、デフォルト位置を設定
-      // TODO: 実際の実装ではEXIFから取得
-      if (!pinPosition) {
+      // EXIF情報を抽出
+      const exif = await extractExif(file)
+      setExifData(exif)
+
+      // GPS座標がEXIFに含まれる場合はピンを自動配置
+      if (exif?.latitude != null && exif?.longitude != null) {
+        setPinPosition({ lat: exif.latitude, lng: exif.longitude })
+      } else if (!pinPosition) {
         setPinPosition({ lat: 35.6762, lng: 139.6503 })
       }
     }
@@ -127,6 +147,18 @@ export function PhotoContributionDialog({
           categories: selectedCategories,
           position: pinPosition,
           weather: selectedWeather,
+          takenAt: exifData?.takenAt,
+          shootingDirection: exifData?.shootingDirection,
+          exif: exifData ? {
+            cameraBody: exifData.cameraBody,
+            cameraLens: exifData.cameraLens,
+            focalLength35mm: exifData.focalLength35mm,
+            fValue: exifData.fValue,
+            iso: exifData.iso,
+            shutterSpeed: exifData.shutterSpeed,
+            imageWidth: exifData.imageWidth,
+            imageHeight: exifData.imageHeight,
+          } : undefined,
         })
       }
 
@@ -170,18 +202,26 @@ export function PhotoContributionDialog({
     setSelectedWeather('')
     setUploadStatus('idle')
     setUploadProgress(0)
+    setExifData(null)
   }
 
   const handleRemovePhoto = () => {
     setSelectedFile(null)
     setPreviewUrl('')
     setPinPosition(null)
+    setExifData(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
   }
 
   const canSubmit = selectedFile && pinPosition && selectedWeather
+
+  const hasExifInfo = exifData && (
+    exifData.cameraBody || exifData.cameraLens || exifData.focalLength35mm ||
+    exifData.fValue || exifData.iso || exifData.shutterSpeed ||
+    exifData.imageWidth || exifData.imageHeight
+  )
 
   return (
     <Dialog open={open} onOpenChange={uploadStatus === 'uploading' ? undefined : onOpenChange}>
@@ -250,6 +290,62 @@ export function PhotoContributionDialog({
               />
             </div>
           </div>
+
+          {/* EXIF情報表示 */}
+          {hasExifInfo && (
+            <div className="space-y-3">
+              <Label className="text-base flex items-center gap-2">
+                <Camera className="w-4 h-4" />
+                カメラ情報
+              </Label>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                  {exifData.cameraBody && (
+                    <div>
+                      <span className="text-gray-500">カメラ</span>
+                      <p className="font-medium">{exifData.cameraBody}</p>
+                    </div>
+                  )}
+                  {exifData.cameraLens && (
+                    <div>
+                      <span className="text-gray-500">レンズ</span>
+                      <p className="font-medium">{exifData.cameraLens}</p>
+                    </div>
+                  )}
+                  {exifData.focalLength35mm != null && (
+                    <div>
+                      <span className="text-gray-500">焦点距離</span>
+                      <p className="font-medium">{exifData.focalLength35mm}mm</p>
+                    </div>
+                  )}
+                  {exifData.fValue && (
+                    <div>
+                      <span className="text-gray-500">絞り</span>
+                      <p className="font-medium">{exifData.fValue}</p>
+                    </div>
+                  )}
+                  {exifData.shutterSpeed && (
+                    <div>
+                      <span className="text-gray-500">シャッタースピード</span>
+                      <p className="font-medium">{exifData.shutterSpeed}</p>
+                    </div>
+                  )}
+                  {exifData.iso != null && (
+                    <div>
+                      <span className="text-gray-500">ISO</span>
+                      <p className="font-medium">ISO {exifData.iso}</p>
+                    </div>
+                  )}
+                  {exifData.imageWidth != null && exifData.imageHeight != null && (
+                    <div>
+                      <span className="text-gray-500">解像度</span>
+                      <p className="font-medium">{exifData.imageWidth} x {exifData.imageHeight}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* タイトル */}
           <div className="space-y-3">
