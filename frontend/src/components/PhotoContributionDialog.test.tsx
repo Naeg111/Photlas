@@ -25,12 +25,19 @@ vi.mock('@react-google-maps/api', () => ({
     isLoaded: true,
     loadError: null,
   }),
-  GoogleMap: ({ children, onLoad }: any) => {
+  GoogleMap: ({ children, onLoad, center }: any) => {
     // onLoadコールバックを呼び出してマップインスタンスをシミュレート
     if (onLoad) {
+      // centerプロパティを追跡して、getCenterがそれを返すようにする
+      let currentCenter = center || { lat: 35.6762, lng: 139.6503 }
       const mockMap = {
-        getCenter: () => ({ lat: () => 35.6762, lng: () => 139.6503 }),
-        panTo: vi.fn(),
+        getCenter: () => ({
+          lat: () => currentCenter.lat,
+          lng: () => currentCenter.lng,
+        }),
+        panTo: vi.fn((newCenter: { lat: number; lng: number }) => {
+          currentCenter = newCenter
+        }),
         addListener: (_event: string, callback: () => void) => {
           // idle イベントを即座に発火
           setTimeout(callback, 0)
@@ -48,6 +55,23 @@ vi.mock('@react-google-maps/api', () => ({
 const mockExtractExif = vi.fn()
 vi.mock('../utils/extractExif', () => ({
   extractExif: (...args: unknown[]) => mockExtractExif(...args),
+}))
+
+// InlineMapPickerのモック（EXIF GPS テスト用にpositionを追跡）
+let lastMapPickerPosition: { lat: number; lng: number } | null = null
+vi.mock('./InlineMapPicker', () => ({
+  InlineMapPicker: ({ position }: { position: { lat: number; lng: number } | null }) => {
+    lastMapPickerPosition = position
+    return (
+      <div data-testid="inline-map-picker">
+        {position && (
+          <span data-testid="map-position">
+            緯度: {position.lat.toFixed(4)}, 経度: {position.lng.toFixed(4)}
+          </span>
+        )}
+      </div>
+    )
+  },
 }))
 
 // URL.createObjectURLのモック
@@ -310,9 +334,9 @@ describe('PhotoContributionDialog', () => {
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
 
-      // InlineMapPickerが表示されていることを確認（Google Mapsモック）
+      // InlineMapPickerが表示されていることを確認
       await waitFor(() => {
-        expect(screen.getByTestId('google-map-mock')).toBeInTheDocument()
+        expect(screen.getByTestId('inline-map-picker')).toBeInTheDocument()
       })
 
       // 投稿ボタンが有効になることを確認
@@ -410,20 +434,36 @@ describe('PhotoContributionDialog', () => {
       expect(screen.queryByText(/mm$/)).not.toBeInTheDocument() // focalLength
     })
 
-    it('should auto-set map pin position from EXIF GPS data', async () => {
+    it('should pass EXIF GPS data to onSubmit as position', async () => {
       mockExtractExif.mockResolvedValue(fullExifData)
+      const mockSubmit = vi.fn(() => Promise.resolve())
       const user = userEvent.setup()
-      render(<PhotoContributionDialog {...defaultProps} />)
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={mockSubmit} />)
 
       const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
       const input = document.querySelector('input[type="file"]') as HTMLInputElement
       await user.upload(input, file)
 
-      // GPS座標がEXIFから取得されてピンに反映されることを確認
+      // 天気を選択
       await waitFor(() => {
-        // 座標が表示されることを確認（InlineMapPickerに渡される）
-        expect(screen.getByText(/34\.6937/)).toBeInTheDocument()
-        expect(screen.getByText(/135\.5023/)).toBeInTheDocument()
+        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+      })
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
+      // 投稿
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
+      })
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      // GPS座標がEXIFから取得された値でsubmitされることを確認
+      await waitFor(() => {
+        expect(mockSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            position: { lat: 34.6937, lng: 135.5023 },
+          })
+        )
       })
     })
 
@@ -433,17 +473,34 @@ describe('PhotoContributionDialog', () => {
         fValue: 'f/2.8',
       }
       mockExtractExif.mockResolvedValue(noGpsExif)
+      const mockSubmit = vi.fn(() => Promise.resolve())
       const user = userEvent.setup()
-      render(<PhotoContributionDialog {...defaultProps} />)
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={mockSubmit} />)
 
       const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
       const input = document.querySelector('input[type="file"]') as HTMLInputElement
       await user.upload(input, file)
 
+      // 天気を選択
       await waitFor(() => {
-        // デフォルト位置（新宿）が表示されることを確認
-        expect(screen.getByText(/35\.6762/)).toBeInTheDocument()
-        expect(screen.getByText(/139\.6503/)).toBeInTheDocument()
+        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+      })
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
+      // 投稿
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
+      })
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      // デフォルト位置（新宿）が使用されることを確認
+      await waitFor(() => {
+        expect(mockSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            position: { lat: 35.6762, lng: 139.6503 },
+          })
+        )
       })
     })
 
