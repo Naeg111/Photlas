@@ -25,12 +25,18 @@ interface SpotResponse {
   photoCount: number
 }
 
-// フィルター条件の型定義（Issue#16）
+// フィルター条件の型定義（Issue#16, Issue#46）
 export interface MapViewFilterParams {
   subject_categories?: number[]
   months?: number[]
   times_of_day?: string[]
   weathers?: string[]
+  min_resolution?: number
+  device_type?: string
+  max_age_years?: number
+  aspect_ratio?: string
+  focal_length_range?: string
+  max_iso?: number
 }
 
 // ピンの色をTailwindクラスにマッピング
@@ -183,6 +189,25 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         }
         if (filterParams.weathers && filterParams.weathers.length > 0) {
           filterParams.weathers.forEach(weather => params.append('weathers', weather))
+        }
+        // Issue#46: 詳細フィルター
+        if (filterParams.min_resolution != null) {
+          params.append('min_resolution', filterParams.min_resolution.toString())
+        }
+        if (filterParams.device_type) {
+          params.append('device_type', filterParams.device_type)
+        }
+        if (filterParams.max_age_years != null) {
+          params.append('max_age_years', filterParams.max_age_years.toString())
+        }
+        if (filterParams.aspect_ratio) {
+          params.append('aspect_ratio', filterParams.aspect_ratio)
+        }
+        if (filterParams.focal_length_range) {
+          params.append('focal_length_range', filterParams.focal_length_range)
+        }
+        if (filterParams.max_iso != null) {
+          params.append('max_iso', filterParams.max_iso.toString())
         }
       }
 

@@ -143,6 +143,136 @@ describe('FilterPanel', () => {
     })
   })
 
+  describe('Issue#46: Advanced Filter UI', () => {
+    it('renders advanced filter toggle button', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      expect(screen.getByRole('button', { name: /詳細フィルター/ })).toBeInTheDocument()
+    })
+
+    it('advanced filter section is hidden by default', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      // 詳細フィルター項目はデフォルトで非表示
+      expect(screen.queryByText('高画質のみ')).not.toBeInTheDocument()
+      expect(screen.queryByText('一眼・デジカメのみ')).not.toBeInTheDocument()
+    })
+
+    it('shows advanced filter items when toggle button is clicked', async () => {
+      const user = userEvent.setup()
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      await user.click(screen.getByRole('button', { name: /詳細フィルター/ }))
+
+      // 解像度
+      expect(screen.getByText('高画質のみ')).toBeInTheDocument()
+      expect(screen.getByText('すべて表示')).toBeInTheDocument()
+
+      // 機材種別
+      expect(screen.getByText('一眼・デジカメのみ')).toBeInTheDocument()
+      expect(screen.getByText('スマホのみ')).toBeInTheDocument()
+
+      // 鮮度
+      expect(screen.getByText('1年以内')).toBeInTheDocument()
+      expect(screen.getByText('3年以内')).toBeInTheDocument()
+
+      // アスペクト比
+      expect(screen.getByText('縦位置')).toBeInTheDocument()
+      expect(screen.getByText('横位置')).toBeInTheDocument()
+      expect(screen.getByText('正方形')).toBeInTheDocument()
+
+      // 焦点距離
+      expect(screen.getByText(/広角/)).toBeInTheDocument()
+      expect(screen.getByText(/標準/)).toBeInTheDocument()
+      expect(screen.getByText(/望遠/)).toBeInTheDocument()
+
+      // ISO感度
+      expect(screen.getByText(/低感度/)).toBeInTheDocument()
+    })
+
+    it('hides advanced filter items when toggle is clicked again', async () => {
+      const user = userEvent.setup()
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      // 開く
+      await user.click(screen.getByRole('button', { name: /詳細フィルター/ }))
+      expect(screen.getByText('高画質のみ')).toBeInTheDocument()
+
+      // 閉じる
+      await user.click(screen.getByRole('button', { name: /詳細フィルター/ }))
+      expect(screen.queryByText('高画質のみ')).not.toBeInTheDocument()
+    })
+
+    it('includes advanced filter conditions in onApply callback', async () => {
+      const mockOnApply = vi.fn()
+      const user = userEvent.setup()
+
+      render(
+        <FilterPanel
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onApply={mockOnApply}
+        />
+      )
+
+      // 詳細フィルターを開く
+      await user.click(screen.getByRole('button', { name: /詳細フィルター/ }))
+
+      // 高画質のみを選択
+      await user.click(screen.getByText('高画質のみ'))
+
+      // 一眼・デジカメのみを選択
+      await user.click(screen.getByText('一眼・デジカメのみ'))
+
+      // 適用
+      await user.click(screen.getByRole('button', { name: '適用' }))
+
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          minResolution: 1080,
+          deviceType: 'CAMERA',
+        })
+      )
+    })
+
+    it('clears advanced filter selections when clear button is clicked', async () => {
+      const mockOnApply = vi.fn()
+      const user = userEvent.setup()
+
+      render(
+        <FilterPanel
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onApply={mockOnApply}
+        />
+      )
+
+      // 詳細フィルターを開く
+      await user.click(screen.getByRole('button', { name: /詳細フィルター/ }))
+
+      // 高画質のみを選択
+      await user.click(screen.getByText('高画質のみ'))
+
+      // クリア
+      await user.click(screen.getByRole('button', { name: 'クリア' }))
+
+      // 適用
+      await user.click(screen.getByRole('button', { name: '適用' }))
+
+      // 詳細フィルターがリセットされている
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          minResolution: undefined,
+          deviceType: undefined,
+          maxAgeYears: undefined,
+          aspectRatio: undefined,
+          focalLengthRange: undefined,
+          maxIso: undefined,
+        })
+      )
+    })
+  })
+
   describe('Issue#16: Filter Application', () => {
     it('calls onApply callback with selected filters when apply button is clicked', async () => {
       const mockOnApply = vi.fn()

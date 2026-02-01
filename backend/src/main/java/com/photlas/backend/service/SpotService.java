@@ -41,10 +41,31 @@ public class SpotService {
         this.photoRepository = photoRepository;
     }
 
+    /**
+     * Issue#46: スマートフォンメーカーの判定リスト
+     */
+    private static final List<String> SMARTPHONE_MAKERS = List.of(
+        "Apple", "iPhone", "Samsung", "Google", "Pixel",
+        "Huawei", "Xiaomi", "OPPO", "OnePlus", "Sony Xperia"
+    );
+
     @Transactional(readOnly = true)
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
                                        List<Integer> subjectCategories, List<Integer> months,
                                        List<String> timesOfDay, List<String> weathers) {
+        return getSpots(north, south, east, west, subjectCategories, months, timesOfDay, weathers,
+                null, null, null, null, null, null);
+    }
+
+    /**
+     * Issue#46: 詳細フィルター対応版
+     */
+    @Transactional(readOnly = true)
+    public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
+                                       List<Integer> subjectCategories, List<Integer> months,
+                                       List<String> timesOfDay, List<String> weathers,
+                                       Integer minResolution, String deviceType, Integer maxAgeYears,
+                                       String aspectRatio, String focalLengthRange, Integer maxIso) {
         logger.info("Getting spots within bounds: north={}, south={}, east={}, west={}", north, south, east, west);
 
         // null/空リストをセンチネル値に変換（PostgreSQLのIN句で型推論問題を回避）
@@ -59,12 +80,32 @@ public class SpotService {
             ? List.of("__NONE__") : weathers;
 
         // ピン色判定期間の基準時刻を計算
-        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(pinColorPeriodHours);
+        // Issue#46: max_age_yearsが指定された場合、cutoffTimeをmax_age_yearsベースに拡張
+        LocalDateTime defaultCutoffTime = LocalDateTime.now().minusHours(pinColorPeriodHours);
+        LocalDateTime cutoffTime;
+        if (maxAgeYears != null) {
+            LocalDateTime maxAgeCutoff = LocalDateTime.now().minusYears(maxAgeYears);
+            cutoffTime = maxAgeCutoff.isBefore(defaultCutoffTime) ? maxAgeCutoff : defaultCutoffTime;
+        } else {
+            cutoffTime = defaultCutoffTime;
+        }
+
+        // Issue#46: 詳細フィルターのセンチネル値変換
+        int safeMinResolution = (minResolution != null) ? minResolution : -1;
+        String safeDeviceType = (deviceType != null) ? deviceType : "__NONE__";
+        LocalDateTime safeMaxAgeDate = (maxAgeYears != null)
+            ? LocalDateTime.now().minusYears(maxAgeYears)
+            : LocalDateTime.of(1900, 1, 1, 0, 0);
+        boolean hasMaxAge = (maxAgeYears != null);
+        String safeAspectRatio = (aspectRatio != null) ? aspectRatio : "__NONE__";
+        String safeFocalLengthRange = (focalLengthRange != null) ? focalLengthRange : "__NONE__";
+        int safeMaxIso = (maxIso != null) ? maxIso : -1;
 
         // リポジトリから集計結果を取得
-        List<Object[]> results = spotRepository.findSpotsWithFilters(
+        List<Object[]> results = spotRepository.findSpotsWithAdvancedFilters(
                 north, south, east, west, safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
-                cutoffTime
+                cutoffTime, safeMinResolution, safeDeviceType,
+                hasMaxAge, safeMaxAgeDate, safeAspectRatio, safeFocalLengthRange, safeMaxIso
         );
 
         logger.info("Found {} spots", results.size());

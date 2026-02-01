@@ -93,7 +93,13 @@ function MainContent() {
       subject_categories: categoryIds.length > 0 ? categoryIds : undefined,
       months: conditions.months.length > 0 ? transformMonths(conditions.months) : undefined,
       times_of_day: conditions.timesOfDay.length > 0 ? transformTimesOfDay(conditions.timesOfDay) : undefined,
-      weathers: conditions.weathers.length > 0 ? transformWeathers(conditions.weathers) : undefined
+      weathers: conditions.weathers.length > 0 ? transformWeathers(conditions.weathers) : undefined,
+      min_resolution: conditions.minResolution,
+      device_type: conditions.deviceType,
+      max_age_years: conditions.maxAgeYears,
+      aspect_ratio: conditions.aspectRatio,
+      focal_length_range: conditions.focalLengthRange,
+      max_iso: conditions.maxIso,
     }
 
     setMapFilterParams(apiParams)
