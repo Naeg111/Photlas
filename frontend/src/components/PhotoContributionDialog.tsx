@@ -6,7 +6,7 @@ import { Label } from './ui/label'
 import { CategoryIcon } from './CategoryIcon'
 import { Checkbox } from './ui/checkbox'
 import { ImageWithFallback } from './figma/ImageWithFallback'
-import { Upload, X, Camera } from 'lucide-react'
+import { Upload, X, Camera, Compass } from 'lucide-react'
 import { Progress } from './ui/progress'
 import { motion, AnimatePresence } from 'motion/react'
 import { PHOTO_CATEGORIES, PHOTO_UPLOAD, UPLOAD_STATUS } from '../utils/constants'
@@ -26,6 +26,18 @@ import { extractExif, type ExifData } from '../utils/extractExif'
 // 天気の選択肢
 const WEATHER_OPTIONS = ['晴れ', '曇り', '雨', '雪'] as const
 type WeatherOption = typeof WEATHER_OPTIONS[number]
+
+// 8方位の定義
+const DIRECTION_OPTIONS = [
+  { label: '北', angle: 0 },
+  { label: '北東', angle: 45 },
+  { label: '東', angle: 90 },
+  { label: '南東', angle: 135 },
+  { label: '南', angle: 180 },
+  { label: '南西', angle: 225 },
+  { label: '西', angle: 270 },
+  { label: '北西', angle: 315 },
+] as const
 
 interface PhotoContributionDialogProps {
   open: boolean
@@ -67,6 +79,7 @@ export function PhotoContributionDialog({
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
   const [exifData, setExifData] = useState<ExifData | null>(null)
+  const [shootingDirection, setShootingDirection] = useState<number | undefined>(undefined)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,6 +110,11 @@ export function PhotoContributionDialog({
         setPinPosition({ lat: exif.latitude, lng: exif.longitude })
       } else if (!pinPosition) {
         setPinPosition({ lat: 35.6762, lng: 139.6503 })
+      }
+
+      // 撮影方向がEXIFに含まれる場合は自動設定
+      if (exif?.shootingDirection != null) {
+        setShootingDirection(exif.shootingDirection)
       }
     }
   }
@@ -148,7 +166,7 @@ export function PhotoContributionDialog({
           position: pinPosition,
           weather: selectedWeather,
           takenAt: exifData?.takenAt,
-          shootingDirection: exifData?.shootingDirection,
+          shootingDirection,
           exif: exifData ? {
             cameraBody: exifData.cameraBody,
             cameraLens: exifData.cameraLens,
@@ -203,6 +221,7 @@ export function PhotoContributionDialog({
     setUploadStatus('idle')
     setUploadProgress(0)
     setExifData(null)
+    setShootingDirection(undefined)
   }
 
   const handleRemovePhoto = () => {
@@ -210,6 +229,7 @@ export function PhotoContributionDialog({
     setPreviewUrl('')
     setPinPosition(null)
     setExifData(null)
+    setShootingDirection(undefined)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -374,6 +394,46 @@ export function PhotoContributionDialog({
               />
             </div>
           </div>
+
+          {/* 撮影方向 */}
+          {selectedFile && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-base flex items-center gap-2">
+                  <Compass className="w-4 h-4" />
+                  撮影方向
+                </Label>
+                {shootingDirection != null && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShootingDirection(undefined)}
+                    aria-label="リセット"
+                  >
+                    リセット
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {DIRECTION_OPTIONS.map(({ label, angle }) => (
+                  <Button
+                    key={label}
+                    variant="outline"
+                    size="sm"
+                    className={`${
+                      shootingDirection === angle
+                        ? 'border-primary bg-primary/5'
+                        : ''
+                    }`}
+                    onClick={() => setShootingDirection(angle)}
+                    aria-label={label}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* カテゴリ選択 */}
           <div className="space-y-3">
