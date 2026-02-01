@@ -654,4 +654,105 @@ public class PhotoControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
+
+    // ===== Issue#40: Photo Entity拡張テスト =====
+
+    @Test
+    @DisplayName("Issue#40 - EXIF情報付き写真投稿でレスポンスにEXIFオブジェクトが含まれる")
+    void testCreatePhoto_WithExif_ReturnsExifInResponse() throws Exception {
+        String requestJson = """
+                {
+                    "title": "EXIF付き投稿",
+                    "s3ObjectKey": "photos/exif-api001.jpg",
+                    "takenAt": "2026-01-15T17:30:00Z",
+                    "latitude": 35.658581,
+                    "longitude": 139.745433,
+                    "categories": ["風景"],
+                    "shootingDirection": 180.50,
+                    "cameraBody": "Canon EOS R5",
+                    "cameraLens": "RF 24-70mm f/2.8L",
+                    "focalLength35mm": 35,
+                    "fValue": "f/2.8",
+                    "shutterSpeed": "1/1000",
+                    "iso": 400,
+                    "imageWidth": 8192,
+                    "imageHeight": 5464
+                }
+                """;
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.photo.photo_id").exists())
+                .andExpect(jsonPath("$.photo.title", is("EXIF付き投稿")))
+                .andExpect(jsonPath("$.photo.shooting_direction", is(180.50)))
+                .andExpect(jsonPath("$.photo.exif.camera_body", is("Canon EOS R5")))
+                .andExpect(jsonPath("$.photo.exif.camera_lens", is("RF 24-70mm f/2.8L")))
+                .andExpect(jsonPath("$.photo.exif.focal_length_35mm", is(35)))
+                .andExpect(jsonPath("$.photo.exif.f_value", is("f/2.8")))
+                .andExpect(jsonPath("$.photo.exif.shutter_speed", is("1/1000")))
+                .andExpect(jsonPath("$.photo.exif.iso", is(400)))
+                .andExpect(jsonPath("$.photo.exif.image_width", is(8192)))
+                .andExpect(jsonPath("$.photo.exif.image_height", is(5464)));
+    }
+
+    @Test
+    @DisplayName("Issue#40 - EXIF情報なしの投稿でexifフィールドがnull")
+    void testCreatePhoto_WithoutExif_ExifIsNull() throws Exception {
+        CreatePhotoRequest request = createPhotoRequest(
+                "EXIF無し投稿",
+                "photos/noexif-api001.jpg",
+                ISO_DATETIME_1,
+                LATITUDE_TOKYO_TOWER,
+                LONGITUDE_TOKYO_TOWER,
+                List.of(CATEGORY_LANDSCAPE)
+        );
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.photo.shooting_direction").doesNotExist())
+                .andExpect(jsonPath("$.photo.exif").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("Issue#40 - 写真詳細取得でEXIFオブジェクトとピンポイント座標が返される")
+    void testGetPhotoDetail_ReturnsExifAndCoordinates() throws Exception {
+        Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
+
+        Photo photo = new Photo();
+        photo.setTitle("EXIF詳細テスト");
+        photo.setS3ObjectKey("photos/exif-detail-api001.jpg");
+        photo.setShotAt(LocalDateTime.of(2026, 1, 15, 17, 30));
+        photo.setWeather("sunny");
+        photo.setUserId(testUser.getId());
+        photo.setSpotId(spot.getSpotId());
+        photo.setLatitude(new BigDecimal("35.658600"));
+        photo.setLongitude(new BigDecimal("139.745450"));
+        photo.setShootingDirection(new BigDecimal("270.00"));
+        photo.setCameraBody("Nikon Z9");
+        photo.setFocalLength35mm(70);
+        photo.setIso(800);
+        photo.setImageWidth(8256);
+        photo.setImageHeight(5504);
+        photo = photoRepository.save(photo);
+
+        mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photo.latitude", is(35.658600)))
+                .andExpect(jsonPath("$.photo.longitude", is(139.745450)))
+                .andExpect(jsonPath("$.photo.shooting_direction", is(270.00)))
+                .andExpect(jsonPath("$.photo.exif.camera_body", is("Nikon Z9")))
+                .andExpect(jsonPath("$.photo.exif.focal_length_35mm", is(70)))
+                .andExpect(jsonPath("$.photo.exif.iso", is(800)))
+                .andExpect(jsonPath("$.photo.exif.image_width", is(8256)))
+                .andExpect(jsonPath("$.photo.exif.image_height", is(5504)));
+    }
 }
