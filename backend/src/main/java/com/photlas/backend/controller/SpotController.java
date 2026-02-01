@@ -37,6 +37,12 @@ public class SpotController {
      * @param months 月フィルター
      * @param timesOfDay 時間帯フィルター
      * @param weathers 天気フィルター
+     * @param minResolution 最小解像度（長辺px）
+     * @param deviceType 機材種別（CAMERA / SMARTPHONE）
+     * @param maxAgeYears 撮影日からの最大年数
+     * @param aspectRatio アスペクト比（HORIZONTAL / VERTICAL / SQUARE）
+     * @param focalLengthRange 焦点距離帯（WIDE / STANDARD / TELEPHOTO）
+     * @param maxIso 最大ISO感度
      * @return スポット一覧
      */
     @GetMapping
@@ -48,10 +54,16 @@ public class SpotController {
             @RequestParam(name = "subject_categories", required = false) List<Integer> subjectCategories,
             @RequestParam(required = false) List<Integer> months,
             @RequestParam(name = "times_of_day", required = false) List<String> timesOfDay,
-            @RequestParam(required = false) List<String> weathers) {
+            @RequestParam(required = false) List<String> weathers,
+            @RequestParam(name = "min_resolution", required = false) Integer minResolution,
+            @RequestParam(name = "device_type", required = false) String deviceType,
+            @RequestParam(name = "max_age_years", required = false) Integer maxAgeYears,
+            @RequestParam(name = "aspect_ratio", required = false) String aspectRatio,
+            @RequestParam(name = "focal_length_range", required = false) String focalLengthRange,
+            @RequestParam(name = "max_iso", required = false) Integer maxIso) {
 
-        logger.info("GET /api/v1/spots - north={}, south={}, east={}, west={}, subjectCategories={}, months={}, timesOfDay={}, weathers={}",
-                north, south, east, west, subjectCategories, months, timesOfDay, weathers);
+        logger.info("GET /api/v1/spots - north={}, south={}, east={}, west={}, subjectCategories={}, months={}, timesOfDay={}, weathers={}, minResolution={}, deviceType={}, maxAgeYears={}, aspectRatio={}, focalLengthRange={}, maxIso={}",
+                north, south, east, west, subjectCategories, months, timesOfDay, weathers, minResolution, deviceType, maxAgeYears, aspectRatio, focalLengthRange, maxIso);
 
         // 範囲パラメータのバリデーション
         if (north == null || south == null || east == null || west == null) {
@@ -59,7 +71,8 @@ public class SpotController {
             return ResponseEntity.badRequest().build();
         }
 
-        List<SpotResponse> spots = spotService.getSpots(north, south, east, west, subjectCategories, months, timesOfDay, weathers);
+        List<SpotResponse> spots = spotService.getSpots(north, south, east, west, subjectCategories, months, timesOfDay, weathers,
+                minResolution, deviceType, maxAgeYears, aspectRatio, focalLengthRange, maxIso);
 
         return ResponseEntity.ok(spots);
     }
