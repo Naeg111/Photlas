@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar, MapPin } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
+import { useLoadScript, GoogleMap, Marker, Polygon } from '@react-google-maps/api'
 import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
 
@@ -110,6 +111,8 @@ interface PhotoDetail {
   isFavorited?: boolean
   favoriteCount?: number
   shootingDirection?: number | null
+  latitude?: number | null
+  longitude?: number | null
   exif?: ExifInfo | null
   tags: TagInfo[]
   user: {
@@ -119,6 +122,8 @@ interface PhotoDetail {
   }
   spot: {
     spotId: number
+    latitude: number
+    longitude: number
   }
 }
 
@@ -144,6 +149,39 @@ function formatShotAt(shotAt: string): string {
   return `${year}年${month}月${day}日 ${hours}:${minutes}`
 }
 
+/**
+ * 扇形の頂点配列を生成する（撮影方向を中心に左右30度）
+ */
+function createFanPoints(
+  lat: number,
+  lng: number,
+  direction: number,
+  radiusMeters: number = 150,
+): { lat: number; lng: number }[] {
+  const points: { lat: number; lng: number }[] = [{ lat, lng }]
+  const startAngle = direction - 30
+  const endAngle = direction + 30
+
+  for (let angle = startAngle; angle <= endAngle; angle += 3) {
+    const rad = (angle * Math.PI) / 180
+    const dLat = (radiusMeters / 111320) * Math.cos(rad)
+    const dLng = (radiusMeters / (111320 * Math.cos((lat * Math.PI) / 180))) * Math.sin(rad)
+    points.push({ lat: lat + dLat, lng: lng + dLng })
+  }
+
+  points.push({ lat, lng })
+  return points
+}
+
+// ミニマップのオプション
+const MINIMAP_OPTIONS: google.maps.MapOptions = {
+  disableDefaultUI: true,
+  gestureHandling: 'none',
+  zoomControl: false,
+  draggable: false,
+  clickableIcons: false,
+}
+
 // APIレスポンスを内部形式に変換
 function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
   const exifRaw = response.photo.exif
@@ -167,6 +205,8 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
     isFavorited: response.photo.is_favorited,
     favoriteCount: response.photo.favorite_count,
     shootingDirection: response.photo.shooting_direction,
+    latitude: response.photo.latitude,
+    longitude: response.photo.longitude,
     exif,
     tags: (response.photo.tags ?? []).map(t => ({ tagId: t.tag_id, name: t.name })),
     user: {
@@ -175,6 +215,8 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
     },
     spot: {
       spotId: response.spot.spot_id,
+      latitude: response.spot.latitude,
+      longitude: response.spot.longitude,
     },
   }
 }
@@ -203,6 +245,61 @@ async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
 
   const data: PhotoApiResponse = await response.json()
   return transformApiResponse(data)
+}
+
+/**
+ * 撮影地点ミニマップコンポーネント
+ * Issue#45: 写真詳細ダイアログ内に撮影地点を表示する静的地図
+ */
+function DetailMiniMap({
+  latitude,
+  longitude,
+  shootingDirection,
+}: {
+  latitude: number
+  longitude: number
+  shootingDirection?: number | null
+}) {
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+  })
+
+  const center = { lat: latitude, lng: longitude }
+  const fanPoints = shootingDirection != null ? createFanPoints(latitude, longitude, shootingDirection) : null
+
+  if (!isLoaded) {
+    return (
+      <div data-testid="detail-minimap" className="w-full h-[200px] bg-gray-100 rounded-lg flex items-center justify-center">
+        <MapPin className="w-6 h-6 text-gray-400" />
+      </div>
+    )
+  }
+
+  return (
+    <div data-testid="detail-minimap" className="w-full h-[200px] rounded-lg overflow-hidden">
+      <GoogleMap
+        mapContainerStyle={{ width: '100%', height: '100%' }}
+        center={center}
+        zoom={15}
+        options={MINIMAP_OPTIONS}
+      >
+        <Marker position={center} />
+        {fanPoints && (
+          <Polygon
+            paths={fanPoints}
+            options={{
+              fillColor: 'rgba(59, 130, 246, 0.3)',
+              fillOpacity: 0.3,
+              strokeColor: '#3B82F6',
+              strokeOpacity: 0.8,
+              strokeWeight: 1,
+            }}
+          />
+        )}
+      </GoogleMap>
+      {fanPoints && <div data-testid="minimap-fan-overlay" className="hidden" />}
+    </div>
+  )
 }
 
 export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }: PhotoDetailDialogProps) {
@@ -587,6 +684,13 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
                       </div>
                     </div>
                   )}
+
+                  {/* ミニマップ */}
+                  <DetailMiniMap
+                    latitude={displayedPhoto.latitude ?? displayedPhoto.spot.latitude}
+                    longitude={displayedPhoto.longitude ?? displayedPhoto.spot.longitude}
+                    shootingDirection={displayedPhoto.shootingDirection}
+                  />
 
                   {/* ドットインジケーター */}
                   {photoIds.length > 1 && (

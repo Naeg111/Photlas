@@ -3,6 +3,14 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import PhotoDetailDialog from './PhotoDetailDialog'
 
+// Google Maps APIのモック
+vi.mock('@react-google-maps/api', () => ({
+  useLoadScript: () => ({ isLoaded: true, loadError: null }),
+  GoogleMap: ({ children }: { children?: React.ReactNode }) => <div data-testid="google-map-mock">{children}</div>,
+  Marker: () => <div data-testid="google-map-marker" />,
+  Polygon: () => <div data-testid="google-map-polygon" />,
+}))
+
 /**
  * Issue#14: 写真詳細表示 (UI + API)
  * TDD Red段階のテストコード
