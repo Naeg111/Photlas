@@ -24,8 +24,9 @@ describe('extractExif', () => {
 
   describe('EXIF情報の抽出', () => {
     it('should extract all EXIF fields from a JPEG file', async () => {
+      const takenDate = new Date('2024-12-25T15:30:00Z')
       const mockExifData = {
-        DateTimeOriginal: new Date('2024-12-25T15:30:00'),
+        DateTimeOriginal: takenDate,
         latitude: 35.6762,
         longitude: 139.6503,
         GPSImgDirection: 180.5,
@@ -45,7 +46,7 @@ describe('extractExif', () => {
       const result = await extractExif(file)
 
       expect(result).not.toBeNull()
-      expect(result!.takenAt).toBe('2024-12-25T15:30:00.000Z')
+      expect(result!.takenAt).toBe(takenDate.toISOString())
       expect(result!.latitude).toBe(35.6762)
       expect(result!.longitude).toBe(139.6503)
       expect(result!.shootingDirection).toBe(180.5)
