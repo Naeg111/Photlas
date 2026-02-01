@@ -52,22 +52,42 @@ function createMockApiResponse(overrides?: {
   photoId?: number
   title?: string
   imageUrl?: string
+  shotAt?: string
   weather?: string
   isFavorited?: boolean
   favoriteCount?: number
   userId?: number
   username?: string
   spotId?: number
+  shootingDirection?: number | null
+  exif?: {
+    camera_body?: string
+    camera_lens?: string
+    focal_length_35mm?: number
+    f_value?: string
+    shutter_speed?: string
+    iso?: number
+    image_width?: number
+    image_height?: number
+  } | null
+  tags?: { tag_id: number; name: string }[]
+  latitude?: number
+  longitude?: number
 }) {
   return {
     photo: {
       photo_id: overrides?.photoId ?? TEST_PHOTO_ID_1,
       title: overrides?.title ?? TEST_PHOTO_TITLE_1,
       image_url: overrides?.imageUrl ?? TEST_STANDARD_URL,
-      shot_at: TEST_SHOT_AT,
+      shot_at: overrides?.shotAt ?? TEST_SHOT_AT,
       weather: overrides?.weather ?? TEST_WEATHER,
       is_favorited: overrides?.isFavorited ?? false,
       favorite_count: overrides?.favoriteCount ?? 0,
+      shooting_direction: overrides?.shootingDirection ?? null,
+      exif: overrides?.exif ?? null,
+      tags: overrides?.tags ?? [],
+      latitude: overrides?.latitude ?? null,
+      longitude: overrides?.longitude ?? null,
     },
     spot: {
       spot_id: overrides?.spotId ?? TEST_SPOT_ID,
@@ -566,6 +586,264 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await waitFor(() => {
         expect(screen.getByTestId('favorite-count')).toHaveTextContent('42')
       })
+    })
+  })
+
+  // ============================================================
+  // Issue#44: 写真詳細ダイアログの情報拡張テスト
+  // ============================================================
+
+  describe('Issue#44: EXIF情報ブロックの表示', () => {
+    it('EXIF情報が全て揃っている場合、撮影情報ブロックが全項目表示される', async () => {
+      const photoDetail = createMockApiResponse({
+        exif: {
+          camera_body: 'Canon EOS R5',
+          camera_lens: 'RF 24-70mm f/2.8L',
+          focal_length_35mm: 35,
+          f_value: 'f/2.8',
+          shutter_speed: '1/1000',
+          iso: 400,
+          image_width: 8192,
+          image_height: 5464,
+        },
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText('撮影情報')).toBeInTheDocument()
+        expect(screen.getByText('Canon EOS R5')).toBeInTheDocument()
+        expect(screen.getByText('RF 24-70mm f/2.8L')).toBeInTheDocument()
+        expect(screen.getByText('35mm')).toBeInTheDocument()
+        expect(screen.getByText('f/2.8')).toBeInTheDocument()
+        expect(screen.getByText('1/1000')).toBeInTheDocument()
+        expect(screen.getByText('ISO 400')).toBeInTheDocument()
+        expect(screen.getByText('8192 x 5464')).toBeInTheDocument()
+      })
+    })
+
+    it('EXIF情報が一部のみの場合、取得できた項目のみ表示される', async () => {
+      const photoDetail = createMockApiResponse({
+        exif: {
+          camera_body: 'iPhone 15 Pro',
+          iso: 100,
+        },
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText('撮影情報')).toBeInTheDocument()
+        expect(screen.getByText('iPhone 15 Pro')).toBeInTheDocument()
+        expect(screen.getByText('ISO 100')).toBeInTheDocument()
+      })
+
+      // 未取得のフィールドは表示されない
+      expect(screen.queryByText(/RF/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/f\//)).not.toBeInTheDocument()
+    })
+
+    it('EXIF情報が全くない場合、撮影情報ブロックが非表示になる', async () => {
+      const photoDetail = createMockApiResponse({
+        exif: null,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
+      })
+
+      expect(screen.queryByText('撮影情報')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Issue#44: 撮影方向の表示', () => {
+    it('撮影方向が記録されている場合、方角テキストと角度が表示される', async () => {
+      const photoDetail = createMockApiResponse({
+        shootingDirection: 225,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(/南西/)).toBeInTheDocument()
+        expect(screen.getByText(/225°/)).toBeInTheDocument()
+      })
+    })
+
+    it('撮影方向の角度が正しく8方位に変換される', async () => {
+      // 北=0°のテスト
+      const photoDetail = createMockApiResponse({
+        shootingDirection: 0,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(/北/)).toBeInTheDocument()
+        expect(screen.getByText(/0°/)).toBeInTheDocument()
+      })
+    })
+
+    it('撮影方向が記録されていない場合は非表示', async () => {
+      const photoDetail = createMockApiResponse({
+        shootingDirection: null,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
+      })
+
+      // 撮影方向の表示がないことを確認
+      expect(screen.queryByText(/撮影方向/)).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Issue#44: 撮影コンテクスト情報の拡充', () => {
+    it('撮影日時がフォーマットされて表示される', async () => {
+      const photoDetail = createMockApiResponse({
+        shotAt: '2026-01-15T18:30:00',
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(/2026年1月15日/)).toBeInTheDocument()
+        expect(screen.getByText(/18:30/)).toBeInTheDocument()
+      })
+    })
+
+    it('タグがチップ形式で表示される', async () => {
+      const photoDetail = createMockApiResponse({
+        tags: [
+          { tag_id: 1, name: '桜' },
+          { tag_id: 2, name: '夕焼け' },
+        ],
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText('桜')).toBeInTheDocument()
+        expect(screen.getByText('夕焼け')).toBeInTheDocument()
+      })
+    })
+
+    it('タグがない場合はタグセクションが非表示', async () => {
+      const photoDetail = createMockApiResponse({
+        tags: [],
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
+      })
+
+      // タグチップが存在しないことを確認
+      expect(screen.queryAllByTestId('detail-tag-chip')).toHaveLength(0)
     })
   })
 })
