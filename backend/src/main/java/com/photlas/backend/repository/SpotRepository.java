@@ -111,4 +111,147 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("weathers") List<String> weathers,
         @Param("cutoffTime") LocalDateTime cutoffTime
     );
+
+    /**
+     * Issue#46: 詳細フィルター対応版スポット検索
+     *
+     * 基本フィルターに加え、以下の詳細フィルターに対応:
+     * - 解像度（最小長辺px）
+     * - 機材種別（カメラ/スマートフォン）- スマートフォン判定はcamera_bodyのLIKE条件
+     * - 鮮度（撮影日からの年数）
+     * - アスペクト比（横/縦/正方形）
+     * - 焦点距離帯（広角/標準/望遠）
+     * - ISO感度（最大値）
+     */
+    @Query(value = """
+        SELECT
+            s.spot_id,
+            s.latitude,
+            s.longitude,
+            COUNT(DISTINCT p.photo_id) as photo_count,
+            (
+                SELECT p2.s3_object_key
+                FROM photos p2
+                WHERE p2.spot_id = s.spot_id
+                  AND p2.shot_at >= :cutoffTime
+                  AND (-1 IN (:months) OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
+                  AND ('__NONE__' IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
+                  AND ('__NONE__' IN (:weathers) OR p2.weather IN (:weathers))
+                  AND (-1 IN (:subjectCategories) OR EXISTS (
+                      SELECT 1 FROM photo_categories pc2
+                      WHERE pc2.photo_id = p2.photo_id
+                        AND pc2.category_id IN (:subjectCategories)
+                  ))
+                  AND (:minResolution = -1 OR (p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND GREATEST(p2.image_width, p2.image_height) >= :minResolution))
+                  AND ('__NONE__' = :deviceType
+                       OR (:deviceType = 'CAMERA' AND p2.camera_body IS NOT NULL
+                           AND LOWER(p2.camera_body) NOT LIKE '%apple%'
+                           AND LOWER(p2.camera_body) NOT LIKE '%iphone%'
+                           AND LOWER(p2.camera_body) NOT LIKE '%samsung%'
+                           AND LOWER(p2.camera_body) NOT LIKE '%google%'
+                           AND LOWER(p2.camera_body) NOT LIKE '%pixel%'
+                           AND LOWER(p2.camera_body) NOT LIKE '%huawei%'
+                           AND LOWER(p2.camera_body) NOT LIKE '%xiaomi%'
+                           AND LOWER(p2.camera_body) NOT LIKE '%oppo%'
+                           AND LOWER(p2.camera_body) NOT LIKE '%oneplus%'
+                           AND LOWER(p2.camera_body) NOT LIKE '%sony xperia%')
+                       OR (:deviceType = 'SMARTPHONE' AND p2.camera_body IS NOT NULL
+                           AND (LOWER(p2.camera_body) LIKE '%apple%'
+                                OR LOWER(p2.camera_body) LIKE '%iphone%'
+                                OR LOWER(p2.camera_body) LIKE '%samsung%'
+                                OR LOWER(p2.camera_body) LIKE '%google%'
+                                OR LOWER(p2.camera_body) LIKE '%pixel%'
+                                OR LOWER(p2.camera_body) LIKE '%huawei%'
+                                OR LOWER(p2.camera_body) LIKE '%xiaomi%'
+                                OR LOWER(p2.camera_body) LIKE '%oppo%'
+                                OR LOWER(p2.camera_body) LIKE '%oneplus%'
+                                OR LOWER(p2.camera_body) LIKE '%sony xperia%'))
+                  )
+                  AND (:hasMaxAge = false OR p2.shot_at >= :maxAgeDate)
+                  AND ('__NONE__' = :aspectRatio
+                       OR (:aspectRatio = 'HORIZONTAL' AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width > p2.image_height)
+                       OR (:aspectRatio = 'VERTICAL' AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width < p2.image_height)
+                       OR (:aspectRatio = 'SQUARE' AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND ABS(p2.image_width - p2.image_height) <= GREATEST(p2.image_width, p2.image_height) * 0.05)
+                  )
+                  AND ('__NONE__' = :focalLengthRange
+                       OR (:focalLengthRange = 'WIDE' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm < 24)
+                       OR (:focalLengthRange = 'STANDARD' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm >= 24 AND p2.focal_length_35mm <= 70)
+                       OR (:focalLengthRange = 'TELEPHOTO' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 70)
+                  )
+                  AND (:maxIso = -1 OR (p2.iso IS NOT NULL AND p2.iso <= :maxIso))
+                ORDER BY p2.shot_at DESC
+                LIMIT 1
+            ) as thumbnail_url
+        FROM spots s
+        INNER JOIN photos p ON s.spot_id = p.spot_id
+        WHERE s.latitude BETWEEN :south AND :north
+          AND s.longitude BETWEEN :west AND :east
+          AND p.shot_at >= :cutoffTime
+          AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
+          AND ('__NONE__' IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
+          AND ('__NONE__' IN (:weathers) OR p.weather IN (:weathers))
+          AND (-1 IN (:subjectCategories) OR EXISTS (
+              SELECT 1 FROM photo_categories pc
+              WHERE pc.photo_id = p.photo_id
+                AND pc.category_id IN (:subjectCategories)
+          ))
+          AND (:minResolution = -1 OR (p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND GREATEST(p.image_width, p.image_height) >= :minResolution))
+          AND ('__NONE__' = :deviceType
+               OR (:deviceType = 'CAMERA' AND p.camera_body IS NOT NULL
+                   AND LOWER(p.camera_body) NOT LIKE '%apple%'
+                   AND LOWER(p.camera_body) NOT LIKE '%iphone%'
+                   AND LOWER(p.camera_body) NOT LIKE '%samsung%'
+                   AND LOWER(p.camera_body) NOT LIKE '%google%'
+                   AND LOWER(p.camera_body) NOT LIKE '%pixel%'
+                   AND LOWER(p.camera_body) NOT LIKE '%huawei%'
+                   AND LOWER(p.camera_body) NOT LIKE '%xiaomi%'
+                   AND LOWER(p.camera_body) NOT LIKE '%oppo%'
+                   AND LOWER(p.camera_body) NOT LIKE '%oneplus%'
+                   AND LOWER(p.camera_body) NOT LIKE '%sony xperia%')
+               OR (:deviceType = 'SMARTPHONE' AND p.camera_body IS NOT NULL
+                   AND (LOWER(p.camera_body) LIKE '%apple%'
+                        OR LOWER(p.camera_body) LIKE '%iphone%'
+                        OR LOWER(p.camera_body) LIKE '%samsung%'
+                        OR LOWER(p.camera_body) LIKE '%google%'
+                        OR LOWER(p.camera_body) LIKE '%pixel%'
+                        OR LOWER(p.camera_body) LIKE '%huawei%'
+                        OR LOWER(p.camera_body) LIKE '%xiaomi%'
+                        OR LOWER(p.camera_body) LIKE '%oppo%'
+                        OR LOWER(p.camera_body) LIKE '%oneplus%'
+                        OR LOWER(p.camera_body) LIKE '%sony xperia%'))
+          )
+          AND (:hasMaxAge = false OR p.shot_at >= :maxAgeDate)
+          AND ('__NONE__' = :aspectRatio
+               OR (:aspectRatio = 'HORIZONTAL' AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width > p.image_height)
+               OR (:aspectRatio = 'VERTICAL' AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width < p.image_height)
+               OR (:aspectRatio = 'SQUARE' AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND ABS(p.image_width - p.image_height) <= GREATEST(p.image_width, p.image_height) * 0.05)
+          )
+          AND ('__NONE__' = :focalLengthRange
+               OR (:focalLengthRange = 'WIDE' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm < 24)
+               OR (:focalLengthRange = 'STANDARD' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm >= 24 AND p.focal_length_35mm <= 70)
+               OR (:focalLengthRange = 'TELEPHOTO' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 70)
+          )
+          AND (:maxIso = -1 OR (p.iso IS NOT NULL AND p.iso <= :maxIso))
+        GROUP BY s.spot_id, s.latitude, s.longitude
+        HAVING COUNT(DISTINCT p.photo_id) > 0
+        ORDER BY photo_count DESC
+        """, nativeQuery = true)
+    List<Object[]> findSpotsWithAdvancedFilters(
+        @Param("north") BigDecimal north,
+        @Param("south") BigDecimal south,
+        @Param("east") BigDecimal east,
+        @Param("west") BigDecimal west,
+        @Param("subjectCategories") List<Integer> subjectCategories,
+        @Param("months") List<Integer> months,
+        @Param("timesOfDay") List<String> timesOfDay,
+        @Param("weathers") List<String> weathers,
+        @Param("cutoffTime") LocalDateTime cutoffTime,
+        @Param("minResolution") int minResolution,
+        @Param("deviceType") String deviceType,
+        @Param("hasMaxAge") boolean hasMaxAge,
+        @Param("maxAgeDate") LocalDateTime maxAgeDate,
+        @Param("aspectRatio") String aspectRatio,
+        @Param("focalLengthRange") String focalLengthRange,
+        @Param("maxIso") int maxIso
+    );
 }

@@ -4,12 +4,19 @@ import { Button } from "./ui/button";
 import { CategoryIcon } from "./CategoryIcon";
 import { MonthIcons, TimeIcons, WeatherIcons } from "./FilterIcons";
 import { PHOTO_CATEGORIES } from "../utils/constants";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 export interface FilterConditions {
   categories: string[];
   months: string[];
   timesOfDay: string[];
   weathers: string[];
+  minResolution?: number;
+  deviceType?: string;
+  maxAgeYears?: number;
+  aspectRatio?: string;
+  focalLengthRange?: string;
+  maxIso?: number;
 }
 
 interface FilterPanelProps {
@@ -33,11 +40,52 @@ const MONTHS_NEED_INVERT = ["1月", "2月", "4月", "5月", "6月", "7月", "8�
 // アイコンが fill="#000000" でハードコードされているため、選択時に invert が必要な時間帯
 const TIMES_NEED_INVERT = ["夕方"];
 
+// Issue#46: 詳細フィルターの選択肢
+const RESOLUTION_OPTIONS = [
+  { label: "高画質のみ", value: 1080 },
+  { label: "すべて表示", value: undefined },
+] as const;
+
+const DEVICE_TYPE_OPTIONS = [
+  { label: "一眼・デジカメのみ", value: "CAMERA" },
+  { label: "スマホのみ", value: "SMARTPHONE" },
+] as const;
+
+const FRESHNESS_OPTIONS = [
+  { label: "1年以内", value: 1 },
+  { label: "3年以内", value: 3 },
+] as const;
+
+const ASPECT_RATIO_OPTIONS = [
+  { label: "横位置", value: "HORIZONTAL" },
+  { label: "縦位置", value: "VERTICAL" },
+  { label: "正方形", value: "SQUARE" },
+] as const;
+
+const FOCAL_LENGTH_OPTIONS = [
+  { label: "広角 (< 24mm)", value: "WIDE" },
+  { label: "標準 (24-70mm)", value: "STANDARD" },
+  { label: "望遠 (> 70mm)", value: "TELEPHOTO" },
+] as const;
+
+const ISO_OPTIONS = [
+  { label: "低感度 (ISO 400以下)", value: 400 },
+] as const;
+
 export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
   const [selectedWeather, setSelectedWeather] = useState<string[]>([]);
+
+  // Issue#46: 詳細フィルターの状態
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [selectedResolution, setSelectedResolution] = useState<number | undefined>(undefined);
+  const [selectedDeviceType, setSelectedDeviceType] = useState<string | undefined>(undefined);
+  const [selectedMaxAgeYears, setSelectedMaxAgeYears] = useState<number | undefined>(undefined);
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string | undefined>(undefined);
+  const [selectedFocalLengthRange, setSelectedFocalLengthRange] = useState<string | undefined>(undefined);
+  const [selectedMaxIso, setSelectedMaxIso] = useState<number | undefined>(undefined);
 
   const toggleSelection = (
     value: string,
@@ -51,6 +99,37 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
     }
   };
 
+  const handleClear = () => {
+    setSelectedCategories([]);
+    setSelectedMonths([]);
+    setSelectedTimes([]);
+    setSelectedWeather([]);
+    setSelectedResolution(undefined);
+    setSelectedDeviceType(undefined);
+    setSelectedMaxAgeYears(undefined);
+    setSelectedAspectRatio(undefined);
+    setSelectedFocalLengthRange(undefined);
+    setSelectedMaxIso(undefined);
+  };
+
+  const handleApply = () => {
+    if (onApply) {
+      onApply({
+        categories: selectedCategories,
+        months: selectedMonths,
+        timesOfDay: selectedTimes,
+        weathers: selectedWeather,
+        minResolution: selectedResolution,
+        deviceType: selectedDeviceType,
+        maxAgeYears: selectedMaxAgeYears,
+        aspectRatio: selectedAspectRatio,
+        focalLengthRange: selectedFocalLengthRange,
+        maxIso: selectedMaxIso,
+      });
+    }
+    onOpenChange(false);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="top" className="w-full h-full md:h-auto px-6 py-6 overflow-y-auto">
@@ -60,7 +139,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
             被写体種別、時期、時間帯、天候でフィルタリング
           </SheetDescription>
         </SheetHeader>
-        
+
         <div className="space-y-8 pb-6 mt-5">
           {/* 被写体種別 */}
           <div>
@@ -160,34 +239,155 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
             </div>
           </div>
 
+          {/* Issue#46: 詳細フィルタートグル */}
+          <div>
+            <Button
+              variant="ghost"
+              className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground"
+              onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+            >
+              詳細フィルター
+              {isAdvancedOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </Button>
+
+            {isAdvancedOpen && (
+              <div className="space-y-6 mt-4">
+                {/* 解像度 */}
+                <div>
+                  <p className="text-sm font-medium mb-2 text-muted-foreground">解像度</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {RESOLUTION_OPTIONS.map((option) => (
+                      <Button
+                        key={option.label}
+                        variant={selectedResolution === option.value ? "default" : "outline"}
+                        className={`text-sm ${selectedResolution === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                        style={{ border: '1px solid #d1d5db' }}
+                        onClick={() => setSelectedResolution(
+                          selectedResolution === option.value ? undefined : option.value
+                        )}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 機材種別 */}
+                <div>
+                  <p className="text-sm font-medium mb-2 text-muted-foreground">機材種別</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {DEVICE_TYPE_OPTIONS.map((option) => (
+                      <Button
+                        key={option.label}
+                        variant={selectedDeviceType === option.value ? "default" : "outline"}
+                        className={`text-sm ${selectedDeviceType === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                        style={{ border: '1px solid #d1d5db' }}
+                        onClick={() => setSelectedDeviceType(
+                          selectedDeviceType === option.value ? undefined : option.value
+                        )}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 鮮度 */}
+                <div>
+                  <p className="text-sm font-medium mb-2 text-muted-foreground">鮮度</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {FRESHNESS_OPTIONS.map((option) => (
+                      <Button
+                        key={option.label}
+                        variant={selectedMaxAgeYears === option.value ? "default" : "outline"}
+                        className={`text-sm ${selectedMaxAgeYears === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                        style={{ border: '1px solid #d1d5db' }}
+                        onClick={() => setSelectedMaxAgeYears(
+                          selectedMaxAgeYears === option.value ? undefined : option.value
+                        )}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* アスペクト比 */}
+                <div>
+                  <p className="text-sm font-medium mb-2 text-muted-foreground">アスペクト比</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {ASPECT_RATIO_OPTIONS.map((option) => (
+                      <Button
+                        key={option.label}
+                        variant={selectedAspectRatio === option.value ? "default" : "outline"}
+                        className={`text-sm ${selectedAspectRatio === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                        style={{ border: '1px solid #d1d5db' }}
+                        onClick={() => setSelectedAspectRatio(
+                          selectedAspectRatio === option.value ? undefined : option.value
+                        )}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 焦点距離 */}
+                <div>
+                  <p className="text-sm font-medium mb-2 text-muted-foreground">焦点距離</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {FOCAL_LENGTH_OPTIONS.map((option) => (
+                      <Button
+                        key={option.label}
+                        variant={selectedFocalLengthRange === option.value ? "default" : "outline"}
+                        className={`text-sm ${selectedFocalLengthRange === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                        style={{ border: '1px solid #d1d5db' }}
+                        onClick={() => setSelectedFocalLengthRange(
+                          selectedFocalLengthRange === option.value ? undefined : option.value
+                        )}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ISO感度 */}
+                <div>
+                  <p className="text-sm font-medium mb-2 text-muted-foreground">ISO感度</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {ISO_OPTIONS.map((option) => (
+                      <Button
+                        key={option.label}
+                        variant={selectedMaxIso === option.value ? "default" : "outline"}
+                        className={`text-sm ${selectedMaxIso === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                        style={{ border: '1px solid #d1d5db' }}
+                        onClick={() => setSelectedMaxIso(
+                          selectedMaxIso === option.value ? undefined : option.value
+                        )}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* アクションボタン */}
           <div className="flex gap-2 pt-4 mt-2.5">
             <Button
               variant="outline"
               className="flex-1 hover:bg-background hover:text-foreground"
               style={{ border: '1px solid #d1d5db' }}
-              onClick={() => {
-                setSelectedCategories([]);
-                setSelectedMonths([]);
-                setSelectedTimes([]);
-                setSelectedWeather([]);
-              }}
+              onClick={handleClear}
             >
               クリア
             </Button>
             <Button
               className="flex-1"
-              onClick={() => {
-                if (onApply) {
-                  onApply({
-                    categories: selectedCategories,
-                    months: selectedMonths,
-                    timesOfDay: selectedTimes,
-                    weathers: selectedWeather
-                  });
-                }
-                onOpenChange(false);
-              }}
+              onClick={handleApply}
             >
               適用
             </Button>
