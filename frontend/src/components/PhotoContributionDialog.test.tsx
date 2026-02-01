@@ -583,4 +583,226 @@ describe('PhotoContributionDialog', () => {
       })
     })
   })
+
+  describe('Shooting Direction - 撮影方向 (Issue#42)', () => {
+    it('should render shooting direction section with 8-direction buttons', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      // 写真を選択して撮影方向セクションを表示
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByText('撮影方向')).toBeInTheDocument()
+      })
+
+      // 8方位ボタンが表示されることを確認
+      const directions = ['北', '北東', '東', '南東', '南', '南西', '西', '北西']
+      directions.forEach(direction => {
+        expect(screen.getByRole('button', { name: direction })).toBeInTheDocument()
+      })
+    })
+
+    it('should select a direction when 8-direction button is clicked', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '東' })).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByRole('button', { name: '東' }))
+
+      // 東ボタンが選択状態になることを確認
+      await waitFor(() => {
+        const eastButton = screen.getByRole('button', { name: '東' })
+        expect(eastButton.className).toMatch(/border-primary|bg-primary/)
+      })
+    })
+
+    it('should map 8-direction buttons to correct angles', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const mockSubmit = vi.fn(() => Promise.resolve())
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={mockSubmit} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      // 天気を選択
+      await waitFor(() => {
+        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+      })
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
+      // 南東（135°）を選択
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '南東' })).toBeInTheDocument()
+      })
+      await user.click(screen.getByRole('button', { name: '南東' }))
+
+      // 投稿
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
+      })
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      await waitFor(() => {
+        expect(mockSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            shootingDirection: 135,
+          })
+        )
+      })
+    })
+
+    it('should have a reset button to clear shooting direction', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '東' })).toBeInTheDocument()
+      })
+
+      // 方向を選択
+      await user.click(screen.getByRole('button', { name: '東' }))
+
+      // リセットボタンをクリック
+      const resetButton = screen.getByRole('button', { name: /リセット/ })
+      await user.click(resetButton)
+
+      // 選択が解除されることを確認
+      await waitFor(() => {
+        const eastButton = screen.getByRole('button', { name: '東' })
+        expect(eastButton.className).not.toMatch(/border-primary|bg-primary/)
+      })
+    })
+
+    it('should auto-fill shooting direction from EXIF data', async () => {
+      const exifWithDirection: ExifData = {
+        cameraBody: 'Canon EOS R5',
+        shootingDirection: 225.5,
+      }
+      mockExtractExif.mockResolvedValue(exifWithDirection)
+      const mockSubmit = vi.fn(() => Promise.resolve())
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={mockSubmit} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      // 天気を選択
+      await waitFor(() => {
+        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+      })
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
+      // 投稿
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
+      })
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      // EXIFの撮影方向が送信されることを確認
+      await waitFor(() => {
+        expect(mockSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            shootingDirection: 225.5,
+          })
+        )
+      })
+    })
+
+    it('should allow overriding EXIF direction with manual selection', async () => {
+      const exifWithDirection: ExifData = {
+        cameraBody: 'Canon EOS R5',
+        shootingDirection: 225.5,
+      }
+      mockExtractExif.mockResolvedValue(exifWithDirection)
+      const mockSubmit = vi.fn(() => Promise.resolve())
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={mockSubmit} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      // 天気を選択
+      await waitFor(() => {
+        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+      })
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
+      // 手動で北（0°）を選択して上書き
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '北' })).toBeInTheDocument()
+      })
+      await user.click(screen.getByRole('button', { name: '北' }))
+
+      // 投稿
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
+      })
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      // 手動選択（北=0°）が送信されることを確認
+      await waitFor(() => {
+        expect(mockSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            shootingDirection: 0,
+          })
+        )
+      })
+    })
+
+    it('should submit without shooting direction when not set', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const mockSubmit = vi.fn(() => Promise.resolve())
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={mockSubmit} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      // 天気を選択
+      await waitFor(() => {
+        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+      })
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
+      // 撮影方向は未設定のまま投稿
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
+      })
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      await waitFor(() => {
+        expect(mockSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            shootingDirection: undefined,
+          })
+        )
+      })
+    })
+  })
 })
