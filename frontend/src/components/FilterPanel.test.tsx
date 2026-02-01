@@ -143,6 +143,91 @@ describe('FilterPanel', () => {
     })
   })
 
+  describe('Issue#47: Tag Filter UI', () => {
+    it('renders tag input field in the filter panel', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      expect(screen.getByPlaceholderText('タグを入力')).toBeInTheDocument()
+    })
+
+    it('adds tag chip when Enter is pressed', async () => {
+      const user = userEvent.setup()
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      const input = screen.getByPlaceholderText('タグを入力')
+      await user.type(input, '桜{Enter}')
+
+      expect(screen.getByTestId('filter-tag-chip')).toHaveTextContent('桜')
+    })
+
+    it('removes tag chip when delete button is clicked', async () => {
+      const user = userEvent.setup()
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      const input = screen.getByPlaceholderText('タグを入力')
+      await user.type(input, '桜{Enter}')
+      expect(screen.getByTestId('filter-tag-chip')).toBeInTheDocument()
+
+      // ×ボタンでタグを削除
+      const deleteButton = screen.getByTestId('filter-tag-chip').querySelector('button')!
+      await user.click(deleteButton)
+
+      expect(screen.queryByTestId('filter-tag-chip')).not.toBeInTheDocument()
+    })
+
+    it('includes tags in onApply callback', async () => {
+      const mockOnApply = vi.fn()
+      const user = userEvent.setup()
+
+      render(
+        <FilterPanel
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onApply={mockOnApply}
+        />
+      )
+
+      const input = screen.getByPlaceholderText('タグを入力')
+      await user.type(input, '桜{Enter}')
+      await user.type(input, '夕焼け{Enter}')
+
+      await user.click(screen.getByRole('button', { name: '適用' }))
+
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tags: ['桜', '夕焼け'],
+        })
+      )
+    })
+
+    it('clears tags when clear button is clicked', async () => {
+      const mockOnApply = vi.fn()
+      const user = userEvent.setup()
+
+      render(
+        <FilterPanel
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onApply={mockOnApply}
+        />
+      )
+
+      const input = screen.getByPlaceholderText('タグを入力')
+      await user.type(input, '桜{Enter}')
+      expect(screen.getByTestId('filter-tag-chip')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'クリア' }))
+      expect(screen.queryByTestId('filter-tag-chip')).not.toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: '適用' }))
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tags: [],
+        })
+      )
+    })
+  })
+
   describe('Issue#46: Advanced Filter UI', () => {
     it('renders advanced filter toggle button', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
@@ -305,12 +390,15 @@ describe('FilterPanel', () => {
       await user.click(applyButton)
 
       // onApplyが選択されたフィルター条件とともに呼び出されることを確認
-      expect(mockOnApply).toHaveBeenCalledWith({
-        categories: ['風景'],
-        months: ['1月'],
-        timesOfDay: ['朝'],
-        weathers: ['晴れ']
-      })
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          categories: ['風景'],
+          months: ['1月'],
+          timesOfDay: ['朝'],
+          weathers: ['晴れ'],
+          tags: [],
+        })
+      )
     })
 
     it('calls onApply with empty arrays when no filters are selected', async () => {
@@ -330,12 +418,15 @@ describe('FilterPanel', () => {
       await user.click(applyButton)
 
       // onApplyが空の配列とともに呼び出されることを確認
-      expect(mockOnApply).toHaveBeenCalledWith({
-        categories: [],
-        months: [],
-        timesOfDay: [],
-        weathers: []
-      })
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          categories: [],
+          months: [],
+          timesOfDay: [],
+          weathers: [],
+          tags: [],
+        })
+      )
     })
 
     it('resets all filters when clear button is clicked', async () => {

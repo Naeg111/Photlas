@@ -31,6 +31,7 @@ export interface MapViewFilterParams {
   months?: number[]
   times_of_day?: string[]
   weathers?: string[]
+  tags?: string[]
   min_resolution?: number
   device_type?: string
   max_age_years?: number
@@ -189,6 +190,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         }
         if (filterParams.weathers && filterParams.weathers.length > 0) {
           filterParams.weathers.forEach(weather => params.append('weathers', weather))
+        }
+        // Issue#47: タグフィルター
+        if (filterParams.tags && filterParams.tags.length > 0) {
+          filterParams.tags.forEach(tag => params.append('tags', tag))
         }
         // Issue#46: 詳細フィルター
         if (filterParams.min_resolution != null) {
