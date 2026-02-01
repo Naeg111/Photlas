@@ -56,9 +56,6 @@ function formatShutterSpeed(exposureTime?: number): string | undefined {
  */
 function formatFValue(fNumber?: number): string | undefined {
   if (fNumber == null) return undefined
-  if (Number.isInteger(fNumber)) {
-    return `f/${fNumber}`
-  }
   return `f/${fNumber}`
 }
 
