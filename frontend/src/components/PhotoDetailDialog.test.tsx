@@ -3,6 +3,14 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import PhotoDetailDialog from './PhotoDetailDialog'
 
+// Google Maps APIのモック
+vi.mock('@react-google-maps/api', () => ({
+  useLoadScript: () => ({ isLoaded: true, loadError: null }),
+  GoogleMap: ({ children }: { children?: React.ReactNode }) => <div data-testid="google-map-mock">{children}</div>,
+  Marker: () => <div data-testid="google-map-marker" />,
+  Polygon: () => <div data-testid="google-map-polygon" />,
+}))
+
 /**
  * Issue#14: 写真詳細表示 (UI + API)
  * TDD Red段階のテストコード
@@ -844,6 +852,111 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       // タグチップが存在しないことを確認
       expect(screen.queryAllByTestId('detail-tag-chip')).toHaveLength(0)
+    })
+  })
+
+  // ============================================================
+  // Issue#45: 撮影地点ミニマップテスト
+  // ============================================================
+
+  describe('Issue#45: 撮影地点ミニマップ', () => {
+    it('撮影座標がある場合、ミニマップが表示される', async () => {
+      const photoDetail = createMockApiResponse({
+        latitude: 35.6586,
+        longitude: 139.7454,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
+      })
+    })
+
+    it('撮影方向がある場合、扇形視野角のオーバーレイが表示される', async () => {
+      const photoDetail = createMockApiResponse({
+        latitude: 35.6586,
+        longitude: 139.7454,
+        shootingDirection: 180,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
+        expect(screen.getByTestId('minimap-fan-overlay')).toBeInTheDocument()
+      })
+    })
+
+    it('撮影方向がない場合、扇形視野角は非表示', async () => {
+      const photoDetail = createMockApiResponse({
+        latitude: 35.6586,
+        longitude: 139.7454,
+        shootingDirection: null,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
+      })
+
+      expect(screen.queryByTestId('minimap-fan-overlay')).not.toBeInTheDocument()
+    })
+
+    it('撮影座標がない場合はスポット座標でミニマップが表示される', async () => {
+      const photoDetail = createMockApiResponse()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        // スポット座標でフォールバック表示される
+        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
+      })
     })
   })
 })
