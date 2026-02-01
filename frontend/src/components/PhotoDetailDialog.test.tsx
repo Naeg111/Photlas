@@ -846,4 +846,109 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(screen.queryAllByTestId('detail-tag-chip')).toHaveLength(0)
     })
   })
+
+  // ============================================================
+  // Issue#45: 撮影地点ミニマップテスト
+  // ============================================================
+
+  describe('Issue#45: 撮影地点ミニマップ', () => {
+    it('撮影座標がある場合、ミニマップが表示される', async () => {
+      const photoDetail = createMockApiResponse({
+        latitude: 35.6586,
+        longitude: 139.7454,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
+      })
+    })
+
+    it('撮影方向がある場合、扇形視野角のオーバーレイが表示される', async () => {
+      const photoDetail = createMockApiResponse({
+        latitude: 35.6586,
+        longitude: 139.7454,
+        shootingDirection: 180,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
+        expect(screen.getByTestId('minimap-fan-overlay')).toBeInTheDocument()
+      })
+    })
+
+    it('撮影方向がない場合、扇形視野角は非表示', async () => {
+      const photoDetail = createMockApiResponse({
+        latitude: 35.6586,
+        longitude: 139.7454,
+        shootingDirection: null,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
+      })
+
+      expect(screen.queryByTestId('minimap-fan-overlay')).not.toBeInTheDocument()
+    })
+
+    it('撮影座標がない場合はスポット座標でミニマップが表示される', async () => {
+      const photoDetail = createMockApiResponse()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        // スポット座標でフォールバック表示される
+        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
+      })
+    })
+  })
 })
