@@ -95,10 +95,6 @@ export function PhotoContributionDialog({
       alert('写真を選択してください。')
       return
     }
-    if (selectedCategories.length === 0) {
-      alert('カテゴリを1つ以上選択してください。')
-      return
-    }
     if (!pinPosition) {
       alert('位置情報を設定してください。')
       return
@@ -185,7 +181,7 @@ export function PhotoContributionDialog({
     }
   }
 
-  const canSubmit = selectedFile && selectedCategories.length > 0 && pinPosition && selectedWeather
+  const canSubmit = selectedFile && pinPosition && selectedWeather
 
   return (
     <Dialog open={open} onOpenChange={uploadStatus === 'uploading' ? undefined : onOpenChange}>

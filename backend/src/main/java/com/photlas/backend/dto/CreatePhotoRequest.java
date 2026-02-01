@@ -27,8 +27,6 @@ public class CreatePhotoRequest {
     @NotNull(message = "経度は必須です")
     private BigDecimal longitude;
 
-    @NotNull(message = "カテゴリは必須です")
-    @Size(min = 1, message = "カテゴリは1つ以上選択してください")
     private List<String> categories;
 
     private String weather;
