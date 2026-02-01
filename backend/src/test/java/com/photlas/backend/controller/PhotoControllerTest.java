@@ -655,6 +655,51 @@ public class PhotoControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ===== Issue#48: カテゴリ任意化テスト =====
+
+    @Test
+    @DisplayName("Issue#48 - カテゴリ空リストでの投稿が201を返す")
+    void testCreatePhoto_EmptyCategories_ReturnsCreated() throws Exception {
+        CreatePhotoRequest request = createPhotoRequest(
+                PHOTO_TITLE_TEST,
+                "photos/nocat-api001.jpg",
+                ISO_DATETIME_1,
+                LATITUDE_TOKYO_TOWER,
+                LONGITUDE_TOKYO_TOWER,
+                List.of()
+        );
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists())
+                .andExpect(jsonPath(JSON_PATH_PHOTO_TITLE, is(PHOTO_TITLE_TEST)));
+    }
+
+    @Test
+    @DisplayName("Issue#48 - カテゴリnullでの投稿が201を返す")
+    void testCreatePhoto_NullCategories_ReturnsCreated() throws Exception {
+        CreatePhotoRequest request = createPhotoRequest(
+                PHOTO_TITLE_TEST,
+                "photos/nullcat-api001.jpg",
+                ISO_DATETIME_1,
+                LATITUDE_TOKYO_TOWER,
+                LONGITUDE_TOKYO_TOWER,
+                null
+        );
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists());
+    }
+
     // ===== Issue#40: Photo Entity拡張テスト =====
 
     @Test
