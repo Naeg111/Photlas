@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight, Star } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
@@ -58,6 +58,20 @@ interface PhotoApiResponse {
     weather?: string
     is_favorited?: boolean
     favorite_count?: number
+    shooting_direction?: number | null
+    latitude?: number | null
+    longitude?: number | null
+    exif?: {
+      camera_body?: string
+      camera_lens?: string
+      focal_length_35mm?: number
+      f_value?: string
+      shutter_speed?: string
+      iso?: number
+      image_width?: number
+      image_height?: number
+    } | null
+    tags?: { tag_id: number; name: string }[]
   }
   spot: {
     spot_id: number
@@ -71,6 +85,22 @@ interface PhotoApiResponse {
 }
 
 // 内部で使用する型定義
+interface ExifInfo {
+  cameraBody?: string
+  cameraLens?: string
+  focalLength35mm?: number
+  fValue?: string
+  shutterSpeed?: string
+  iso?: number
+  imageWidth?: number
+  imageHeight?: number
+}
+
+interface TagInfo {
+  tagId: number
+  name: string
+}
+
 interface PhotoDetail {
   photoId: number
   title: string
@@ -79,6 +109,9 @@ interface PhotoDetail {
   weather?: string
   isFavorited?: boolean
   favoriteCount?: number
+  shootingDirection?: number | null
+  exif?: ExifInfo | null
+  tags: TagInfo[]
   user: {
     userId: number
     username: string
@@ -89,8 +122,42 @@ interface PhotoDetail {
   }
 }
 
+/**
+ * 角度を8方位の日本語に変換する
+ */
+function directionToLabel(deg: number): string {
+  const directions = ['北', '北東', '東', '南東', '南', '南西', '西', '北西']
+  const index = Math.round(deg / 45) % 8
+  return directions[index]
+}
+
+/**
+ * 撮影日時をフォーマットする（例: 2026年1月15日 18:30）
+ */
+function formatShotAt(shotAt: string): string {
+  const date = new Date(shotAt)
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${year}年${month}月${day}日 ${hours}:${minutes}`
+}
+
 // APIレスポンスを内部形式に変換
 function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
+  const exifRaw = response.photo.exif
+  const exif: ExifInfo | null = exifRaw ? {
+    cameraBody: exifRaw.camera_body,
+    cameraLens: exifRaw.camera_lens,
+    focalLength35mm: exifRaw.focal_length_35mm,
+    fValue: exifRaw.f_value,
+    shutterSpeed: exifRaw.shutter_speed,
+    iso: exifRaw.iso,
+    imageWidth: exifRaw.image_width,
+    imageHeight: exifRaw.image_height,
+  } : null
+
   return {
     photoId: response.photo.photo_id,
     title: response.photo.title,
@@ -99,6 +166,9 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
     weather: response.photo.weather,
     isFavorited: response.photo.is_favorited,
     favoriteCount: response.photo.favorite_count,
+    shootingDirection: response.photo.shooting_direction,
+    exif,
+    tags: (response.photo.tags ?? []).map(t => ({ tagId: t.tag_id, name: t.name })),
     user: {
       userId: response.user.user_id,
       username: response.user.username,
@@ -422,10 +492,99 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
                     <span className="font-medium">{displayedPhoto.user.username}</span>
                   </div>
 
-                  {/* 天気情報 */}
-                  {displayedPhoto.weather && (
-                    <div className="text-sm text-gray-600">
-                      天気: {WEATHER_LABELS[displayedPhoto.weather] ?? displayedPhoto.weather}
+                  {/* 撮影コンテクスト情報 */}
+                  <div className="space-y-2">
+                    {/* 撮影日時 */}
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Calendar className="w-4 h-4" />
+                      <span>{formatShotAt(displayedPhoto.shotAt)}</span>
+                    </div>
+
+                    {/* 天気情報 */}
+                    {displayedPhoto.weather && (
+                      <div className="text-sm text-gray-600">
+                        天気: {WEATHER_LABELS[displayedPhoto.weather] ?? displayedPhoto.weather}
+                      </div>
+                    )}
+
+                    {/* 撮影方向 */}
+                    {displayedPhoto.shootingDirection != null && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Compass className="w-4 h-4" />
+                        <span>撮影方向: {directionToLabel(displayedPhoto.shootingDirection)} ({displayedPhoto.shootingDirection}°)</span>
+                      </div>
+                    )}
+
+                    {/* タグ */}
+                    {displayedPhoto.tags.length > 0 && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Tag className="w-4 h-4 text-gray-500" />
+                        {displayedPhoto.tags.map((tag) => (
+                          <span
+                            key={tag.tagId}
+                            data-testid="detail-tag-chip"
+                            className="inline-flex items-center px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-700"
+                          >
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* EXIF情報ブロック */}
+                  {displayedPhoto.exif && (
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium flex items-center gap-2">
+                        <Camera className="w-4 h-4" />
+                        撮影情報
+                      </h3>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          {displayedPhoto.exif.cameraBody && (
+                            <div>
+                              <span className="text-gray-500">カメラ</span>
+                              <p className="font-medium">{displayedPhoto.exif.cameraBody}</p>
+                            </div>
+                          )}
+                          {displayedPhoto.exif.cameraLens && (
+                            <div>
+                              <span className="text-gray-500">レンズ</span>
+                              <p className="font-medium">{displayedPhoto.exif.cameraLens}</p>
+                            </div>
+                          )}
+                          {displayedPhoto.exif.focalLength35mm != null && (
+                            <div>
+                              <span className="text-gray-500">焦点距離</span>
+                              <p className="font-medium">{displayedPhoto.exif.focalLength35mm}mm</p>
+                            </div>
+                          )}
+                          {displayedPhoto.exif.fValue && (
+                            <div>
+                              <span className="text-gray-500">絞り</span>
+                              <p className="font-medium">{displayedPhoto.exif.fValue}</p>
+                            </div>
+                          )}
+                          {displayedPhoto.exif.shutterSpeed && (
+                            <div>
+                              <span className="text-gray-500">シャッタースピード</span>
+                              <p className="font-medium">{displayedPhoto.exif.shutterSpeed}</p>
+                            </div>
+                          )}
+                          {displayedPhoto.exif.iso != null && (
+                            <div>
+                              <span className="text-gray-500">ISO</span>
+                              <p className="font-medium">ISO {displayedPhoto.exif.iso}</p>
+                            </div>
+                          )}
+                          {displayedPhoto.exif.imageWidth != null && displayedPhoto.exif.imageHeight != null && (
+                            <div>
+                              <span className="text-gray-500">解像度</span>
+                              <p className="font-medium">{displayedPhoto.exif.imageWidth} x {displayedPhoto.exif.imageHeight}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
 
