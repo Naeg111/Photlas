@@ -4,13 +4,14 @@ import { Button } from "./ui/button";
 import { CategoryIcon } from "./CategoryIcon";
 import { MonthIcons, TimeIcons, WeatherIcons } from "./FilterIcons";
 import { PHOTO_CATEGORIES } from "../utils/constants";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 
 export interface FilterConditions {
   categories: string[];
   months: string[];
   timesOfDay: string[];
   weathers: string[];
+  tags: string[];
   minResolution?: number;
   deviceType?: string;
   maxAgeYears?: number;
@@ -78,6 +79,10 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
   const [selectedWeather, setSelectedWeather] = useState<string[]>([]);
 
+  // Issue#47: タグフィルターの状態
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+
   // Issue#46: 詳細フィルターの状態
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [selectedResolution, setSelectedResolution] = useState<number | undefined>(undefined);
@@ -104,6 +109,8 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
     setSelectedMonths([]);
     setSelectedTimes([]);
     setSelectedWeather([]);
+    setTags([]);
+    setTagInput('');
     setSelectedResolution(undefined);
     setSelectedDeviceType(undefined);
     setSelectedMaxAgeYears(undefined);
@@ -119,6 +126,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
         months: selectedMonths,
         timesOfDay: selectedTimes,
         weathers: selectedWeather,
+        tags,
         minResolution: selectedResolution,
         deviceType: selectedDeviceType,
         maxAgeYears: selectedMaxAgeYears,
@@ -237,6 +245,45 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                 );
               })}
             </div>
+          </div>
+
+          {/* Issue#47: タグフィルター */}
+          <div>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  data-testid="filter-tag-chip"
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => setTags(tags.filter((t) => t !== tag))}
+                    className="ml-1 hover:opacity-70"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <input
+              type="text"
+              placeholder="タグを入力"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  const trimmed = tagInput.trim()
+                  if (trimmed && !tags.includes(trimmed)) {
+                    setTags([...tags, trimmed])
+                    setTagInput('')
+                  }
+                }
+              }}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
 
           {/* Issue#46: 詳細フィルタートグル */}

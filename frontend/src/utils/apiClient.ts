@@ -72,6 +72,7 @@ export interface SpotSearchParams {
   months?: number[];
   times_of_day?: string[];
   weathers?: string[];
+  tags?: string[];
   min_resolution?: number;
   device_type?: string;
   max_age_years?: number;

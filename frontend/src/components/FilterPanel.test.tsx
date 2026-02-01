@@ -390,12 +390,15 @@ describe('FilterPanel', () => {
       await user.click(applyButton)
 
       // onApplyが選択されたフィルター条件とともに呼び出されることを確認
-      expect(mockOnApply).toHaveBeenCalledWith({
-        categories: ['風景'],
-        months: ['1月'],
-        timesOfDay: ['朝'],
-        weathers: ['晴れ']
-      })
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          categories: ['風景'],
+          months: ['1月'],
+          timesOfDay: ['朝'],
+          weathers: ['晴れ'],
+          tags: [],
+        })
+      )
     })
 
     it('calls onApply with empty arrays when no filters are selected', async () => {
@@ -415,12 +418,15 @@ describe('FilterPanel', () => {
       await user.click(applyButton)
 
       // onApplyが空の配列とともに呼び出されることを確認
-      expect(mockOnApply).toHaveBeenCalledWith({
-        categories: [],
-        months: [],
-        timesOfDay: [],
-        weathers: []
-      })
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          categories: [],
+          months: [],
+          timesOfDay: [],
+          weathers: [],
+          tags: [],
+        })
+      )
     })
 
     it('resets all filters when clear button is clicked', async () => {

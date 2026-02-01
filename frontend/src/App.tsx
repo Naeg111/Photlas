@@ -94,6 +94,7 @@ function MainContent() {
       months: conditions.months.length > 0 ? transformMonths(conditions.months) : undefined,
       times_of_day: conditions.timesOfDay.length > 0 ? transformTimesOfDay(conditions.timesOfDay) : undefined,
       weathers: conditions.weathers.length > 0 ? transformWeathers(conditions.weathers) : undefined,
+      tags: conditions.tags.length > 0 ? conditions.tags : undefined,
       min_resolution: conditions.minResolution,
       device_type: conditions.deviceType,
       max_age_years: conditions.maxAgeYears,

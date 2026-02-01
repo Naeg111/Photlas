@@ -902,7 +902,7 @@ public class SpotControllerTest {
         // 桜タグがついた写真
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo photo1 = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo1.setTags(List.of(sakuraTag));
+        photo1.setTags(new ArrayList<>(List.of(sakuraTag)));
         photoRepository.save(photo1);
 
         // タグなしの写真
@@ -930,19 +930,19 @@ public class SpotControllerTest {
         // 桜タグ
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo photo1 = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo1.setTags(List.of(sakuraTag));
+        photo1.setTags(new ArrayList<>(List.of(sakuraTag)));
         photoRepository.save(photo1);
 
         // 夕焼けタグ
         Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
         Photo photo2 = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo2.setTags(List.of(sunsetTag));
+        photo2.setTags(new ArrayList<>(List.of(sunsetTag)));
         photoRepository.save(photo2);
 
         // リフレクションタグ（検索条件に含まれない）
         Spot spot3 = createSpot(TEST_LATITUDE_3, TEST_LONGITUDE_3);
         Photo photo3 = createPhoto(spot3, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo3.setTags(List.of(reflectionTag));
+        photo3.setTags(new ArrayList<>(List.of(reflectionTag)));
         photoRepository.save(photo3);
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
@@ -967,13 +967,13 @@ public class SpotControllerTest {
         // 桜タグ + 晴れ
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo photo1 = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo1.setTags(List.of(sakuraTag));
+        photo1.setTags(new ArrayList<>(List.of(sakuraTag)));
         photoRepository.save(photo1);
 
         // 桜タグ + 曇り
         Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
         Photo photo2 = createPhoto(spot2, TEST_SHOT_AT, WEATHER_CLOUDY);
-        photo2.setTags(List.of(sakuraTag));
+        photo2.setTags(new ArrayList<>(List.of(sakuraTag)));
         photoRepository.save(photo2);
 
         // 桜 AND 晴れ = spot1のみ
