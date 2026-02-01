@@ -96,6 +96,17 @@ public class PhotoService {
         photo.setShotAt(takenAt);
         photo.setWeather(weather);
         photo.setCategories(categories);
+        photo.setLatitude(request.getLatitude());
+        photo.setLongitude(request.getLongitude());
+        photo.setShootingDirection(request.getShootingDirection());
+        photo.setCameraBody(request.getCameraBody());
+        photo.setCameraLens(request.getCameraLens());
+        photo.setFocalLength35mm(request.getFocalLength35mm());
+        photo.setFValue(request.getFValue());
+        photo.setShutterSpeed(request.getShutterSpeed());
+        photo.setIso(request.getIso());
+        photo.setImageWidth(request.getImageWidth());
+        photo.setImageHeight(request.getImageHeight());
 
         Photo savedPhoto = photoRepository.save(photo);
 
@@ -207,6 +218,15 @@ public class PhotoService {
                 favoriteCount
         );
 
+        // ピンポイント座標と撮影方向を設定
+        photoDTO.setLatitude(photo.getLatitude());
+        photoDTO.setLongitude(photo.getLongitude());
+        photoDTO.setShootingDirection(photo.getShootingDirection());
+
+        // EXIF情報を設定（1つでも値があればExifDTOを生成）
+        PhotoResponse.ExifDTO exifDTO = buildExifDTO(photo);
+        photoDTO.setExif(exifDTO);
+
         PhotoResponse.SpotDTO spotDTO = new PhotoResponse.SpotDTO(
                 spot.getSpotId(),
                 spot.getLatitude(),
@@ -219,6 +239,36 @@ public class PhotoService {
         );
 
         return new PhotoResponse(photoDTO, spotDTO, userDTO);
+    }
+
+    /**
+     * Photo エンティティからExifDTOを構築する
+     * EXIF情報が全てnullの場合はnullを返す
+     */
+    private PhotoResponse.ExifDTO buildExifDTO(Photo photo) {
+        boolean hasAnyExif = photo.getCameraBody() != null
+                || photo.getCameraLens() != null
+                || photo.getFocalLength35mm() != null
+                || photo.getFValue() != null
+                || photo.getShutterSpeed() != null
+                || photo.getIso() != null
+                || photo.getImageWidth() != null
+                || photo.getImageHeight() != null;
+
+        if (!hasAnyExif) {
+            return null;
+        }
+
+        PhotoResponse.ExifDTO exifDTO = new PhotoResponse.ExifDTO();
+        exifDTO.setCameraBody(photo.getCameraBody());
+        exifDTO.setCameraLens(photo.getCameraLens());
+        exifDTO.setFocalLength35mm(photo.getFocalLength35mm());
+        exifDTO.setFValue(photo.getFValue());
+        exifDTO.setShutterSpeed(photo.getShutterSpeed());
+        exifDTO.setIso(photo.getIso());
+        exifDTO.setImageWidth(photo.getImageWidth());
+        exifDTO.setImageHeight(photo.getImageHeight());
+        return exifDTO;
     }
 
 }
