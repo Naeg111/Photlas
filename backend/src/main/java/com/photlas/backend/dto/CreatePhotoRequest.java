@@ -1,5 +1,6 @@
 package com.photlas.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -31,6 +32,26 @@ public class CreatePhotoRequest {
     private List<String> categories;
 
     private String weather;
+
+    private BigDecimal shootingDirection;
+
+    private String cameraBody;
+
+    private String cameraLens;
+
+    @JsonProperty("focalLength35mm")
+    private Integer focalLength35mm;
+
+    @JsonProperty("fValue")
+    private String fValue;
+
+    private String shutterSpeed;
+
+    private Integer iso;
+
+    private Integer imageWidth;
+
+    private Integer imageHeight;
 
     // Getters and Setters
     public String getTitle() {
@@ -87,5 +108,77 @@ public class CreatePhotoRequest {
 
     public void setWeather(String weather) {
         this.weather = weather;
+    }
+
+    public BigDecimal getShootingDirection() {
+        return shootingDirection;
+    }
+
+    public void setShootingDirection(BigDecimal shootingDirection) {
+        this.shootingDirection = shootingDirection;
+    }
+
+    public String getCameraBody() {
+        return cameraBody;
+    }
+
+    public void setCameraBody(String cameraBody) {
+        this.cameraBody = cameraBody;
+    }
+
+    public String getCameraLens() {
+        return cameraLens;
+    }
+
+    public void setCameraLens(String cameraLens) {
+        this.cameraLens = cameraLens;
+    }
+
+    public Integer getFocalLength35mm() {
+        return focalLength35mm;
+    }
+
+    public void setFocalLength35mm(Integer focalLength35mm) {
+        this.focalLength35mm = focalLength35mm;
+    }
+
+    public String getFValue() {
+        return fValue;
+    }
+
+    public void setFValue(String fValue) {
+        this.fValue = fValue;
+    }
+
+    public String getShutterSpeed() {
+        return shutterSpeed;
+    }
+
+    public void setShutterSpeed(String shutterSpeed) {
+        this.shutterSpeed = shutterSpeed;
+    }
+
+    public Integer getIso() {
+        return iso;
+    }
+
+    public void setIso(Integer iso) {
+        this.iso = iso;
+    }
+
+    public Integer getImageWidth() {
+        return imageWidth;
+    }
+
+    public void setImageWidth(Integer imageWidth) {
+        this.imageWidth = imageWidth;
+    }
+
+    public Integer getImageHeight() {
+        return imageHeight;
+    }
+
+    public void setImageHeight(Integer imageHeight) {
+        this.imageHeight = imageHeight;
     }
 }
