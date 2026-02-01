@@ -77,8 +77,10 @@ public class PhotoService {
         // 1. スポットの集約と作成
         Spot spot = findOrCreateSpot(request, user);
 
-        // 2. カテゴリの変換
-        List<Category> categories = convertCategoriesToEntities(request.getCategories());
+        // 2. カテゴリの変換（任意項目）
+        List<Category> categories = (request.getCategories() != null && !request.getCategories().isEmpty())
+                ? convertCategoriesToEntities(request.getCategories())
+                : new ArrayList<>();
 
         // 3. 天気情報の取得（ユーザー入力を優先、なければweatherServiceで取得）
         LocalDateTime takenAt = LocalDateTime.parse(request.getTakenAt(), DateTimeFormatter.ISO_DATE_TIME);
