@@ -564,6 +564,322 @@ public class SpotControllerTest {
                 )));
     }
 
+    // ============================================================
+    // Issue#46: 詳細フィルター機能テスト
+    // ============================================================
+
+    // Test Data Constants - Issue#46 Advanced Filters
+    private static final String PARAM_MIN_RESOLUTION = "min_resolution";
+    private static final String PARAM_DEVICE_TYPE = "device_type";
+    private static final String PARAM_MAX_AGE_YEARS = "max_age_years";
+    private static final String PARAM_ASPECT_RATIO = "aspect_ratio";
+    private static final String PARAM_FOCAL_LENGTH_RANGE = "focal_length_range";
+    private static final String PARAM_MAX_ISO = "max_iso";
+
+    private static final String DEVICE_TYPE_CAMERA = "CAMERA";
+    private static final String DEVICE_TYPE_SMARTPHONE = "SMARTPHONE";
+    private static final String ASPECT_HORIZONTAL = "HORIZONTAL";
+    private static final String ASPECT_VERTICAL = "VERTICAL";
+    private static final String ASPECT_SQUARE = "SQUARE";
+    private static final String FOCAL_WIDE = "WIDE";
+    private static final String FOCAL_STANDARD = "STANDARD";
+    private static final String FOCAL_TELEPHOTO = "TELEPHOTO";
+
+    @Test
+    @DisplayName("Issue#46 - 解像度フィルター: 高画質のみ（長辺1080px以上）の写真のスポットのみ返される")
+    void testGetSpots_WithMinResolution_ReturnsHighResOnly() throws Exception {
+        // 高解像度の写真（横2000x縦1500）
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo hiRes = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        hiRes.setImageWidth(2000);
+        hiRes.setImageHeight(1500);
+        photoRepository.save(hiRes);
+
+        // 低解像度の写真（横800x縦600）
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo loRes = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        loRes.setImageWidth(800);
+        loRes.setImageHeight(600);
+        photoRepository.save(loRes);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_MIN_RESOLUTION, "1080"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - 解像度フィルター: 解像度情報がnullの写真は除外される")
+    void testGetSpots_WithMinResolution_ExcludesNullResolution() throws Exception {
+        // 解像度情報なしの写真
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);  // imageWidth/heightはnull
+
+        // 高解像度の写真
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo hiRes = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        hiRes.setImageWidth(1920);
+        hiRes.setImageHeight(1080);
+        photoRepository.save(hiRes);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_MIN_RESOLUTION, "1080"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot2.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - 機材種別フィルター: CAMERAを指定するとスマートフォンの写真は除外される")
+    void testGetSpots_WithDeviceTypeCamera_ExcludesSmartphone() throws Exception {
+        // カメラの写真
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo cameraPhoto = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        cameraPhoto.setCameraBody("Canon EOS R5");
+        photoRepository.save(cameraPhoto);
+
+        // スマートフォンの写真
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo phonePhoto = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        phonePhoto.setCameraBody("Apple iPhone 15 Pro");
+        photoRepository.save(phonePhoto);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_DEVICE_TYPE, DEVICE_TYPE_CAMERA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - 機材種別フィルター: SMARTPHONEを指定するとカメラの写真は除外される")
+    void testGetSpots_WithDeviceTypeSmartphone_ExcludesCamera() throws Exception {
+        // カメラの写真
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo cameraPhoto = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        cameraPhoto.setCameraBody("Nikon Z9");
+        photoRepository.save(cameraPhoto);
+
+        // スマートフォンの写真
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo phonePhoto = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        phonePhoto.setCameraBody("Samsung Galaxy S24");
+        photoRepository.save(phonePhoto);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_DEVICE_TYPE, DEVICE_TYPE_SMARTPHONE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot2.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - 鮮度フィルター: 1年以内の写真のスポットのみ返される")
+    void testGetSpots_WithMaxAgeYears1_ReturnsRecentOnly() throws Exception {
+        // 半年前の写真（1年以内）
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo recentPhoto = createPhoto(spot1, LocalDateTime.now().minusMonths(6), WEATHER_SUNNY);
+
+        // 2年前の写真（1年超え）
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo oldPhoto = createPhoto(spot2, LocalDateTime.now().minusYears(2), WEATHER_SUNNY);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_MAX_AGE_YEARS, "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - アスペクト比フィルター: HORIZONTALを指定すると横位置のみ返される")
+    void testGetSpots_WithAspectRatioHorizontal_ReturnsHorizontalOnly() throws Exception {
+        // 横位置（3000x2000）
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo horizontal = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        horizontal.setImageWidth(3000);
+        horizontal.setImageHeight(2000);
+        photoRepository.save(horizontal);
+
+        // 縦位置（2000x3000）
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo vertical = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        vertical.setImageWidth(2000);
+        vertical.setImageHeight(3000);
+        photoRepository.save(vertical);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_ASPECT_RATIO, ASPECT_HORIZONTAL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - アスペクト比フィルター: SQUAREは±5%の誤差を許容する")
+    void testGetSpots_WithAspectRatioSquare_AllowsMargin() throws Exception {
+        // ほぼ正方形（1000x1040 = 4%差）
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo almostSquare = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        almostSquare.setImageWidth(1000);
+        almostSquare.setImageHeight(1040);
+        photoRepository.save(almostSquare);
+
+        // 横位置（3000x2000）
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo horizontal = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        horizontal.setImageWidth(3000);
+        horizontal.setImageHeight(2000);
+        photoRepository.save(horizontal);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_ASPECT_RATIO, ASPECT_SQUARE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - 焦点距離フィルター: WIDEは24mm未満のみ返される")
+    void testGetSpots_WithFocalLengthWide_ReturnsWideOnly() throws Exception {
+        // 広角（16mm）
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo wide = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        wide.setFocalLength35mm(16);
+        photoRepository.save(wide);
+
+        // 標準（50mm）
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo standard = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        standard.setFocalLength35mm(50);
+        photoRepository.save(standard);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_FOCAL_LENGTH_RANGE, FOCAL_WIDE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - 焦点距離フィルター: TELEPHOTOは70mm超のみ返される")
+    void testGetSpots_WithFocalLengthTelephoto_ReturnsTelephotoOnly() throws Exception {
+        // 望遠（200mm）
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo tele = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        tele.setFocalLength35mm(200);
+        photoRepository.save(tele);
+
+        // 標準（50mm）
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo standard = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        standard.setFocalLength35mm(50);
+        photoRepository.save(standard);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_FOCAL_LENGTH_RANGE, FOCAL_TELEPHOTO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - ISO感度フィルター: max_iso=400で低感度のみ返される")
+    void testGetSpots_WithMaxIso_ReturnsLowIsoOnly() throws Exception {
+        // 低ISO（ISO 200）
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo lowIso = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        lowIso.setIso(200);
+        photoRepository.save(lowIso);
+
+        // 高ISO（ISO 6400）
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo highIso = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        highIso.setIso(6400);
+        photoRepository.save(highIso);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_MAX_ISO, "400"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - 基本フィルターと詳細フィルターの組み合わせ: 天気+焦点距離")
+    void testGetSpots_CombinedBasicAndAdvanced_ReturnsIntersection() throws Exception {
+        // 晴れ+広角
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo photo1 = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        photo1.setFocalLength35mm(16);
+        photoRepository.save(photo1);
+
+        // 晴れ+望遠
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo photo2 = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        photo2.setFocalLength35mm(200);
+        photoRepository.save(photo2);
+
+        // 曇り+広角
+        Spot spot3 = createSpot(TEST_LATITUDE_3, TEST_LONGITUDE_3);
+        Photo photo3 = createPhoto(spot3, TEST_SHOT_AT, WEATHER_CLOUDY);
+        photo3.setFocalLength35mm(16);
+        photoRepository.save(photo3);
+
+        // 晴れ AND 広角 = spot1のみ
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_WEATHERS, WEATHER_SUNNY)
+                        .param(PARAM_FOCAL_LENGTH_RANGE, FOCAL_WIDE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
     // ヘルパーメソッド
     private Spot createSpot(BigDecimal latitude, BigDecimal longitude) {
         Spot spot = new Spot();
