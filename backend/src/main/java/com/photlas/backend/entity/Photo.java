@@ -1,6 +1,7 @@
 package com.photlas.backend.entity;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,39 @@ public class Photo {
 
     @Column(name = "time_of_day", length = 20)
     private String timeOfDay;
+
+    @Column(name = "latitude", precision = 9, scale = 6)
+    private BigDecimal latitude;
+
+    @Column(name = "longitude", precision = 9, scale = 6)
+    private BigDecimal longitude;
+
+    @Column(name = "shooting_direction", precision = 5, scale = 2)
+    private BigDecimal shootingDirection;
+
+    @Column(name = "camera_body", length = 100)
+    private String cameraBody;
+
+    @Column(name = "camera_lens", length = 100)
+    private String cameraLens;
+
+    @Column(name = "focal_length_35mm")
+    private Integer focalLength35mm;
+
+    @Column(name = "f_value", length = 20)
+    private String fValue;
+
+    @Column(name = "shutter_speed", length = 20)
+    private String shutterSpeed;
+
+    @Column(name = "iso")
+    private Integer iso;
+
+    @Column(name = "image_width")
+    private Integer imageWidth;
+
+    @Column(name = "image_height")
+    private Integer imageHeight;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -144,6 +178,94 @@ public class Photo {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public BigDecimal getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(BigDecimal latitude) {
+        this.latitude = latitude;
+    }
+
+    public BigDecimal getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(BigDecimal longitude) {
+        this.longitude = longitude;
+    }
+
+    public BigDecimal getShootingDirection() {
+        return shootingDirection;
+    }
+
+    public void setShootingDirection(BigDecimal shootingDirection) {
+        this.shootingDirection = shootingDirection;
+    }
+
+    public String getCameraBody() {
+        return cameraBody;
+    }
+
+    public void setCameraBody(String cameraBody) {
+        this.cameraBody = cameraBody;
+    }
+
+    public String getCameraLens() {
+        return cameraLens;
+    }
+
+    public void setCameraLens(String cameraLens) {
+        this.cameraLens = cameraLens;
+    }
+
+    public Integer getFocalLength35mm() {
+        return focalLength35mm;
+    }
+
+    public void setFocalLength35mm(Integer focalLength35mm) {
+        this.focalLength35mm = focalLength35mm;
+    }
+
+    public String getFValue() {
+        return fValue;
+    }
+
+    public void setFValue(String fValue) {
+        this.fValue = fValue;
+    }
+
+    public String getShutterSpeed() {
+        return shutterSpeed;
+    }
+
+    public void setShutterSpeed(String shutterSpeed) {
+        this.shutterSpeed = shutterSpeed;
+    }
+
+    public Integer getIso() {
+        return iso;
+    }
+
+    public void setIso(Integer iso) {
+        this.iso = iso;
+    }
+
+    public Integer getImageWidth() {
+        return imageWidth;
+    }
+
+    public void setImageWidth(Integer imageWidth) {
+        this.imageWidth = imageWidth;
+    }
+
+    public Integer getImageHeight() {
+        return imageHeight;
+    }
+
+    public void setImageHeight(Integer imageHeight) {
+        this.imageHeight = imageHeight;
     }
 
     public List<Category> getCategories() {

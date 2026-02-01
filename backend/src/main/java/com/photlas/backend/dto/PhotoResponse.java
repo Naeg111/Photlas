@@ -65,6 +65,21 @@ public class PhotoResponse {
         @JsonProperty("favorite_count")
         private Long favoriteCount;
 
+        @JsonProperty("latitude")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        private BigDecimal latitude;
+
+        @JsonProperty("longitude")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        private BigDecimal longitude;
+
+        @JsonProperty("shooting_direction")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        private BigDecimal shootingDirection;
+
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        private ExifDTO exif;
+
         public PhotoDTO() {
         }
 
@@ -74,7 +89,7 @@ public class PhotoResponse {
             this.imageUrl = imageUrl;
             this.shotAt = shotAt;
             this.weather = weather;
-            this.isFavorited = false; // デフォルトはfalse
+            this.isFavorited = false;
             this.favoriteCount = 0L;
         }
 
@@ -152,6 +167,131 @@ public class PhotoResponse {
 
         public void setFavoriteCount(Long favoriteCount) {
             this.favoriteCount = favoriteCount;
+        }
+
+        public BigDecimal getLatitude() {
+            return latitude;
+        }
+
+        public void setLatitude(BigDecimal latitude) {
+            this.latitude = latitude;
+        }
+
+        public BigDecimal getLongitude() {
+            return longitude;
+        }
+
+        public void setLongitude(BigDecimal longitude) {
+            this.longitude = longitude;
+        }
+
+        public BigDecimal getShootingDirection() {
+            return shootingDirection;
+        }
+
+        public void setShootingDirection(BigDecimal shootingDirection) {
+            this.shootingDirection = shootingDirection;
+        }
+
+        public ExifDTO getExif() {
+            return exif;
+        }
+
+        public void setExif(ExifDTO exif) {
+            this.exif = exif;
+        }
+    }
+
+    // 内部DTO: ExifDTO
+    public static class ExifDTO {
+        @JsonProperty("camera_body")
+        private String cameraBody;
+
+        @JsonProperty("camera_lens")
+        private String cameraLens;
+
+        @JsonProperty("focal_length_35mm")
+        private Integer focalLength35mm;
+
+        @JsonProperty("f_value")
+        private String fValue;
+
+        @JsonProperty("shutter_speed")
+        private String shutterSpeed;
+
+        private Integer iso;
+
+        @JsonProperty("image_width")
+        private Integer imageWidth;
+
+        @JsonProperty("image_height")
+        private Integer imageHeight;
+
+        public ExifDTO() {
+        }
+
+        public String getCameraBody() {
+            return cameraBody;
+        }
+
+        public void setCameraBody(String cameraBody) {
+            this.cameraBody = cameraBody;
+        }
+
+        public String getCameraLens() {
+            return cameraLens;
+        }
+
+        public void setCameraLens(String cameraLens) {
+            this.cameraLens = cameraLens;
+        }
+
+        public Integer getFocalLength35mm() {
+            return focalLength35mm;
+        }
+
+        public void setFocalLength35mm(Integer focalLength35mm) {
+            this.focalLength35mm = focalLength35mm;
+        }
+
+        public String getFValue() {
+            return fValue;
+        }
+
+        public void setFValue(String fValue) {
+            this.fValue = fValue;
+        }
+
+        public String getShutterSpeed() {
+            return shutterSpeed;
+        }
+
+        public void setShutterSpeed(String shutterSpeed) {
+            this.shutterSpeed = shutterSpeed;
+        }
+
+        public Integer getIso() {
+            return iso;
+        }
+
+        public void setIso(Integer iso) {
+            this.iso = iso;
+        }
+
+        public Integer getImageWidth() {
+            return imageWidth;
+        }
+
+        public void setImageWidth(Integer imageWidth) {
+            this.imageWidth = imageWidth;
+        }
+
+        public Integer getImageHeight() {
+            return imageHeight;
+        }
+
+        public void setImageHeight(Integer imageHeight) {
+            this.imageHeight = imageHeight;
         }
     }
 
