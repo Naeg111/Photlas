@@ -335,6 +335,48 @@ public class PhotoServiceTest {
                 .hasMessageContaining("カテゴリ");
     }
 
+    // ===== Issue#48: カテゴリ任意化テスト =====
+
+    @Test
+    @DisplayName("Issue#48 - カテゴリなし（空リスト）での投稿が成功する")
+    void testCreatePhoto_EmptyCategories_SucceedsWithoutCategory() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("カテゴリ無し写真");
+        request.setS3ObjectKey("photos/nocat001.jpg");
+        request.setTakenAt("2026-01-20T10:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of()); // 空リスト
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoto().getTitle()).isEqualTo("カテゴリ無し写真");
+
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getCategories()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#48 - カテゴリnullでの投稿が成功する")
+    void testCreatePhoto_NullCategories_SucceedsWithoutCategory() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("カテゴリnull写真");
+        request.setS3ObjectKey("photos/nullcat001.jpg");
+        request.setTakenAt("2026-01-21T10:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(null); // null
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoto().getTitle()).isEqualTo("カテゴリnull写真");
+
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getCategories()).isEmpty();
+    }
+
     // ===== Issue#40: Photo Entity拡張テスト =====
 
     @Test
