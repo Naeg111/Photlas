@@ -60,7 +60,8 @@ public class SpotController {
             @RequestParam(name = "max_age_years", required = false) Integer maxAgeYears,
             @RequestParam(name = "aspect_ratio", required = false) String aspectRatio,
             @RequestParam(name = "focal_length_range", required = false) String focalLengthRange,
-            @RequestParam(name = "max_iso", required = false) Integer maxIso) {
+            @RequestParam(name = "max_iso", required = false) Integer maxIso,
+            @RequestParam(required = false) List<String> tags) {
 
         logger.info("GET /api/v1/spots - north={}, south={}, east={}, west={}, subjectCategories={}, months={}, timesOfDay={}, weathers={}, minResolution={}, deviceType={}, maxAgeYears={}, aspectRatio={}, focalLengthRange={}, maxIso={}",
                 north, south, east, west, subjectCategories, months, timesOfDay, weathers, minResolution, deviceType, maxAgeYears, aspectRatio, focalLengthRange, maxIso);
@@ -72,7 +73,7 @@ public class SpotController {
         }
 
         List<SpotResponse> spots = spotService.getSpots(north, south, east, west, subjectCategories, months, timesOfDay, weathers,
-                minResolution, deviceType, maxAgeYears, aspectRatio, focalLengthRange, maxIso);
+                minResolution, deviceType, maxAgeYears, aspectRatio, focalLengthRange, maxIso, tags);
 
         return ResponseEntity.ok(spots);
     }
