@@ -805,4 +805,132 @@ describe('PhotoContributionDialog', () => {
       })
     })
   })
+
+  describe('Tag Input - タグ入力 (Issue#43)', () => {
+    it('should render tag input field', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      expect(screen.getByText('タグ')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText(/タグを入力/)).toBeInTheDocument()
+    })
+
+    it('should add a tag when Enter is pressed', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const tagInput = screen.getByPlaceholderText(/タグを入力/)
+      await user.type(tagInput, '桜{Enter}')
+
+      await waitFor(() => {
+        expect(screen.getByText('桜')).toBeInTheDocument()
+      })
+    })
+
+    it('should add a tag when comma is typed', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const tagInput = screen.getByPlaceholderText(/タグを入力/)
+      await user.type(tagInput, '夕焼け,')
+
+      await waitFor(() => {
+        expect(screen.getByText('夕焼け')).toBeInTheDocument()
+      })
+    })
+
+    it('should remove a tag when delete button is clicked', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const tagInput = screen.getByPlaceholderText(/タグを入力/)
+      await user.type(tagInput, '桜{Enter}')
+
+      await waitFor(() => {
+        expect(screen.getByText('桜')).toBeInTheDocument()
+      })
+
+      // タグの×ボタンをクリック
+      const removeButton = screen.getByText('桜').closest('[data-testid="tag-chip"]')?.querySelector('button')
+      if (removeButton) await user.click(removeButton)
+
+      await waitFor(() => {
+        expect(screen.queryByText('桜')).not.toBeInTheDocument()
+      })
+    })
+
+    it('should pass tags to onSubmit callback', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const mockSubmit = vi.fn(() => Promise.resolve())
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={mockSubmit} />)
+
+      // 写真を選択
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      // 天気を選択
+      await waitFor(() => {
+        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+      })
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
+      // タグを追加
+      const tagInput = screen.getByPlaceholderText(/タグを入力/)
+      await user.type(tagInput, '桜{Enter}')
+      await user.type(tagInput, '展望台{Enter}')
+
+      // 投稿
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
+      })
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      await waitFor(() => {
+        expect(mockSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tags: ['桜', '展望台'],
+          })
+        )
+      })
+    })
+
+    it('should allow submission without tags', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const mockSubmit = vi.fn(() => Promise.resolve())
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={mockSubmit} />)
+
+      // 写真を選択
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      // 天気を選択
+      await waitFor(() => {
+        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+      })
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
+      // タグなしで投稿
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
+      })
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      await waitFor(() => {
+        expect(mockSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tags: [],
+          })
+        )
+      })
+    })
+  })
 })
