@@ -334,4 +334,188 @@ public class PhotoServiceTest {
                 .isInstanceOf(CategoryNotFoundException.class)
                 .hasMessageContaining("カテゴリ");
     }
+
+    // ===== Issue#40: Photo Entity拡張テスト =====
+
+    @Test
+    @DisplayName("Issue#40 - EXIF情報付き写真の投稿が正常に保存される")
+    void testCreatePhoto_WithExifData_SavesAllExifFields() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("EXIF付き写真");
+        request.setS3ObjectKey("photos/exif001.jpg");
+        request.setTakenAt("2026-01-15T17:30:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+        request.setShootingDirection(new BigDecimal("180.50"));
+        request.setCameraBody("Canon EOS R5");
+        request.setCameraLens("RF 24-70mm f/2.8L");
+        request.setFocalLength35mm(35);
+        request.setFValue("f/2.8");
+        request.setShutterSpeed("1/1000");
+        request.setIso(400);
+        request.setImageWidth(8192);
+        request.setImageHeight(5464);
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoto().getShootingDirection()).isEqualByComparingTo(new BigDecimal("180.50"));
+
+        // EXIF情報がネストオブジェクトで返されることを確認
+        PhotoResponse.ExifDTO exif = response.getPhoto().getExif();
+        assertThat(exif).isNotNull();
+        assertThat(exif.getCameraBody()).isEqualTo("Canon EOS R5");
+        assertThat(exif.getCameraLens()).isEqualTo("RF 24-70mm f/2.8L");
+        assertThat(exif.getFocalLength35mm()).isEqualTo(35);
+        assertThat(exif.getFValue()).isEqualTo("f/2.8");
+        assertThat(exif.getShutterSpeed()).isEqualTo("1/1000");
+        assertThat(exif.getIso()).isEqualTo(400);
+        assertThat(exif.getImageWidth()).isEqualTo(8192);
+        assertThat(exif.getImageHeight()).isEqualTo(5464);
+
+        // データベースに保存されたことを確認
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getShootingDirection()).isEqualByComparingTo(new BigDecimal("180.50"));
+        assertThat(savedPhoto.getCameraBody()).isEqualTo("Canon EOS R5");
+        assertThat(savedPhoto.getFocalLength35mm()).isEqualTo(35);
+        assertThat(savedPhoto.getIso()).isEqualTo(400);
+        assertThat(savedPhoto.getImageWidth()).isEqualTo(8192);
+        assertThat(savedPhoto.getImageHeight()).isEqualTo(5464);
+    }
+
+    @Test
+    @DisplayName("Issue#40 - EXIF情報なしの写真も正常に投稿できる")
+    void testCreatePhoto_WithoutExifData_SavesSuccessfully() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("EXIF無し写真");
+        request.setS3ObjectKey("photos/noexif001.jpg");
+        request.setTakenAt("2026-01-16T10:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+        // EXIF情報は全て未設定
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoto().getShootingDirection()).isNull();
+        assertThat(response.getPhoto().getExif()).isNull();
+
+        // データベースの値も確認
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getShootingDirection()).isNull();
+        assertThat(savedPhoto.getCameraBody()).isNull();
+        assertThat(savedPhoto.getIso()).isNull();
+    }
+
+    @Test
+    @DisplayName("Issue#40 - 写真詳細取得でEXIF情報が返される")
+    void testGetPhotoDetail_WithExifData_ReturnsExifInResponse() {
+        // EXIF付き写真を直接DBに保存
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal("35.658581"));
+        spot.setLongitude(new BigDecimal("139.745433"));
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setS3ObjectKey("photos/exifdetail001.jpg");
+        photo.setTitle("EXIF詳細テスト");
+        photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 15, 17, 30));
+        photo.setWeather("sunny");
+        photo.setShootingDirection(new BigDecimal("270.00"));
+        photo.setCameraBody("Sony α7 IV");
+        photo.setCameraLens("FE 24-105mm F4 G OSS");
+        photo.setFocalLength35mm(50);
+        photo.setFValue("f/4.0");
+        photo.setShutterSpeed("1/500");
+        photo.setIso(200);
+        photo.setImageWidth(7008);
+        photo.setImageHeight(4672);
+        photo.setCategories(List.of(landscapeCategory));
+        photo = photoRepository.save(photo);
+
+        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoto().getShootingDirection()).isEqualByComparingTo(new BigDecimal("270.00"));
+
+        PhotoResponse.ExifDTO exif = response.getPhoto().getExif();
+        assertThat(exif).isNotNull();
+        assertThat(exif.getCameraBody()).isEqualTo("Sony α7 IV");
+        assertThat(exif.getCameraLens()).isEqualTo("FE 24-105mm F4 G OSS");
+        assertThat(exif.getFocalLength35mm()).isEqualTo(50);
+        assertThat(exif.getFValue()).isEqualTo("f/4.0");
+        assertThat(exif.getShutterSpeed()).isEqualTo("1/500");
+        assertThat(exif.getIso()).isEqualTo(200);
+        assertThat(exif.getImageWidth()).isEqualTo(7008);
+        assertThat(exif.getImageHeight()).isEqualTo(4672);
+    }
+
+    @Test
+    @DisplayName("Issue#40 - 写真詳細取得でEXIF情報が部分的な場合も正常に返される")
+    void testGetPhotoDetail_PartialExifData_ReturnsAvailableFields() {
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal("35.658581"));
+        spot.setLongitude(new BigDecimal("139.745433"));
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setS3ObjectKey("photos/partialexif001.jpg");
+        photo.setTitle("部分EXIF");
+        photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 16, 10, 0));
+        photo.setWeather("cloudy");
+        // カメラ名とISOのみ設定
+        photo.setCameraBody("iPhone 15 Pro");
+        photo.setIso(100);
+        photo.setCategories(List.of(landscapeCategory));
+        photo = photoRepository.save(photo);
+
+        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        PhotoResponse.ExifDTO exif = response.getPhoto().getExif();
+        assertThat(exif).isNotNull();
+        assertThat(exif.getCameraBody()).isEqualTo("iPhone 15 Pro");
+        assertThat(exif.getIso()).isEqualTo(100);
+        assertThat(exif.getCameraLens()).isNull();
+        assertThat(exif.getFocalLength35mm()).isNull();
+    }
+
+    @Test
+    @DisplayName("Issue#40 - 写真のピンポイント座標がレスポンスに含まれる")
+    void testGetPhotoDetail_ReturnsPhotoLevelCoordinates() {
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal("35.658581"));
+        spot.setLongitude(new BigDecimal("139.745433"));
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setS3ObjectKey("photos/coord001.jpg");
+        photo.setTitle("座標テスト");
+        photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 17, 12, 0));
+        photo.setWeather("sunny");
+        photo.setLatitude(new BigDecimal("35.658600"));
+        photo.setLongitude(new BigDecimal("139.745450"));
+        photo.setCategories(List.of(landscapeCategory));
+        photo = photoRepository.save(photo);
+
+        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        // 写真ごとのピンポイント座標が返されることを確認
+        assertThat(response.getPhoto().getLatitude()).isEqualByComparingTo(new BigDecimal("35.658600"));
+        assertThat(response.getPhoto().getLongitude()).isEqualByComparingTo(new BigDecimal("139.745450"));
+        // スポット座標は別途返される
+        assertThat(response.getSpot().getLatitude()).isEqualByComparingTo(new BigDecimal("35.658581"));
+    }
 }
