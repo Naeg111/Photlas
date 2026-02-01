@@ -1,5 +1,6 @@
 package com.photlas.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
@@ -66,18 +67,18 @@ public class PhotoResponse {
         private Long favoriteCount;
 
         @JsonProperty("latitude")
-        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         private BigDecimal latitude;
 
         @JsonProperty("longitude")
-        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         private BigDecimal longitude;
 
         @JsonProperty("shooting_direction")
-        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         private BigDecimal shootingDirection;
 
-        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         private ExifDTO exif;
 
         public PhotoDTO() {
@@ -202,7 +203,11 @@ public class PhotoResponse {
         }
     }
 
-    // 内部DTO: ExifDTO
+    /**
+     * EXIF情報DTO
+     * 写真のカメラ設定・機材情報を格納します。
+     * 取得できた情報のみを含み、全てnullの場合はPhotoDTOのexifフィールド自体がnullになります。
+     */
     public static class ExifDTO {
         @JsonProperty("camera_body")
         private String cameraBody;
