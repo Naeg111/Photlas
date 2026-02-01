@@ -13,7 +13,7 @@ import { PHOTO_CATEGORIES, PHOTO_UPLOAD, UPLOAD_STATUS } from '../utils/constant
 import { ApiError } from '../utils/apiClient'
 import { WeatherIcons } from './FilterIcons'
 import { InlineMapPicker } from './InlineMapPicker'
-import { extractExif, ExifData } from '../utils/extractExif'
+import { extractExif, type ExifData } from '../utils/extractExif'
 
 /**
  * PhotoContributionDialog コンポーネント
