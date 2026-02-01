@@ -691,15 +691,15 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 鮮度フィルター: 1年以内の写真のスポットのみ返される")
+    @DisplayName("Issue#46 - 鮮度フィルター: 1年以内の写真のスポットのみ返される（cutoffTimeが拡張される）")
     void testGetSpots_WithMaxAgeYears1_ReturnsRecentOnly() throws Exception {
-        // 半年前の写真（1年以内）
+        // 半年前の写真（1年以内、通常cutoff=14日を超えるがmax_age_yearsで拡張される）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-        Photo recentPhoto = createPhoto(spot1, LocalDateTime.now().minusMonths(6), WEATHER_SUNNY);
+        createPhoto(spot1, LocalDateTime.now().minusMonths(6), WEATHER_SUNNY);
 
         // 2年前の写真（1年超え）
         Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
-        Photo oldPhoto = createPhoto(spot2, LocalDateTime.now().minusYears(2), WEATHER_SUNNY);
+        createPhoto(spot2, LocalDateTime.now().minusYears(2), WEATHER_SUNNY);
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
