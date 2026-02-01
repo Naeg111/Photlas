@@ -440,47 +440,8 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath("$.errors[?(@.field == '" + FIELD_LONGITUDE + "')].message").exists());
     }
 
-    @Test
-    @DisplayName("バリデーションエラー - categories必須")
-    void testCreatePhoto_MissingCategories_ReturnsBadRequest() throws Exception {
-        CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
-                S3_OBJECT_KEY_PREFIX + "009.jpg",
-                ISO_DATETIME_1,
-                LATITUDE_TOKYO_TOWER,
-                LONGITUDE_TOKYO_TOWER,
-                null
-        );
-
-        mockMvc.perform(post(ENDPOINT_PHOTOS)
-                .with(csrf())
-                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[?(@.field == '" + FIELD_CATEGORIES + "')].message").exists());
-    }
-
-    @Test
-    @DisplayName("バリデーションエラー - categories空リスト")
-    void testCreatePhoto_EmptyCategories_ReturnsBadRequest() throws Exception {
-        CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
-                S3_OBJECT_KEY_PREFIX + "010.jpg",
-                ISO_DATETIME_1,
-                LATITUDE_TOKYO_TOWER,
-                LONGITUDE_TOKYO_TOWER,
-                List.of()
-        );
-
-        mockMvc.perform(post(ENDPOINT_PHOTOS)
-                .with(csrf())
-                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[?(@.field == '" + FIELD_CATEGORIES + "')].message").exists());
-    }
+    // Issue#48: categories は任意項目に変更されたため、null/空リストの
+    // バリデーションエラーテストは Issue#48 の正常系テストに置き換え済み
 
     @Test
     @DisplayName("業務エラー - 存在しないカテゴリ名が送信された場合")
