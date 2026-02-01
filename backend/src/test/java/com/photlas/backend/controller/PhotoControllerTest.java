@@ -440,47 +440,8 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath("$.errors[?(@.field == '" + FIELD_LONGITUDE + "')].message").exists());
     }
 
-    @Test
-    @DisplayName("バリデーションエラー - categories必須")
-    void testCreatePhoto_MissingCategories_ReturnsBadRequest() throws Exception {
-        CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
-                S3_OBJECT_KEY_PREFIX + "009.jpg",
-                ISO_DATETIME_1,
-                LATITUDE_TOKYO_TOWER,
-                LONGITUDE_TOKYO_TOWER,
-                null
-        );
-
-        mockMvc.perform(post(ENDPOINT_PHOTOS)
-                .with(csrf())
-                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[?(@.field == '" + FIELD_CATEGORIES + "')].message").exists());
-    }
-
-    @Test
-    @DisplayName("バリデーションエラー - categories空リスト")
-    void testCreatePhoto_EmptyCategories_ReturnsBadRequest() throws Exception {
-        CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
-                S3_OBJECT_KEY_PREFIX + "010.jpg",
-                ISO_DATETIME_1,
-                LATITUDE_TOKYO_TOWER,
-                LONGITUDE_TOKYO_TOWER,
-                List.of()
-        );
-
-        mockMvc.perform(post(ENDPOINT_PHOTOS)
-                .with(csrf())
-                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[?(@.field == '" + FIELD_CATEGORIES + "')].message").exists());
-    }
+    // Issue#48: categories は任意項目に変更されたため、null/空リストの
+    // バリデーションエラーテストは Issue#48 の正常系テストに置き換え済み
 
     @Test
     @DisplayName("業務エラー - 存在しないカテゴリ名が送信された場合")
@@ -653,6 +614,51 @@ public class PhotoControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    // ===== Issue#48: カテゴリ任意化テスト =====
+
+    @Test
+    @DisplayName("Issue#48 - カテゴリ空リストでの投稿が201を返す")
+    void testCreatePhoto_EmptyCategories_ReturnsCreated() throws Exception {
+        CreatePhotoRequest request = createPhotoRequest(
+                PHOTO_TITLE_TEST,
+                "photos/nocat-api001.jpg",
+                ISO_DATETIME_1,
+                LATITUDE_TOKYO_TOWER,
+                LONGITUDE_TOKYO_TOWER,
+                List.of()
+        );
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists())
+                .andExpect(jsonPath(JSON_PATH_PHOTO_TITLE, is(PHOTO_TITLE_TEST)));
+    }
+
+    @Test
+    @DisplayName("Issue#48 - カテゴリnullでの投稿が201を返す")
+    void testCreatePhoto_NullCategories_ReturnsCreated() throws Exception {
+        CreatePhotoRequest request = createPhotoRequest(
+                PHOTO_TITLE_TEST,
+                "photos/nullcat-api001.jpg",
+                ISO_DATETIME_1,
+                LATITUDE_TOKYO_TOWER,
+                LONGITUDE_TOKYO_TOWER,
+                null
+        );
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists());
     }
 
     // ===== Issue#40: Photo Entity拡張テスト =====
