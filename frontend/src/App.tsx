@@ -120,6 +120,7 @@ function MainContent() {
     file: File
     title: string
     categories: string[]
+    tags: string[]
     position: { lat: number; lng: number }
     weather: string
     takenAt?: string
@@ -157,6 +158,7 @@ function MainContent() {
         latitude: data.position.lat,
         longitude: data.position.lng,
         categories: data.categories,
+        tags: data.tags,
         weather: data.weather,
         shootingDirection: data.shootingDirection,
         cameraBody: data.exif?.cameraBody,

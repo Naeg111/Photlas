@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public class PhotoResponse {
 
@@ -80,6 +81,8 @@ public class PhotoResponse {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private ExifDTO exif;
+
+        private List<TagDTO> tags;
 
         public PhotoDTO() {
         }
@@ -201,6 +204,14 @@ public class PhotoResponse {
         public void setExif(ExifDTO exif) {
             this.exif = exif;
         }
+
+        public List<TagDTO> getTags() {
+            return tags;
+        }
+
+        public void setTags(List<TagDTO> tags) {
+            this.tags = tags;
+        }
     }
 
     /**
@@ -297,6 +308,41 @@ public class PhotoResponse {
 
         public void setImageHeight(Integer imageHeight) {
             this.imageHeight = imageHeight;
+        }
+    }
+
+    /**
+     * タグDTO
+     * タグのIDと名前を格納します。
+     */
+    public static class TagDTO {
+        @JsonProperty("tag_id")
+        private Long tagId;
+
+        private String name;
+
+        public TagDTO() {
+        }
+
+        public TagDTO(Long tagId, String name) {
+            this.tagId = tagId;
+            this.name = name;
+        }
+
+        public Long getTagId() {
+            return tagId;
+        }
+
+        public void setTagId(Long tagId) {
+            this.tagId = tagId;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
     }
 
