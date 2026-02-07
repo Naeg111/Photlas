@@ -84,6 +84,18 @@ public class PhotoResponse {
 
         private List<TagDTO> tags;
 
+        @JsonProperty("crop_center_x")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private Double cropCenterX;
+
+        @JsonProperty("crop_center_y")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private Double cropCenterY;
+
+        @JsonProperty("crop_zoom")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private Double cropZoom;
+
         public PhotoDTO() {
         }
 
@@ -211,6 +223,30 @@ public class PhotoResponse {
 
         public void setTags(List<TagDTO> tags) {
             this.tags = tags;
+        }
+
+        public Double getCropCenterX() {
+            return cropCenterX;
+        }
+
+        public void setCropCenterX(Double cropCenterX) {
+            this.cropCenterX = cropCenterX;
+        }
+
+        public Double getCropCenterY() {
+            return cropCenterY;
+        }
+
+        public void setCropCenterY(Double cropCenterY) {
+            this.cropCenterY = cropCenterY;
+        }
+
+        public Double getCropZoom() {
+            return cropZoom;
+        }
+
+        public void setCropZoom(Double cropZoom) {
+            this.cropZoom = cropZoom;
         }
     }
 

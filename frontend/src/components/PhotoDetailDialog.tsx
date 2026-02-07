@@ -73,6 +73,9 @@ interface PhotoApiResponse {
       image_height?: number
     } | null
     tags?: { tag_id: number; name: string }[]
+    crop_center_x?: number | null
+    crop_center_y?: number | null
+    crop_zoom?: number | null
   }
   spot: {
     spot_id: number
@@ -115,6 +118,9 @@ interface PhotoDetail {
   longitude?: number | null
   exif?: ExifInfo | null
   tags: TagInfo[]
+  cropCenterX?: number | null
+  cropCenterY?: number | null
+  cropZoom?: number | null
   user: {
     userId: number
     username: string
@@ -208,6 +214,9 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
     latitude: response.photo.latitude,
     longitude: response.photo.longitude,
     exif,
+    cropCenterX: response.photo.crop_center_x,
+    cropCenterY: response.photo.crop_center_y,
+    cropZoom: response.photo.crop_zoom,
     tags: (response.photo.tags ?? []).map(t => ({ tagId: t.tag_id, name: t.name })),
     user: {
       userId: response.user.user_id,
@@ -498,19 +507,21 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
 
           {!loading && !error && photoIds.length > 0 && (
             <div className="flex flex-col min-h-0 flex-1">
-              {/* カルーセル */}
-              <div className="relative flex-shrink-0 min-h-[40vh] max-h-[60vh] overflow-hidden flex items-center">
-                <div className="overflow-hidden h-full w-full" ref={emblaRef}>
-                  <div className="flex h-full items-center">
+              {/* カルーセル - Issue#49: 正方形表示エリア */}
+              <div className="relative flex-shrink-0 max-h-[60vh] overflow-hidden flex items-center">
+                <div className="overflow-hidden w-full" ref={emblaRef}>
+                  <div className="flex items-center">
                     {photoIds.map((photoId) => {
                       const photo = photoDetails.get(photoId)
+                      const cx = photo?.cropCenterX ?? 0.5
+                      const cy = photo?.cropCenterY ?? 0.5
+                      const zoom = photo?.cropZoom ?? 1
                       return (
-                        <div key={photoId} className="flex-[0_0_100%] min-w-0 h-full flex items-center justify-center">
+                        <div key={photoId} className="flex-[0_0_100%] min-w-0 flex items-center justify-center">
                           {photo ? (
-                            <img
-                              src={photo.imageUrl}
-                              alt={photo.title}
-                              className="max-w-full max-h-full object-contain cursor-pointer"
+                            <div
+                              data-testid="photo-crop-container"
+                              className="aspect-square w-full overflow-hidden cursor-pointer"
                               onClick={() => window.open(`/photo-viewer/${photo.photoId}`, '_blank')}
                               role="button"
                               tabIndex={0}
@@ -519,9 +530,21 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
                                   window.open(`/photo-viewer/${photo.photoId}`, '_blank')
                                 }
                               }}
-                            />
+                            >
+                              <img
+                                src={photo.imageUrl}
+                                alt={photo.title}
+                                className="w-full h-full"
+                                style={{
+                                  objectFit: 'cover',
+                                  objectPosition: `${cx * 100}% ${cy * 100}%`,
+                                  transform: `scale(${zoom})`,
+                                  transformOrigin: `${cx * 100}% ${cy * 100}%`,
+                                }}
+                              />
+                            </div>
                           ) : (
-                            <div className="flex items-center justify-center h-full">
+                            <div className="flex items-center justify-center aspect-square w-full">
                               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
                             </div>
                           )}

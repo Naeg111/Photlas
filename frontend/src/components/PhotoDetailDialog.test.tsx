@@ -81,6 +81,9 @@ function createMockApiResponse(overrides?: {
   tags?: { tag_id: number; name: string }[]
   latitude?: number
   longitude?: number
+  cropCenterX?: number | null
+  cropCenterY?: number | null
+  cropZoom?: number | null
 }) {
   return {
     photo: {
@@ -96,6 +99,9 @@ function createMockApiResponse(overrides?: {
       tags: overrides?.tags ?? [],
       latitude: overrides?.latitude ?? null,
       longitude: overrides?.longitude ?? null,
+      crop_center_x: overrides?.cropCenterX ?? null,
+      crop_center_y: overrides?.cropCenterY ?? null,
+      crop_zoom: overrides?.cropZoom ?? null,
     },
     spot: {
       spot_id: overrides?.spotId ?? TEST_SPOT_ID,
@@ -957,6 +963,115 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         // スポット座標でフォールバック表示される
         expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
       })
+    })
+  })
+
+  // ===== Issue#49: クロップ表示テスト =====
+  describe('Issue#49: クロップ表示', () => {
+    it('写真表示エリアが正方形コンテナで表示される', async () => {
+      const photoDetail = createMockApiResponse()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('photo-crop-container')).toBeInTheDocument()
+      })
+    })
+
+    it('クロップデータがある場合、画像にクロップスタイルが設定される', async () => {
+      const photoDetail = createMockApiResponse({
+        cropCenterX: 0.3,
+        cropCenterY: 0.7,
+        cropZoom: 1.5,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        const img = screen.getByAltText(TEST_PHOTO_TITLE_1)
+        expect(img).toHaveStyle({ objectFit: 'cover' })
+        expect(img).toHaveStyle({ objectPosition: '30% 70%' })
+        expect(img).toHaveStyle({ transform: 'scale(1.5)' })
+      })
+    })
+
+    it('クロップデータがない場合、中央表示のデフォルトスタイルが適用される', async () => {
+      const photoDetail = createMockApiResponse()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        const img = screen.getByAltText(TEST_PHOTO_TITLE_1)
+        expect(img).toHaveStyle({ objectFit: 'cover' })
+        expect(img).toHaveStyle({ objectPosition: '50% 50%' })
+        expect(img).toHaveStyle({ transform: 'scale(1)' })
+      })
+    })
+
+    it('画像クリックでフルサイズビューアが開く（既存動作維持）', async () => {
+      const photoDetail = createMockApiResponse({
+        cropCenterX: 0.3,
+        cropCenterY: 0.7,
+        cropZoom: 1.5,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+      const mockOpen = vi.fn()
+      vi.stubGlobal('open', mockOpen)
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByAltText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByAltText(TEST_PHOTO_TITLE_1))
+
+      expect(mockOpen).toHaveBeenCalledWith(`/photo-viewer/${TEST_PHOTO_ID_1}`, '_blank')
+      vi.unstubAllGlobals()
     })
   })
 })

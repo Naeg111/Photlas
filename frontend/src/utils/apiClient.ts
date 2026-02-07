@@ -176,6 +176,9 @@ export interface CreatePhotoRequest {
   iso?: number
   imageWidth?: number
   imageHeight?: number
+  cropCenterX?: number
+  cropCenterY?: number
+  cropZoom?: number
 }
 
 /**

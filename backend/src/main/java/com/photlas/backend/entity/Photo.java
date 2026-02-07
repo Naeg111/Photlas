@@ -74,6 +74,15 @@ public class Photo {
     @Column(name = "image_height")
     private Integer imageHeight;
 
+    @Column(name = "crop_center_x")
+    private Double cropCenterX;
+
+    @Column(name = "crop_center_y")
+    private Double cropCenterY;
+
+    @Column(name = "crop_zoom")
+    private Double cropZoom;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -274,6 +283,30 @@ public class Photo {
 
     public void setImageHeight(Integer imageHeight) {
         this.imageHeight = imageHeight;
+    }
+
+    public Double getCropCenterX() {
+        return cropCenterX;
+    }
+
+    public void setCropCenterX(Double cropCenterX) {
+        this.cropCenterX = cropCenterX;
+    }
+
+    public Double getCropCenterY() {
+        return cropCenterY;
+    }
+
+    public void setCropCenterY(Double cropCenterY) {
+        this.cropCenterY = cropCenterY;
+    }
+
+    public Double getCropZoom() {
+        return cropZoom;
+    }
+
+    public void setCropZoom(Double cropZoom) {
+        this.cropZoom = cropZoom;
     }
 
     public List<Category> getCategories() {
