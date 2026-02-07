@@ -48,13 +48,19 @@ const RESOLUTION_OPTIONS = [
 ] as const;
 
 const DEVICE_TYPE_OPTIONS = [
-  { label: "一眼・デジカメのみ", value: "CAMERA" },
-  { label: "スマホのみ", value: "SMARTPHONE" },
+  { label: "一眼レフ", value: "SLR" },
+  { label: "ミラーレス", value: "MIRRORLESS" },
+  { label: "コンパクトデジカメ", value: "COMPACT" },
+  { label: "スマートフォン", value: "SMARTPHONE" },
+  { label: "フィルム", value: "FILM" },
+  { label: "その他", value: "OTHER" },
 ] as const;
 
 const FRESHNESS_OPTIONS = [
-  { label: "1年以内", value: 1 },
-  { label: "3年以内", value: 3 },
+  { label: "1週間以内", value: 7 },
+  { label: "1ヶ月以内", value: 30 },
+  { label: "1年以内", value: 365 },
+  { label: "3年以内", value: 1095 },
 ] as const;
 
 const ASPECT_RATIO_OPTIONS = [
@@ -64,9 +70,10 @@ const ASPECT_RATIO_OPTIONS = [
 ] as const;
 
 const FOCAL_LENGTH_OPTIONS = [
-  { label: "広角 (< 24mm)", value: "WIDE" },
-  { label: "標準 (24-70mm)", value: "STANDARD" },
-  { label: "望遠 (> 70mm)", value: "TELEPHOTO" },
+  { label: "広角（< 24mm）", value: "WIDE" },
+  { label: "標準（24-70mm）", value: "STANDARD" },
+  { label: "望遠（> 70mm）", value: "TELEPHOTO" },
+  { label: "超望遠（> 300mm）", value: "SUPER_TELEPHOTO" },
 ] as const;
 
 const ISO_OPTIONS = [
@@ -140,7 +147,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="top" className="w-full h-full md:h-auto px-6 py-6 overflow-y-auto">
+      <SheetContent side="top" className="w-full h-full md:max-h-[90vh] px-6 py-6 overflow-y-auto">
         <SheetHeader className="sr-only">
           <SheetTitle>フィルター</SheetTitle>
           <SheetDescription>
@@ -148,7 +155,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-8 pb-6 mt-5">
+        <div className="space-y-8 pb-6 mt-[35px]">
           {/* 被写体種別 */}
           <div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -322,7 +329,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                 {/* 機材種別 */}
                 <div>
                   <p className="text-sm font-medium mb-2 text-muted-foreground">機材種別</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {DEVICE_TYPE_OPTIONS.map((option) => (
                       <Button
                         key={option.label}
@@ -342,7 +349,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                 {/* 鮮度 */}
                 <div>
                   <p className="text-sm font-medium mb-2 text-muted-foreground">鮮度</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {FRESHNESS_OPTIONS.map((option) => (
                       <Button
                         key={option.label}
@@ -381,8 +388,8 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
 
                 {/* 焦点距離 */}
                 <div>
-                  <p className="text-sm font-medium mb-2 text-muted-foreground">焦点距離</p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <p className="text-sm font-medium mb-2 text-muted-foreground">焦点距離（フルサイズ換算）</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {FOCAL_LENGTH_OPTIONS.map((option) => (
                       <Button
                         key={option.label}
