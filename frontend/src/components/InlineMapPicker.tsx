@@ -134,7 +134,7 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
         <Autocomplete
           onLoad={handleAutocompleteLoad}
           onPlaceChanged={handlePlaceChanged}
-          options={{ componentRestrictions: { country: 'jp' } }}
+          options={{ componentRestrictions: { country: 'jp' }, fields: ['geometry', 'name'] }}
         >
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
