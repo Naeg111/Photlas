@@ -57,6 +57,28 @@ vi.mock('../utils/extractExif', () => ({
   extractExif: (...args: unknown[]) => mockExtractExif(...args),
 }))
 
+// react-easy-crop のモック（Issue#49）
+vi.mock('react-easy-crop', () => ({
+  default: ({ onCropComplete, zoom }: { onCropComplete: (croppedArea: unknown, croppedAreaPixels: unknown) => void; zoom: number }) => {
+    return (
+      <div data-testid="cropper-component">
+        <button
+          data-testid="mock-crop-trigger"
+          onClick={() =>
+            onCropComplete(
+              { x: 10, y: 20, width: 60, height: 60 },
+              { x: 100, y: 200, width: 600, height: 600 }
+            )
+          }
+        >
+          Mock Crop
+        </button>
+        <span data-testid="crop-zoom">{zoom}</span>
+      </div>
+    )
+  },
+}))
+
 // InlineMapPickerのモック（EXIF GPS テスト用にpositionを追跡）
 let lastMapPickerPosition: { lat: number; lng: number } | null = null
 vi.mock('./InlineMapPicker', () => ({
@@ -183,7 +205,7 @@ describe('PhotoContributionDialog', () => {
       await user.upload(input, file)
 
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
     })
 
@@ -402,7 +424,7 @@ describe('PhotoContributionDialog', () => {
       await user.upload(input, file)
 
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
 
       // EXIF表示エリアが存在しないことを確認
@@ -446,7 +468,7 @@ describe('PhotoContributionDialog', () => {
 
       // 天気を選択
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
@@ -483,7 +505,7 @@ describe('PhotoContributionDialog', () => {
 
       // 天気を選択
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
@@ -517,7 +539,7 @@ describe('PhotoContributionDialog', () => {
 
       // 天気を選択
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
@@ -561,7 +583,7 @@ describe('PhotoContributionDialog', () => {
 
       // 天気を選択
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
@@ -640,7 +662,7 @@ describe('PhotoContributionDialog', () => {
 
       // 天気を選択
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
@@ -709,7 +731,7 @@ describe('PhotoContributionDialog', () => {
 
       // 天気を選択
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
@@ -746,7 +768,7 @@ describe('PhotoContributionDialog', () => {
 
       // 天気を選択
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
@@ -785,7 +807,7 @@ describe('PhotoContributionDialog', () => {
 
       // 天気を選択
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
@@ -875,7 +897,7 @@ describe('PhotoContributionDialog', () => {
 
       // 天気を選択
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
@@ -913,7 +935,7 @@ describe('PhotoContributionDialog', () => {
 
       // 天気を選択
       await waitFor(() => {
-        expect(screen.getByAltText('プレビュー')).toBeInTheDocument()
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
@@ -928,6 +950,62 @@ describe('PhotoContributionDialog', () => {
         expect(mockSubmit).toHaveBeenCalledWith(
           expect.objectContaining({
             tags: [],
+          })
+        )
+      })
+    })
+  })
+
+  // ===== Issue#49: 写真クロップ機能テスト =====
+  describe('Issue#49: 写真クロップ機能', () => {
+    it('写真選択後にクロップUIが表示される', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
+      })
+    })
+
+    it('クロップデータがonSubmitに渡される', async () => {
+      mockExtractExif.mockResolvedValue(null)
+      const mockSubmit = vi.fn(() => Promise.resolve())
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={mockSubmit} />)
+
+      // 写真を選択
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('photo-crop-area')).toBeInTheDocument()
+      })
+
+      // クロップを実行（モックのトリガーをクリック）
+      await user.click(screen.getByTestId('mock-crop-trigger'))
+
+      // 天気を選択
+      const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
+      if (weatherDiv) await user.click(weatherDiv)
+
+      // 投稿
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
+      })
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      await waitFor(() => {
+        expect(mockSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            cropCenterX: expect.any(Number),
+            cropCenterY: expect.any(Number),
+            cropZoom: expect.any(Number),
           })
         )
       })

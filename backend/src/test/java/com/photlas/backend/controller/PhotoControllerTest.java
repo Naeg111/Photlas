@@ -762,6 +762,83 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath("$.photo.exif.image_height", is(5504)));
     }
 
+    // ===== Issue#49: クロップ（トリミング）データ コントローラーテスト =====
+
+    @Test
+    @DisplayName("Issue#49 - クロップデータ付き写真投稿でレスポンスにクロップ情報が含まれる")
+    void testCreatePhoto_WithCropData_ReturnsCropInResponse() throws Exception {
+        String requestJson = """
+                {
+                    "title": "クロップ付き投稿",
+                    "s3ObjectKey": "photos/crop-api001.jpg",
+                    "takenAt": "2026-02-08T10:00:00Z",
+                    "latitude": 35.658581,
+                    "longitude": 139.745433,
+                    "cropCenterX": 0.3,
+                    "cropCenterY": 0.7,
+                    "cropZoom": 1.5
+                }
+                """;
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.photo.crop_center_x", is(0.3)))
+                .andExpect(jsonPath("$.photo.crop_center_y", is(0.7)))
+                .andExpect(jsonPath("$.photo.crop_zoom", is(1.5)));
+    }
+
+    @Test
+    @DisplayName("Issue#49 - クロップデータなし投稿でcropフィールドがレスポンスに含まれない")
+    void testCreatePhoto_WithoutCropData_CropNotInResponse() throws Exception {
+        CreatePhotoRequest request = createPhotoRequest(
+                PHOTO_TITLE_TEST,
+                "photos/nocrop-api001.jpg",
+                ISO_DATETIME_1,
+                LATITUDE_TOKYO_TOWER,
+                LONGITUDE_TOKYO_TOWER,
+                List.of(CATEGORY_LANDSCAPE)
+        );
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.photo.crop_center_x").doesNotExist())
+                .andExpect(jsonPath("$.photo.crop_center_y").doesNotExist())
+                .andExpect(jsonPath("$.photo.crop_zoom").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("Issue#49 - 写真詳細取得でクロップデータが返される")
+    void testGetPhotoDetail_ReturnsCropData() throws Exception {
+        Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
+
+        Photo photo = new Photo();
+        photo.setTitle("クロップ詳細APIテスト");
+        photo.setS3ObjectKey("photos/crop-detail-api001.jpg");
+        photo.setShotAt(LocalDateTime.of(2026, 2, 8, 10, 0));
+        photo.setWeather("sunny");
+        photo.setUserId(testUser.getId());
+        photo.setSpotId(spot.getSpotId());
+        photo.setCropCenterX(0.4);
+        photo.setCropCenterY(0.6);
+        photo.setCropZoom(2.0);
+        photo = photoRepository.save(photo);
+
+        mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photo.crop_center_x", is(0.4)))
+                .andExpect(jsonPath("$.photo.crop_center_y", is(0.6)))
+                .andExpect(jsonPath("$.photo.crop_zoom", is(2.0)));
+    }
+
     // ===== Issue#43: タグシステム コントローラーテスト =====
 
     @Test

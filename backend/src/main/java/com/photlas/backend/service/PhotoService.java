@@ -119,6 +119,9 @@ public class PhotoService {
         photo.setIso(request.getIso());
         photo.setImageWidth(request.getImageWidth());
         photo.setImageHeight(request.getImageHeight());
+        photo.setCropCenterX(request.getCropCenterX());
+        photo.setCropCenterY(request.getCropCenterY());
+        photo.setCropZoom(request.getCropZoom());
         photo.setTags(tags);
 
         Photo savedPhoto = photoRepository.save(photo);
@@ -259,6 +262,11 @@ public class PhotoService {
         photoDTO.setLatitude(photo.getLatitude());
         photoDTO.setLongitude(photo.getLongitude());
         photoDTO.setShootingDirection(photo.getShootingDirection());
+
+        // クロップ情報を設定
+        photoDTO.setCropCenterX(photo.getCropCenterX());
+        photoDTO.setCropCenterY(photo.getCropCenterY());
+        photoDTO.setCropZoom(photo.getCropZoom());
 
         // EXIF情報を設定（1つでも値があればExifDTOを生成）
         PhotoResponse.ExifDTO exifDTO = buildExifDTO(photo);

@@ -132,6 +132,9 @@ function MainContent() {
     weather: string
     takenAt?: string
     shootingDirection?: number
+    cropCenterX?: number
+    cropCenterY?: number
+    cropZoom?: number
     exif?: {
       cameraBody?: string
       cameraLens?: string
@@ -176,6 +179,9 @@ function MainContent() {
         iso: data.exif?.iso,
         imageWidth: data.exif?.imageWidth,
         imageHeight: data.exif?.imageHeight,
+        cropCenterX: data.cropCenterX,
+        cropCenterY: data.cropCenterY,
+        cropZoom: data.cropZoom,
       })
 
       // 4. マップ更新
