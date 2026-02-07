@@ -76,6 +76,9 @@ interface SpotProperties extends SpotResponse {
 // Google Maps APIキー
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 
+// Google Maps ライブラリ（全コンポーネントで同一の定数を使用すること）
+const LIBRARIES: ('places')[] = ['places']
+
 // MapViewコンポーネントのProps（Issue#16）
 interface MapViewProps {
   filterParams?: MapViewFilterParams
@@ -159,6 +162,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // APIキーが空の場合はuseLoadScriptを呼ばない
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: LIBRARIES,
   })
 
   // スポットデータを取得（mapInstanceとフィルター条件をパラメータで受け取る）

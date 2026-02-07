@@ -180,6 +180,9 @@ function createFanPoints(
 }
 
 // ミニマップのオプション
+// Google Maps ライブラリ（全コンポーネントで同一の定数を使用すること）
+const LIBRARIES: ('places')[] = ['places']
+
 const MINIMAP_OPTIONS: google.maps.MapOptions = {
   disableDefaultUI: true,
   gestureHandling: 'none',
@@ -271,6 +274,7 @@ function DetailMiniMap({
 }) {
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    libraries: LIBRARIES,
   })
 
   const center = { lat: latitude, lng: longitude }
