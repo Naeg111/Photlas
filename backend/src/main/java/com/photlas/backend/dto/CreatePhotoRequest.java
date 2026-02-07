@@ -53,6 +53,12 @@ public class CreatePhotoRequest {
 
     private List<String> tags;
 
+    private Double cropCenterX;
+
+    private Double cropCenterY;
+
+    private Double cropZoom;
+
     // Getters and Setters
     public String getTitle() {
         return title;
@@ -188,5 +194,29 @@ public class CreatePhotoRequest {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
+    }
+
+    public Double getCropCenterX() {
+        return cropCenterX;
+    }
+
+    public void setCropCenterX(Double cropCenterX) {
+        this.cropCenterX = cropCenterX;
+    }
+
+    public Double getCropCenterY() {
+        return cropCenterY;
+    }
+
+    public void setCropCenterY(Double cropCenterY) {
+        this.cropCenterY = cropCenterY;
+    }
+
+    public Double getCropZoom() {
+        return cropZoom;
+    }
+
+    public void setCropZoom(Double cropZoom) {
+        this.cropZoom = cropZoom;
     }
 }

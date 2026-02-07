@@ -638,6 +638,108 @@ public class PhotoServiceTest {
         assertThat(tagRepository.count()).isEqualTo(tagCountBefore);
     }
 
+    // ===== Issue#49: クロップ（トリミング）データテスト =====
+
+    @Test
+    @DisplayName("Issue#49 - クロップデータ付き写真の投稿が正常に保存される")
+    void testCreatePhoto_WithCropData_SavesCropFields() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("クロップ付き写真");
+        request.setS3ObjectKey("photos/crop001.jpg");
+        request.setTakenAt("2026-02-08T10:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCropCenterX(0.3);
+        request.setCropCenterY(0.7);
+        request.setCropZoom(1.5);
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+
+        // データベースに保存されたことを確認
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getCropCenterX()).isEqualTo(0.3);
+        assertThat(savedPhoto.getCropCenterY()).isEqualTo(0.7);
+        assertThat(savedPhoto.getCropZoom()).isEqualTo(1.5);
+    }
+
+    @Test
+    @DisplayName("Issue#49 - クロップデータなしの投稿が成功する（後方互換）")
+    void testCreatePhoto_WithoutCropData_SavesNullCropFields() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("クロップ無し写真");
+        request.setS3ObjectKey("photos/nocrop001.jpg");
+        request.setTakenAt("2026-02-08T11:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        // cropフィールド未設定
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getCropCenterX()).isNull();
+        assertThat(savedPhoto.getCropCenterY()).isNull();
+        assertThat(savedPhoto.getCropZoom()).isNull();
+    }
+
+    @Test
+    @DisplayName("Issue#49 - 写真詳細取得でクロップデータが返される")
+    void testGetPhotoDetail_WithCropData_ReturnsCropInResponse() {
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal("35.658581"));
+        spot.setLongitude(new BigDecimal("139.745433"));
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setS3ObjectKey("photos/cropdetail001.jpg");
+        photo.setTitle("クロップ詳細テスト");
+        photo.setShotAt(java.time.LocalDateTime.of(2026, 2, 8, 10, 0));
+        photo.setWeather("sunny");
+        photo.setCropCenterX(0.25);
+        photo.setCropCenterY(0.75);
+        photo.setCropZoom(2.0);
+        photo.setCategories(List.of(landscapeCategory));
+        photo = photoRepository.save(photo);
+
+        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoto().getCropCenterX()).isEqualTo(0.25);
+        assertThat(response.getPhoto().getCropCenterY()).isEqualTo(0.75);
+        assertThat(response.getPhoto().getCropZoom()).isEqualTo(2.0);
+    }
+
+    @Test
+    @DisplayName("Issue#49 - クロップデータなしの写真詳細でcropフィールドがnull")
+    void testGetPhotoDetail_WithoutCropData_CropIsNull() {
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal("35.658581"));
+        spot.setLongitude(new BigDecimal("139.745433"));
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setS3ObjectKey("photos/nocropdetail001.jpg");
+        photo.setTitle("クロップ無し詳細");
+        photo.setShotAt(java.time.LocalDateTime.of(2026, 2, 8, 11, 0));
+        photo.setWeather("cloudy");
+        photo.setCategories(List.of(landscapeCategory));
+        photo = photoRepository.save(photo);
+
+        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoto().getCropCenterX()).isNull();
+        assertThat(response.getPhoto().getCropCenterY()).isNull();
+        assertThat(response.getPhoto().getCropZoom()).isNull();
+    }
+
     @Test
     @DisplayName("Issue#43 - 写真詳細取得でタグが返される")
     void testGetPhotoDetail_WithTags_ReturnsTagsInResponse() {

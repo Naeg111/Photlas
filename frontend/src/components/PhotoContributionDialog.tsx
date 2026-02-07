@@ -1,12 +1,13 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { CategoryIcon } from './CategoryIcon'
 import { Checkbox } from './ui/checkbox'
-import { ImageWithFallback } from './figma/ImageWithFallback'
 import { Upload, X, Camera, Compass, Tag } from 'lucide-react'
+import Cropper from 'react-easy-crop'
+import type { Area } from 'react-easy-crop'
 import { Progress } from './ui/progress'
 import { motion, AnimatePresence } from 'motion/react'
 import { PHOTO_CATEGORIES, PHOTO_UPLOAD, UPLOAD_STATUS } from '../utils/constants'
@@ -61,6 +62,9 @@ interface PhotoContributionDialogProps {
       imageWidth?: number
       imageHeight?: number
     }
+    cropCenterX?: number
+    cropCenterY?: number
+    cropZoom?: number
   }) => Promise<void>
 }
 
@@ -83,7 +87,14 @@ export function PhotoContributionDialog({
   const [shootingDirection, setShootingDirection] = useState<number | undefined>(undefined)
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [cropZoom, setCropZoom] = useState(1)
+  const [croppedArea, setCroppedArea] = useState<Area | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleCropComplete = useCallback((croppedArea: Area, _croppedAreaPixels: Area) => {
+    setCroppedArea(croppedArea)
+  }, [])
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -209,6 +220,9 @@ export function PhotoContributionDialog({
             imageWidth: exifData.imageWidth,
             imageHeight: exifData.imageHeight,
           } : undefined,
+          cropCenterX: croppedArea ? (croppedArea.x + croppedArea.width / 2) / 100 : 0.5,
+          cropCenterY: croppedArea ? (croppedArea.y + croppedArea.height / 2) / 100 : 0.5,
+          cropZoom,
         })
       }
 
@@ -256,6 +270,9 @@ export function PhotoContributionDialog({
     setShootingDirection(undefined)
     setTags([])
     setTagInput('')
+    setCrop({ x: 0, y: 0 })
+    setCropZoom(1)
+    setCroppedArea(null)
   }
 
   const handleRemovePhoto = () => {
@@ -264,6 +281,9 @@ export function PhotoContributionDialog({
     setPinPosition(null)
     setExifData(null)
     setShootingDirection(undefined)
+    setCrop({ x: 0, y: 0 })
+    setCropZoom(1)
+    setCroppedArea(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -303,15 +323,34 @@ export function PhotoContributionDialog({
             >
               {previewUrl ? (
                 <div className="relative">
-                  <ImageWithFallback
-                    src={previewUrl}
-                    alt="プレビュー"
-                    className="w-full h-64 object-contain rounded"
-                  />
+                  <div data-testid="photo-crop-area" className="relative h-80 bg-gray-900 rounded overflow-hidden">
+                    <Cropper
+                      image={previewUrl}
+                      crop={crop}
+                      zoom={cropZoom}
+                      aspect={1}
+                      onCropChange={setCrop}
+                      onZoomChange={setCropZoom}
+                      onCropComplete={handleCropComplete}
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-sm text-gray-500">ズーム</span>
+                    <input
+                      type="range"
+                      data-testid="crop-zoom-slider"
+                      min={1}
+                      max={3}
+                      step={0.1}
+                      value={cropZoom}
+                      onChange={(e) => setCropZoom(Number(e.target.value))}
+                      className="flex-1"
+                    />
+                  </div>
                   <Button
                     variant="destructive"
                     size="icon"
-                    className="absolute top-2 right-2"
+                    className="absolute top-2 right-2 z-10"
                     onClick={handleRemovePhoto}
                     aria-label="削除"
                   >
