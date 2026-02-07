@@ -240,7 +240,7 @@ describe('FilterPanel', () => {
 
       // 詳細フィルター項目はデフォルトで非表示
       expect(screen.queryByText('高画質のみ')).not.toBeInTheDocument()
-      expect(screen.queryByText('一眼・デジカメのみ')).not.toBeInTheDocument()
+      expect(screen.queryByText('ミラーレス')).not.toBeInTheDocument()
     })
 
     it('shows advanced filter items when toggle button is clicked', async () => {
@@ -254,10 +254,18 @@ describe('FilterPanel', () => {
       expect(screen.getByText('すべて表示')).toBeInTheDocument()
 
       // 機材種別
-      expect(screen.getByText('一眼・デジカメのみ')).toBeInTheDocument()
-      expect(screen.getByText('スマホのみ')).toBeInTheDocument()
+      expect(screen.getByText('一眼レフ')).toBeInTheDocument()
+      expect(screen.getByText('ミラーレス')).toBeInTheDocument()
+      expect(screen.getByText('コンパクトデジカメ')).toBeInTheDocument()
+      expect(screen.getByText('スマートフォン')).toBeInTheDocument()
+      expect(screen.getByText('フィルム')).toBeInTheDocument()
+      // 「その他」はカテゴリと機材種別の両方にあるため、getAllByRoleを使用
+      const otherButtons = screen.getAllByRole('button', { name: 'その他' })
+      expect(otherButtons.length).toBe(2)
 
       // 鮮度
+      expect(screen.getByText('1週間以内')).toBeInTheDocument()
+      expect(screen.getByText('1ヶ月以内')).toBeInTheDocument()
       expect(screen.getByText('1年以内')).toBeInTheDocument()
       expect(screen.getByText('3年以内')).toBeInTheDocument()
 
@@ -266,10 +274,12 @@ describe('FilterPanel', () => {
       expect(screen.getByText('横位置')).toBeInTheDocument()
       expect(screen.getByText('正方形')).toBeInTheDocument()
 
-      // 焦点距離
-      expect(screen.getByText(/広角/)).toBeInTheDocument()
-      expect(screen.getByText(/標準/)).toBeInTheDocument()
-      expect(screen.getByText(/望遠/)).toBeInTheDocument()
+      // 焦点距離（フルサイズ換算）
+      expect(screen.getByText('焦点距離（フルサイズ換算）')).toBeInTheDocument()
+      expect(screen.getByText(/広角（< 24mm）/)).toBeInTheDocument()
+      expect(screen.getByText(/標準（24-70mm）/)).toBeInTheDocument()
+      expect(screen.getByText(/望遠（> 70mm）/)).toBeInTheDocument()
+      expect(screen.getByText(/超望遠（> 300mm）/)).toBeInTheDocument()
 
       // ISO感度
       expect(screen.getByText(/低感度/)).toBeInTheDocument()
@@ -306,8 +316,8 @@ describe('FilterPanel', () => {
       // 高画質のみを選択
       await user.click(screen.getByText('高画質のみ'))
 
-      // 一眼・デジカメのみを選択
-      await user.click(screen.getByText('一眼・デジカメのみ'))
+      // ミラーレスを選択
+      await user.click(screen.getByText('ミラーレス'))
 
       // 適用
       await user.click(screen.getByRole('button', { name: '適用' }))
@@ -315,7 +325,7 @@ describe('FilterPanel', () => {
       expect(mockOnApply).toHaveBeenCalledWith(
         expect.objectContaining({
           minResolution: 1080,
-          deviceType: 'CAMERA',
+          deviceType: 'MIRRORLESS',
         })
       )
     })

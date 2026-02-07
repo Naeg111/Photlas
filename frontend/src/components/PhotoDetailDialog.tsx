@@ -505,12 +505,12 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
                     {photoIds.map((photoId) => {
                       const photo = photoDetails.get(photoId)
                       return (
-                        <div key={photoId} className="flex-[0_0_100%] min-w-0 h-full">
+                        <div key={photoId} className="flex-[0_0_100%] min-w-0 h-full flex items-center justify-center">
                           {photo ? (
                             <img
                               src={photo.imageUrl}
                               alt={photo.title}
-                              className="w-full h-full object-contain cursor-pointer"
+                              className="max-w-full max-h-full object-contain cursor-pointer"
                               onClick={() => window.open(`/photo-viewer/${photo.photoId}`, '_blank')}
                               role="button"
                               tabIndex={0}
