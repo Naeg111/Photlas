@@ -499,9 +499,9 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
           {!loading && !error && photoIds.length > 0 && (
             <div className="flex flex-col min-h-0 flex-1">
               {/* カルーセル */}
-              <div className="relative flex-shrink-0 min-h-[40vh] max-h-[60vh] overflow-hidden">
-                <div className="overflow-hidden h-full" ref={emblaRef}>
-                  <div className="flex h-full">
+              <div className="relative flex-shrink-0 min-h-[40vh] max-h-[60vh] overflow-hidden flex items-center">
+                <div className="overflow-hidden h-full w-full" ref={emblaRef}>
+                  <div className="flex h-full items-center">
                     {photoIds.map((photoId) => {
                       const photo = photoDetails.get(photoId)
                       return (
