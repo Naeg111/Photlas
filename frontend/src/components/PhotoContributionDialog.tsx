@@ -22,6 +22,10 @@ import { extractExif, type ExifData } from '../utils/extractExif'
  * Issue#41: EXIF情報の自動抽出
  *
  * 写真投稿ダイアログ - design-assetsベースでS3 Presigned URL連携を統合
+ *
+ * ダイアログ構造: 固定ヘッダー + スクロール可能なフォーム部分
+ * iOS Safariのfixed+transformスクロール問題を回避するため、
+ * DialogContentのoverflow-y-autoではなく内部divでスクロールを管理する
  */
 
 // 天気の選択肢
@@ -91,17 +95,25 @@ export function PhotoContributionDialog({
   const [cropZoom, setCropZoom] = useState(1)
   const [croppedArea, setCroppedArea] = useState<Area | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const topRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   // ダイアログ表示時にスクロール位置を先頭にリセット
   useEffect(() => {
-    if (open) {
-      requestAnimationFrame(() => {
-        const scrollContainer = topRef.current?.closest('[data-slot="dialog-content"]')
-        if (scrollContainer) {
-          scrollContainer.scrollTop = 0
-        }
-      })
+    if (!open) return
+    const scrollToTop = () => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0
+      }
+    }
+    // ダイアログのアニメーション完了後にリセット（複数回試行）
+    scrollToTop()
+    const t1 = setTimeout(scrollToTop, 50)
+    const t2 = setTimeout(scrollToTop, 150)
+    const t3 = setTimeout(scrollToTop, 300)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
     }
   }, [open])
 
@@ -313,335 +325,344 @@ export function PhotoContributionDialog({
   return (
     <Dialog open={open} onOpenChange={uploadStatus === 'uploading' ? undefined : onOpenChange}>
       <DialogContent
-        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        className="max-w-4xl max-h-[90vh]"
+        style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div ref={topRef} />
-        <DialogHeader>
-          <DialogTitle>写真を投稿</DialogTitle>
-          <DialogDescription className="sr-only">
-            写真とコンテクスト情報を投稿する
-          </DialogDescription>
-        </DialogHeader>
+        {/* 固定ヘッダー（常時表示・スクロールしない） */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogHeader>
+            <DialogTitle>写真を投稿</DialogTitle>
+            <DialogDescription className="sr-only">
+              写真とコンテクスト情報を投稿する
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-gray-500 mt-2">* は入力必須項目です</p>
+        </div>
 
-        <p className="text-sm text-gray-500">* は入力必須項目です</p>
-
-        <div className="space-y-6 mt-4">
-          {/* 写真選択 */}
-          <div className="space-y-3">
-            <Label className="text-base">写真 *</Label>
-            <div
-              className={`border-2 border-dashed rounded-lg p-6 ${
-                !previewUrl ? 'cursor-pointer hover:border-gray-400 transition-colors' : ''
-              }`}
-              onClick={() => {
-                if (!previewUrl) {
-                  fileInputRef.current?.click()
-                }
-              }}
-            >
-              {previewUrl ? (
-                <div className="relative">
-                  <div data-testid="photo-crop-area" className="relative h-80 bg-gray-900 overflow-hidden">
-                    <Cropper
-                      image={previewUrl}
-                      crop={crop}
-                      zoom={cropZoom}
-                      aspect={1}
-                      showGrid
-                      onCropChange={setCrop}
-                      onZoomChange={setCropZoom}
-                      onCropComplete={handleCropComplete}
-                      style={{
-                        cropAreaStyle: {
-                          border: '3px solid rgba(255, 255, 255, 0.5)',
-                        },
+        {/* スクロール可能なフォーム部分 */}
+        <div
+          ref={scrollRef}
+          className="overflow-y-auto flex-1 px-6 pb-6"
+          style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}
+        >
+          <div className="space-y-6 mt-4">
+            {/* 写真選択 */}
+            <div className="space-y-3">
+              <Label className="text-base">写真 *</Label>
+              <div
+                className={`border-2 border-dashed rounded-lg p-6 ${
+                  !previewUrl ? 'cursor-pointer hover:border-gray-400 transition-colors' : ''
+                }`}
+                onClick={() => {
+                  if (!previewUrl) {
+                    fileInputRef.current?.click()
+                  }
+                }}
+              >
+                {previewUrl ? (
+                  <div className="relative">
+                    <div data-testid="photo-crop-area" className="relative h-80 bg-gray-900">
+                      <Cropper
+                        image={previewUrl}
+                        crop={crop}
+                        zoom={cropZoom}
+                        aspect={1}
+                        showGrid
+                        onCropChange={setCrop}
+                        onZoomChange={setCropZoom}
+                        onCropComplete={handleCropComplete}
+                        style={{
+                          cropAreaStyle: {
+                            border: '3px solid rgba(255, 255, 255, 0.5)',
+                          },
+                        }}
+                      />
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-sm text-gray-500">ズーム</span>
+                      <input
+                        type="range"
+                        data-testid="crop-zoom-slider"
+                        min={1}
+                        max={3}
+                        step={0.1}
+                        value={cropZoom}
+                        onChange={(e) => setCropZoom(Number(e.target.value))}
+                        className="flex-1"
+                      />
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 z-10"
+                      onClick={handleRemovePhoto}
+                      aria-label="削除"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Upload className="w-12 h-12 text-gray-400 mb-4" />
+                    <Button
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        fileInputRef.current?.click()
                       }}
-                    />
+                    >
+                      写真を選択
+                    </Button>
+                    <p className="text-sm text-gray-500 mt-2">
+                      {PHOTO_UPLOAD.ALLOWED_FILE_TYPES_DISPLAY}（最大{PHOTO_UPLOAD.MAX_FILE_SIZE_DISPLAY}）
+                    </p>
                   </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-sm text-gray-500">ズーム</span>
-                    <input
-                      type="range"
-                      data-testid="crop-zoom-slider"
-                      min={1}
-                      max={3}
-                      step={0.1}
-                      value={cropZoom}
-                      onChange={(e) => setCropZoom(Number(e.target.value))}
-                      className="flex-1"
-                    />
-                  </div>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2 z-10"
-                    onClick={handleRemovePhoto}
-                    aria-label="削除"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <Upload className="w-12 h-12 text-gray-400 mb-4" />
-                  <Button
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      fileInputRef.current?.click()
-                    }}
-                  >
-                    写真を選択
-                  </Button>
-                  <p className="text-sm text-gray-500 mt-2">
-                    {PHOTO_UPLOAD.ALLOWED_FILE_TYPES_DISPLAY}（最大{PHOTO_UPLOAD.MAX_FILE_SIZE_DISPLAY}）
-                  </p>
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/heic"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/heic"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* EXIF情報表示 */}
-          {hasExifInfo && (
+            {/* EXIF情報表示 */}
+            {hasExifInfo && (
+              <div className="space-y-3">
+                <Label className="text-base flex items-center gap-2">
+                  <Camera className="w-4 h-4" />
+                  カメラ情報
+                </Label>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                    {exifData.cameraBody && (
+                      <div>
+                        <span className="text-gray-500">カメラ</span>
+                        <p className="font-medium">{exifData.cameraBody}</p>
+                      </div>
+                    )}
+                    {exifData.cameraLens && (
+                      <div>
+                        <span className="text-gray-500">レンズ</span>
+                        <p className="font-medium">{exifData.cameraLens}</p>
+                      </div>
+                    )}
+                    {exifData.focalLength35mm != null && (
+                      <div>
+                        <span className="text-gray-500">焦点距離</span>
+                        <p className="font-medium">{exifData.focalLength35mm}mm</p>
+                      </div>
+                    )}
+                    {exifData.fValue && (
+                      <div>
+                        <span className="text-gray-500">絞り</span>
+                        <p className="font-medium">{exifData.fValue}</p>
+                      </div>
+                    )}
+                    {exifData.shutterSpeed && (
+                      <div>
+                        <span className="text-gray-500">シャッタースピード</span>
+                        <p className="font-medium">{exifData.shutterSpeed}</p>
+                      </div>
+                    )}
+                    {exifData.iso != null && (
+                      <div>
+                        <span className="text-gray-500">ISO</span>
+                        <p className="font-medium">ISO {exifData.iso}</p>
+                      </div>
+                    )}
+                    {exifData.imageWidth != null && exifData.imageHeight != null && (
+                      <div>
+                        <span className="text-gray-500">解像度</span>
+                        <p className="font-medium">{exifData.imageWidth} x {exifData.imageHeight}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* タイトル */}
+            <div className="space-y-3">
+              <Label htmlFor="title" className="text-base">タイトル</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="例：夕暮れの東京タワー"
+                maxLength={PHOTO_UPLOAD.TITLE_MAX_LENGTH}
+                className="mt-2"
+              />
+              <p className="text-sm text-gray-500">{title.length}/{PHOTO_UPLOAD.TITLE_MAX_LENGTH}文字</p>
+            </div>
+
+            {/* 位置情報 */}
+            <div className="space-y-3">
+              <Label className="text-base">撮影場所 *</Label>
+              <p className="text-sm text-gray-500">
+                地図をドラッグして撮影場所にピンを合わせてください
+              </p>
+              <div className="border rounded-lg overflow-hidden h-64">
+                <InlineMapPicker
+                  position={pinPosition}
+                  onPositionChange={setPinPosition}
+                />
+              </div>
+            </div>
+
+            {/* 撮影方向 */}
+            {selectedFile && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base flex items-center gap-2">
+                    <Compass className="w-4 h-4" />
+                    撮影方向
+                  </Label>
+                  {shootingDirection != null && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShootingDirection(undefined)}
+                      aria-label="リセット"
+                    >
+                      リセット
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {DIRECTION_OPTIONS.map(({ label, angle }) => (
+                    <Button
+                      key={label}
+                      variant="outline"
+                      size="sm"
+                      className={`${
+                        shootingDirection === angle
+                          ? 'border-primary bg-primary/5'
+                          : ''
+                      }`}
+                      onClick={() => setShootingDirection(angle)}
+                      aria-label={label}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* タグ入力 */}
             <div className="space-y-3">
               <Label className="text-base flex items-center gap-2">
-                <Camera className="w-4 h-4" />
-                カメラ情報
+                <Tag className="w-4 h-4" />
+                タグ
               </Label>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                  {exifData.cameraBody && (
-                    <div>
-                      <span className="text-gray-500">カメラ</span>
-                      <p className="font-medium">{exifData.cameraBody}</p>
-                    </div>
-                  )}
-                  {exifData.cameraLens && (
-                    <div>
-                      <span className="text-gray-500">レンズ</span>
-                      <p className="font-medium">{exifData.cameraLens}</p>
-                    </div>
-                  )}
-                  {exifData.focalLength35mm != null && (
-                    <div>
-                      <span className="text-gray-500">焦点距離</span>
-                      <p className="font-medium">{exifData.focalLength35mm}mm</p>
-                    </div>
-                  )}
-                  {exifData.fValue && (
-                    <div>
-                      <span className="text-gray-500">絞り</span>
-                      <p className="font-medium">{exifData.fValue}</p>
-                    </div>
-                  )}
-                  {exifData.shutterSpeed && (
-                    <div>
-                      <span className="text-gray-500">シャッタースピード</span>
-                      <p className="font-medium">{exifData.shutterSpeed}</p>
-                    </div>
-                  )}
-                  {exifData.iso != null && (
-                    <div>
-                      <span className="text-gray-500">ISO</span>
-                      <p className="font-medium">ISO {exifData.iso}</p>
-                    </div>
-                  )}
-                  {exifData.imageWidth != null && exifData.imageHeight != null && (
-                    <div>
-                      <span className="text-gray-500">解像度</span>
-                      <p className="font-medium">{exifData.imageWidth} x {exifData.imageHeight}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* タイトル */}
-          <div className="space-y-3">
-            <Label htmlFor="title" className="text-base">タイトル</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="例：夕暮れの東京タワー"
-              maxLength={PHOTO_UPLOAD.TITLE_MAX_LENGTH}
-              className="mt-2"
-            />
-            <p className="text-sm text-gray-500">{title.length}/{PHOTO_UPLOAD.TITLE_MAX_LENGTH}文字</p>
-          </div>
-
-          {/* 位置情報 */}
-          <div className="space-y-3">
-            <Label className="text-base">撮影場所 *</Label>
-            <p className="text-sm text-gray-500">
-              地図をドラッグして撮影場所にピンを合わせてください
-            </p>
-            <div className="border rounded-lg overflow-hidden h-64">
-              <InlineMapPicker
-                position={pinPosition}
-                onPositionChange={setPinPosition}
-              />
-            </div>
-          </div>
-
-          {/* 撮影方向 */}
-          {selectedFile && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-base flex items-center gap-2">
-                  <Compass className="w-4 h-4" />
-                  撮影方向
-                </Label>
-                {shootingDirection != null && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShootingDirection(undefined)}
-                    aria-label="リセット"
+              <div className="flex flex-wrap gap-2 mb-2">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    data-testid="tag-chip"
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm"
                   >
-                    リセット
-                  </Button>
-                )}
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                {DIRECTION_OPTIONS.map(({ label, angle }) => (
-                  <Button
-                    key={label}
-                    variant="outline"
-                    size="sm"
-                    className={`${
-                      shootingDirection === angle
-                        ? 'border-primary bg-primary/5'
-                        : ''
-                    }`}
-                    onClick={() => setShootingDirection(angle)}
-                    aria-label={label}
-                  >
-                    {label}
-                  </Button>
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="hover:text-red-500"
+                      aria-label={`${tag}を削除`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
                 ))}
               </div>
+              <Input
+                value={tagInput}
+                onChange={handleTagInputChange}
+                onKeyDown={handleTagKeyDown}
+                placeholder="タグを入力（Enterまたはカンマで追加）"
+              />
             </div>
-          )}
 
-          {/* タグ入力 */}
-          <div className="space-y-3">
-            <Label className="text-base flex items-center gap-2">
-              <Tag className="w-4 h-4" />
-              タグ
-            </Label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  data-testid="tag-chip"
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:text-red-500"
-                    aria-label={`${tag}を削除`}
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <Input
-              value={tagInput}
-              onChange={handleTagInputChange}
-              onKeyDown={handleTagKeyDown}
-              placeholder="タグを入力（Enterまたはカンマで追加）"
-            />
-          </div>
-
-          {/* カテゴリ選択 */}
-          <div className="space-y-3">
-            <Label className="text-base">カテゴリ *（1つ以上選択）</Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {PHOTO_CATEGORIES.map((category) => (
-                <div
-                  key={category}
-                  className={`flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${
-                    selectedCategories.includes(category)
-                      ? 'border-primary bg-primary/5'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => handleCategoryToggle(category)}
-                >
-                  <Checkbox
-                    id={`category-${category}`}
-                    checked={selectedCategories.includes(category)}
-                    onCheckedChange={() => handleCategoryToggle(category)}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label={category}
-                  />
-                  <CategoryIcon category={category} className="w-5 h-5" />
-                  <Label
-                    htmlFor={`category-${category}`}
-                    className="cursor-pointer flex-1"
-                  >
-                    {category}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 天気選択 */}
-          <div className="space-y-3">
-            <Label className="text-base">天気 *</Label>
-            <div className="grid grid-cols-4 gap-3">
-              {WEATHER_OPTIONS.map((weather) => {
-                const Icon = WeatherIcons[weather]
-                return (
+            {/* カテゴリ選択 */}
+            <div className="space-y-3">
+              <Label className="text-base">カテゴリ *（1つ以上選択）</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {PHOTO_CATEGORIES.map((category) => (
                   <div
-                    key={weather}
-                    className={`flex items-center justify-center gap-2 border rounded-lg p-3 cursor-pointer transition-colors ${
-                      selectedWeather === weather
+                    key={category}
+                    className={`flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${
+                      selectedCategories.includes(category)
                         ? 'border-primary bg-primary/5'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
-                    onClick={() => setSelectedWeather(weather)}
+                    onClick={() => handleCategoryToggle(category)}
                   >
-                    {Icon && <Icon className="w-5 h-5 shrink-0" />}
-                    <Label className="cursor-pointer">
-                      {weather}
+                    <Checkbox
+                      id={`category-${category}`}
+                      checked={selectedCategories.includes(category)}
+                      onCheckedChange={() => handleCategoryToggle(category)}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={category}
+                    />
+                    <CategoryIcon category={category} className="w-5 h-5" />
+                    <Label
+                      htmlFor={`category-${category}`}
+                      className="cursor-pointer flex-1"
+                    >
+                      {category}
                     </Label>
                   </div>
-                )
-              })}
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* 投稿ボタン */}
-          <div className="flex gap-3 pt-6">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-              disabled={uploadStatus === 'uploading'}
-            >
-              キャンセル
-            </Button>
-            <Button
-              className="flex-1"
-              onClick={handleSubmit}
-              disabled={!canSubmit || uploadStatus === 'uploading'}
-            >
-              投稿する
-            </Button>
+            {/* 天気選択 */}
+            <div className="space-y-3">
+              <Label className="text-base">天気 *</Label>
+              <div className="grid grid-cols-4 gap-3">
+                {WEATHER_OPTIONS.map((weather) => {
+                  const Icon = WeatherIcons[weather]
+                  return (
+                    <div
+                      key={weather}
+                      className={`flex items-center justify-center gap-2 border rounded-lg p-3 cursor-pointer transition-colors ${
+                        selectedWeather === weather
+                          ? 'border-primary bg-primary/5'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setSelectedWeather(weather)}
+                    >
+                      {Icon && <Icon className="w-5 h-5 shrink-0" />}
+                      <Label className="cursor-pointer">
+                        {weather}
+                      </Label>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 投稿ボタン */}
+            <div className="flex gap-3 pt-6">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => onOpenChange(false)}
+                disabled={uploadStatus === 'uploading'}
+              >
+                キャンセル
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleSubmit}
+                disabled={!canSubmit || uploadStatus === 'uploading'}
+              >
+                投稿する
+              </Button>
+            </div>
           </div>
         </div>
 
