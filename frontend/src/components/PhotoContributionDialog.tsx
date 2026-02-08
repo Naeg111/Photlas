@@ -331,7 +331,7 @@ export function PhotoContributionDialog({
                       crop={crop}
                       zoom={cropZoom}
                       aspect={1}
-                      objectFit="auto-cover"
+                      objectFit="horizontal-cover"
                       onCropChange={setCrop}
                       onZoomChange={setCropZoom}
                       onCropComplete={handleCropComplete}
