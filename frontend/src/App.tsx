@@ -372,10 +372,7 @@ function MainContent() {
             snsLinks: [],
           }}
           isOwnProfile={!viewingUser}
-          photos={[]}
-          onPhotoClick={() => {
-            // TODO: 写真クリック時の処理
-          }}
+          onSpotClick={handleSpotClick}
           initialTab={profileInitialTab}
         />
       )}

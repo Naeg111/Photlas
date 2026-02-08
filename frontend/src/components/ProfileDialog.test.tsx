@@ -13,7 +13,7 @@ import ProfileDialog from './ProfileDialog'
  * - ユーザー名の表示
  * - SNSリンクの表示
  * - タブUI（「投稿」と「お気に入り」）
- * - 写真グリッド表示
+ * - 写真グリッド表示（APIから取得）
  * - プロフィール編集機能（自分の場合のみ）
  */
 
@@ -52,9 +52,52 @@ vi.mock('react-easy-crop', () => ({
   },
 }))
 
+// 投稿一覧APIのデフォルトモックレスポンス（空）
+const mockEmptyPhotosResponse = {
+  content: [],
+  total_elements: 0,
+  total_pages: 0,
+  pageable: { page_number: 0, page_size: 20 },
+  last: true,
+}
+
+// 投稿一覧APIのモックレスポンス（写真あり）
+const mockPhotosResponse = {
+  content: [
+    {
+      photo: {
+        photo_id: 1,
+        title: 'Test Photo 1',
+        image_url: 'https://cdn.example.com/photos/1.jpg',
+        crop_center_x: 0.3,
+        crop_center_y: 0.7,
+        crop_zoom: 1.5,
+      },
+      spot: { spot_id: 10 },
+      user: { user_id: 123, username: 'testuser' },
+    },
+    {
+      photo: {
+        photo_id: 2,
+        title: 'Test Photo 2',
+        image_url: 'https://cdn.example.com/photos/2.jpg',
+        crop_center_x: null,
+        crop_center_y: null,
+        crop_zoom: null,
+      },
+      spot: { spot_id: 20 },
+      user: { user_id: 123, username: 'testuser' },
+    },
+  ],
+  total_elements: 2,
+  total_pages: 1,
+  pageable: { page_number: 0, page_size: 20 },
+  last: true,
+}
+
 describe('ProfileDialog', () => {
   const mockOnClose = vi.fn()
-  const mockOnPhotoClick = vi.fn()
+  const mockOnSpotClick = vi.fn()
 
   const mockUserProfile = {
     userId: 123,
@@ -74,27 +117,13 @@ describe('ProfileDialog', () => {
     snsLinks: []
   }
 
-  const mockPhotos = [
-    {
-      photoId: 1,
-      title: 'Test Photo 1',
-      s3ObjectKey: 'photos/1.jpg',
-      shotAt: '2025-01-01T00:00:00',
-      weather: '晴れ',
-      isFavorited: false
-    },
-    {
-      photoId: 2,
-      title: 'Test Photo 2',
-      s3ObjectKey: 'photos/2.jpg',
-      shotAt: '2025-01-02T00:00:00',
-      weather: '曇り',
-      isFavorited: true
-    }
-  ]
-
   beforeEach(() => {
     vi.clearAllMocks()
+    // デフォルトではAPIが空レスポンスを返す
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockEmptyPhotosResponse),
+    })
   })
 
   describe('基本表示', () => {
@@ -105,8 +134,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -120,8 +148,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -137,8 +164,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockOtherUserProfile}
           isOwnProfile={false}
-          photos={[]}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -153,8 +179,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -173,8 +198,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -189,8 +213,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockOtherUserProfile}
           isOwnProfile={false}
-          photos={[]}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -207,8 +230,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -221,39 +243,154 @@ describe('ProfileDialog', () => {
     })
   })
 
-  describe('写真グリッド表示', () => {
-    it('写真がグリッド表示される', () => {
+  describe('投稿写真グリッド表示', () => {
+    it('APIから取得した写真がグリッド表示される', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockPhotosResponse),
+      })
+
       render(
         <ProfileDialog
           open={true}
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
-      const grid = screen.getByTestId('photo-grid')
-      expect(grid).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByTestId('photo-grid')).toBeInTheDocument()
+      })
+
+      expect(screen.getByTestId('post-photo-item-1')).toBeInTheDocument()
+      expect(screen.getByTestId('post-photo-item-2')).toBeInTheDocument()
     })
 
-    it('写真をクリックすると詳細ダイアログが開く', () => {
+    it('写真画像が正しいsrcで表示される', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockPhotosResponse),
+      })
+
       render(
         <ProfileDialog
           open={true}
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
-      const photoItems = screen.getAllByTestId(/^photo-item-/)
-      fireEvent.click(photoItems[0])
+      await waitFor(() => {
+        expect(screen.getByAltText('Test Photo 1')).toBeInTheDocument()
+      })
 
-      expect(mockOnPhotoClick).toHaveBeenCalledWith(mockPhotos[0])
+      const img = screen.getByAltText('Test Photo 1')
+      expect(img).toHaveAttribute('src', 'https://cdn.example.com/photos/1.jpg')
+    })
+
+    it('写真をクリックするとonSpotClickが呼ばれる', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockPhotosResponse),
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={false}
+          onSpotClick={mockOnSpotClick}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('post-photo-item-1')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByTestId('post-photo-item-1'))
+      expect(mockOnSpotClick).toHaveBeenCalledWith(10)
+    })
+
+    it('投稿がない場合はメッセージが表示される', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockEmptyPhotosResponse),
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={false}
+          onSpotClick={mockOnSpotClick}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('まだ投稿がありません')).toBeInTheDocument()
+      })
+    })
+
+    it('自分のプロフィールでは /api/v1/users/me/photos が呼ばれる', async () => {
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onSpotClick={mockOnSpotClick}
+        />
+      )
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/users/me/photos'),
+          expect.any(Object)
+        )
+      })
+    })
+
+    it('他ユーザーのプロフィールでは /api/v1/users/{userId}/photos が呼ばれる', async () => {
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockOtherUserProfile}
+          isOwnProfile={false}
+          onSpotClick={mockOnSpotClick}
+        />
+      )
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/users/456/photos'),
+          expect.any(Object)
+        )
+      })
+    })
+
+    it('写真読み込み中はローディングが表示される', async () => {
+      global.fetch = vi.fn().mockImplementation(() => new Promise(() => {}))
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={false}
+          onSpotClick={mockOnSpotClick}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('posts-loading')).toBeInTheDocument()
+      })
     })
   })
 
@@ -265,8 +402,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -280,8 +416,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -295,8 +430,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockOtherUserProfile}
           isOwnProfile={false}
-          photos={[]}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -311,8 +445,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -333,8 +466,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -343,32 +475,6 @@ describe('ProfileDialog', () => {
       fireEvent.click(closeButton)
 
       expect(mockOnClose).toHaveBeenCalled()
-    })
-  })
-
-  describe('ページネーション', () => {
-    it('写真が20件以上ある場合、ページネーションが表示される', () => {
-      const manyPhotos = Array.from({ length: 25 }, (_, i) => ({
-        photoId: i + 1,
-        title: `Photo ${i + 1}`,
-        s3ObjectKey: `photos/${i + 1}.jpg`,
-        shotAt: '2025-01-01T00:00:00',
-        weather: '晴れ',
-        isFavorited: false
-      }))
-
-      render(
-        <ProfileDialog
-          open={true}
-          onClose={mockOnClose}
-          userProfile={mockUserProfile}
-          isOwnProfile={false}
-          photos={manyPhotos}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
-
-      expect(screen.getByTestId('pagination')).toBeInTheDocument()
     })
   })
 
@@ -386,8 +492,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -408,8 +513,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -449,8 +553,12 @@ describe('ProfileDialog', () => {
         writable: true,
       })
 
-      // API呼び出しをモック
+      // API呼び出しをモック（投稿一覧 + presigned URL + S3アップロード + 画像登録）
       global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve({ uploadUrl: 'https://s3.example.com/upload', objectKey: 'profile-images/123/test.jpg' })
@@ -467,8 +575,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -498,7 +605,12 @@ describe('ProfileDialog', () => {
     it('プロフィール画像を削除できる', async () => {
       const user = userEvent.setup()
 
-      global.fetch = vi.fn().mockResolvedValueOnce({ ok: true })
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+        .mockResolvedValueOnce({ ok: true }) // DELETE /profile-image
 
       render(
         <ProfileDialog
@@ -506,8 +618,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -531,8 +642,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -548,8 +658,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -570,8 +679,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -596,12 +704,17 @@ describe('ProfileDialog', () => {
     it('SNSリンクを保存するとAPIが呼び出される', async () => {
       const user = userEvent.setup()
 
-      global.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          snsLinks: [{ platform: 'twitter', url: 'https://x.com/newuser' }]
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
         })
-      })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({
+            snsLinks: [{ platform: 'twitter', url: 'https://x.com/newuser' }]
+          })
+        })
 
       render(
         <ProfileDialog
@@ -609,8 +722,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -633,10 +745,15 @@ describe('ProfileDialog', () => {
       const user = userEvent.setup()
       const newUrl = 'https://x.com/newusername'
 
-      global.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ snsLinks: [] })
-      })
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ snsLinks: [] })
+        })
 
       render(
         <ProfileDialog
@@ -644,8 +761,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={{ ...mockUserProfile, snsLinks: [] }}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -682,8 +798,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={{ ...mockUserProfile, snsLinks: [] }}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -709,8 +824,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={{ ...mockUserProfile, snsLinks: [{ url: 'https://x.com/test', platform: 'twitter' }] }}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -731,10 +845,15 @@ describe('ProfileDialog', () => {
     it('ユーザー名を変更して保存するとAPIが呼び出される', async () => {
       const user = userEvent.setup()
 
-      global.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ username: 'newusername' })
-      })
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ username: 'newusername' })
+        })
 
       render(
         <ProfileDialog
@@ -742,8 +861,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -774,8 +892,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -802,8 +919,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -825,11 +941,16 @@ describe('ProfileDialog', () => {
     it('ユーザー名が重複している場合はエラーが表示される', async () => {
       const user = userEvent.setup()
 
-      global.fetch = vi.fn().mockResolvedValueOnce({
-        ok: false,
-        status: 409,
-        json: () => Promise.resolve({ message: 'このユーザー名はすでに使用されています' })
-      })
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 409,
+          json: () => Promise.resolve({ message: 'このユーザー名はすでに使用されています' })
+        })
 
       render(
         <ProfileDialog
@@ -837,8 +958,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -881,10 +1001,15 @@ describe('ProfileDialog', () => {
         pageable: { page_number: 0, page_size: 20 },
       }
 
-      global.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockFavoritesResponse),
-      })
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockFavoritesResponse),
+        })
 
       render(
         <ProfileDialog
@@ -892,8 +1017,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -917,10 +1041,15 @@ describe('ProfileDialog', () => {
         pageable: { page_number: 0, page_size: 20 },
       }
 
-      global.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockEmptyFavoritesResponse),
-      })
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyFavoritesResponse),
+        })
 
       render(
         <ProfileDialog
@@ -928,8 +1057,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -939,55 +1067,6 @@ describe('ProfileDialog', () => {
       await waitFor(() => {
         expect(screen.getByText(/お気に入りはまだありません/i)).toBeInTheDocument()
       })
-    })
-
-    it('お気に入り写真をクリックするとPhotoDetailDialogが開く', async () => {
-      const user = userEvent.setup()
-
-      const mockFavoritesResponse = {
-        content: [
-          {
-            photo: {
-              photo_id: 999,
-              title: 'Favorite Photo',
-              thumbnail_url: 'https://example.com/thumb.jpg',
-            },
-            favorited_at: '2025-01-01T00:00:00Z',
-          },
-        ],
-        total_elements: 1,
-        pageable: { page_number: 0, page_size: 20 },
-      }
-
-      global.fetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockFavoritesResponse),
-      })
-
-      render(
-        <ProfileDialog
-          open={true}
-          onClose={mockOnClose}
-          userProfile={mockUserProfile}
-          isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
-
-      const favoritesTab = screen.getByRole('tab', { name: 'お気に入り' })
-      await user.click(favoritesTab)
-
-      await waitFor(() => {
-        expect(screen.getByTestId('favorite-photo-item-999')).toBeInTheDocument()
-      })
-
-      const favoritePhoto = screen.getByTestId('favorite-photo-item-999')
-      await user.click(favoritePhoto)
-
-      expect(mockOnPhotoClick).toHaveBeenCalledWith(
-        expect.objectContaining({ photoId: 999 })
-      )
     })
 
     it('お気に入り一覧でページネーションが機能する', async () => {
@@ -1009,29 +1088,14 @@ describe('ProfileDialog', () => {
         last: false,
       }
 
-      const mockFavoritesPage2 = {
-        content: Array.from({ length: 5 }, (_, i) => ({
-          photo: {
-            photo_id: i + 21,
-            title: `Favorite Photo ${i + 21}`,
-            thumbnail_url: `https://example.com/thumb${i + 21}.jpg`,
-          },
-          favorited_at: '2025-01-01T00:00:00Z',
-        })),
-        total_elements: 25,
-        total_pages: 2,
-        pageable: { page_number: 1, page_size: 20 },
-        last: true,
-      }
-
       global.fetch = vi.fn()
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve(mockFavoritesPage1),
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve(mockFavoritesPage2),
+          json: () => Promise.resolve(mockFavoritesPage1),
         })
 
       render(
@@ -1040,8 +1104,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
@@ -1056,8 +1119,18 @@ describe('ProfileDialog', () => {
     it('お気に入り一覧の読み込み中はローディング表示される', async () => {
       const user = userEvent.setup()
 
-      // 永続的にpending状態にする
-      global.fetch = vi.fn().mockImplementation(() => new Promise(() => {}))
+      // 投稿一覧は即座に返し、お気に入りだけペンディングにする
+      let fetchCallCount = 0
+      global.fetch = vi.fn().mockImplementation(() => {
+        fetchCallCount++
+        if (fetchCallCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(mockEmptyPhotosResponse),
+          })
+        }
+        return new Promise(() => {}) // お気に入りはペンディング
+      })
 
       render(
         <ProfileDialog
@@ -1065,8 +1138,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          photos={mockPhotos}
-          onPhotoClick={mockOnPhotoClick}
+          onSpotClick={mockOnSpotClick}
         />
       )
 
