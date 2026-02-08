@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { GoogleMap, useLoadScript } from '@react-google-maps/api'
 import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
@@ -10,6 +11,9 @@ import { Button } from './ui/button'
  * 地図をドラッグして中央のピンで位置を選択する
  * 検索候補はAutocompleteServiceで取得し、コンポーネント内に描画する
  * （Radix UIモーダルの pointer-events:none 制約を回避するため）
+ *
+ * オーバーレイはcreatePortalでGoogleMapコンテナ内部に描画し、
+ * iOS Safariのスタッキングコンテキスト問題を回避する
  */
 
 interface InlineMapPickerProps {
@@ -40,8 +44,55 @@ const mapOptions: google.maps.MapOptions = {
   fullscreenControl: false,
 }
 
+/**
+ * オーバーレイのスタイル定数
+ * iOS Safariでの表示を保証するためインラインスタイルを使用
+ */
+const overlayStyles = {
+  container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'none',
+    zIndex: 1,
+  } as React.CSSProperties,
+  searchArea: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    right: 8,
+    pointerEvents: 'auto',
+  } as React.CSSProperties,
+  pin: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -100%)',
+    pointerEvents: 'none',
+  } as React.CSSProperties,
+  locationButton: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    pointerEvents: 'auto',
+  } as React.CSSProperties,
+  coordinates: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    background: 'rgba(255,255,255,0.9)',
+    borderRadius: 4,
+    padding: '2px 8px',
+    fontSize: 12,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+  } as React.CSSProperties,
+}
+
 export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerProps) {
   const mapRef = useRef<google.maps.Map | null>(null)
+  const [mapContainerEl, setMapContainerEl] = useState<HTMLElement | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
 
@@ -110,6 +161,7 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
 
   const handleLoad = useCallback((mapInstance: google.maps.Map) => {
     mapRef.current = mapInstance
+    setMapContainerEl(mapInstance.getDiv())
 
     // 地図のドラッグ終了時に中心座標を取得
     mapInstance.addListener('idle', () => {
@@ -142,12 +194,16 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
     )
   }, [])
 
-  // ドロップダウン外クリックで閉じる
+  // ドロップダウン外クリック/タップで閉じる
   useEffect(() => {
     if (!isDropdownOpen) return
     const handleClick = () => setIsDropdownOpen(false)
     document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
+    document.addEventListener('touchstart', handleClick)
+    return () => {
+      document.removeEventListener('click', handleClick)
+      document.removeEventListener('touchstart', handleClick)
+    }
   }, [isDropdownOpen])
 
   if (loadError) {
@@ -168,9 +224,105 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
 
   const center = position || DEFAULT_CENTER
 
+  // オーバーレイ要素（createPortalでGoogleMapコンテナ内に描画）
+  const overlayContent = (
+    <div style={overlayStyles.container}>
+      {/* 検索バー + 候補リスト */}
+      <div style={overlayStyles.searchArea}>
+        <div style={{ position: 'relative' }}>
+          <Search
+            style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: '#9ca3af', pointerEvents: 'none' }}
+          />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="場所を検索"
+            style={{
+              width: '100%',
+              paddingLeft: 36,
+              paddingRight: 12,
+              paddingTop: 8,
+              paddingBottom: 8,
+              fontSize: 14,
+              borderRadius: 8,
+              border: '1px solid #d1d5db',
+              backgroundColor: 'white',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              outline: 'none',
+              WebkitAppearance: 'none',
+            }}
+          />
+          {/* 検索候補ドロップダウン */}
+          {isDropdownOpen && predictions.length > 0 && (
+            <ul style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              marginTop: 4,
+              backgroundColor: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: 8,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              maxHeight: 192,
+              overflowY: 'auto',
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+            }}>
+              {predictions.map((prediction) => (
+                <li
+                  key={prediction.place_id}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onClick={() => handleSelectPrediction(prediction)}
+                  style={{
+                    padding: '8px 12px',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    borderBottom: '1px solid #f3f4f6',
+                  }}
+                >
+                  <div style={{ fontWeight: 500 }}>{prediction.structured_formatting.main_text}</div>
+                  <div style={{ fontSize: 12, color: '#6b7280' }}>{prediction.structured_formatting.secondary_text}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* 中央固定ピン */}
+      <div style={overlayStyles.pin}>
+        <MapPin style={{ width: 40, height: 40, color: '#ef4444', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+      </div>
+
+      {/* 現在地ボタン */}
+      <div style={overlayStyles.locationButton}>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="bg-white shadow-lg"
+          onClick={handleCurrentLocation}
+          aria-label="現在地へ移動"
+        >
+          <LocateFixed className="w-5 h-5" />
+        </Button>
+      </div>
+
+      {/* 座標表示 */}
+      {position && (
+        <div style={overlayStyles.coordinates}>
+          緯度: {position.lat.toFixed(4)}, 経度: {position.lng.toFixed(4)}
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div className="relative h-full">
-      {/* 地図レイヤー */}
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         center={center}
@@ -179,64 +331,8 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
         onLoad={handleLoad}
       />
 
-      {/* オーバーレイレイヤー（地図の上に配置） */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
-        {/* 検索バー + 候補リスト */}
-        <div className="absolute top-2 left-2 right-2 pointer-events-auto">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="場所を検索"
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-            {/* 検索候補ドロップダウン */}
-            {isDropdownOpen && predictions.length > 0 && (
-              <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                {predictions.map((prediction) => (
-                  <li
-                    key={prediction.place_id}
-                    className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 border-b border-gray-50 last:border-b-0"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => handleSelectPrediction(prediction)}
-                  >
-                    <div className="font-medium">{prediction.structured_formatting.main_text}</div>
-                    <div className="text-xs text-gray-500">{prediction.structured_formatting.secondary_text}</div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        {/* 中央固定ピン */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full">
-          <MapPin className="w-10 h-10 text-red-500 drop-shadow-lg" />
-        </div>
-
-        {/* 現在地ボタン */}
-        <div className="absolute bottom-2 right-2 pointer-events-auto">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="bg-white shadow-lg"
-            onClick={handleCurrentLocation}
-            aria-label="現在地へ移動"
-          >
-            <LocateFixed className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* 座標表示 */}
-        {position && (
-          <div className="absolute bottom-2 left-2 bg-white/90 rounded px-2 py-1 text-xs shadow">
-            緯度: {position.lat.toFixed(4)}, 経度: {position.lng.toFixed(4)}
-          </div>
-        )}
-      </div>
+      {/* GoogleMapコンテナ内部にオーバーレイをPortalで描画 */}
+      {mapContainerEl && createPortal(overlayContent, mapContainerEl)}
     </div>
   )
 }
