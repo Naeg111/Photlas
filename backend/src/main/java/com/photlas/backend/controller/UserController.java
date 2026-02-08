@@ -117,6 +117,25 @@ public class UserController {
     }
 
     /**
+     * 自分の投稿写真一覧を取得
+     * GET /api/v1/users/me/photos
+     */
+    @GetMapping("/me/photos")
+    public ResponseEntity<Map<String, Object>> getMyPhotos(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+
+        Pageable pageable = PageRequest.of(page, size);
+        Map<String, Object> response = photoService.getUserPhotos(user.getId(), pageable, email);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * ユーザーの投稿写真一覧を取得
      * GET /api/v1/users/{userId}/photos
      */
@@ -126,18 +145,8 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        // ページネーション設定（投稿日時の新しい順）
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        // TODO: PhotoServiceにgetUserPhotosメソッドを追加する
-        // 現在はダミーレスポンスを返す
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", List.of());
-        response.put("page", page);
-        response.put("size", size);
-        response.put("totalElements", 0);
-        response.put("totalPages", 0);
-
+        Pageable pageable = PageRequest.of(page, size);
+        Map<String, Object> response = photoService.getUserPhotos(userId, pageable, null);
         return ResponseEntity.ok(response);
     }
 

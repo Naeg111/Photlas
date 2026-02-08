@@ -3,12 +3,22 @@ package com.photlas.backend.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.UpdateProfileRequest;
 import com.photlas.backend.dto.UploadUrlRequest;
+import com.photlas.backend.entity.Category;
+import com.photlas.backend.entity.Photo;
+import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserSnsLink;
+import com.photlas.backend.repository.CategoryRepository;
+import com.photlas.backend.repository.PhotoCategoryRepository;
+import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.repository.UserSnsLinkRepository;
 import com.photlas.backend.service.JwtService;
 import com.photlas.backend.service.S3Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -52,6 +62,18 @@ public class UserControllerTest {
 
     @Autowired
     private UserSnsLinkRepository userSnsLinkRepository;
+
+    @Autowired
+    private PhotoRepository photoRepository;
+
+    @Autowired
+    private SpotRepository spotRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private PhotoCategoryRepository photoCategoryRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -152,8 +174,12 @@ public class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        userRepository.deleteAll();
+        photoCategoryRepository.deleteAll();
+        photoRepository.deleteAll();
+        spotRepository.deleteAll();
+        categoryRepository.deleteAll();
         userSnsLinkRepository.deleteAll();
+        userRepository.deleteAll();
 
         // テストユーザーを作成
         testUser = createTestUser(TEST_USERNAME, TEST_EMAIL);
@@ -397,24 +423,106 @@ public class UserControllerTest {
     @Test
     @DisplayName("GET /api/v1/users/{userId}/photos - ユーザーの投稿一覧を取得")
     void testGetUserPhotos_ReturnsPhotoList() throws Exception {
-        // このテストは写真データが必要なので、後ほど実装する
+        // Given: 写真データを作成
+        Spot spot = createTestSpot(testUser.getId());
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/test001.jpg", "テスト写真");
+
+        // When & Then
         mockMvc.perform(get(getUserPhotosEndpoint(testUser.getId())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath(JSON_PATH_CONTENT).isArray());
+                .andExpect(jsonPath(JSON_PATH_CONTENT).isArray())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].photo.title", is("テスト写真")))
+                .andExpect(jsonPath("$.content[0].photo.image_url").exists())
+                .andExpect(jsonPath("$.content[0].spot.spot_id", is(spot.getSpotId().intValue())));
     }
 
     @Test
-    @DisplayName("GET /api/v1/users/{userId}/photos - ページネーション対応")
+    @DisplayName("GET /api/v1/users/{userId}/photos - ページネーション情報が返される")
     void testGetUserPhotos_WithPagination_ReturnsPagedResult() throws Exception {
+        // Given: 写真データを作成
+        Spot spot = createTestSpot(testUser.getId());
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/test001.jpg", "写真1");
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/test002.jpg", "写真2");
+
+        // When & Then
         mockMvc.perform(get(getUserPhotosEndpoint(testUser.getId()))
                 .param(PARAM_PAGE, String.valueOf(PAGE_NUMBER_0))
                 .param(PARAM_SIZE, String.valueOf(PAGE_SIZE_20)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(JSON_PATH_CONTENT).isArray())
-                .andExpect(jsonPath(JSON_PATH_PAGE).exists())
-                .andExpect(jsonPath(JSON_PATH_SIZE).exists())
-                .andExpect(jsonPath(JSON_PATH_TOTAL_ELEMENTS).exists())
-                .andExpect(jsonPath(JSON_PATH_TOTAL_PAGES).exists());
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.total_elements", is(2)))
+                .andExpect(jsonPath("$.total_pages", is(1)))
+                .andExpect(jsonPath("$.last", is(true)));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/users/{userId}/photos - 投稿がないユーザーは空配列を返す")
+    void testGetUserPhotos_NoPhotos_ReturnsEmptyContent() throws Exception {
+        mockMvc.perform(get(getUserPhotosEndpoint(testUser.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(JSON_PATH_CONTENT).isArray())
+                .andExpect(jsonPath("$.content", hasSize(0)))
+                .andExpect(jsonPath("$.total_elements", is(0)));
+    }
+
+    // GET /api/v1/users/me/photos のテスト
+    private static final String USER_ME_PHOTOS_ENDPOINT = "/api/v1/users/me/photos";
+
+    @Test
+    @DisplayName("GET /api/v1/users/me/photos - 認証ユーザーの投稿一覧を取得")
+    void testGetMyPhotos_Authenticated_ReturnsPhotoList() throws Exception {
+        // Given: 写真データを作成
+        Spot spot = createTestSpot(testUser.getId());
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/my001.jpg", "自分の写真");
+
+        // When & Then
+        mockMvc.perform(get(USER_ME_PHOTOS_ENDPOINT)
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(JSON_PATH_CONTENT).isArray())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].photo.title", is("自分の写真")))
+                .andExpect(jsonPath("$.content[0].photo.image_url").exists())
+                .andExpect(jsonPath("$.content[0].spot.spot_id").exists());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/users/me/photos - 未認証の場合は401を返す")
+    void testGetMyPhotos_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get(USER_ME_PHOTOS_ENDPOINT))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/users/me/photos - ページネーションパラメータが正しく動作する")
+    void testGetMyPhotos_WithPagination_ReturnsPagedResult() throws Exception {
+        // Given: 3枚の写真を作成（ページサイズ2で2ページになる）
+        Spot spot = createTestSpot(testUser.getId());
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/page001.jpg", "写真A");
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/page002.jpg", "写真B");
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/page003.jpg", "写真C");
+
+        // When & Then: 1ページ目（2件）
+        mockMvc.perform(get(USER_ME_PHOTOS_ENDPOINT)
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .param(PARAM_PAGE, "0")
+                .param(PARAM_SIZE, "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.total_elements", is(3)))
+                .andExpect(jsonPath("$.total_pages", is(2)))
+                .andExpect(jsonPath("$.last", is(false)));
+
+        // When & Then: 2ページ目（1件）
+        mockMvc.perform(get(USER_ME_PHOTOS_ENDPOINT)
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .param(PARAM_PAGE, "1")
+                .param(PARAM_SIZE, "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.last", is(true)));
     }
 
     // ============================================================
@@ -877,5 +985,26 @@ public class UserControllerTest {
         performGetUserProfile(testUser.getId())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.profileImageUrl").value(nullValue()));
+    }
+
+    // ===== テスト用ヘルパーメソッド（写真・スポット作成） =====
+
+    private Spot createTestSpot(Long userId) {
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal("35.658581"));
+        spot.setLongitude(new BigDecimal("139.745433"));
+        spot.setCreatedByUserId(userId);
+        return spotRepository.save(spot);
+    }
+
+    private Photo createTestPhoto(Long spotId, Long userId, String s3Key, String title) {
+        Photo photo = new Photo();
+        photo.setSpotId(spotId);
+        photo.setUserId(userId);
+        photo.setS3ObjectKey(s3Key);
+        photo.setTitle(title);
+        photo.setShotAt(LocalDateTime.of(2026, 1, 15, 10, 0));
+        photo.setWeather("sunny");
+        return photoRepository.save(photo);
     }
 }

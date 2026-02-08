@@ -20,14 +20,19 @@ import ProfileImageCropper from './ProfileImageCropper'
 
 // API Endpoints
 const API_FAVORITES = '/api/v1/users/me/favorites'
+const API_MY_PHOTOS = '/api/v1/users/me/photos'
+const API_USER_PHOTOS_PREFIX = '/api/v1/users/'
 
 // Test IDs
 const TEST_ID_FAVORITES_LOADING = 'favorites-loading'
 const TEST_ID_FAVORITES_PAGINATION = 'favorites-pagination'
 const TEST_ID_FAVORITE_PHOTO_PREFIX = 'favorite-photo-item-'
+const TEST_ID_POSTS_LOADING = 'posts-loading'
+const TEST_ID_POSTS_PHOTO_PREFIX = 'post-photo-item-'
 
 // Messages
 const MSG_NO_FAVORITES = 'お気に入りはまだありません'
+const MSG_NO_POSTS = 'まだ投稿がありません'
 
 // SNSプラットフォーム定義
 const SNS_PLATFORMS = [
@@ -56,13 +61,30 @@ interface UserProfile {
   snsLinks: SnsLink[]
 }
 
-interface Photo {
-  photoId: number
-  title: string
-  s3ObjectKey: string
-  shotAt: string
-  weather: string
-  isFavorited: boolean
+// ユーザー投稿写真APIレスポンスの型定義
+interface UserPhotoItem {
+  photo: {
+    photo_id: number
+    title: string
+    image_url: string
+    crop_center_x?: number | null
+    crop_center_y?: number | null
+    crop_zoom?: number | null
+  }
+  spot: {
+    spot_id: number
+  }
+}
+
+interface UserPhotosResponse {
+  content: UserPhotoItem[]
+  total_elements: number
+  total_pages?: number
+  pageable: {
+    page_number: number
+    page_size: number
+  }
+  last?: boolean
 }
 
 // Issue#30: お気に入り一覧API用インターフェース
@@ -71,6 +93,9 @@ interface FavoritePhoto {
     photo_id: number
     title: string
     thumbnail_url: string
+  }
+  spot?: {
+    spot_id: number
   }
   favorited_at: string
 }
@@ -91,8 +116,7 @@ interface ProfileDialogProps {
   onClose: () => void
   userProfile: UserProfile
   isOwnProfile: boolean
-  photos: Photo[]
-  onPhotoClick: (photo: Photo) => void
+  onSpotClick?: (spotId: number) => void
   initialTab?: 'posts' | 'favorites'
 }
 
@@ -135,12 +159,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   onClose,
   userProfile,
   isOwnProfile,
-  photos,
-  onPhotoClick,
+  onSpotClick,
   initialTab = 'posts',
 }) => {
-  const [currentPage, setCurrentPage] = useState(1)
-
   // プロフィール画像とSNSリンクのローカルステート（即時反映用）
   const [localProfileImageUrl, setLocalProfileImageUrl] = useState<string | null>(null)
   const [localSnsLinks, setLocalSnsLinks] = useState<SnsLink[] | null>(null)
@@ -148,6 +169,43 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   // 実際に表示する値（ローカルステートがあればそれを優先）
   const displayProfileImageUrl = localProfileImageUrl ?? userProfile.profileImageUrl
   const displaySnsLinks = localSnsLinks ?? userProfile.snsLinks
+
+  // ユーザー投稿一覧の状態
+  const [userPhotos, setUserPhotos] = useState<UserPhotoItem[]>([])
+  const [photosLoading, setPhotosLoading] = useState(false)
+  const [photosFetched, setPhotosFetched] = useState(false)
+  const [photosTotalPages, setPhotosTotalPages] = useState(0)
+  const [photosPage, setPhotosPage] = useState(0)
+
+  // ユーザー投稿一覧を取得
+  const fetchUserPhotos = useCallback(async (page = 0) => {
+    setPhotosLoading(true)
+    try {
+      const url = isOwnProfile
+        ? `${API_MY_PHOTOS}?page=${page}&size=${PHOTOS_PER_PAGE}`
+        : `${API_USER_PHOTOS_PREFIX}${userProfile.userId}/photos?page=${page}&size=${PHOTOS_PER_PAGE}`
+      const headers: HeadersInit = isOwnProfile ? getAuthHeaders() : {}
+      const response = await fetch(url, { headers })
+      if (response.ok) {
+        const data: UserPhotosResponse = await response.json()
+        setUserPhotos(data.content)
+        setPhotosTotalPages(data.total_pages ?? Math.ceil(data.total_elements / PHOTOS_PER_PAGE))
+        setPhotosPage(data.pageable.page_number)
+        setPhotosFetched(true)
+      }
+    } catch {
+      // エラー時は空配列のまま
+    } finally {
+      setPhotosLoading(false)
+    }
+  }, [isOwnProfile, userProfile.userId])
+
+  // ダイアログが開いたときに投稿一覧を取得
+  useEffect(() => {
+    if (open && !photosFetched) {
+      fetchUserPhotos()
+    }
+  }, [open, photosFetched, fetchUserPhotos])
 
   // Issue#30: お気に入り一覧状態
   const [favorites, setFavorites] = useState<FavoritePhoto[]>([])
@@ -191,17 +249,10 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     }
   }, [open, initialTab, favoritesFetched, fetchFavorites])
 
-  // Issue#30: お気に入り写真がクリックされた時
-  const handleFavoritePhotoClick = useCallback((favoritePhoto: FavoritePhoto) => {
-    onPhotoClick({
-      photoId: favoritePhoto.photo.photo_id,
-      title: favoritePhoto.photo.title,
-      s3ObjectKey: '',
-      shotAt: '',
-      weather: '',
-      isFavorited: true,
-    })
-  }, [onPhotoClick])
+  // 写真クリックハンドラー（spotIdを渡してPhotoDetailDialogを開く）
+  const handlePhotoClick = useCallback((spotId: number) => {
+    onSpotClick?.(spotId)
+  }, [onSpotClick])
 
   // カスタムフックを使用してプロフィール編集機能を取得
   // Issue#36: AuthContextからupdateUserを取得
@@ -251,12 +302,6 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
       setLocalSnsLinks(newLinks)
     },
   })
-
-  // ページネーション計算
-  const totalPages = Math.ceil(photos.length / PHOTOS_PER_PAGE)
-  const startIndex = (currentPage - 1) * PHOTOS_PER_PAGE
-  const endIndex = startIndex + PHOTOS_PER_PAGE
-  const currentPhotos = photos.slice(startIndex, endIndex)
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -471,64 +516,96 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           </TabsList>
 
           <TabsContent value="posts" className="mt-4 data-[state=inactive]:hidden" forceMount>
-            {/* 写真グリッド */}
-            <div
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
-              data-testid="photo-grid"
-            >
-              {currentPhotos.map((photo) => (
-                <div
-                  key={photo.photoId}
-                  data-testid={`photo-item-${photo.photoId}`}
-                  onClick={() => onPhotoClick(photo)}
-                  className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                >
-                  <div className="absolute inset-0 flex items-center justify-center p-2">
-                    <span className="text-xs text-gray-500 text-center line-clamp-2">
-                      {photo.title}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* ページネーション */}
-            {photos.length > PHOTOS_PER_PAGE && (
-              <div className="mt-6" data-testid="pagination">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        className={
-                          currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
-                        }
-                      />
-                    </PaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          onClick={() => setCurrentPage(page)}
-                          isActive={currentPage === page}
-                          className="cursor-pointer"
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        className={
-                          currentPage === totalPages
-                            ? 'pointer-events-none opacity-50'
-                            : 'cursor-pointer'
-                        }
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+            {/* ローディング表示 */}
+            {photosLoading && (
+              <div
+                data-testid={TEST_ID_POSTS_LOADING}
+                className="flex items-center justify-center py-8"
+              >
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
               </div>
+            )}
+
+            {/* 投稿なしメッセージ */}
+            {!photosLoading && photosFetched && userPhotos.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                {MSG_NO_POSTS}
+              </div>
+            )}
+
+            {/* 写真グリッド */}
+            {!photosLoading && userPhotos.length > 0 && (
+              <>
+                <div
+                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
+                  data-testid="photo-grid"
+                >
+                  {userPhotos.map((item) => {
+                    const cx = item.photo.crop_center_x ?? 0.5
+                    const cy = item.photo.crop_center_y ?? 0.5
+                    const zoom = item.photo.crop_zoom ?? 1
+                    return (
+                      <div
+                        key={item.photo.photo_id}
+                        data-testid={`${TEST_ID_POSTS_PHOTO_PREFIX}${item.photo.photo_id}`}
+                        onClick={() => handlePhotoClick(item.spot.spot_id)}
+                        className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                      >
+                        <img
+                          src={item.photo.image_url}
+                          alt={item.photo.title}
+                          className="absolute inset-0 w-full h-full"
+                          style={{
+                            objectFit: 'cover',
+                            objectPosition: `${cx * 100}% ${cy * 100}%`,
+                            transform: `scale(${zoom})`,
+                            transformOrigin: `${cx * 100}% ${cy * 100}%`,
+                          }}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* 投稿一覧ページネーション */}
+                {photosTotalPages > 1 && (
+                  <div className="mt-6" data-testid="posts-pagination">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={() => fetchUserPhotos(Math.max(0, photosPage - 1))}
+                            className={
+                              photosPage === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                            }
+                          />
+                        </PaginationItem>
+                        {Array.from({ length: photosTotalPages }, (_, i) => i).map((page) => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => fetchUserPhotos(page)}
+                              isActive={photosPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page + 1}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() => fetchUserPhotos(Math.min(photosTotalPages - 1, photosPage + 1))}
+                            className={
+                              photosPage === photosTotalPages - 1
+                                ? 'pointer-events-none opacity-50'
+                                : 'cursor-pointer'
+                            }
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
 
@@ -560,7 +637,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                       <div
                         key={favorite.photo.photo_id}
                         data-testid={`${TEST_ID_FAVORITE_PHOTO_PREFIX}${favorite.photo.photo_id}`}
-                        onClick={() => handleFavoritePhotoClick(favorite)}
+                        onClick={() => favorite.spot?.spot_id && handlePhotoClick(favorite.spot.spot_id)}
                         className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                       >
                         <div className="absolute inset-0 flex items-center justify-center p-2">
