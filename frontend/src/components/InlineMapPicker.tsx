@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { GoogleMap, useLoadScript } from '@react-google-maps/api'
 import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
@@ -8,6 +8,8 @@ import { Button } from './ui/button'
  * Issue#9: 写真投稿時の位置選択用インライン地図ピッカー
  *
  * 地図をドラッグして中央のピンで位置を選択する
+ * 検索候補はAutocompleteServiceで取得し、コンポーネント内に描画する
+ * （Radix UIモーダルの pointer-events:none 制約を回避するため）
  */
 
 interface InlineMapPickerProps {
@@ -32,7 +34,7 @@ const mapContainerStyle = {
 
 const mapOptions: google.maps.MapOptions = {
   disableDefaultUI: true,
-  zoomControl: true,
+  zoomControl: false,
   mapTypeControl: false,
   streetViewControl: false,
   fullscreenControl: false,
@@ -40,38 +42,71 @@ const mapOptions: google.maps.MapOptions = {
 
 export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerProps) {
   const mapRef = useRef<google.maps.Map | null>(null)
-  const searchInputRef = useRef<HTMLInputElement | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
+
+  // 検索関連のstate
+  const [searchQuery, setSearchQuery] = useState('')
+  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([])
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null)
+  const geocoderRef = useRef<google.maps.Geocoder | null>(null)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: LIBRARIES,
   })
 
-  // Google Maps Autocomplete を直接作成
+  // AutocompleteService と Geocoder を初期化
   useEffect(() => {
-    if (!isLoaded || !searchInputRef.current) return
+    if (!isLoaded) return
+    autocompleteServiceRef.current = new google.maps.places.AutocompleteService()
+    geocoderRef.current = new google.maps.Geocoder()
+  }, [isLoaded])
 
-    const autocomplete = new google.maps.places.Autocomplete(searchInputRef.current, {
-      componentRestrictions: { country: 'jp' },
-      fields: ['geometry', 'name'],
-    })
+  // 検索入力ハンドラー（デバウンス付き）
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value)
 
-    autocomplete.addListener('place_changed', () => {
-      const place = autocomplete.getPlace()
-      if (place.geometry?.location) {
-        const lat = place.geometry.location.lat()
-        const lng = place.geometry.location.lng()
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    if (!value.trim() || !autocompleteServiceRef.current) {
+      setPredictions([])
+      setIsDropdownOpen(false)
+      return
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      autocompleteServiceRef.current?.getPlacePredictions(
+        { input: value, componentRestrictions: { country: 'jp' } },
+        (results) => {
+          setPredictions(results || [])
+          setIsDropdownOpen((results?.length ?? 0) > 0)
+        }
+      )
+    }, 300)
+  }, [])
+
+  // 候補選択ハンドラー
+  const handleSelectPrediction = useCallback((prediction: google.maps.places.AutocompletePrediction) => {
+    if (!geocoderRef.current) return
+
+    geocoderRef.current.geocode({ placeId: prediction.place_id }, (results, status) => {
+      if (status === 'OK' && results?.[0]?.geometry?.location) {
+        const lat = results[0].geometry.location.lat()
+        const lng = results[0].geometry.location.lng()
         mapRef.current?.panTo({ lat, lng })
         onPositionChangeRef.current({ lat, lng })
       }
     })
 
-    return () => {
-      google.maps.event.clearInstanceListeners(autocomplete)
-    }
-  }, [isLoaded])
+    setSearchQuery(prediction.structured_formatting.main_text)
+    setPredictions([])
+    setIsDropdownOpen(false)
+  }, [])
 
   const handleLoad = useCallback((mapInstance: google.maps.Map) => {
     mapRef.current = mapInstance
@@ -107,6 +142,14 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
     )
   }, [])
 
+  // ドロップダウン外クリックで閉じる
+  useEffect(() => {
+    if (!isDropdownOpen) return
+    const handleClick = () => setIsDropdownOpen(false)
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [isDropdownOpen])
+
   if (loadError) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-100 text-gray-500">
@@ -127,53 +170,73 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
 
   return (
     <div className="relative h-full">
-      {/* 地図 - isolateでスタッキングコンテキストを隔離しオーバーレイ要素が隠れるのを防止 */}
-      <div className="absolute inset-0 isolate">
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={center}
-          zoom={DEFAULT_ZOOM}
-          options={mapOptions}
-          onLoad={handleLoad}
-        />
-      </div>
+      {/* 地図レイヤー */}
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        center={center}
+        zoom={DEFAULT_ZOOM}
+        options={mapOptions}
+        onLoad={handleLoad}
+      />
 
-      {/* 検索バー */}
-      <div className="absolute top-3 left-3 right-3 z-10">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="場所を検索"
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
+      {/* オーバーレイレイヤー（地図の上に配置） */}
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
+        {/* 検索バー + 候補リスト */}
+        <div className="absolute top-2 left-2 right-2 pointer-events-auto">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="場所を検索"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+            {/* 検索候補ドロップダウン */}
+            {isDropdownOpen && predictions.length > 0 && (
+              <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {predictions.map((prediction) => (
+                  <li
+                    key={prediction.place_id}
+                    className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 border-b border-gray-50 last:border-b-0"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSelectPrediction(prediction)}
+                  >
+                    <div className="font-medium">{prediction.structured_formatting.main_text}</div>
+                    <div className="text-xs text-gray-500">{prediction.structured_formatting.secondary_text}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* 中央固定ピン */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full pointer-events-none z-10">
-        <MapPin className="w-10 h-10 text-red-500 drop-shadow-lg" />
-      </div>
-
-      {/* 現在地ボタン */}
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="absolute bottom-3 right-3 z-10 bg-white shadow-lg"
-        onClick={handleCurrentLocation}
-        aria-label="現在地へ移動"
-      >
-        <LocateFixed className="w-5 h-5" />
-      </Button>
-
-      {/* 座標表示 */}
-      {position && (
-        <div className="absolute bottom-3 left-3 z-10 bg-white/90 rounded px-2 py-1 text-xs shadow">
-          緯度: {position.lat.toFixed(4)}, 経度: {position.lng.toFixed(4)}
+        {/* 中央固定ピン */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full">
+          <MapPin className="w-10 h-10 text-red-500 drop-shadow-lg" />
         </div>
-      )}
+
+        {/* 現在地ボタン */}
+        <div className="absolute bottom-2 right-2 pointer-events-auto">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="bg-white shadow-lg"
+            onClick={handleCurrentLocation}
+            aria-label="現在地へ移動"
+          >
+            <LocateFixed className="w-5 h-5" />
+          </Button>
+        </div>
+
+        {/* 座標表示 */}
+        {position && (
+          <div className="absolute bottom-2 left-2 bg-white/90 rounded px-2 py-1 text-xs shadow">
+            緯度: {position.lat.toFixed(4)}, 経度: {position.lng.toFixed(4)}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
