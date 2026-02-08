@@ -307,6 +307,8 @@ export function PhotoContributionDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <p className="text-sm text-gray-500">* は入力必須項目です</p>
+
         <div className="space-y-6 mt-4">
           {/* 写真選択 */}
           <div className="space-y-3">
@@ -323,12 +325,13 @@ export function PhotoContributionDialog({
             >
               {previewUrl ? (
                 <div className="relative">
-                  <div data-testid="photo-crop-area" className="relative h-80 bg-gray-900 rounded overflow-hidden">
+                  <div data-testid="photo-crop-area" className="relative h-80 bg-gray-900">
                     <Cropper
                       image={previewUrl}
                       crop={crop}
                       zoom={cropZoom}
                       aspect={1}
+                      objectFit="auto-cover"
                       onCropChange={setCrop}
                       onZoomChange={setCropZoom}
                       onCropComplete={handleCropComplete}
