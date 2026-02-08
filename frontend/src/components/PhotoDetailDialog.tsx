@@ -482,7 +482,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden border-0" hideCloseButton>
+      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden border-0" style={{ maxHeight: '90dvh' }} hideCloseButton>
         <DialogTitle className="sr-only">{SR_TITLE}</DialogTitle>
         <DialogDescription className="sr-only">{SR_DESCRIPTION}</DialogDescription>
         <div className="relative flex flex-col min-h-0 h-full">
@@ -512,7 +512,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
           {!loading && !error && photoIds.length > 0 && (
             <div className="flex flex-col min-h-0 flex-1">
               {/* カルーセル - Issue#49: 正方形表示エリア */}
-              <div className="relative flex-shrink-0 max-h-[60vh] overflow-hidden flex items-center">
+              <div className="relative flex-shrink-0 max-h-[60vh] overflow-hidden flex items-center" style={{ maxHeight: '60dvh' }}>
                 <div className="overflow-hidden w-full" ref={emblaRef}>
                   <div className="flex items-center">
                     {photoIds.map((photoId) => {
