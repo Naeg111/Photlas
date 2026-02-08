@@ -23,10 +23,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 写真サービス
@@ -166,6 +171,56 @@ public class PhotoService {
         return buildPhotoResponse(photo, spot, user, isFavorited, favoriteCount);
     }
 
+
+    /**
+     * ユーザーの投稿写真一覧を取得する（ページネーション対応）
+     *
+     * @param userId 対象ユーザーのID
+     * @param pageable ページネーション情報
+     * @param email ログイン中ユーザーのメールアドレス（未認証の場合はnull）
+     * @return ページネーション情報を含む写真一覧レスポンス
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getUserPhotos(Long userId, Pageable pageable, String email) {
+        Page<Photo> photoPage = photoRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+
+        // ログインユーザー情報を取得（お気に入り判定用）
+        User currentUser = null;
+        if (email != null) {
+            currentUser = userRepository.findByEmail(email).orElse(null);
+        }
+        final User finalCurrentUser = currentUser;
+
+        Page<PhotoResponse> photoResponses = photoPage.map(photo -> {
+            Spot spot = spotRepository.findById(photo.getSpotId())
+                    .orElseThrow(() -> new SpotNotFoundException("スポットが見つかりません"));
+            User photoUser = userRepository.findById(photo.getUserId())
+                    .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+
+            boolean isFavorited = false;
+            if (finalCurrentUser != null) {
+                isFavorited = favoriteRepository.findByUserIdAndPhotoId(
+                        finalCurrentUser.getId(), photo.getPhotoId()).isPresent();
+            }
+            long favoriteCount = favoriteRepository.countByPhotoId(photo.getPhotoId());
+
+            return buildPhotoResponse(photo, spot, photoUser, isFavorited, favoriteCount);
+        });
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", photoResponses.getContent());
+
+        Map<String, Object> pageableInfo = new HashMap<>();
+        pageableInfo.put("page_number", photoResponses.getNumber());
+        pageableInfo.put("page_size", photoResponses.getSize());
+        response.put("pageable", pageableInfo);
+
+        response.put("total_pages", photoResponses.getTotalPages());
+        response.put("total_elements", photoResponses.getTotalElements());
+        response.put("last", photoResponses.isLast());
+
+        return response;
+    }
 
     /**
      * スポットを検索または新規作成する

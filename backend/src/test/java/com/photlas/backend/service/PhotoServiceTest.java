@@ -22,8 +22,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -762,5 +766,112 @@ public class PhotoServiceTest {
         assertThat(detailResponse.getPhoto().getTags())
                 .extracting(PhotoResponse.TagDTO::getName)
                 .containsExactlyInAnyOrder("リフレクション", "湖");
+    }
+
+    // ===== ユーザー投稿一覧テスト =====
+
+    @Test
+    @DisplayName("ユーザー投稿一覧 - ユーザーの投稿写真がページネーション付きで取得できる")
+    @SuppressWarnings("unchecked")
+    void testGetUserPhotos_ReturnsUserPhotosWithPagination() {
+        // Given
+        Spot spot = createSpot("35.658581", "139.745433");
+
+        createPhotoForUser(spot, "photos/user001.jpg", "写真1",
+                java.time.LocalDateTime.of(2026, 1, 15, 10, 0), "sunny");
+        createPhotoForUser(spot, "photos/user002.jpg", "写真2",
+                java.time.LocalDateTime.of(2026, 1, 16, 10, 0), "cloudy");
+
+        Pageable pageable = PageRequest.of(0, 20);
+
+        // When
+        Map<String, Object> result = photoService.getUserPhotos(
+                testUser.getId(), pageable, testUser.getEmail());
+
+        // Then
+        List<PhotoResponse> content = (List<PhotoResponse>) result.get("content");
+        assertThat(content).hasSize(2);
+        assertThat((long) result.get("total_elements")).isEqualTo(2L);
+        assertThat((int) result.get("total_pages")).isEqualTo(1);
+        assertThat((boolean) result.get("last")).isTrue();
+    }
+
+    @Test
+    @DisplayName("ユーザー投稿一覧 - 投稿がないユーザーは空のcontentが返る")
+    @SuppressWarnings("unchecked")
+    void testGetUserPhotos_NoPhotos_ReturnsEmptyContent() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 20);
+
+        // When
+        Map<String, Object> result = photoService.getUserPhotos(
+                testUser.getId(), pageable, testUser.getEmail());
+
+        // Then
+        List<PhotoResponse> content = (List<PhotoResponse>) result.get("content");
+        assertThat(content).isEmpty();
+        assertThat((long) result.get("total_elements")).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("ユーザー投稿一覧 - 写真にimage_url, spot_id, クロップ情報が含まれる")
+    @SuppressWarnings("unchecked")
+    void testGetUserPhotos_ReturnsPhotoWithDetails() {
+        // Given
+        Spot spot = createSpot("35.658581", "139.745433");
+
+        Photo photo = new Photo();
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setS3ObjectKey("photos/detail001.jpg");
+        photo.setTitle("詳細確認用");
+        photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 15, 10, 0));
+        photo.setWeather("sunny");
+        photo.setCropCenterX(0.5);
+        photo.setCropCenterY(0.5);
+        photo.setCropZoom(1.2);
+        photo.setCategories(List.of(landscapeCategory));
+        photoRepository.save(photo);
+
+        Pageable pageable = PageRequest.of(0, 20);
+
+        // When
+        Map<String, Object> result = photoService.getUserPhotos(
+                testUser.getId(), pageable, testUser.getEmail());
+
+        // Then
+        List<PhotoResponse> content = (List<PhotoResponse>) result.get("content");
+        assertThat(content).hasSize(1);
+
+        PhotoResponse response = content.get(0);
+        assertThat(response.getPhoto().getImageUrl()).isNotNull();
+        assertThat(response.getPhoto().getTitle()).isEqualTo("詳細確認用");
+        assertThat(response.getSpot().getSpotId()).isEqualTo(spot.getSpotId());
+        assertThat(response.getPhoto().getCropCenterX()).isEqualTo(0.5);
+        assertThat(response.getPhoto().getCropCenterY()).isEqualTo(0.5);
+        assertThat(response.getPhoto().getCropZoom()).isEqualTo(1.2);
+    }
+
+    // ===== テストヘルパーメソッド =====
+
+    private Spot createSpot(String lat, String lng) {
+        Spot spot = new Spot();
+        spot.setLatitude(new BigDecimal(lat));
+        spot.setLongitude(new BigDecimal(lng));
+        spot.setCreatedByUserId(testUser.getId());
+        return spotRepository.save(spot);
+    }
+
+    private Photo createPhotoForUser(Spot spot, String s3Key, String title,
+                                     java.time.LocalDateTime shotAt, String weather) {
+        Photo photo = new Photo();
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setS3ObjectKey(s3Key);
+        photo.setTitle(title);
+        photo.setShotAt(shotAt);
+        photo.setWeather(weather);
+        photo.setCategories(List.of(landscapeCategory));
+        return photoRepository.save(photo);
     }
 }
