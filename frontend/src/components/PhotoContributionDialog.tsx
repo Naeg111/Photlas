@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -91,6 +91,19 @@ export function PhotoContributionDialog({
   const [cropZoom, setCropZoom] = useState(1)
   const [croppedArea, setCroppedArea] = useState<Area | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const topRef = useRef<HTMLDivElement>(null)
+
+  // ダイアログ表示時にスクロール位置を先頭にリセット
+  useEffect(() => {
+    if (open) {
+      requestAnimationFrame(() => {
+        const scrollContainer = topRef.current?.closest('[data-slot="dialog-content"]')
+        if (scrollContainer) {
+          scrollContainer.scrollTop = 0
+        }
+      })
+    }
+  }, [open])
 
   const handleCropComplete = useCallback((croppedArea: Area, _croppedAreaPixels: Area) => {
     setCroppedArea(croppedArea)
@@ -299,7 +312,11 @@ export function PhotoContributionDialog({
 
   return (
     <Dialog open={open} onOpenChange={uploadStatus === 'uploading' ? undefined : onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <div ref={topRef} />
         <DialogHeader>
           <DialogTitle>写真を投稿</DialogTitle>
           <DialogDescription className="sr-only">
@@ -325,16 +342,21 @@ export function PhotoContributionDialog({
             >
               {previewUrl ? (
                 <div className="relative">
-                  <div data-testid="photo-crop-area" className="relative h-80 bg-gray-900">
+                  <div data-testid="photo-crop-area" className="relative h-80 bg-gray-900 overflow-hidden">
                     <Cropper
                       image={previewUrl}
                       crop={crop}
                       zoom={cropZoom}
                       aspect={1}
-                      objectFit="horizontal-cover"
+                      showGrid
                       onCropChange={setCrop}
                       onZoomChange={setCropZoom}
                       onCropComplete={handleCropComplete}
+                      style={{
+                        cropAreaStyle: {
+                          border: '3px solid rgba(255, 255, 255, 0.5)',
+                        },
+                      }}
                     />
                   </div>
                   <div className="mt-2 flex items-center gap-2">
