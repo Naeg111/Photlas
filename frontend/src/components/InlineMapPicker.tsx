@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import { GoogleMap, useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
@@ -38,10 +38,14 @@ const mapOptions: google.maps.MapOptions = {
   fullscreenControl: false,
 }
 
+// オーバーレイ要素のz-index（Google Maps内部要素より上に表示するため高めに設定）
+const OVERLAY_Z_INDEX = 'z-[1000]'
+
 export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerProps) {
-  const [map, setMap] = useState<google.maps.Map | null>(null)
+  const mapRef = useRef<google.maps.Map | null>(null)
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
-  const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const onPositionChangeRef = useRef(onPositionChange)
+  onPositionChangeRef.current = onPositionChange
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -49,19 +53,19 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
   })
 
   const handleLoad = useCallback((mapInstance: google.maps.Map) => {
-    setMap(mapInstance)
+    mapRef.current = mapInstance
 
     // 地図のドラッグ終了時に中心座標を取得
     mapInstance.addListener('idle', () => {
       const center = mapInstance.getCenter()
       if (center) {
-        onPositionChange({
+        onPositionChangeRef.current({
           lat: center.lat(),
           lng: center.lng(),
         })
       }
     })
-  }, [onPositionChange])
+  }, [])
 
   const handleAutocompleteLoad = useCallback((autocomplete: google.maps.places.Autocomplete) => {
     autocompleteRef.current = autocomplete
@@ -69,7 +73,7 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
 
   const handlePlaceChanged = useCallback(() => {
     const autocomplete = autocompleteRef.current
-    if (!autocomplete || !map) return
+    if (!autocomplete) return
 
     const place = autocomplete.getPlace()
     if (place.geometry?.location) {
@@ -77,13 +81,13 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
         lat: place.geometry.location.lat(),
         lng: place.geometry.location.lng(),
       }
-      map.panTo(newCenter)
-      onPositionChange(newCenter)
+      mapRef.current?.panTo(newCenter)
+      onPositionChangeRef.current(newCenter)
     }
-  }, [map, onPositionChange])
+  }, [])
 
   const handleCurrentLocation = useCallback(() => {
-    if (!navigator.geolocation || !map) return
+    if (!navigator.geolocation || !mapRef.current) return
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -91,15 +95,15 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         }
-        map.panTo(newCenter)
-        onPositionChange(newCenter)
+        mapRef.current?.panTo(newCenter)
+        onPositionChangeRef.current(newCenter)
       },
       (error) => {
         console.error('位置情報の取得に失敗しました:', error)
       },
       { enableHighAccuracy: true }
     )
-  }, [map, onPositionChange])
+  }, [])
 
   if (loadError) {
     return (
@@ -130,7 +134,7 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
       />
 
       {/* 検索バー */}
-      <div className="absolute top-3 left-3 right-3 z-10">
+      <div className={`absolute top-3 left-3 right-3 ${OVERLAY_Z_INDEX}`}>
         <Autocomplete
           onLoad={handleAutocompleteLoad}
           onPlaceChanged={handlePlaceChanged}
@@ -139,7 +143,6 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <input
-              ref={searchInputRef}
               type="text"
               placeholder="場所を検索"
               className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -149,7 +152,7 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
       </div>
 
       {/* 中央固定ピン */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full pointer-events-none z-10">
+      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full pointer-events-none ${OVERLAY_Z_INDEX}`}>
         <MapPin className="w-10 h-10 text-red-500 drop-shadow-lg" />
       </div>
 
@@ -158,7 +161,7 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
         type="button"
         variant="outline"
         size="icon"
-        className="absolute bottom-3 right-3 z-10 bg-white shadow-lg"
+        className={`absolute bottom-3 right-3 ${OVERLAY_Z_INDEX} bg-white shadow-lg`}
         onClick={handleCurrentLocation}
         aria-label="現在地へ移動"
       >
@@ -167,7 +170,7 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
 
       {/* 座標表示 */}
       {position && (
-        <div className="absolute bottom-3 left-3 z-10 bg-white/90 rounded px-2 py-1 text-xs shadow">
+        <div className={`absolute bottom-3 left-3 ${OVERLAY_Z_INDEX} bg-white/90 rounded px-2 py-1 text-xs shadow`}>
           緯度: {position.lat.toFixed(4)}, 経度: {position.lng.toFixed(4)}
         </div>
       )}
