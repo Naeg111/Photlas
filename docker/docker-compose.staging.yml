@@ -45,7 +45,7 @@ services:
       options:
         awslogs-region: ${AWS_REGION:-ap-northeast-1}
         awslogs-group: /photlas/staging/backend
-        awslogs-stream-prefix: backend
+        tag: "{{.Name}}"
         awslogs-create-group: "true"
 
   # Nginx Reverse Proxy
@@ -76,7 +76,7 @@ services:
       options:
         awslogs-region: ${AWS_REGION:-ap-northeast-1}
         awslogs-group: /photlas/staging/nginx
-        awslogs-stream-prefix: nginx
+        tag: "{{.Name}}"
         awslogs-create-group: "true"
 
 networks:
