@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { X } from 'lucide-react'
@@ -24,6 +24,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const pinchRef = useRef<{ initialDistance: number; initialScale: number } | null>(null)
 
   useEffect(() => {
     if (!open) {
@@ -69,8 +70,20 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
     setIsDragging(false)
   }
 
+  const getTouchDistance = (touches: React.TouchList) => {
+    const dx = touches[0].clientX - touches[1].clientX
+    const dy = touches[0].clientY - touches[1].clientY
+    return Math.sqrt(dx * dx + dy * dy)
+  }
+
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && scale > 1) {
+    if (e.touches.length === 2) {
+      setIsDragging(false)
+      pinchRef.current = {
+        initialDistance: getTouchDistance(e.touches),
+        initialScale: scale,
+      }
+    } else if (e.touches.length === 1 && scale > 1) {
       setIsDragging(true)
       setDragStart({
         x: e.touches[0].clientX - position.x,
@@ -80,7 +93,13 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
   }
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (isDragging && e.touches.length === 1) {
+    if (e.touches.length === 2 && pinchRef.current) {
+      e.preventDefault()
+      const currentDistance = getTouchDistance(e.touches)
+      const ratio = currentDistance / pinchRef.current.initialDistance
+      const newScale = pinchRef.current.initialScale * ratio
+      setScale(Math.max(LIGHTBOX.MIN_SCALE, Math.min(LIGHTBOX.MAX_SCALE, newScale)))
+    } else if (isDragging && e.touches.length === 1) {
       setPosition({
         x: e.touches[0].clientX - dragStart.x,
         y: e.touches[0].clientY - dragStart.y,
@@ -89,6 +108,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
   }
 
   const handleTouchEnd = () => {
+    pinchRef.current = null
     setIsDragging(false)
   }
 
@@ -113,7 +133,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            style={{ cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
+            style={{ cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default', touchAction: 'none' }}
           >
             <motion.div
               style={{
