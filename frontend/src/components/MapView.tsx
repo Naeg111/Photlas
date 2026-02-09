@@ -122,6 +122,17 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const [userHeading, setUserHeading] = useState<number | null>(null)
   const listenerAddedRef = useRef(false)
   const initialMountRef = useRef(true)
+  const watchIdRef = useRef<number | null>(null)
+
+  // watchPositionのクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current)
+        watchIdRef.current = null
+      }
+    }
+  }, [])
 
   // デバイスの向きを取得
   useEffect(() => {
@@ -248,14 +259,24 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       await requestOrientationPermission()
 
       if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
+        // 既存のwatchを停止してから新しいwatchを開始
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current)
+        }
+
+        let isFirstUpdate = true
+        watchIdRef.current = navigator.geolocation.watchPosition(
           (position) => {
             const newLocation = {
               lat: position.coords.latitude,
               lng: position.coords.longitude,
             }
             setUserLocation(newLocation)
-            map.panTo(newLocation)
+            // 初回のみ地図を現在地にパン
+            if (isFirstUpdate) {
+              map.panTo(newLocation)
+              isFirstUpdate = false
+            }
           },
           (error) => {
             console.error('位置情報の取得に失敗しました:', error)

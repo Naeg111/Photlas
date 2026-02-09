@@ -53,7 +53,7 @@ interface PhotoContributionDialogProps {
     categories: string[]
     tags: string[]
     position: { lat: number; lng: number }
-    weather: string
+    weather?: string
     takenAt?: string
     shootingDirection?: number
     exif?: {
@@ -204,10 +204,6 @@ export function PhotoContributionDialog({
       alert('位置情報を設定してください。')
       return
     }
-    if (!selectedWeather) {
-      alert('天気を選択してください。')
-      return
-    }
 
     // アップロード処理
     setUploadStatus('uploading')
@@ -232,7 +228,7 @@ export function PhotoContributionDialog({
           categories: selectedCategories,
           tags,
           position: pinPosition,
-          weather: selectedWeather,
+          weather: selectedWeather || undefined,
           takenAt: exifData?.takenAt,
           shootingDirection,
           exif: exifData ? {
@@ -314,7 +310,7 @@ export function PhotoContributionDialog({
     }
   }
 
-  const canSubmit = selectedFile && pinPosition && selectedWeather
+  const canSubmit = selectedFile && pinPosition && selectedCategories.length > 0
 
   const hasExifInfo = exifData && (
     exifData.cameraBody || exifData.cameraLens || exifData.focalLength35mm ||
@@ -621,7 +617,7 @@ export function PhotoContributionDialog({
 
             {/* 天気選択 */}
             <div className="space-y-3">
-              <Label className="text-base">天気 *</Label>
+              <Label className="text-base">天気</Label>
               <div className="grid grid-cols-4 gap-3">
                 {WEATHER_OPTIONS.map((weather) => {
                   const Icon = WeatherIcons[weather]
@@ -633,7 +629,7 @@ export function PhotoContributionDialog({
                           ? 'border-primary bg-primary/5'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      onClick={() => setSelectedWeather(weather)}
+                      onClick={() => setSelectedWeather(prev => prev === weather ? '' : weather)}
                     >
                       {Icon && <Icon className="w-5 h-5 shrink-0" />}
                       <Label className="cursor-pointer">

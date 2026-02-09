@@ -92,11 +92,11 @@ public class PhotoService {
                 ? convertCategoriesToEntities(request.getCategories())
                 : new ArrayList<>();
 
-        // 3. 天気情報の取得（ユーザー入力を優先、なければweatherServiceで取得）
+        // 3. 天気情報の設定（ユーザー入力があればそのまま使用、なければnull）
         LocalDateTime takenAt = LocalDateTime.parse(request.getTakenAt(), DateTimeFormatter.ISO_DATE_TIME);
         String weather = request.getWeather();
-        if (weather == null || weather.isBlank()) {
-            weather = weatherService.getWeather(request.getLatitude(), request.getLongitude(), takenAt);
+        if (weather != null && weather.isBlank()) {
+            weather = null;
         }
 
         // 3.5. タグの変換（find-or-create）
