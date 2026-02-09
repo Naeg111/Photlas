@@ -305,11 +305,11 @@ public class UserController {
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
-        if (e.getMessage().contains("ユーザーが見つかりません")) {
+        if (e.getMessage() != null && e.getMessage().contains("ユーザーが見つかりません")) {
             ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         }
-        ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("サーバーエラーが発生しました");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
