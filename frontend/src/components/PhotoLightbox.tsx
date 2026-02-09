@@ -99,20 +99,11 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center"
+          className="fixed inset-0 bg-black/90 z-[60] pointer-events-auto"
           onClick={() => onOpenChange(false)}
         >
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 text-white hover:bg-white/20 z-10"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="w-6 h-6" />
-          </Button>
-
           <div
-            className="relative w-full h-full flex items-center justify-center overflow-hidden"
+            className="absolute inset-0 flex items-center justify-center overflow-hidden"
             onClick={(e) => e.stopPropagation()}
             onWheel={handleWheel}
             onMouseDown={handleMouseDown}
@@ -140,7 +131,19 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
             </motion.div>
           </div>
 
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-2 rounded-full">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 text-white hover:bg-white/20 z-10"
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpenChange(false)
+            }}
+          >
+            <X className="w-6 h-6" />
+          </Button>
+
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-2 rounded-full pointer-events-none">
             拡大: {Math.round(scale * 100)}%
           </div>
         </motion.div>
