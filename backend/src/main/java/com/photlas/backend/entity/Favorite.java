@@ -11,7 +11,9 @@ import java.util.Objects;
  * 複合主キー（userId, photoId）により、同じ組み合わせの重複を防止します。
  */
 @Entity
-@Table(name = "favorites")
+@Table(name = "favorites", indexes = {
+    @Index(name = "idx_favorites_photo_id", columnList = "photo_id")
+})
 @IdClass(Favorite.FavoriteId.class)
 public class Favorite {
 

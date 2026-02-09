@@ -10,7 +10,10 @@ import java.time.LocalDateTime;
  * 半径200m以内の写真は同じスポットとして集約されます。
  */
 @Entity
-@Table(name = "spots")
+@Table(name = "spots", indexes = {
+    @Index(name = "idx_spots_lat_lng", columnList = "latitude, longitude"),
+    @Index(name = "idx_spots_created_by", columnList = "created_by_user_id")
+})
 public class Spot {
 
     @Id

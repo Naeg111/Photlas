@@ -10,7 +10,9 @@ import java.util.Objects;
  * Composite PKを使用して、(reporting_user_id, photo_id)の組み合わせで重複を防止
  */
 @Entity
-@Table(name = "reports")
+@Table(name = "reports", indexes = {
+    @Index(name = "idx_reports_photo_id", columnList = "photo_id")
+})
 @IdClass(Report.ReportId.class)
 public class Report {
 

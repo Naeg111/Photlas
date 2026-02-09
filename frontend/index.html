@@ -1,10 +1,53 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Vite + React + TS</title>
+
+    <!-- Basic SEO -->
+    <title>Photlas - 写真で撮影スポットを共有・発見</title>
+    <meta name="description" content="Photlasは写真を通じて撮影スポットを共有・発見できるWebアプリです。地図上で撮影ポイントを探し、他のフォトグラファーの作品からインスピレーションを得ましょう。" />
+
+    <!-- OGP -->
+    <meta property="og:title" content="Photlas - 写真で撮影スポットを共有・発見" />
+    <meta property="og:description" content="写真を通じて撮影スポットを共有・発見できるWebアプリ" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://photlas.jp/" />
+    <meta property="og:site_name" content="Photlas" />
+    <meta property="og:locale" content="ja_JP" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Photlas - 写真で撮影スポットを共有・発見" />
+    <meta name="twitter:description" content="写真を通じて撮影スポットを共有・発見できるWebアプリ" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Photlas",
+      "url": "https://photlas.jp",
+      "description": "写真を通じて撮影スポットを共有・発見できるWebアプリ"
+    }
+    </script>
+
+    <!-- Google Analytics 4 -->
+    <script>
+      (function() {
+        var gaId = '%VITE_GA_MEASUREMENT_ID%';
+        if (!gaId) return;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', gaId);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
