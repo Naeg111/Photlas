@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { X } from 'lucide-react'
 import { Button } from './ui/button'
@@ -80,7 +81,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
     setIsDragging(false)
   }
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -133,6 +134,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
