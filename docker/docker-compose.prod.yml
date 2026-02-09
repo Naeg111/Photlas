@@ -37,6 +37,13 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_REGION:-ap-northeast-1}
+        awslogs-group: /photlas/prod/backend
+        awslogs-stream-prefix: backend
+        awslogs-create-group: "true"
 
   # Nginx Reverse Proxy
   nginx:
@@ -61,6 +68,13 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_REGION:-ap-northeast-1}
+        awslogs-group: /photlas/prod/nginx
+        awslogs-stream-prefix: nginx
+        awslogs-create-group: "true"
 
 networks:
   photlas-network:

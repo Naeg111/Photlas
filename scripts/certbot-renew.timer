@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Let's Encrypt certificate renewal twice daily
+
+[Timer]
+# Let's Encrypt推奨: 1日2回実行
+OnCalendar=*-*-* 00,12:00:00
+# 0〜3600秒のランダム遅延で分散
+RandomizedDelaySec=3600
+Persistent=true
+
+[Install]
+WantedBy=timers.target
