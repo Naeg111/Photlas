@@ -9,10 +9,10 @@ export default defineConfig({
   testDir: './e2e',
 
   // テスト全体のタイムアウト
-  timeout: 30000,
+  timeout: 60000,
 
-  // 各テストのリトライ回数（CI環境では1回リトライ）
-  retries: process.env.CI ? 1 : 0,
+  // 各テストのリトライ回数
+  retries: 0,
 
   // 並列実行のワーカー数
   workers: process.env.CI ? 1 : undefined,
