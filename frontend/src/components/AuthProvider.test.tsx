@@ -34,6 +34,7 @@ const TestComponent = () => {
       )}
       <button
         onClick={() => login({
+          userId: 1,
           username: 'testuser',
           email: 'test@example.com',
           role: 'USER'
@@ -44,6 +45,7 @@ const TestComponent = () => {
       </button>
       <button
         onClick={() => login({
+          userId: 1,
           username: 'testuser',
           email: 'test@example.com',
           role: 'USER'
@@ -117,7 +119,7 @@ describe('AuthProvider', () => {
     })
 
     it('restores authentication from localStorage on mount', () => {
-      const mockUser = { username: 'testuser', email: 'test@example.com', role: 'USER' }
+      const mockUser = { userId: 1, username: 'testuser', email: 'test@example.com', role: 'USER' }
 
       vi.mocked(window.localStorage.getItem)
         .mockImplementation((key) => {
@@ -139,7 +141,7 @@ describe('AuthProvider', () => {
     })
 
     it('restores authentication from sessionStorage on mount', () => {
-      const mockUser = { username: 'testuser', email: 'test@example.com', role: 'USER' }
+      const mockUser = { userId: 1, username: 'testuser', email: 'test@example.com', role: 'USER' }
 
       vi.mocked(window.sessionStorage.getItem)
         .mockImplementation((key) => {
@@ -191,6 +193,7 @@ describe('AuthProvider', () => {
       await waitFor(() => {
         expect(window.sessionStorage.setItem).toHaveBeenCalledWith('auth_token', 'mock-jwt-token')
         expect(window.sessionStorage.setItem).toHaveBeenCalledWith('auth_user', JSON.stringify({
+          userId: 1,
           username: 'testuser',
           email: 'test@example.com',
           role: 'USER'
@@ -211,6 +214,7 @@ describe('AuthProvider', () => {
       await waitFor(() => {
         expect(window.localStorage.setItem).toHaveBeenCalledWith('auth_token', 'mock-jwt-token')
         expect(window.localStorage.setItem).toHaveBeenCalledWith('auth_user', JSON.stringify({
+          userId: 1,
           username: 'testuser',
           email: 'test@example.com',
           role: 'USER'

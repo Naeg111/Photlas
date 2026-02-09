@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 
 interface User {
+  userId: number
   username: string
   email: string
   role: string
@@ -38,6 +39,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (token && savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser)
+        if (!parsedUser.userId) {
+          // userIdがない古いデータの場合は再ログインを要求
+          logout()
+          return
+        }
         setUser(parsedUser)
         setIsAuthenticated(true)
       } catch {

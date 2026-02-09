@@ -8,7 +8,10 @@ import com.photlas.backend.dto.RegisterResponse;
 import com.photlas.backend.dto.ResetPasswordRequest;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +30,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final UserService userService;
 
@@ -95,7 +100,8 @@ public class AuthController {
      * @return ログインレスポンス
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult,
+                                   HttpServletRequest httpRequest) {
         if (bindingResult.hasErrors()) {
             return buildValidationErrorResponse(bindingResult);
         }
@@ -104,6 +110,7 @@ public class AuthController {
             RegisterResponse response = userService.loginUser(request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            logger.warn("Login failed - email: {}, IP: {}", request.getEmail(), httpRequest.getRemoteAddr());
             ErrorResponse errorResponse = new ErrorResponse("メールアドレスまたはパスワードが正しくありません");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         } catch (Exception e) {

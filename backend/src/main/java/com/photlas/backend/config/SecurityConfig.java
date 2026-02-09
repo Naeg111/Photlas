@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -108,6 +109,8 @@ public class SecurityConfig {
                 .requestMatchers(ERROR_ENDPOINT).permitAll()             // エラーページ
                 .requestMatchers(SPOTS_ENDPOINT, SPOTS_ENDPOINT_PATTERN).permitAll()  // スポット関連（一覧・詳細）
                 .requestMatchers(CATEGORIES_ENDPOINT).permitAll()        // カテゴリ一覧
+                .requestMatchers("/api/v1/ogp/**").permitAll()              // OGPメタタグ
+                .requestMatchers("/api/v1/sitemap.xml").permitAll()         // サイトマップ
                 .requestMatchers(HttpMethod.GET, PHOTOS_ENDPOINT_PATTERN).permitAll()  // 写真閲覧
                 .requestMatchers(new RegexRequestMatcher(USER_PROFILE_PATTERN, HttpMethod.GET.name())).permitAll()  // ユーザープロフィール閲覧
                 .requestMatchers(new RegexRequestMatcher(USER_PHOTOS_PATTERN, HttpMethod.GET.name())).permitAll()   // ユーザー写真一覧閲覧
@@ -121,6 +124,18 @@ public class SecurityConfig {
                         HttpStatus.UNAUTHORIZED.getReasonPhrase()
                     );
                 })
+            )
+            // セキュリティヘッダー
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.deny())
+                .contentTypeOptions(contentType -> {})
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000)
+                )
+                .referrerPolicy(referrer -> referrer
+                    .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+                )
             )
             // Issue#22: レート制限フィルターを追加
             .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
