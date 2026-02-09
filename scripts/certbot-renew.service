@@ -1,0 +1,8 @@
+[Unit]
+Description=Let's Encrypt certificate renewal for Photlas
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/home/ec2-user/photlas/scripts/certbot-renew.sh

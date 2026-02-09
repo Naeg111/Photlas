@@ -186,7 +186,7 @@ jobs:
         fi
         cd /home/ec2-user/photlas
         git fetch origin develop
-        git checkout origin/develop -- docker/docker-compose.staging.yml docker/nginx/staging.conf
+        git checkout origin/develop -- docker/docker-compose.staging.yml docker/nginx/staging.conf scripts/certbot-renew.sh scripts/certbot-renew.service scripts/certbot-renew.timer
 
         echo '=== Debug: Environment variables ==='
         echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID"
@@ -211,6 +211,15 @@ jobs:
 
         echo '=== Cleanup ==='
         docker image prune -f
+
+        echo '=== Setting up certbot auto-renewal ==='
+        which certbot || (dnf install -y certbot || yum install -y certbot || true)
+        chmod +x /home/ec2-user/photlas/scripts/certbot-renew.sh
+        cp /home/ec2-user/photlas/scripts/certbot-renew.service /etc/systemd/system/certbot-renew.service
+        cp /home/ec2-user/photlas/scripts/certbot-renew.timer /etc/systemd/system/certbot-renew.timer
+        systemctl daemon-reload
+        systemctl enable certbot-renew.timer
+        systemctl start certbot-renew.timer
 
         echo '=== Deployment completed ==='
         SCRIPT_END
@@ -384,7 +393,7 @@ jobs:
         fi
         cd /home/ec2-user/photlas
         git fetch origin main
-        git checkout origin/main -- docker/docker-compose.prod.yml docker/nginx/prod.conf
+        git checkout origin/main -- docker/docker-compose.prod.yml docker/nginx/prod.conf scripts/certbot-renew.sh scripts/certbot-renew.service scripts/certbot-renew.timer
 
         echo '=== Stopping old containers ==='
         docker-compose -f docker/docker-compose.prod.yml down || true
@@ -397,6 +406,15 @@ jobs:
 
         echo '=== Cleanup ==='
         docker image prune -f
+
+        echo '=== Setting up certbot auto-renewal ==='
+        which certbot || (dnf install -y certbot || yum install -y certbot || true)
+        chmod +x /home/ec2-user/photlas/scripts/certbot-renew.sh
+        cp /home/ec2-user/photlas/scripts/certbot-renew.service /etc/systemd/system/certbot-renew.service
+        cp /home/ec2-user/photlas/scripts/certbot-renew.timer /etc/systemd/system/certbot-renew.timer
+        systemctl daemon-reload
+        systemctl enable certbot-renew.timer
+        systemctl start certbot-renew.timer
 
         echo '=== Production deployment completed ==='
         SCRIPT_END
