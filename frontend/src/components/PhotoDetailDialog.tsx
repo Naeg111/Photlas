@@ -48,6 +48,7 @@ interface PhotoDetailDialogProps {
   onClose: () => void
   onUserClick?: (user: { userId: number; username: string }) => void
   onImageClick?: (imageUrl: string) => void
+  isLightboxOpen?: boolean
 }
 
 // APIレスポンスの型定義
@@ -316,7 +317,7 @@ function DetailMiniMap({
   )
 }
 
-export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, onImageClick }: PhotoDetailDialogProps) {
+export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, onImageClick, isLightboxOpen }: PhotoDetailDialogProps) {
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [photoDetails, setPhotoDetails] = useState<Map<number, PhotoDetail>>(new Map())
@@ -483,7 +484,15 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent data-testid={TEST_ID_DIALOG} className="max-w-4xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden border-0" style={{ maxHeight: '90dvh' }} hideCloseButton>
+      <DialogContent
+        data-testid={TEST_ID_DIALOG}
+        className="max-w-4xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden border-0"
+        style={{ maxHeight: '90dvh' }}
+        hideCloseButton
+        onPointerDownOutside={(e) => { if (isLightboxOpen) e.preventDefault() }}
+        onInteractOutside={(e) => { if (isLightboxOpen) e.preventDefault() }}
+        onEscapeKeyDown={(e) => { if (isLightboxOpen) e.preventDefault() }}
+      >
         <DialogTitle className="sr-only">{SR_TITLE}</DialogTitle>
         <DialogDescription className="sr-only">{SR_DESCRIPTION}</DialogDescription>
         <div className="relative flex flex-col min-h-0 h-full">
