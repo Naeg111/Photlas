@@ -62,7 +62,8 @@ export default function MapPicker({
       },
       () => {
         setErrorMessage('位置情報の取得に失敗しました')
-      }
+      },
+      { enableHighAccuracy: true }
     )
   }
 
