@@ -17,9 +17,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/photos")
 public class PhotoController {
+
+    private static final List<String> ALLOWED_IMAGE_EXTENSIONS = List.of("jpg", "jpeg", "png", "webp", "heic");
 
     private final PhotoService photoService;
     private final S3Service s3Service;
@@ -78,6 +82,11 @@ public class PhotoController {
             @Valid @RequestBody UploadUrlRequest request,
             Authentication authentication
     ) {
+        // 拡張子のバリデーション
+        if (!ALLOWED_IMAGE_EXTENSIONS.contains(request.getExtension().toLowerCase())) {
+            throw new IllegalArgumentException("対応していないファイル形式です");
+        }
+
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
@@ -98,6 +107,15 @@ public class PhotoController {
      */
     @ExceptionHandler(CategoryNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCategoryNotFoundException(CategoryNotFoundException e) {
+        ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * IllegalArgumentExceptionをハンドリング
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
         ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }

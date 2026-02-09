@@ -21,6 +21,12 @@ public class S3Service {
 
     private static final int PRESIGNED_URL_EXPIRATION_MINUTES = 10;
 
+    /** 写真アップロードの最大ファイルサイズ（10MB） */
+    private static final long MAX_PHOTO_UPLOAD_SIZE = 10L * 1024 * 1024;
+
+    /** アバター・プロフィール画像の最大ファイルサイズ（5MB） */
+    private static final long MAX_AVATAR_UPLOAD_SIZE = 5L * 1024 * 1024;
+
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
@@ -43,6 +49,9 @@ public class S3Service {
         // オブジェクトキーを生成: folder/userId/uuid.extension
         String objectKey = String.format("%s/%d/%s.%s", folder, userId, UUID.randomUUID(), extension);
 
+        // フォルダに応じたファイルサイズ上限を決定
+        long maxSize = "uploads".equals(folder) ? MAX_PHOTO_UPLOAD_SIZE : MAX_AVATAR_UPLOAD_SIZE;
+
         try (S3Presigner presigner = S3Presigner.builder()
                 .region(Region.of(region))
                 .credentialsProvider(DefaultCredentialsProvider.create())
@@ -52,6 +61,7 @@ public class S3Service {
                     .bucket(bucketName)
                     .key(objectKey)
                     .contentType(contentType)
+                    .contentLength(maxSize)
                     .build();
 
             PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()

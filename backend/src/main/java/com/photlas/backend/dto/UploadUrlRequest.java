@@ -1,12 +1,14 @@
 package com.photlas.backend.dto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 public class UploadUrlRequest {
     @NotNull(message = "拡張子は必須です")
     private String extension;
 
     @NotNull(message = "コンテンツタイプは必須です")
+    @Pattern(regexp = "^image/(jpeg|png|webp|heic)$", message = "対応していないコンテンツタイプです")
     private String contentType;
 
     public UploadUrlRequest() {}
