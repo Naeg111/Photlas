@@ -29,8 +29,19 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
     if (!open) {
       setScale(LIGHTBOX.INITIAL_SCALE)
       setPosition({ x: 0, y: 0 })
+      return
     }
-  }, [open])
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        onOpenChange(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open, onOpenChange])
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault()

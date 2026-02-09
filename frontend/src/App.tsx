@@ -387,6 +387,7 @@ function MainContent() {
           }}
           onUserClick={handleUserClick}
           onImageClick={handleShowLightbox}
+          isLightboxOpen={dialog.isOpen('lightbox')}
         />
       )}
 
