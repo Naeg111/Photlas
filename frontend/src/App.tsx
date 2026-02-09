@@ -364,7 +364,7 @@ function MainContent() {
             profileImageUrl: null,
             snsLinks: [],
           } : {
-            userId: 0, // TODO: 実際のユーザーIDを取得
+            userId: user?.userId ?? 0,
             username: user?.username || '',
             email: user?.email,
             profileImageUrl: null,

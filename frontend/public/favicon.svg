@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Map pin body -->
+  <path d="M32 4C20.95 4 12 12.95 12 24c0 14 20 36 20 36s20-22 20-36C52 12.95 43.05 4 32 4z" fill="#3B82F6" stroke="#1D4ED8" stroke-width="1.5"/>
+  <!-- Camera lens outer circle -->
+  <circle cx="32" cy="23" r="13" fill="#1E3A5F" stroke="#93C5FD" stroke-width="1"/>
+  <!-- Camera lens inner ring -->
+  <circle cx="32" cy="23" r="9" fill="none" stroke="#60A5FA" stroke-width="1.5"/>
+  <!-- Camera lens aperture blades -->
+  <circle cx="32" cy="23" r="5" fill="#3B82F6"/>
+  <!-- Camera lens highlight -->
+  <circle cx="29" cy="20" r="2" fill="rgba(255,255,255,0.4)"/>
+</svg>

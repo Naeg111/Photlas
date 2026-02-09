@@ -61,7 +61,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             } catch (Exception e) {
                 // トークンが無効な場合は認証情報を設定しない
-                logger.error("JWT authentication failed", e);
+                logger.warn("JWT authentication failed - IP: " + request.getRemoteAddr()
+                        + ", URI: " + request.getRequestURI(), e);
             }
         }
 

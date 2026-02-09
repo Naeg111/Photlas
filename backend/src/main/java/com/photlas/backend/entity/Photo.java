@@ -12,7 +12,11 @@ import java.util.List;
  * 撮影スポット、カテゴリ、撮影情報などを含みます。
  */
 @Entity
-@Table(name = "photos")
+@Table(name = "photos", indexes = {
+    @Index(name = "idx_photos_spot_id", columnList = "spot_id"),
+    @Index(name = "idx_photos_user_id", columnList = "user_id"),
+    @Index(name = "idx_photos_created_at", columnList = "created_at")
+})
 public class Photo {
 
     @Id
