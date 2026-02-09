@@ -47,6 +47,7 @@ interface PhotoDetailDialogProps {
   spotId: number
   onClose: () => void
   onUserClick?: (user: { userId: number; username: string }) => void
+  onImageClick?: (imageUrl: string) => void
 }
 
 // APIレスポンスの型定義
@@ -315,7 +316,7 @@ function DetailMiniMap({
   )
 }
 
-export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }: PhotoDetailDialogProps) {
+export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, onImageClick }: PhotoDetailDialogProps) {
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [photoDetails, setPhotoDetails] = useState<Map<number, PhotoDetail>>(new Map())
@@ -526,12 +527,12 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick }
                             <div
                               data-testid="photo-crop-container"
                               className="aspect-square w-full overflow-hidden cursor-pointer"
-                              onClick={() => window.open(`/photo-viewer/${photo.photoId}`, '_blank')}
+                              onClick={() => onImageClick?.(photo.imageUrl)}
                               role="button"
                               tabIndex={0}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
-                                  window.open(`/photo-viewer/${photo.photoId}`, '_blank')
+                                  onImageClick?.(photo.imageUrl)
                                 }
                               }}
                             >

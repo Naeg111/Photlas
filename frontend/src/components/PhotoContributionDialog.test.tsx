@@ -473,6 +473,10 @@ describe('PhotoContributionDialog', () => {
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
 
+      // カテゴリを選択
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
+
       // 投稿
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
@@ -510,6 +514,10 @@ describe('PhotoContributionDialog', () => {
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
 
+      // カテゴリを選択
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
+
       // 投稿
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
@@ -543,6 +551,10 @@ describe('PhotoContributionDialog', () => {
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
+
+      // カテゴリを選択
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
 
       // 投稿ボタンが有効になるのを待ってクリック
       await waitFor(() => {
@@ -587,6 +599,10 @@ describe('PhotoContributionDialog', () => {
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
+
+      // カテゴリを選択
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
 
       // 投稿ボタンが有効になるのを待ってクリック
       await waitFor(() => {
@@ -667,6 +683,10 @@ describe('PhotoContributionDialog', () => {
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
 
+      // カテゴリを選択
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
+
       // 南東（135°）を選択
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '南東' })).toBeInTheDocument()
@@ -736,6 +756,10 @@ describe('PhotoContributionDialog', () => {
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
 
+      // カテゴリを選択
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
+
       // 投稿
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
@@ -772,6 +796,10 @@ describe('PhotoContributionDialog', () => {
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
+
+      // カテゴリを選択
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
 
       // 手動で北（0°）を選択して上書き
       await waitFor(() => {
@@ -811,6 +839,10 @@ describe('PhotoContributionDialog', () => {
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
+
+      // カテゴリを選択
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
 
       // 撮影方向は未設定のまま投稿
       await waitFor(() => {
@@ -902,6 +934,10 @@ describe('PhotoContributionDialog', () => {
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
 
+      // カテゴリを選択
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
+
       // タグを追加
       const tagInput = screen.getByPlaceholderText(/タグを入力/)
       await user.type(tagInput, '桜{Enter}')
@@ -939,6 +975,10 @@ describe('PhotoContributionDialog', () => {
       })
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
+
+      // カテゴリを選択
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
 
       // タグなしで投稿
       await waitFor(() => {
@@ -993,6 +1033,10 @@ describe('PhotoContributionDialog', () => {
       // 天気を選択
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
+
+      // カテゴリを選択
+      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
 
       // 投稿
       await waitFor(() => {

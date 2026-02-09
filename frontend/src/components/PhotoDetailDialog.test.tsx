@@ -1041,18 +1041,17 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('画像クリックでフルサイズビューアが開く（既存動作維持）', async () => {
+    it('画像クリックでonImageClickが呼ばれる', async () => {
       const photoDetail = createMockApiResponse({
         cropCenterX: 0.3,
         cropCenterY: 0.7,
         cropZoom: 1.5,
       })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
-      const mockOpen = vi.fn()
-      vi.stubGlobal('open', mockOpen)
+      const mockImageClick = vi.fn()
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} onImageClick={mockImageClick} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1061,7 +1060,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} onImageClick={mockImageClick} />)
 
       await waitFor(() => {
         expect(screen.getByAltText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
@@ -1070,8 +1069,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const user = userEvent.setup()
       await user.click(screen.getByAltText(TEST_PHOTO_TITLE_1))
 
-      expect(mockOpen).toHaveBeenCalledWith(`/photo-viewer/${TEST_PHOTO_ID_1}`, '_blank')
-      vi.unstubAllGlobals()
+      expect(mockImageClick).toHaveBeenCalledWith(photoDetail.photo.image_url)
     })
   })
 })

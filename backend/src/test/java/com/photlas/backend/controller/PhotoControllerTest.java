@@ -278,7 +278,6 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists())
                 .andExpect(jsonPath(JSON_PATH_PHOTO_IMAGE_URL, containsString(S3_OBJECT_KEY_PREFIX + "001.jpg")))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_SHOT_AT, is(FORMATTED_DATETIME_1)))
-                .andExpect(jsonPath(JSON_PATH_PHOTO_WEATHER).exists())
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID).exists())
                 .andExpect(jsonPath(JSON_PATH_SPOT_LATITUDE, is(35.658581)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_LONGITUDE, is(139.745433)))

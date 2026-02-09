@@ -266,8 +266,8 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("天気情報取得ロジック - 天気APIが正常に動作する場合")
-    void testCreatePhoto_WeatherAPISuccess_SavesWeatherInfo() {
+    @DisplayName("天気情報 - ユーザーが天気を指定した場合はその値が保存される")
+    void testCreatePhoto_WithWeather_SavesProvidedWeather() {
         CreatePhotoRequest request = new CreatePhotoRequest();
         request.setTitle("天気テスト");
         request.setS3ObjectKey("photos/test008.jpg");
@@ -275,23 +275,21 @@ public class PhotoServiceTest {
         request.setLatitude(new BigDecimal("35.658581"));
         request.setLongitude(new BigDecimal("139.745433"));
         request.setCategories(List.of("風景"));
+        request.setWeather("晴れ");
 
         PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
 
         assertThat(response).isNotNull();
-        assertThat(response.getPhoto().getWeather()).isNotNull();
-        // 天気情報が設定されていることを確認（"Unknown" または実際の天気）
-        assertThat(response.getPhoto().getWeather()).isIn("Unknown", "Sunny", "Rainy", "Cloudy", "Snowy");
+        assertThat(response.getPhoto().getWeather()).isEqualTo("晴れ");
     }
 
     @Test
-    @DisplayName("天気情報取得ロジック - 天気APIがエラーの場合はUnknownで続行")
-    void testCreatePhoto_WeatherAPIError_SavesUnknownAndContinues() {
-        // 天気APIがエラーになるような条件（過去の日付など）でテスト
+    @DisplayName("天気情報 - ユーザーが天気を未指定の場合はnullで保存される")
+    void testCreatePhoto_WithoutWeather_SavesNull() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("天気エラーテスト");
+        request.setTitle("天気未指定テスト");
         request.setS3ObjectKey("photos/test009.jpg");
-        request.setTakenAt("2020-01-01T00:00:00Z");  // 過去の日付
+        request.setTakenAt("2020-01-01T00:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
         request.setLongitude(new BigDecimal("139.745433"));
         request.setCategories(List.of("風景"));
@@ -299,8 +297,7 @@ public class PhotoServiceTest {
         PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
 
         assertThat(response).isNotNull();
-        // エラーでも処理が続行され、天気は"Unknown"が設定される
-        assertThat(response.getPhoto().getWeather()).isEqualTo("Unknown");
+        assertThat(response.getPhoto().getWeather()).isNull();
     }
 
     @Test

@@ -129,7 +129,7 @@ function MainContent() {
     categories: string[]
     tags: string[]
     position: { lat: number; lng: number }
-    weather: string
+    weather?: string
     takenAt?: string
     shootingDirection?: number
     cropCenterX?: number
@@ -229,11 +229,10 @@ function MainContent() {
   }
 
   // ライトボックス表示ハンドラー
-  // TODO: PhotoDetailDialogから呼び出されるように修正後に有効化
-  // const handleShowLightbox = (imageUrl: string) => {
-  //   setSelectedImageUrl(imageUrl)
-  //   dialog.open('lightbox')
-  // }
+  const handleShowLightbox = (imageUrl: string) => {
+    setSelectedImageUrl(imageUrl)
+    dialog.open('lightbox')
+  }
 
   return (
     <div className="relative w-full h-full overflow-hidden isolate">
@@ -387,6 +386,7 @@ function MainContent() {
             setSelectedSpotId(null)
           }}
           onUserClick={handleUserClick}
+          onImageClick={handleShowLightbox}
         />
       )}
 
