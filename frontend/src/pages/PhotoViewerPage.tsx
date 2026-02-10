@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { API_V1_URL } from '../config/api'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 /**
  * Issue#15: 写真フルサイズ表示 (UI / 専用ビューアー)
@@ -39,6 +40,11 @@ function PhotoViewerPage() {
   const [photoData, setPhotoData] = useState<PhotoData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const pageTitle = photoData?.photo.title
+    ? `${photoData.photo.title} - Photlas`
+    : 'Photlas - 写真で撮影スポットを共有・発見'
+  useDocumentTitle(pageTitle)
 
   useEffect(() => {
     const fetchPhoto = async () => {
