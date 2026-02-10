@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#f8fafc"/>
+  <rect x="0" y="0" width="1200" height="4" fill="#3B82F6"/>
+  <!-- Map pin icon -->
+  <path d="M560 200C560 170.15 584.15 146 614 146C643.85 146 668 170.15 668 200C668 230 614 280 614 280S560 230 560 200Z" fill="#3B82F6" stroke="#1D4ED8" stroke-width="2"/>
+  <circle cx="614" cy="197" r="15" fill="#1E3A5F"/>
+  <circle cx="614" cy="197" r="10" fill="none" stroke="#60A5FA" stroke-width="2"/>
+  <circle cx="614" cy="197" r="6" fill="#3B82F6"/>
+  <!-- App name -->
+  <text x="600" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#1e293b" text-anchor="middle">Photlas</text>
+  <!-- Tagline -->
+  <text x="600" y="390" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#64748b" text-anchor="middle">写真で撮影スポットを共有・発見</text>
+</svg>

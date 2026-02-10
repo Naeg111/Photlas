@@ -11,11 +11,13 @@ import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserSnsLink;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.UnauthorizedException;
+import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.repository.UserSnsLinkRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -58,6 +60,9 @@ public class UserService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final UserSnsLinkRepository userSnsLinkRepository;
     private final S3Service s3Service;
+
+    @Value("${app.frontend-url:https://photlas.jp}")
+    private String frontendUrl;
 
     public UserService(
             UserRepository userRepository,
@@ -226,11 +231,10 @@ public class UserService {
             message.setSubject("【Photlas】パスワードの再設定");
             message.setText("パスワード再設定のリクエストを受け付けました。\n\n" +
                            "以下のリンクをクリックして、パスワードを再設定してください：\n" +
-                           "http://localhost:5173/reset-password?token=" + token + "\n\n" +
+                           frontendUrl + "/reset-password?token=" + token + "\n\n" +
                            "このリンクの有効期限は30分です。\n\n" +
                            "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                           "Best regards,\n" +
-                           "The Photlas Team");
+                           "Photlas チーム");
 
             mailSender.send(message);
         } catch (Exception e) {
@@ -243,12 +247,13 @@ public class UserService {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(email);
-            message.setSubject("Welcome to Photlas!");
-            message.setText("Hello " + username + ",\n\n" +
-                           "Welcome to Photlas! Your account has been successfully created.\n\n" +
-                           "You can now start exploring and sharing your favorite photography spots.\n\n" +
-                           "Best regards,\n" +
-                           "The Photlas Team");
+            message.setSubject("【Photlas】ご登録ありがとうございます");
+            message.setText(username + " さん\n\n" +
+                           "Photlasへのご登録ありがとうございます！\n" +
+                           "アカウントが作成されました。\n\n" +
+                           "さっそく撮影スポットを探してみましょう：\n" +
+                           frontendUrl + "\n\n" +
+                           "Photlas チーム");
 
             mailSender.send(message);
         } catch (Exception e) {
@@ -266,7 +271,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserProfileResponse getMyProfile(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         List<UserSnsLink> snsLinks = userSnsLinkRepository.findByUserId(user.getId());
         List<UserProfileResponse.SnsLink> snsLinkDtos = snsLinks.stream()
@@ -293,7 +298,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         List<UserSnsLink> snsLinks = userSnsLinkRepository.findByUserId(user.getId());
         List<UserProfileResponse.SnsLink> snsLinkDtos = snsLinks.stream()
@@ -321,7 +326,7 @@ public class UserService {
     @Transactional
     public UserProfileResponse updateProfile(String email, UpdateProfileRequest request) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         // ユーザー名重複チェック（自分以外）
         Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
@@ -363,7 +368,7 @@ public class UserService {
     @Transactional
     public String updateEmail(String email, String newEmail, String currentPassword) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         // パスワード検証
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
@@ -399,7 +404,7 @@ public class UserService {
     @Transactional
     public void updatePassword(String email, String currentPassword, String newPassword, String newPasswordConfirm) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         // 現在のパスワード検証
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
@@ -426,7 +431,7 @@ public class UserService {
     @Transactional
     public void deleteAccount(String email, String password) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         // パスワード検証
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
@@ -451,7 +456,7 @@ public class UserService {
     @Transactional
     public String updateProfileImage(String email, String objectKey) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         user.setProfileImageS3Key(objectKey);
         userRepository.save(user);
@@ -467,7 +472,7 @@ public class UserService {
     @Transactional
     public void deleteProfileImage(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         user.setProfileImageS3Key(null);
         userRepository.save(user);
@@ -483,7 +488,7 @@ public class UserService {
     @Transactional
     public List<UserSnsLink> updateSnsLinks(String email, List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException(ERROR_USER_NOT_FOUND));
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         // バリデーション
         validateSnsLinks(snsLinks);
@@ -559,7 +564,7 @@ public class UserService {
     @Transactional
     public String updateUsername(String email, String username) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException(ERROR_USER_NOT_FOUND));
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         // ユーザー名重複チェック（自分以外）
         Optional<User> existingUser = userRepository.findByUsername(username);

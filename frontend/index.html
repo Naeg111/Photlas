@@ -16,11 +16,15 @@
     <meta property="og:url" content="https://photlas.jp/" />
     <meta property="og:site_name" content="Photlas" />
     <meta property="og:locale" content="ja_JP" />
+    <meta property="og:image" content="https://photlas.jp/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Photlas - 写真で撮影スポットを共有・発見" />
     <meta name="twitter:description" content="写真を通じて撮影スポットを共有・発見できるWebアプリ" />
+    <meta name="twitter:image" content="https://photlas.jp/og-image.svg" />
 
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
@@ -37,7 +41,7 @@
     <script>
       (function() {
         var gaId = '%VITE_GA_MEASUREMENT_ID%';
-        if (!gaId) return;
+        if (!gaId || gaId.indexOf('%') !== -1) return;
         var s = document.createElement('script');
         s.async = true;
         s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;

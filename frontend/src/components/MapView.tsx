@@ -278,8 +278,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               isFirstUpdate = false
             }
           },
-          (error) => {
-            console.error('位置情報の取得に失敗しました:', error)
+          () => {
+            // 位置情報取得失敗時は現在位置の追跡をスキップ
           },
           { enableHighAccuracy: true }
         )
