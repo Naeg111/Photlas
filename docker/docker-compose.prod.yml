@@ -31,6 +31,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
       - AWS_REGION=${AWS_REGION}
+      - AWS_CLOUDFRONT_DOMAIN=${AWS_CLOUDFRONT_DOMAIN:}
       - SMTP_HOST=${SMTP_HOST:-email-smtp.ap-northeast-1.amazonaws.com}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME}
