@@ -144,6 +144,10 @@ jobs:
         DEPLOY_JWT_SECRET: ${{ secrets.JWT_SECRET }}
         DEPLOY_AWS_S3_BUCKET: ${{ secrets.STAGING_S3_BUCKET }}
         DEPLOY_ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
+        DEPLOY_SMTP_HOST: ${{ secrets.SMTP_HOST }}
+        DEPLOY_SMTP_PORT: ${{ secrets.SMTP_PORT }}
+        DEPLOY_SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+        DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       run: |
         # デプロイスクリプトを生成してbase64エンコード
         cat > /tmp/deploy_script.sh << 'SCRIPT_END'
@@ -161,6 +165,10 @@ jobs:
         export JWT_SECRET='__JWT_SECRET__'
         export AWS_S3_BUCKET='__AWS_S3_BUCKET__'
         export ECR_REGISTRY='__ECR_REGISTRY__'
+        export SMTP_HOST='__SMTP_HOST__'
+        export SMTP_PORT='__SMTP_PORT__'
+        export SMTP_USERNAME='__SMTP_USERNAME__'
+        export SMTP_PASSWORD='__SMTP_PASSWORD__'
 
         echo '=== Environment variables set ==='
         echo "IMAGE_TAG: $IMAGE_TAG"
@@ -234,6 +242,10 @@ jobs:
         sed -i "s|__JWT_SECRET__|${DEPLOY_JWT_SECRET}|g" /tmp/deploy_script.sh
         sed -i "s|__AWS_S3_BUCKET__|${DEPLOY_AWS_S3_BUCKET}|g" /tmp/deploy_script.sh
         sed -i "s|__ECR_REGISTRY__|${DEPLOY_ECR_REGISTRY}|g" /tmp/deploy_script.sh
+        sed -i "s|__SMTP_HOST__|${DEPLOY_SMTP_HOST}|g" /tmp/deploy_script.sh
+        sed -i "s|__SMTP_PORT__|${DEPLOY_SMTP_PORT}|g" /tmp/deploy_script.sh
+        sed -i "s|__SMTP_USERNAME__|${DEPLOY_SMTP_USERNAME}|g" /tmp/deploy_script.sh
+        sed -i "s|__SMTP_PASSWORD__|${DEPLOY_SMTP_PASSWORD}|g" /tmp/deploy_script.sh
 
         # base64エンコード
         ENCODED_SCRIPT=$(base64 -w 0 /tmp/deploy_script.sh)
@@ -351,6 +363,10 @@ jobs:
         DEPLOY_JWT_SECRET: ${{ secrets.JWT_SECRET }}
         DEPLOY_AWS_S3_BUCKET: ${{ secrets.PRODUCTION_S3_BUCKET }}
         DEPLOY_ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
+        DEPLOY_SMTP_HOST: ${{ secrets.SMTP_HOST }}
+        DEPLOY_SMTP_PORT: ${{ secrets.SMTP_PORT }}
+        DEPLOY_SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+        DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       run: |
         # デプロイスクリプトを生成してbase64エンコード
         cat > /tmp/deploy_script.sh << 'SCRIPT_END'
@@ -368,6 +384,10 @@ jobs:
         export JWT_SECRET='__JWT_SECRET__'
         export AWS_S3_BUCKET='__AWS_S3_BUCKET__'
         export ECR_REGISTRY='__ECR_REGISTRY__'
+        export SMTP_HOST='__SMTP_HOST__'
+        export SMTP_PORT='__SMTP_PORT__'
+        export SMTP_USERNAME='__SMTP_USERNAME__'
+        export SMTP_PASSWORD='__SMTP_PASSWORD__'
 
         echo '=== Environment variables set ==='
         echo "IMAGE_TAG: $IMAGE_TAG"
@@ -429,6 +449,10 @@ jobs:
         sed -i "s|__JWT_SECRET__|${DEPLOY_JWT_SECRET}|g" /tmp/deploy_script.sh
         sed -i "s|__AWS_S3_BUCKET__|${DEPLOY_AWS_S3_BUCKET}|g" /tmp/deploy_script.sh
         sed -i "s|__ECR_REGISTRY__|${DEPLOY_ECR_REGISTRY}|g" /tmp/deploy_script.sh
+        sed -i "s|__SMTP_HOST__|${DEPLOY_SMTP_HOST}|g" /tmp/deploy_script.sh
+        sed -i "s|__SMTP_PORT__|${DEPLOY_SMTP_PORT}|g" /tmp/deploy_script.sh
+        sed -i "s|__SMTP_USERNAME__|${DEPLOY_SMTP_USERNAME}|g" /tmp/deploy_script.sh
+        sed -i "s|__SMTP_PASSWORD__|${DEPLOY_SMTP_PASSWORD}|g" /tmp/deploy_script.sh
 
         # base64エンコード
         ENCODED_SCRIPT=$(base64 -w 0 /tmp/deploy_script.sh)

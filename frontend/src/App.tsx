@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
 import PhotoViewerPage from './pages/PhotoViewerPage'
+import NotFoundPage from './pages/NotFoundPage'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
 import { TopMenuPanel } from './components/TopMenuPanel'
@@ -437,7 +438,8 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/photo-viewer/:photoId" element={<PhotoViewerPage />} />
-        <Route path="*" element={<MainApp />} />
+        <Route path="/" element={<MainApp />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AuthProvider>
   )
