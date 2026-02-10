@@ -88,8 +88,7 @@ export function AccountSettingsDialog({
       } else {
         toast.error("メールアドレスの変更に失敗しました");
       }
-    } catch (error) {
-      console.error("Email change error:", error);
+    } catch {
       toast.error("メールアドレスの変更に失敗しました");
     } finally {
       setIsEmailLoading(false);
@@ -150,8 +149,7 @@ export function AccountSettingsDialog({
       } else {
         toast.error("パスワードの変更に失敗しました");
       }
-    } catch (error) {
-      console.error("Password change error:", error);
+    } catch {
       toast.error("パスワードの変更に失敗しました");
     } finally {
       setIsPasswordLoading(false);
@@ -203,8 +201,7 @@ export function AccountSettingsDialog({
         toast.error("アカウントの削除に失敗しました");
         setIsAlertOpen(false);
       }
-    } catch (error) {
-      console.error("Account delete error:", error);
+    } catch {
       toast.error("アカウントの削除に失敗しました");
       setIsAlertOpen(false);
     } finally {
