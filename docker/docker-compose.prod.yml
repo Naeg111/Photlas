@@ -7,6 +7,7 @@ services:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/photlas-frontend:${IMAGE_TAG:-latest}
     container_name: photlas-frontend-prod
     restart: unless-stopped
+    mem_limit: 512m
     networks:
       - photlas-network
     healthcheck:
@@ -21,6 +22,7 @@ services:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/photlas-backend:${IMAGE_TAG:-latest}
     container_name: photlas-backend-prod
     restart: unless-stopped
+    mem_limit: 1g
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=${DATABASE_URL}
@@ -33,6 +35,7 @@ services:
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - APP_FRONTEND_URL=https://photlas.jp
     networks:
       - photlas-network
     healthcheck:
@@ -54,6 +57,7 @@ services:
     image: nginx:1.25-alpine
     container_name: photlas-nginx-prod
     restart: unless-stopped
+    mem_limit: 256m
     ports:
       - "80:80"
       - "443:443"

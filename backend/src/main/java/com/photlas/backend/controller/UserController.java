@@ -99,7 +99,7 @@ public class UserController {
     ) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new com.photlas.backend.exception.UnauthorizedException("ユーザーが見つかりません"));
 
         S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(
                 "avatars",
@@ -128,7 +128,7 @@ public class UserController {
     ) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new com.photlas.backend.exception.UnauthorizedException("ユーザーが見つかりません"));
 
         Pageable pageable = PageRequest.of(page, size);
         Map<String, Object> response = photoService.getUserPhotos(user.getId(), pageable, email);
@@ -215,7 +215,7 @@ public class UserController {
     ) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new com.photlas.backend.exception.UnauthorizedException("ユーザーが見つかりません"));
 
         // 拡張子のバリデーション
         if (!ALLOWED_IMAGE_EXTENSIONS.contains(request.getExtension().toLowerCase())) {

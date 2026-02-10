@@ -190,8 +190,8 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
         mapRef.current?.panTo(newCenter)
         onPositionChangeRef.current(newCenter)
       },
-      (error) => {
-        console.error('位置情報の取得に失敗しました:', error)
+      () => {
+        // 位置情報取得失敗時は現在位置への移動をスキップ
       },
       { enableHighAccuracy: true }
     )
