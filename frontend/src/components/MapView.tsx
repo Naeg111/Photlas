@@ -466,17 +466,15 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                   className="cursor-pointer"
                   style={{
                     width: `${BASE_PIN_SIZE * getPinScale(zoom)}px`,
-                    height: `${BASE_PIN_SIZE * 1.4 * getPinScale(zoom)}px`,
+                    height: `${BASE_PIN_SIZE * 1.2 * getPinScale(zoom)}px`,
                     transform: 'translate(-50%, -100%)',
                   }}
                   onClick={() => onSpotClick?.(spot.spotId)}
                 >
-                  <svg viewBox="0 0 32 45" width="100%" height="100%">
+                  <svg viewBox="0 0 32 38" width="100%" height="100%">
                     <path
-                      d="M16 0C7.16 0 0 7.16 0 16c0 12 16 29 16 29s16-17 16-29C32 7.16 24.84 0 16 0z"
+                      d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
                       fill={PIN_FILL_COLOR_MAP[spot.pinColor]}
-                      stroke="#ffffff"
-                      strokeWidth="2"
                     />
                     <text
                       x="16"
