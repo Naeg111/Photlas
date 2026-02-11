@@ -49,6 +49,8 @@ interface PhotoDetailDialogProps {
   onUserClick?: (user: { userId: number; username: string }) => void
   onImageClick?: (imageUrl: string) => void
   isLightboxOpen?: boolean
+  onMinimapClick?: (location: { lat: number; lng: number }) => void
+  isSlideDown?: boolean
 }
 
 // APIレスポンスの型定義
@@ -269,10 +271,12 @@ function DetailMiniMap({
   latitude,
   longitude,
   shootingDirection,
+  onClick,
 }: {
   latitude: number
   longitude: number
   shootingDirection?: number | null
+  onClick?: () => void
 }) {
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
@@ -284,14 +288,22 @@ function DetailMiniMap({
 
   if (!isLoaded) {
     return (
-      <div data-testid="detail-minimap" className="w-full h-[200px] bg-gray-100 rounded-lg flex items-center justify-center">
+      <div
+        data-testid="detail-minimap"
+        className={`w-full h-[200px] bg-gray-100 rounded-lg flex items-center justify-center ${onClick ? 'cursor-pointer' : ''}`}
+        onClick={onClick}
+      >
         <MapPin className="w-6 h-6 text-gray-400" />
       </div>
     )
   }
 
   return (
-    <div data-testid="detail-minimap" className="w-full h-[200px] rounded-lg overflow-hidden">
+    <div
+      data-testid="detail-minimap"
+      className={`w-full h-[200px] rounded-lg overflow-hidden ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <GoogleMap
         mapContainerStyle={{ width: '100%', height: '100%' }}
         center={center}
@@ -317,7 +329,7 @@ function DetailMiniMap({
   )
 }
 
-export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, onImageClick, isLightboxOpen }: PhotoDetailDialogProps) {
+export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown }: PhotoDetailDialogProps) {
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [photoDetails, setPhotoDetails] = useState<Map<number, PhotoDetail>>(new Map())
@@ -487,11 +499,16 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
       <DialogContent
         data-testid={TEST_ID_DIALOG}
         className="max-w-4xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden border-0"
-        style={{ maxHeight: '90dvh' }}
+        style={{
+          maxHeight: '90dvh',
+          translate: isSlideDown ? '-50% calc(50vh - 30px)' : '-50% -50%',
+          transition: 'translate 0.4s ease-in-out',
+        }}
+        overlayClassName={isSlideDown ? 'bg-transparent pointer-events-none' : undefined}
         hideCloseButton
-        onPointerDownOutside={(e) => { if (isLightboxOpen) e.preventDefault() }}
-        onInteractOutside={(e) => { if (isLightboxOpen) e.preventDefault() }}
-        onEscapeKeyDown={(e) => { if (isLightboxOpen) e.preventDefault() }}
+        onPointerDownOutside={(e) => { if (isLightboxOpen || isSlideDown) e.preventDefault() }}
+        onInteractOutside={(e) => { if (isLightboxOpen || isSlideDown) e.preventDefault() }}
+        onEscapeKeyDown={(e) => { if (isLightboxOpen || isSlideDown) e.preventDefault() }}
       >
         <DialogTitle className="sr-only">{SR_TITLE}</DialogTitle>
         <DialogDescription className="sr-only">{SR_DESCRIPTION}</DialogDescription>
@@ -727,6 +744,10 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
                     latitude={displayedPhoto.latitude ?? displayedPhoto.spot.latitude}
                     longitude={displayedPhoto.longitude ?? displayedPhoto.spot.longitude}
                     shootingDirection={displayedPhoto.shootingDirection}
+                    onClick={onMinimapClick ? () => onMinimapClick({
+                      lat: displayedPhoto.latitude ?? displayedPhoto.spot.latitude,
+                      lng: displayedPhoto.longitude ?? displayedPhoto.spot.longitude,
+                    }) : undefined}
                   />
 
                   {/* ドットインジケーター */}
