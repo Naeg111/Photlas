@@ -99,6 +99,7 @@ interface SpotProperties extends SpotResponse {
 
 // Google Maps APIキー
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+const GOOGLE_MAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || ''
 
 // Google Maps ライブラリ（全コンポーネントで同一の定数を使用すること）
 const LIBRARIES: ('places')[] = ['places']
@@ -418,9 +419,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   }
 
   return (
-    <div className="relative w-full h-full" style={{ transform: 'translateZ(0)' }}>
+    <div className="relative w-full h-full">
       <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '100%', imageRendering: 'auto' }}
+        mapContainerStyle={{ width: '100%', height: '100%' }}
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
         onLoad={handleLoad}
@@ -430,6 +431,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           gestureHandling: 'greedy',
           keyboardShortcuts: false,
           isFractionalZoomEnabled: false,
+          ...(GOOGLE_MAPS_MAP_ID ? { mapId: GOOGLE_MAPS_MAP_ID } : {}),
         }}
       >
         {/* Issue#39: クラスタリング対応ピン表示 */}
