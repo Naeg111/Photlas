@@ -26,7 +26,7 @@ import { useDialogState } from './hooks/useDialogState'
 import { transformMonths, transformTimesOfDay, transformWeathers, transformCategories, categoryNamesToIds } from './utils/filterTransform'
 import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto, ApiError } from './utils/apiClient'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
-import { SlidersHorizontal, Menu, Plus, LocateFixed } from 'lucide-react'
+import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed } from 'lucide-react'
 import { Button } from './components/ui/button'
 import { Toaster } from './components/ui/sonner'
 
@@ -270,6 +270,28 @@ function MainContent() {
         className="absolute right-6 z-10 flex flex-col items-center gap-3"
         style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
       >
+        {/* ズームボタン（PC表示のみ） */}
+        <div className="hidden md:flex flex-col items-center gap-1.5">
+          <Button
+            variant="secondary"
+            className="rounded-full shadow-lg hover:bg-secondary"
+            style={{ width: '42px', height: '42px' }}
+            onClick={() => mapRef.current?.zoomIn()}
+            aria-label="ズームイン"
+          >
+            <Plus className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="secondary"
+            className="rounded-full shadow-lg hover:bg-secondary"
+            style={{ width: '42px', height: '42px' }}
+            onClick={() => mapRef.current?.zoomOut()}
+            aria-label="ズームアウト"
+          >
+            <Minus className="w-5 h-5" />
+          </Button>
+        </div>
+
         {/* 現在位置ボタン（投稿ボタンの75%サイズ） */}
         <Button
           variant="secondary"
