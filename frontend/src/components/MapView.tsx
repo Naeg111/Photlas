@@ -526,7 +526,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
             <div
               data-testid="user-location-marker"
               className="relative"
-              style={{ width: '80px', height: '80px' }}
+              style={{ width: '80px', height: '80px', transform: 'translate(-50%, -50%)' }}
             >
               {/* パルスエフェクト（波紋） */}
               <div
