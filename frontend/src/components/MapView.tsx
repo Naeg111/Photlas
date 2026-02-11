@@ -68,6 +68,22 @@ function determinePinColorClass(count: number): string {
   return PIN_COLOR_MAP.Green
 }
 
+/**
+ * ズームレベルに応じたピンのスケール倍率を返す
+ */
+function getPinScale(zoom: number): number {
+  if (zoom >= 18) return 4.0
+  if (zoom >= 17) return 3.0
+  if (zoom >= 16) return 2.0
+  if (zoom >= 15) return 1.5
+  return 1.0
+}
+
+// 個別ピンの基準サイズ (px)
+const BASE_PIN_SIZE = 32
+// クラスタピンの基準サイズ (px)
+const BASE_CLUSTER_SIZE = 40
+
 // supercluster用のプロパティ型
 interface SpotProperties extends SpotResponse {
   [key: string]: unknown
@@ -413,7 +429,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 >
                   <div
                     data-testid={`map-cluster-${clusterId}`}
-                    className={`rounded-full ${colorClass} w-10 h-10 flex items-center justify-center text-white text-sm font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2 border-2 border-white`}
+                    className={`rounded-full ${colorClass} flex items-center justify-center text-white font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2 border-2 border-white`}
+                    style={{
+                      width: `${BASE_CLUSTER_SIZE * getPinScale(zoom)}px`,
+                      height: `${BASE_CLUSTER_SIZE * getPinScale(zoom)}px`,
+                      fontSize: `${14 * getPinScale(zoom)}px`,
+                    }}
                     onClick={() => {
                       const expansionZoom = clusterIndex.getClusterExpansionZoom(clusterId)
                       map?.setZoom(Math.min(expansionZoom, CLUSTER_MAX_ZOOM + 1))
@@ -436,7 +457,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               >
                 <div
                   data-testid={`map-pin-${spot.spotId}`}
-                  className={`rounded-full ${PIN_COLOR_MAP[spot.pinColor]} w-8 h-8 flex items-center justify-center text-white text-sm font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2`}
+                  className={`rounded-full ${PIN_COLOR_MAP[spot.pinColor]} flex items-center justify-center text-white font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2`}
+                  style={{
+                    width: `${BASE_PIN_SIZE * getPinScale(zoom)}px`,
+                    height: `${BASE_PIN_SIZE * getPinScale(zoom)}px`,
+                    fontSize: `${14 * getPinScale(zoom)}px`,
+                  }}
                   onClick={() => onSpotClick?.(spot.spotId)}
                 >
                   {spot.photoCount}

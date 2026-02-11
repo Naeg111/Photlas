@@ -232,14 +232,14 @@ describe('FilterPanel', () => {
     it('renders advanced filter toggle button', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      expect(screen.getByRole('button', { name: /詳細フィルター/ })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /上級者向けフィルター/ })).toBeInTheDocument()
     })
 
     it('advanced filter section is hidden by default', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
       // 詳細フィルター項目はデフォルトで非表示
-      expect(screen.queryByText('高画質のみ')).not.toBeInTheDocument()
+      expect(screen.queryByText('フルHD以上（1080p）')).not.toBeInTheDocument()
       expect(screen.queryByText('ミラーレス')).not.toBeInTheDocument()
     })
 
@@ -247,10 +247,10 @@ describe('FilterPanel', () => {
       const user = userEvent.setup()
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      await user.click(screen.getByRole('button', { name: /詳細フィルター/ }))
+      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
 
       // 解像度
-      expect(screen.getByText('高画質のみ')).toBeInTheDocument()
+      expect(screen.getByText('フルHD以上（1080p）')).toBeInTheDocument()
       expect(screen.getByText('すべて表示')).toBeInTheDocument()
 
       // 機材種別
@@ -276,10 +276,10 @@ describe('FilterPanel', () => {
 
       // 焦点距離（フルサイズ換算）
       expect(screen.getByText('焦点距離（フルサイズ換算）')).toBeInTheDocument()
-      expect(screen.getByText(/広角（< 24mm）/)).toBeInTheDocument()
+      expect(screen.getByText(/広角（24mm未満）/)).toBeInTheDocument()
       expect(screen.getByText(/標準（24-70mm）/)).toBeInTheDocument()
-      expect(screen.getByText(/望遠（> 70mm）/)).toBeInTheDocument()
-      expect(screen.getByText(/超望遠（> 300mm）/)).toBeInTheDocument()
+      expect(screen.getByText(/望遠（70-300mm）/)).toBeInTheDocument()
+      expect(screen.getByText(/超望遠（301mm以上）/)).toBeInTheDocument()
 
       // ISO感度
       expect(screen.getByText(/低感度/)).toBeInTheDocument()
@@ -290,12 +290,12 @@ describe('FilterPanel', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
       // 開く
-      await user.click(screen.getByRole('button', { name: /詳細フィルター/ }))
-      expect(screen.getByText('高画質のみ')).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+      expect(screen.getByText('フルHD以上（1080p）')).toBeInTheDocument()
 
       // 閉じる
-      await user.click(screen.getByRole('button', { name: /詳細フィルター/ }))
-      expect(screen.queryByText('高画質のみ')).not.toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+      expect(screen.queryByText('フルHD以上（1080p）')).not.toBeInTheDocument()
     })
 
     it('includes advanced filter conditions in onApply callback', async () => {
@@ -311,10 +311,10 @@ describe('FilterPanel', () => {
       )
 
       // 詳細フィルターを開く
-      await user.click(screen.getByRole('button', { name: /詳細フィルター/ }))
+      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
 
       // 高画質のみを選択
-      await user.click(screen.getByText('高画質のみ'))
+      await user.click(screen.getByText('フルHD以上（1080p）'))
 
       // ミラーレスを選択
       await user.click(screen.getByText('ミラーレス'))
@@ -343,10 +343,10 @@ describe('FilterPanel', () => {
       )
 
       // 詳細フィルターを開く
-      await user.click(screen.getByRole('button', { name: /詳細フィルター/ }))
+      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
 
       // 高画質のみを選択
-      await user.click(screen.getByText('高画質のみ'))
+      await user.click(screen.getByText('フルHD以上（1080p）'))
 
       // クリア
       await user.click(screen.getByRole('button', { name: 'クリア' }))
