@@ -966,6 +966,101 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
+  // ============================================================
+  // 撮影地点プレビュー: ミニマップクリックテスト
+  // ============================================================
+
+  describe('撮影地点プレビュー: ミニマップクリック', () => {
+    it('ミニマップクリック時にonMinimapClickが座標つきで呼ばれる', async () => {
+      const photoDetail = createMockApiResponse({
+        latitude: 35.6586,
+        longitude: 139.7454,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+      const onMinimapClick = vi.fn()
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} onMinimapClick={onMinimapClick} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} onMinimapClick={onMinimapClick} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('detail-minimap'))
+
+      expect(onMinimapClick).toHaveBeenCalledWith({
+        lat: 35.6586,
+        lng: 139.7454,
+      })
+    })
+
+    it('撮影座標がない場合、スポット座標でonMinimapClickが呼ばれる', async () => {
+      const photoDetail = createMockApiResponse()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+      const onMinimapClick = vi.fn()
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} onMinimapClick={onMinimapClick} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} onMinimapClick={onMinimapClick} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('detail-minimap'))
+
+      // スポット座標（35.6762, 139.6503）でコールバックが呼ばれる
+      expect(onMinimapClick).toHaveBeenCalledWith({
+        lat: 35.6762,
+        lng: 139.6503,
+      })
+    })
+
+    it('onMinimapClickが未設定の場合、ミニマップはcursor-pointerクラスを持たない', async () => {
+      const photoDetail = createMockApiResponse({
+        latitude: 35.6586,
+        longitude: 139.7454,
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        const minimap = screen.getByTestId('detail-minimap')
+        expect(minimap).not.toHaveClass('cursor-pointer')
+      })
+    })
+  })
+
   // ===== Issue#49: クロップ表示テスト =====
   describe('Issue#49: クロップ表示', () => {
     it('写真表示エリアが正方形コンテナで表示される', async () => {

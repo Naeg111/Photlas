@@ -9,6 +9,8 @@ export interface MapViewHandle {
   refreshSpots: () => void
   zoomIn: () => void
   zoomOut: () => void
+  showShootingLocationPin: (lat: number, lng: number) => void
+  clearShootingLocationPin: () => void
 }
 
 /**
@@ -105,9 +107,13 @@ const GOOGLE_MAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || ''
 const LIBRARIES: ('places')[] = ['places']
 
 // MapViewコンポーネントのProps（Issue#16）
+// 撮影地点プレビューのピンク色
+const SHOOTING_PIN_COLOR = '#ec4899'
+
 interface MapViewProps {
   filterParams?: MapViewFilterParams
   onSpotClick?: (spotId: number) => void
+  onMapClick?: () => void
 }
 
 /**
@@ -138,13 +144,14 @@ function FallbackMapView() {
   )
 }
 
-const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick }, ref) {
+const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onMapClick }, ref) {
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const [showToast, setShowToast] = useState(false)
   const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null)
   const [userHeading, setUserHeading] = useState<number | null>(null)
+  const [shootingLocationPin, setShootingLocationPin] = useState<google.maps.LatLngLiteral | null>(null)
   const listenerAddedRef = useRef(false)
   const initialMountRef = useRef(true)
   const watchIdRef = useRef<number | null>(null)
@@ -327,6 +334,16 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         map.setZoom(current - 1)
       }
     },
+    showShootingLocationPin: (lat: number, lng: number) => {
+      if (map) {
+        map.setZoom(16)
+        map.panTo({ lat, lng })
+        setShootingLocationPin({ lat, lng })
+      }
+    },
+    clearShootingLocationPin: () => {
+      setShootingLocationPin(null)
+    },
   }), [map, requestOrientationPermission, fetchSpots])
 
   // 地図が読み込まれたときの処理
@@ -425,6 +442,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
         onLoad={handleLoad}
+        onClick={() => onMapClick?.()}
         options={{
           disableDefaultUI: true,
           clickableIcons: false,
@@ -516,6 +534,42 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               </OverlayViewF>
             )
           })}
+
+        {/* 撮影地点プレビューピン（ピンクのピン + ドロップアニメーション） */}
+        {shootingLocationPin && (
+          <OverlayViewF
+            position={shootingLocationPin}
+            mapPaneName="overlayMouseTarget"
+          >
+            <div
+              data-testid="shooting-location-pin"
+              className="cursor-pointer"
+              style={{
+                width: `${BASE_PIN_SIZE * 1.4}px`,
+                height: `${BASE_PIN_SIZE * 1.2 * 1.4}px`,
+                transform: 'translate(-50%, -100%)',
+              }}
+              onClick={() => onMapClick?.()}
+            >
+              <div className="pin-drop">
+                <svg viewBox="-2 -2 36 42" width="100%" height="100%">
+                  <defs>
+                    <filter id="pin-shadow-pink">
+                      <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.4" />
+                    </filter>
+                  </defs>
+                  <path
+                    d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
+                    fill={SHOOTING_PIN_COLOR}
+                    stroke="rgba(0,0,0,0.3)"
+                    strokeWidth="1"
+                    filter="url(#pin-shadow-pink)"
+                  />
+                </svg>
+              </div>
+            </div>
+          </OverlayViewF>
+        )}
 
         {/* 現在地マーカー（パルスエフェクト + ビーム + 青い円） */}
         {userLocation && (
