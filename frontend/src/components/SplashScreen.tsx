@@ -18,8 +18,8 @@ export function SplashScreen() {
         {/* Logo Design - Pin with Camera */}
         <div className="relative mb-8">
           <svg
-            width="100"
-            height="100"
+            width="130"
+            height="130"
             viewBox="56 60 400 400"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
