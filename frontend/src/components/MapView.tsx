@@ -415,6 +415,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           clickableIcons: false,
           gestureHandling: 'greedy',
           keyboardShortcuts: false,
+          isFractionalZoomEnabled: false,
         }}
       >
         {/* Issue#39: クラスタリング対応ピン表示 */}
@@ -471,10 +472,18 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                   }}
                   onClick={() => onSpotClick?.(spot.spotId)}
                 >
-                  <svg viewBox="0 0 32 38" width="100%" height="100%">
+                  <svg viewBox="-2 -2 36 42" width="100%" height="100%">
+                    <defs>
+                      <filter id="pin-shadow">
+                        <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.4" />
+                      </filter>
+                    </defs>
                     <path
                       d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
                       fill={PIN_FILL_COLOR_MAP[spot.pinColor]}
+                      stroke="rgba(0,0,0,0.3)"
+                      strokeWidth="1"
+                      filter="url(#pin-shadow)"
                     />
                     <text
                       x="16"
