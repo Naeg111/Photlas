@@ -73,15 +73,22 @@ describe('SplashScreen', () => {
       expect(paths!.length).toBeGreaterThan(0)
     })
 
-    it('includes camera aperture circle in SVG', () => {
+    it('includes camera lens circle in SVG', () => {
       const { container } = render(<SplashScreen />)
 
       const svg = container.querySelector('svg')
-      const circle = svg?.querySelector('circle')
-      expect(circle).toBeInTheDocument()
-      expect(circle).toHaveAttribute('cx', '40')
-      expect(circle).toHaveAttribute('cy', '26')
-      expect(circle).toHaveAttribute('r', '10')
+      const circles = svg?.querySelectorAll('circle')
+      expect(circles).toBeTruthy()
+      expect(circles!.length).toBeGreaterThanOrEqual(2)
+    })
+
+    it('includes camera body rect in SVG', () => {
+      const { container } = render(<SplashScreen />)
+
+      const svg = container.querySelector('svg')
+      const rects = svg?.querySelectorAll('rect')
+      expect(rects).toBeTruthy()
+      expect(rects!.length).toBeGreaterThanOrEqual(2)
     })
   })
 })
