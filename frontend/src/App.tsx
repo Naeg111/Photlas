@@ -18,6 +18,7 @@ import { AccountSettingsDialog } from './components/AccountSettingsDialog'
 import ProfileDialog from './components/ProfileDialog'
 import PhotoDetailDialog from './components/PhotoDetailDialog'
 import { WantToGoListDialog } from './components/WantToGoListDialog'
+import { AboutDialog } from './components/AboutDialog'
 import { PhotoLightbox } from './components/PhotoLightbox'
 import MapView from './components/MapView'
 import type { MapViewFilterParams, MapViewHandle } from './components/MapView'
@@ -325,12 +326,15 @@ function MainContent() {
         onMyPageClick={handleShowProfile}
         onFavoritesClick={handleShowWantToGoList}
         onAccountSettingsClick={() => dialog.open('accountSettings')}
+        onAboutClick={() => dialog.open('about')}
         onTermsClick={() => dialog.open('terms')}
         onPrivacyClick={() => dialog.open('privacy')}
         onLoginClick={() => dialog.open('login')}
         onSignUpClick={() => dialog.open('signUp')}
         onLogout={handleLogout}
       />
+
+      <AboutDialog {...dialog.getProps('about')} />
 
       <LoginRequiredDialog
         {...dialog.getProps('loginRequired')}

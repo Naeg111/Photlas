@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
-import { User, Settings, FileText, Shield, LogOut, Heart, LogIn, UserPlus } from "lucide-react";
+import { User, Settings, FileText, Shield, LogOut, Heart, LogIn, UserPlus, Info } from "lucide-react";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 
@@ -12,6 +12,7 @@ interface TopMenuPanelProps {
   onAccountSettingsClick: () => void;
   onTermsClick: () => void;
   onPrivacyClick: () => void;
+  onAboutClick: () => void;
   onLoginClick: () => void;
   onSignUpClick: () => void;
   onLogout: () => void;
@@ -24,6 +25,7 @@ export function TopMenuPanel({
   onMyPageClick,
   onFavoritesClick,
   onAccountSettingsClick,
+  onAboutClick,
   onTermsClick,
   onPrivacyClick,
   onLoginClick,
@@ -40,6 +42,18 @@ export function TopMenuPanel({
           </SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-2">
+          <Button
+            variant="ghost"
+            className="justify-start gap-3"
+            onClick={() => {
+              onAboutClick();
+              onOpenChange(false);
+            }}
+          >
+            <Info className="w-5 h-5" />
+            Photlasとは？
+          </Button>
+          <Separator />
           {isLoggedIn ? (
             <>
               <Button
