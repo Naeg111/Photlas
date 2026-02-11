@@ -68,6 +68,9 @@ function MainContent() {
   // 他ユーザーのプロフィール表示用の状態
   const [viewingUser, setViewingUser] = useState<{ userId: number; username: string } | null>(null)
 
+  // 撮影地点プレビュー状態
+  const [shootingLocationPreview, setShootingLocationPreview] = useState<{ lat: number; lng: number } | null>(null)
+
   // カテゴリマップの取得
   useEffect(() => {
     const loadCategories = async () => {
@@ -226,8 +229,24 @@ function MainContent() {
 
   // スポットクリックハンドラー（MapViewから呼び出される）
   const handleSpotClick = (spotId: number) => {
+    if (shootingLocationPreview) {
+      handleReturnFromPreview()
+      return
+    }
     setSelectedSpotId(spotId)
     dialog.open('photoDetail')
+  }
+
+  // ミニマップクリックハンドラー（撮影地点プレビュー開始）
+  const handleMinimapClick = (location: { lat: number; lng: number }) => {
+    setShootingLocationPreview(location)
+    mapRef.current?.showShootingLocationPin(location.lat, location.lng)
+  }
+
+  // プレビューからの復帰ハンドラー
+  const handleReturnFromPreview = () => {
+    setShootingLocationPreview(null)
+    mapRef.current?.clearShootingLocationPin()
   }
 
   // ライトボックス表示ハンドラー
@@ -240,7 +259,12 @@ function MainContent() {
     <div className="relative w-full h-full overflow-hidden">
       {/* MapView - メインコンテンツ（z-0で最下層に配置、画面全体を覆う） */}
       <div className="absolute inset-0 z-0">
-        <MapView ref={mapRef} filterParams={mapFilterParams} onSpotClick={handleSpotClick} />
+        <MapView
+          ref={mapRef}
+          filterParams={mapFilterParams}
+          onSpotClick={handleSpotClick}
+          onMapClick={shootingLocationPreview ? handleReturnFromPreview : undefined}
+        />
       </div>
 
       {/* フローティングUI - 左上: フィルターボタン、右上: メニューボタン */}
@@ -411,10 +435,14 @@ function MainContent() {
           onClose={() => {
             dialog.close('photoDetail')
             setSelectedSpotId(null)
+            setShootingLocationPreview(null)
+            mapRef.current?.clearShootingLocationPin()
           }}
           onUserClick={handleUserClick}
           onImageClick={handleShowLightbox}
           isLightboxOpen={dialog.isOpen('lightbox')}
+          onMinimapClick={handleMinimapClick}
+          isSlideDown={!!shootingLocationPreview}
         />
       )}
 
