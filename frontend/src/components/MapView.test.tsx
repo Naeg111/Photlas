@@ -229,9 +229,9 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        // ピンのスタイルが円形（border-radius: 50%）であることを確認
+        // ピンがSVGマーカー形状で表示されていることを確認
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin).toHaveClass('rounded-full')
+        expect(pin.querySelector('svg')).toBeInTheDocument()
 
         // 写真枚数が表示されていることを確認
         expect(screen.getByText('3')).toBeInTheDocument()
@@ -259,7 +259,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin).toHaveClass('bg-green-500')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#22c55e')
       })
     })
 
@@ -284,7 +284,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin).toHaveClass('bg-yellow-500')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#eab308')
       })
     })
 
@@ -309,7 +309,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin).toHaveClass('bg-orange-500')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#f97316')
       })
     })
 
@@ -334,7 +334,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin).toHaveClass('bg-red-500')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#ef4444')
       })
     })
   })
