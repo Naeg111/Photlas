@@ -32,8 +32,8 @@ const TIME_OF_DAY = ["朝", "昼", "夕方", "夜"];
 
 const WEATHER = ["晴れ", "曇り", "雨", "雪"];
 
-// アイコンが fill="#000000" でハードコードされているため、選択時に invert が必要なカテゴリ
-const CATEGORIES_NEED_INVERT = ["植物", "バイク", "その他"];
+// カテゴリアイコンは全て fill="currentColor" のため invert 不要
+const CATEGORIES_NEED_INVERT: string[] = [];
 
 // アイコンが fill="#000000" でハードコードされているため、選択時に invert が必要な月（3月以外）
 const MONTHS_NEED_INVERT = ["1月", "2月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
@@ -43,7 +43,7 @@ const TIMES_NEED_INVERT = ["夕方"];
 
 // Issue#46: 詳細フィルターの選択肢
 const RESOLUTION_OPTIONS = [
-  { label: "高画質のみ", value: 1080 },
+  { label: "フルHD以上（1080p）", value: 1080 },
   { label: "すべて表示", value: undefined },
 ] as const;
 
@@ -70,14 +70,14 @@ const ASPECT_RATIO_OPTIONS = [
 ] as const;
 
 const FOCAL_LENGTH_OPTIONS = [
-  { label: "広角（< 24mm）", value: "WIDE" },
+  { label: "広角（24mm未満）", value: "WIDE" },
   { label: "標準（24-70mm）", value: "STANDARD" },
-  { label: "望遠（> 70mm）", value: "TELEPHOTO" },
-  { label: "超望遠（> 300mm）", value: "SUPER_TELEPHOTO" },
+  { label: "望遠（70-300mm）", value: "TELEPHOTO" },
+  { label: "超望遠（301mm以上）", value: "SUPER_TELEPHOTO" },
 ] as const;
 
 const ISO_OPTIONS = [
-  { label: "低感度 (ISO 400以下)", value: 400 },
+  { label: "低感度（ISO 400以下）", value: 400 },
 ] as const;
 
 export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
@@ -300,7 +300,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
               className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground"
               onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
             >
-              詳細フィルター
+              上級者向けフィルター
               {isAdvancedOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </Button>
 

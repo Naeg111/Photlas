@@ -514,10 +514,9 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        // クラスタピンはw-10 h-10、個別ピンはw-8 h-8
-        const clusterPin = document.querySelector('.w-10.h-10')
-        const individualPin = document.querySelector('.w-8.h-8')
-        // どちらかが存在する（クラスタ化の有無に依存）
+        // クラスタピンまたは個別ピンが存在する（クラスタ化の有無に依存）
+        const clusterPin = document.querySelector('[data-testid^="map-cluster-"]')
+        const individualPin = document.querySelector('[data-testid^="map-pin-"]')
         expect(clusterPin !== null || individualPin !== null).toBe(true)
       })
     })

@@ -588,68 +588,14 @@ export const MonthIcons: Record<
       height="256"
     >
       <g fill="#000000">
-        <path
-          d="M190,200 
-             Q60,100 20,50 
-             Q0,20 120,30 
-             Q170,50 220,180 Z"
-        />
-
-        <path
-          d="M322,200 
-             Q452,100 492,50 
-             Q512,20 392,30 
-             Q342,50 292,180 Z"
-        />
-
-        <path
-          d="M160,180
-             C120,190 60,250 60,330
-             Q60,400 120,440
-             Q180,480 256,480
-             Q332,480 392,440
-             Q452,400 452,330
-             C452,250 392,190 352,180
-             Q256,160 160,180 Z"
-        />
-      </g>
-
-      <g fill="#FFFFFF">
-        <path
-          d="M185,180 Q70,100 60,70 Q55,55 90,60 Q130,70 195,160 Z"
-          opacity="0.9"
-        />
-        <path
-          d="M327,180 Q442,100 452,70 Q457,55 422,60 Q382,70 317,160 Z"
-          opacity="0.9"
-        />
-
-        <circle cx="170" cy="300" r="18" />
-        <circle cx="342" cy="300" r="18" />
-        <path d="M246,330 L266,330 L256,345 Z" />
-        <path
-          d="M256,345 L256,365"
-          stroke="#FFFFFF"
-          stroke-width="4"
-          stroke-linecap="round"
-        />
-        <path
-          d="M256,365 Q226,390 206,360 M256,365 Q286,390 306,360"
-          fill="none"
-          stroke="#FFFFFF"
-          stroke-width="6"
-          stroke-linecap="round"
-        />
-        <g
-          stroke="#FFFFFF"
-          stroke-width="4"
-          stroke-linecap="round"
-        >
-          <path d="M130,340 L80,330" />
-          <path d="M130,360 L90,370" />
-          <path d="M382,340 L432,330" />
-          <path d="M382,360 L422,370" />
-        </g>
+        {/* 左耳 */}
+        <ellipse cx="185" cy="120" rx="45" ry="100" transform="rotate(-15 185 120)" />
+        {/* 右耳 */}
+        <ellipse cx="327" cy="120" rx="45" ry="100" transform="rotate(15 327 120)" />
+        {/* 頭 */}
+        <circle cx="256" cy="260" r="130" />
+        {/* 体 */}
+        <ellipse cx="256" cy="420" rx="110" ry="80" />
       </g>
     </svg>
   ),
