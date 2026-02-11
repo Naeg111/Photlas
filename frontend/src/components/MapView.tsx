@@ -72,10 +72,7 @@ function determinePinColorClass(count: number): string {
  * ズームレベルに応じたピンのスケール倍率を返す
  */
 function getPinScale(zoom: number): number {
-  if (zoom >= 18) return 4.0
-  if (zoom >= 17) return 3.0
   if (zoom >= 16) return 2.0
-  if (zoom >= 15) return 1.5
   return 1.0
 }
 

@@ -588,14 +588,19 @@ export const MonthIcons: Record<
       height="256"
     >
       <g fill="#000000">
-        {/* 左耳 */}
-        <ellipse cx="185" cy="120" rx="45" ry="100" transform="rotate(-15 185 120)" />
-        {/* 右耳 */}
-        <ellipse cx="327" cy="120" rx="45" ry="100" transform="rotate(15 327 120)" />
-        {/* 頭 */}
-        <circle cx="256" cy="260" r="130" />
-        {/* 体 */}
-        <ellipse cx="256" cy="420" rx="110" ry="80" />
+        {/* 三方（台座） */}
+        <rect x="136" y="400" width="240" height="20" rx="4" />
+        <path d="M156,400 L166,360 L346,360 L356,400 Z" />
+        <rect x="176" y="360" width="160" height="12" rx="3" />
+        {/* 下段：3個 */}
+        <circle cx="196" cy="320" r="44" />
+        <circle cx="316" cy="320" r="44" />
+        <circle cx="256" cy="320" r="44" />
+        {/* 中段：2個 */}
+        <circle cx="226" cy="240" r="44" />
+        <circle cx="286" cy="240" r="44" />
+        {/* 上段：1個 */}
+        <circle cx="256" cy="160" r="44" />
       </g>
     </svg>
   ),
