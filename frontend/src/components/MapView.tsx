@@ -418,9 +418,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full" style={{ transform: 'translateZ(0)' }}>
       <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '100%' }}
+        mapContainerStyle={{ width: '100%', height: '100%', imageRendering: 'auto' }}
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
         onLoad={handleLoad}
