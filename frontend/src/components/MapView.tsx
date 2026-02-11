@@ -41,11 +41,20 @@ export interface MapViewFilterParams {
 }
 
 // ピンの色をTailwindクラスにマッピング
-const PIN_COLOR_MAP: Record<SpotResponse['pinColor'], string> = {
+// Tailwind bgクラス（クラスタピン用）
+const PIN_BG_CLASS_MAP: Record<SpotResponse['pinColor'], string> = {
   Green: 'bg-green-500',
   Yellow: 'bg-yellow-500',
   Orange: 'bg-orange-500',
   Red: 'bg-red-500',
+}
+
+// SVG fillカラー（個別ピン用）
+const PIN_FILL_COLOR_MAP: Record<SpotResponse['pinColor'], string> = {
+  Green: '#22c55e',
+  Yellow: '#eab308',
+  Orange: '#f97316',
+  Red: '#ef4444',
 }
 
 // 地図の初期設定
@@ -62,10 +71,10 @@ const CLUSTER_MAX_ZOOM = 16
  * Issue#12のピン色ルールに準拠
  */
 function determinePinColorClass(count: number): string {
-  if (count >= 30) return PIN_COLOR_MAP.Red
-  if (count >= 10) return PIN_COLOR_MAP.Orange
-  if (count >= 5) return PIN_COLOR_MAP.Yellow
-  return PIN_COLOR_MAP.Green
+  if (count >= 30) return PIN_BG_CLASS_MAP.Red
+  if (count >= 10) return PIN_BG_CLASS_MAP.Orange
+  if (count >= 5) return PIN_BG_CLASS_MAP.Yellow
+  return PIN_BG_CLASS_MAP.Green
 }
 
 /**
@@ -454,15 +463,32 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               >
                 <div
                   data-testid={`map-pin-${spot.spotId}`}
-                  className={`rounded-full ${PIN_COLOR_MAP[spot.pinColor]} flex items-center justify-center text-white font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2`}
+                  className="cursor-pointer"
                   style={{
                     width: `${BASE_PIN_SIZE * getPinScale(zoom)}px`,
-                    height: `${BASE_PIN_SIZE * getPinScale(zoom)}px`,
-                    fontSize: `${14 * getPinScale(zoom)}px`,
+                    height: `${BASE_PIN_SIZE * 1.4 * getPinScale(zoom)}px`,
+                    transform: 'translate(-50%, -100%)',
                   }}
                   onClick={() => onSpotClick?.(spot.spotId)}
                 >
-                  {spot.photoCount}
+                  <svg viewBox="0 0 32 45" width="100%" height="100%">
+                    <path
+                      d="M16 0C7.16 0 0 7.16 0 16c0 12 16 29 16 29s16-17 16-29C32 7.16 24.84 0 16 0z"
+                      fill={PIN_FILL_COLOR_MAP[spot.pinColor]}
+                      stroke="#ffffff"
+                      strokeWidth="2"
+                    />
+                    <text
+                      x="16"
+                      y="19"
+                      textAnchor="middle"
+                      fill="#ffffff"
+                      fontSize="14"
+                      fontWeight="bold"
+                    >
+                      {spot.photoCount}
+                    </text>
+                  </svg>
                 </div>
               </OverlayViewF>
             )
