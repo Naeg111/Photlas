@@ -107,25 +107,26 @@
 }
 
 /* 投稿詳細ダイアログ: 画面中央から広がるアニメーション */
+/* Tailwind v4ではtranslateが独立CSSプロパティのため、transformにはscaleのみ指定 */
 @keyframes dialog-zoom-in {
   from {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
+    transform: scale(0.8);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
   }
 }
 
 @keyframes dialog-zoom-out {
   from {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
   }
   to {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
+    transform: scale(0.8);
   }
 }
 
