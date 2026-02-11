@@ -68,6 +68,7 @@ jobs:
         build-args: |
           VITE_API_URL=${{ env.VITE_API_URL }}
           VITE_GOOGLE_MAPS_API_KEY=${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+          VITE_GOOGLE_MAPS_MAP_ID=${{ secrets.VITE_GOOGLE_MAPS_MAP_ID }}
           VITE_GA_MEASUREMENT_ID=${{ secrets.VITE_GA_MEASUREMENT_ID }}
           VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
         cache-from: type=gha
@@ -118,6 +119,7 @@ jobs:
       env:
         VITE_API_URL: 'https://test-api.photlas.jp'
         VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+        VITE_GOOGLE_MAPS_MAP_ID: ${{ secrets.VITE_GOOGLE_MAPS_MAP_ID }}
         VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
       run: pnpm build
@@ -339,6 +341,7 @@ jobs:
       env:
         VITE_API_URL: ''
         VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+        VITE_GOOGLE_MAPS_MAP_ID: ${{ secrets.VITE_GOOGLE_MAPS_MAP_ID }}
         VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
       run: pnpm build
