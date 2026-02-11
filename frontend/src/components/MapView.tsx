@@ -7,6 +7,8 @@ import { API_V1_URL } from '../config/api'
 export interface MapViewHandle {
   centerOnUserLocation: () => void
   refreshSpots: () => void
+  zoomIn: () => void
+  zoomOut: () => void
 }
 
 /**
@@ -310,6 +312,18 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     refreshSpots: () => {
       if (map) {
         fetchSpots(map)
+      }
+    },
+    zoomIn: () => {
+      if (map) {
+        const current = map.getZoom() ?? DEFAULT_ZOOM
+        map.setZoom(current + 1)
+      }
+    },
+    zoomOut: () => {
+      if (map) {
+        const current = map.getZoom() ?? DEFAULT_ZOOM
+        map.setZoom(current - 1)
       }
     },
   }), [map, requestOrientationPermission, fetchSpots])
