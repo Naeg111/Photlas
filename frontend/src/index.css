@@ -106,6 +106,19 @@
   }
 }
 
+/* Google Maps タイルのぼやけ防止 */
+.gm-style img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.gm-style {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 /* 現在地マーカーのパルスエフェクト */
 @keyframes location-pulse {
   0% {
