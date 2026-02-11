@@ -15,42 +15,31 @@ export function SplashScreen() {
         transition={{ duration: 0.5 }}
         className="text-center"
       >
-        {/* Logo Design - Pin with Camera Aperture */}
+        {/* Logo Design - Pin with Camera */}
         <div className="relative mb-8">
           <svg
             width="80"
             height="80"
-            viewBox="0 0 80 80"
+            viewBox="56 60 400 400"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className="mx-auto"
           >
             {/* Map Pin Shape */}
             <path
-              d="M40 5C28.402 5 19 14.402 19 26C19 38.5 40 65 40 65C40 65 61 38.5 61 26C61 14.402 51.598 5 40 5Z"
-              fill="white"
-              stroke="white"
-              strokeWidth="2"
-            />
-            {/* Camera Aperture Circle */}
-            <circle cx="40" cy="26" r="10" fill="black" />
-            {/* Aperture Blades */}
-            <path
-              d="M40 18L42.5 23.5L40 26L37.5 23.5L40 18Z"
+              d="M256 80C180 80 120 140 120 216c0 96 136 228 136 228s136-132 136-228C392 140 332 80 256 80z"
               fill="white"
             />
-            <path
-              d="M48 26L42.5 28.5L40 26L42.5 23.5L48 26Z"
-              fill="white"
-            />
-            <path
-              d="M40 34L37.5 28.5L40 26L42.5 28.5L40 34Z"
-              fill="white"
-            />
-            <path
-              d="M32 26L37.5 23.5L40 26L37.5 28.5L32 26Z"
-              fill="white"
-            />
+            {/* Camera Body */}
+            <rect x="182" y="190" width="148" height="86" rx="12" fill="black" />
+            {/* Camera Top */}
+            <rect x="224" y="170" width="56" height="28" rx="6" fill="black" />
+            {/* Lens Outer */}
+            <circle cx="256" cy="230" r="30" fill="white" />
+            {/* Lens Inner */}
+            <circle cx="256" cy="230" r="18" fill="black" />
+            {/* Flash */}
+            <circle cx="316" cy="208" r="6" fill="white" opacity="0.6" />
           </svg>
         </div>
         <h1 className="text-white text-6xl mb-8 tracking-tight">Photlas</h1>

@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
-import { User, Settings, FileText, Shield, LogOut, Heart, LogIn, UserPlus, Info } from "lucide-react";
+import { User, Settings, FileText, Shield, LogOut, Heart, LogIn, UserPlus } from "lucide-react";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 
@@ -50,7 +50,13 @@ export function TopMenuPanel({
               onOpenChange(false);
             }}
           >
-            <Info className="w-5 h-5" />
+            <svg className="w-5 h-5" viewBox="56 60 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M256 80C180 80 120 140 120 216c0 96 136 228 136 228s136-132 136-228C392 140 332 80 256 80z" fill="currentColor"/>
+              <rect x="182" y="190" width="148" height="86" rx="12" fill="white"/>
+              <rect x="224" y="170" width="56" height="28" rx="6" fill="white"/>
+              <circle cx="256" cy="230" r="30" fill="currentColor"/>
+              <circle cx="256" cy="230" r="18" fill="white"/>
+            </svg>
             Photlasとは？
           </Button>
           <Separator />
