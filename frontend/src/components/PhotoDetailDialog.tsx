@@ -337,6 +337,23 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
   const [error, setError] = useState<string | null>(null)
   const [emblaRef, emblaApi] = useEmblaCarousel()
 
+  // Issue#50: isSlideDownのref版（Radix flushSync対策）
+  // Radix DismissableLayerのdispatchDiscreteCustomEventはflushSyncでstate更新を強制コミットするため、
+  // モバイルタッチ時にisSlideDown propがfalseになった状態でイベントハンドラが評価される。
+  // このrefはuseEffectでのみ更新されるため、flushSyncの影響を受けず、
+  // プレビュー復帰時の全イベント（pointer-down-outside, focus-outside等）を確実にブロックする。
+  const wasSlideDownRef = useRef(false)
+  useEffect(() => {
+    if (isSlideDown) {
+      wasSlideDownRef.current = true
+    } else if (wasSlideDownRef.current) {
+      const timer = setTimeout(() => {
+        wasSlideDownRef.current = false
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [isSlideDown])
+
   // Issue#30: お気に入り状態管理
   const [isFavorited, setIsFavorited] = useState(false)
   const [favoriteCount, setFavoriteCount] = useState(0)
@@ -511,10 +528,10 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
         }}
         overlayClassName={isSlideDown ? 'bg-transparent pointer-events-none' : undefined}
         hideCloseButton
-        onPointerDownOutside={(e) => { if (isLightboxOpen || isSlideDown) e.preventDefault() }}
-        onFocusOutside={(e) => { if (isLightboxOpen || isSlideDown) e.preventDefault() }}
-        onInteractOutside={(e) => { if (isLightboxOpen || isSlideDown) e.preventDefault() }}
-        onEscapeKeyDown={(e) => { if (isLightboxOpen || isSlideDown) e.preventDefault() }}
+        onPointerDownOutside={(e) => { if (isLightboxOpen || wasSlideDownRef.current) e.preventDefault() }}
+        onFocusOutside={(e) => { if (isLightboxOpen || wasSlideDownRef.current) e.preventDefault() }}
+        onInteractOutside={(e) => { if (isLightboxOpen || wasSlideDownRef.current) e.preventDefault() }}
+        onEscapeKeyDown={(e) => { if (isLightboxOpen || wasSlideDownRef.current) e.preventDefault() }}
       >
         <DialogTitle className="sr-only">{SR_TITLE}</DialogTitle>
         <DialogDescription className="sr-only">{SR_DESCRIPTION}</DialogDescription>
