@@ -258,15 +258,15 @@ function MainContent() {
     if (!shootingLocationPreviewRef.current) return
     setShootingLocationPreview(null)
     mapRef.current?.clearShootingLocationPin()
-    // Issue#50: setTimeoutでフラグをクリア（macrotask）
-    // useEffectだとRadixのflushSync→flushPassiveEffects()で早期実行され、
-    // onCloseのガードが無効化されてしまう。setTimeoutはmacrotaskのため
-    // flushSyncの影響を受けず、全ての同期イベント処理完了後に確実に実行される。
+    // Issue#50: 500ms遅延でフラグをクリア
+    // モバイルタッチ時、Radixのflushyncやブラウザの遅延イベント（focusin等）が
+    // 予測不能なタイミングでonDismissを呼ぶ可能性がある。
+    // スライドアップアニメーション（400ms）完了後まで全dismiss操作をブロックする。
     setTimeout(() => {
       if (!shootingLocationPreviewRef.current) {
         isInPreviewRef.current = false
       }
-    }, 0)
+    }, 500)
   }, [])
 
   // ライトボックス表示ハンドラー
