@@ -557,8 +557,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               data-testid="shooting-location-pin"
               className="cursor-pointer"
               style={{
-                width: `${BASE_PIN_SIZE * 2}px`,
-                height: `${BASE_PIN_SIZE * 1.2 * 2}px`,
+                width: `${BASE_PIN_SIZE * 1.4}px`,
+                height: `${BASE_PIN_SIZE * 1.2 * 1.4}px`,
                 transform: 'translate(-50%, -100%)',
               }}
               onClick={() => onMapClickRef.current?.()}
