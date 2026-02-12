@@ -171,7 +171,7 @@ describe('LoginDialog', () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ user: { email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
+        json: () => Promise.resolve({ user: { id: 1, email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
       })
 
       render(<LoginDialog {...defaultProps} />)
@@ -182,7 +182,7 @@ describe('LoginDialog', () => {
 
       await waitFor(() => {
         expect(mockLogin).toHaveBeenCalledWith(
-          { email: 'test@example.com', username: 'testuser', role: 'user' },
+          { userId: 1, email: 'test@example.com', username: 'testuser', role: 'user' },
           'test-token',
           false // rememberMe is false by default
         )
@@ -195,7 +195,7 @@ describe('LoginDialog', () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ user: { email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
+        json: () => Promise.resolve({ user: { id: 1, email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
       })
 
       render(<LoginDialog {...defaultProps} />)

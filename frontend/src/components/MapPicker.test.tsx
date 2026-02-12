@@ -134,18 +134,6 @@ describe('MapPicker', () => {
       expect(searchBar).toHaveValue('東京タワー')
     })
 
-    it('displays autocomplete suggestions when typing (mocked)', async () => {
-      // Note: Google Places APIのモックは複雑なため、基本的なUIテストのみ
-      render(<MapPicker open={true} onConfirm={mockOnConfirm} onCancel={mockOnCancel} />)
-
-      const searchBar = screen.getByPlaceholderText(/場所を検索/)
-      fireEvent.change(searchBar, { target: { value: '東京' } })
-
-      // 実装時にAutocompleteのドロップダウンが表示されることを確認
-      // await waitFor(() => {
-      //   expect(screen.getByTestId('autocomplete-dropdown')).toBeInTheDocument()
-      // })
-    })
   })
 
   describe('Current Location - 現在地機能', () => {

@@ -8,14 +8,14 @@ import { TopMenuPanel } from './TopMenuPanel'
  *
  * UI要件:
  * - スライドインアニメーションを持つパネル
- * - マイページ表示メニュー項目
- * - アカウント設定表示メニュー項目
- * - ログアウトメニュー項目
+ * - ログイン状態でマイページ・行きたい場所リスト・アカウント設定・ログアウトを表示
+ * - ログアウト状態でログイン・新規アカウント作成を表示
  */
 
 describe('TopMenuPanel', () => {
   const mockOnOpenChange = vi.fn()
   const mockOnMyPageClick = vi.fn()
+  const mockOnFavoritesClick = vi.fn()
   const mockOnAccountSettingsClick = vi.fn()
   const mockOnAboutClick = vi.fn()
   const mockOnTermsClick = vi.fn()
@@ -24,138 +24,73 @@ describe('TopMenuPanel', () => {
   const mockOnSignUpClick = vi.fn()
   const mockOnLogout = vi.fn()
 
+  const defaultProps = {
+    open: true,
+    onOpenChange: mockOnOpenChange,
+    isLoggedIn: true,
+    onMyPageClick: mockOnMyPageClick,
+    onFavoritesClick: mockOnFavoritesClick,
+    onAccountSettingsClick: mockOnAccountSettingsClick,
+    onAboutClick: mockOnAboutClick,
+    onTermsClick: mockOnTermsClick,
+    onPrivacyClick: mockOnPrivacyClick,
+    onLoginClick: mockOnLoginClick,
+    onSignUpClick: mockOnSignUpClick,
+    onLogout: mockOnLogout,
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  describe('UI Elements', () => {
-    it('renders when open prop is true with logged in user', () => {
-      render(
-        <TopMenuPanel
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          isLoggedIn={true}
-          onMyPageClick={mockOnMyPageClick}
-          onAccountSettingsClick={mockOnAccountSettingsClick}
-          onAboutClick={mockOnAboutClick}
-          onTermsClick={mockOnTermsClick}
-          onPrivacyClick={mockOnPrivacyClick}
-          onLoginClick={mockOnLoginClick}
-          onSignUpClick={mockOnSignUpClick}
-          onLogout={mockOnLogout}
-        />
-      )
+  describe('UI Elements - ログイン状態', () => {
+    it('renders logged-in menu items', () => {
+      render(<TopMenuPanel {...defaultProps} />)
 
-      // メニュー項目が表示されることを確認
-      expect(screen.getByText(/マイページ/i)).toBeInTheDocument()
+      expect(screen.getByText(/Photlasとは？/)).toBeInTheDocument()
+      expect(screen.getByText(/マイページ/)).toBeInTheDocument()
+      expect(screen.getByText(/行きたい場所リスト/)).toBeInTheDocument()
+      expect(screen.getByText(/アカウント設定/)).toBeInTheDocument()
+      expect(screen.getByText(/利用規約/)).toBeInTheDocument()
+      expect(screen.getByText(/プライバシーポリシー/)).toBeInTheDocument()
+      expect(screen.getByText(/ログアウト/)).toBeInTheDocument()
     })
 
-    it('renders profile menu item', () => {
-      render(
-        <TopMenuPanel
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          isLoggedIn={true}
-          onMyPageClick={mockOnMyPageClick}
-          onAccountSettingsClick={mockOnAccountSettingsClick}
-          onAboutClick={mockOnAboutClick}
-          onTermsClick={mockOnTermsClick}
-          onPrivacyClick={mockOnPrivacyClick}
-          onLoginClick={mockOnLoginClick}
-          onSignUpClick={mockOnSignUpClick}
-          onLogout={mockOnLogout}
-        />
-      )
+    it('does not render login/signup items when logged in', () => {
+      render(<TopMenuPanel {...defaultProps} />)
 
-      expect(screen.getByText(/マイページ/i)).toBeInTheDocument()
-    })
-
-    it('renders account settings menu item', () => {
-      render(
-        <TopMenuPanel
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          isLoggedIn={true}
-          onMyPageClick={mockOnMyPageClick}
-          onAccountSettingsClick={mockOnAccountSettingsClick}
-          onAboutClick={mockOnAboutClick}
-          onTermsClick={mockOnTermsClick}
-          onPrivacyClick={mockOnPrivacyClick}
-          onLoginClick={mockOnLoginClick}
-          onSignUpClick={mockOnSignUpClick}
-          onLogout={mockOnLogout}
-        />
-      )
-
-      expect(screen.getByText(/アカウント設定/i)).toBeInTheDocument()
-    })
-
-    it('renders logout menu item', () => {
-      render(
-        <TopMenuPanel
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          isLoggedIn={true}
-          onMyPageClick={mockOnMyPageClick}
-          onAccountSettingsClick={mockOnAccountSettingsClick}
-          onAboutClick={mockOnAboutClick}
-          onTermsClick={mockOnTermsClick}
-          onPrivacyClick={mockOnPrivacyClick}
-          onLoginClick={mockOnLoginClick}
-          onSignUpClick={mockOnSignUpClick}
-          onLogout={mockOnLogout}
-        />
-      )
-
-      expect(screen.getByText(/ログアウト/i)).toBeInTheDocument()
+      expect(screen.queryByText(/^ログイン$/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/新規アカウント作成/)).not.toBeInTheDocument()
     })
   })
 
-  describe('Menu Icons', () => {
-    it('renders icons for each menu item', () => {
-      render(
-        <TopMenuPanel
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          isLoggedIn={true}
-          onMyPageClick={mockOnMyPageClick}
-          onAccountSettingsClick={mockOnAccountSettingsClick}
-          onAboutClick={mockOnAboutClick}
-          onTermsClick={mockOnTermsClick}
-          onPrivacyClick={mockOnPrivacyClick}
-          onLoginClick={mockOnLoginClick}
-          onSignUpClick={mockOnSignUpClick}
-          onLogout={mockOnLogout}
-        />
-      )
+  describe('UI Elements - ログアウト状態', () => {
+    it('renders logged-out menu items', () => {
+      render(<TopMenuPanel {...defaultProps} isLoggedIn={false} />)
 
-      // メニュー項目が表示されていることを確認（アイコンと共にレンダリングされる）
-      expect(screen.getByText(/マイページ/i)).toBeInTheDocument()
-      expect(screen.getByText(/アカウント設定/i)).toBeInTheDocument()
-      expect(screen.getByText(/ログアウト/i)).toBeInTheDocument()
+      expect(screen.getByText(/Photlasとは？/)).toBeInTheDocument()
+      expect(screen.getByText(/ログイン/)).toBeInTheDocument()
+      expect(screen.getByText(/新規アカウント作成/)).toBeInTheDocument()
+      expect(screen.getByText(/利用規約/)).toBeInTheDocument()
+      expect(screen.getByText(/プライバシーポリシー/)).toBeInTheDocument()
+    })
+
+    it('does not render logged-in only items when logged out', () => {
+      render(<TopMenuPanel {...defaultProps} isLoggedIn={false} />)
+
+      expect(screen.queryByText(/マイページ/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/行きたい場所リスト/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/アカウント設定/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/ログアウト/)).not.toBeInTheDocument()
     })
   })
 
   describe('Panel Behavior', () => {
     it('uses sheet component for slide-in animation', () => {
-      render(
-        <TopMenuPanel
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          isLoggedIn={true}
-          onMyPageClick={mockOnMyPageClick}
-          onAccountSettingsClick={mockOnAccountSettingsClick}
-          onAboutClick={mockOnAboutClick}
-          onTermsClick={mockOnTermsClick}
-          onPrivacyClick={mockOnPrivacyClick}
-          onLoginClick={mockOnLoginClick}
-          onSignUpClick={mockOnSignUpClick}
-          onLogout={mockOnLogout}
-        />
-      )
+      render(<TopMenuPanel {...defaultProps} />)
 
       // メニュー項目が表示されることでSheetコンポーネントが機能していることを確認
-      expect(screen.getByText(/マイページ/i)).toBeInTheDocument()
+      expect(screen.getByText(/マイページ/)).toBeInTheDocument()
     })
   })
 })
