@@ -501,8 +501,13 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
         className="max-w-4xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden border-0"
         style={{
           maxHeight: '90dvh',
-          translate: isSlideDown ? '-50% calc(50vh - 30px)' : '-50% -50%',
-          transition: 'translate 0.4s ease-in-out',
+          ...(isSlideDown ? {
+            top: 'calc(100dvh - 30px)',
+            translate: '-50% 0',
+          } : {
+            translate: '-50% -50%',
+          }),
+          transition: 'top 0.4s ease-in-out, translate 0.4s ease-in-out',
         }}
         overlayClassName={isSlideDown ? 'bg-transparent pointer-events-none' : undefined}
         hideCloseButton

@@ -152,6 +152,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null)
   const [userHeading, setUserHeading] = useState<number | null>(null)
   const [shootingLocationPin, setShootingLocationPin] = useState<google.maps.LatLngLiteral | null>(null)
+  const onMapClickRef = useRef(onMapClick)
+  onMapClickRef.current = onMapClick
   const listenerAddedRef = useRef(false)
   const initialMountRef = useRef(true)
   const watchIdRef = useRef<number | null>(null)
@@ -165,6 +167,17 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       }
     }
   }, [])
+
+  // Issue#50: Google Maps APIのclickイベントで確実にコールバックを呼ぶ（モバイル対応）
+  // DOMのclickイベントはGoogle Maps canvas上ではバブルしないため、
+  // Google Maps APIのイベントリスナーを直接使用する
+  useEffect(() => {
+    if (!map) return
+    const listener = map.addListener('click', () => {
+      onMapClickRef.current?.()
+    })
+    return () => listener.remove()
+  }, [map])
 
   // デバイスの向きを取得
   useEffect(() => {
@@ -442,7 +455,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
         onLoad={handleLoad}
-        onClick={() => onMapClick?.()}
         options={{
           disableDefaultUI: true,
           clickableIcons: false,
@@ -549,7 +561,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 height: `${BASE_PIN_SIZE * 1.2 * 1.4}px`,
                 transform: 'translate(-50%, -100%)',
               }}
-              onClick={() => onMapClick?.()}
+              onClick={() => onMapClickRef.current?.()}
             >
               <div className="pin-drop">
                 <svg viewBox="-2 -2 36 42" width="100%" height="100%">
@@ -565,6 +577,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                     strokeWidth="1"
                     filter="url(#pin-shadow-pink)"
                   />
+                  <circle cx="16" cy="14" r="6" fill="white" />
                 </svg>
               </div>
             </div>
