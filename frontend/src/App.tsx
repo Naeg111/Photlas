@@ -70,6 +70,8 @@ function MainContent() {
 
   // 撮影地点プレビュー状態
   const [shootingLocationPreview, setShootingLocationPreview] = useState<{ lat: number; lng: number } | null>(null)
+  const shootingLocationPreviewRef = useRef(shootingLocationPreview)
+  shootingLocationPreviewRef.current = shootingLocationPreview
 
   // カテゴリマップの取得
   useEffect(() => {
@@ -243,30 +245,12 @@ function MainContent() {
     mapRef.current?.showShootingLocationPin(location.lat, location.lng)
   }
 
-  // プレビューからの復帰ハンドラー
+  // プレビューからの復帰ハンドラー（refでガード、依存配列を空に保つ）
   const handleReturnFromPreview = useCallback(() => {
+    if (!shootingLocationPreviewRef.current) return
     setShootingLocationPreview(null)
     mapRef.current?.clearShootingLocationPin()
   }, [])
-
-  // 撮影地点プレビュー中のクリックで復帰
-  useEffect(() => {
-    if (!shootingLocationPreview) return
-
-    const handleClick = () => {
-      handleReturnFromPreview()
-    }
-
-    // ミニマップクリック（プレビュー開始時）を無視するため遅延登録
-    const timer = setTimeout(() => {
-      document.addEventListener('click', handleClick, { once: true })
-    }, 800)
-
-    return () => {
-      clearTimeout(timer)
-      document.removeEventListener('click', handleClick)
-    }
-  }, [shootingLocationPreview, handleReturnFromPreview])
 
   // ライトボックス表示ハンドラー
   const handleShowLightbox = (imageUrl: string) => {
@@ -282,7 +266,7 @@ function MainContent() {
           ref={mapRef}
           filterParams={mapFilterParams}
           onSpotClick={handleSpotClick}
-          onMapClick={shootingLocationPreview ? handleReturnFromPreview : undefined}
+          onMapClick={handleReturnFromPreview}
         />
       </div>
 
