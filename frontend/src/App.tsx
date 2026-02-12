@@ -252,38 +252,6 @@ function MainContent() {
     mapRef.current?.clearShootingLocationPin()
   }, [])
 
-  // Issue#50: プレビュー中、Radix Dialogのモーダル制御を無効化
-  // DismissableLayerがbody.style.pointerEvents="none"を設定し、
-  // react-remove-scrollがwheel/touchイベントをpreventDefault()する。
-  // これらを直接上書きしてマップ操作を可能にする。
-  useEffect(() => {
-    if (!shootingLocationPreview) return
-
-    // 1. body.style.pointerEventsを直接上書き（DismissableLayer対策）
-    const origPointerEvents = document.body.style.pointerEvents
-    document.body.style.pointerEvents = 'auto'
-
-    // 2. react-remove-scrollのblock-interactivityクラスを除去
-    const blockClasses = Array.from(document.body.classList)
-      .filter(c => c.startsWith('block-interactivity-'))
-    blockClasses.forEach(c => document.body.classList.remove(c))
-
-    // 3. react-remove-scrollのwheel/touch preventDefault()を#rootで遮断
-    const rootEl = document.getElementById('root')
-    const stopProp = (e: Event) => e.stopPropagation()
-    rootEl?.addEventListener('wheel', stopProp)
-    rootEl?.addEventListener('touchmove', stopProp)
-    rootEl?.addEventListener('touchstart', stopProp)
-
-    return () => {
-      document.body.style.pointerEvents = origPointerEvents
-      blockClasses.forEach(c => document.body.classList.add(c))
-      rootEl?.removeEventListener('wheel', stopProp)
-      rootEl?.removeEventListener('touchmove', stopProp)
-      rootEl?.removeEventListener('touchstart', stopProp)
-    }
-  }, [shootingLocationPreview])
-
   // ライトボックス表示ハンドラー
   const handleShowLightbox = (imageUrl: string) => {
     setSelectedImageUrl(imageUrl)
