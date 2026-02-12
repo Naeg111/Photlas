@@ -452,8 +452,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           ...(GOOGLE_MAPS_MAP_ID ? { mapId: GOOGLE_MAPS_MAP_ID } : {}),
         }}
       >
-        {/* Issue#39: クラスタリング対応ピン表示 */}
-        {zoom >= MIN_ZOOM_FOR_PINS &&
+        {/* Issue#39: クラスタリング対応ピン表示（プレビュー中は非表示） */}
+        {zoom >= MIN_ZOOM_FOR_PINS && !shootingLocationPin &&
           clusteredFeatures.map((feature) => {
             const [lng, lat] = feature.geometry.coordinates
             const isCluster = feature.properties.cluster
