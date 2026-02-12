@@ -261,7 +261,8 @@ function MainContent() {
   return (
     <div className="relative w-full h-full overflow-hidden">
       {/* MapView - メインコンテンツ（z-0で最下層に配置、画面全体を覆う） */}
-      <div className="absolute inset-0 z-0">
+      {/* Issue#50: プレビュー中はpointer-events: autoでRadix Dialogのbody pointer-events: noneを上書き */}
+      <div className="absolute inset-0 z-0" style={shootingLocationPreview ? { pointerEvents: 'auto' } : undefined}>
         <MapView
           ref={mapRef}
           filterParams={mapFilterParams}
@@ -293,10 +294,13 @@ function MainContent() {
         </Button>
       </div>}
 
-      {/* フローティングUI - 右下: 現在位置ボタン + 投稿ボタン (FAB)（プレビュー中は非表示） */}
-      {!shootingLocationPreview && <div
+      {/* フローティングUI - 右下: 現在位置ボタン + ズームボタン + 投稿ボタン */}
+      <div
         className="absolute right-6 z-10 flex flex-col items-center gap-3"
-        style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
+        style={{
+          bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+          ...(shootingLocationPreview ? { pointerEvents: 'auto' } : {}),
+        }}
       >
         {/* ズームボタン（PC表示のみ） */}
         <div className="hidden md:flex flex-col items-center gap-1.5">
@@ -320,7 +324,7 @@ function MainContent() {
           </Button>
         </div>
 
-        {/* 現在位置ボタン（投稿ボタンの75%サイズ） */}
+        {/* 現在位置ボタン */}
         <Button
           variant="secondary"
           className="w-10.5 h-10.5 rounded-full shadow-lg hover:bg-secondary"
@@ -331,15 +335,17 @@ function MainContent() {
           <LocateFixed className="w-5 h-5" />
         </Button>
 
-        {/* 投稿ボタン */}
-        <Button
-          className={`${FLOATING_BUTTON_STYLES.fab} hover:bg-primary`}
-          onClick={handlePostClick}
-          aria-label="投稿"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
-      </div>}
+        {/* 投稿ボタン（プレビュー中は非表示） */}
+        {!shootingLocationPreview && (
+          <Button
+            className={`${FLOATING_BUTTON_STYLES.fab} hover:bg-primary`}
+            onClick={handlePostClick}
+            aria-label="投稿"
+          >
+            <Plus className="w-6 h-6" />
+          </Button>
+        )}
+      </div>
 
       {/* パネル・ダイアログ群 */}
       <FilterPanel
