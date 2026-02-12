@@ -76,13 +76,18 @@ public class RateLimitFilterTest {
         String photoUrl = "/api/v1/photos";
 
         // 30回のリクエストは成功する（認証エラーにはなるが、レート制限は通過）
+        // POST /api/v1/photos は認証必須のため401が返る
         for (int i = 0; i < 30; i++) {
-            mockMvc.perform(get(photoUrl))
+            mockMvc.perform(post(photoUrl)
+                    .contentType("application/json")
+                    .content("{}"))
                     .andExpect(status().is4xxClientError()); // 認証エラーだが、レート制限は通過
         }
 
         // 31回目のリクエストはレート制限で拒否される
-        mockMvc.perform(get(photoUrl))
+        mockMvc.perform(post(photoUrl)
+                .contentType("application/json")
+                .content("{}"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().exists("Retry-After"));
     }

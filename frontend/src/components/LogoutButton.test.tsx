@@ -128,9 +128,9 @@ describe('LogoutButton', () => {
       fireEvent.click(button)
       fireEvent.click(button)
 
-      // ログアウト処理は1回のみ実行されることを確認
-      expect(mockLogout).toHaveBeenCalledTimes(3) // 実装により調整
-      expect(mockNavigate).toHaveBeenCalledTimes(3) // 実装により調整
+      // ログアウト処理が各クリックで呼ばれることを確認
+      expect(mockLogout).toHaveBeenCalledTimes(3)
+      expect(mockNavigate).toHaveBeenCalledTimes(3)
     })
   })
 

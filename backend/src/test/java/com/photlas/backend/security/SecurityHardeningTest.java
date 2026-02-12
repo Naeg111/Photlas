@@ -48,7 +48,7 @@ public class SecurityHardeningTest {
     private static final String AUTH_LOGIN_ENDPOINT = "/api/v1/auth/login";
     private static final String AUTH_REGISTER_ENDPOINT = "/api/v1/auth/register";
     private static final String AUTH_PASSWORD_RESET_REQUEST_ENDPOINT = "/api/v1/auth/password-reset-request";
-    private static final String AUTH_PASSWORD_RESET_CONFIRM_ENDPOINT = "/api/v1/auth/password-reset-confirm";
+    private static final String AUTH_RESET_PASSWORD_ENDPOINT = "/api/v1/auth/reset-password";
 
     @Autowired
     private MockMvc mockMvc;
@@ -135,13 +135,13 @@ public class SecurityHardeningTest {
     void testJwtAuth_PutWithValidToken_Succeeds() throws Exception {
         String requestBody = """
                 {
-                    "bio": "Updated bio"
+                    "username": "updateduser"
                 }
                 """;
 
         // JWT認証でPUTリクエストを送信（CSRFトークン不要）
         // 403(Forbidden)でなければ認証は成功
-        mockMvc.perform(put("/api/v1/users/" + testUser.getId())
+        mockMvc.perform(put("/api/v1/users/me/profile")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
@@ -153,13 +153,13 @@ public class SecurityHardeningTest {
     void testJwtAuth_PutWithoutToken_Returns401Or429() throws Exception {
         String requestBody = """
                 {
-                    "bio": "Updated bio"
+                    "username": "updateduser"
                 }
                 """;
 
         // JWTトークンなしでPUTリクエストを送信
         // 401（認証エラー）または429（レート制限）のいずれかで拒否されれば成功
-        mockMvc.perform(put("/api/v1/users/" + testUser.getId())
+        mockMvc.perform(put("/api/v1/users/me/profile")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(result -> {
@@ -175,7 +175,7 @@ public class SecurityHardeningTest {
     void testJwtAuth_DeleteWithoutToken_Returns401Or429() throws Exception {
         // JWTトークンなしでDELETEリクエストを送信
         // 401（認証エラー）または429（レート制限）のいずれかで拒否されれば成功
-        mockMvc.perform(delete("/api/v1/users/" + testUser.getId()))
+        mockMvc.perform(delete("/api/v1/users/me"))
                 .andExpect(result -> {
                     int status = result.getResponse().getStatus();
                     if (status != 401 && status != 429) {
@@ -248,12 +248,13 @@ public class SecurityHardeningTest {
         String resetConfirmRequest = """
                 {
                     "token": "dummy-token",
-                    "newPassword": "NewPassword456"
+                    "newPassword": "NewPassword456",
+                    "confirmPassword": "NewPassword456"
                 }
                 """;
 
         // JWTトークンなしでパスワードリセット確認を送信（トークンが無効でも認可チェックはパスする）
-        mockMvc.perform(post(AUTH_PASSWORD_RESET_CONFIRM_ENDPOINT)
+        mockMvc.perform(post(AUTH_RESET_PASSWORD_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(resetConfirmRequest))
                 .andExpect(status().is4xxClientError());  // トークン無効でエラーになるが、認可チェックはパス

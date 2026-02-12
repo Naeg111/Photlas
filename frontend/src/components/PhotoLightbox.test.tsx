@@ -94,15 +94,18 @@ describe('PhotoLightbox', () => {
     it('changes zoom level on wheel scroll', () => {
       render(<PhotoLightbox {...defaultProps} />)
 
+      // 初期状態は100%
+      expect(screen.getByText('拡大: 100%')).toBeInTheDocument()
+
       const imageContainer = screen.getByAltText('フルサイズ写真').parentElement?.parentElement
 
       if (imageContainer) {
-        // ホイールスクロールでズーム
+        // ホイールスクロールでズームイン（deltaY < 0）
         fireEvent.wheel(imageContainer, { deltaY: -100 })
       }
 
-      // ズームレベルが変わることを確認（具体的な値はコンポーネントの実装に依存）
-      expect(screen.getByText(/拡大:/)).toBeInTheDocument()
+      // ZOOM_DELTA=0.1でズームインし、110%になることを確認
+      expect(screen.getByText('拡大: 110%')).toBeInTheDocument()
     })
   })
 })

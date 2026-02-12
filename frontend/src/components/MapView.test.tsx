@@ -340,7 +340,8 @@ describe('MapView Component - Issue#13', () => {
   })
 
   describe('Issue#39: ピンクラスタリング', () => {
-    it('近接するスポットがクラスタとして統合表示される', async () => {
+    it('近接するスポットがクラスタまたは個別ピンとして表示される', async () => {
+      // superclusterの内部判定によりクラスタ化の有無が変わるため、いずれかの表示を確認
       mockMap.getZoom.mockReturnValue(11)
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -368,12 +369,10 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        // 近接スポットはクラスタ化されるため、個別ピンは表示されない
         const pin1 = screen.queryByTestId('map-pin-1')
         const pin2 = screen.queryByTestId('map-pin-2')
         const hasCluster = pin1 === null && pin2 === null
         const hasIndividualPins = pin1 !== null && pin2 !== null
-        // クラスタ化されるか、両方個別表示されるかのどちらか
         expect(hasCluster || hasIndividualPins).toBe(true)
       })
     })
@@ -413,7 +412,8 @@ describe('MapView Component - Issue#13', () => {
       })
     })
 
-    it('クラスタピンの合計投稿件数が表示される', async () => {
+    it('クラスタ化時は合計投稿件数、個別表示時は各件数が表示される', async () => {
+      // superclusterの内部判定によりクラスタ化の有無が変わるため、いずれかの表示を確認
       mockMap.getZoom.mockReturnValue(11)
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -441,17 +441,15 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        // クラスタ化された場合、合計投稿件数(15)が表示される
         const totalText = screen.queryByText('15')
         const individual8 = screen.queryByText('8')
-        // クラスタ化されるか個別表示されるかはsuperclusterの判断に依存
         expect(totalText !== null || individual8 !== null).toBe(true)
       })
     })
 
-    it('クラスタピンの色が合計投稿件数に基づいて決定される', async () => {
+    it('クラスタ化時は合計件数で色が決定、個別表示時はピンが表示される', async () => {
+      // superclusterの内部判定によりクラスタ化の有無が変わるため、いずれかの表示を確認
       mockMap.getZoom.mockReturnValue(11)
-      // 合計30件以上 → 赤色
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
@@ -478,15 +476,14 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        // クラスタ化された場合、合計35件で赤色
         const redCluster = document.querySelector('.bg-red-500')
         const greenPin = screen.queryByTestId('map-pin-30')
-        // クラスタ化されるか個別表示されるかはsuperclusterの判断に依存
         expect(redCluster !== null || greenPin !== null).toBe(true)
       })
     })
 
-    it('クラスタピンは個別ピンより大きいサイズ(w-10 h-10)で表示される', async () => {
+    it('クラスタピンまたは個別ピンが表示される', async () => {
+      // superclusterの内部判定によりクラスタ化の有無が変わるため、いずれかの表示を確認
       mockMap.getZoom.mockReturnValue(11)
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -514,14 +511,14 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        // クラスタピンまたは個別ピンが存在する（クラスタ化の有無に依存）
         const clusterPin = document.querySelector('[data-testid^="map-cluster-"]')
         const individualPin = document.querySelector('[data-testid^="map-pin-"]')
         expect(clusterPin !== null || individualPin !== null).toBe(true)
       })
     })
 
-    it('クラスタクリックでズームインする', async () => {
+    it('クラスタが表示された場合、クリックでズームインする', async () => {
+      // superclusterの内部判定によりクラスタ化の有無が変わるため、クラスタ表示時のみ検証
       mockMap.getZoom.mockReturnValue(11)
       mockMap.setZoom.mockClear()
       const user = userEvent.setup()
@@ -551,7 +548,6 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        // クラスタまたは個別ピンのいずれかが描画される
         const cluster = document.querySelector('[data-testid^="map-cluster-"]')
         const pin = screen.queryByTestId('map-pin-50')
         expect(cluster !== null || pin !== null).toBe(true)
