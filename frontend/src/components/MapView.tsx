@@ -557,25 +557,19 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               data-testid="shooting-location-pin"
               className="cursor-pointer"
               style={{
-                width: `${BASE_PIN_SIZE * 1.4}px`,
-                height: `${BASE_PIN_SIZE * 1.2 * 1.4}px`,
+                width: `${BASE_PIN_SIZE * 2}px`,
+                height: `${BASE_PIN_SIZE * 1.2 * 2}px`,
                 transform: 'translate(-50%, -100%)',
               }}
               onClick={() => onMapClickRef.current?.()}
             >
-              <div className="pin-drop">
-                <svg viewBox="-2 -2 36 42" width="100%" height="100%">
-                  <defs>
-                    <filter id="pin-shadow-pink">
-                      <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.4" />
-                    </filter>
-                  </defs>
+              <div className="pin-drop" style={{ filter: 'drop-shadow(0px 2px 3px rgba(0,0,0,0.4))' }}>
+                <svg viewBox="-2 -2 36 42" width="100%" height="100%" shapeRendering="geometricPrecision">
                   <path
                     d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
                     fill={SHOOTING_PIN_COLOR}
-                    stroke="rgba(0,0,0,0.3)"
-                    strokeWidth="1"
-                    filter="url(#pin-shadow-pink)"
+                    stroke="rgba(0,0,0,0.25)"
+                    strokeWidth="0.8"
                   />
                   <circle cx="16" cy="14" r="6" fill="white" />
                 </svg>
