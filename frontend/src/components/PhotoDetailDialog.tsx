@@ -495,7 +495,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
   }, [currentPhotoId, isFavorited, isFavoriteLoading])
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onClose} modal={false}>
       <DialogContent
         data-testid={TEST_ID_DIALOG}
         className="max-w-4xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden border-0"
