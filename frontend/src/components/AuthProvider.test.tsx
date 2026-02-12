@@ -301,9 +301,109 @@ describe('AuthProvider', () => {
   })
 
   describe('Token Management', () => {
-    it('provides getAuthToken method', () => {
-      // 実装時にgetAuthTokenメソッドのテストを追加
-      expect(true).toBe(true) // プレースホルダー
+    it('returns token from localStorage when remember=true', async () => {
+      // getAuthTokenはlocalStorage.getItemを直接呼ぶため、実データを返すモックが必要
+      const localStore: Record<string, string> = {}
+      vi.mocked(window.localStorage.getItem).mockImplementation((key) => localStore[key] ?? null)
+      vi.mocked(window.localStorage.setItem).mockImplementation((key, value) => { localStore[key] = value })
+
+      let authResult: { getAuthToken: () => string | null } | null = null
+
+      function TokenConsumer() {
+        const { login, getAuthToken } = useAuth()
+        authResult = { getAuthToken }
+        return (
+          <button data-testid="login-button" onClick={() => login(
+            { userId: 1, email: 'test@example.com', username: 'testuser', role: 'user' },
+            'local-test-token',
+            true
+          )}>Login</button>
+        )
+      }
+
+      render(
+        <MockedAuthProvider>
+          <TokenConsumer />
+        </MockedAuthProvider>
+      )
+
+      fireEvent.click(screen.getByTestId('login-button'))
+
+      await waitFor(() => {
+        expect(authResult?.getAuthToken()).toBe('local-test-token')
+      })
+    })
+
+    it('returns token from sessionStorage when remember=false', async () => {
+      const sessionStore: Record<string, string> = {}
+      vi.mocked(window.sessionStorage.getItem).mockImplementation((key) => sessionStore[key] ?? null)
+      vi.mocked(window.sessionStorage.setItem).mockImplementation((key, value) => { sessionStore[key] = value })
+
+      let authResult: { getAuthToken: () => string | null } | null = null
+
+      function TokenConsumer() {
+        const { login, getAuthToken } = useAuth()
+        authResult = { getAuthToken }
+        return (
+          <button data-testid="login-button" onClick={() => login(
+            { userId: 1, email: 'test@example.com', username: 'testuser', role: 'user' },
+            'session-test-token',
+            false
+          )}>Login</button>
+        )
+      }
+
+      render(
+        <MockedAuthProvider>
+          <TokenConsumer />
+        </MockedAuthProvider>
+      )
+
+      fireEvent.click(screen.getByTestId('login-button'))
+
+      await waitFor(() => {
+        expect(authResult?.getAuthToken()).toBe('session-test-token')
+      })
+    })
+
+    it('returns null after logout', async () => {
+      const localStore: Record<string, string> = {}
+      const sessionStore: Record<string, string> = {}
+      vi.mocked(window.localStorage.getItem).mockImplementation((key) => localStore[key] ?? null)
+      vi.mocked(window.localStorage.setItem).mockImplementation((key, value) => { localStore[key] = value })
+      vi.mocked(window.localStorage.removeItem).mockImplementation((key) => { delete localStore[key] })
+      vi.mocked(window.sessionStorage.getItem).mockImplementation((key) => sessionStore[key] ?? null)
+      vi.mocked(window.sessionStorage.removeItem).mockImplementation((key) => { delete sessionStore[key] })
+
+      let authResult: { getAuthToken: () => string | null } | null = null
+
+      function TokenConsumer() {
+        const { login, logout, getAuthToken } = useAuth()
+        authResult = { getAuthToken }
+        return (
+          <>
+            <button data-testid="login-button" onClick={() => login(
+              { userId: 1, email: 'test@example.com', username: 'testuser', role: 'user' },
+              'test-token',
+              true
+            )}>Login</button>
+            <button data-testid="logout-button" onClick={logout}>Logout</button>
+          </>
+        )
+      }
+
+      render(
+        <MockedAuthProvider>
+          <TokenConsumer />
+        </MockedAuthProvider>
+      )
+
+      fireEvent.click(screen.getByTestId('login-button'))
+      fireEvent.click(screen.getByTestId('logout-button'))
+
+      await waitFor(() => {
+        expect(authResult?.getAuthToken()).toBeNull()
+      })
     })
 
     it('handles malformed JSON in storage gracefully', () => {

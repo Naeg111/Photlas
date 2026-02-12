@@ -457,6 +457,7 @@ describe('AccountSettingsDialog', () => {
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalled()
+        expect(toast.error).toHaveBeenCalledWith('パスワードが正しくありません')
       })
     })
 
@@ -481,6 +482,7 @@ describe('AccountSettingsDialog', () => {
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalled()
+        expect(toast.error).toHaveBeenCalledWith('このメールアドレスはすでに使用されています')
       })
     })
   })
@@ -635,6 +637,7 @@ describe('AccountSettingsDialog', () => {
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalled()
+        expect(toast.error).toHaveBeenCalledWith('パスワードが正しくありません')
       })
     })
   })
