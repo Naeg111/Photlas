@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
@@ -244,10 +244,29 @@ function MainContent() {
   }
 
   // プレビューからの復帰ハンドラー
-  const handleReturnFromPreview = () => {
+  const handleReturnFromPreview = useCallback(() => {
     setShootingLocationPreview(null)
     mapRef.current?.clearShootingLocationPin()
-  }
+  }, [])
+
+  // 撮影地点プレビュー中のクリックで復帰
+  useEffect(() => {
+    if (!shootingLocationPreview) return
+
+    const handleClick = () => {
+      handleReturnFromPreview()
+    }
+
+    // ミニマップクリック（プレビュー開始時）を無視するため遅延登録
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleClick, { once: true })
+    }, 800)
+
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('click', handleClick)
+    }
+  }, [shootingLocationPreview, handleReturnFromPreview])
 
   // ライトボックス表示ハンドラー
   const handleShowLightbox = (imageUrl: string) => {
@@ -267,8 +286,8 @@ function MainContent() {
         />
       </div>
 
-      {/* フローティングUI - 左上: フィルターボタン、右上: メニューボタン */}
-      <div className="absolute top-4 left-6 right-6 z-10 flex items-start justify-between gap-3">
+      {/* フローティングUI - 左上: フィルターボタン、右上: メニューボタン（プレビュー中は非表示） */}
+      {!shootingLocationPreview && <div className="absolute top-4 left-6 right-6 z-10 flex items-start justify-between gap-3">
         <Button
           variant="secondary"
           size="icon"
@@ -288,10 +307,10 @@ function MainContent() {
         >
           <Menu className="w-5 h-5" />
         </Button>
-      </div>
+      </div>}
 
-      {/* フローティングUI - 右下: 現在位置ボタン + 投稿ボタン (FAB) */}
-      <div
+      {/* フローティングUI - 右下: 現在位置ボタン + 投稿ボタン (FAB)（プレビュー中は非表示） */}
+      {!shootingLocationPreview && <div
         className="absolute right-6 z-10 flex flex-col items-center gap-3"
         style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
       >
@@ -336,7 +355,7 @@ function MainContent() {
         >
           <Plus className="w-6 h-6" />
         </Button>
-      </div>
+      </div>}
 
       {/* パネル・ダイアログ群 */}
       <FilterPanel
