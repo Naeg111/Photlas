@@ -72,6 +72,11 @@ function MainContent() {
   const [shootingLocationPreview, setShootingLocationPreview] = useState<{ lat: number; lng: number } | null>(null)
   const shootingLocationPreviewRef = useRef(shootingLocationPreview)
   shootingLocationPreviewRef.current = shootingLocationPreview
+  // Issue#50: プレビュー復帰中フラグ（Radix flushSync対策）
+  // モバイルタッチ時、RadixのdispatchDiscreteCustomEventがflushSyncでstate更新を
+  // 強制コミットし、isSlideDownがfalseになった後にonPointerDownOutsideが呼ばれる。
+  // このrefはflushSyncの影響を受けないため、onClose内でダイアログ閉じを防げる。
+  const isReturningFromPreviewRef = useRef(false)
 
   // カテゴリマップの取得
   useEffect(() => {
@@ -248,8 +253,11 @@ function MainContent() {
   // プレビューからの復帰ハンドラー（refでガード、依存配列を空に保つ）
   const handleReturnFromPreview = useCallback(() => {
     if (!shootingLocationPreviewRef.current) return
+    isReturningFromPreviewRef.current = true
     setShootingLocationPreview(null)
     mapRef.current?.clearShootingLocationPin()
+    // フラグをマイクロタスクでリセット（同期イベントハンドラ完了後）
+    queueMicrotask(() => { isReturningFromPreviewRef.current = false })
   }, [])
 
   // ライトボックス表示ハンドラー
@@ -438,6 +446,8 @@ function MainContent() {
           open={dialog.isOpen('photoDetail')}
           spotId={selectedSpotId}
           onClose={() => {
+            // プレビュー復帰中はダイアログを閉じない（Radix flushSync対策）
+            if (isReturningFromPreviewRef.current) return
             dialog.close('photoDetail')
             setSelectedSpotId(null)
             setShootingLocationPreview(null)
