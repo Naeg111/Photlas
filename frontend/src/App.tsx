@@ -258,14 +258,16 @@ function MainContent() {
     if (!shootingLocationPreviewRef.current) return
     setShootingLocationPreview(null)
     mapRef.current?.clearShootingLocationPin()
+    // Issue#50: setTimeoutでフラグをクリア（macrotask）
+    // useEffectだとRadixのflushSync→flushPassiveEffects()で早期実行され、
+    // onCloseのガードが無効化されてしまう。setTimeoutはmacrotaskのため
+    // flushSyncの影響を受けず、全ての同期イベント処理完了後に確実に実行される。
+    setTimeout(() => {
+      if (!shootingLocationPreviewRef.current) {
+        isInPreviewRef.current = false
+      }
+    }, 0)
   }, [])
-
-  // プレビュー終了後にフラグをクリア（useEffectはflushSyncの後に実行される）
-  useEffect(() => {
-    if (!shootingLocationPreview && isInPreviewRef.current) {
-      isInPreviewRef.current = false
-    }
-  }, [shootingLocationPreview])
 
   // ライトボックス表示ハンドラー
   const handleShowLightbox = (imageUrl: string) => {

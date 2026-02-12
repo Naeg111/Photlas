@@ -512,6 +512,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
         overlayClassName={isSlideDown ? 'bg-transparent pointer-events-none' : undefined}
         hideCloseButton
         onPointerDownOutside={(e) => { if (isLightboxOpen || isSlideDown) e.preventDefault() }}
+        onFocusOutside={(e) => { if (isLightboxOpen || isSlideDown) e.preventDefault() }}
         onInteractOutside={(e) => { if (isLightboxOpen || isSlideDown) e.preventDefault() }}
         onEscapeKeyDown={(e) => { if (isLightboxOpen || isSlideDown) e.preventDefault() }}
       >
