@@ -394,14 +394,16 @@ test.describe('写真投稿機能', () => {
       const submitButton = page.getByRole('button', { name: '投稿する' })
       await expect(submitButton).toBeEnabled({ timeout: 3000 })
 
-      // 5. API応答をキャプチャ（デバッグ用）
+      // 5. API応答をキャプチャ（デバッグ用 - 全HTTPエラーとリクエスト失敗を取得）
       const apiErrors: string[] = []
       page.on('response', async (response) => {
-        const url = response.url()
-        if (url.includes('/api/v1/photos') && !response.ok()) {
+        if (!response.ok()) {
           const body = await response.text().catch(() => 'N/A')
-          apiErrors.push(`${response.status()} ${url} ${body}`)
+          apiErrors.push(`HTTP ${response.status()} ${response.url().substring(0, 120)} body=${body.substring(0, 300)}`)
         }
+      })
+      page.on('requestfailed', (request) => {
+        apiErrors.push(`FAILED ${request.url().substring(0, 120)} error=${request.failure()?.errorText || 'unknown'}`)
       })
 
       // 6. 投稿ボタンをクリック
