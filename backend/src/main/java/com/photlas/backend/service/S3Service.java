@@ -61,7 +61,6 @@ public class S3Service {
                     .bucket(bucketName)
                     .key(objectKey)
                     .contentType(contentType)
-                    .contentLength(maxSize)
                     .build();
 
             PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
