@@ -44,21 +44,12 @@ export interface MapViewFilterParams {
   max_iso?: number
 }
 
-// ピンの色をTailwindクラスにマッピング
-// Tailwind bgクラス（クラスタピン用）
-const PIN_BG_CLASS_MAP: Record<SpotResponse['pinColor'], string> = {
-  Green: 'bg-green-500',
-  Yellow: 'bg-yellow-500',
-  Orange: 'bg-orange-500',
-  Red: 'bg-red-500',
-}
-
-// SVG fillカラー（個別ピン用）
-const PIN_FILL_COLOR_MAP: Record<SpotResponse['pinColor'], string> = {
-  Green: '#22c55e',
-  Yellow: '#eab308',
-  Orange: '#f97316',
-  Red: '#ef4444',
+// ピンの色をHEXカラーにマッピング（カスタムビビッドカラー）
+const PIN_COLOR_MAP: Record<SpotResponse['pinColor'], string> = {
+  Green: '#00d68f',
+  Yellow: '#ffbe0b',
+  Orange: '#ff6b35',
+  Red: '#ff006e',
 }
 
 // 地図の初期設定
@@ -71,14 +62,14 @@ const CLUSTER_RADIUS = 60
 const CLUSTER_MAX_ZOOM = 16
 
 /**
- * 投稿件数からピン色のTailwindクラスを決定
+ * 投稿件数からピン色のHEXカラーを決定
  * Issue#12のピン色ルールに準拠
  */
-function determinePinColorClass(count: number): string {
-  if (count >= 30) return PIN_BG_CLASS_MAP.Red
-  if (count >= 10) return PIN_BG_CLASS_MAP.Orange
-  if (count >= 5) return PIN_BG_CLASS_MAP.Yellow
-  return PIN_BG_CLASS_MAP.Green
+function determinePinColor(count: number): string {
+  if (count >= 30) return PIN_COLOR_MAP.Red
+  if (count >= 10) return PIN_COLOR_MAP.Orange
+  if (count >= 5) return PIN_COLOR_MAP.Yellow
+  return PIN_COLOR_MAP.Green
 }
 
 /**
@@ -473,7 +464,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
             if (isCluster) {
               const clusterId = feature.id as number
               const totalPhotoCount = getClusterPhotoCount(clusterId)
-              const colorClass = determinePinColorClass(totalPhotoCount)
+              const pinColor = determinePinColor(totalPhotoCount)
               return (
                 <OverlayViewF
                   key={`cluster-${clusterId}`}
@@ -482,8 +473,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 >
                   <div
                     data-testid={`map-cluster-${clusterId}`}
-                    className={`rounded-full ${colorClass} flex items-center justify-center text-white font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2 border-2 border-white`}
+                    className="rounded-full flex items-center justify-center text-white font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2 border-2 border-white"
                     style={{
+                      backgroundColor: pinColor,
                       width: `${BASE_CLUSTER_SIZE * getPinScale(zoom)}px`,
                       height: `${BASE_CLUSTER_SIZE * getPinScale(zoom)}px`,
                       fontSize: `${14 * getPinScale(zoom)}px`,
@@ -526,7 +518,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                     </defs>
                     <path
                       d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
-                      fill={PIN_FILL_COLOR_MAP[spot.pinColor]}
+                      fill={PIN_COLOR_MAP[spot.pinColor]}
                       stroke="rgba(0,0,0,0.3)"
                       strokeWidth="1"
                       filter="url(#pin-shadow)"

@@ -259,7 +259,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#22c55e')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#00d68f')
       })
     })
 
@@ -284,7 +284,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#eab308')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#ffbe0b')
       })
     })
 
@@ -309,7 +309,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#f97316')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#ff6b35')
       })
     })
 
@@ -334,7 +334,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#ef4444')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#ff006e')
       })
     })
   })
@@ -476,7 +476,7 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        const redCluster = document.querySelector('.bg-red-500')
+        const redCluster = document.querySelector('[style*="background-color"]')
         const greenPin = screen.queryByTestId('map-pin-30')
         expect(redCluster !== null || greenPin !== null).toBe(true)
       })
