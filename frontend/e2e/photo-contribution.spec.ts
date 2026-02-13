@@ -394,19 +394,7 @@ test.describe('写真投稿機能', () => {
       const submitButton = page.getByRole('button', { name: '投稿する' })
       await expect(submitButton).toBeEnabled({ timeout: 3000 })
 
-      // 5. API応答をキャプチャ（デバッグ用 - 全HTTPエラーとリクエスト失敗を取得）
-      const apiErrors: string[] = []
-      page.on('response', async (response) => {
-        if (!response.ok()) {
-          const body = await response.text().catch(() => 'N/A')
-          apiErrors.push(`HTTP ${response.status()} ${response.url().substring(0, 120)} body=${body.substring(0, 300)}`)
-        }
-      })
-      page.on('requestfailed', (request) => {
-        apiErrors.push(`FAILED ${request.url().substring(0, 120)} error=${request.failure()?.errorText || 'unknown'}`)
-      })
-
-      // 6. 投稿ボタンをクリック
+      // 5. 投稿ボタンをクリック
       await submitButton.click()
 
       // 7. アップロード完了を待機（成功またはエラー）
@@ -414,9 +402,9 @@ test.describe('写真投稿機能', () => {
       const errorMessage = page.getByText('エラー 時間をおいて再度お試しください')
       await expect(successMessage.or(errorMessage)).toBeVisible({ timeout: 30000 })
 
-      // 成功メッセージであることを確認（エラーの場合はAPI応答を表示）
+      // 成功メッセージであることを確認（エラーの場合はデバッグ情報を表示）
       if (await errorMessage.isVisible().catch(() => false)) {
-        throw new Error(`投稿API失敗: ${apiErrors.join(' | ') || 'レスポンス未取得（S3またはネットワークエラーの可能性）'}`)
+        throw new Error(`投稿API失敗: ${debugLog.join(' | ') || 'ログなし'}`)
       }
 
       // 7. ダイアログが最終的に閉じることを確認
