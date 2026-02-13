@@ -98,9 +98,9 @@ const GOOGLE_MAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || ''
 const LIBRARIES: ('places')[] = ['places']
 
 // MapViewコンポーネントのProps（Issue#16）
-// 撮影地点プレビューのホワイト+ダークボーダー
+// 撮影地点プレビューのホワイト+ブラックボーダー
 const SHOOTING_PIN_COLOR = '#ffffff'
-const SHOOTING_PIN_STROKE = '#374151'
+const SHOOTING_PIN_STROKE = '#000000'
 
 interface MapViewProps {
   filterParams?: MapViewFilterParams
@@ -567,10 +567,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                     d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
                     fill={SHOOTING_PIN_COLOR}
                     stroke={SHOOTING_PIN_STROKE}
-                    strokeWidth="1.5"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
                     filter="url(#shooting-pin-shadow)"
                   />
-                  <circle cx="16" cy="14" r="6" fill={SHOOTING_PIN_STROKE} stroke={SHOOTING_PIN_STROKE} strokeWidth="0.5" />
+                  <circle cx="16" cy="14" r="6" fill={SHOOTING_PIN_STROKE} stroke={SHOOTING_PIN_STROKE} strokeWidth="1" />
                 </svg>
               </div>
             </div>
