@@ -108,8 +108,7 @@ async function zoomIn(page: Page, times: number = 1): Promise<void> {
   await page.waitForTimeout(300)
 
   for (let i = 0; i < times; i++) {
-    await mapContainer.hover()
-    await page.mouse.wheel(0, -300)
+    await page.keyboard.press('+')
     await page.waitForTimeout(800)
   }
 }
@@ -123,8 +122,7 @@ async function zoomOut(page: Page, times: number = 1): Promise<void> {
   await page.waitForTimeout(300)
 
   for (let i = 0; i < times; i++) {
-    await mapContainer.hover()
-    await page.mouse.wheel(0, 300)
+    await page.keyboard.press('-')
     await page.waitForTimeout(800)
   }
 }
