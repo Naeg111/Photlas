@@ -31,13 +31,16 @@ async function waitForMapLoad(page: Page): Promise<void> {
 }
 
 /**
- * ズームインしてピンを表示
+ * ズームインしてピンを表示（Google Maps APIで直接ズーム制御）
  */
 async function zoomInToShowPins(page: Page): Promise<void> {
-  for (let i = 0; i < 3; i++) {
-    await page.keyboard.press('+')
-    await page.waitForTimeout(500)
-  }
+  await page.evaluate(() => {
+    const map = (window as unknown as Record<string, any>).__photlas_map
+    if (map?.setZoom) {
+      const currentZoom = map.getZoom?.() ?? 11
+      map.setZoom(currentZoom + 3)
+    }
+  })
   await page.waitForTimeout(2000)
 }
 

@@ -355,6 +355,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const handleLoad = useCallback((mapInstance: google.maps.Map) => {
     setMap(mapInstance)
 
+    // E2Eテスト用: マップインスタンスをwindowに公開（ズーム制御等）
+    ;(window as unknown as Record<string, unknown>).__photlas_map = mapInstance
+
     // idle イベントリスナーを一度だけ追加
     // Google Maps は初回読み込み時と地図操作後に自動的にidleイベントを発火する
     if (!listenerAddedRef.current) {
