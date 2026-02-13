@@ -11,6 +11,12 @@ vi.mock('@react-google-maps/api', () => ({
   Polygon: () => <div data-testid="google-map-polygon" />,
 }))
 
+// AuthContextのモック
+const mockUseAuth = vi.fn()
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => mockUseAuth(),
+}))
+
 /**
  * Issue#14: 写真詳細表示 (UI + API)
  * TDD Red段階のテストコード
@@ -167,6 +173,15 @@ function renderPhotoDetailDialog({
 describe('PhotoDetailDialog Component - Issue#14', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // デフォルトはログイン済み状態
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: { userId: 1, username: 'testuser', email: 'test@example.com', role: 'USER' },
+      login: vi.fn(),
+      logout: vi.fn(),
+      getAuthToken: () => 'mock-token',
+      updateUser: vi.fn(),
+    })
   })
 
   describe('基本表示とAPI連携', () => {
@@ -578,6 +593,37 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       await waitFor(() => {
         expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りから削除')
+      })
+    })
+
+    it('未ログイン状態ではお気に入りボタンが無効化される', async () => {
+      mockUseAuth.mockReturnValue({
+        isAuthenticated: false,
+        user: null,
+        login: vi.fn(),
+        logout: vi.fn(),
+        getAuthToken: () => null,
+        updateUser: vi.fn(),
+      })
+
+      const photoDetail = createMockPhotoDetail()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+
+      await waitFor(() => {
+        const favoriteButton = screen.getByTestId('favorite-button')
+        expect(favoriteButton).toBeDisabled()
       })
     })
 

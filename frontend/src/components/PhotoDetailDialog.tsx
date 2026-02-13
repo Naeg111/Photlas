@@ -6,6 +6,7 @@ import useEmblaCarousel from 'embla-carousel-react'
 import { useLoadScript, GoogleMap, Marker, Polygon } from '@react-google-maps/api'
 import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
+import { useAuth } from '../contexts/AuthContext'
 
 // API Endpoints
 const API_SPOTS_PHOTOS = `${API_V1_URL}/spots`
@@ -330,6 +331,7 @@ function DetailMiniMap({
 }
 
 export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown }: PhotoDetailDialogProps) {
+  const { isAuthenticated } = useAuth()
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [photoDetails, setPhotoDetails] = useState<Map<number, PhotoDetail>>(new Map())
@@ -797,7 +799,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
                       }`}
                       data-testid={TEST_ID_FAVORITE_BUTTON}
                       onClick={handleToggleFavorite}
-                      disabled={isFavoriteLoading}
+                      disabled={isFavoriteLoading || !isAuthenticated}
                       aria-label={isFavorited ? LABEL_REMOVE_FAVORITE : LABEL_ADD_FAVORITE}
                     >
                       <Star

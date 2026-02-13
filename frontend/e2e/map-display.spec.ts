@@ -71,7 +71,7 @@ async function closeFilterPanel(page: Page): Promise<void> {
  */
 async function zoomIn(page: Page, times: number = 1): Promise<void> {
   // 地図をクリックしてフォーカス
-  const mapContainer = page.locator('.gm-style')
+  const mapContainer = page.locator('.gm-style').first()
   await mapContainer.click()
   await page.waitForTimeout(300)
 
@@ -88,7 +88,7 @@ async function zoomIn(page: Page, times: number = 1): Promise<void> {
  */
 async function zoomOut(page: Page, times: number = 1): Promise<void> {
   // 地図をクリックしてフォーカス
-  const mapContainer = page.locator('.gm-style')
+  const mapContainer = page.locator('.gm-style').first()
   await mapContainer.click()
   await page.waitForTimeout(300)
 
@@ -125,7 +125,7 @@ test.describe('地図表示・ピン表示機能', () => {
   test.describe('地図の基本表示', () => {
     test('地図が正常に表示される', async ({ page }) => {
       // Google Mapsのコンテナが表示される
-      await expect(page.locator('.gm-style')).toBeVisible()
+      await expect(page.locator('.gm-style').first()).toBeVisible()
     })
 
     test('フィルターボタンが表示される', async ({ page }) => {
@@ -171,7 +171,7 @@ test.describe('地図表示・ピン表示機能', () => {
     test('ズームレベル11未満で「ズームしてスポットを表示」バナーが表示される', async ({ page }) => {
       // ズームアウトしてレベルを下げる（十分にズームアウト）
       // 地図の縮小はマウスホイールで行う
-      const mapContainer = page.locator('.gm-style')
+      const mapContainer = page.locator('.gm-style').first()
       await mapContainer.click()
       await page.waitForTimeout(500)
 
@@ -222,18 +222,12 @@ test.describe('地図表示・ピン表示機能', () => {
       const pinCount = await pins.count()
 
       if (pinCount > 0) {
-        // 最初のピンの色クラスを確認
+        // 個別ピン: SVGのfill属性でピン色を確認（カスタムビビッドカラー）
         const firstPin = pins.first()
-        const className = await firstPin.getAttribute('class')
-
-        // 色クラスが含まれていることを確認（Green, Yellow, Orange, Red）
-        const hasColorClass =
-          className?.includes('bg-green-500') ||
-          className?.includes('bg-yellow-500') ||
-          className?.includes('bg-orange-500') ||
-          className?.includes('bg-red-500')
-
-        expect(hasColorClass).toBe(true)
+        const svgPath = firstPin.locator('path')
+        const fill = await svgPath.getAttribute('fill')
+        const validColors = ['#00d68f', '#ffbe0b', '#ff6b35', '#ff006e']
+        expect(validColors).toContain(fill)
       }
     })
 
@@ -400,7 +394,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await page.waitForTimeout(2000)
 
       // 地図が引き続き表示されている
-      await expect(page.locator('.gm-style')).toBeVisible()
+      await expect(page.locator('.gm-style').first()).toBeVisible()
     })
   })
 
@@ -410,7 +404,7 @@ test.describe('地図表示・ピン表示機能', () => {
 
   test.describe('地図ナビゲーション', () => {
     test('ドラッグで地図を移動できる', async ({ page }) => {
-      const mapContainer = page.locator('.gm-style')
+      const mapContainer = page.locator('.gm-style').first()
 
       // マウスでドラッグ
       const box = await mapContainer.boundingBox()
@@ -426,7 +420,7 @@ test.describe('地図表示・ピン表示機能', () => {
     })
 
     test('マウスホイールでズームイン・アウトできる', async ({ page }) => {
-      const mapContainer = page.locator('.gm-style')
+      const mapContainer = page.locator('.gm-style').first()
 
       // マウスホイールでズーム
       await mapContainer.hover()
@@ -440,7 +434,7 @@ test.describe('地図表示・ピン表示機能', () => {
     test('ピンチズームでズームイン・アウトできる（モバイル）', async ({ page }) => {
       // モバイルデバイスでのピンチズームはPlaywrightで直接テストが難しいため、
       // タッチイベントの基本的な動作のみ確認
-      const mapContainer = page.locator('.gm-style')
+      const mapContainer = page.locator('.gm-style').first()
       await expect(mapContainer).toBeVisible()
     })
   })

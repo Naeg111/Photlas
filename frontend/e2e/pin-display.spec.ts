@@ -66,7 +66,7 @@ async function submitPhoto(
   const testImagePath = getTestImagePath('small')
   const fileInput = page.locator('input[type="file"]')
   await fileInput.setInputFiles(testImagePath)
-  await expect(page.locator('img[alt="プレビュー"]')).toBeVisible({ timeout: 5000 })
+  await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible({ timeout: 5000 })
 
   // タイトル入力（任意）
   if (title) {
@@ -103,7 +103,7 @@ async function waitForMapLoad(page: Page): Promise<void> {
  * ズームイン
  */
 async function zoomIn(page: Page, times: number = 1): Promise<void> {
-  const mapContainer = page.locator('.gm-style')
+  const mapContainer = page.locator('.gm-style').first()
   await mapContainer.click()
   await page.waitForTimeout(300)
 
@@ -118,7 +118,7 @@ async function zoomIn(page: Page, times: number = 1): Promise<void> {
  * ズームアウト
  */
 async function zoomOut(page: Page, times: number = 1): Promise<void> {
-  const mapContainer = page.locator('.gm-style')
+  const mapContainer = page.locator('.gm-style').first()
   await mapContainer.click()
   await page.waitForTimeout(300)
 
@@ -201,30 +201,23 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
 
       const { pins, clusters, pinCount, clusterCount } = await findPinsAndClusters(page)
 
-      if (pinCount > 0) {
-        const firstPin = pins.first()
-        const className = await firstPin.getAttribute('class')
+      // カスタムビビッドカラー（HEX）
+      const validColors = ['#00d68f', '#ffbe0b', '#ff6b35', '#ff006e']
 
-        // いずれかの色クラスが含まれていること
-        const hasColorClass =
-          className?.includes('bg-green-500') ||
-          className?.includes('bg-yellow-500') ||
-          className?.includes('bg-orange-500') ||
-          className?.includes('bg-red-500')
-        expect(hasColorClass).toBe(true)
+      if (pinCount > 0) {
+        // 個別ピン: SVGのfill属性でピン色を確認
+        const firstPin = pins.first()
+        const svgPath = firstPin.locator('path')
+        const fill = await svgPath.getAttribute('fill')
+        expect(validColors).toContain(fill)
       }
 
       if (clusterCount > 0) {
+        // クラスタピン: style属性のbackground-colorで色を確認
         const firstCluster = clusters.first()
-        const className = await firstCluster.getAttribute('class')
-
-        // クラスタも色クラスが含まれていること
-        const hasColorClass =
-          className?.includes('bg-green-500') ||
-          className?.includes('bg-yellow-500') ||
-          className?.includes('bg-orange-500') ||
-          className?.includes('bg-red-500')
-        expect(hasColorClass).toBe(true)
+        const style = await firstCluster.getAttribute('style')
+        const hasColor = validColors.some(c => style?.includes(c))
+        expect(hasColor).toBe(true)
       }
     })
 
@@ -382,7 +375,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       await page.waitForTimeout(3000)
 
       // エラーなく地図が表示されている
-      await expect(page.locator('.gm-style')).toBeVisible()
+      await expect(page.locator('.gm-style').first()).toBeVisible()
     })
   })
 
@@ -408,7 +401,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       await page.waitForTimeout(2000)
 
       // エラーなく地図が表示されている
-      await expect(page.locator('.gm-style')).toBeVisible()
+      await expect(page.locator('.gm-style').first()).toBeVisible()
     })
   })
 
@@ -421,7 +414,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       await zoomIn(page, 2)
       await page.waitForTimeout(2000)
 
-      const mapContainer = page.locator('.gm-style')
+      const mapContainer = page.locator('.gm-style').first()
       const box = await mapContainer.boundingBox()
 
       if (box) {
@@ -435,7 +428,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
         await page.waitForTimeout(3000)
 
         // エラーなく地図が表示されている
-        await expect(page.locator('.gm-style')).toBeVisible()
+        await expect(page.locator('.gm-style').first()).toBeVisible()
       }
     })
   })
