@@ -70,9 +70,9 @@ async function closeFilterPanel(page: Page): Promise<void> {
  * 地図のズームレベルを変更（ズームイン）
  */
 async function zoomIn(page: Page, times: number = 1): Promise<void> {
-  // 地図をクリックしてフォーカス
+  // 地図の左上隅をクリックしてフォーカス（ピンを誤クリックしないよう安全な位置）
   const mapContainer = page.locator('.gm-style').first()
-  await mapContainer.click()
+  await mapContainer.click({ position: { x: 10, y: 10 } })
   await page.waitForTimeout(300)
 
   // キーボードでズームイン（mobile-chromeでも安定動作）
@@ -86,9 +86,9 @@ async function zoomIn(page: Page, times: number = 1): Promise<void> {
  * 地図のズームレベルを変更（ズームアウト）
  */
 async function zoomOut(page: Page, times: number = 1): Promise<void> {
-  // 地図をクリックしてフォーカス
+  // 地図の左上隅をクリックしてフォーカス（ピンを誤クリックしないよう安全な位置）
   const mapContainer = page.locator('.gm-style').first()
-  await mapContainer.click()
+  await mapContainer.click({ position: { x: 10, y: 10 } })
   await page.waitForTimeout(300)
 
   // キーボードでズームアウト（mobile-chromeでも安定動作）
@@ -167,18 +167,8 @@ test.describe('地図表示・ピン表示機能', () => {
     })
 
     test('ズームレベル11未満で「ズームしてスポットを表示」バナーが表示される', async ({ page }) => {
-      // ズームアウトしてレベルを下げる（十分にズームアウト）
-      // 地図の縮小はマウスホイールで行う
-      const mapContainer = page.locator('.gm-style').first()
-      await mapContainer.click()
-      await page.waitForTimeout(500)
-
-      // 大幅にズームアウト（各ホイールイベントは1〜2レベル縮小）
-      for (let i = 0; i < 10; i++) {
-        await mapContainer.hover()
-        await page.mouse.wheel(0, 400)
-        await page.waitForTimeout(500)
-      }
+      // キーボードでズームアウト（mobile-chromeでも安定動作）
+      await zoomOut(page, 10)
 
       // ズーム変更後のアイドル状態を待機
       await page.waitForTimeout(3000)
