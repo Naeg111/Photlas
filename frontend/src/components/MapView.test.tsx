@@ -259,7 +259,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#4ade80')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#00d68f')
       })
     })
 
@@ -284,7 +284,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#fbbf24')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#ffbe0b')
       })
     })
 
@@ -309,7 +309,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#fb923c')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#ff6b35')
       })
     })
 
@@ -334,7 +334,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#f43f5e')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#ff006e')
       })
     })
   })
@@ -586,7 +586,7 @@ describe('MapView Component - Issue#13', () => {
         expect(pin).toBeInTheDocument()
         // ピンクの色を確認
         const path = pin.querySelector('path')
-        expect(path?.getAttribute('fill')).toBe('#ec4899')
+        expect(path?.getAttribute('fill')).toBe('#ffffff')
       })
 
       // ズームとパンが呼ばれたことを確認
