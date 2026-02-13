@@ -44,12 +44,12 @@ export interface MapViewFilterParams {
   max_iso?: number
 }
 
-// ピンの色をHEXカラーにマッピング（ネオンカラー）
+// ピンの色をHEXカラーにマッピング（カスタムビビッドカラー）
 const PIN_COLOR_MAP: Record<SpotResponse['pinColor'], string> = {
-  Green: '#4ade80',
-  Yellow: '#fbbf24',
-  Orange: '#fb923c',
-  Red: '#f43f5e',
+  Green: '#00d68f',
+  Yellow: '#ffbe0b',
+  Orange: '#ff6b35',
+  Red: '#ff006e',
 }
 
 // 地図の初期設定
@@ -98,8 +98,9 @@ const GOOGLE_MAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || ''
 const LIBRARIES: ('places')[] = ['places']
 
 // MapViewコンポーネントのProps（Issue#16）
-// 撮影地点プレビューのピンク色
-const SHOOTING_PIN_COLOR = '#ec4899'
+// 撮影地点プレビューのホワイト+ダークボーダー
+const SHOOTING_PIN_COLOR = '#ffffff'
+const SHOOTING_PIN_STROKE = '#374151'
 
 interface MapViewProps {
   filterParams?: MapViewFilterParams
@@ -560,10 +561,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                   <path
                     d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
                     fill={SHOOTING_PIN_COLOR}
-                    stroke="rgba(0,0,0,0.25)"
-                    strokeWidth="0.8"
+                    stroke={SHOOTING_PIN_STROKE}
+                    strokeWidth="1.5"
                   />
-                  <circle cx="16" cy="14" r="6" fill="white" />
+                  <circle cx="16" cy="14" r="6" fill={SHOOTING_PIN_STROKE} />
                 </svg>
               </div>
             </div>
