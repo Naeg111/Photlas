@@ -75,10 +75,9 @@ async function zoomIn(page: Page, times: number = 1): Promise<void> {
   await mapContainer.click()
   await page.waitForTimeout(300)
 
-  // マウスホイールでズームイン
+  // キーボードでズームイン（mobile-chromeでも安定動作）
   for (let i = 0; i < times; i++) {
-    await mapContainer.hover()
-    await page.mouse.wheel(0, -300)
+    await page.keyboard.press('+')
     await page.waitForTimeout(800)
   }
 }
@@ -92,10 +91,9 @@ async function zoomOut(page: Page, times: number = 1): Promise<void> {
   await mapContainer.click()
   await page.waitForTimeout(300)
 
-  // マウスホイールでズームアウト
+  // キーボードでズームアウト（mobile-chromeでも安定動作）
   for (let i = 0; i < times; i++) {
-    await mapContainer.hover()
-    await page.mouse.wheel(0, 300)
+    await page.keyboard.press('-')
     await page.waitForTimeout(800)
   }
 }

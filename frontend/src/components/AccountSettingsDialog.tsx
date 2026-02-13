@@ -35,6 +35,7 @@ export function AccountSettingsDialog({
   const [isEmailLoading, setIsEmailLoading] = useState(false);
 
   // パスワード変更
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
@@ -97,7 +98,7 @@ export function AccountSettingsDialog({
 
   // パスワード変更処理
   const handlePasswordChange = async () => {
-    if (!newPassword || !confirmPassword) {
+    if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error("すべてのフィールドを入力してください");
       return;
     }
@@ -131,6 +132,7 @@ export function AccountSettingsDialog({
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
+            current_password: currentPassword,
             new_password: newPassword,
             new_password_confirm: confirmPassword,
           }),
@@ -139,6 +141,7 @@ export function AccountSettingsDialog({
 
       if (response.ok) {
         toast.success("パスワードを変更しました");
+        setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
       } else if (response.status === 401) {
@@ -272,6 +275,16 @@ export function AccountSettingsDialog({
           <div className="space-y-4">
             <h3 className="font-medium">パスワードの変更</h3>
             <div className="space-y-4 mt-5">
+              <div>
+                <Label htmlFor="current-password">現在のパスワード</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  className="mt-2"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
+              </div>
               <div>
                 <Label htmlFor="new-password">新しいパスワード</Label>
                 <Input

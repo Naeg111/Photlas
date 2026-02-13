@@ -56,6 +56,7 @@ const SECTION_PLAN = 'プラン'
 
 const LABEL_NEW_EMAIL = '新しいメールアドレス'
 const LABEL_PASSWORD = 'パスワード'
+const LABEL_CURRENT_PASSWORD = '現在のパスワード'
 const LABEL_NEW_PASSWORD = '新しいパスワード'
 const LABEL_NEW_PASSWORD_CONFIRM = '新しいパスワード（確認）'
 const LABEL_PASSWORD_CONFIRM = 'パスワードを入力して確認'
@@ -128,11 +129,12 @@ const setupEmailChangeTest = () => {
  * Sets up the password change form with test data
  */
 const setupPasswordChangeTest = () => {
+  const currentPasswordInput = screen.getByLabelText(LABEL_CURRENT_PASSWORD)
   const newPasswordInput = screen.getByLabelText(LABEL_NEW_PASSWORD)
   const confirmPasswordInput = screen.getByLabelText(LABEL_NEW_PASSWORD_CONFIRM)
   const submitButton = screen.getByRole('button', { name: BUTTON_CHANGE_PASSWORD })
 
-  return { newPasswordInput, confirmPasswordInput, submitButton }
+  return { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton }
 }
 
 /**
@@ -278,6 +280,7 @@ describe('AccountSettingsDialog', () => {
       )
 
       expect(screen.getByText(SECTION_PASSWORD_CHANGE)).toBeInTheDocument()
+      expect(screen.getByLabelText(LABEL_CURRENT_PASSWORD)).toBeInTheDocument()
       expect(screen.getByLabelText(LABEL_NEW_PASSWORD)).toBeInTheDocument()
       expect(screen.getByLabelText(LABEL_NEW_PASSWORD_CONFIRM)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: BUTTON_CHANGE_PASSWORD })).toBeInTheDocument()
@@ -349,8 +352,9 @@ describe('AccountSettingsDialog', () => {
         />
       )
 
-      const { newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
+      const { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
 
+      fireEvent.change(currentPasswordInput, { target: { value: VALID_PASSWORD } })
       fireEvent.change(newPasswordInput, { target: { value: NEW_PASSWORD } })
       fireEvent.change(confirmPasswordInput, { target: { value: NEW_PASSWORD } })
       fireEvent.click(submitButton)
@@ -501,14 +505,16 @@ describe('AccountSettingsDialog', () => {
         />
       )
 
-      const { newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
+      const { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
 
+      fireEvent.change(currentPasswordInput, { target: { value: VALID_PASSWORD } })
       fireEvent.change(newPasswordInput, { target: { value: NEW_PASSWORD } })
       fireEvent.change(confirmPasswordInput, { target: { value: NEW_PASSWORD } })
       fireEvent.click(submitButton)
 
       await waitFor(() => {
         expectFetchCalledWith(PASSWORD_UPDATE_ENDPOINT, 'PUT', {
+          [FIELD_CURRENT_PASSWORD]: VALID_PASSWORD,
           [FIELD_NEW_PASSWORD]: NEW_PASSWORD,
           [FIELD_NEW_PASSWORD_CONFIRM]: NEW_PASSWORD,
         })
@@ -525,8 +531,9 @@ describe('AccountSettingsDialog', () => {
         />
       )
 
-      const { newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
+      const { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
 
+      fireEvent.change(currentPasswordInput, { target: { value: VALID_PASSWORD } })
       fireEvent.change(newPasswordInput, { target: { value: PASSWORD_WITH_SPECIAL_CHARS } })
       fireEvent.change(confirmPasswordInput, { target: { value: PASSWORD_WITH_SPECIAL_CHARS } })
       fireEvent.click(submitButton)
@@ -548,8 +555,9 @@ describe('AccountSettingsDialog', () => {
         />
       )
 
-      const { newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
+      const { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
 
+      fireEvent.change(currentPasswordInput, { target: { value: VALID_PASSWORD } })
       fireEvent.change(newPasswordInput, { target: { value: PASSWORD_TOO_LONG } }) // 21文字
       fireEvent.change(confirmPasswordInput, { target: { value: PASSWORD_TOO_LONG } })
       fireEvent.click(submitButton)
@@ -684,8 +692,9 @@ describe('AccountSettingsDialog', () => {
         />
       )
 
-      const { newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
+      const { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
 
+      fireEvent.change(currentPasswordInput, { target: { value: VALID_PASSWORD } })
       fireEvent.change(newPasswordInput, { target: { value: NEW_PASSWORD } })
       fireEvent.change(confirmPasswordInput, { target: { value: DIFFERENT_PASSWORD } })
       fireEvent.click(submitButton)

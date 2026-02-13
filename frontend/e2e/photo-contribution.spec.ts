@@ -168,11 +168,11 @@ test.describe('写真投稿機能', () => {
         await expect(submitButton).toBeDisabled()
       })
 
-      test('タイトルが未入力の場合は投稿できない', async ({ page }) => {
+      test('タイトルが未入力でも投稿ボタンが有効になる（タイトルは任意項目）', async ({ page }) => {
         await createAccountAndLogin(page, 'validation-title')
         await openPhotoContributionDialog(page)
 
-        // 写真とカテゴリを選択
+        // 写真とカテゴリを選択（タイトルは入力しない）
         const testImagePath = getTestImagePath('small')
         await page.locator('input[type="file"]').setInputFiles(testImagePath)
         await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
@@ -180,9 +180,9 @@ test.describe('写真投稿機能', () => {
         await page.getByRole('checkbox', { name: '風景' }).click()
         await expect(page.getByRole('checkbox', { name: '風景' })).toBeChecked()
 
-        // 投稿ボタンがdisabledであることを確認
+        // タイトルは任意項目のため、投稿ボタンが有効であることを確認
         const submitButton = page.getByRole('button', { name: '投稿する' })
-        await expect(submitButton).toBeDisabled()
+        await expect(submitButton).toBeEnabled({ timeout: 3000 })
       })
 
       test('カテゴリが未選択の場合は投稿できない', async ({ page }) => {
@@ -338,8 +338,8 @@ test.describe('写真投稿機能', () => {
       await page.locator('input[type="file"]').setInputFiles(testImagePath)
       await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
 
-      // 位置情報が設定されていることを確認（テキストで確認）
-      await expect(page.getByText('位置が設定されました')).toBeVisible({ timeout: 5000 })
+      // InlineMapPickerが表示されていることで位置設定済みを確認
+      await expect(page.getByText('地図をドラッグして撮影場所にピンを合わせてください')).toBeVisible({ timeout: 5000 })
     })
 
     test('MapPickerで位置を変更できる', async ({ page }) => {
@@ -351,8 +351,8 @@ test.describe('写真投稿機能', () => {
       await page.locator('input[type="file"]').setInputFiles(testImagePath)
       await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
 
-      // 位置情報が設定されていることを確認
-      await expect(page.getByText('位置が設定されました')).toBeVisible({ timeout: 5000 })
+      // InlineMapPickerが表示されていることで位置設定済みを確認
+      await expect(page.getByText('地図をドラッグして撮影場所にピンを合わせてください')).toBeVisible({ timeout: 5000 })
 
       // 位置変更ボタンをクリック（存在する場合）
       const changeLocationButton = page.getByRole('button', { name: /位置.*変更|地図.*選択/i })

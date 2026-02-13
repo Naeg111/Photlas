@@ -75,7 +75,8 @@ test.describe('アカウント設定', () => {
     await page.getByText('アカウント設定').click()
     await expect(page.getByRole('heading', { name: 'アカウント設定' })).toBeVisible({ timeout: 5000 })
 
-    // 新しいパスワードと確認を入力
+    // 現在のパスワードと新しいパスワードを入力
+    await page.getByLabel('現在のパスワード').fill(TEST_PASSWORD)
     await page.getByLabel('新しいパスワード', { exact: true }).fill(newPassword)
     await page.getByLabel('新しいパスワード（確認）').fill(newPassword)
 
@@ -94,7 +95,8 @@ test.describe('アカウント設定', () => {
     await page.getByText('アカウント設定').click()
     await expect(page.getByRole('heading', { name: 'アカウント設定' })).toBeVisible({ timeout: 5000 })
 
-    // 不一致のパスワードを入力
+    // 現在のパスワードと不一致の新パスワードを入力
+    await page.getByLabel('現在のパスワード').fill(TEST_PASSWORD)
     await page.getByLabel('新しいパスワード', { exact: true }).fill('NewPass456')
     await page.getByLabel('新しいパスワード（確認）').fill('DifferentPass789')
 
