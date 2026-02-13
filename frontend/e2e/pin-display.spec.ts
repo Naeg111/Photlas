@@ -84,8 +84,11 @@ async function submitPhoto(
   // 投稿実行
   await submitButton.click()
 
-  // 成功メッセージまたはダイアログ閉鎖を待機
-  await expect(page.getByText('完了しました')).toBeVisible({ timeout: 30000 })
+  // アップロード完了を待機（成功またはエラー）
+  const successMsg = page.getByText('完了しました')
+  const errorMsg = page.getByText('エラー 時間をおいて再度お試しください')
+  await expect(successMsg.or(errorMsg)).toBeVisible({ timeout: 30000 })
+  await expect(successMsg).toBeVisible()
 
   // ダイアログが閉じるのを待機
   await page.waitForTimeout(1500)
@@ -103,8 +106,9 @@ async function waitForMapLoad(page: Page): Promise<void> {
  * ズームイン
  */
 async function zoomIn(page: Page, times: number = 1): Promise<void> {
+  // 地図の左上隅をクリックしてフォーカス（ピンを誤クリックしないよう安全な位置）
   const mapContainer = page.locator('.gm-style').first()
-  await mapContainer.click()
+  await mapContainer.click({ position: { x: 10, y: 10 } })
   await page.waitForTimeout(300)
 
   for (let i = 0; i < times; i++) {
@@ -117,8 +121,9 @@ async function zoomIn(page: Page, times: number = 1): Promise<void> {
  * ズームアウト
  */
 async function zoomOut(page: Page, times: number = 1): Promise<void> {
+  // 地図の左上隅をクリックしてフォーカス（ピンを誤クリックしないよう安全な位置）
   const mapContainer = page.locator('.gm-style').first()
-  await mapContainer.click()
+  await mapContainer.click({ position: { x: 10, y: 10 } })
   await page.waitForTimeout(300)
 
   for (let i = 0; i < times; i++) {

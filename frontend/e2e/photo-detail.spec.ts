@@ -84,8 +84,11 @@ async function createTestPost(page: Page, title: string): Promise<void> {
   // 投稿
   await submitButton.click()
 
-  // 成功を待機
-  await expect(page.getByText('完了しました')).toBeVisible({ timeout: 30000 })
+  // アップロード完了を待機（成功またはエラー）
+  const successMsg = page.getByText('完了しました')
+  const errorMsg = page.getByText('エラー 時間をおいて再度お試しください')
+  await expect(successMsg.or(errorMsg)).toBeVisible({ timeout: 30000 })
+  await expect(successMsg).toBeVisible()
 
   // ダイアログが閉じるのを待機
   await page.waitForTimeout(2000)

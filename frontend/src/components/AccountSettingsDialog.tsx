@@ -27,7 +27,7 @@ export function AccountSettingsDialog({
   currentEmail,
 }: AccountSettingsDialogProps) {
   const navigate = useNavigate();
-  const { getAuthToken } = useAuth();
+  const { getAuthToken, logout } = useAuth();
 
   // メールアドレス変更
   const [newEmail, setNewEmail] = useState("");
@@ -191,9 +191,8 @@ export function AccountSettingsDialog({
 
       if (response.status === 204) {
         toast.success("アカウントを削除しました");
-        // ローカルストレージをクリア
-        localStorage.removeItem("token");
-        localStorage.removeItem("username");
+        // AuthContextで認証状態をクリア（auth_token, auth_user）
+        logout();
         // トップページにリダイレクト
         navigate("/");
         onOpenChange(false);
