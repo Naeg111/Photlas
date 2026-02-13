@@ -44,12 +44,12 @@ export interface MapViewFilterParams {
   max_iso?: number
 }
 
-// ピンの色をHEXカラーにマッピング（カスタムビビッドカラー）
+// ピンの色をHEXカラーにマッピング（ネオンカラー）
 const PIN_COLOR_MAP: Record<SpotResponse['pinColor'], string> = {
-  Green: '#00d68f',
-  Yellow: '#ffbe0b',
-  Orange: '#ff6b35',
-  Red: '#ff006e',
+  Green: '#4ade80',
+  Yellow: '#fbbf24',
+  Orange: '#fb923c',
+  Red: '#f43f5e',
 }
 
 // 地図の初期設定

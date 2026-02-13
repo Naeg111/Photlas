@@ -259,7 +259,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#00d68f')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#4ade80')
       })
     })
 
@@ -284,7 +284,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#ffbe0b')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#fbbf24')
       })
     })
 
@@ -309,7 +309,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#ff6b35')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#fb923c')
       })
     })
 
@@ -334,7 +334,7 @@ describe('MapView Component - Issue#13', () => {
 
       await waitFor(() => {
         const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#ff006e')
+        expect(pin.querySelector('path')?.getAttribute('fill')).toBe('#f43f5e')
       })
     })
   })
