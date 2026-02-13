@@ -179,9 +179,11 @@ vi.mock('sonner', () => ({
 
 // Issue#38: AuthContext のモック
 const mockGetAuthToken = vi.fn()
+const mockLogout = vi.fn()
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
     getAuthToken: mockGetAuthToken,
+    logout: mockLogout,
   }),
 }))
 
@@ -614,10 +616,9 @@ describe('AccountSettingsDialog', () => {
         })
       })
 
-      // Check that localStorage is cleared and navigation occurs
+      // Check that logout is called and navigation occurs
       await waitFor(() => {
-        expect(window.localStorage.removeItem).toHaveBeenCalledWith('token')
-        expect(window.localStorage.removeItem).toHaveBeenCalledWith('username')
+        expect(mockLogout).toHaveBeenCalled()
         expect(mockNavigate).toHaveBeenCalledWith('/')
       })
     })

@@ -397,19 +397,16 @@ test.describe('写真投稿機能', () => {
       // 5. 投稿ボタンをクリック
       await submitButton.click()
 
-      // 6. 成功メッセージまたはダイアログ閉鎖を待機
-      // 注: 現在の実装ではonSubmitハンドラーが未実装のため、即座に成功状態になる
-      // 成功メッセージが表示されるか、ダイアログが閉じることを確認
+      // 6. アップロード完了を待機（成功またはエラー）
       const successMessage = page.getByText('完了しました')
-      const dialogHeading = page.getByRole('heading', { name: '写真を投稿' })
+      const errorMessage = page.getByText('エラー 時間をおいて再度お試しください')
+      await expect(successMessage.or(errorMessage)).toBeVisible({ timeout: 30000 })
 
-      // 成功メッセージが表示されるか、ダイアログが閉じるかを待機
-      await Promise.race([
-        expect(successMessage).toBeVisible({ timeout: 10000 }),
-        expect(dialogHeading).not.toBeVisible({ timeout: 10000 }),
-      ])
+      // 成功メッセージであることを確認（エラーの場合はここで失敗）
+      await expect(successMessage).toBeVisible()
 
       // 7. ダイアログが最終的に閉じることを確認
+      const dialogHeading = page.getByRole('heading', { name: '写真を投稿' })
       await expect(dialogHeading).not.toBeVisible({ timeout: 10000 })
     })
 
@@ -430,8 +427,11 @@ test.describe('写真投稿機能', () => {
       await expect(page.getByRole('button', { name: '投稿する' })).toBeEnabled({ timeout: 3000 })
       await page.getByRole('button', { name: '投稿する' }).click()
 
-      // 成功を待機
-      await expect(page.getByText('完了しました')).toBeVisible({ timeout: 30000 })
+      // アップロード完了を待機（成功またはエラー）
+      const successMsg = page.getByText('完了しました')
+      const errorMsg = page.getByText('エラー 時間をおいて再度お試しください')
+      await expect(successMsg.or(errorMsg)).toBeVisible({ timeout: 30000 })
+      await expect(successMsg).toBeVisible()
 
       // ダイアログが閉じるのを待機
       await page.waitForTimeout(2000)

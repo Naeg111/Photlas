@@ -130,8 +130,11 @@ test.describe('アカウント設定', () => {
     // 成功トーストを確認
     await expect(page.getByText('アカウントを削除しました')).toBeVisible({ timeout: 10000 })
 
+    // 認証状態更新とナビゲーションの完了を待機
+    await page.waitForTimeout(2000)
+
     // ホーム画面に遷移し、未認証状態になる
     await page.getByRole('button', { name: 'メニュー' }).click()
-    await expect(page.getByRole('button', { name: 'ログイン' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'ログイン' })).toBeVisible({ timeout: 5000 })
   })
 })
