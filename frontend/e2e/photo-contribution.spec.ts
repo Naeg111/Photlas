@@ -125,7 +125,7 @@ test.describe('写真投稿機能', () => {
       await fileInput.setInputFiles(testImagePath)
 
       // プレビュー画像が表示される
-      await expect(page.locator('img[alt="プレビュー"]')).toBeVisible({ timeout: 5000 })
+      await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible({ timeout: 5000 })
     })
 
     test('選択した写真を削除できる', async ({ page }) => {
@@ -138,13 +138,13 @@ test.describe('写真投稿機能', () => {
       await fileInput.setInputFiles(testImagePath)
 
       // プレビューが表示される
-      await expect(page.locator('img[alt="プレビュー"]')).toBeVisible()
+      await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
 
       // 削除ボタンをクリック
       await page.getByRole('button', { name: '削除' }).click()
 
       // プレビューが消える
-      await expect(page.locator('img[alt="プレビュー"]')).not.toBeVisible()
+      await expect(page.locator('[data-testid="photo-crop-area"]')).not.toBeVisible()
     })
   })
 
@@ -175,7 +175,7 @@ test.describe('写真投稿機能', () => {
         // 写真とカテゴリを選択
         const testImagePath = getTestImagePath('small')
         await page.locator('input[type="file"]').setInputFiles(testImagePath)
-        await expect(page.locator('img[alt="プレビュー"]')).toBeVisible()
+        await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
         // カテゴリのチェックボックスをクリック
         await page.getByRole('checkbox', { name: '風景' }).click()
         await expect(page.getByRole('checkbox', { name: '風景' })).toBeChecked()
@@ -192,7 +192,7 @@ test.describe('写真投稿機能', () => {
         // 写真とタイトルを入力
         const testImagePath = getTestImagePath('small')
         await page.locator('input[type="file"]').setInputFiles(testImagePath)
-        await expect(page.locator('img[alt="プレビュー"]')).toBeVisible()
+        await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
         await page.getByPlaceholder('例：夕暮れの東京タワー').fill('テストタイトル')
 
         // 投稿ボタンがdisabledであることを確認
@@ -220,7 +220,7 @@ test.describe('写真投稿機能', () => {
 
         // プレビューが表示されないことを確認
         await page.waitForTimeout(1000)
-        await expect(page.locator('img[alt="プレビュー"]')).not.toBeVisible()
+        await expect(page.locator('[data-testid="photo-crop-area"]')).not.toBeVisible()
       })
 
       test('非対応形式（GIF）のファイルは選択できない', async ({ page }) => {
@@ -241,7 +241,7 @@ test.describe('写真投稿機能', () => {
 
         // プレビューが表示されないことを確認
         await page.waitForTimeout(1000)
-        await expect(page.locator('img[alt="プレビュー"]')).not.toBeVisible()
+        await expect(page.locator('[data-testid="photo-crop-area"]')).not.toBeVisible()
       })
     })
 
@@ -336,7 +336,7 @@ test.describe('写真投稿機能', () => {
       // 写真を選択すると位置情報がデフォルトで設定される
       const testImagePath = getTestImagePath('small')
       await page.locator('input[type="file"]').setInputFiles(testImagePath)
-      await expect(page.locator('img[alt="プレビュー"]')).toBeVisible()
+      await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
 
       // 位置情報が設定されていることを確認（テキストで確認）
       await expect(page.getByText('位置が設定されました')).toBeVisible({ timeout: 5000 })
@@ -349,7 +349,7 @@ test.describe('写真投稿機能', () => {
       // 写真を選択
       const testImagePath = getTestImagePath('small')
       await page.locator('input[type="file"]').setInputFiles(testImagePath)
-      await expect(page.locator('img[alt="プレビュー"]')).toBeVisible()
+      await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
 
       // 位置情報が設定されていることを確認
       await expect(page.getByText('位置が設定されました')).toBeVisible({ timeout: 5000 })
@@ -380,7 +380,7 @@ test.describe('写真投稿機能', () => {
       // 1. 写真を選択
       const testImagePath = getTestImagePath('small')
       await page.locator('input[type="file"]').setInputFiles(testImagePath)
-      await expect(page.locator('img[alt="プレビュー"]')).toBeVisible()
+      await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
 
       // 2. タイトルを入力（20文字以内）
       const uniqueTitle = `E2Eテスト-${Date.now().toString().slice(-8)}`
@@ -420,7 +420,7 @@ test.describe('写真投稿機能', () => {
       // 投稿を実行
       const testImagePath = getTestImagePath('small')
       await page.locator('input[type="file"]').setInputFiles(testImagePath)
-      await expect(page.locator('img[alt="プレビュー"]')).toBeVisible()
+      await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
       await page.getByPlaceholder('例：夕暮れの東京タワー').fill('リセットテスト')
       // カテゴリをチェックボックスで選択
       await page.getByRole('checkbox', { name: 'その他' }).click()
@@ -440,7 +440,7 @@ test.describe('写真投稿機能', () => {
       await openPhotoContributionDialog(page)
 
       // フォームがリセットされている
-      await expect(page.locator('img[alt="プレビュー"]')).not.toBeVisible()
+      await expect(page.locator('[data-testid="photo-crop-area"]')).not.toBeVisible()
       const titleInput = page.getByPlaceholder('例：夕暮れの東京タワー')
       await expect(titleInput).toHaveValue('')
     })
