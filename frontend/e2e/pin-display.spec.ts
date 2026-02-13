@@ -103,33 +103,38 @@ async function waitForMapLoad(page: Page): Promise<void> {
 }
 
 /**
+ * Google Maps APIを通じてズームレベルを変更（keyboardShortcuts: falseでも動作）
+ */
+async function setMapZoom(page: Page, zoom: number): Promise<void> {
+  await page.evaluate((targetZoom) => {
+    const map = (window as unknown as Record<string, any>).__photlas_map
+    if (map?.setZoom) {
+      map.setZoom(targetZoom)
+    }
+  }, zoom)
+  await page.waitForTimeout(2000)
+}
+
+/**
  * ズームイン
  */
 async function zoomIn(page: Page, times: number = 1): Promise<void> {
-  // 地図の左上隅をクリックしてフォーカス（ピンを誤クリックしないよう安全な位置）
-  const mapContainer = page.locator('.gm-style').first()
-  await mapContainer.click({ position: { x: 10, y: 10 } })
-  await page.waitForTimeout(300)
-
-  for (let i = 0; i < times; i++) {
-    await page.keyboard.press('+')
-    await page.waitForTimeout(800)
-  }
+  const currentZoom = await page.evaluate(() => {
+    const map = (window as unknown as Record<string, any>).__photlas_map
+    return map?.getZoom?.() ?? 11
+  })
+  await setMapZoom(page, currentZoom + times)
 }
 
 /**
  * ズームアウト
  */
 async function zoomOut(page: Page, times: number = 1): Promise<void> {
-  // 地図の左上隅をクリックしてフォーカス（ピンを誤クリックしないよう安全な位置）
-  const mapContainer = page.locator('.gm-style').first()
-  await mapContainer.click({ position: { x: 10, y: 10 } })
-  await page.waitForTimeout(300)
-
-  for (let i = 0; i < times; i++) {
-    await page.keyboard.press('-')
-    await page.waitForTimeout(800)
-  }
+  const currentZoom = await page.evaluate(() => {
+    const map = (window as unknown as Record<string, any>).__photlas_map
+    return map?.getZoom?.() ?? 11
+  })
+  await setMapZoom(page, Math.max(1, currentZoom - times))
 }
 
 /**
