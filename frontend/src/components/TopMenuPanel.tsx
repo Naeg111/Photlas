@@ -34,7 +34,7 @@ export function TopMenuPanel({
 }: TopMenuPanelProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="top" className="w-full px-16 py-10">
+      <SheetContent side="top" className="w-full h-full px-16 py-10">
         <SheetHeader className="sr-only">
           <SheetTitle>メニュー</SheetTitle>
           <SheetDescription>
