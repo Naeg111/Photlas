@@ -589,21 +589,17 @@ export const MonthIcons: Record<
     >
       <g fill="#000000">
         {/* 左耳 */}
-        <ellipse cx="175" cy="100" rx="40" ry="100" />
+        <ellipse cx="170" cy="80" rx="45" ry="115" />
         {/* 右耳 */}
-        <ellipse cx="337" cy="100" rx="40" ry="100" />
+        <ellipse cx="342" cy="80" rx="45" ry="115" />
         {/* 顔 */}
-        <ellipse cx="256" cy="310" rx="160" ry="150" />
+        <ellipse cx="256" cy="320" rx="175" ry="165" />
         {/* 左目 */}
-        <ellipse cx="200" cy="290" rx="18" ry="22" fill="#FFFFFF" />
-        <ellipse cx="205" cy="293" rx="10" ry="13" />
+        <ellipse cx="190" cy="295" rx="28" ry="34" fill="#FFFFFF" />
+        <ellipse cx="196" cy="299" rx="16" ry="21" />
         {/* 右目 */}
-        <ellipse cx="312" cy="290" rx="18" ry="22" fill="#FFFFFF" />
-        <ellipse cx="307" cy="293" rx="10" ry="13" />
-        {/* 鼻 */}
-        <ellipse cx="256" cy="340" rx="12" ry="9" fill="#FF9999" />
-        {/* 口 */}
-        <path d="M244,350 Q256,370 268,350" fill="none" stroke="#000000" strokeWidth="5" strokeLinecap="round" />
+        <ellipse cx="322" cy="295" rx="28" ry="34" fill="#FFFFFF" />
+        <ellipse cx="316" cy="299" rx="16" ry="21" />
       </g>
     </svg>
   ),
