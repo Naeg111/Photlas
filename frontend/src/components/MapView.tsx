@@ -479,6 +479,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                       width: `${BASE_CLUSTER_SIZE * getPinScale(zoom)}px`,
                       height: `${BASE_CLUSTER_SIZE * getPinScale(zoom)}px`,
                       fontSize: `${14 * getPinScale(zoom)}px`,
+                      textShadow: '0 0 3px rgba(0,0,0,0.6), 0 0 3px rgba(0,0,0,0.6)',
                     }}
                     onClick={() => {
                       const expansionZoom = clusterIndex.getClusterExpansionZoom(clusterId)
@@ -530,6 +531,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                       fill="#ffffff"
                       fontSize="14"
                       fontWeight="bold"
+                      stroke="rgba(0,0,0,0.6)"
+                      strokeWidth="3"
+                      paintOrder="stroke"
                     >
                       {spot.photoCount}
                     </text>
