@@ -36,7 +36,6 @@ export interface MapViewFilterParams {
   times_of_day?: string[]
   weathers?: string[]
   tags?: string[]
-  min_resolution?: number
   device_type?: string
   max_age_years?: number
   aspect_ratio?: string
@@ -248,9 +247,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           filterParams.tags.forEach(tag => params.append('tags', tag))
         }
         // Issue#46: 詳細フィルター
-        if (filterParams.min_resolution != null) {
-          params.append('min_resolution', filterParams.min_resolution.toString())
-        }
         if (filterParams.device_type) {
           params.append('device_type', filterParams.device_type)
         }
