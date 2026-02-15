@@ -80,7 +80,14 @@
     --ring: oklch(.439 0 0);
   }
 
-  html, body {
+  html {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background-color: #000000;
+  }
+
+  body {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;

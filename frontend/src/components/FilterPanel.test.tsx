@@ -258,7 +258,7 @@ describe('FilterPanel', () => {
       const otherButtons = screen.getAllByRole('button', { name: 'その他' })
       expect(otherButtons.length).toBe(2)
 
-      // 鮮度
+      // 撮影日からの経過期間
       expect(screen.getByText('1週間以内')).toBeInTheDocument()
       expect(screen.getByText('1ヶ月以内')).toBeInTheDocument()
       expect(screen.getByText('1年以内')).toBeInTheDocument()
