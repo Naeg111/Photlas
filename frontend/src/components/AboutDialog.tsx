@@ -27,12 +27,12 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
             <h3 className="font-bold text-base mb-2">サービス概要</h3>
             <p>
               Photlasは、写真を通じて撮影スポットを共有・発見できるサービスです。
-              地図上に投稿された写真のピンが表示され、
               どこでどんな写真が撮れるのかをひと目で確認できます。
             </p>
             <p className="mt-2">
-              「あの場所ではどんな写真が撮れるんだろう？」「次の撮影スポットを探したい」
-              ——そんな写真好きの方のために作られたサービスです。
+              「こんな景色のいい場所があったんだ」「知らなかった、行ってみたい」
+              ——地図と写真を眺めているだけで、まだ見ぬ風景との出会いが生まれます。
+              写真をきっかけに新しい目的地を見つける。それがPhotlasの一番の魅力です。
             </p>
           </section>
 
@@ -43,7 +43,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
                 <span className="font-semibold">スポットを探す</span>
                 <p className="ml-5 mt-1">
                   地図を移動・ズームして、気になるエリアのピンをタップしてみましょう。
-                  投稿された写真や撮影情報を確認できます。
+                  そこで投稿された写真を撮影情報付きで確認できます。
                 </p>
               </li>
               <li>
@@ -51,20 +51,15 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
                 <p className="ml-5 mt-1">
                   左上のフィルターボタンから、被写体の種類・季節・時間帯・天候などの条件で
                   スポットを絞り込めます。
+                  選択した項目はAND条件で絞り込まれ、何も選択していない項目ではフィルタリングは行われません。
                 </p>
               </li>
               <li>
                 <span className="font-semibold">写真を投稿する</span>
                 <p className="ml-5 mt-1">
                   アカウントを作成してログインすると、右下の「＋」ボタンから写真を投稿できます。
-                  撮影場所は写真のEXIF情報から自動で取得されます。
-                </p>
-              </li>
-              <li>
-                <span className="font-semibold">行きたい場所を保存する</span>
-                <p className="ml-5 mt-1">
-                  気になるスポットは「行きたい」ボタンで保存できます。
-                  保存したスポットはメニューの「行きたい場所リスト」からいつでも確認できます。
+                  撮影場所は写真のEXIF情報に位置情報が含まれている場合は自動で取得されます。
+                  含まれていない場合は、地図上で手動で設定できます。
                 </p>
               </li>
             </ol>
