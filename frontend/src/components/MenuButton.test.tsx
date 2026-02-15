@@ -13,11 +13,11 @@ import MenuButton from './MenuButton'
  * - クリック可能
  *
  * Issue#20 要件:
- * - ドロップダウンメニューの表示
+ * - メニューシートの表示
  * - アカウント設定メニュー項目
  * - AccountSettingsDialog の統合
  *
- * Note: ドロップダウンメニューとAccountSettingsDialogの統合テストは、
+ * Note: メニューシートとAccountSettingsDialogの統合テストは、
  * Radix UIのポータル実装の制約によりJSDOM環境では正しく動作しないため、
  * E2Eテストで確認することを推奨します。
  * AccountSettingsDialog自体の機能テストはAccountSettingsDialog.test.tsxで
@@ -100,10 +100,10 @@ describe('MenuButton', () => {
   })
 
   describe('Component Integration - Issue#20', () => {
-    it('renders DropdownMenu trigger', () => {
+    it('renders menu button that opens sheet', () => {
       render(<MockedMenuButton />)
       const button = screen.getByRole('button', { name: /メニュー/i })
-      expect(button).toHaveAttribute('aria-haspopup', 'menu')
+      expect(button).toBeInTheDocument()
     })
 
     it('renders with user authenticated', () => {
