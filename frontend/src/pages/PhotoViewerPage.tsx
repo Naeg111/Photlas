@@ -43,7 +43,7 @@ function PhotoViewerPage() {
 
   const pageTitle = photoData?.photo.title
     ? `${photoData.photo.title} - Photlas`
-    : 'Photlas - 写真で撮影スポットを共有・発見'
+    : 'Photlas - 誰かの一枚が、次の目的地に'
   useDocumentTitle(pageTitle)
 
   useEffect(() => {

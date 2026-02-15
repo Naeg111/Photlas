@@ -9,5 +9,5 @@
   <!-- App name -->
   <text x="600" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#1e293b" text-anchor="middle">Photlas</text>
   <!-- Tagline -->
-  <text x="600" y="390" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#64748b" text-anchor="middle">写真で撮影スポットを共有・発見</text>
+  <text x="600" y="390" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#64748b" text-anchor="middle">誰かの一枚が、次の目的地に</text>
 </svg>
