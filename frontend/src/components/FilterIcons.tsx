@@ -588,19 +588,22 @@ export const MonthIcons: Record<
       height="256"
     >
       <g fill="#000000">
-        {/* 三方（台座） */}
-        <rect x="136" y="400" width="240" height="20" rx="4" />
-        <path d="M156,400 L166,360 L346,360 L356,400 Z" />
-        <rect x="176" y="360" width="160" height="12" rx="3" />
-        {/* 下段：3個 */}
-        <circle cx="196" cy="320" r="44" />
-        <circle cx="316" cy="320" r="44" />
-        <circle cx="256" cy="320" r="44" />
-        {/* 中段：2個 */}
-        <circle cx="226" cy="240" r="44" />
-        <circle cx="286" cy="240" r="44" />
-        {/* 上段：1個 */}
-        <circle cx="256" cy="160" r="44" />
+        {/* 左耳 */}
+        <ellipse cx="175" cy="100" rx="40" ry="100" />
+        {/* 右耳 */}
+        <ellipse cx="337" cy="100" rx="40" ry="100" />
+        {/* 顔 */}
+        <ellipse cx="256" cy="310" rx="160" ry="150" />
+        {/* 左目 */}
+        <ellipse cx="200" cy="290" rx="18" ry="22" fill="#FFFFFF" />
+        <ellipse cx="205" cy="293" rx="10" ry="13" />
+        {/* 右目 */}
+        <ellipse cx="312" cy="290" rx="18" ry="22" fill="#FFFFFF" />
+        <ellipse cx="307" cy="293" rx="10" ry="13" />
+        {/* 鼻 */}
+        <ellipse cx="256" cy="340" rx="12" ry="9" fill="#FF9999" />
+        {/* 口 */}
+        <path d="M244,350 Q256,370 268,350" fill="none" stroke="#000000" strokeWidth="5" strokeLinecap="round" />
       </g>
     </svg>
   ),

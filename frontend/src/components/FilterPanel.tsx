@@ -12,7 +12,6 @@ export interface FilterConditions {
   timesOfDay: string[];
   weathers: string[];
   tags: string[];
-  minResolution?: number;
   deviceType?: string;
   maxAgeYears?: number;
   aspectRatio?: string;
@@ -42,11 +41,6 @@ const MONTHS_NEED_INVERT = ["1月", "2月", "4月", "5月", "6月", "7月", "8�
 const TIMES_NEED_INVERT = ["夕方"];
 
 // Issue#46: 詳細フィルターの選択肢
-const RESOLUTION_OPTIONS = [
-  { label: "フルHD以上（1080p）", value: 1080 },
-  { label: "すべて表示", value: undefined },
-] as const;
-
 const DEVICE_TYPE_OPTIONS = [
   { label: "一眼レフ", value: "SLR" },
   { label: "ミラーレス", value: "MIRRORLESS" },
@@ -92,7 +86,6 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
 
   // Issue#46: 詳細フィルターの状態
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [selectedResolution, setSelectedResolution] = useState<number | undefined>(undefined);
   const [selectedDeviceType, setSelectedDeviceType] = useState<string | undefined>(undefined);
   const [selectedMaxAgeYears, setSelectedMaxAgeYears] = useState<number | undefined>(undefined);
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string | undefined>(undefined);
@@ -118,7 +111,6 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
     setSelectedWeather([]);
     setTags([]);
     setTagInput('');
-    setSelectedResolution(undefined);
     setSelectedDeviceType(undefined);
     setSelectedMaxAgeYears(undefined);
     setSelectedAspectRatio(undefined);
@@ -134,7 +126,6 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
         timesOfDay: selectedTimes,
         weathers: selectedWeather,
         tags,
-        minResolution: selectedResolution,
         deviceType: selectedDeviceType,
         maxAgeYears: selectedMaxAgeYears,
         aspectRatio: selectedAspectRatio,
@@ -306,26 +297,6 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
 
             {isAdvancedOpen && (
               <div className="space-y-6 mt-4">
-                {/* 解像度 */}
-                <div>
-                  <p className="text-sm font-medium mb-2 text-muted-foreground">解像度</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {RESOLUTION_OPTIONS.map((option) => (
-                      <Button
-                        key={option.label}
-                        variant={selectedResolution === option.value ? "default" : "outline"}
-                        className={`text-sm ${selectedResolution === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
-                        style={{ border: '1px solid #d1d5db' }}
-                        onClick={() => setSelectedResolution(
-                          selectedResolution === option.value ? undefined : option.value
-                        )}
-                      >
-                        {option.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* 機材種別 */}
                 <div>
                   <p className="text-sm font-medium mb-2 text-muted-foreground">機材種別</p>
