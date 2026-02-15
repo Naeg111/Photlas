@@ -22,7 +22,7 @@ function MenuButton() {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
             className="bg-white shadow-lg rounded-lg border px-4 py-2 text-sm font-medium"
