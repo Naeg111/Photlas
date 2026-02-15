@@ -589,17 +589,15 @@ export const MonthIcons: Record<
     >
       <g fill="#000000">
         {/* 左耳 */}
-        <ellipse cx="170" cy="80" rx="45" ry="115" />
+        <ellipse cx="170" cy="110" rx="45" ry="105" />
         {/* 右耳 */}
-        <ellipse cx="342" cy="80" rx="45" ry="115" />
+        <ellipse cx="342" cy="110" rx="45" ry="105" />
         {/* 顔 */}
-        <ellipse cx="256" cy="320" rx="175" ry="165" />
+        <ellipse cx="256" cy="330" rx="175" ry="160" />
         {/* 左目 */}
-        <ellipse cx="190" cy="295" rx="28" ry="34" fill="#FFFFFF" />
-        <ellipse cx="196" cy="299" rx="16" ry="21" />
+        <ellipse cx="190" cy="305" rx="28" ry="34" fill="#FFFFFF" />
         {/* 右目 */}
-        <ellipse cx="322" cy="295" rx="28" ry="34" fill="#FFFFFF" />
-        <ellipse cx="316" cy="299" rx="16" ry="21" />
+        <ellipse cx="322" cy="305" rx="28" ry="34" fill="#FFFFFF" />
       </g>
     </svg>
   ),
