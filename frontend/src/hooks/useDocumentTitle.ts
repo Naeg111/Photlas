@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const DEFAULT_TITLE = 'Photlas - 写真で撮影スポットを共有・発見'
+const DEFAULT_TITLE = 'Photlas - 誰かの一枚が、次の目的地に'
 
 /**
  * document.titleを設定するカスタムフック

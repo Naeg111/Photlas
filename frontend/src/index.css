@@ -91,10 +91,7 @@
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
-  }
-
-  body {
-    background-color: var(--background);
+    background-color: #000000;
     color: var(--foreground);
     font-feature-settings: "rlig" 1, "calt" 1;
     /* セーフエリアを考慮した背景拡張 */
