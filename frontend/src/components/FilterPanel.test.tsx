@@ -239,7 +239,6 @@ describe('FilterPanel', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
       // 詳細フィルター項目はデフォルトで非表示
-      expect(screen.queryByText('フルHD以上（1080p）')).not.toBeInTheDocument()
       expect(screen.queryByText('ミラーレス')).not.toBeInTheDocument()
     })
 
@@ -248,10 +247,6 @@ describe('FilterPanel', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
       await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
-
-      // 解像度
-      expect(screen.getByText('フルHD以上（1080p）')).toBeInTheDocument()
-      expect(screen.getByText('すべて表示')).toBeInTheDocument()
 
       // 機材種別
       expect(screen.getByText('一眼レフ')).toBeInTheDocument()
@@ -291,11 +286,11 @@ describe('FilterPanel', () => {
 
       // 開く
       await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
-      expect(screen.getByText('フルHD以上（1080p）')).toBeInTheDocument()
+      expect(screen.getByText('ミラーレス')).toBeInTheDocument()
 
       // 閉じる
       await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
-      expect(screen.queryByText('フルHD以上（1080p）')).not.toBeInTheDocument()
+      expect(screen.queryByText('ミラーレス')).not.toBeInTheDocument()
     })
 
     it('includes advanced filter conditions in onApply callback', async () => {
@@ -313,9 +308,6 @@ describe('FilterPanel', () => {
       // 詳細フィルターを開く
       await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
 
-      // 高画質のみを選択
-      await user.click(screen.getByText('フルHD以上（1080p）'))
-
       // ミラーレスを選択
       await user.click(screen.getByText('ミラーレス'))
 
@@ -324,7 +316,6 @@ describe('FilterPanel', () => {
 
       expect(mockOnApply).toHaveBeenCalledWith(
         expect.objectContaining({
-          minResolution: 1080,
           deviceType: 'MIRRORLESS',
         })
       )
@@ -345,8 +336,8 @@ describe('FilterPanel', () => {
       // 詳細フィルターを開く
       await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
 
-      // 高画質のみを選択
-      await user.click(screen.getByText('フルHD以上（1080p）'))
+      // ミラーレスを選択
+      await user.click(screen.getByText('ミラーレス'))
 
       // クリア
       await user.click(screen.getByRole('button', { name: 'クリア' }))
@@ -357,7 +348,6 @@ describe('FilterPanel', () => {
       // 詳細フィルターがリセットされている
       expect(mockOnApply).toHaveBeenCalledWith(
         expect.objectContaining({
-          minResolution: undefined,
           deviceType: undefined,
           maxAgeYears: undefined,
           aspectRatio: undefined,
