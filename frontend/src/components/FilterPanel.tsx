@@ -317,9 +317,9 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                   </div>
                 </div>
 
-                {/* 鮮度 */}
+                {/* 撮影日からの経過期間 */}
                 <div>
-                  <p className="text-sm font-medium mb-2 text-muted-foreground">鮮度</p>
+                  <p className="text-sm font-medium mb-2 text-muted-foreground">撮影日からの経過期間</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {FRESHNESS_OPTIONS.map((option) => (
                       <Button
