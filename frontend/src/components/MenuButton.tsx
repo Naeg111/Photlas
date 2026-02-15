@@ -19,10 +19,19 @@ import { Settings } from "lucide-react";
 function MenuButton() {
   const { user } = useAuth();
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <>
-      <DropdownMenu modal={false}>
+      {/* メニュー展開時のオーバーレイ（モバイルステータスバー白色防止） */}
+      {isMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
+
+      <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <DropdownMenuTrigger asChild>
           <button
             className="bg-white shadow-lg rounded-lg border px-4 py-2 text-sm font-medium"
