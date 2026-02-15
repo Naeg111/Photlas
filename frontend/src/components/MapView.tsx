@@ -72,6 +72,14 @@ function determinePinColor(count: number): string {
 }
 
 /**
+ * ピン色に応じたテキストアウトラインの不透明度を返す
+ * 緑は明度が高く白文字との境界が見づらいため、より濃いアウトラインを適用
+ */
+function getTextStrokeOpacity(hexColor: string): number {
+  return hexColor === PIN_COLOR_MAP.Green ? 0.85 : 0.6
+}
+
+/**
  * ズームレベルに応じたピンのスケール倍率を返す
  */
 function getPinScale(zoom: number): number {
@@ -479,7 +487,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                       width: `${BASE_CLUSTER_SIZE * getPinScale(zoom)}px`,
                       height: `${BASE_CLUSTER_SIZE * getPinScale(zoom)}px`,
                       fontSize: `${14 * getPinScale(zoom)}px`,
-                      textShadow: '0 0 3px rgba(0,0,0,0.6), 0 0 3px rgba(0,0,0,0.6)',
+                      textShadow: `0 0 3px rgba(0,0,0,${getTextStrokeOpacity(pinColor)}), 0 0 3px rgba(0,0,0,${getTextStrokeOpacity(pinColor)})`,
                     }}
                     onClick={() => {
                       const expansionZoom = clusterIndex.getClusterExpansionZoom(clusterId)
@@ -531,7 +539,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                       fill="#ffffff"
                       fontSize="14"
                       fontWeight="bold"
-                      stroke="rgba(0,0,0,0.6)"
+                      stroke={`rgba(0,0,0,${getTextStrokeOpacity(PIN_COLOR_MAP[spot.pinColor])})`}
                       strokeWidth="3"
                       paintOrder="stroke"
                     >
