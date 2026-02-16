@@ -3,7 +3,7 @@ import { ScrollArea } from './ui/scroll-area'
 
 /**
  * PrivacyPolicyPage コンポーネント
- * Issue#27: パネル・ダイアログ群の移行
+ * Issue#52: プライバシーポリシーの文面改訂
  *
  * プライバシーポリシーを表示するダイアログ
  */
@@ -31,117 +31,272 @@ export function PrivacyPolicyPage({
           <div className="space-y-6">
             <section>
               <p className="text-sm text-gray-700">
-                Photlas運営（以下「当社」）は、本サービスにおけるユーザーの個人情報の取扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」）を定めます。
+                Photlas運営（以下「運営者」）は、本サービス「Photlas」（以下「本サービス」）におけるユーザーの個人情報の取扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」）を定めます。運営者は、個人情報の保護に関する法律（個人情報保護法）その他の関係法令を遵守し、ユーザーの個人情報を適切に取り扱います。
               </p>
             </section>
 
             <section>
-              <h2 className="mb-3">第1条（個人情報）</h2>
-              <p className="text-sm text-gray-700">
-                「個人情報」とは、個人情報保護法にいう「個人情報」を指すものとし、生存する個人に関する情報であって、当該情報に含まれる氏名、メールアドレス、その他の記述等により特定の個人を識別できる情報を指します。
-              </p>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第2条（個人情報の収集方法）</h2>
+              <h2 className="mb-3">第1条（基本方針）</h2>
               <p className="text-sm text-gray-700 mb-2">
-                当社は、ユーザーが利用登録をする際に、以下の個人情報をお尋ねすることがあります。
+                運営者は、個人情報の保護を重要な責務と認識し、個人情報保護法その他の関係法令およびガイドラインを遵守するとともに、本ポリシーに従い個人情報を適正に取り扱います。本ポリシーは、本サービス（photlas.jp）における個人情報の取り扱いについて定めるものです。
               </p>
+              <p className="text-sm text-gray-700">
+                本ポリシーにおいて「個人情報」とは、個人情報保護法にいう「個人情報」を指すものとし、生存する個人に関する情報であって、当該情報に含まれるメールアドレス、ユーザー名その他の記述等により特定の個人を識別できる情報を指します。
+              </p>
+            </section>
+
+            <section>
+              <h2 className="mb-3">第2条（収集する情報）</h2>
+              <p className="text-sm text-gray-700 mb-2">
+                運営者は、本サービスの提供にあたり、以下の情報を収集します。
+              </p>
+
+              <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（1）アカウント情報</h3>
               <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                <li>氏名または表示名</li>
                 <li>メールアドレス</li>
+                <li>ユーザー名</li>
+                <li>パスワード（暗号化して保存します）</li>
+              </ul>
+
+              <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（2）プロフィール情報</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
                 <li>プロフィール画像</li>
-                <li>SNSアカウント情報</li>
+                <li>SNSアカウントリンク（最大3件）</li>
+              </ul>
+
+              <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（3）投稿データ</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                <li>写真ファイル</li>
+                <li>タイトル、タグ、カテゴリ</li>
+              </ul>
+
+              <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（4）写真メタデータ（EXIF情報）</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                <li>撮影日時</li>
+                <li>GPS座標（緯度・経度）</li>
+                <li>撮影方向</li>
+                <li>カメラ本体名</li>
+                <li>レンズ名</li>
+                <li>焦点距離、F値、シャッタースピード、ISO感度</li>
+                <li>画像サイズ</li>
+              </ul>
+
+              <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（5）位置情報</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                <li>撮影地点のGPS座標（写真のEXIF情報から自動取得、またはユーザーによる手動入力）</li>
+              </ul>
+
+              <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（6）利用データ</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                <li>お気に入り登録情報</li>
+                <li>通報情報</li>
+              </ul>
+
+              <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（7）技術情報</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                <li>IPアドレス（レートリミット制御目的で一時的に取得。永続的な保存は行いません）</li>
+                <li>エラー情報（外部サービス「Sentry」を通じて収集。全エラーの一部のみが送信されます）</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="mb-3">第3条（個人情報の利用目的）</h2>
+              <h2 className="mb-3">第3条（情報の収集方法）</h2>
               <p className="text-sm text-gray-700 mb-2">
-                当社が個人情報を収集・利用する目的は、以下のとおりです。
+                運営者は、以下の方法により情報を収集します。
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                <li>本サービスの提供・運営のため</li>
-                <li>ユーザーからのお問い合わせに回答するため</li>
-                <li>ユーザーが利用中のサービスの新機能、更新情報、キャンペーン等及び当社が提供する他のサービスの案内のメールを送付するため</li>
-                <li>メンテナンス、重要なお知らせなど必要に応じたご連絡のため</li>
-                <li>利用規約に違反したユーザーや、不正・不当な目的でサービスを利用しようとするユーザーの特定をし、ご利用をお断りするため</li>
-                <li>ユーザーにご自身の登録情報の閲覧や変更、削除、ご利用状況の閲覧を行っていただくため</li>
+                <li>ユーザーが直接入力する情報（アカウント登録時、プロフィール編集時、写真投稿時）</li>
+                <li>写真ファイルから自動的に抽出する情報（EXIF情報に含まれる撮影日時、GPS座標、カメラ情報等）</li>
+                <li>サービス利用時に自動的に取得する情報（IPアドレス、エラー情報）</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="mb-3">第4条（情報の利用目的）</h2>
+              <p className="text-sm text-gray-700 mb-2">
+                運営者が個人情報を収集・利用する目的は、以下のとおりです。
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                <li>本サービスの提供・運営・改善</li>
+                <li>ユーザーの本人確認・認証</li>
+                <li>写真の撮影地点をマップ上に表示する機能の提供</li>
+                <li>写真の撮影情報（カメラ、レンズ、設定値等）の表示</li>
+                <li>新機能・更新情報・メンテナンス等に関するユーザーへの通知</li>
+                <li>パスワードリセットへの対応</li>
+                <li>不正利用の検知・防止（レートリミット、不正アクセス防止）</li>
+                <li>利用規約違反への対応</li>
+                <li>本サービスの広告・宣伝・プロモーション（投稿データの利用）</li>
+                <li>ユーザーからのお問い合わせへの対応</li>
                 <li>上記の利用目的に付随する目的</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="mb-3">第4条（利用目的の変更）</h2>
-              <p className="text-sm text-gray-700">
-                当社は、利用目的が変更前と関連性を有すると合理的に認められる場合に限り、個人情報の利用目的を変更するものとします。利用目的の変更を行った場合には、変更後の目的について、当社所定の方法により、ユーザーに通知し、または本ウェブサイト上に公表するものとします。
-              </p>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第5条（個人情報の第三者提供）</h2>
+              <h2 className="mb-3">第5条（情報の保存・セキュリティ）</h2>
               <p className="text-sm text-gray-700 mb-2">
-                当社は、次に掲げる場合を除いて、あらかじめユーザーの同意を得ることなく、第三者に個人情報を提供することはありません。
+                運営者は、収集した情報を以下の方法で安全に管理します。
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                <li>法令に基づく場合</li>
-                <li>人の生命、身体または財産の保護のために必要がある場合であって、本人の同意を得ることが困難であるとき</li>
-                <li>公衆衛生の向上または児童の健全な育成の推進のために特に必要がある場合であって、本人の同意を得ることが困難であるとき</li>
-                <li>国の機関もしくは地方公共団体またはその委託を受けた者が法令の定める事務を遂行することに対して協力する必要がある場合であって、本人の同意を得ることにより当該事務の遂行に支障を及ぼすおそれがあるとき</li>
+                <li>パスワードはBCryptにより暗号化（ハッシュ化）して保存し、運営者を含め誰も元のパスワードを閲覧できません。</li>
+                <li>写真ファイルおよびプロフィール画像は、Amazon Web Services（AWS）のクラウドストレージに保存します。</li>
+                <li>認証にはJSON Web Token（JWT）を使用し、トークンはユーザーのブラウザに保存されます。</li>
+                <li>すべての通信はHTTPSにより暗号化して行います。</li>
+                <li>不正アクセス防止のため、アクセス頻度の制限（レートリミット）を実施しています。</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="mb-3">第6条（個人情報の開示）</h2>
-              <p className="text-sm text-gray-700">
-                当社は、本人から個人情報の開示を求められたときは、本人に対し、遅滞なくこれを開示します。ただし、開示することにより次のいずれかに該当する場合は、その全部または一部を開示しないこともあり、開示しない決定をした場合には、その旨を遅滞なく通知します。
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 mt-2">
-                <li>本人または第三者の生命、身体、財産その他の権利利益を害するおそれがある場合</li>
-                <li>当社の業務の適正な実施に著しい支障を及ぼすおそれがある場合</li>
-                <li>その他法令に違反することとなる場合</li>
-              </ul>
+              <h2 className="mb-3">第6条（第三者提供・外部サービスの利用）</h2>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                <li>
+                  運営者は、次に掲げる場合を除いて、あらかじめユーザーの同意を得ることなく、第三者に個人情報を提供することはありません。
+                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
+                    <li>法令に基づく場合</li>
+                    <li>人の生命、身体または財産の保護のために必要がある場合であって、本人の同意を得ることが困難であるとき</li>
+                    <li>公衆衛生の向上または児童の健全な育成の推進のために特に必要がある場合であって、本人の同意を得ることが困難であるとき</li>
+                    <li>国の機関もしくは地方公共団体またはその委託を受けた者が法令の定める事務を遂行することに対して協力する必要がある場合であって、本人の同意を得ることにより当該事務の遂行に支障を及ぼすおそれがあるとき</li>
+                  </ul>
+                </li>
+                <li>
+                  運営者は、本サービスにかかる事業を他者に譲渡した場合、当該事業譲渡に伴い、個人情報を当該事業譲渡の譲受人に提供することがあります。
+                </li>
+                <li>
+                  運営者は、本サービスの提供にあたり、以下の外部サービスを利用しています。これらのサービスにユーザーの情報の一部が送信される場合があります。
+                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
+                    <li>
+                      <span className="font-semibold">Amazon Web Services（AWS S3、CloudFront、SES）</span>：画像ファイルの保存・配信、メール送信に使用します。データはAWSの東京リージョン（ap-northeast-1）に保存されます。
+                    </li>
+                    <li>
+                      <span className="font-semibold">Google Maps Platform</span>：地図の表示および撮影地点の位置情報の表示に使用します。Googleのプライバシーポリシーは
+                      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>
+                      をご参照ください。
+                    </li>
+                    <li>
+                      <span className="font-semibold">Sentry</span>：アプリケーションのエラー監視に使用します。エラー発生時に技術的なエラー情報が送信されます（全エラーの一部のみ）。Sentryのプライバシーポリシーは
+                      <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>
+                      をご参照ください。
+                    </li>
+                  </ul>
+                </li>
+              </ol>
             </section>
 
             <section>
-              <h2 className="mb-3">第7条（個人情報の訂正および削除）</h2>
+              <h2 className="mb-3">第7条（EXIF情報の取り扱い）</h2>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                <li>
+                  運営者は、ユーザーが投稿した写真ファイルに含まれるEXIF情報から、撮影日時、GPS座標、カメラ情報、レンズ情報、撮影設定値等を自動的に抽出します。
+                </li>
+                <li>
+                  抽出された撮影情報（カメラ名、レンズ名、焦点距離、F値、シャッタースピード、ISO感度等）は、本サービスのUI上で他のユーザーに表示されます。
+                </li>
+                <li>
+                  位置情報（GPS座標）は、撮影スポットとしてマップ上に表示されます。ユーザーは、写真投稿時に位置情報が本サービス上で公開されることを理解し、同意した上で投稿するものとします。
+                </li>
+                <li>
+                  本サービスでは、投稿された写真の直接ダウンロード機能は提供しておりません。ただし、ブラウザに表示される画像は技術的に保存される可能性があり、その場合、元の写真ファイルに含まれるEXIF情報が残存していることがあります。運営者は、EXIF情報の完全な保護を保証するものではありません。
+                </li>
+              </ol>
+            </section>
+
+            <section>
+              <h2 className="mb-3">第8条（Cookie等の利用）</h2>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                <li>
+                  本サービスでは、認証目的でのCookieは使用しません。認証にはJSON Web Token（JWT）を使用し、以下の方法でブラウザに保存します。
+                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
+                    <li>ログイン時に「ログインを記憶する」を選択した場合：localStorage（ブラウザを閉じても保持され、24時間有効）</li>
+                    <li>選択しない場合：sessionStorage（ブラウザを閉じると削除されます）</li>
+                  </ul>
+                </li>
+                <li>
+                  外部サービス（Google Maps、Sentry等）が独自にCookieを使用する場合があります。これらのCookieの取り扱いについては、各サービスのプライバシーポリシーをご確認ください。
+                </li>
+              </ol>
+            </section>
+
+            <section>
+              <h2 className="mb-3">第9条（個人情報の開示・訂正・削除）</h2>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                <li>
+                  ユーザーは、自身の個人情報について、以下の権利を有します。
+                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
+                    <li>個人情報の開示を請求する権利</li>
+                    <li>個人情報の訂正、追加または削除を請求する権利</li>
+                    <li>個人情報の利用停止を請求する権利</li>
+                  </ul>
+                </li>
+                <li>
+                  上記の請求は、support@photlas.jp へのメールにて受け付けます。運営者は、本人確認を行った上で、合理的な期間内に対応いたします。
+                </li>
+                <li>
+                  プロフィール情報の一部（ユーザー名、プロフィール画像、SNSアカウントリンク）は、ユーザー自身で本サービス上から変更・削除することができます。
+                </li>
+              </ol>
+            </section>
+
+            <section>
+              <h2 className="mb-3">第10条（アカウント削除時のデータ取り扱い）</h2>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                <li>
+                  ユーザーが退会した場合、以下のデータは不正利用の調査・対応を目的として90日間保持した後、バックアップを含め完全に削除します。ただし、利用規約に基づきプロモーション目的で既に公開された投稿データについてはこの限りではありません。
+                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
+                    <li>アカウント情報（メールアドレス、ユーザー名等）</li>
+                    <li>プロフィール情報（プロフィール画像、SNSアカウントリンク）</li>
+                    <li>投稿データ（写真ファイル、メタデータ、タグ等）</li>
+                    <li>お気に入り・通報情報</li>
+                  </ul>
+                </li>
+                <li>
+                  削除後のデータの復旧はできません。
+                </li>
+              </ol>
+            </section>
+
+            <section>
+              <h2 className="mb-3">第11条（未成年者の利用）</h2>
               <p className="text-sm text-gray-700">
-                ユーザーは、当社の保有する自己の個人情報が誤った情報である場合には、当社が定める手続きにより、当社に対して個人情報の訂正、追加または削除（以下「訂正等」）を請求することができます。当社は、ユーザーから前項の請求を受けてその請求に応じる必要があると判断した場合には、遅滞なく、当該個人情報の訂正等を行うものとします。
+                未成年者が本サービスを利用する場合は、法定代理人（保護者）の同意を得た上で利用するものとします。未成年者が本サービスを利用した場合、法定代理人の同意を得ているものとみなします。
               </p>
             </section>
 
             <section>
-              <h2 className="mb-3">第8条（個人情報の利用停止等）</h2>
+              <h2 className="mb-3">第12条（利用目的の変更）</h2>
               <p className="text-sm text-gray-700">
-                当社は、本人から、個人情報が、利用目的の範囲を超えて取り扱われているという理由、または不正の手段により取得されたものであるという理由により、その利用の停止または消去（以下「利用停止等」）を求められた場合には、遅滞なく必要な調査を行います。調査結果に基づき、その請求に応じる必要があると判断した場合には、遅滞なく、当該個人情報の利用停止等を行います。
+                運営者は、利用目的が変更前と関連性を有すると合理的に認められる場合に限り、個人情報の利用目的を変更するものとします。利用目的の変更を行った場合には、変更後の目的について、ユーザーに通知し、または本サービス上に公表するものとします。
               </p>
             </section>
 
             <section>
-              <h2 className="mb-3">第9条（Cookie等の利用）</h2>
-              <p className="text-sm text-gray-700">
-                当社は、ユーザーによる本サービスの利用状況を把握するため、Cookie等の技術を使用することがあります。これにより収集した情報は、本サービスの改善や、ユーザーに最適化されたコンテンツの提供のために利用されます。
-              </p>
+              <h2 className="mb-3">第13条（プライバシーポリシーの変更）</h2>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                <li>
+                  運営者は、法令の改正やサービスの変更に伴い、本ポリシーを変更する場合があります。
+                </li>
+                <li>
+                  本ポリシーの重要な変更を行う場合は、事前にユーザーに通知するものとします。
+                </li>
+                <li>
+                  変更後のプライバシーポリシーは、本サービス上に掲載した時点から効力を生じるものとします。
+                </li>
+              </ol>
             </section>
 
             <section>
-              <h2 className="mb-3">第10条（プライバシーポリシーの変更）</h2>
+              <h2 className="mb-3">第14条（お問い合わせ窓口）</h2>
               <p className="text-sm text-gray-700">
-                本ポリシーの内容は、法令その他本ポリシーに別段の定めのある事項を除いて、ユーザーに通知することなく、変更することができるものとします。当社が別途定める場合を除いて、変更後のプライバシーポリシーは、本ウェブサイトに掲載したときから効力を生じるものとします。
+                本ポリシーに関するお問い合わせは、以下の窓口までご連絡ください。
               </p>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第11条（お問い合わせ窓口）</h2>
-              <p className="text-sm text-gray-700">
-                本ポリシーに関するお問い合わせは、本サービス内のお問い合わせフォームよりお願いいたします。
+              <p className="text-sm text-gray-700 mt-2">
+                運営者名：Photlas運営<br />
+                メールアドレス：support@photlas.jp
               </p>
             </section>
 
             <section className="pt-6 border-t">
               <p className="text-sm text-gray-500">
-                制定日：2025年1月1日<br />
-                最終改定日：2025年1月1日
+                制定日：2026年2月16日<br />
+                最終改定日：2026年2月16日
               </p>
             </section>
           </div>
