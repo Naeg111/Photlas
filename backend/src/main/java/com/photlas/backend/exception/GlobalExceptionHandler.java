@@ -85,6 +85,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
+     * スポットが見つからない（404 Not Found）をハンドリング
+     */
+    @ExceptionHandler(SpotNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSpotNotFoundException(SpotNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
      * 未ハンドル例外のcatch-all（スタックトレース漏洩防止）
      */
     @ExceptionHandler(Exception.class)
