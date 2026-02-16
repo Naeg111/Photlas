@@ -390,8 +390,8 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("正常ケース - 期間外の投稿はカウントされない")
-    void testGetSpots_PhotoOutsidePeriod_NotCounted() throws Exception {
+    @DisplayName("正常ケース - 期間外のみの写真しかないスポットは返されない")
+    void testGetSpots_PhotoOutsidePeriod_SpotNotReturned() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
 
         // 期間外の写真（500時間前 > 336時間）
@@ -408,8 +408,8 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("正常ケース - 期間内の投稿のみがカウントされる")
-    void testGetSpots_MixedPeriodPhotos_OnlyCountsWithinPeriod() throws Exception {
+    @DisplayName("正常ケース - photoCountは全期間のトータル件数、pinColorは期間内の件数で決定")
+    void testGetSpots_MixedPeriodPhotos_PhotoCountIsTotalAndPinColorIsRecent() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
 
         // 期間内の写真1枚
@@ -420,7 +420,7 @@ public class SpotControllerTest {
             createPhoto(spot, TEST_SHOT_AT_OUTSIDE_PERIOD.minusHours(i), WEATHER_SUNNY);
         }
 
-        // 期間内は1枚のみなのでGreen
+        // photoCountは全期間のトータル5枚、pinColorは期間内1枚ベースでGreen
         mockMvc.perform(get(SPOTS_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
                         .param(PARAM_SOUTH, BOUND_SOUTH)
@@ -429,7 +429,7 @@ public class SpotControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_PIN_COLOR, is(PIN_COLOR_GREEN)))
-                .andExpect(jsonPath(JSON_PATH_PHOTO_COUNT, is(1)));
+                .andExpect(jsonPath(JSON_PATH_PHOTO_COUNT, is(5)));
     }
 
     @Test
@@ -1003,6 +1003,46 @@ public class SpotControllerTest {
                         .param(PARAM_TAGS, "存在しないタグ"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    // --- getSpotPhotoIds テスト ---
+
+    @Test
+    @DisplayName("スポットに紐づく写真IDリストを撮影日昇順で取得できる")
+    void testGetSpotPhotoIds_ReturnsPhotoIdsInShotAtOrder() throws Exception {
+        // Given: スポット1つに写真3枚（異なる撮影日時）
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo photo1 = createPhoto(spot, TEST_SHOT_AT.minusHours(2), WEATHER_SUNNY);
+        Photo photo2 = createPhoto(spot, TEST_SHOT_AT, WEATHER_CLOUDY);
+        Photo photo3 = createPhoto(spot, TEST_SHOT_AT.minusHours(1), WEATHER_SUNNY);
+
+        // When & Then: shotAt昇順で返る（photo1, photo3, photo2）
+        mockMvc.perform(get(SPOTS_ENDPOINT + "/" + spot.getSpotId() + "/photos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(3)))
+                .andExpect(jsonPath("$[0]", is(photo1.getPhotoId().intValue())))
+                .andExpect(jsonPath("$[1]", is(photo3.getPhotoId().intValue())))
+                .andExpect(jsonPath("$[2]", is(photo2.getPhotoId().intValue())));
+    }
+
+    @Test
+    @DisplayName("写真が0件のスポットは空リストを返す")
+    void testGetSpotPhotoIds_EmptySpot_ReturnsEmptyList() throws Exception {
+        // Given: 写真なしのスポット
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+
+        // When & Then
+        mockMvc.perform(get(SPOTS_ENDPOINT + "/" + spot.getSpotId() + "/photos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("存在しないスポットIDは404を返す")
+    void testGetSpotPhotoIds_NonExistentSpot_Returns404() throws Exception {
+        // When & Then
+        mockMvc.perform(get(SPOTS_ENDPOINT + "/99999/photos"))
+                .andExpect(status().isNotFound());
     }
 
     // ヘルパーメソッド

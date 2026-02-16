@@ -135,16 +135,18 @@ public class SpotService {
         Long spotId = ((Number) result[0]).longValue();
         BigDecimal latitude = (BigDecimal) result[1];
         BigDecimal longitude = (BigDecimal) result[2];
-        Integer photoCount = ((Number) result[3]).intValue();
-        String thumbnailUrl = (String) result[4];
+        Integer recentPhotoCount = ((Number) result[3]).intValue();
+        Integer totalPhotoCount = ((Number) result[4]).intValue();
+        String thumbnailUrl = (String) result[5];
 
-        // ピンの色を決定
-        String pinColor = determinePinColor(photoCount);
+        // ピンの色はカットオフ期間内の写真数で決定
+        String pinColor = determinePinColor(recentPhotoCount);
 
         // titleは現在nullまたは空文字列（将来的に緯度経度から生成する可能性がある）
         String title = null;
 
-        return new SpotResponse(spotId, latitude, longitude, title, pinColor, thumbnailUrl, photoCount);
+        // photoCountには全期間のトータル件数を設定（表示用）
+        return new SpotResponse(spotId, latitude, longitude, title, pinColor, thumbnailUrl, totalPhotoCount);
     }
 
     private String determinePinColor(Integer photoCount) {

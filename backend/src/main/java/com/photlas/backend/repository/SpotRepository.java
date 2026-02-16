@@ -58,8 +58,9 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
      * [0] spot_id (Long)
      * [1] latitude (BigDecimal)
      * [2] longitude (BigDecimal)
-     * [3] photo_count (Integer) - フィルター条件に合致する写真の枚数
-     * [4] thumbnail_url (String) - 最新の写真のS3 URL
+     * [3] photo_count (Integer) - ピン色判定用（カットオフ期間内の写真枚数）
+     * [4] total_photo_count (Integer) - 表示用（全期間の写真枚数、フィルター条件適用済み）
+     * [5] thumbnail_url (String) - 最新の写真のS3 URL
      */
     @Query(value = """
         SELECT
@@ -67,6 +68,19 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
             s.latitude,
             s.longitude,
             COUNT(DISTINCT p.photo_id) as photo_count,
+            (
+                SELECT COUNT(DISTINCT p3.photo_id)
+                FROM photos p3
+                WHERE p3.spot_id = s.spot_id
+                  AND (-1 IN (:months) OR EXTRACT(MONTH FROM p3.shot_at) IN (:months))
+                  AND ('__NONE__' IN (:timesOfDay) OR p3.time_of_day IN (:timesOfDay))
+                  AND ('__NONE__' IN (:weathers) OR p3.weather IN (:weathers))
+                  AND (-1 IN (:subjectCategories) OR EXISTS (
+                      SELECT 1 FROM photo_categories pc3
+                      WHERE pc3.photo_id = p3.photo_id
+                        AND pc3.category_id IN (:subjectCategories)
+                  ))
+            ) as total_photo_count,
             (
                 SELECT p2.s3_object_key
                 FROM photos p2
@@ -98,7 +112,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
           ))
         GROUP BY s.spot_id, s.latitude, s.longitude
         HAVING COUNT(DISTINCT p.photo_id) > 0
-        ORDER BY photo_count DESC
+        ORDER BY total_photo_count DESC
         """, nativeQuery = true)
     List<Object[]> findSpotsWithFilters(
         @Param("north") BigDecimal north,
@@ -129,6 +143,62 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
             s.latitude,
             s.longitude,
             COUNT(DISTINCT p.photo_id) as photo_count,
+            (
+                SELECT COUNT(DISTINCT p3.photo_id)
+                FROM photos p3
+                WHERE p3.spot_id = s.spot_id
+                  AND (-1 IN (:months) OR EXTRACT(MONTH FROM p3.shot_at) IN (:months))
+                  AND ('__NONE__' IN (:timesOfDay) OR p3.time_of_day IN (:timesOfDay))
+                  AND ('__NONE__' IN (:weathers) OR p3.weather IN (:weathers))
+                  AND (-1 IN (:subjectCategories) OR EXISTS (
+                      SELECT 1 FROM photo_categories pc3
+                      WHERE pc3.photo_id = p3.photo_id
+                        AND pc3.category_id IN (:subjectCategories)
+                  ))
+                  AND (:minResolution = -1 OR (p3.image_width IS NOT NULL AND p3.image_height IS NOT NULL AND GREATEST(p3.image_width, p3.image_height) >= :minResolution))
+                  AND ('__NONE__' = :deviceType
+                       OR (:deviceType = 'CAMERA' AND p3.camera_body IS NOT NULL
+                           AND LOWER(p3.camera_body) NOT LIKE '%apple%'
+                           AND LOWER(p3.camera_body) NOT LIKE '%iphone%'
+                           AND LOWER(p3.camera_body) NOT LIKE '%samsung%'
+                           AND LOWER(p3.camera_body) NOT LIKE '%google%'
+                           AND LOWER(p3.camera_body) NOT LIKE '%pixel%'
+                           AND LOWER(p3.camera_body) NOT LIKE '%huawei%'
+                           AND LOWER(p3.camera_body) NOT LIKE '%xiaomi%'
+                           AND LOWER(p3.camera_body) NOT LIKE '%oppo%'
+                           AND LOWER(p3.camera_body) NOT LIKE '%oneplus%'
+                           AND LOWER(p3.camera_body) NOT LIKE '%sony xperia%')
+                       OR (:deviceType = 'SMARTPHONE' AND p3.camera_body IS NOT NULL
+                           AND (LOWER(p3.camera_body) LIKE '%apple%'
+                                OR LOWER(p3.camera_body) LIKE '%iphone%'
+                                OR LOWER(p3.camera_body) LIKE '%samsung%'
+                                OR LOWER(p3.camera_body) LIKE '%google%'
+                                OR LOWER(p3.camera_body) LIKE '%pixel%'
+                                OR LOWER(p3.camera_body) LIKE '%huawei%'
+                                OR LOWER(p3.camera_body) LIKE '%xiaomi%'
+                                OR LOWER(p3.camera_body) LIKE '%oppo%'
+                                OR LOWER(p3.camera_body) LIKE '%oneplus%'
+                                OR LOWER(p3.camera_body) LIKE '%sony xperia%'))
+                  )
+                  AND (:hasMaxAge = false OR p3.shot_at >= :maxAgeDate)
+                  AND ('__NONE__' = :aspectRatio
+                       OR (:aspectRatio = 'HORIZONTAL' AND p3.image_width IS NOT NULL AND p3.image_height IS NOT NULL AND p3.image_width > p3.image_height)
+                       OR (:aspectRatio = 'VERTICAL' AND p3.image_width IS NOT NULL AND p3.image_height IS NOT NULL AND p3.image_width < p3.image_height)
+                       OR (:aspectRatio = 'SQUARE' AND p3.image_width IS NOT NULL AND p3.image_height IS NOT NULL AND ABS(p3.image_width - p3.image_height) <= GREATEST(p3.image_width, p3.image_height) * 0.05)
+                  )
+                  AND ('__NONE__' = :focalLengthRange
+                       OR (:focalLengthRange = 'WIDE' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm < 24)
+                       OR (:focalLengthRange = 'STANDARD' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm >= 24 AND p3.focal_length_35mm <= 70)
+                       OR (:focalLengthRange = 'TELEPHOTO' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm > 70)
+                  )
+                  AND (:maxIso = -1 OR (p3.iso IS NOT NULL AND p3.iso <= :maxIso))
+                  AND (:hasTags = false OR EXISTS (
+                      SELECT 1 FROM photo_tags pt3
+                      JOIN tags t3 ON pt3.tag_id = t3.tag_id
+                      WHERE pt3.photo_id = p3.photo_id
+                        AND t3.name IN (:tagNames)
+                  ))
+            ) as total_photo_count,
             (
                 SELECT p2.s3_object_key
                 FROM photos p2
@@ -246,7 +316,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
           ))
         GROUP BY s.spot_id, s.latitude, s.longitude
         HAVING COUNT(DISTINCT p.photo_id) > 0
-        ORDER BY photo_count DESC
+        ORDER BY total_photo_count DESC
         """, nativeQuery = true)
     List<Object[]> findSpotsWithAdvancedFilters(
         @Param("north") BigDecimal north,
