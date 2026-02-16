@@ -4,7 +4,7 @@ import { TermsOfServicePage } from './TermsOfServicePage'
 
 /**
  * TermsOfServicePage コンポーネントのテスト
- * Issue#27: パネル・ダイアログ群の移行
+ * Issue#51: 利用規約の文面改訂
  *
  * 利用規約を表示するダイアログ
  */
@@ -41,7 +41,6 @@ describe('TermsOfServicePage', () => {
     it('renders terms of service content', () => {
       render(<TermsOfServicePage {...defaultProps} />)
 
-      // 主要な条項が表示されていることを確認
       expect(screen.getByText(/第1条（適用）/)).toBeInTheDocument()
       expect(screen.getByText(/第2条（定義）/)).toBeInTheDocument()
       expect(screen.getByText(/第3条（ユーザー登録）/)).toBeInTheDocument()
@@ -50,19 +49,31 @@ describe('TermsOfServicePage', () => {
     it('renders scrollable area for long content', () => {
       render(<TermsOfServicePage {...defaultProps} />)
 
-      // 利用規約の内容が表示されていることを確認
       expect(screen.getByText(/本規約は、本サービスの提供条件/)).toBeInTheDocument()
     })
 
     it('renders all required sections', () => {
       render(<TermsOfServicePage {...defaultProps} />)
 
-      // 全ての条項が存在することを確認
       expect(screen.getByText(/第4条（投稿データの取扱い）/)).toBeInTheDocument()
       expect(screen.getByText(/第5条（禁止事項）/)).toBeInTheDocument()
-      expect(screen.getByText(/第6条（本サービスの停止等）/)).toBeInTheDocument()
-      expect(screen.getByText(/第7条（免責事項）/)).toBeInTheDocument()
-      expect(screen.getByText(/第8条（準拠法・管轄裁判所）/)).toBeInTheDocument()
+      expect(screen.getByText(/第6条（利用料金）/)).toBeInTheDocument()
+      expect(screen.getByText(/第7条（退会・アカウント削除）/)).toBeInTheDocument()
+      expect(screen.getByText(/第8条（登録抹消）/)).toBeInTheDocument()
+      expect(screen.getByText(/第9条（本サービスの停止・変更・終了）/)).toBeInTheDocument()
+      expect(screen.getByText(/第10条（免責事項）/)).toBeInTheDocument()
+      expect(screen.getByText(/第11条（規約の変更）/)).toBeInTheDocument()
+      expect(screen.getByText(/第12条（通知）/)).toBeInTheDocument()
+      expect(screen.getByText(/第13条（権利義務の譲渡禁止）/)).toBeInTheDocument()
+      expect(screen.getByText(/第14条（分離可能性）/)).toBeInTheDocument()
+      expect(screen.getByText(/第15条（準拠法・管轄裁判所）/)).toBeInTheDocument()
+      expect(screen.getByText(/第16条（お問い合わせ）/)).toBeInTheDocument()
+    })
+
+    it('renders contact email address', () => {
+      render(<TermsOfServicePage {...defaultProps} />)
+
+      expect(screen.getByText(/support@photlas.jp/)).toBeInTheDocument()
     })
 
     it('renders effective date', () => {
