@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { GoogleMap, useLoadScript } from '@react-google-maps/api'
 import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
+import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 
 /**
  * InlineMapPicker コンポーネント
@@ -18,6 +19,7 @@ import { Button } from './ui/button'
 interface InlineMapPickerProps {
   position: { lat: number; lng: number } | null
   onPositionChange: (position: { lat: number; lng: number }) => void
+  shootingDirection?: number
 }
 
 // 地図の初期設定
@@ -95,7 +97,7 @@ const overlayStyles = {
   } as React.CSSProperties,
 }
 
-export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerProps) {
+export function InlineMapPicker({ position, onPositionChange, shootingDirection }: InlineMapPickerProps) {
   const mapRef = useRef<google.maps.Map | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
@@ -308,6 +310,11 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
         {/* 中央固定ピン */}
         <div style={overlayStyles.pin}>
           <MapPin style={{ width: 40, height: 40, color: '#ef4444', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+          {shootingDirection != null && (
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, 0)' }}>
+              <ShootingDirectionArrow direction={shootingDirection} />
+            </div>
+          )}
         </div>
 
         {/* 現在地ボタン */}

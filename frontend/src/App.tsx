@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
-import PhotoViewerPage from './pages/PhotoViewerPage'
 import NotFoundPage from './pages/NotFoundPage'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
@@ -26,6 +25,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useDialogState } from './hooks/useDialogState'
 import { transformMonths, transformTimesOfDay, transformWeathers, transformCategories, categoryNamesToIds } from './utils/filterTransform'
 import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto, ApiError } from './utils/apiClient'
+import { stripExif } from './utils/stripExif'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
 import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed } from 'lucide-react'
 import { Button } from './components/ui/button'
@@ -170,10 +170,7 @@ function MainContent() {
         contentType,
       })
 
-      // 2. S3へアップロード
-      await uploadFileToS3(uploadUrl, data.file)
-
-      // 3. メタデータ保存（EXIF情報を含む）
+      // 2. メタデータ保存（EXIF情報を含む）
       await createPhoto({
         title: data.title,
         s3ObjectKey: objectKey,
@@ -197,7 +194,13 @@ function MainContent() {
         cropZoom: data.cropZoom,
       })
 
-      // 4. マップ更新
+      // 3. EXIF情報を削除して画像を再エンコード
+      const strippedBlob = await stripExif(data.file)
+
+      // 4. EXIF削除済み画像をS3へアップロード
+      await uploadFileToS3(uploadUrl, strippedBlob)
+
+      // 5. マップ更新
       mapRef.current?.refreshSpots()
     } catch (error) {
       // 認証エラーの場合はログアウトしてログインダイアログを表示
@@ -246,10 +249,10 @@ function MainContent() {
   }
 
   // ミニマップクリックハンドラー（撮影地点プレビュー開始）
-  const handleMinimapClick = (location: { lat: number; lng: number }) => {
+  const handleMinimapClick = (location: { lat: number; lng: number; shootingDirection?: number | null }) => {
     isInPreviewRef.current = true
     setShootingLocationPreview(location)
-    mapRef.current?.showShootingLocationPin(location.lat, location.lng)
+    mapRef.current?.showShootingLocationPin(location.lat, location.lng, location.shootingDirection)
   }
 
   // プレビューからの復帰ハンドラー（refでガード、依存配列を空に保つ）
@@ -517,7 +520,6 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/photo-viewer/:photoId" element={<PhotoViewerPage />} />
         <Route path="/" element={<MainApp />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

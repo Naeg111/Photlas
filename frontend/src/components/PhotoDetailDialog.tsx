@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dial
 import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar, MapPin } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
-import { useLoadScript, GoogleMap, Marker, Polygon } from '@react-google-maps/api'
+import { useLoadScript, GoogleMap, OverlayViewF } from '@react-google-maps/api'
+import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -50,7 +51,7 @@ interface PhotoDetailDialogProps {
   onUserClick?: (user: { userId: number; username: string }) => void
   onImageClick?: (imageUrl: string) => void
   isLightboxOpen?: boolean
-  onMinimapClick?: (location: { lat: number; lng: number }) => void
+  onMinimapClick?: (location: { lat: number; lng: number; shootingDirection?: number | null }) => void
   isSlideDown?: boolean
 }
 
@@ -160,30 +161,6 @@ function formatShotAt(shotAt: string): string {
   return `${year}年${month}月${day}日 ${hours}:${minutes}`
 }
 
-/**
- * 扇形の頂点配列を生成する（撮影方向を中心に左右30度）
- */
-function createFanPoints(
-  lat: number,
-  lng: number,
-  direction: number,
-  radiusMeters: number = 150,
-): { lat: number; lng: number }[] {
-  const points: { lat: number; lng: number }[] = [{ lat, lng }]
-  const startAngle = direction - 30
-  const endAngle = direction + 30
-
-  for (let angle = startAngle; angle <= endAngle; angle += 3) {
-    const rad = (angle * Math.PI) / 180
-    const dLat = (radiusMeters / 111320) * Math.cos(rad)
-    const dLng = (radiusMeters / (111320 * Math.cos((lat * Math.PI) / 180))) * Math.sin(rad)
-    points.push({ lat: lat + dLat, lng: lng + dLng })
-  }
-
-  points.push({ lat, lng })
-  return points
-}
-
 // ミニマップのオプション
 // Google Maps ライブラリ（全コンポーネントで同一の定数を使用すること）
 const LIBRARIES: ('places')[] = ['places']
@@ -285,7 +262,6 @@ function DetailMiniMap({
   })
 
   const center = { lat: latitude, lng: longitude }
-  const fanPoints = shootingDirection != null ? createFanPoints(latitude, longitude, shootingDirection) : null
 
   if (!isLoaded) {
     return (
@@ -311,21 +287,41 @@ function DetailMiniMap({
         zoom={15}
         options={MINIMAP_OPTIONS}
       >
-        <Marker position={center} />
-        {fanPoints && (
-          <Polygon
-            paths={fanPoints}
-            options={{
-              fillColor: 'rgba(59, 130, 246, 0.3)',
-              fillOpacity: 0.3,
-              strokeColor: '#3B82F6',
-              strokeOpacity: 0.8,
-              strokeWeight: 1,
+        <OverlayViewF position={center} mapPaneName="overlayMouseTarget">
+          <div
+            style={{
+              width: '27px',
+              height: '43px',
+              transform: 'translate(-50%, -100%)',
             }}
-          />
+          >
+            <svg viewBox="-2 -2 36 42" width="100%" height="100%" shapeRendering="geometricPrecision">
+              <defs>
+                <filter id="minimap-pin-shadow">
+                  <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.4" />
+                </filter>
+              </defs>
+              <path
+                d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
+                fill="#ffffff"
+                stroke="#000000"
+                strokeWidth="2"
+                strokeLinejoin="round"
+                filter="url(#minimap-pin-shadow)"
+              />
+              <circle cx="16" cy="14" r="6" fill="#000000" stroke="#000000" strokeWidth="1" />
+            </svg>
+          </div>
+        </OverlayViewF>
+        {shootingDirection != null && (
+          <OverlayViewF position={center} mapPaneName="overlayMouseTarget">
+            <div style={{ transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+              <ShootingDirectionArrow direction={shootingDirection} />
+            </div>
+          </OverlayViewF>
         )}
       </GoogleMap>
-      {fanPoints && <div data-testid="minimap-fan-overlay" className="hidden" />}
+      {shootingDirection != null && <div data-testid="minimap-direction-arrow" className="hidden" />}
     </div>
   )
 }
@@ -485,14 +481,22 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
     }
   }, [currentPhoto])
 
-  // Issue#30: お気に入りトグル処理
+  // Issue#30: お気に入りトグル処理（エラー時リバート）
   const handleToggleFavorite = useCallback(async () => {
     if (!currentPhotoId || isFavoriteLoading) return
 
     setIsFavoriteLoading(true)
 
+    // 楽観的UI更新前に現在の状態を保存
+    const prevFavorited = isFavorited
+    const prevCount = favoriteCount
+
+    // 楽観的UI更新
+    setIsFavorited(!isFavorited)
+    setFavoriteCount(isFavorited ? favoriteCount - 1 : favoriteCount + 1)
+
     try {
-      const method = isFavorited ? 'DELETE' : 'POST'
+      const method = prevFavorited ? 'DELETE' : 'POST'
       const response = await fetch(
         `${API_PHOTOS}/${currentPhotoId}/favorite`,
         {
@@ -501,17 +505,19 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
         }
       )
 
-      if (response.ok) {
-        // 楽観的UI更新
-        setIsFavorited(!isFavorited)
-        setFavoriteCount(prev => isFavorited ? prev - 1 : prev + 1)
+      if (!response.ok) {
+        // APIエラー時はリバート
+        setIsFavorited(prevFavorited)
+        setFavoriteCount(prevCount)
       }
     } catch {
-      // エラー時は状態を戻さない（楽観的更新なし）
+      // ネットワークエラー時もリバート
+      setIsFavorited(prevFavorited)
+      setFavoriteCount(prevCount)
     } finally {
       setIsFavoriteLoading(false)
     }
-  }, [currentPhotoId, isFavorited, isFavoriteLoading])
+  }, [currentPhotoId, isFavorited, favoriteCount, isFavoriteLoading])
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal={false}>
@@ -772,6 +778,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
                     onClick={onMinimapClick ? () => onMinimapClick({
                       lat: displayedPhoto.latitude ?? displayedPhoto.spot.latitude,
                       lng: displayedPhoto.longitude ?? displayedPhoto.spot.longitude,
+                      shootingDirection: displayedPhoto.shootingDirection,
                     }) : undefined}
                   />
 
