@@ -112,6 +112,7 @@ public class PhotoService {
         photo.setTitle(request.getTitle());
         photo.setShotAt(takenAt);
         photo.setWeather(weather);
+        photo.setTimeOfDay(calculateTimeOfDay(takenAt));
         photo.setCategories(categories);
         photo.setLatitude(request.getLatitude());
         photo.setLongitude(request.getLongitude());
@@ -345,6 +346,28 @@ public class PhotoService {
         );
 
         return new PhotoResponse(photoDTO, spotDTO, userDTO);
+    }
+
+    /**
+     * 撮影日時から時間帯を自動判定する
+     *
+     * @param shotAt 撮影日時（nullの場合はnullを返す）
+     * @return 時間帯（MORNING/DAY/EVENING/NIGHT）
+     */
+    private String calculateTimeOfDay(LocalDateTime shotAt) {
+        if (shotAt == null) {
+            return null;
+        }
+        int hour = shotAt.getHour();
+        if (hour >= 5 && hour <= 9) {
+            return "MORNING";
+        } else if (hour >= 10 && hour <= 15) {
+            return "DAY";
+        } else if (hour >= 16 && hour <= 17) {
+            return "EVENING";
+        } else {
+            return "NIGHT";
+        }
     }
 
     /**

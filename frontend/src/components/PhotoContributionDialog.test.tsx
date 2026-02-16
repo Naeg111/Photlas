@@ -82,7 +82,7 @@ vi.mock('react-easy-crop', () => ({
 // InlineMapPickerのモック（EXIF GPS テスト用にpositionを追跡）
 let lastMapPickerPosition: { lat: number; lng: number } | null = null
 vi.mock('./InlineMapPicker', () => ({
-  InlineMapPicker: ({ position }: { position: { lat: number; lng: number } | null }) => {
+  InlineMapPicker: ({ position, shootingDirection }: { position: { lat: number; lng: number } | null; shootingDirection?: number }) => {
     lastMapPickerPosition = position
     return (
       <div data-testid="inline-map-picker">
@@ -90,6 +90,9 @@ vi.mock('./InlineMapPicker', () => ({
           <span data-testid="map-position">
             緯度: {position.lat.toFixed(4)}, 経度: {position.lng.toFixed(4)}
           </span>
+        )}
+        {shootingDirection != null && (
+          <span data-testid="map-direction">{shootingDirection}</span>
         )}
       </div>
     )
@@ -623,46 +626,32 @@ describe('PhotoContributionDialog', () => {
   })
 
   describe('Shooting Direction - 撮影方向 (Issue#42)', () => {
-    it('should render shooting direction section with 8-direction buttons', async () => {
+    it('should render shooting direction section with 8-direction options always visible', () => {
       mockExtractExif.mockResolvedValue(null)
-      const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      // 写真を選択して撮影方向セクションを表示
-      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement
-      await user.upload(input, file)
+      // 写真未選択でも撮影方向セクションが表示される
+      expect(screen.getByText('撮影方向')).toBeInTheDocument()
 
-      await waitFor(() => {
-        expect(screen.getByText('撮影方向')).toBeInTheDocument()
-      })
-
-      // 8方位ボタンが表示されることを確認
+      // 8方位が表示されることを確認
       const directions = ['北', '北東', '東', '南東', '南', '南西', '西', '北西']
       directions.forEach(direction => {
-        expect(screen.getByRole('button', { name: direction })).toBeInTheDocument()
+        expect(screen.getByText(direction)).toBeInTheDocument()
       })
     })
 
-    it('should select a direction when 8-direction button is clicked', async () => {
+    it('should select a direction when clicked', async () => {
       mockExtractExif.mockResolvedValue(null)
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement
-      await user.upload(input, file)
+      const eastDiv = screen.getByText('東').closest('div[class*="cursor-pointer"]')
+      if (eastDiv) await user.click(eastDiv)
 
+      // 東が選択状態になることを確認
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: '東' })).toBeInTheDocument()
-      })
-
-      await user.click(screen.getByRole('button', { name: '東' }))
-
-      // 東ボタンが選択状態になることを確認
-      await waitFor(() => {
-        const eastButton = screen.getByRole('button', { name: '東' })
-        expect(eastButton.className).toMatch(/border-primary|bg-primary/)
+        const selectedDiv = screen.getByText('東').closest('div[class*="cursor-pointer"]')
+        expect(selectedDiv?.className).toMatch(/border-primary|bg-primary/)
       })
     })
 
@@ -688,10 +677,8 @@ describe('PhotoContributionDialog', () => {
       if (categoryDiv) await user.click(categoryDiv)
 
       // 南東（135°）を選択
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: '南東' })).toBeInTheDocument()
-      })
-      await user.click(screen.getByRole('button', { name: '南東' }))
+      const seDiv = screen.getByText('南東').closest('div[class*="cursor-pointer"]')
+      if (seDiv) await user.click(seDiv)
 
       // 投稿
       await waitFor(() => {
@@ -708,30 +695,26 @@ describe('PhotoContributionDialog', () => {
       })
     })
 
-    it('should have a reset button to clear shooting direction', async () => {
+    it('should toggle off when same direction is clicked again', async () => {
       mockExtractExif.mockResolvedValue(null)
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement
-      await user.upload(input, file)
+      // 方向を選択
+      const eastDiv = screen.getByText('東').closest('div[class*="cursor-pointer"]')
+      if (eastDiv) await user.click(eastDiv)
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: '東' })).toBeInTheDocument()
+        const selectedDiv = screen.getByText('東').closest('div[class*="cursor-pointer"]')
+        expect(selectedDiv?.className).toMatch(/border-primary|bg-primary/)
       })
 
-      // 方向を選択
-      await user.click(screen.getByRole('button', { name: '東' }))
+      // 同じ方向を再クリックで解除
+      if (eastDiv) await user.click(eastDiv)
 
-      // リセットボタンをクリック
-      const resetButton = screen.getByRole('button', { name: /リセット/ })
-      await user.click(resetButton)
-
-      // 選択が解除されることを確認
       await waitFor(() => {
-        const eastButton = screen.getByRole('button', { name: '東' })
-        expect(eastButton.className).not.toMatch(/border-primary|bg-primary/)
+        const deselectedDiv = screen.getByText('東').closest('div[class*="cursor-pointer"]')
+        expect(deselectedDiv?.className).not.toMatch(/border-primary|bg-primary/)
       })
     })
 
@@ -802,10 +785,8 @@ describe('PhotoContributionDialog', () => {
       if (categoryDiv) await user.click(categoryDiv)
 
       // 手動で北（0°）を選択して上書き
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: '北' })).toBeInTheDocument()
-      })
-      await user.click(screen.getByRole('button', { name: '北' }))
+      const northDiv = screen.getByText('北').closest('div[class*="cursor-pointer"]')
+      if (northDiv) await user.click(northDiv)
 
       // 投稿
       await waitFor(() => {
@@ -907,9 +888,9 @@ describe('PhotoContributionDialog', () => {
         expect(screen.getByText('桜')).toBeInTheDocument()
       })
 
-      // タグの×ボタンをクリック
-      const removeButton = screen.getByText('桜').closest('[data-testid="tag-chip"]')?.querySelector('button')
-      if (removeButton) await user.click(removeButton)
+      // タグの×ボタンをクリック（aria-labelで特定）
+      const removeButton = screen.getByRole('button', { name: '桜を削除' })
+      await user.click(removeButton)
 
       await waitFor(() => {
         expect(screen.queryByText('桜')).not.toBeInTheDocument()

@@ -7,8 +7,7 @@ import PhotoDetailDialog from './PhotoDetailDialog'
 vi.mock('@react-google-maps/api', () => ({
   useLoadScript: () => ({ isLoaded: true, loadError: null }),
   GoogleMap: ({ children }: { children?: React.ReactNode }) => <div data-testid="google-map-mock">{children}</div>,
-  Marker: () => <div data-testid="google-map-marker" />,
-  Polygon: () => <div data-testid="google-map-polygon" />,
+  OverlayViewF: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
 }))
 
 // AuthContextのモック
@@ -936,7 +935,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('撮影方向がある場合、扇形視野角のオーバーレイが表示される', async () => {
+    it('撮影方向がある場合、矢印オーバーレイが表示される', async () => {
       const photoDetail = createMockApiResponse({
         latitude: 35.6586,
         longitude: 139.7454,
@@ -958,11 +957,11 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       await waitFor(() => {
         expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
-        expect(screen.getByTestId('minimap-fan-overlay')).toBeInTheDocument()
+        expect(screen.getByTestId('minimap-direction-arrow')).toBeInTheDocument()
       })
     })
 
-    it('撮影方向がない場合、扇形視野角は非表示', async () => {
+    it('撮影方向がない場合、矢印オーバーレイは非表示', async () => {
       const photoDetail = createMockApiResponse({
         latitude: 35.6586,
         longitude: 139.7454,
@@ -986,7 +985,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
       })
 
-      expect(screen.queryByTestId('minimap-fan-overlay')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('minimap-direction-arrow')).not.toBeInTheDocument()
     })
 
     it('撮影座標がない場合はスポット座標でミニマップが表示される', async () => {
@@ -1047,6 +1046,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(onMinimapClick).toHaveBeenCalledWith({
         lat: 35.6586,
         lng: 139.7454,
+        shootingDirection: null,
       })
     })
 
@@ -1078,6 +1078,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(onMinimapClick).toHaveBeenCalledWith({
         lat: 35.6762,
         lng: 139.6503,
+        shootingDirection: null,
       })
     })
 

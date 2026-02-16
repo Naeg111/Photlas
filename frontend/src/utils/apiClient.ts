@@ -231,7 +231,7 @@ export async function getPhotoUploadUrl(request: UploadUrlRequest): Promise<Uplo
  * @param uploadUrl Presigned URL
  * @param file アップロードするファイル
  */
-export async function uploadFileToS3(uploadUrl: string, file: File): Promise<void> {
+export async function uploadFileToS3(uploadUrl: string, file: Blob): Promise<void> {
   const response = await fetch(uploadUrl, {
     method: 'PUT',
     body: file,

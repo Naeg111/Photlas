@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo, forwardRef, useImper
 import { GoogleMap, useLoadScript, OverlayViewF } from '@react-google-maps/api'
 import Supercluster from 'supercluster'
 import { API_V1_URL } from '../config/api'
+import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 
 // MapViewの公開メソッド型定義
 export interface MapViewHandle {
@@ -9,7 +10,7 @@ export interface MapViewHandle {
   refreshSpots: () => void
   zoomIn: () => void
   zoomOut: () => void
-  showShootingLocationPin: (lat: number, lng: number) => void
+  showShootingLocationPin: (lat: number, lng: number, shootingDirection?: number | null) => void
   clearShootingLocationPin: () => void
 }
 
@@ -142,7 +143,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const [showToast, setShowToast] = useState(false)
   const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null)
   const [userHeading, setUserHeading] = useState<number | null>(null)
-  const [shootingLocationPin, setShootingLocationPin] = useState<google.maps.LatLngLiteral | null>(null)
+  const [shootingLocationPin, setShootingLocationPin] = useState<{ lat: number; lng: number; shootingDirection?: number | null } | null>(null)
   const onMapClickRef = useRef(onMapClick)
   onMapClickRef.current = onMapClick
   const listenerAddedRef = useRef(false)
@@ -335,11 +336,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         map.setZoom(current - 1)
       }
     },
-    showShootingLocationPin: (lat: number, lng: number) => {
+    showShootingLocationPin: (lat: number, lng: number, shootingDirection?: number | null) => {
       if (map) {
         map.setZoom(16)
         map.panTo({ lat, lng })
-        setShootingLocationPin({ lat, lng })
+        setShootingLocationPin({ lat, lng, shootingDirection })
       }
     },
     clearShootingLocationPin: () => {
@@ -545,40 +546,49 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
         {/* 撮影地点プレビューピン（ピンクのピン + ドロップアニメーション） */}
         {shootingLocationPin && (
-          <OverlayViewF
-            position={shootingLocationPin}
-            mapPaneName="overlayMouseTarget"
-          >
-            <div
-              data-testid="shooting-location-pin"
-              className="cursor-pointer"
-              style={{
-                width: `${Math.round(BASE_PIN_SIZE * 1.4)}px`,
-                height: `${Math.round(BASE_PIN_SIZE * 1.2 * 1.4)}px`,
-                transform: 'translate(-50%, -100%)',
-              }}
-              onClick={() => onMapClickRef.current?.()}
+          <>
+            <OverlayViewF
+              position={shootingLocationPin}
+              mapPaneName="overlayMouseTarget"
             >
-              <div className="pin-drop">
-                <svg viewBox="-2 -2 36 42" width="100%" height="100%" shapeRendering="geometricPrecision">
-                  <defs>
-                    <filter id="shooting-pin-shadow">
-                      <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.4" />
-                    </filter>
-                  </defs>
-                  <path
-                    d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
-                    fill={SHOOTING_PIN_COLOR}
-                    stroke={SHOOTING_PIN_STROKE}
-                    strokeWidth="2"
-                    strokeLinejoin="round"
-                    filter="url(#shooting-pin-shadow)"
-                  />
-                  <circle cx="16" cy="14" r="6" fill={SHOOTING_PIN_STROKE} stroke={SHOOTING_PIN_STROKE} strokeWidth="1" />
-                </svg>
+              <div
+                data-testid="shooting-location-pin"
+                className="cursor-pointer"
+                style={{
+                  width: `${Math.round(BASE_PIN_SIZE * 1.4)}px`,
+                  height: `${Math.round(BASE_PIN_SIZE * 1.2 * 1.4)}px`,
+                  transform: 'translate(-50%, -100%)',
+                }}
+                onClick={() => onMapClickRef.current?.()}
+              >
+                <div className="pin-drop">
+                  <svg viewBox="-2 -2 36 42" width="100%" height="100%" shapeRendering="geometricPrecision">
+                    <defs>
+                      <filter id="shooting-pin-shadow">
+                        <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.4" />
+                      </filter>
+                    </defs>
+                    <path
+                      d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
+                      fill={SHOOTING_PIN_COLOR}
+                      stroke={SHOOTING_PIN_STROKE}
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                      filter="url(#shooting-pin-shadow)"
+                    />
+                    <circle cx="16" cy="14" r="6" fill={SHOOTING_PIN_STROKE} stroke={SHOOTING_PIN_STROKE} strokeWidth="1" />
+                  </svg>
+                </div>
               </div>
-            </div>
-          </OverlayViewF>
+            </OverlayViewF>
+            {shootingLocationPin.shootingDirection != null && (
+              <OverlayViewF position={shootingLocationPin} mapPaneName="overlayMouseTarget">
+                <div style={{ transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+                  <ShootingDirectionArrow direction={shootingLocationPin.shootingDirection} />
+                </div>
+              </OverlayViewF>
+            )}
+          </>
         )}
 
         {/* 現在地マーカー（パルスエフェクト + ビーム + 青い円） */}

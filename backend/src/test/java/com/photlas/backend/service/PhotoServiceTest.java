@@ -384,6 +384,132 @@ public class PhotoServiceTest {
         assertThat(savedPhoto.getCategories()).isEmpty();
     }
 
+    // ===== 時間帯自動判定テスト =====
+
+    @Test
+    @DisplayName("時間帯自動判定 - 朝（5:00〜9:59）の撮影日時からMORNINGが設定される")
+    void testCreatePhoto_MorningShot_SetsTimeOfDayToMorning() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("朝の写真");
+        request.setS3ObjectKey("photos/morning001.jpg");
+        request.setTakenAt("2026-02-17T07:30:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("MORNING");
+    }
+
+    @Test
+    @DisplayName("時間帯自動判定 - 昼（10:00〜15:59）の撮影日時からDAYが設定される")
+    void testCreatePhoto_DaytimeShot_SetsTimeOfDayToDay() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("昼の写真");
+        request.setS3ObjectKey("photos/day001.jpg");
+        request.setTakenAt("2026-02-17T12:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("DAY");
+    }
+
+    @Test
+    @DisplayName("時間帯自動判定 - 夕方（16:00〜17:59）の撮影日時からEVENINGが設定される")
+    void testCreatePhoto_EveningShot_SetsTimeOfDayToEvening() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("夕方の写真");
+        request.setS3ObjectKey("photos/evening001.jpg");
+        request.setTakenAt("2026-02-17T17:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("EVENING");
+    }
+
+    @Test
+    @DisplayName("時間帯自動判定 - 夜（18:00〜4:59）の撮影日時からNIGHTが設定される")
+    void testCreatePhoto_NightShot_SetsTimeOfDayToNight() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("夜の写真");
+        request.setS3ObjectKey("photos/night001.jpg");
+        request.setTakenAt("2026-02-17T22:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("NIGHT");
+    }
+
+    @Test
+    @DisplayName("時間帯自動判定 - 深夜（3:00）の撮影日時からNIGHTが設定される")
+    void testCreatePhoto_EarlyMorningShot_SetsTimeOfDayToNight() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("深夜の写真");
+        request.setS3ObjectKey("photos/latenight001.jpg");
+        request.setTakenAt("2026-02-17T03:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("NIGHT");
+    }
+
+    @Test
+    @DisplayName("時間帯自動判定 - 境界値: 5:00はMORNINGになる")
+    void testCreatePhoto_BoundaryMorningStart_SetsTimeOfDayToMorning() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("朝5時の写真");
+        request.setS3ObjectKey("photos/morning5am.jpg");
+        request.setTakenAt("2026-02-17T05:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("MORNING");
+    }
+
+    @Test
+    @DisplayName("時間帯自動判定 - 境界値: 4:59はNIGHTになる")
+    void testCreatePhoto_BoundaryNightEnd_SetsTimeOfDayToNight() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("夜4時59分の写真");
+        request.setS3ObjectKey("photos/night459.jpg");
+        request.setTakenAt("2026-02-17T04:59:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("NIGHT");
+    }
+
     // ===== Issue#40: Photo Entity拡張テスト =====
 
     @Test

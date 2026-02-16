@@ -21,8 +21,8 @@ public class S3Service {
 
     private static final int PRESIGNED_URL_EXPIRATION_MINUTES = 10;
 
-    /** 写真アップロードの最大ファイルサイズ（10MB） */
-    private static final long MAX_PHOTO_UPLOAD_SIZE = 10L * 1024 * 1024;
+    /** 写真アップロードの最大ファイルサイズ（50MB） */
+    private static final long MAX_PHOTO_UPLOAD_SIZE = 50L * 1024 * 1024;
 
     /** アバター・プロフィール画像の最大ファイルサイズ（5MB） */
     private static final long MAX_AVATAR_UPLOAD_SIZE = 5L * 1024 * 1024;

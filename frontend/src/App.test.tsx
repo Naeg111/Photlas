@@ -9,8 +9,7 @@ import { SPLASH_SCREEN_DURATION_MS } from './config/app'
  * App コンポーネントのテスト
  * Issue#28: App.tsx再構築と不要ファイル削除
  *
- * モーダルベースのナビゲーションを使用しつつ、
- * Issue#15のPhotoViewerPageのみReact Routerルートを使用
+ * モーダルベースのナビゲーションを使用
  */
 
 // motion/react のモック（アニメーションを無効化）
@@ -47,6 +46,20 @@ vi.mock('@react-google-maps/api', () => ({
   }),
   OverlayViewF: ({ children }: any) => <div>{children}</div>,
 }))
+
+// Google Maps グローバルオブジェクトのモック（InlineMapPicker用）
+vi.stubGlobal('google', {
+  maps: {
+    places: {
+      AutocompleteService: vi.fn(() => ({
+        getPlacePredictions: vi.fn(),
+      })),
+    },
+    Geocoder: vi.fn(() => ({
+      geocode: vi.fn(),
+    })),
+  },
+})
 
 // fetch APIのモック
 global.fetch = vi.fn(() =>
@@ -283,40 +296,17 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('opens LoginDialog from TopMenuPanel', async () => {
+    it('transitions from TopMenuPanel to SignUpDialog when signup is clicked', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
 
-      // メニューからログインダイアログを開く
+      // メニューボタンをクリック
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
       await user.click(menuButton)
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /ログイン/i })).toBeInTheDocument()
-      })
-
-      // TopMenuPanel内のログインボタンをクリック
-      const loginButtons = screen.getAllByRole('button', { name: /ログイン/i })
-      await user.click(loginButtons[0])
-
-      // LoginDialogが表示される
-      await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
-      })
-    })
-
-    it('opens SignUpDialog from LoginRequiredDialog', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-      renderApp()
-      skipSplashScreen()
-
-      // 投稿ボタンをクリック
-      const postButton = screen.getByRole('button', { name: /投稿/i })
-      await user.click(postButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('ログインが必要です')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /新規アカウント作成/i })).toBeInTheDocument()
       })
 
       // 新規アカウント作成ボタンをクリック
@@ -326,6 +316,96 @@ describe('App - Issue#28: App.tsx再構築', () => {
       // SignUpDialogが表示される
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'アカウント作成' })).toBeInTheDocument()
+      })
+    })
+
+    it('transitions from LoginDialog to PasswordResetDialog', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      renderApp()
+      skipSplashScreen()
+
+      // メニュー → ログインダイアログを開く
+      const menuButton = screen.getByRole('button', { name: /メニュー/i })
+      await user.click(menuButton)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /ログイン/i })).toBeInTheDocument()
+      })
+
+      const loginButton = screen.getByRole('button', { name: /ログイン/i })
+      await user.click(loginButton)
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+      })
+
+      // パスワードをお忘れですか？リンクをクリック
+      const resetLink = screen.getByText(/パスワードをお忘れですか？/i)
+      await user.click(resetLink)
+
+      // PasswordResetDialogが表示される
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: /パスワードリセット/i })).toBeInTheDocument()
+      })
+    })
+
+    it('transitions from LoginDialog to SignUpDialog', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      renderApp()
+      skipSplashScreen()
+
+      // メニュー → ログインダイアログを開く
+      const menuButton = screen.getByRole('button', { name: /メニュー/i })
+      await user.click(menuButton)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /ログイン/i })).toBeInTheDocument()
+      })
+
+      const loginButton = screen.getByRole('button', { name: /ログイン/i })
+      await user.click(loginButton)
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+      })
+
+      // 新規登録リンクをクリック
+      const signUpLink = screen.getByText(/新規登録/i)
+      await user.click(signUpLink)
+
+      // SignUpDialogが表示される
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'アカウント作成' })).toBeInTheDocument()
+      })
+    })
+
+    it('transitions from SignUpDialog to LoginDialog', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      renderApp()
+      skipSplashScreen()
+
+      // メニュー → 新規アカウント作成ダイアログを開く
+      const menuButton = screen.getByRole('button', { name: /メニュー/i })
+      await user.click(menuButton)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /新規アカウント作成/i })).toBeInTheDocument()
+      })
+
+      const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
+      await user.click(signUpButton)
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'アカウント作成' })).toBeInTheDocument()
+      })
+
+      // ログインリンクをクリック
+      const loginLink = screen.getByText(/ログイン$/i)
+      await user.click(loginLink)
+
+      // LoginDialogが表示される
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
       })
     })
   })
@@ -365,17 +445,77 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
   describe('Routing - ルーティング', () => {
     it('renders main content at root path', () => {
-      // Issue#28, Issue#15: ルートパスでメインコンテンツを表示
       renderApp(['/'])
       skipSplashScreen()
       expect(screen.getByTestId('google-map')).toBeInTheDocument()
     })
+  })
 
-    it('renders PhotoViewerPage at /photo-viewer/:photoId path', () => {
-      // Issue#15: 写真ビューワールートのテスト
-      renderApp(['/photo-viewer/123'])
-      // PhotoViewerPageが表示される（ローディング中のメッセージ）
-      expect(screen.getByText(/読み込み中/i)).toBeInTheDocument()
+  describe('Authenticated User - 認証済みユーザー', () => {
+    beforeEach(() => {
+      // 認証済み状態をシミュレート
+      localStorageMock.getItem.mockImplementation((key: string) => {
+        if (key === 'auth_token') return 'fake-token'
+        if (key === 'auth_user') return JSON.stringify({ userId: 1, email: 'test@example.com', username: 'testuser', role: 'user' })
+        return null
+      })
+    })
+
+    it('opens PhotoContributionDialog when post button is clicked while authenticated', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      renderApp()
+      skipSplashScreen()
+
+      const postButton = screen.getByRole('button', { name: /投稿/i })
+      await user.click(postButton)
+
+      // 認証済みなのでPhotoContributionDialogが表示される（LoginRequiredDialogではない）
+      await waitFor(() => {
+        expect(screen.getByText('写真を投稿')).toBeInTheDocument()
+      })
+      expect(screen.queryByText('ログインが必要です')).not.toBeInTheDocument()
+    })
+
+    it('shows authenticated menu items in TopMenuPanel', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      renderApp()
+      skipSplashScreen()
+
+      const menuButton = screen.getByRole('button', { name: /メニュー/i })
+      await user.click(menuButton)
+
+      // 認証済みメニュー項目が表示される
+      await waitFor(() => {
+        expect(screen.getByText(/マイページ/)).toBeInTheDocument()
+      })
+      expect(screen.getByText(/行きたい場所リスト/)).toBeInTheDocument()
+      expect(screen.getByText(/アカウント設定/)).toBeInTheDocument()
+      expect(screen.getByText(/ログアウト/)).toBeInTheDocument()
+
+      // 未認証メニュー項目は表示されない
+      expect(screen.queryByRole('button', { name: /^ログイン$/i })).not.toBeInTheDocument()
+      expect(screen.queryByText(/新規アカウント作成/)).not.toBeInTheDocument()
+    })
+
+    it('opens AccountSettingsDialog from TopMenuPanel', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      renderApp()
+      skipSplashScreen()
+
+      const menuButton = screen.getByRole('button', { name: /メニュー/i })
+      await user.click(menuButton)
+
+      await waitFor(() => {
+        expect(screen.getByText(/アカウント設定/)).toBeInTheDocument()
+      })
+
+      const accountSettingsButton = screen.getByText(/アカウント設定/)
+      await user.click(accountSettingsButton)
+
+      // AccountSettingsDialogが表示される
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'アカウント設定' })).toBeInTheDocument()
+      })
     })
   })
 })
