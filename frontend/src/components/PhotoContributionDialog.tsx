@@ -505,81 +505,34 @@ export function PhotoContributionDialog({
                 <InlineMapPicker
                   position={pinPosition}
                   onPositionChange={setPinPosition}
+                  shootingDirection={shootingDirection}
                 />
               </div>
             </div>
 
             {/* 撮影方向 */}
-            {selectedFile && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base flex items-center gap-2">
-                    <Compass className="w-4 h-4" />
-                    撮影方向
-                  </Label>
-                  {shootingDirection != null && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShootingDirection(undefined)}
-                      aria-label="リセット"
-                    >
-                      リセット
-                    </Button>
-                  )}
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {DIRECTION_OPTIONS.map(({ label, angle }) => (
-                    <Button
-                      key={label}
-                      variant="outline"
-                      size="sm"
-                      className={`${
-                        shootingDirection === angle
-                          ? 'border-primary bg-primary/5'
-                          : ''
-                      }`}
-                      onClick={() => setShootingDirection(angle)}
-                      aria-label={label}
-                    >
-                      {label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* タグ入力 */}
             <div className="space-y-3">
               <Label className="text-base flex items-center gap-2">
-                <Tag className="w-4 h-4" />
-                タグ
+                <Compass className="w-4 h-4" />
+                撮影方向
               </Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    data-testid="tag-chip"
-                    className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm"
+              <div className="grid grid-cols-4 gap-3">
+                {DIRECTION_OPTIONS.map(({ label, angle }) => (
+                  <div
+                    key={label}
+                    className={`flex items-center justify-center border rounded-lg p-3 cursor-pointer transition-colors ${
+                      shootingDirection === angle
+                        ? 'border-primary bg-primary/5'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setShootingDirection(prev => prev === angle ? undefined : angle)}
                   >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="hover:text-red-500"
-                      aria-label={`${tag}を削除`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
+                    <Label className="cursor-pointer">
+                      {label}
+                    </Label>
+                  </div>
                 ))}
               </div>
-              <Input
-                value={tagInput}
-                onChange={handleTagInputChange}
-                onKeyDown={handleTagKeyDown}
-                placeholder="タグを入力（Enterまたはカンマで追加）"
-              />
             </div>
 
             {/* カテゴリ選択 */}
@@ -639,6 +592,39 @@ export function PhotoContributionDialog({
                   )
                 })}
               </div>
+            </div>
+
+            {/* タグ */}
+            <div className="space-y-3">
+              <Label className="text-base flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                タグ
+              </Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 bg-gray-100 text-sm px-3 py-1 rounded-full"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="text-gray-400 hover:text-gray-600"
+                      aria-label={`${tag}を削除`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <Input
+                value={tagInput}
+                onChange={handleTagInputChange}
+                onKeyDown={handleTagKeyDown}
+                placeholder="タグを入力（EnterまたはカンマでOK）"
+                maxLength={50}
+              />
             </div>
 
             {/* 投稿ボタン */}
