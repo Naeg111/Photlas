@@ -61,8 +61,8 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
               <li>
                 <span className="font-semibold">SNSアカウントを登録する</span>
                 <p className="ml-5 mt-1">
-                  プロフィールにSNSアカウントへのリンクを登録できます。
-                  あなたの投稿を見て興味を持った人が、SNSを通じてつながってくれるかもしれません。
+                  アカウントプロフィールにSNSアカウントへのリンクを登録できます。
+                  あなたの投稿を見て興味を持った人が、SNSを訪れるかもしれません。
                 </p>
               </li>
             </ol>
