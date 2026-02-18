@@ -46,7 +46,7 @@ const ERROR_FETCH_DETAIL = 'Failed to fetch photo detail'
 
 interface PhotoDetailDialogProps {
   open: boolean
-  spotId: number
+  spotIds: number[]
   onClose: () => void
   onUserClick?: (user: { userId: number; username: string }) => void
   onImageClick?: (imageUrl: string) => void
@@ -216,7 +216,7 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
 }
 
 // Helper Functions
-async function fetchPhotoIds(spotId: number): Promise<number[]> {
+async function fetchPhotoIdsForSpot(spotId: number): Promise<number[]> {
   const response = await fetch(`${API_SPOTS_PHOTOS}/${spotId}/photos`, {
     headers: getAuthHeaders(),
   })
@@ -226,6 +226,11 @@ async function fetchPhotoIds(spotId: number): Promise<number[]> {
   }
 
   return await response.json()
+}
+
+async function fetchPhotoIdsForSpots(spotIds: number[]): Promise<number[]> {
+  const results = await Promise.all(spotIds.map(id => fetchPhotoIdsForSpot(id)))
+  return results.flat()
 }
 
 async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
@@ -326,7 +331,7 @@ function DetailMiniMap({
   )
 }
 
-export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown }: PhotoDetailDialogProps) {
+export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown }: PhotoDetailDialogProps) {
   const { isAuthenticated } = useAuth()
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -385,7 +390,7 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
       setError(null)
 
       try {
-        const ids = await fetchPhotoIds(spotId)
+        const ids = await fetchPhotoIdsForSpots(spotIds)
         setPhotoIds(ids)
         setCurrentIndex(0)
 
@@ -403,7 +408,8 @@ export default function PhotoDetailDialog({ open, spotId, onClose, onUserClick, 
     }
 
     fetchData()
-  }, [open, spotId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, JSON.stringify(spotIds)])
 
   // 写真詳細を取得（refで依存配列ループを回避、429時にエラー表示しない）
   const fetchPhotoDetail = useCallback(async (photoId: number) => {

@@ -80,10 +80,8 @@ function getPinScale(zoom: number): number {
   return 1.0
 }
 
-// 個別ピンの基準サイズ (px)
+// ピンの基準サイズ (px) - クラスタ・個別ピン共通
 const BASE_PIN_SIZE = 32
-// クラスタピンの基準サイズ (px)
-const BASE_CLUSTER_SIZE = 40
 
 // supercluster用のプロパティ型
 interface SpotProperties extends SpotResponse {
@@ -105,6 +103,7 @@ const SHOOTING_PIN_STROKE = '#000000'
 interface MapViewProps {
   filterParams?: MapViewFilterParams
   onSpotClick?: (spotId: number) => void
+  onClusterClick?: (spotIds: number[]) => void
   onMapClick?: () => void
 }
 
@@ -136,7 +135,7 @@ function FallbackMapView() {
   )
 }
 
-const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onMapClick }, ref) {
+const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick }, ref) {
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
@@ -420,6 +419,14 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     return leaves.reduce((sum, leaf) => sum + (leaf.properties.photoCount || 0), 0)
   }, [clusterIndex])
 
+  /**
+   * クラスタ内の全SpotIDを取得
+   */
+  const getClusterSpotIds = useCallback((clusterId: number): number[] => {
+    const leaves = clusterIndex.getLeaves(clusterId, Infinity)
+    return leaves.map(leaf => leaf.properties.spotId)
+  }, [clusterIndex])
+
   // ズームバナーをクリックしたときの処理
   const handleZoomBannerClick = () => {
     if (map) {
@@ -474,21 +481,44 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 >
                   <div
                     data-testid={`map-cluster-${clusterId}`}
-                    className="rounded-full flex items-center justify-center text-white font-bold cursor-pointer shadow-lg transform -translate-x-1/2 -translate-y-1/2 border-2 border-white"
+                    className="cursor-pointer"
                     style={{
-                      backgroundColor: pinColor,
-                      width: `${BASE_CLUSTER_SIZE * getPinScale(zoom)}px`,
-                      height: `${BASE_CLUSTER_SIZE * getPinScale(zoom)}px`,
-                      fontSize: `${14 * getPinScale(zoom)}px`,
-                      textShadow: '0 0 3px rgba(0,0,0,0.6), 0 0 3px rgba(0,0,0,0.6)',
+                      width: `${BASE_PIN_SIZE * getPinScale(zoom)}px`,
+                      height: `${BASE_PIN_SIZE * 1.2 * getPinScale(zoom)}px`,
+                      transform: 'translate(-50%, -100%)',
                     }}
                     onClick={() => {
-                      const expansionZoom = clusterIndex.getClusterExpansionZoom(clusterId)
-                      map?.setZoom(Math.min(expansionZoom, CLUSTER_MAX_ZOOM + 1))
-                      map?.panTo({ lat, lng })
+                      const spotIds = getClusterSpotIds(clusterId)
+                      onClusterClick?.(spotIds)
                     }}
                   >
-                    {totalPhotoCount}
+                    <svg viewBox="-2 -2 36 42" width="100%" height="100%">
+                      <defs>
+                        <filter id={`cluster-shadow-${clusterId}`}>
+                          <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.4" />
+                        </filter>
+                      </defs>
+                      <path
+                        d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
+                        fill={pinColor}
+                        stroke="rgba(0,0,0,0.3)"
+                        strokeWidth="1"
+                        filter={`url(#cluster-shadow-${clusterId})`}
+                      />
+                      <text
+                        x="16"
+                        y="19"
+                        textAnchor="middle"
+                        fill="#ffffff"
+                        fontSize="14"
+                        fontWeight="bold"
+                        stroke="rgba(0,0,0,0.6)"
+                        strokeWidth="3"
+                        paintOrder="stroke"
+                      >
+                        {totalPhotoCount}
+                      </text>
+                    </svg>
                   </div>
                 </OverlayViewF>
               )
