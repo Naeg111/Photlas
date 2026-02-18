@@ -476,9 +476,9 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        const redCluster = document.querySelector('[style*="background-color"]')
+        const clusterPin = document.querySelector('[data-testid^="map-cluster-"]')
         const greenPin = screen.queryByTestId('map-pin-30')
-        expect(redCluster !== null || greenPin !== null).toBe(true)
+        expect(clusterPin !== null || greenPin !== null).toBe(true)
       })
     })
 
@@ -517,11 +517,11 @@ describe('MapView Component - Issue#13', () => {
       })
     })
 
-    it('クラスタが表示された場合、クリックでズームインする', async () => {
+    it('クラスタが表示された場合、クリックでonClusterClickが呼ばれる', async () => {
       // superclusterの内部判定によりクラスタ化の有無が変わるため、クラスタ表示時のみ検証
       mockMap.getZoom.mockReturnValue(11)
-      mockMap.setZoom.mockClear()
       const user = userEvent.setup()
+      const mockClusterClick = vi.fn()
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
@@ -545,7 +545,7 @@ describe('MapView Component - Issue#13', () => {
       })
       global.fetch = mockFetch
 
-      render(<MapView />)
+      render(<MapView onClusterClick={mockClusterClick} />)
 
       await waitFor(() => {
         const cluster = document.querySelector('[data-testid^="map-cluster-"]')
@@ -553,11 +553,11 @@ describe('MapView Component - Issue#13', () => {
         expect(cluster !== null || pin !== null).toBe(true)
       })
 
-      // クラスタが表示されていればクリックしてズームイン確認
+      // クラスタが表示されていればクリックしてonClusterClick呼び出し確認
       const cluster = document.querySelector('[data-testid^="map-cluster-"]')
       if (cluster) {
         await user.click(cluster as HTMLElement)
-        expect(mockMap.setZoom).toHaveBeenCalled()
+        expect(mockClusterClick).toHaveBeenCalledWith(expect.arrayContaining([50, 51]))
       }
     })
   })

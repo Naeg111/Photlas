@@ -157,16 +157,16 @@ function setupMockFetch(photoIds: number[], photoDetails: any[]) {
 
 interface RenderPhotoDetailDialogProps {
   open?: boolean
-  spotId?: number
+  spotIds?: number[]
   onClose?: () => void
 }
 
 function renderPhotoDetailDialog({
   open = true,
-  spotId = TEST_SPOT_ID,
+  spotIds = [TEST_SPOT_ID],
   onClose = () => {},
 }: RenderPhotoDetailDialogProps = {}) {
-  return render(<PhotoDetailDialog open={open} spotId={spotId} onClose={onClose} />)
+  return render(<PhotoDetailDialog open={open} spotIds={spotIds} onClose={onClose} />)
 }
 
 describe('PhotoDetailDialog Component - Issue#14', () => {
@@ -221,7 +221,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
-      const { rerender } = render(<PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
@@ -229,7 +229,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       // 写真タイトルが表示される
       await waitFor(() => {
@@ -254,7 +254,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
       const mockFetch = setupMockFetch(photoIds, [photoDetail])
 
-      const { rerender } = render(<PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
@@ -262,7 +262,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         const indicators = screen.queryAllByTestId(/^dot-indicator-/)
@@ -288,7 +288,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
       const mockFetch = setupMockFetch(photoIds, [photoDetail1, photoDetail2])
 
-      const { rerender } = render(<PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
@@ -297,7 +297,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
 
       const user = userEvent.setup()
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByText(TEST_PHOTO_TITLE_2)).toBeInTheDocument()
@@ -366,7 +366,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const onClose = vi.fn()
-      const { rerender } = render(<PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={onClose} />)
+      const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={onClose} />)
 
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
@@ -375,7 +375,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
 
       const user = userEvent.setup()
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={onClose} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={onClose} />)
 
       await waitFor(() => {
         expect(screen.getByText(TEST_PHOTO_TITLE_TEST)).toBeInTheDocument()
@@ -398,7 +398,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -407,7 +407,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
@@ -419,7 +419,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -428,7 +428,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         const favoriteButton = screen.getByTestId('favorite-button')
@@ -442,7 +442,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -451,7 +451,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         const favoriteButton = screen.getByTestId('favorite-button')
@@ -468,7 +468,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         .mockResolvedValueOnce({ ok: true }) // POST /favorite
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -478,7 +478,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
 
       const user = userEvent.setup()
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
@@ -503,7 +503,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         .mockResolvedValueOnce({ ok: true }) // DELETE /favorite
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -513,7 +513,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
 
       const user = userEvent.setup()
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
@@ -538,7 +538,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         .mockImplementationOnce(() => new Promise(() => {})) // 永続的にpending
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -548,7 +548,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
 
       const user = userEvent.setup()
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
@@ -570,7 +570,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         .mockResolvedValueOnce({ ok: true }) // POST /favorite
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -580,7 +580,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
 
       const user = userEvent.setup()
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         const favoriteButton = screen.getByTestId('favorite-button')
@@ -609,7 +609,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -618,7 +618,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         const favoriteButton = screen.getByTestId('favorite-button')
@@ -631,7 +631,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -640,7 +640,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByTestId('favorite-count')).toHaveTextContent('42')
@@ -669,7 +669,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -678,7 +678,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByText('撮影情報')).toBeInTheDocument()
@@ -702,7 +702,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -711,7 +711,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByText('撮影情報')).toBeInTheDocument()
@@ -731,7 +731,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -740,7 +740,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
@@ -758,7 +758,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -767,7 +767,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByText(/南西/)).toBeInTheDocument()
@@ -783,7 +783,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -792,7 +792,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByText(/北/)).toBeInTheDocument()
@@ -807,7 +807,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -816,7 +816,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
@@ -835,7 +835,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -844,7 +844,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByText(/2026年1月15日/)).toBeInTheDocument()
@@ -862,7 +862,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -871,7 +871,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByText('桜')).toBeInTheDocument()
@@ -886,7 +886,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -895,7 +895,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
@@ -919,7 +919,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -928,7 +928,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
@@ -944,7 +944,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -953,7 +953,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
@@ -970,7 +970,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -979,7 +979,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
@@ -993,7 +993,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1002,7 +1002,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         // スポット座標でフォールバック表示される
@@ -1025,7 +1025,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const onMinimapClick = vi.fn()
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} onMinimapClick={onMinimapClick} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} onMinimapClick={onMinimapClick} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1034,7 +1034,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} onMinimapClick={onMinimapClick} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} onMinimapClick={onMinimapClick} />)
 
       await waitFor(() => {
         expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
@@ -1056,7 +1056,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const onMinimapClick = vi.fn()
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} onMinimapClick={onMinimapClick} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} onMinimapClick={onMinimapClick} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1065,7 +1065,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} onMinimapClick={onMinimapClick} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} onMinimapClick={onMinimapClick} />)
 
       await waitFor(() => {
         expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
@@ -1090,7 +1090,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1099,7 +1099,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         const minimap = screen.getByTestId('detail-minimap')
@@ -1115,7 +1115,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1124,7 +1124,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         expect(screen.getByTestId('photo-crop-container')).toBeInTheDocument()
@@ -1140,7 +1140,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1149,7 +1149,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         const img = screen.getByAltText(TEST_PHOTO_TITLE_1)
@@ -1164,7 +1164,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1173,7 +1173,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
         const img = screen.getByAltText(TEST_PHOTO_TITLE_1)
@@ -1193,7 +1193,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockImageClick = vi.fn()
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotId={TEST_SPOT_ID} onClose={() => {}} onImageClick={mockImageClick} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} onImageClick={mockImageClick} />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1202,7 +1202,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotId={TEST_SPOT_ID} onClose={() => {}} onImageClick={mockImageClick} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} onImageClick={mockImageClick} />)
 
       await waitFor(() => {
         expect(screen.getByAltText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
