@@ -58,7 +58,7 @@ const DEFAULT_ZOOM = 11
 const MIN_ZOOM_FOR_PINS = 11
 
 // クラスタリング設定（Issue#39）
-const CLUSTER_RADIUS = 60
+const CLUSTER_RADIUS = 120
 const CLUSTER_MAX_ZOOM = 16
 
 /**
