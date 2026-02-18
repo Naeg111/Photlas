@@ -7,6 +7,8 @@ import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.FavoriteNotFoundException;
+import com.photlas.backend.exception.PhotoNotFoundException;
+import com.photlas.backend.exception.SpotNotFoundException;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
@@ -14,6 +16,7 @@ import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,17 +40,20 @@ public class FavoriteService {
     private final PhotoRepository photoRepository;
     private final SpotRepository spotRepository;
     private final UserRepository userRepository;
+    private final S3Service s3Service;
 
     public FavoriteService(
             FavoriteRepository favoriteRepository,
             PhotoRepository photoRepository,
             SpotRepository spotRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            S3Service s3Service
     ) {
         this.favoriteRepository = favoriteRepository;
         this.photoRepository = photoRepository;
         this.spotRepository = spotRepository;
         this.userRepository = userRepository;
+        this.s3Service = s3Service;
     }
 
     // エラーメッセージ定数
@@ -66,10 +72,10 @@ public class FavoriteService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
-        Photo photo = photoRepository.findById(photoId)
-                .orElseThrow(() -> new RuntimeException(ERROR_PHOTO_NOT_FOUND));
+        photoRepository.findById(photoId)
+                .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
-        // すでに登録済みかチェック
+        // 通常フローでの重複チェック
         if (favoriteRepository.findByUserIdAndPhotoId(user.getId(), photoId).isPresent()) {
             logger.info("お気に入りは既に登録済みです: userId={}, photoId={}", user.getId(), photoId);
             throw new ConflictException(ERROR_ALREADY_FAVORITED);
@@ -78,7 +84,14 @@ public class FavoriteService {
         Favorite favorite = new Favorite();
         favorite.setUserId(user.getId());
         favorite.setPhotoId(photoId);
-        favoriteRepository.save(favorite);
+
+        try {
+            favoriteRepository.saveAndFlush(favorite);
+        } catch (DataIntegrityViolationException e) {
+            // 同時リクエストによるレースコンディション時のセーフティネット
+            logger.info("お気に入りは既に登録済みです（並行リクエスト）: userId={}, photoId={}", user.getId(), photoId);
+            throw new ConflictException(ERROR_ALREADY_FAVORITED);
+        }
 
         logger.info("お気に入りに登録しました: userId={}, photoId={}", user.getId(), photoId);
     }
@@ -124,13 +137,14 @@ public class FavoriteService {
         // 写真詳細情報を取得
         Page<PhotoResponse> photoResponses = favoritePage.map(favorite -> {
             Photo photo = photoRepository.findById(favorite.getPhotoId())
-                    .orElseThrow(() -> new RuntimeException(ERROR_PHOTO_NOT_FOUND));
+                    .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
             Spot spot = spotRepository.findById(photo.getSpotId())
-                    .orElseThrow(() -> new RuntimeException(ERROR_SPOT_NOT_FOUND));
+                    .orElseThrow(() -> new SpotNotFoundException(ERROR_SPOT_NOT_FOUND));
             User photoUser = userRepository.findById(photo.getUserId())
-                    .orElseThrow(() -> new RuntimeException(ERROR_USER_NOT_FOUND));
+                    .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
+            long favoriteCount = favoriteRepository.countByPhotoId(photo.getPhotoId());
 
-            return buildPhotoResponse(photo, spot, photoUser, true);
+            return buildPhotoResponse(photo, spot, photoUser, true, favoriteCount);
         });
 
         // ページネーション情報を含むレスポンスを構築
@@ -163,15 +177,22 @@ public class FavoriteService {
     /**
      * PhotoResponseを構築する
      */
-    private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited) {
+    private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited, long favoriteCount) {
+        String imageUrl = s3Service.generateCdnUrl(photo.getS3ObjectKey());
+
         PhotoResponse.PhotoDTO photoDTO = new PhotoResponse.PhotoDTO(
                 photo.getPhotoId(),
                 photo.getTitle(),
-                photo.getS3ObjectKey(),
+                imageUrl,
                 photo.getShotAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                 photo.getWeather(),
-                isFavorited
+                isFavorited,
+                favoriteCount
         );
+
+        photoDTO.setCropCenterX(photo.getCropCenterX());
+        photoDTO.setCropCenterY(photo.getCropCenterY());
+        photoDTO.setCropZoom(photo.getCropZoom());
 
         PhotoResponse.SpotDTO spotDTO = new PhotoResponse.SpotDTO(
                 spot.getSpotId(),

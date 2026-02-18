@@ -92,12 +92,18 @@ interface FavoritePhoto {
   photo: {
     photo_id: number
     title: string
-    thumbnail_url: string
+    image_url: string
+    crop_center_x?: number
+    crop_center_y?: number
+    crop_zoom?: number
   }
-  spot?: {
+  spot: {
     spot_id: number
   }
-  favorited_at: string
+  user: {
+    user_id: number
+    username: string
+  }
 }
 
 interface FavoritesResponse {
@@ -633,20 +639,31 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                     className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
                     data-testid="favorites-grid"
                   >
-                    {favorites.map((favorite) => (
-                      <div
-                        key={favorite.photo.photo_id}
-                        data-testid={`${TEST_ID_FAVORITE_PHOTO_PREFIX}${favorite.photo.photo_id}`}
-                        onClick={() => favorite.spot?.spot_id && handlePhotoClick(favorite.spot.spot_id)}
-                        className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                      >
-                        <div className="absolute inset-0 flex items-center justify-center p-2">
-                          <span className="text-xs text-gray-500 text-center line-clamp-2">
-                            {favorite.photo.title}
-                          </span>
+                    {favorites.map((favorite) => {
+                      const cx = favorite.photo.crop_center_x ?? 0.5
+                      const cy = favorite.photo.crop_center_y ?? 0.5
+                      const zoom = favorite.photo.crop_zoom ?? 1
+                      return (
+                        <div
+                          key={favorite.photo.photo_id}
+                          data-testid={`${TEST_ID_FAVORITE_PHOTO_PREFIX}${favorite.photo.photo_id}`}
+                          onClick={() => handlePhotoClick(favorite.spot.spot_id)}
+                          className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                        >
+                          <img
+                            src={favorite.photo.image_url}
+                            alt={favorite.photo.title}
+                            className="absolute inset-0 w-full h-full"
+                            style={{
+                              objectFit: 'cover',
+                              objectPosition: `${cx * 100}% ${cy * 100}%`,
+                              transform: `scale(${zoom})`,
+                              transformOrigin: `${cx * 100}% ${cy * 100}%`,
+                            }}
+                          />
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
 
                   {/* お気に入りページネーション */}

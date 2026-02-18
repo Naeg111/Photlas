@@ -85,6 +85,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
+     * 写真が見つからない（404 Not Found）をハンドリング
+     */
+    @ExceptionHandler(PhotoNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePhotoNotFoundException(PhotoNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
      * スポットが見つからない（404 Not Found）をハンドリング
      */
     @ExceptionHandler(SpotNotFoundException.class)
