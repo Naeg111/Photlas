@@ -72,6 +72,45 @@ function determinePinColor(count: number): string {
   return PIN_COLOR_MAP.Green
 }
 
+/** 999件超の表示上限 */
+const PIN_COUNT_DISPLAY_LIMIT = 999
+
+/**
+ * ピン内の件数テキストをSVG要素として返す
+ * 999件超の場合は「999」と「+」を2段で表示する
+ */
+function renderPinCountText(count: number): React.ReactNode {
+  if (count > PIN_COUNT_DISPLAY_LIMIT) {
+    return (
+      <>
+        <text
+          x="16" y="17" textAnchor="middle" fill="#ffffff"
+          fontSize="14" fontWeight="bold"
+          stroke="rgba(0,0,0,0.6)" strokeWidth="3" paintOrder="stroke"
+        >
+          {PIN_COUNT_DISPLAY_LIMIT}
+        </text>
+        <text
+          x="16" y="28" textAnchor="middle" fill="#ffffff"
+          fontSize="10" fontWeight="bold"
+          stroke="rgba(0,0,0,0.6)" strokeWidth="2" paintOrder="stroke"
+        >
+          +
+        </text>
+      </>
+    )
+  }
+  return (
+    <text
+      x="16" y="19" textAnchor="middle" fill="#ffffff"
+      fontSize="14" fontWeight="bold"
+      stroke="rgba(0,0,0,0.6)" strokeWidth="3" paintOrder="stroke"
+    >
+      {count}
+    </text>
+  )
+}
+
 /**
  * ズームレベルに応じたピンのスケール倍率を返す
  */
@@ -505,19 +544,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                         strokeWidth="1"
                         filter={`url(#cluster-shadow-${clusterId})`}
                       />
-                      <text
-                        x="16"
-                        y="19"
-                        textAnchor="middle"
-                        fill="#ffffff"
-                        fontSize="14"
-                        fontWeight="bold"
-                        stroke="rgba(0,0,0,0.6)"
-                        strokeWidth="3"
-                        paintOrder="stroke"
-                      >
-                        {totalPhotoCount}
-                      </text>
+                      {renderPinCountText(totalPhotoCount)}
                     </svg>
                   </div>
                 </OverlayViewF>
@@ -555,19 +582,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                       strokeWidth="1"
                       filter="url(#pin-shadow)"
                     />
-                    <text
-                      x="16"
-                      y="19"
-                      textAnchor="middle"
-                      fill="#ffffff"
-                      fontSize="14"
-                      fontWeight="bold"
-                      stroke="rgba(0,0,0,0.6)"
-                      strokeWidth="3"
-                      paintOrder="stroke"
-                    >
-                      {spot.photoCount}
-                    </text>
+                    {renderPinCountText(spot.photoCount)}
                   </svg>
                 </div>
               </OverlayViewF>
