@@ -59,7 +59,7 @@ function MainContent() {
   const [categoryMap, setCategoryMap] = useState<Map<string, number>>(new Map())
 
   // 写真詳細・ライトボックス関連の状態
-  const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null)
+  const [selectedSpotIds, setSelectedSpotIds] = useState<number[] | null>(null)
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>('')
 
   // プロフィールダイアログの初期タブ
@@ -244,7 +244,17 @@ function MainContent() {
       handleReturnFromPreview()
       return
     }
-    setSelectedSpotId(spotId)
+    setSelectedSpotIds([spotId])
+    dialog.open('photoDetail')
+  }
+
+  // クラスタクリックハンドラー（MapViewから呼び出される）
+  const handleClusterClick = (spotIds: number[]) => {
+    if (shootingLocationPreview) {
+      handleReturnFromPreview()
+      return
+    }
+    setSelectedSpotIds(spotIds)
     dialog.open('photoDetail')
   }
 
@@ -285,6 +295,7 @@ function MainContent() {
           ref={mapRef}
           filterParams={mapFilterParams}
           onSpotClick={handleSpotClick}
+          onClusterClick={handleClusterClick}
           onMapClick={handleReturnFromPreview}
         />
       </div>
@@ -452,10 +463,10 @@ function MainContent() {
       )}
 
       {/* PhotoDetailDialog - 写真詳細表示 */}
-      {selectedSpotId !== null && (
+      {selectedSpotIds !== null && (
         <PhotoDetailDialog
           open={dialog.isOpen('photoDetail')}
-          spotId={selectedSpotId}
+          spotIds={selectedSpotIds}
           onClose={() => {
             // プレビューモード中はダイアログを閉じない（Radix flushSync対策）
             // モバイルタッチ時、RadixがflushSyncでisSlideDown=falseをコミットした後に
@@ -463,7 +474,7 @@ function MainContent() {
             // refはflushSyncの影響を受けないため、プレビュー中を確実にガードできる。
             if (isInPreviewRef.current) return
             dialog.close('photoDetail')
-            setSelectedSpotId(null)
+            setSelectedSpotIds(null)
             setShootingLocationPreview(null)
             mapRef.current?.clearShootingLocationPin()
           }}
