@@ -31,12 +31,20 @@ const LABEL_REMOVE_FAVORITE = 'お気に入りから削除'
 const SR_TITLE = '写真詳細'
 const SR_DESCRIPTION = '写真の詳細情報と撮影コンテクスト'
 
-// Weather labels
+// Weather labels（DB値は日本語・英語どちらもありうるため両方対応）
 const WEATHER_LABELS: Record<string, string> = {
+  Sunny: '晴れ',
+  Cloudy: '曇り',
+  Rain: '雨',
+  Snow: '雪',
   sunny: '晴れ',
   cloudy: '曇り',
   rainy: '雨',
   snowy: '雪',
+  晴れ: '晴れ',
+  曇り: '曇り',
+  雨: '雨',
+  雪: '雪',
 }
 
 // Error messages
@@ -654,7 +662,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
               {/* 写真情報（displayedPhotoで表示し、スライド切替時の点滅を防止） */}
               {displayedPhoto && (
                 <div className="min-h-0 p-6 pb-8 space-y-4 overflow-y-auto">
-                  <h2 className="text-2xl font-bold">{displayedPhoto.title}</h2>
+                  <h2 className="text-2xl font-bold min-h-[2rem]">{displayedPhoto.title}</h2>
 
                   {/* ユーザー情報 */}
                   <div
