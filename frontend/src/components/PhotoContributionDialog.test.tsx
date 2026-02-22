@@ -32,6 +32,7 @@ vi.mock('@mapbox/search-js-core', () => ({
     suggest: vi.fn().mockResolvedValue({ suggestions: [] }),
     retrieve: vi.fn().mockResolvedValue({ features: [] }),
   })),
+  SessionToken: vi.fn(),
 }))
 
 // extractExif のモック

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import Map from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { SearchBoxCore } from '@mapbox/search-js-core'
+import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
 import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
 import { ShootingDirectionArrow } from './ShootingDirectionArrow'
@@ -113,6 +113,9 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
     return null
   }, [])
 
+  // セッショントークン（検索セッション管理用）
+  const sessionTokenRef = useRef(new SessionToken())
+
   // 検索入力ハンドラー（デバウンス付き）
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value)
@@ -130,6 +133,7 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
     debounceTimerRef.current = setTimeout(async () => {
       try {
         const result = await searchBox!.suggest(value, {
+          sessionToken: sessionTokenRef.current,
           country: 'jp',
         })
         const items = result.suggestions || []
@@ -148,7 +152,9 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await searchBox.retrieve(suggestion as any)
+      const result = await searchBox.retrieve(suggestion as any, {
+        sessionToken: sessionTokenRef.current,
+      })
       const feature = result.features?.[0]
       if (feature?.geometry?.coordinates) {
         const [lng, lat] = feature.geometry.coordinates
@@ -160,6 +166,8 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
       // 検索結果の取得に失敗した場合はスキップ
     }
 
+    // retrieve完了後にセッショントークンを更新
+    sessionTokenRef.current = new SessionToken()
     setSearchQuery(suggestion.name)
     setSuggestions([])
     setIsDropdownOpen(false)
