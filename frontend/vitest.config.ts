@@ -21,7 +21,7 @@ export default defineConfig({
     isolate: true,
     // テスト用環境変数
     env: {
-      VITE_GOOGLE_MAPS_API_KEY: 'test-api-key',
+      VITE_MAPBOX_ACCESS_TOKEN: 'test-access-token',
     },
   },
 })

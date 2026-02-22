@@ -20,46 +20,42 @@ vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
 
-// Google Maps APIのモック
+// Mapbox GL JS (react-map-gl) のモック
 const mockMap = {
   setZoom: vi.fn(),
   getZoom: vi.fn(() => 11),
-  getCenter: vi.fn(() => ({ lat: () => 35.6585, lng: () => 139.7454 })),
+  getCenter: vi.fn(() => ({ lng: 139.7454, lat: 35.6585 })),
   getBounds: vi.fn(() => ({
-    getNorthEast: () => ({ lat: () => 35.7, lng: () => 139.8 }),
-    getSouthWest: () => ({ lat: () => 35.6, lng: () => 139.7 }),
+    getNorth: () => 35.7,
+    getSouth: () => 35.6,
+    getEast: () => 139.8,
+    getWest: () => 139.7,
   })),
-  addListener: vi.fn(() => ({ remove: vi.fn() })),
+  flyTo: vi.fn(),
+  on: vi.fn(),
+  off: vi.fn(),
 }
 
-// @react-google-maps/api のモック
-vi.mock('@react-google-maps/api', () => ({
-  GoogleMap: ({ children, onLoad }: any) => {
-    if (onLoad) {
-      onLoad(mockMap)
-    }
-    return <div data-testid="google-map">{children}</div>
-  },
-  useLoadScript: () => ({
-    isLoaded: true,
-    loadError: undefined,
-  }),
-  OverlayViewF: ({ children }: any) => <div>{children}</div>,
+const MapMock = ({ children, onLoad }: any) => {
+  if (onLoad) {
+    onLoad({ target: mockMap })
+  }
+  return <div data-testid="mapbox-map">{children}</div>
+}
+
+vi.mock('react-map-gl', () => ({
+  default: MapMock,
+  Map: MapMock,
+  Marker: ({ children }: any) => <div>{children}</div>,
 }))
 
-// Google Maps グローバルオブジェクトのモック（InlineMapPicker用）
-vi.stubGlobal('google', {
-  maps: {
-    places: {
-      AutocompleteService: vi.fn(() => ({
-        getPlacePredictions: vi.fn(),
-      })),
-    },
-    Geocoder: vi.fn(() => ({
-      geocode: vi.fn(),
-    })),
-  },
-})
+// Mapbox Search Box API のモック（InlineMapPicker用）
+vi.mock('@mapbox/search-js-core', () => ({
+  SearchBoxCore: vi.fn(() => ({
+    suggest: vi.fn(),
+    retrieve: vi.fn(),
+  })),
+}))
 
 // fetch APIのモック
 global.fetch = vi.fn(() =>
@@ -146,7 +142,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
     it('shows main content after SplashScreen disappears', () => {
       renderApp()
       skipSplashScreen()
-      expect(screen.getByTestId('google-map')).toBeInTheDocument()
+      expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
     })
   })
 
@@ -154,7 +150,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
     it('renders MapView as main content', () => {
       renderApp()
       skipSplashScreen()
-      expect(screen.getByTestId('google-map')).toBeInTheDocument()
+      expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
     })
 
     it('renders filter button in top-left area', () => {
@@ -447,7 +443,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
     it('renders main content at root path', () => {
       renderApp(['/'])
       skipSplashScreen()
-      expect(screen.getByTestId('google-map')).toBeInTheDocument()
+      expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
     })
   })
 
