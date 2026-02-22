@@ -5,9 +5,11 @@ import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar } fr
 import useEmblaCarousel from 'embla-carousel-react'
 import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import { PinSvg } from './PinSvg'
 import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
+import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { useAuth } from '../contexts/AuthContext'
 
 // API Endpoints
@@ -171,7 +173,6 @@ function formatShotAt(shotAt: string): string {
 }
 
 // Mapbox アクセストークン
-const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ''
 
 // APIレスポンスを内部形式に変換
 function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
@@ -275,7 +276,7 @@ function DetailMiniMap({
           zoom: 15,
         }}
         style={{ width: '100%', height: '100%' }}
-        mapStyle="mapbox://styles/mapbox/streets-v12"
+        mapStyle={MAPBOX_STYLE}
         interactive={false}
       >
         <Marker longitude={longitude} latitude={latitude} anchor="bottom">
@@ -286,22 +287,16 @@ function DetailMiniMap({
               transform: 'translate(-50%, -100%)',
             }}
           >
-            <svg viewBox="-2 -2 36 42" width="100%" height="100%" shapeRendering="geometricPrecision">
-              <defs>
-                <filter id="minimap-pin-shadow">
-                  <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.4" />
-                </filter>
-              </defs>
-              <path
-                d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
-                fill="#ffffff"
-                stroke="#000000"
-                strokeWidth="2"
-                strokeLinejoin="round"
-                filter="url(#minimap-pin-shadow)"
-              />
+            <PinSvg
+              filterId="minimap-pin-shadow"
+              fill="#ffffff"
+              stroke="#000000"
+              strokeWidth={2}
+              strokeLinejoin="round"
+              shapeRendering="geometricPrecision"
+            >
               <circle cx="16" cy="14" r="6" fill="#000000" stroke="#000000" strokeWidth="1" />
-            </svg>
+            </PinSvg>
           </div>
         </Marker>
         {shootingDirection != null && (

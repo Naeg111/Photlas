@@ -1,8 +1,12 @@
 import { useState, useRef, useCallback, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react'
 import Map, { Marker } from 'react-map-gl'
+import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
+import type { Map as MapboxMap } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import Supercluster from 'supercluster'
 import { API_V1_URL } from '../config/api'
+import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
+import { PinSvg } from './PinSvg'
 import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 
 // MapViewの公開メソッド型定義
@@ -62,6 +66,12 @@ const MIN_ZOOM_FOR_PINS = 11
 const CLUSTER_RADIUS = 120
 const CLUSTER_MAX_ZOOM = 16
 
+// UI設定
+const TOAST_DURATION_MS = 3000
+const PIN_HEIGHT_RATIO = 1.2
+const SHOOTING_PIN_SCALE = 1.4
+const PIN_ANCHOR_TRANSFORM = 'translate(-50%, -100%)'
+
 /**
  * 投稿件数からピン色のHEXカラーを決定
  * Issue#12のピン色ルールに準拠
@@ -116,12 +126,24 @@ function renderPinCountText(count: number): React.ReactNode {
  * ズームレベルに応じたピンのスケール倍率を返す
  */
 function getPinScale(zoom: number): number {
-  if (zoom >= 16) return 1.4
+  if (zoom >= 16) return SHOOTING_PIN_SCALE
   return 1.0
 }
 
 // ピンの基準サイズ (px) - クラスタ・個別ピン共通
 const BASE_PIN_SIZE = 32
+
+/** URLSearchParamsに配列型フィルター値を追加 */
+function appendArrayParams(params: URLSearchParams, key: string, values?: (string | number)[]) {
+  values?.forEach(v => params.append(key, v.toString()))
+}
+
+/** URLSearchParamsにスカラー型フィルター値を追加 */
+function appendScalarParam(params: URLSearchParams, key: string, value?: string | number | null) {
+  if (value != null) {
+    params.append(key, value.toString())
+  }
+}
 
 // supercluster用のプロパティ型
 interface SpotProperties extends SpotResponse {
@@ -129,7 +151,6 @@ interface SpotProperties extends SpotResponse {
 }
 
 // Mapbox アクセストークン
-const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ''
 
 // 撮影地点プレビューのホワイト+ブラックボーダー
 const SHOOTING_PIN_COLOR = '#ffffff'
@@ -170,11 +191,9 @@ function FallbackMapView() {
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick }, ref) {
   const [spots, setSpots] = useState<SpotResponse[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [map, setMap] = useState<any>(null)
+  const [map, setMap] = useState<MapboxMap | null>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const [showToast, setShowToast] = useState(false)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
@@ -231,8 +250,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   }, [])
 
   // スポットデータを取得（mapInstanceとフィルター条件をパラメータで受け取る）
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fetchSpots = useCallback(async (mapInstance: any) => {
+  const fetchSpots = useCallback(async (mapInstance: MapboxMap) => {
     try {
       const bounds = mapInstance.getBounds()
       if (!bounds) return
@@ -246,38 +264,16 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
       // Issue#16: フィルター条件を追加
       if (filterParams) {
-        if (filterParams.subject_categories && filterParams.subject_categories.length > 0) {
-          filterParams.subject_categories.forEach(id => params.append('subject_categories', id.toString()))
-        }
-        if (filterParams.months && filterParams.months.length > 0) {
-          filterParams.months.forEach(month => params.append('months', month.toString()))
-        }
-        if (filterParams.times_of_day && filterParams.times_of_day.length > 0) {
-          filterParams.times_of_day.forEach(time => params.append('times_of_day', time))
-        }
-        if (filterParams.weathers && filterParams.weathers.length > 0) {
-          filterParams.weathers.forEach(weather => params.append('weathers', weather))
-        }
-        // Issue#47: タグフィルター
-        if (filterParams.tags && filterParams.tags.length > 0) {
-          filterParams.tags.forEach(tag => params.append('tags', tag))
-        }
-        // Issue#46: 詳細フィルター
-        if (filterParams.device_type) {
-          params.append('device_type', filterParams.device_type)
-        }
-        if (filterParams.max_age_years != null) {
-          params.append('max_age_years', filterParams.max_age_years.toString())
-        }
-        if (filterParams.aspect_ratio) {
-          params.append('aspect_ratio', filterParams.aspect_ratio)
-        }
-        if (filterParams.focal_length_range) {
-          params.append('focal_length_range', filterParams.focal_length_range)
-        }
-        if (filterParams.max_iso != null) {
-          params.append('max_iso', filterParams.max_iso.toString())
-        }
+        appendArrayParams(params, 'subject_categories', filterParams.subject_categories)
+        appendArrayParams(params, 'months', filterParams.months)
+        appendArrayParams(params, 'times_of_day', filterParams.times_of_day)
+        appendArrayParams(params, 'weathers', filterParams.weathers)
+        appendArrayParams(params, 'tags', filterParams.tags)
+        appendScalarParam(params, 'device_type', filterParams.device_type)
+        appendScalarParam(params, 'max_age_years', filterParams.max_age_years)
+        appendScalarParam(params, 'aspect_ratio', filterParams.aspect_ratio)
+        appendScalarParam(params, 'focal_length_range', filterParams.focal_length_range)
+        appendScalarParam(params, 'max_iso', filterParams.max_iso)
       }
 
       const response = await fetch(`${API_V1_URL}/spots?${params}`, {
@@ -295,7 +291,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       setSpots(data)
     } catch (error) {
       setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
+      setTimeout(() => setShowToast(false), TOAST_DURATION_MS)
     }
   }, [filterParams])
 
@@ -363,8 +359,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   }), [map, requestOrientationPermission, fetchSpots])
 
   // 地図が読み込まれたときの処理
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleLoad = useCallback((e: any) => {
+  const handleLoad = useCallback((e: MapEvent) => {
     const mapInstance = e.target
     setMap(mapInstance)
 
@@ -373,8 +368,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   }, [])
 
   // 地図移動完了時の処理（旧idle イベント相当）
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleMoveEnd = useCallback((e: any) => {
+  const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
     const currentZoom = mapInstance.getZoom()
     if (currentZoom !== undefined) {
@@ -464,7 +458,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           zoom: DEFAULT_ZOOM,
         }}
         style={{ width: '100%', height: '100%' }}
-        mapStyle="mapbox://styles/mapbox/streets-v12"
+        mapStyle={MAPBOX_STYLE}
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}
         onClick={() => onMapClickRef.current?.()}
@@ -491,29 +485,17 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                     className="cursor-pointer"
                     style={{
                       width: `${BASE_PIN_SIZE * getPinScale(zoom)}px`,
-                      height: `${BASE_PIN_SIZE * 1.2 * getPinScale(zoom)}px`,
-                      transform: 'translate(-50%, -100%)',
+                      height: `${BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom)}px`,
+                      transform: PIN_ANCHOR_TRANSFORM,
                     }}
                     onClick={() => {
                       const spotIds = getClusterSpotIds(clusterId)
                       onClusterClick?.(spotIds)
                     }}
                   >
-                    <svg viewBox="-2 -2 36 42" width="100%" height="100%">
-                      <defs>
-                        <filter id={`cluster-shadow-${clusterId}`}>
-                          <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.4" />
-                        </filter>
-                      </defs>
-                      <path
-                        d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
-                        fill={pinColor}
-                        stroke="rgba(0,0,0,0.3)"
-                        strokeWidth="1"
-                        filter={`url(#cluster-shadow-${clusterId})`}
-                      />
+                    <PinSvg filterId={`cluster-shadow-${clusterId}`} fill={pinColor} stroke="rgba(0,0,0,0.3)">
                       {renderPinCountText(totalPhotoCount)}
-                    </svg>
+                    </PinSvg>
                   </div>
                 </Marker>
               )
@@ -533,26 +515,14 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                   className="cursor-pointer"
                   style={{
                     width: `${BASE_PIN_SIZE * getPinScale(zoom)}px`,
-                    height: `${BASE_PIN_SIZE * 1.2 * getPinScale(zoom)}px`,
-                    transform: 'translate(-50%, -100%)',
+                    height: `${BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom)}px`,
+                    transform: PIN_ANCHOR_TRANSFORM,
                   }}
                   onClick={() => onSpotClick?.(spot.spotId)}
                 >
-                  <svg viewBox="-2 -2 36 42" width="100%" height="100%">
-                    <defs>
-                      <filter id="pin-shadow">
-                        <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.4" />
-                      </filter>
-                    </defs>
-                    <path
-                      d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
-                      fill={PIN_COLOR_MAP[spot.pinColor]}
-                      stroke="rgba(0,0,0,0.3)"
-                      strokeWidth="1"
-                      filter="url(#pin-shadow)"
-                    />
+                  <PinSvg filterId="pin-shadow" fill={PIN_COLOR_MAP[spot.pinColor]} stroke="rgba(0,0,0,0.3)">
                     {renderPinCountText(spot.photoCount)}
-                  </svg>
+                  </PinSvg>
                 </div>
               </Marker>
             )
@@ -570,29 +540,23 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 data-testid="shooting-location-pin"
                 className="cursor-pointer"
                 style={{
-                  width: `${Math.round(BASE_PIN_SIZE * 1.4)}px`,
-                  height: `${Math.round(BASE_PIN_SIZE * 1.2 * 1.4)}px`,
-                  transform: 'translate(-50%, -100%)',
+                  width: `${Math.round(BASE_PIN_SIZE * SHOOTING_PIN_SCALE)}px`,
+                  height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * SHOOTING_PIN_SCALE)}px`,
+                  transform: PIN_ANCHOR_TRANSFORM,
                 }}
                 onClick={() => onMapClickRef.current?.()}
               >
                 <div className="pin-drop">
-                  <svg viewBox="-2 -2 36 42" width="100%" height="100%" shapeRendering="geometricPrecision">
-                    <defs>
-                      <filter id="shooting-pin-shadow">
-                        <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.4" />
-                      </filter>
-                    </defs>
-                    <path
-                      d="M16 0C7.16 0 0 7.16 0 16c0 8 16 22 16 22s16-14 16-22C32 7.16 24.84 0 16 0z"
-                      fill={SHOOTING_PIN_COLOR}
-                      stroke={SHOOTING_PIN_STROKE}
-                      strokeWidth="2"
-                      strokeLinejoin="round"
-                      filter="url(#shooting-pin-shadow)"
-                    />
+                  <PinSvg
+                    filterId="shooting-pin-shadow"
+                    fill={SHOOTING_PIN_COLOR}
+                    stroke={SHOOTING_PIN_STROKE}
+                    strokeWidth={2}
+                    strokeLinejoin="round"
+                    shapeRendering="geometricPrecision"
+                  >
                     <circle cx="16" cy="14" r="6" fill={SHOOTING_PIN_STROKE} stroke={SHOOTING_PIN_STROKE} strokeWidth="1" />
-                  </svg>
+                  </PinSvg>
                 </div>
               </div>
             </Marker>
