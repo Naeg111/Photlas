@@ -58,6 +58,7 @@ vi.mock('@mapbox/search-js-core', () => ({
     suggest: mockSuggest,
     retrieve: mockRetrieve,
   })),
+  SessionToken: vi.fn(),
 }))
 
 describe('InlineMapPicker - Issue#53: Mapbox移行', () => {

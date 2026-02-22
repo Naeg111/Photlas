@@ -59,6 +59,7 @@ vi.mock('@mapbox/search-js-core', () => ({
     suggest: vi.fn(),
     retrieve: vi.fn(),
   })),
+  SessionToken: vi.fn(),
 }))
 
 // fetch APIのモック
