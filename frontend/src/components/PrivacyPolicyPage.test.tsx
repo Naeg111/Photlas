@@ -83,7 +83,7 @@ describe('PrivacyPolicyPage', () => {
 
       const links = screen.getAllByRole('link', { name: 'こちら' })
       expect(links.length).toBe(2)
-      expect(links[0]).toHaveAttribute('href', 'https://policies.google.com/privacy')
+      expect(links[0]).toHaveAttribute('href', 'https://www.mapbox.com/legal/privacy')
       expect(links[1]).toHaveAttribute('href', 'https://sentry.io/privacy/')
     })
 
