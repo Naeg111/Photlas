@@ -4,67 +4,58 @@ import { userEvent } from '@testing-library/user-event'
 import MapView from './MapView'
 
 /**
- * Issue#13: 地図検索機能のインタラクション改善とピン表示制御
+ * Issue#53: Google Maps API から Mapbox API への移行
  * TDD Red段階のテストコード
  */
 
-// Google Maps APIキーをモック（テスト環境用）
-// import.meta.envをモック
+// API設定のモック
 vi.mock('../config/api', () => ({
   API_V1_URL: 'http://localhost:3000/api/v1',
 }))
 
-// Google Maps APIのモック
+// Mapbox GL JS のモックマップインスタンス
 const mockMap = {
   setZoom: vi.fn(),
   getZoom: vi.fn(),
-  getCenter: vi.fn(() => ({ lat: () => 35.6585, lng: () => 139.7454 })),
+  getCenter: vi.fn(() => ({ lng: 139.7454, lat: 35.6585 })),
   getBounds: vi.fn(() => ({
-    getNorthEast: () => ({ lat: () => 35.7, lng: () => 139.8 }),
-    getSouthWest: () => ({ lat: () => 35.6, lng: () => 139.7 }),
+    getNorth: () => 35.7,
+    getSouth: () => 35.6,
+    getEast: () => 139.8,
+    getWest: () => 139.7,
   })),
-  panTo: vi.fn(),
-  addListener: vi.fn((event: string, callback: () => void) => {
-    if (event === 'idle') {
-      // idle イベントをシミュレート（初回と地図移動後）
-      setTimeout(callback, 100)
-      setTimeout(callback, 200)
-    }
-    return { remove: vi.fn() }
-  }),
+  flyTo: vi.fn(),
+  on: vi.fn(),
+  off: vi.fn(),
 }
 
-// @react-google-maps/api のモック
-vi.mock('@react-google-maps/api', () => ({
-  GoogleMap: ({ children, onLoad, zoom }: any) => {
-    if (onLoad) {
-      onLoad(mockMap)
-    }
-    return (
-      <div data-testid="google-map" data-zoom={zoom}>
-        {children}
-      </div>
-    )
-  },
-  useLoadScript: () => ({
-    isLoaded: true,
-    loadError: undefined,
-  }),
-  MarkerF: ({ position, onClick }: any) => (
-    <div
-      data-testid="map-marker"
-      data-lat={position.lat}
-      data-lng={position.lng}
-      onClick={onClick}
-    />
-  ),
-  OverlayViewF: ({ children }: any) => <div>{children}</div>,
+// react-map-gl のモック
+const MapMock = ({ children, onLoad, onMoveEnd }: any) => {
+  if (onLoad) {
+    onLoad({ target: mockMap })
+  }
+  if (onMoveEnd) {
+    // onMoveEnd イベントをシミュレート（初回と地図移動後）
+    setTimeout(() => onMoveEnd({ target: mockMap }), 100)
+    setTimeout(() => onMoveEnd({ target: mockMap }), 200)
+  }
+  return (
+    <div data-testid="mapbox-map">
+      {children}
+    </div>
+  )
+}
+
+vi.mock('react-map-gl', () => ({
+  default: MapMock,
+  Map: MapMock,
+  Marker: ({ children }: any) => <div>{children}</div>,
 }))
 
 // fetch APIのモック
 global.fetch = vi.fn()
 
-describe('MapView Component - Issue#13', () => {
+describe('MapView Component - Issue#53', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockMap.getZoom.mockReturnValue(11) // デフォルトはZoom 11
@@ -108,7 +99,7 @@ describe('MapView Component - Issue#13', () => {
       expect(callArgs).toContain('west=')
     })
 
-    it('地図移動後（idle イベント）にAPIが呼ばれる', async () => {
+    it('地図移動後（onMoveEnd イベント）にAPIが呼ばれる', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [],
@@ -117,8 +108,8 @@ describe('MapView Component - Issue#13', () => {
 
       render(<MapView />)
 
-      // idle イベント（初回と地図移動）により2回APIが呼ばれることを確認
-      // モックは100msと200msで2回のidleイベントをシミュレートする
+      // onMoveEnd イベント（初回と地図移動）により2回APIが呼ばれることを確認
+      // モックは100msと200msで2回のonMoveEndイベントをシミュレートする
       await waitFor(
         () => {
           expect(mockFetch).toHaveBeenCalledTimes(2)
@@ -563,7 +554,7 @@ describe('MapView Component - Issue#13', () => {
   })
 
   describe('撮影地点プレビュー', () => {
-    it('showShootingLocationPinでピンクのピンが表示される', async () => {
+    it('showShootingLocationPinで白色のピンが表示される', async () => {
       mockMap.getZoom.mockReturnValue(16)
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -584,17 +575,21 @@ describe('MapView Component - Issue#13', () => {
       await waitFor(() => {
         const pin = screen.getByTestId('shooting-location-pin')
         expect(pin).toBeInTheDocument()
-        // ピンクの色を確認
+        // 白色を確認
         const path = pin.querySelector('path')
         expect(path?.getAttribute('fill')).toBe('#ffffff')
       })
 
-      // ズームとパンが呼ばれたことを確認
-      expect(mockMap.setZoom).toHaveBeenCalledWith(16)
-      expect(mockMap.panTo).toHaveBeenCalledWith({ lat: 35.6585, lng: 139.7454 })
+      // flyToが呼ばれたことを確認（Mapbox形式）
+      expect(mockMap.flyTo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          center: [139.7454, 35.6585],
+          zoom: 16,
+        })
+      )
     })
 
-    it('clearShootingLocationPinでピンクのピンが消える', async () => {
+    it('clearShootingLocationPinで白色のピンが消える', async () => {
       mockMap.getZoom.mockReturnValue(16)
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -635,11 +630,11 @@ describe('MapView Component - Issue#13', () => {
       render(<MapView onMapClick={onMapClick} />)
 
       await waitFor(() => {
-        expect(screen.getByTestId('google-map')).toBeInTheDocument()
+        expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
       })
 
-      // GoogleMapのonClickが呼ばれることを確認
-      // モックではGoogleMapのonClickは直接テストできないので、
+      // Mapbox MapのonClickが呼ばれることを確認
+      // モックではMapのonClickは直接テストできないので、
       // propsが正しく渡されることを確認
       expect(onMapClick).not.toHaveBeenCalled()
     })

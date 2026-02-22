@@ -3,11 +3,12 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import PhotoDetailDialog from './PhotoDetailDialog'
 
-// Google Maps APIのモック
-vi.mock('@react-google-maps/api', () => ({
-  useLoadScript: () => ({ isLoaded: true, loadError: null }),
-  GoogleMap: ({ children }: { children?: React.ReactNode }) => <div data-testid="google-map-mock">{children}</div>,
-  OverlayViewF: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+// Mapbox GL JS (react-map-gl) のモック
+const MapMock = ({ children }: { children?: React.ReactNode }) => <div data-testid="mapbox-map">{children}</div>
+vi.mock('react-map-gl', () => ({
+  default: MapMock,
+  Map: MapMock,
+  Marker: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
 }))
 
 // AuthContextのモック

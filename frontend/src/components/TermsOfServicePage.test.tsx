@@ -82,4 +82,20 @@ describe('TermsOfServicePage', () => {
       expect(screen.getByText(/制定日/)).toBeInTheDocument()
     })
   })
+
+  describe('Issue#53: 外部サービス利用規約リンク', () => {
+    it('renders Mapbox terms of service link', () => {
+      render(<TermsOfServicePage {...defaultProps} />)
+
+      const mapboxLink = screen.getByRole('link', { name: /Mapbox/i })
+      expect(mapboxLink).toHaveAttribute('href', 'https://www.mapbox.com/legal/tos')
+    })
+
+    it('renders OpenStreetMap license link', () => {
+      render(<TermsOfServicePage {...defaultProps} />)
+
+      const osmLink = screen.getByRole('link', { name: /OpenStreetMap/i })
+      expect(osmLink).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright')
+    })
+  })
 })
