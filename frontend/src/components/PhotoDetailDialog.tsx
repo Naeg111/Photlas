@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar, MapPin } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
