@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react'
-import { GoogleMap, useLoadScript, OverlayViewF } from '@react-google-maps/api'
+import Map, { Marker } from 'react-map-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
 import Supercluster from 'supercluster'
 import { API_V1_URL } from '../config/api'
 import { ShootingDirectionArrow } from './ShootingDirectionArrow'
@@ -17,7 +18,7 @@ export interface MapViewHandle {
 /**
  * Issue#13: 地図検索機能のインタラクション改善とピン表示制御
  * Issue#16: フィルター機能統合
- * TDD Green段階: テストをパスする実装
+ * Issue#53: Google Maps API → Mapbox API 移行
  */
 
 // Spot APIレスポンスの型定義
@@ -127,14 +128,9 @@ interface SpotProperties extends SpotResponse {
   [key: string]: unknown
 }
 
-// Google Maps APIキー
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
-const GOOGLE_MAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || ''
+// Mapbox アクセストークン
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ''
 
-// Google Maps ライブラリ（全コンポーネントで同一の定数を使用すること）
-const LIBRARIES: ('places')[] = ['places']
-
-// MapViewコンポーネントのProps（Issue#16）
 // 撮影地点プレビューのホワイト+ブラックボーダー
 const SHOOTING_PIN_COLOR = '#ffffff'
 const SHOOTING_PIN_STROKE = '#000000'
@@ -168,23 +164,24 @@ function FallbackMapView() {
       {/* 中央メッセージ */}
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-6 py-4 rounded-lg shadow-lg text-center">
         <p className="text-gray-700 font-semibold mb-2">地図を表示できません</p>
-        <p className="text-gray-500 text-sm">Google Maps APIキーが設定されていません</p>
+        <p className="text-gray-500 text-sm">Mapbox アクセストークンが設定されていません</p>
       </div>
     </div>
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick }, ref) {
   const [spots, setSpots] = useState<SpotResponse[]>([])
-  const [map, setMap] = useState<google.maps.Map | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [map, setMap] = useState<any>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const [showToast, setShowToast] = useState(false)
-  const [userLocation, setUserLocation] = useState<google.maps.LatLngLiteral | null>(null)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [userHeading, setUserHeading] = useState<number | null>(null)
   const [shootingLocationPin, setShootingLocationPin] = useState<{ lat: number; lng: number; shootingDirection?: number | null } | null>(null)
   const onMapClickRef = useRef(onMapClick)
   onMapClickRef.current = onMapClick
-  const listenerAddedRef = useRef(false)
   const initialMountRef = useRef(true)
   const watchIdRef = useRef<number | null>(null)
 
@@ -197,17 +194,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       }
     }
   }, [])
-
-  // Issue#50: Google Maps APIのclickイベントで確実にコールバックを呼ぶ（モバイル対応）
-  // DOMのclickイベントはGoogle Maps canvas上ではバブルしないため、
-  // Google Maps APIのイベントリスナーを直接使用する
-  useEffect(() => {
-    if (!map) return
-    const listener = map.addListener('click', () => {
-      onMapClickRef.current?.()
-    })
-    return () => listener.remove()
-  }, [map])
 
   // デバイスの向きを取得
   useEffect(() => {
@@ -228,7 +214,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
   // デバイスの向き取得の許可をリクエスト（iOS 13+用）
   const requestOrientationPermission = useCallback(async () => {
-    // DeviceOrientationEventにrequestPermissionメソッドがあるか確認（iOS 13+）
     const DeviceOrientationEventWithPermission = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
       requestPermission?: () => Promise<'granted' | 'denied' | 'default'>
     }
@@ -245,26 +230,18 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     return true
   }, [])
 
-  // APIキーが空の場合はuseLoadScriptを呼ばない
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: LIBRARIES,
-  })
-
   // スポットデータを取得（mapInstanceとフィルター条件をパラメータで受け取る）
-  const fetchSpots = useCallback(async (mapInstance: google.maps.Map) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fetchSpots = useCallback(async (mapInstance: any) => {
     try {
       const bounds = mapInstance.getBounds()
       if (!bounds) return
 
-      const ne = bounds.getNorthEast()
-      const sw = bounds.getSouthWest()
-
       const params = new URLSearchParams({
-        north: ne.lat().toString(),
-        south: sw.lat().toString(),
-        east: ne.lng().toString(),
-        west: sw.lng().toString(),
+        north: bounds.getNorth().toString(),
+        south: bounds.getSouth().toString(),
+        east: bounds.getEast().toString(),
+        west: bounds.getWest().toString(),
       })
 
       // Issue#16: フィルター条件を追加
@@ -344,9 +321,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               lng: position.coords.longitude,
             }
             setUserLocation(newLocation)
-            // 初回のみ地図を現在地にパン
+            // 初回のみ地図を現在地にフライ
             if (isFirstUpdate) {
-              map.panTo(newLocation)
+              map.flyTo({ center: [newLocation.lng, newLocation.lat] })
               isFirstUpdate = false
             }
           },
@@ -376,8 +353,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     },
     showShootingLocationPin: (lat: number, lng: number, shootingDirection?: number | null) => {
       if (map) {
-        map.setZoom(16)
-        map.panTo({ lat, lng })
+        map.flyTo({ center: [lng, lat], zoom: 16 })
         setShootingLocationPin({ lat, lng, shootingDirection })
       }
     },
@@ -387,28 +363,28 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   }), [map, requestOrientationPermission, fetchSpots])
 
   // 地図が読み込まれたときの処理
-  const handleLoad = useCallback((mapInstance: google.maps.Map) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleLoad = useCallback((e: any) => {
+    const mapInstance = e.target
     setMap(mapInstance)
 
     // E2Eテスト用: マップインスタンスをwindowに公開（ズーム制御等）
     ;(window as unknown as Record<string, unknown>).__photlas_map = mapInstance
+  }, [])
 
-    // idle イベントリスナーを一度だけ追加
-    // Google Maps は初回読み込み時と地図操作後に自動的にidleイベントを発火する
-    if (!listenerAddedRef.current) {
-      listenerAddedRef.current = true
-      mapInstance.addListener('idle', () => {
-        const currentZoom = mapInstance.getZoom()
-        if (currentZoom !== undefined) {
-          setZoom(currentZoom)
-        }
-        fetchSpots(mapInstance)
-      })
+  // 地図移動完了時の処理（旧idle イベント相当）
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleMoveEnd = useCallback((e: any) => {
+    const mapInstance = e.target
+    const currentZoom = mapInstance.getZoom()
+    if (currentZoom !== undefined) {
+      setZoom(currentZoom)
     }
+    fetchSpots(mapInstance)
   }, [fetchSpots])
 
   // Issue#16: フィルター条件が変更されたときにスポットを再取得
-  // 初回マウント時はskip（idleイベントで既に呼ばれるため）
+  // 初回マウント時はskip（onMoveEndで既に呼ばれるため）
   // filterParamsのみに依存することで、zoom変更などによる不要な再取得を防ぐ
   useEffect(() => {
     if (initialMountRef.current) {
@@ -442,10 +418,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     const bounds = map.getBounds()
     if (!bounds) return []
     const bbox: [number, number, number, number] = [
-      bounds.getSouthWest().lng(),
-      bounds.getSouthWest().lat(),
-      bounds.getNorthEast().lng(),
-      bounds.getNorthEast().lat(),
+      bounds.getWest(),
+      bounds.getSouth(),
+      bounds.getEast(),
+      bounds.getNorth(),
     ]
     return clusterIndex.getClusters(bbox, Math.floor(zoom))
   }, [clusterIndex, map, zoom])
@@ -473,34 +449,25 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }
   }
 
-  // APIキーが空の場合はフォールバックUIを表示
-  if (!GOOGLE_MAPS_API_KEY) {
+  // アクセストークンが空の場合はフォールバックUIを表示
+  if (!MAPBOX_ACCESS_TOKEN) {
     return <FallbackMapView />
-  }
-
-  if (loadError) {
-    return <FallbackMapView />
-  }
-
-  if (!isLoaded) {
-    return <div>読み込み中...</div>
   }
 
   return (
     <div className="relative w-full h-full">
-      <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '100%' }}
-        center={DEFAULT_CENTER}
-        zoom={DEFAULT_ZOOM}
-        onLoad={handleLoad}
-        options={{
-          disableDefaultUI: true,
-          clickableIcons: false,
-          gestureHandling: 'greedy',
-          keyboardShortcuts: false,
-          isFractionalZoomEnabled: false,
-          ...(GOOGLE_MAPS_MAP_ID ? { mapId: GOOGLE_MAPS_MAP_ID } : {}),
+      <Map
+        mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+        initialViewState={{
+          longitude: DEFAULT_CENTER.lng,
+          latitude: DEFAULT_CENTER.lat,
+          zoom: DEFAULT_ZOOM,
         }}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
+        onLoad={handleLoad}
+        onMoveEnd={handleMoveEnd}
+        onClick={() => onMapClickRef.current?.()}
       >
         {/* Issue#39: クラスタリング対応ピン表示（プレビュー中は非表示） */}
         {zoom >= MIN_ZOOM_FOR_PINS && !shootingLocationPin &&
@@ -513,10 +480,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               const totalPhotoCount = getClusterPhotoCount(clusterId)
               const pinColor = determinePinColor(totalPhotoCount)
               return (
-                <OverlayViewF
+                <Marker
                   key={`cluster-${clusterId}`}
-                  position={{ lat, lng }}
-                  mapPaneName="overlayMouseTarget"
+                  longitude={lng}
+                  latitude={lat}
+                  anchor="bottom"
                 >
                   <div
                     data-testid={`map-cluster-${clusterId}`}
@@ -547,17 +515,18 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                       {renderPinCountText(totalPhotoCount)}
                     </svg>
                   </div>
-                </OverlayViewF>
+                </Marker>
               )
             }
 
             // 個別スポット
             const spot = feature.properties as SpotProperties
             return (
-              <OverlayViewF
+              <Marker
                 key={spot.spotId}
-                position={{ lat, lng }}
-                mapPaneName="overlayMouseTarget"
+                longitude={lng}
+                latitude={lat}
+                anchor="bottom"
               >
                 <div
                   data-testid={`map-pin-${spot.spotId}`}
@@ -585,16 +554,17 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                     {renderPinCountText(spot.photoCount)}
                   </svg>
                 </div>
-              </OverlayViewF>
+              </Marker>
             )
           })}
 
         {/* 撮影地点プレビューピン（ピンクのピン + ドロップアニメーション） */}
         {shootingLocationPin && (
           <>
-            <OverlayViewF
-              position={shootingLocationPin}
-              mapPaneName="overlayMouseTarget"
+            <Marker
+              longitude={shootingLocationPin.lng}
+              latitude={shootingLocationPin.lat}
+              anchor="bottom"
             >
               <div
                 data-testid="shooting-location-pin"
@@ -625,27 +595,32 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                   </svg>
                 </div>
               </div>
-            </OverlayViewF>
+            </Marker>
             {shootingLocationPin.shootingDirection != null && (
-              <OverlayViewF position={shootingLocationPin} mapPaneName="overlayMouseTarget">
-                <div style={{ transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+              <Marker
+                longitude={shootingLocationPin.lng}
+                latitude={shootingLocationPin.lat}
+                anchor="center"
+              >
+                <div style={{ pointerEvents: 'none' }}>
                   <ShootingDirectionArrow direction={shootingLocationPin.shootingDirection} />
                 </div>
-              </OverlayViewF>
+              </Marker>
             )}
           </>
         )}
 
         {/* 現在地マーカー（パルスエフェクト + ビーム + 青い円） */}
         {userLocation && (
-          <OverlayViewF
-            position={userLocation}
-            mapPaneName="overlayMouseTarget"
+          <Marker
+            longitude={userLocation.lng}
+            latitude={userLocation.lat}
+            anchor="center"
           >
             <div
               data-testid="user-location-marker"
               className="relative"
-              style={{ width: '80px', height: '80px', transform: 'translate(-50%, -50%)' }}
+              style={{ width: '80px', height: '80px' }}
             >
               {/* パルスエフェクト（波紋） */}
               <div
@@ -684,9 +659,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 style={{ transform: 'translate(-50%, -50%)' }}
               />
             </div>
-          </OverlayViewF>
+          </Marker>
         )}
-      </GoogleMap>
+      </Map>
 
       {/* Zoom 10以下の場合、ズームバナーを表示 */}
       {zoom < MIN_ZOOM_FOR_PINS && (

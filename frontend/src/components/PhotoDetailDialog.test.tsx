@@ -4,7 +4,10 @@ import { userEvent } from '@testing-library/user-event'
 import PhotoDetailDialog from './PhotoDetailDialog'
 
 // Mapbox GL JS (react-map-gl) のモック
-const MapMock = ({ children }: { children?: React.ReactNode }) => <div data-testid="mapbox-map">{children}</div>
+const { MapMock } = vi.hoisted(() => {
+  const MapMock = ({ children }: { children?: React.ReactNode }) => <div data-testid="mapbox-map">{children}</div>
+  return { MapMock }
+})
 vi.mock('react-map-gl', () => ({
   default: MapMock,
   Map: MapMock,

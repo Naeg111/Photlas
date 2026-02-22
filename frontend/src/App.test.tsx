@@ -21,27 +21,31 @@ vi.mock('motion/react', () => ({
 }))
 
 // Mapbox GL JS (react-map-gl) のモック
-const mockMap = {
-  setZoom: vi.fn(),
-  getZoom: vi.fn(() => 11),
-  getCenter: vi.fn(() => ({ lng: 139.7454, lat: 35.6585 })),
-  getBounds: vi.fn(() => ({
-    getNorth: () => 35.7,
-    getSouth: () => 35.6,
-    getEast: () => 139.8,
-    getWest: () => 139.7,
-  })),
-  flyTo: vi.fn(),
-  on: vi.fn(),
-  off: vi.fn(),
-}
-
-const MapMock = ({ children, onLoad }: any) => {
-  if (onLoad) {
-    onLoad({ target: mockMap })
+const { mockMap, MapMock } = vi.hoisted(() => {
+  const mockMap = {
+    setZoom: vi.fn(),
+    getZoom: vi.fn(() => 11),
+    getCenter: vi.fn(() => ({ lng: 139.7454, lat: 35.6585 })),
+    getBounds: vi.fn(() => ({
+      getNorth: () => 35.7,
+      getSouth: () => 35.6,
+      getEast: () => 139.8,
+      getWest: () => 139.7,
+    })),
+    flyTo: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
   }
-  return <div data-testid="mapbox-map">{children}</div>
-}
+
+  const MapMock = ({ children, onLoad }: any) => {
+    if (onLoad) {
+      onLoad({ target: mockMap })
+    }
+    return <div data-testid="mapbox-map">{children}</div>
+  }
+
+  return { mockMap, MapMock }
+})
 
 vi.mock('react-map-gl', () => ({
   default: MapMock,

@@ -14,37 +14,49 @@ vi.mock('../config/api', () => ({
 }))
 
 // Mapbox GL JS のモックマップインスタンス
-const mockMap = {
-  setZoom: vi.fn(),
-  getZoom: vi.fn(),
-  getCenter: vi.fn(() => ({ lng: 139.7454, lat: 35.6585 })),
-  getBounds: vi.fn(() => ({
-    getNorth: () => 35.7,
-    getSouth: () => 35.6,
-    getEast: () => 139.8,
-    getWest: () => 139.7,
-  })),
-  flyTo: vi.fn(),
-  on: vi.fn(),
-  off: vi.fn(),
-}
+const { mockMap, MapMock, resetMockMountFlag } = vi.hoisted(() => {
+  let hasMounted = false
 
-// react-map-gl のモック
-const MapMock = ({ children, onLoad, onMoveEnd }: any) => {
-  if (onLoad) {
-    onLoad({ target: mockMap })
+  const mockMap = {
+    setZoom: vi.fn(),
+    getZoom: vi.fn(),
+    getCenter: vi.fn(() => ({ lng: 139.7454, lat: 35.6585 })),
+    getBounds: vi.fn(() => ({
+      getNorth: () => 35.7,
+      getSouth: () => 35.6,
+      getEast: () => 139.8,
+      getWest: () => 139.7,
+    })),
+    flyTo: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
   }
-  if (onMoveEnd) {
-    // onMoveEnd イベントをシミュレート（初回と地図移動後）
-    setTimeout(() => onMoveEnd({ target: mockMap }), 100)
-    setTimeout(() => onMoveEnd({ target: mockMap }), 200)
+
+  // react-map-gl のモック
+  // onLoad/onMoveEndは初回マウント時のみ発火（re-renderでは再発火しない）
+  const MapMock = ({ children, onLoad, onMoveEnd }: any) => {
+    if (!hasMounted) {
+      hasMounted = true
+      if (onLoad) {
+        onLoad({ target: mockMap })
+      }
+      if (onMoveEnd) {
+        // onMoveEnd イベントをシミュレート（初回と地図移動後）
+        setTimeout(() => onMoveEnd({ target: mockMap }), 100)
+        setTimeout(() => onMoveEnd({ target: mockMap }), 200)
+      }
+    }
+    return (
+      <div data-testid="mapbox-map">
+        {children}
+      </div>
+    )
   }
-  return (
-    <div data-testid="mapbox-map">
-      {children}
-    </div>
-  )
-}
+
+  const resetMockMountFlag = () => { hasMounted = false }
+
+  return { mockMap, MapMock, resetMockMountFlag }
+})
 
 vi.mock('react-map-gl', () => ({
   default: MapMock,
@@ -58,6 +70,7 @@ global.fetch = vi.fn()
 describe('MapView Component - Issue#53', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    resetMockMountFlag()
     mockMap.getZoom.mockReturnValue(11) // デフォルトはZoom 11
   })
 

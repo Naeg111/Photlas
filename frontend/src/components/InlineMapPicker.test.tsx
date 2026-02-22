@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { InlineMapPicker } from './InlineMapPicker'
 
@@ -15,26 +15,36 @@ import { InlineMapPicker } from './InlineMapPicker'
  */
 
 // Mapbox GL JS (react-map-gl) のモック
-const mockMap = {
-  getCenter: vi.fn(() => ({ lng: 139.6503, lat: 35.6762 })),
-  flyTo: vi.fn(),
-  getZoom: vi.fn(() => 15),
-}
+const { mockMap, MapMock, mockSuggest, mockRetrieve, getCapturedOnMoveEnd, resetCapturedOnMoveEnd } = vi.hoisted(() => {
+  let _capturedOnMoveEnd: ((e: any) => void) | null = null
 
-let capturedOnMoveEnd: ((e: any) => void) | null = null
-
-const MapMock = ({ children, onLoad, onMoveEnd }: any) => {
-  if (onLoad) {
-    onLoad({ target: mockMap })
+  const mockMap = {
+    getCenter: vi.fn(() => ({ lng: 139.6503, lat: 35.6762 })),
+    flyTo: vi.fn(),
+    getZoom: vi.fn(() => 15),
   }
-  // onMoveEnd を後からシミュレートできるようキャプチャ
-  capturedOnMoveEnd = onMoveEnd
-  return (
-    <div data-testid="mapbox-map">
-      {children}
-    </div>
-  )
-}
+
+  const MapMock = ({ children, onLoad, onMoveEnd }: any) => {
+    if (onLoad) {
+      onLoad({ target: mockMap })
+    }
+    // onMoveEnd を後からシミュレートできるようキャプチャ
+    _capturedOnMoveEnd = onMoveEnd
+    return (
+      <div data-testid="mapbox-map">
+        {children}
+      </div>
+    )
+  }
+
+  const mockSuggest = vi.fn()
+  const mockRetrieve = vi.fn()
+
+  const getCapturedOnMoveEnd = () => _capturedOnMoveEnd
+  const resetCapturedOnMoveEnd = () => { _capturedOnMoveEnd = null }
+
+  return { mockMap, MapMock, mockSuggest, mockRetrieve, getCapturedOnMoveEnd, resetCapturedOnMoveEnd }
+})
 
 vi.mock('react-map-gl', () => ({
   default: MapMock,
@@ -43,9 +53,6 @@ vi.mock('react-map-gl', () => ({
 }))
 
 // Mapbox Search Box API のモック
-const mockSuggest = vi.fn()
-const mockRetrieve = vi.fn()
-
 vi.mock('@mapbox/search-js-core', () => ({
   SearchBoxCore: vi.fn(() => ({
     suggest: mockSuggest,
@@ -62,7 +69,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
-    capturedOnMoveEnd = null
+    resetCapturedOnMoveEnd()
   })
 
   afterEach(() => {
@@ -91,8 +98,6 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
 
   describe('場所検索（Mapbox Search Box API）', () => {
     it('検索入力でMapbox Search Box APIのsuggestが呼ばれる', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-
       mockSuggest.mockResolvedValue({
         suggestions: [
           {
@@ -106,41 +111,33 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       render(<InlineMapPicker {...defaultProps} />)
 
       const searchInput = screen.getByPlaceholderText(/場所を検索/)
-      await user.type(searchInput, '東京タワー')
+      fireEvent.change(searchInput, { target: { value: '東京タワー' } })
 
-      // デバウンス待ち（300ms）
-      vi.advanceTimersByTime(300)
+      // デバウンス待ち（300ms）- async版でPromise microtaskもフラッシュ
+      await vi.advanceTimersByTimeAsync(300)
 
-      await waitFor(() => {
-        expect(mockSuggest).toHaveBeenCalled()
-      })
+      expect(mockSuggest).toHaveBeenCalled()
     })
 
     it('検索が日本国内に制限されている', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-
       mockSuggest.mockResolvedValue({ suggestions: [] })
 
       render(<InlineMapPicker {...defaultProps} />)
 
       const searchInput = screen.getByPlaceholderText(/場所を検索/)
-      await user.type(searchInput, '東京')
+      fireEvent.change(searchInput, { target: { value: '東京' } })
 
-      vi.advanceTimersByTime(300)
+      await vi.advanceTimersByTimeAsync(300)
 
-      await waitFor(() => {
-        expect(mockSuggest).toHaveBeenCalledWith(
-          expect.anything(),
-          expect.objectContaining({
-            country: 'jp',
-          })
-        )
-      })
+      expect(mockSuggest).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          country: 'jp',
+        })
+      )
     })
 
     it('検索候補選択時は地図のセンタリングのみ行われる（flyTo）', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-
       mockSuggest.mockResolvedValue({
         suggestions: [
           {
@@ -164,20 +161,22 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       render(<InlineMapPicker {...defaultProps} />)
 
       const searchInput = screen.getByPlaceholderText(/場所を検索/)
-      await user.type(searchInput, '東京タワー')
+      fireEvent.change(searchInput, { target: { value: '東京タワー' } })
 
-      vi.advanceTimersByTime(300)
+      // デバウンス待ち + Promise flush
+      await vi.advanceTimersByTimeAsync(300)
 
-      await waitFor(() => {
-        expect(mockSuggest).toHaveBeenCalled()
-      })
+      expect(mockSuggest).toHaveBeenCalled()
 
-      // 検索候補をクリック
+      // React再レンダリングのためリアルタイマーに切り替え
+      vi.useRealTimers()
+
+      // 検索候補が表示されるのを待ってクリック
       const suggestion = await screen.findByText('東京タワー')
-      await user.click(suggestion)
+      fireEvent.click(suggestion)
 
+      // flyToが呼ばれることを確認（センタリング）
       await waitFor(() => {
-        // flyToが呼ばれることを確認（センタリング）
         expect(mockMap.flyTo).toHaveBeenCalledWith(
           expect.objectContaining({
             center: [139.7454, 35.6585],
@@ -191,7 +190,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   })
 
   describe('センタリングのみ方式（座標取得）', () => {
-    it('地図移動完了後に中心座標がonPositionChangeに伝播される', async () => {
+    it('地図移動完了後に中心座標がonPositionChangeに伝播される', () => {
       const onPositionChange = vi.fn()
       render(
         <InlineMapPicker
@@ -204,19 +203,17 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       mockMap.getCenter.mockReturnValue({ lng: 139.7454, lat: 35.6585 })
 
       // onMoveEnd イベントをシミュレート
-      if (capturedOnMoveEnd) {
-        capturedOnMoveEnd({ target: mockMap })
-      }
+      const capturedOnMoveEnd = getCapturedOnMoveEnd()
+      expect(capturedOnMoveEnd).not.toBeNull()
+      capturedOnMoveEnd!({ target: mockMap })
 
-      await waitFor(() => {
-        expect(onPositionChange).toHaveBeenCalledWith({
-          lat: 35.6585,
-          lng: 139.7454,
-        })
+      expect(onPositionChange).toHaveBeenCalledWith({
+        lat: 35.6585,
+        lng: 139.7454,
       })
     })
 
-    it('座標はGeocoding APIではなく地図中心点から取得される', async () => {
+    it('座標はGeocoding APIではなく地図中心点から取得される', () => {
       const onPositionChange = vi.fn()
       render(
         <InlineMapPicker
@@ -228,16 +225,14 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       // 地図をドラッグした後の中心点をシミュレート
       mockMap.getCenter.mockReturnValue({ lng: 139.7000, lat: 35.6500 })
 
-      if (capturedOnMoveEnd) {
-        capturedOnMoveEnd({ target: mockMap })
-      }
+      const capturedOnMoveEnd = getCapturedOnMoveEnd()
+      expect(capturedOnMoveEnd).not.toBeNull()
+      capturedOnMoveEnd!({ target: mockMap })
 
-      await waitFor(() => {
-        // map.getCenter() の値がそのまま渡される
-        expect(onPositionChange).toHaveBeenCalledWith({
-          lat: 35.6500,
-          lng: 139.7000,
-        })
+      // map.getCenter() の値がそのまま渡される
+      expect(onPositionChange).toHaveBeenCalledWith({
+        lat: 35.6500,
+        lng: 139.7000,
       })
     })
   })
@@ -252,9 +247,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   })
 
   describe('座標表示', () => {
-    it('地図の中心座標が表示される', async () => {
-      mockMap.getCenter.mockReturnValue({ lng: 139.7454, lat: 35.6585 })
-
+    it('地図の中心座標が表示される', () => {
       render(
         <InlineMapPicker
           {...defaultProps}
@@ -262,11 +255,9 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
         />
       )
 
-      // 座標が4桁の精度で表示される
-      await waitFor(() => {
-        expect(screen.getByText(/35\.6585/)).toBeInTheDocument()
-        expect(screen.getByText(/139\.7454/)).toBeInTheDocument()
-      })
+      // 座標が4桁の精度で表示される（positionが直接渡されるので同期的に表示）
+      expect(screen.getByText(/35\.6585/)).toBeInTheDocument()
+      expect(screen.getByText(/139\.7454/)).toBeInTheDocument()
     })
   })
 })

@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dial
 import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar, MapPin } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
-import { useLoadScript, GoogleMap, OverlayViewF } from '@react-google-maps/api'
+import MapGL, { Marker } from 'react-map-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
 import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
@@ -169,17 +170,8 @@ function formatShotAt(shotAt: string): string {
   return `${year}年${month}月${day}日 ${hours}:${minutes}`
 }
 
-// ミニマップのオプション
-// Google Maps ライブラリ（全コンポーネントで同一の定数を使用すること）
-const LIBRARIES: ('places')[] = ['places']
-
-const MINIMAP_OPTIONS: google.maps.MapOptions = {
-  disableDefaultUI: true,
-  gestureHandling: 'none',
-  zoomControl: false,
-  draggable: false,
-  clickableIcons: false,
-}
+// Mapbox アクセストークン
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ''
 
 // APIレスポンスを内部形式に変換
 function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
@@ -269,38 +261,24 @@ function DetailMiniMap({
   shootingDirection?: number | null
   onClick?: () => void
 }) {
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: LIBRARIES,
-  })
-
-  const center = { lat: latitude, lng: longitude }
-
-  if (!isLoaded) {
-    return (
-      <div
-        data-testid="detail-minimap"
-        className={`w-full h-[200px] bg-gray-100 rounded-lg flex items-center justify-center ${onClick ? 'cursor-pointer' : ''}`}
-        onClick={onClick}
-      >
-        <MapPin className="w-6 h-6 text-gray-400" />
-      </div>
-    )
-  }
-
   return (
     <div
       data-testid="detail-minimap"
       className={`w-full h-[200px] rounded-lg overflow-hidden ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
-      <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '100%' }}
-        center={center}
-        zoom={15}
-        options={MINIMAP_OPTIONS}
+      <MapGL
+        mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+        initialViewState={{
+          longitude: longitude,
+          latitude: latitude,
+          zoom: 15,
+        }}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
+        interactive={false}
       >
-        <OverlayViewF position={center} mapPaneName="overlayMouseTarget">
+        <Marker longitude={longitude} latitude={latitude} anchor="bottom">
           <div
             style={{
               width: '27px',
@@ -325,15 +303,15 @@ function DetailMiniMap({
               <circle cx="16" cy="14" r="6" fill="#000000" stroke="#000000" strokeWidth="1" />
             </svg>
           </div>
-        </OverlayViewF>
+        </Marker>
         {shootingDirection != null && (
-          <OverlayViewF position={center} mapPaneName="overlayMouseTarget">
-            <div style={{ transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+          <Marker longitude={longitude} latitude={latitude} anchor="center">
+            <div style={{ pointerEvents: 'none' }}>
               <ShootingDirectionArrow direction={shootingDirection} />
             </div>
-          </OverlayViewF>
+          </Marker>
         )}
-      </GoogleMap>
+      </MapGL>
       {shootingDirection != null && <div data-testid="minimap-direction-arrow" className="hidden" />}
     </div>
   )

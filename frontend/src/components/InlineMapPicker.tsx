@@ -1,5 +1,7 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { GoogleMap, useLoadScript } from '@react-google-maps/api'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import Map from 'react-map-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
+import { SearchBoxCore } from '@mapbox/search-js-core'
 import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
 import { ShootingDirectionArrow } from './ShootingDirectionArrow'
@@ -7,13 +9,17 @@ import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 /**
  * InlineMapPicker コンポーネント
  * Issue#9: 写真投稿時の位置選択用インライン地図ピッカー
+ * Issue#53: Google Maps API → Mapbox API 移行（センタリングのみ方式）
  *
  * 地図をドラッグして中央のピンで位置を選択する
- * 検索候補はAutocompleteServiceで取得し、コンポーネント内に描画する
- * （Radix UIモーダルの pointer-events:none 制約を回避するため）
+ * 検索候補はMapbox Search Box APIで取得し、コンポーネント内に描画する
+ *
+ * センタリングのみ方式:
+ * - 検索候補選択時は地図のセンタリングのみ（flyTo）
+ * - 最終座標は常に地図中心点（ユーザー確定位置）から取得
  *
  * オーバーレイはtranslateZ(0)でGPUレイヤーを強制生成し、
- * iOS SafariでGoogle Mapsのコンポジティングレイヤーの上に確実に配置する
+ * iOS Safariでのコンポジティングレイヤーの上に確実に配置する
  */
 
 interface InlineMapPickerProps {
@@ -22,35 +28,25 @@ interface InlineMapPickerProps {
   shootingDirection?: number
 }
 
+// Mapbox Search Box APIの検索結果型
+interface SearchSuggestion {
+  name: string
+  full_address?: string
+  mapbox_id: string
+}
+
 // 地図の初期設定
 const DEFAULT_CENTER = { lat: 35.6762, lng: 139.6503 } // 新宿
 const DEFAULT_ZOOM = 15
 
-// Google Maps APIキー
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
-
-// Places ライブラリ（useLoadScriptのlibrariesは定数参照が必要）
-const LIBRARIES: ('places')[] = ['places']
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '100%',
-}
-
-const mapOptions: google.maps.MapOptions = {
-  disableDefaultUI: true,
-  zoomControl: false,
-  mapTypeControl: false,
-  streetViewControl: false,
-  fullscreenControl: false,
-  gestureHandling: 'greedy',
-}
+// Mapbox アクセストークン
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ''
 
 /**
  * オーバーレイのスタイル定数
  * iOS Safariでの表示を保証するためインラインスタイルを使用
  * translateZ(0)でGPUコンポジティングレイヤーを強制生成し、
- * Google Mapsのレイヤーの上に確実に描画する
+ * 地図レイヤーの上に確実に描画する
  */
 const overlayStyles = {
   container: {
@@ -98,29 +94,24 @@ const overlayStyles = {
 }
 
 export function InlineMapPicker({ position, onPositionChange, shootingDirection }: InlineMapPickerProps) {
-  const mapRef = useRef<google.maps.Map | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
 
   // 検索関連のstate
   const [searchQuery, setSearchQuery] = useState('')
-  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([])
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null)
-  const geocoderRef = useRef<google.maps.Geocoder | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: LIBRARIES,
-  })
-
-  // AutocompleteService と Geocoder を初期化
-  useEffect(() => {
-    if (!isLoaded) return
-    autocompleteServiceRef.current = new google.maps.places.AutocompleteService()
-    geocoderRef.current = new google.maps.Geocoder()
-  }, [isLoaded])
+  // SearchBoxCore を初期化（useMemoで即座に生成）
+  const searchBox = useMemo(() => {
+    if (MAPBOX_ACCESS_TOKEN) {
+      return new SearchBoxCore({ accessToken: MAPBOX_ACCESS_TOKEN })
+    }
+    return null
+  }, [])
 
   // 検索入力ハンドラー（デバウンス付き）
   const handleSearchChange = useCallback((value: string) => {
@@ -130,54 +121,66 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
       clearTimeout(debounceTimerRef.current)
     }
 
-    if (!value.trim() || !autocompleteServiceRef.current) {
-      setPredictions([])
+    if (!value.trim() || !searchBox) {
+      setSuggestions([])
       setIsDropdownOpen(false)
       return
     }
 
-    debounceTimerRef.current = setTimeout(() => {
-      autocompleteServiceRef.current?.getPlacePredictions(
-        { input: value, componentRestrictions: { country: 'jp' } },
-        (results) => {
-          setPredictions(results || [])
-          setIsDropdownOpen((results?.length ?? 0) > 0)
-        }
-      )
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        const result = await searchBox!.suggest(value, {
+          country: 'jp',
+        })
+        const items = result.suggestions || []
+        setSuggestions(items)
+        setIsDropdownOpen(items.length > 0)
+      } catch {
+        setSuggestions([])
+        setIsDropdownOpen(false)
+      }
     }, 300)
   }, [])
 
-  // 候補選択ハンドラー
-  const handleSelectPrediction = useCallback((prediction: google.maps.places.AutocompletePrediction) => {
-    if (!geocoderRef.current) return
+  // 候補選択ハンドラー（センタリングのみ方式）
+  const handleSelectSuggestion = useCallback(async (suggestion: SearchSuggestion) => {
+    if (!searchBox) return
 
-    geocoderRef.current.geocode({ placeId: prediction.place_id }, (results, status) => {
-      if (status === 'OK' && results?.[0]?.geometry?.location) {
-        const lat = results[0].geometry.location.lat()
-        const lng = results[0].geometry.location.lng()
-        mapRef.current?.panTo({ lat, lng })
-        onPositionChangeRef.current({ lat, lng })
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await searchBox.retrieve(suggestion as any)
+      const feature = result.features?.[0]
+      if (feature?.geometry?.coordinates) {
+        const [lng, lat] = feature.geometry.coordinates
+        // センタリングのみ: flyToで地図を移動するが、onPositionChangeは呼ばない
+        // 最終座標はonMoveEnd経由で地図中心点から取得される
+        mapRef.current?.flyTo({ center: [lng, lat], zoom: DEFAULT_ZOOM })
       }
-    })
+    } catch {
+      // 検索結果の取得に失敗した場合はスキップ
+    }
 
-    setSearchQuery(prediction.structured_formatting.main_text)
-    setPredictions([])
+    setSearchQuery(suggestion.name)
+    setSuggestions([])
     setIsDropdownOpen(false)
   }, [])
 
-  const handleLoad = useCallback((mapInstance: google.maps.Map) => {
-    mapRef.current = mapInstance
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleLoad = useCallback((e: any) => {
+    mapRef.current = e.target
+  }, [])
 
-    // 地図のドラッグ終了時に中心座標を取得
-    mapInstance.addListener('idle', () => {
-      const center = mapInstance.getCenter()
-      if (center) {
-        onPositionChangeRef.current({
-          lat: center.lat(),
-          lng: center.lng(),
-        })
-      }
-    })
+  // 地図移動完了時に中心座標をonPositionChangeに伝播
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleMoveEnd = useCallback((e: any) => {
+    const mapInstance = e.target
+    const center = mapInstance.getCenter()
+    if (center) {
+      onPositionChangeRef.current({
+        lat: center.lat,
+        lng: center.lng,
+      })
+    }
   }, [])
 
   const handleCurrentLocation = useCallback(() => {
@@ -189,8 +192,7 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         }
-        mapRef.current?.panTo(newCenter)
-        onPositionChangeRef.current(newCenter)
+        mapRef.current?.flyTo({ center: [newCenter.lng, newCenter.lat] })
       },
       () => {
         // 位置情報取得失敗時は現在位置への移動をスキップ
@@ -211,35 +213,24 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
     }
   }, [isDropdownOpen])
 
-  if (loadError) {
-    return (
-      <div className="h-full flex items-center justify-center bg-gray-100 text-gray-500">
-        地図の読み込みに失敗しました
-      </div>
-    )
-  }
-
-  if (!isLoaded) {
-    return (
-      <div className="h-full flex items-center justify-center bg-gray-100 text-gray-500">
-        地図を読み込み中...
-      </div>
-    )
-  }
-
   const center = position || DEFAULT_CENTER
 
   return (
     <div style={{ position: 'relative', height: '100%' }}>
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={center}
-        zoom={DEFAULT_ZOOM}
-        options={mapOptions}
+      <Map
+        mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+        initialViewState={{
+          longitude: center.lng,
+          latitude: center.lat,
+          zoom: DEFAULT_ZOOM,
+        }}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
         onLoad={handleLoad}
+        onMoveEnd={handleMoveEnd}
       />
 
-      {/* オーバーレイ: translateZ(0)でGPUレイヤーを生成しGoogle Mapsの上に表示 */}
+      {/* オーバーレイ: translateZ(0)でGPUレイヤーを生成し地図の上に表示 */}
       <div style={overlayStyles.container}>
         {/* 検索バー + 候補リスト */}
         <div style={overlayStyles.searchArea}>
@@ -268,7 +259,7 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
               }}
             />
             {/* 検索候補ドロップダウン */}
-            {isDropdownOpen && predictions.length > 0 && (
+            {isDropdownOpen && suggestions.length > 0 && (
               <ul style={{
                 position: 'absolute',
                 top: '100%',
@@ -285,12 +276,12 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
                 padding: 0,
                 margin: 0,
               }}>
-                {predictions.map((prediction) => (
+                {suggestions.map((suggestion) => (
                   <li
-                    key={prediction.place_id}
+                    key={suggestion.mapbox_id}
                     onMouseDown={(e) => e.preventDefault()}
                     onTouchStart={(e) => e.stopPropagation()}
-                    onClick={() => handleSelectPrediction(prediction)}
+                    onClick={() => handleSelectSuggestion(suggestion)}
                     style={{
                       padding: '8px 12px',
                       fontSize: 14,
@@ -298,8 +289,10 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
                       borderBottom: '1px solid #f3f4f6',
                     }}
                   >
-                    <div style={{ fontWeight: 500 }}>{prediction.structured_formatting.main_text}</div>
-                    <div style={{ fontSize: 12, color: '#6b7280' }}>{prediction.structured_formatting.secondary_text}</div>
+                    <div style={{ fontWeight: 500 }}>{suggestion.name}</div>
+                    {suggestion.full_address && (
+                      <div style={{ fontSize: 12, color: '#6b7280' }}>{suggestion.full_address}</div>
+                    )}
                   </li>
                 ))}
               </ul>
