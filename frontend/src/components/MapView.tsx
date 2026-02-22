@@ -60,13 +60,13 @@ const PIN_COLOR_MAP: Record<SpotResponse['pinColor'], string> = {
 // 地図の初期設定
 const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 const DEFAULT_ZOOM = 11
-const MIN_ZOOM_FOR_PINS = 11
+const MIN_ZOOM_FOR_PINS = 10
 
 // クラスタリング設定（Issue#39）
 // Mapbox GL JSではデバイスピクセル比を考慮してradiusが適用されるため、
 // Google Maps時代のCLUSTER_RADIUS=120相当の表示密度にするには60程度が適切
 const CLUSTER_RADIUS = 60
-const CLUSTER_MAX_ZOOM = 16
+const CLUSTER_MAX_ZOOM = 17
 
 // UI設定
 const TOAST_DURATION_MS = 3000
