@@ -167,8 +167,8 @@ export function PrivacyPolicyPage({
                       <span className="font-semibold">Amazon Web Services（AWS S3、CloudFront、SES）</span>：画像ファイルの保存・配信、メール送信に使用します。データはAWSの東京リージョン（ap-northeast-1）に保存されます。
                     </li>
                     <li>
-                      <span className="font-semibold">Google Maps Platform</span>：地図の表示および撮影地点の位置情報の表示に使用します。Googleのプライバシーポリシーは
-                      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>
+                      <span className="font-semibold">Mapbox</span>：地図の表示および撮影地点の位置情報の表示に使用します。Mapboxのプライバシーポリシーは
+                      <a href="https://www.mapbox.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>
                       をご参照ください。
                     </li>
                     <li>

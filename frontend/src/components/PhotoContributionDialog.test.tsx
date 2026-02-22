@@ -19,36 +19,19 @@ vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
 
-// @react-google-maps/api のモック
-vi.mock('@react-google-maps/api', () => ({
-  useLoadScript: () => ({
-    isLoaded: true,
-    loadError: null,
-  }),
-  GoogleMap: ({ children, onLoad, center }: any) => {
-    // onLoadコールバックを呼び出してマップインスタンスをシミュレート
-    if (onLoad) {
-      // centerプロパティを追跡して、getCenterがそれを返すようにする
-      let currentCenter = center || { lat: 35.6762, lng: 139.6503 }
-      const mockMap = {
-        getCenter: () => ({
-          lat: () => currentCenter.lat,
-          lng: () => currentCenter.lng,
-        }),
-        panTo: vi.fn((newCenter: { lat: number; lng: number }) => {
-          currentCenter = newCenter
-        }),
-        addListener: (_event: string, callback: () => void) => {
-          // idle イベントを即座に発火
-          setTimeout(callback, 0)
-          return { remove: vi.fn() }
-        },
-      }
-      setTimeout(() => onLoad(mockMap), 0)
-    }
-    return <div data-testid="google-map-mock">{children}</div>
-  },
-  Autocomplete: ({ children }: any) => <div data-testid="autocomplete-mock">{children}</div>,
+// react-map-gl のモック（InlineMapPickerの依存）
+vi.mock('react-map-gl', () => ({
+  default: ({ children }: any) => <div data-testid="mapbox-map">{children}</div>,
+  Map: ({ children }: any) => <div data-testid="mapbox-map">{children}</div>,
+  Marker: ({ children }: any) => <div>{children}</div>,
+}))
+
+// @mapbox/search-js-core のモック
+vi.mock('@mapbox/search-js-core', () => ({
+  SearchBoxCore: vi.fn(() => ({
+    suggest: vi.fn().mockResolvedValue({ suggestions: [] }),
+    retrieve: vi.fn().mockResolvedValue({ features: [] }),
+  })),
 }))
 
 // extractExif のモック

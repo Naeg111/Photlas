@@ -284,6 +284,14 @@ export function TermsOfServicePage({
             </section>
 
             <section>
+              <h2 className="mb-3">外部サービスの利用</h2>
+              <p className="text-sm text-gray-700">
+                本サービスでは、地図の表示に<a href="https://www.mapbox.com/legal/tos" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Mapbox</a>を利用しています。
+                地図データは<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">OpenStreetMap</a>の提供するデータに基づいています。
+              </p>
+            </section>
+
+            <section>
               <h2 className="mb-3">第16条（お問い合わせ）</h2>
               <p className="text-sm text-gray-700">
                 本規約に関するお問い合わせは、以下の窓口までご連絡ください。
