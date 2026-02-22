@@ -159,8 +159,8 @@ describe('MapView Component - Issue#53', () => {
       })
     })
 
-    it('Zoom 10以下の場合、ピンが非表示になる', async () => {
-      mockMap.getZoom.mockReturnValue(10)
+    it('Zoom 9以下の場合、ピンが非表示になる', async () => {
+      mockMap.getZoom.mockReturnValue(9)
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
@@ -184,8 +184,8 @@ describe('MapView Component - Issue#53', () => {
       })
     })
 
-    it('Zoom 10以下の場合、ズームバナーが表示される', async () => {
-      mockMap.getZoom.mockReturnValue(10)
+    it('Zoom 9以下の場合、ズームバナーが表示される', async () => {
+      mockMap.getZoom.mockReturnValue(9)
 
       render(<MapView />)
 
@@ -195,8 +195,8 @@ describe('MapView Component - Issue#53', () => {
       })
     })
 
-    it('ズームバナーをタップするとZoom 11にズームアップする', async () => {
-      mockMap.getZoom.mockReturnValue(10)
+    it('ズームバナーをタップするとZoom 10にズームアップする', async () => {
+      mockMap.getZoom.mockReturnValue(9)
       const user = userEvent.setup()
 
       render(<MapView />)
@@ -209,7 +209,7 @@ describe('MapView Component - Issue#53', () => {
       const banner = screen.getByText(/ズームしてスポットを表示/i)
       await user.click(banner)
 
-      expect(mockMap.setZoom).toHaveBeenCalledWith(11)
+      expect(mockMap.setZoom).toHaveBeenCalledWith(10)
     })
   })
 
