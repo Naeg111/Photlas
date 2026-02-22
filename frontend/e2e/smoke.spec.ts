@@ -12,8 +12,8 @@ test.describe('Smoke Tests', () => {
     // スプラッシュ画面が消えるまで待機（最大5秒）
     await page.waitForTimeout(3000)
 
-    // メインコンテンツが表示されることを確認
-    await expect(page.locator('body')).toBeVisible()
+    // メインコンテンツ（地図）が表示されることを確認
+    await expect(page.locator('[data-testid="map-container"], .gm-style')).toBeVisible({ timeout: 10000 })
   })
 
   test('フィルターボタンが表示される', async ({ page }) => {

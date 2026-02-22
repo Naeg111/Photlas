@@ -21,6 +21,7 @@ const { mockMap, MapMock, mockSuggest, mockRetrieve, getCapturedOnMoveEnd, reset
   const mockMap = {
     getCenter: vi.fn(() => ({ lng: 139.6503, lat: 35.6762 })),
     flyTo: vi.fn(),
+    setLanguage: vi.fn(),
     getZoom: vi.fn(() => 15),
   }
 

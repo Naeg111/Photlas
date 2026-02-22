@@ -5,7 +5,12 @@ import PhotoDetailDialog from './PhotoDetailDialog'
 
 // Mapbox GL JS (react-map-gl) のモック
 const { MapMock } = vi.hoisted(() => {
-  const MapMock = ({ children }: { children?: React.ReactNode }) => <div data-testid="mapbox-map">{children}</div>
+  const mockMapInstance = { setLanguage: vi.fn() }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const MapMock = ({ children, onLoad }: { children?: React.ReactNode; onLoad?: (e: any) => void }) => {
+    if (onLoad) onLoad({ target: mockMapInstance })
+    return <div data-testid="mapbox-map">{children}</div>
+  }
   return { MapMock }
 })
 vi.mock('react-map-gl', () => ({

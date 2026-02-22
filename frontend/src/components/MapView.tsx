@@ -63,7 +63,9 @@ const DEFAULT_ZOOM = 11
 const MIN_ZOOM_FOR_PINS = 11
 
 // クラスタリング設定（Issue#39）
-const CLUSTER_RADIUS = 120
+// Mapbox GL JSではデバイスピクセル比を考慮してradiusが適用されるため、
+// Google Maps時代のCLUSTER_RADIUS=120相当の表示密度にするには60程度が適切
+const CLUSTER_RADIUS = 60
 const CLUSTER_MAX_ZOOM = 16
 
 // UI設定
@@ -361,6 +363,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // 地図が読み込まれたときの処理
   const handleLoad = useCallback((e: MapEvent) => {
     const mapInstance = e.target
+    mapInstance.setLanguage('ja')
     setMap(mapInstance)
 
     // E2Eテスト用: マップインスタンスをwindowに公開（ズーム制御等）
