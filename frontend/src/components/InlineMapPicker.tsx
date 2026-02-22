@@ -1,9 +1,12 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import Map from 'react-map-gl'
+import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
+import type { Map as MapboxMap } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
 import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
+import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 
 /**
@@ -38,9 +41,8 @@ interface SearchSuggestion {
 // 地図の初期設定
 const DEFAULT_CENTER = { lat: 35.6762, lng: 139.6503 } // 新宿
 const DEFAULT_ZOOM = 15
+const SEARCH_DEBOUNCE_MS = 300
 
-// Mapbox アクセストークン
-const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || ''
 
 /**
  * オーバーレイのスタイル定数
@@ -94,8 +96,7 @@ const overlayStyles = {
 }
 
 export function InlineMapPicker({ position, onPositionChange, shootingDirection }: InlineMapPickerProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mapRef = useRef<any>(null)
+  const mapRef = useRef<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
 
@@ -143,7 +144,7 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
         setSuggestions([])
         setIsDropdownOpen(false)
       }
-    }, 300)
+    }, SEARCH_DEBOUNCE_MS)
   }, [])
 
   // 候補選択ハンドラー（センタリングのみ方式）
@@ -173,14 +174,12 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
     setIsDropdownOpen(false)
   }, [])
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleLoad = useCallback((e: any) => {
+  const handleLoad = useCallback((e: MapEvent) => {
     mapRef.current = e.target
   }, [])
 
   // 地図移動完了時に中心座標をonPositionChangeに伝播
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleMoveEnd = useCallback((e: any) => {
+  const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
     const center = mapInstance.getCenter()
     if (center) {
@@ -233,7 +232,7 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
           zoom: DEFAULT_ZOOM,
         }}
         style={{ width: '100%', height: '100%' }}
-        mapStyle="mapbox://styles/mapbox/streets-v12"
+        mapStyle={MAPBOX_STYLE}
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}
       />
