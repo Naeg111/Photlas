@@ -175,7 +175,9 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
   }, [])
 
   const handleLoad = useCallback((e: MapEvent) => {
-    mapRef.current = e.target
+    const mapInstance = e.target
+    mapInstance.setLanguage('ja')
+    mapRef.current = mapInstance
   }, [])
 
   // 地図移動完了時に中心座標をonPositionChangeに伝播

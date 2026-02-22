@@ -28,6 +28,7 @@ const { mockMap, MapMock, resetMockMountFlag } = vi.hoisted(() => {
       getWest: () => 139.7,
     })),
     flyTo: vi.fn(),
+    setLanguage: vi.fn(),
     on: vi.fn(),
     off: vi.fn(),
   }
