@@ -286,7 +286,6 @@ function DetailMiniMap({
             style={{
               width: '27px',
               height: '43px',
-              transform: 'translate(-50%, -100%)',
             }}
           >
             <PinSvg
