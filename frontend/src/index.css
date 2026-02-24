@@ -111,6 +111,17 @@
 }
 
 
+/**
+ * Mapboxマーカーのコンポジットレイヤー化を無効化
+ * mapbox-gl.css の .mapboxgl-marker は will-change: transform を設定するが、
+ * これによりブラウザがマーカーをビットマップ化し、地理座標投影の小数ピクセル位置で
+ * バイリニア補間によるぼやけが発生する。will-change: auto にすることで
+ * SVGがベクターとして正確な位置に描画され、常にシャープになる。
+ */
+.mapboxgl-marker {
+  will-change: auto !important;
+}
+
 /* 現在地マーカーのパルスエフェクト */
 @keyframes location-pulse {
   0% {
