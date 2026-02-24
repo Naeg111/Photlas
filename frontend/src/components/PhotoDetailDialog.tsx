@@ -4,7 +4,6 @@ import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import MapGL, { Marker } from 'react-map-gl'
-import type { MapEvent } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PinSvg } from './PinSvg'
 import { ShootingDirectionArrow } from './ShootingDirectionArrow'
@@ -278,8 +277,8 @@ function DetailMiniMap({
         }}
         style={{ width: '100%', height: '100%' }}
         mapStyle={MAPBOX_STYLE}
+        language="ja"
         interactive={false}
-        onLoad={(e: MapEvent) => e.target.setLanguage('ja')}
       >
         <Marker longitude={longitude} latitude={latitude} anchor="bottom">
           <div
