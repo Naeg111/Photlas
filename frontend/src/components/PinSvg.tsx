@@ -5,10 +5,12 @@
  * 地図上のピンSVGを描画する共通コンポーネント
  * MapView（クラスタ・個別・撮影地点）とPhotoDetailDialog（ミニマップ）で使用
  *
- * ドロップシャドウはSVGフィルター（feDropShadow）ではなくCSS filter: drop-shadow()で
- * 親要素に適用する。SVGフィルターはラスタライズされた中間バッファを生成するため、
- * ズーム時にぼやけの原因となる。CSSフィルターはブラウザの合成レイヤーで処理され、
- * devicePixelRatioを正しく反映するためシャープに描画される。
+ * ドロップシャドウはSVGフィルター（feDropShadow）やCSS filter: drop-shadow()を
+ * 使用せず、半透明のSVGパス（オフセット複製）で表現する。
+ * SVGフィルターはラスタライズされた中間バッファを生成し、CSS filterは
+ * コンポジットレイヤーを生成するため、Mapboxの will-change: transform と
+ * 組み合わさるとズーム時にビットマップ拡縮によるぼやけが発生する。
+ * 純粋なSVGパスであればベクターのまま描画されるため常にシャープになる。
  */
 
 interface PinSvgProps {
@@ -32,6 +34,12 @@ export function PinSvg({
 }: PinSvgProps) {
   return (
     <svg viewBox="-2 -2 36 42" width="100%" height="100%" shapeRendering={shapeRendering}>
+      <path
+        d={PIN_PATH}
+        fill="rgba(0,0,0,0.2)"
+        stroke="none"
+        transform="translate(0.4, 1.2)"
+      />
       <path
         d={PIN_PATH}
         fill={fill}

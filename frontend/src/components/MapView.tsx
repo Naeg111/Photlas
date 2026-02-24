@@ -73,7 +73,6 @@ const CLUSTER_MAX_ZOOM = 17
 const TOAST_DURATION_MS = 3000
 const PIN_HEIGHT_RATIO = 1.2
 const SHOOTING_PIN_SCALE = 1.4
-const PIN_DROP_SHADOW = 'drop-shadow(0px 1px 2px rgba(0,0,0,0.4))'
 
 /**
  * 投稿件数からピン色のHEXカラーを決定
@@ -497,7 +496,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                     style={{
                       width: `${Math.round(BASE_PIN_SIZE * getPinScale(zoom))}px`,
                       height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom))}px`,
-                      filter: PIN_DROP_SHADOW,
                     }}
                     onClick={() => {
                       const spotIds = getClusterSpotIds(clusterId)
@@ -527,7 +525,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                   style={{
                     width: `${Math.round(BASE_PIN_SIZE * getPinScale(zoom))}px`,
                     height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom))}px`,
-                    filter: PIN_DROP_SHADOW,
                   }}
                   onClick={() => onSpotClick?.(spot.spotId)}
                 >
@@ -553,7 +550,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 style={{
                   width: `${Math.round(BASE_PIN_SIZE * SHOOTING_PIN_SCALE)}px`,
                   height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * SHOOTING_PIN_SCALE)}px`,
-                  filter: PIN_DROP_SHADOW,
                 }}
                 onClick={() => onMapClickRef.current?.()}
               >
