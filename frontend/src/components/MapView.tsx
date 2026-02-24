@@ -64,9 +64,9 @@ const MIN_ZOOM_FOR_PINS = 10
 
 // クラスタリング設定（Issue#39）
 // Mapbox GL JSではデバイスピクセル比を考慮してradiusが適用されるため、
-// Google Maps時代のCLUSTER_RADIUS=120相当の表示密度にするには80程度が適切
-// ピン密度が高い領域でも十分な間隔を確保するため、radiusを80に設定
-const CLUSTER_RADIUS = 80
+// Google Maps時代のCLUSTER_RADIUS=120相当の表示密度と
+// ピン密度が高い領域での間隔確保のバランスをとり、radiusを70に設定
+const CLUSTER_RADIUS = 70
 const CLUSTER_MAX_ZOOM = 17
 
 // UI設定
