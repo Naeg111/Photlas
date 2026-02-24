@@ -374,7 +374,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // 地図が読み込まれたときの処理
   const handleLoad = useCallback((e: MapEvent) => {
     const mapInstance = e.target
-    mapInstance.setLanguage('ja')
     setMap(mapInstance)
 
     // 初期ロード時にスポットデータを取得
@@ -478,6 +477,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         }}
         style={{ width: '100%', height: '100%' }}
         mapStyle={MAPBOX_STYLE}
+        language="ja"
         fadeDuration={0}
         renderWorldCopies={false}
         onLoad={handleLoad}

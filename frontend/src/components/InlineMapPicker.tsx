@@ -176,7 +176,6 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
 
   const handleLoad = useCallback((e: MapEvent) => {
     const mapInstance = e.target
-    mapInstance.setLanguage('ja')
     mapRef.current = mapInstance
   }, [])
 
@@ -235,6 +234,7 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
         }}
         style={{ width: '100%', height: '100%' }}
         mapStyle={MAPBOX_STYLE}
+        language="ja"
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}
       />
