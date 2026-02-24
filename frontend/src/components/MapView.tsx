@@ -174,6 +174,7 @@ interface MapViewProps {
   onSpotClick?: (spotId: number) => void
   onClusterClick?: (spotIds: number[]) => void
   onMapClick?: () => void
+  onMapReady?: () => void
 }
 
 /**
@@ -204,7 +205,7 @@ function FallbackMapView() {
   )
 }
 
-const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick }, ref) {
+const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady }, ref) {
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<MapboxMap | null>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
@@ -383,7 +384,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
     // E2Eテスト用: マップインスタンスをwindowに公開（ズーム制御等）
     ;(window as unknown as Record<string, unknown>).__photlas_map = mapInstance
-  }, [fetchSpots])
+
+    // スプラッシュスクリーン解除の通知
+    onMapReady?.()
+  }, [fetchSpots, onMapReady])
 
   // 地図移動完了時の処理（旧idle イベント相当）
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
