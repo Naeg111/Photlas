@@ -45,11 +45,15 @@ const FLOATING_BUTTON_STYLES = {
   fab: 'w-14 h-14 rounded-full shadow-lg',
 } as const
 
+interface MainContentProps {
+  onMapReady?: () => void
+}
+
 /**
  * MainContent コンポーネント
  * useAuthを使用するためAuthProvider内で使用
  */
-function MainContent() {
+function MainContent({ onMapReady }: MainContentProps) {
   const { user, logout } = useAuth()
   const dialog = useDialogState()
   const mapRef = useRef<MapViewHandle>(null)
@@ -297,6 +301,7 @@ function MainContent() {
           onSpotClick={handleSpotClick}
           onClusterClick={handleClusterClick}
           onMapClick={handleReturnFromPreview}
+          onMapReady={onMapReady}
         />
       </div>
 
@@ -503,21 +508,41 @@ function MainContent() {
 
 /**
  * メインアプリコンテント（スプラッシュスクリーン付き）
+ *
+ * MainContentをスプラッシュの裏で最初からレンダリングし、
+ * マップの読み込みを早期に開始する。スプラッシュの解除は
+ * 「最低表示時間の経過」かつ「マップの読み込み完了」の両方を満たした時点で行う。
  */
 function MainApp() {
   const [isLoading, setIsLoading] = useState(true)
+  const isMapReadyRef = useRef(false)
+  const isMinDurationPassedRef = useRef(false)
+
+  const tryDismissSplash = useCallback(() => {
+    if (isMapReadyRef.current && isMinDurationPassedRef.current) {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const handleMapReady = useCallback(() => {
+    isMapReadyRef.current = true
+    tryDismissSplash()
+  }, [tryDismissSplash])
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), SPLASH_SCREEN_DURATION_MS)
+    const timer = setTimeout(() => {
+      isMinDurationPassedRef.current = true
+      tryDismissSplash()
+    }, SPLASH_SCREEN_DURATION_MS)
     return () => clearTimeout(timer)
-  }, [])
+  }, [tryDismissSplash])
 
   return (
     <>
       <AnimatePresence>
         {isLoading && <SplashScreen />}
       </AnimatePresence>
-      {!isLoading && <MainContent />}
+      <MainContent onMapReady={handleMapReady} />
       <Toaster />
     </>
   )
