@@ -286,10 +286,10 @@ function DetailMiniMap({
             style={{
               width: '27px',
               height: '43px',
+              filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.4))',
             }}
           >
             <PinSvg
-              filterId="minimap-pin-shadow"
               fill="#ffffff"
               stroke="#000000"
               strokeWidth={2}

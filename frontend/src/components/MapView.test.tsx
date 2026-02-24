@@ -16,6 +16,7 @@ vi.mock('../config/api', () => ({
 // Mapbox GL JS のモックマップインスタンス
 const { mockMap, MapMock, resetMockMountFlag } = vi.hoisted(() => {
   let hasMounted = false
+  const timerIds: ReturnType<typeof setTimeout>[] = []
 
   const mockMap = {
     setZoom: vi.fn(),
@@ -43,8 +44,8 @@ const { mockMap, MapMock, resetMockMountFlag } = vi.hoisted(() => {
       }
       if (onMoveEnd) {
         // onMoveEnd イベントをシミュレート（初回と地図移動後）
-        setTimeout(() => onMoveEnd({ target: mockMap }), 100)
-        setTimeout(() => onMoveEnd({ target: mockMap }), 200)
+        timerIds.push(setTimeout(() => onMoveEnd({ target: mockMap }), 100))
+        timerIds.push(setTimeout(() => onMoveEnd({ target: mockMap }), 200))
       }
     }
     return (
@@ -54,7 +55,11 @@ const { mockMap, MapMock, resetMockMountFlag } = vi.hoisted(() => {
     )
   }
 
-  const resetMockMountFlag = () => { hasMounted = false }
+  const resetMockMountFlag = () => {
+    hasMounted = false
+    timerIds.forEach(id => clearTimeout(id))
+    timerIds.length = 0
+  }
 
   return { mockMap, MapMock, resetMockMountFlag }
 })
@@ -122,11 +127,10 @@ describe('MapView Component - Issue#53', () => {
 
       render(<MapView />)
 
-      // onMoveEnd イベント（初回と地図移動）により2回APIが呼ばれることを確認
-      // モックは100msと200msで2回のonMoveEndイベントをシミュレートする
+      // onLoad時に1回、onMoveEnd（100msと200ms）で2回、計3回APIが呼ばれることを確認
       await waitFor(
         () => {
-          expect(mockFetch).toHaveBeenCalledTimes(2)
+          expect(mockFetch).toHaveBeenCalledTimes(3)
         },
         { timeout: 300 }
       )
