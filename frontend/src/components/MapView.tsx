@@ -135,6 +135,17 @@ function getPinScale(zoom: number): number {
 // ピンの基準サイズ (px) - クラスタ・個別ピン共通
 const BASE_PIN_SIZE = 32
 
+/**
+ * 偶数ピクセルに丸める
+ * Mapboxの Marker anchor="bottom" は内部で translate(-50%, -100%) を適用する。
+ * 幅が奇数ピクセルの場合、-50% が小数（例: 45px → -22.5px）になり、
+ * サブピクセルレンダリングによるぼやけが発生する。
+ * 偶数に丸めることで -50% が常に整数ピクセルになることを保証する。
+ */
+function roundToEven(n: number): number {
+  return Math.round(n / 2) * 2
+}
+
 /** URLSearchParamsに配列型フィルター値を追加 */
 function appendArrayParams(params: URLSearchParams, key: string, values?: (string | number)[]) {
   values?.forEach(v => params.append(key, v.toString()))
@@ -494,8 +505,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                     data-testid={`map-cluster-${clusterId}`}
                     className="cursor-pointer"
                     style={{
-                      width: `${Math.round(BASE_PIN_SIZE * getPinScale(zoom))}px`,
-                      height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom))}px`,
+                      width: `${roundToEven(BASE_PIN_SIZE * getPinScale(zoom))}px`,
+                      height: `${roundToEven(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom))}px`,
                     }}
                     onClick={() => {
                       const spotIds = getClusterSpotIds(clusterId)
@@ -523,8 +534,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                   data-testid={`map-pin-${spot.spotId}`}
                   className="cursor-pointer"
                   style={{
-                    width: `${Math.round(BASE_PIN_SIZE * getPinScale(zoom))}px`,
-                    height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom))}px`,
+                    width: `${roundToEven(BASE_PIN_SIZE * getPinScale(zoom))}px`,
+                    height: `${roundToEven(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom))}px`,
                   }}
                   onClick={() => onSpotClick?.(spot.spotId)}
                 >
@@ -548,8 +559,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 data-testid="shooting-location-pin"
                 className="cursor-pointer"
                 style={{
-                  width: `${Math.round(BASE_PIN_SIZE * SHOOTING_PIN_SCALE)}px`,
-                  height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * SHOOTING_PIN_SCALE)}px`,
+                  width: `${roundToEven(BASE_PIN_SIZE * SHOOTING_PIN_SCALE)}px`,
+                  height: `${roundToEven(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * SHOOTING_PIN_SCALE)}px`,
                 }}
                 onClick={() => onMapClickRef.current?.()}
               >
