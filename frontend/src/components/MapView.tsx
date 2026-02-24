@@ -73,6 +73,7 @@ const CLUSTER_MAX_ZOOM = 17
 const TOAST_DURATION_MS = 3000
 const PIN_HEIGHT_RATIO = 1.2
 const SHOOTING_PIN_SCALE = 1.4
+const PIN_DROP_SHADOW = 'drop-shadow(0px 1px 2px rgba(0,0,0,0.4))'
 
 /**
  * 投稿件数からピン色のHEXカラーを決定
@@ -366,9 +367,14 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     mapInstance.setLanguage('ja')
     setMap(mapInstance)
 
+    // 初期ロード時にスポットデータを取得
+    // initialViewStateで地図が配置された場合、moveendが発火しない場合があるため
+    // onLoadでも明示的にfetchSpotsを呼び出す
+    fetchSpots(mapInstance)
+
     // E2Eテスト用: マップインスタンスをwindowに公開（ズーム制御等）
     ;(window as unknown as Record<string, unknown>).__photlas_map = mapInstance
-  }, [])
+  }, [fetchSpots])
 
   // 地図移動完了時の処理（旧idle イベント相当）
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
@@ -462,6 +468,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         }}
         style={{ width: '100%', height: '100%' }}
         mapStyle={MAPBOX_STYLE}
+        fadeDuration={0}
+        renderWorldCopies={false}
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}
         onClick={() => onMapClickRef.current?.()}
@@ -489,13 +497,14 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                     style={{
                       width: `${Math.round(BASE_PIN_SIZE * getPinScale(zoom))}px`,
                       height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom))}px`,
+                      filter: PIN_DROP_SHADOW,
                     }}
                     onClick={() => {
                       const spotIds = getClusterSpotIds(clusterId)
                       onClusterClick?.(spotIds)
                     }}
                   >
-                    <PinSvg filterId={`cluster-shadow-${clusterId}`} fill={pinColor} stroke="rgba(0,0,0,0.3)">
+                    <PinSvg fill={pinColor} stroke="rgba(0,0,0,0.3)">
                       {renderPinCountText(totalPhotoCount)}
                     </PinSvg>
                   </div>
@@ -518,10 +527,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                   style={{
                     width: `${Math.round(BASE_PIN_SIZE * getPinScale(zoom))}px`,
                     height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom))}px`,
+                    filter: PIN_DROP_SHADOW,
                   }}
                   onClick={() => onSpotClick?.(spot.spotId)}
                 >
-                  <PinSvg filterId={`pin-shadow-${spot.spotId}`} fill={PIN_COLOR_MAP[spot.pinColor]} stroke="rgba(0,0,0,0.3)">
+                  <PinSvg fill={PIN_COLOR_MAP[spot.pinColor]} stroke="rgba(0,0,0,0.3)">
                     {renderPinCountText(spot.photoCount)}
                   </PinSvg>
                 </div>
@@ -543,12 +553,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 style={{
                   width: `${Math.round(BASE_PIN_SIZE * SHOOTING_PIN_SCALE)}px`,
                   height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * SHOOTING_PIN_SCALE)}px`,
+                  filter: PIN_DROP_SHADOW,
                 }}
                 onClick={() => onMapClickRef.current?.()}
               >
                 <div className="pin-drop">
                   <PinSvg
-                    filterId="shooting-pin-shadow"
                     fill={SHOOTING_PIN_COLOR}
                     stroke={SHOOTING_PIN_STROKE}
                     strokeWidth={2}
