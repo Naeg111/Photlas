@@ -64,15 +64,15 @@ const MIN_ZOOM_FOR_PINS = 10
 
 // クラスタリング設定（Issue#39）
 // Mapbox GL JSではデバイスピクセル比を考慮してradiusが適用されるため、
-// Google Maps時代のCLUSTER_RADIUS=120相当の表示密度にするには60程度が適切
-const CLUSTER_RADIUS = 60
+// Google Maps時代のCLUSTER_RADIUS=120相当の表示密度にするには80程度が適切
+// ピン密度が高い領域でも十分な間隔を確保するため、radiusを80に設定
+const CLUSTER_RADIUS = 80
 const CLUSTER_MAX_ZOOM = 17
 
 // UI設定
 const TOAST_DURATION_MS = 3000
 const PIN_HEIGHT_RATIO = 1.2
 const SHOOTING_PIN_SCALE = 1.4
-const PIN_ANCHOR_TRANSFORM = 'translate(-50%, -100%)'
 
 /**
  * 投稿件数からピン色のHEXカラーを決定
@@ -487,9 +487,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                     data-testid={`map-cluster-${clusterId}`}
                     className="cursor-pointer"
                     style={{
-                      width: `${BASE_PIN_SIZE * getPinScale(zoom)}px`,
-                      height: `${BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom)}px`,
-                      transform: PIN_ANCHOR_TRANSFORM,
+                      width: `${Math.round(BASE_PIN_SIZE * getPinScale(zoom))}px`,
+                      height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom))}px`,
                     }}
                     onClick={() => {
                       const spotIds = getClusterSpotIds(clusterId)
@@ -517,13 +516,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                   data-testid={`map-pin-${spot.spotId}`}
                   className="cursor-pointer"
                   style={{
-                    width: `${BASE_PIN_SIZE * getPinScale(zoom)}px`,
-                    height: `${BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom)}px`,
-                    transform: PIN_ANCHOR_TRANSFORM,
+                    width: `${Math.round(BASE_PIN_SIZE * getPinScale(zoom))}px`,
+                    height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * getPinScale(zoom))}px`,
                   }}
                   onClick={() => onSpotClick?.(spot.spotId)}
                 >
-                  <PinSvg filterId="pin-shadow" fill={PIN_COLOR_MAP[spot.pinColor]} stroke="rgba(0,0,0,0.3)">
+                  <PinSvg filterId={`pin-shadow-${spot.spotId}`} fill={PIN_COLOR_MAP[spot.pinColor]} stroke="rgba(0,0,0,0.3)">
                     {renderPinCountText(spot.photoCount)}
                   </PinSvg>
                 </div>
@@ -545,7 +543,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 style={{
                   width: `${Math.round(BASE_PIN_SIZE * SHOOTING_PIN_SCALE)}px`,
                   height: `${Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * SHOOTING_PIN_SCALE)}px`,
-                  transform: PIN_ANCHOR_TRANSFORM,
                 }}
                 onClick={() => onMapClickRef.current?.()}
               >

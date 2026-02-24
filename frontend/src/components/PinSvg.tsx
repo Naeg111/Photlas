@@ -24,7 +24,7 @@ export function PinSvg({
   stroke,
   strokeWidth = 1,
   strokeLinejoin,
-  shapeRendering,
+  shapeRendering = 'geometricPrecision',
   children,
 }: PinSvgProps) {
   return (
