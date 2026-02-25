@@ -36,6 +36,9 @@ public class Photo {
     @Column(name = "title", nullable = true, length = 20)
     private String title;
 
+    @Column(name = "place_name", length = 100)
+    private String placeName;
+
     @Column(name = "shot_at")
     private LocalDateTime shotAt;
 
@@ -159,6 +162,14 @@ public class Photo {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getPlaceName() {
+        return placeName;
+    }
+
+    public void setPlaceName(String placeName) {
+        this.placeName = placeName;
     }
 
     public LocalDateTime getShotAt() {

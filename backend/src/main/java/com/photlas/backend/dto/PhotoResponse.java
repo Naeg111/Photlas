@@ -53,6 +53,10 @@ public class PhotoResponse {
 
         private String title;
 
+        @JsonProperty("place_name")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private String placeName;
+
         @JsonProperty("image_url")
         private String imageUrl;
 
@@ -143,6 +147,14 @@ public class PhotoResponse {
 
         public void setTitle(String title) {
             this.title = title;
+        }
+
+        public String getPlaceName() {
+            return placeName;
+        }
+
+        public void setPlaceName(String placeName) {
+            this.placeName = placeName;
         }
 
         public String getImageUrl() {

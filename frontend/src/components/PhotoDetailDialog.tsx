@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar, MapPin } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -71,6 +71,7 @@ interface PhotoApiResponse {
   photo: {
     photo_id: number
     title: string
+    place_name?: string | null
     image_url: string
     shot_at: string
     weather?: string
@@ -125,6 +126,7 @@ interface TagInfo {
 interface PhotoDetail {
   photoId: number
   title: string
+  placeName?: string | null
   imageUrl: string
   shotAt: string
   weather?: string
@@ -191,6 +193,7 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
   return {
     photoId: response.photo.photo_id,
     title: response.photo.title,
+    placeName: response.photo.place_name,
     imageUrl: response.photo.image_url,
     shotAt: response.photo.shot_at,
     weather: response.photo.weather,
@@ -667,6 +670,14 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       <Calendar className="w-4 h-4" />
                       <span>{formatShotAt(displayedPhoto.shotAt)}</span>
                     </div>
+
+                    {/* 施設名・店名 */}
+                    {displayedPhoto.placeName && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <MapPin className="w-4 h-4" />
+                        <span>{displayedPhoto.placeName}</span>
+                      </div>
+                    )}
 
                     {/* 天気情報 */}
                     {displayedPhoto.weather && (

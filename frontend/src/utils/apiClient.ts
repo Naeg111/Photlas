@@ -159,6 +159,7 @@ export interface UploadUrlResponse {
  */
 export interface CreatePhotoRequest {
   title?: string
+  placeName?: string
   s3ObjectKey: string
   takenAt: string
   latitude: number
