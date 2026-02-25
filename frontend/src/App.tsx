@@ -112,7 +112,6 @@ function MainContent({ onMapReady }: MainContentProps) {
       months: conditions.months.length > 0 ? transformMonths(conditions.months) : undefined,
       times_of_day: conditions.timesOfDay.length > 0 ? transformTimesOfDay(conditions.timesOfDay) : undefined,
       weathers: conditions.weathers.length > 0 ? transformWeathers(conditions.weathers) : undefined,
-      tags: conditions.tags.length > 0 ? conditions.tags : undefined,
       device_type: conditions.deviceType,
       max_age_years: conditions.maxAgeYears,
       aspect_ratio: conditions.aspectRatio,
@@ -145,11 +144,9 @@ function MainContent({ onMapReady }: MainContentProps) {
     title: string
     placeName?: string
     categories: string[]
-    tags: string[]
     position: { lat: number; lng: number }
     weather?: string
     takenAt?: string
-    shootingDirection?: number
     cropCenterX?: number
     cropCenterY?: number
     cropZoom?: number
@@ -184,9 +181,7 @@ function MainContent({ onMapReady }: MainContentProps) {
         latitude: data.position.lat,
         longitude: data.position.lng,
         categories: data.categories,
-        tags: data.tags,
         weather: data.weather,
-        shootingDirection: data.shootingDirection,
         cameraBody: data.exif?.cameraBody,
         cameraLens: data.exif?.cameraLens,
         focalLength35mm: data.exif?.focalLength35mm,
@@ -265,10 +260,10 @@ function MainContent({ onMapReady }: MainContentProps) {
   }
 
   // ミニマップクリックハンドラー（撮影地点プレビュー開始）
-  const handleMinimapClick = (location: { lat: number; lng: number; shootingDirection?: number | null }) => {
+  const handleMinimapClick = (location: { lat: number; lng: number }) => {
     isInPreviewRef.current = true
     setShootingLocationPreview(location)
-    mapRef.current?.showShootingLocationPin(location.lat, location.lng, location.shootingDirection)
+    mapRef.current?.showShootingLocationPin(location.lat, location.lng)
   }
 
   // プレビューからの復帰ハンドラー（refでガード、依存配列を空に保つ）

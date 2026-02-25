@@ -54,9 +54,6 @@ public class Photo {
     @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
 
-    @Column(name = "shooting_direction", precision = 5, scale = 2)
-    private BigDecimal shootingDirection;
-
     @Column(name = "camera_body", length = 100)
     private String cameraBody;
 
@@ -103,14 +100,6 @@ public class Photo {
         inverseJoinColumns = @JoinColumn(name = "category_id")
     )
     private List<Category> categories = new ArrayList<>();
-
-    @ManyToMany
-    @JoinTable(
-        name = "photo_tags",
-        joinColumns = @JoinColumn(name = "photo_id"),
-        inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
-    private List<Tag> tags = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -228,14 +217,6 @@ public class Photo {
         this.longitude = longitude;
     }
 
-    public BigDecimal getShootingDirection() {
-        return shootingDirection;
-    }
-
-    public void setShootingDirection(BigDecimal shootingDirection) {
-        this.shootingDirection = shootingDirection;
-    }
-
     public String getCameraBody() {
         return cameraBody;
     }
@@ -332,11 +313,4 @@ public class Photo {
         this.categories = categories;
     }
 
-    public List<Tag> getTags() {
-        return tags;
-    }
-
-    public void setTags(List<Tag> tags) {
-        this.tags = tags;
-    }
 }

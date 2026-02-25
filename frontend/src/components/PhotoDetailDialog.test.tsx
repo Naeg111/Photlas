@@ -81,7 +81,6 @@ function createMockApiResponse(overrides?: {
   userId?: number
   username?: string
   spotId?: number
-  shootingDirection?: number | null
   exif?: {
     camera_body?: string
     camera_lens?: string
@@ -92,7 +91,6 @@ function createMockApiResponse(overrides?: {
     image_width?: number
     image_height?: number
   } | null
-  tags?: { tag_id: number; name: string }[]
   latitude?: number
   longitude?: number
   cropCenterX?: number | null
@@ -108,9 +106,7 @@ function createMockApiResponse(overrides?: {
       weather: overrides?.weather ?? TEST_WEATHER,
       is_favorited: overrides?.isFavorited ?? false,
       favorite_count: overrides?.favoriteCount ?? 0,
-      shooting_direction: overrides?.shootingDirection ?? null,
       exif: overrides?.exif ?? null,
-      tags: overrides?.tags ?? [],
       latitude: overrides?.latitude ?? null,
       longitude: overrides?.longitude ?? null,
       crop_center_x: overrides?.cropCenterX ?? null,
@@ -759,83 +755,6 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
-  describe('Issue#44: 撮影方向の表示', () => {
-    it('撮影方向が記録されている場合、方角テキストと角度が表示される', async () => {
-      const photoDetail = createMockApiResponse({
-        shootingDirection: 225,
-      })
-      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
-
-      const { rerender } = render(
-        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
-      )
-
-      Object.defineProperty(globalThis, 'fetch', {
-        value: mockFetch,
-        writable: true,
-        configurable: true,
-      })
-
-      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
-
-      await waitFor(() => {
-        expect(screen.getByText(/南西/)).toBeInTheDocument()
-        expect(screen.getByText(/225°/)).toBeInTheDocument()
-      })
-    })
-
-    it('撮影方向の角度が正しく8方位に変換される', async () => {
-      // 北=0°のテスト
-      const photoDetail = createMockApiResponse({
-        shootingDirection: 0,
-      })
-      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
-
-      const { rerender } = render(
-        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
-      )
-
-      Object.defineProperty(globalThis, 'fetch', {
-        value: mockFetch,
-        writable: true,
-        configurable: true,
-      })
-
-      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
-
-      await waitFor(() => {
-        expect(screen.getByText(/北/)).toBeInTheDocument()
-        expect(screen.getByText(/0°/)).toBeInTheDocument()
-      })
-    })
-
-    it('撮影方向が記録されていない場合は非表示', async () => {
-      const photoDetail = createMockApiResponse({
-        shootingDirection: null,
-      })
-      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
-
-      const { rerender } = render(
-        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
-      )
-
-      Object.defineProperty(globalThis, 'fetch', {
-        value: mockFetch,
-        writable: true,
-        configurable: true,
-      })
-
-      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
-
-      await waitFor(() => {
-        expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
-      })
-
-      // 撮影方向の表示がないことを確認
-      expect(screen.queryByText(/撮影方向/)).not.toBeInTheDocument()
-    })
-  })
-
   describe('Issue#44: 撮影コンテクスト情報の拡充', () => {
     it('撮影日時がフォーマットされて表示される', async () => {
       const photoDetail = createMockApiResponse({
@@ -861,58 +780,6 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('タグがチップ形式で表示される', async () => {
-      const photoDetail = createMockApiResponse({
-        tags: [
-          { tag_id: 1, name: '桜' },
-          { tag_id: 2, name: '夕焼け' },
-        ],
-      })
-      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
-
-      const { rerender } = render(
-        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
-      )
-
-      Object.defineProperty(globalThis, 'fetch', {
-        value: mockFetch,
-        writable: true,
-        configurable: true,
-      })
-
-      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
-
-      await waitFor(() => {
-        expect(screen.getByText('桜')).toBeInTheDocument()
-        expect(screen.getByText('夕焼け')).toBeInTheDocument()
-      })
-    })
-
-    it('タグがない場合はタグセクションが非表示', async () => {
-      const photoDetail = createMockApiResponse({
-        tags: [],
-      })
-      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
-
-      const { rerender } = render(
-        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
-      )
-
-      Object.defineProperty(globalThis, 'fetch', {
-        value: mockFetch,
-        writable: true,
-        configurable: true,
-      })
-
-      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
-
-      await waitFor(() => {
-        expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
-      })
-
-      // タグチップが存在しないことを確認
-      expect(screen.queryAllByTestId('detail-tag-chip')).toHaveLength(0)
-    })
   })
 
   // ============================================================
@@ -942,59 +809,6 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await waitFor(() => {
         expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
       })
-    })
-
-    it('撮影方向がある場合、矢印オーバーレイが表示される', async () => {
-      const photoDetail = createMockApiResponse({
-        latitude: 35.6586,
-        longitude: 139.7454,
-        shootingDirection: 180,
-      })
-      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
-
-      const { rerender } = render(
-        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
-      )
-
-      Object.defineProperty(globalThis, 'fetch', {
-        value: mockFetch,
-        writable: true,
-        configurable: true,
-      })
-
-      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
-
-      await waitFor(() => {
-        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
-        expect(screen.getByTestId('minimap-direction-arrow')).toBeInTheDocument()
-      })
-    })
-
-    it('撮影方向がない場合、矢印オーバーレイは非表示', async () => {
-      const photoDetail = createMockApiResponse({
-        latitude: 35.6586,
-        longitude: 139.7454,
-        shootingDirection: null,
-      })
-      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
-
-      const { rerender } = render(
-        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
-      )
-
-      Object.defineProperty(globalThis, 'fetch', {
-        value: mockFetch,
-        writable: true,
-        configurable: true,
-      })
-
-      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
-
-      await waitFor(() => {
-        expect(screen.getByTestId('detail-minimap')).toBeInTheDocument()
-      })
-
-      expect(screen.queryByTestId('minimap-direction-arrow')).not.toBeInTheDocument()
     })
 
     it('撮影座標がない場合はスポット座標でミニマップが表示される', async () => {
@@ -1055,7 +869,6 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(onMinimapClick).toHaveBeenCalledWith({
         lat: 35.6586,
         lng: 139.7454,
-        shootingDirection: null,
       })
     })
 
@@ -1087,7 +900,6 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(onMinimapClick).toHaveBeenCalledWith({
         lat: 35.6762,
         lng: 139.6503,
-        shootingDirection: null,
       })
     })
 

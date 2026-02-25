@@ -5,7 +5,7 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { CategoryIcon } from './CategoryIcon'
 import { Checkbox } from './ui/checkbox'
-import { Upload, X, Camera, Compass, Tag, MapPin } from 'lucide-react'
+import { Upload, X, Camera, MapPin } from 'lucide-react'
 import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
 import { Progress } from './ui/progress'
@@ -34,18 +34,6 @@ import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
 const WEATHER_OPTIONS = ['晴れ', '曇り', '雨', '雪'] as const
 type WeatherOption = typeof WEATHER_OPTIONS[number]
 
-// 8方位の定義
-const DIRECTION_OPTIONS = [
-  { label: '北', angle: 0 },
-  { label: '北東', angle: 45 },
-  { label: '東', angle: 90 },
-  { label: '南東', angle: 135 },
-  { label: '南', angle: 180 },
-  { label: '南西', angle: 225 },
-  { label: '西', angle: 270 },
-  { label: '北西', angle: 315 },
-] as const
-
 // 施設名・店名の検索候補型
 interface PlaceNameSuggestion {
   name: string
@@ -64,11 +52,9 @@ interface PhotoContributionDialogProps {
     title: string
     placeName?: string
     categories: string[]
-    tags: string[]
     position: { lat: number; lng: number }
     weather?: string
     takenAt?: string
-    shootingDirection?: number
     exif?: {
       cameraBody?: string
       cameraLens?: string
@@ -101,9 +87,6 @@ export function PhotoContributionDialog({
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
   const [exifData, setExifData] = useState<ExifData | null>(null)
-  const [shootingDirection, setShootingDirection] = useState<number | undefined>(undefined)
-  const [tags, setTags] = useState<string[]>([])
-  const [tagInput, setTagInput] = useState('')
   const [placeName, setPlaceName] = useState('')
   const [placeNameSuggestions, setPlaceNameSuggestions] = useState<PlaceNameSuggestion[]>([])
   const [isPlaceNameDropdownOpen, setIsPlaceNameDropdownOpen] = useState(false)
@@ -177,10 +160,6 @@ export function PhotoContributionDialog({
         setPinPosition({ lat: 35.6762, lng: 139.6503 })
       }
 
-      // 撮影方向がEXIFに含まれる場合は自動設定
-      if (exif?.shootingDirection != null) {
-        setShootingDirection(exif.shootingDirection)
-      }
     }
   }
 
@@ -190,34 +169,6 @@ export function PhotoContributionDialog({
         ? prev.filter((c) => c !== category)
         : [...prev, category]
     )
-  }
-
-  const handleAddTag = (value: string) => {
-    const trimmed = value.trim()
-    if (trimmed && !tags.includes(trimmed)) {
-      setTags((prev) => [...prev, trimmed])
-    }
-    setTagInput('')
-  }
-
-  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleAddTag(tagInput)
-    }
-  }
-
-  const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    if (value.endsWith(',')) {
-      handleAddTag(value.slice(0, -1))
-    } else {
-      setTagInput(value)
-    }
-  }
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags((prev) => prev.filter((t) => t !== tagToRemove))
   }
 
   // 施設名・店名の検索ハンドラー（デバウンス付き）
@@ -308,11 +259,9 @@ export function PhotoContributionDialog({
           title,
           placeName: placeName || undefined,
           categories: selectedCategories,
-          tags,
           position: pinPosition,
           weather: selectedWeather || undefined,
           takenAt: exifData?.takenAt,
-          shootingDirection,
           exif: exifData ? {
             cameraBody: exifData.cameraBody,
             cameraLens: exifData.cameraLens,
@@ -373,9 +322,6 @@ export function PhotoContributionDialog({
     setUploadStatus('idle')
     setUploadProgress(0)
     setExifData(null)
-    setShootingDirection(undefined)
-    setTags([])
-    setTagInput('')
     setCrop({ x: 0, y: 0 })
     setCropZoom(1)
     setCroppedArea(null)
@@ -386,7 +332,6 @@ export function PhotoContributionDialog({
     setPreviewUrl('')
     setPinPosition(null)
     setExifData(null)
-    setShootingDirection(undefined)
     setCrop({ x: 0, y: 0 })
     setCropZoom(1)
     setCroppedArea(null)
@@ -590,7 +535,6 @@ export function PhotoContributionDialog({
                 <InlineMapPicker
                   position={pinPosition}
                   onPositionChange={setPinPosition}
-                  shootingDirection={shootingDirection}
                 />
               </div>
             </div>
@@ -628,31 +572,6 @@ export function PhotoContributionDialog({
                 )}
               </div>
               <p className="text-sm text-gray-500">{placeName.length}/{PHOTO_UPLOAD.PLACE_NAME_MAX_LENGTH}文字</p>
-            </div>
-
-            {/* 撮影方向 */}
-            <div className="space-y-3">
-              <Label className="text-base flex items-center gap-2">
-                <Compass className="w-4 h-4" />
-                撮影方向
-              </Label>
-              <div className="grid grid-cols-4 gap-3">
-                {DIRECTION_OPTIONS.map(({ label, angle }) => (
-                  <div
-                    key={label}
-                    className={`flex items-center justify-center border rounded-lg p-3 cursor-pointer transition-colors ${
-                      shootingDirection === angle
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => setShootingDirection(prev => prev === angle ? undefined : angle)}
-                  >
-                    <Label className="cursor-pointer">
-                      {label}
-                    </Label>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* カテゴリ選択 */}
@@ -712,39 +631,6 @@ export function PhotoContributionDialog({
                   )
                 })}
               </div>
-            </div>
-
-            {/* タグ */}
-            <div className="space-y-3">
-              <Label className="text-base flex items-center gap-2">
-                <Tag className="w-4 h-4" />
-                タグ
-              </Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 bg-gray-100 text-sm px-3 py-1 rounded-full"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="text-gray-400 hover:text-gray-600"
-                      aria-label={`${tag}を削除`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <Input
-                value={tagInput}
-                onChange={handleTagInputChange}
-                onKeyDown={handleTagKeyDown}
-                placeholder="タグを入力（EnterまたはカンマでOK）"
-                maxLength={50}
-              />
             </div>
 
             {/* 投稿ボタン */}

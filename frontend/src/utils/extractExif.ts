@@ -15,7 +15,6 @@ export interface ExifData {
   takenAt?: string
   latitude?: number
   longitude?: number
-  shootingDirection?: number
   cameraBody?: string
   cameraLens?: string
   focalLength35mm?: number
@@ -70,7 +69,6 @@ export async function extractExif(file: File): Promise<ExifData | null> {
       pick: [
         'DateTimeOriginal',
         'GPSLatitude', 'GPSLongitude', 'latitude', 'longitude',
-        'GPSImgDirection',
         'Make', 'Model', 'LensModel',
         'FocalLengthIn35mmFilm', 'FNumber', 'ISO',
         'ExposureTime', 'ImageWidth', 'ImageHeight',
@@ -98,12 +96,6 @@ export async function extractExif(file: File): Promise<ExifData | null> {
     }
     if (raw.longitude != null) {
       result.longitude = raw.longitude
-      hasAnyField = true
-    }
-
-    // 撮影方向
-    if (raw.GPSImgDirection != null) {
-      result.shootingDirection = raw.GPSImgDirection
       hasAnyField = true
     }
 

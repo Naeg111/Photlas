@@ -1,12 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight, Star, Camera, Compass, Tag, Calendar, MapPin } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PinSvg } from './PinSvg'
-import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
@@ -62,7 +61,7 @@ interface PhotoDetailDialogProps {
   onUserClick?: (user: { userId: number; username: string }) => void
   onImageClick?: (imageUrl: string) => void
   isLightboxOpen?: boolean
-  onMinimapClick?: (location: { lat: number; lng: number; shootingDirection?: number | null }) => void
+  onMinimapClick?: (location: { lat: number; lng: number }) => void
   isSlideDown?: boolean
 }
 
@@ -77,7 +76,6 @@ interface PhotoApiResponse {
     weather?: string
     is_favorited?: boolean
     favorite_count?: number
-    shooting_direction?: number | null
     latitude?: number | null
     longitude?: number | null
     exif?: {
@@ -90,7 +88,6 @@ interface PhotoApiResponse {
       image_width?: number
       image_height?: number
     } | null
-    tags?: { tag_id: number; name: string }[]
     crop_center_x?: number | null
     crop_center_y?: number | null
     crop_zoom?: number | null
@@ -118,11 +115,6 @@ interface ExifInfo {
   imageHeight?: number
 }
 
-interface TagInfo {
-  tagId: number
-  name: string
-}
-
 interface PhotoDetail {
   photoId: number
   title: string
@@ -132,11 +124,9 @@ interface PhotoDetail {
   weather?: string
   isFavorited?: boolean
   favoriteCount?: number
-  shootingDirection?: number | null
   latitude?: number | null
   longitude?: number | null
   exif?: ExifInfo | null
-  tags: TagInfo[]
   cropCenterX?: number | null
   cropCenterY?: number | null
   cropZoom?: number | null
@@ -150,15 +140,6 @@ interface PhotoDetail {
     latitude: number
     longitude: number
   }
-}
-
-/**
- * 角度を8方位の日本語に変換する
- */
-function directionToLabel(deg: number): string {
-  const directions = ['北', '北東', '東', '南東', '南', '南西', '西', '北西']
-  const index = Math.round(deg / 45) % 8
-  return directions[index]
 }
 
 /**
@@ -199,14 +180,12 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
     weather: response.photo.weather,
     isFavorited: response.photo.is_favorited,
     favoriteCount: response.photo.favorite_count,
-    shootingDirection: response.photo.shooting_direction,
     latitude: response.photo.latitude,
     longitude: response.photo.longitude,
     exif,
     cropCenterX: response.photo.crop_center_x,
     cropCenterY: response.photo.crop_center_y,
     cropZoom: response.photo.crop_zoom,
-    tags: (response.photo.tags ?? []).map(t => ({ tagId: t.tag_id, name: t.name })),
     user: {
       userId: response.user.user_id,
       username: response.user.username,
@@ -257,12 +236,10 @@ async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
 function DetailMiniMap({
   latitude,
   longitude,
-  shootingDirection,
   onClick,
 }: {
   latitude: number
   longitude: number
-  shootingDirection?: number | null
   onClick?: () => void
 }) {
   return (
@@ -301,15 +278,7 @@ function DetailMiniMap({
             </PinSvg>
           </div>
         </Marker>
-        {shootingDirection != null && (
-          <Marker longitude={longitude} latitude={latitude} anchor="center">
-            <div style={{ pointerEvents: 'none' }}>
-              <ShootingDirectionArrow direction={shootingDirection} />
-            </div>
-          </Marker>
-        )}
       </MapGL>
-      {shootingDirection != null && <div data-testid="minimap-direction-arrow" className="hidden" />}
     </div>
   )
 }
@@ -686,29 +655,6 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       </div>
                     )}
 
-                    {/* 撮影方向 */}
-                    {displayedPhoto.shootingDirection != null && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Compass className="w-4 h-4" />
-                        <span>撮影方向: {directionToLabel(displayedPhoto.shootingDirection)} ({displayedPhoto.shootingDirection}°)</span>
-                      </div>
-                    )}
-
-                    {/* タグ */}
-                    {displayedPhoto.tags.length > 0 && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Tag className="w-4 h-4 text-gray-500" />
-                        {displayedPhoto.tags.map((tag) => (
-                          <span
-                            key={tag.tagId}
-                            data-testid="detail-tag-chip"
-                            className="inline-flex items-center px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-700"
-                          >
-                            {tag.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
 
                   {/* EXIF情報ブロック */}
@@ -771,11 +717,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                   <DetailMiniMap
                     latitude={displayedPhoto.latitude ?? displayedPhoto.spot.latitude}
                     longitude={displayedPhoto.longitude ?? displayedPhoto.spot.longitude}
-                    shootingDirection={displayedPhoto.shootingDirection}
                     onClick={onMinimapClick ? () => onMinimapClick({
                       lat: displayedPhoto.latitude ?? displayedPhoto.spot.latitude,
                       lng: displayedPhoto.longitude ?? displayedPhoto.spot.longitude,
-                      shootingDirection: displayedPhoto.shootingDirection,
                     }) : undefined}
                   />
 
