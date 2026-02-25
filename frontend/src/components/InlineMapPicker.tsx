@@ -136,6 +136,7 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
         const result = await searchBox!.suggest(value, {
           sessionToken: sessionTokenRef.current,
           country: 'jp',
+          language: 'ja',
         })
         const items = result.suggestions || []
         setSuggestions(items)

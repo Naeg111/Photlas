@@ -1,11 +1,11 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { CategoryIcon } from './CategoryIcon'
 import { Checkbox } from './ui/checkbox'
-import { Upload, X, Camera, Compass, Tag } from 'lucide-react'
+import { Upload, X, Camera, Compass, Tag, MapPin } from 'lucide-react'
 import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
 import { Progress } from './ui/progress'
@@ -15,6 +15,8 @@ import { ApiError } from '../utils/apiClient'
 import { WeatherIcons } from './FilterIcons'
 import { InlineMapPicker } from './InlineMapPicker'
 import { extractExif, type ExifData } from '../utils/extractExif'
+import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
+import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
 
 /**
  * PhotoContributionDialog コンポーネント
@@ -44,12 +46,23 @@ const DIRECTION_OPTIONS = [
   { label: '北西', angle: 315 },
 ] as const
 
+// 施設名・店名の検索候補型
+interface PlaceNameSuggestion {
+  name: string
+  full_address?: string
+  mapbox_id: string
+}
+
+// 施設名検索のデバウンス時間
+const PLACE_NAME_DEBOUNCE_MS = 300
+
 interface PhotoContributionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit?: (data: {
     file: File
     title: string
+    placeName?: string
     categories: string[]
     tags: string[]
     position: { lat: number; lng: number }
@@ -91,11 +104,24 @@ export function PhotoContributionDialog({
   const [shootingDirection, setShootingDirection] = useState<number | undefined>(undefined)
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
+  const [placeName, setPlaceName] = useState('')
+  const [placeNameSuggestions, setPlaceNameSuggestions] = useState<PlaceNameSuggestion[]>([])
+  const [isPlaceNameDropdownOpen, setIsPlaceNameDropdownOpen] = useState(false)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [cropZoom, setCropZoom] = useState(1)
   const [croppedArea, setCroppedArea] = useState<Area | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // 施設名検索用SearchBoxCore
+  const placeNameSearchBox = useMemo(() => {
+    if (MAPBOX_ACCESS_TOKEN) {
+      return new SearchBoxCore({ accessToken: MAPBOX_ACCESS_TOKEN })
+    }
+    return null
+  }, [])
+  const placeNameSessionTokenRef = useRef(new SessionToken())
+  const placeNameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ダイアログ表示時にスクロール位置を先頭にリセット
   useEffect(() => {
@@ -194,6 +220,61 @@ export function PhotoContributionDialog({
     setTags((prev) => prev.filter((t) => t !== tagToRemove))
   }
 
+  // 施設名・店名の検索ハンドラー（デバウンス付き）
+  const handlePlaceNameSearch = useCallback((value: string) => {
+    setPlaceName(value)
+
+    if (placeNameDebounceRef.current) {
+      clearTimeout(placeNameDebounceRef.current)
+    }
+
+    if (!value.trim() || !placeNameSearchBox) {
+      setPlaceNameSuggestions([])
+      setIsPlaceNameDropdownOpen(false)
+      return
+    }
+
+    placeNameDebounceRef.current = setTimeout(async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const options: any = {
+          sessionToken: placeNameSessionTokenRef.current,
+          country: 'jp',
+          language: 'ja',
+          types: 'poi',
+        }
+
+        if (pinPosition) {
+          options.proximity = [pinPosition.lng, pinPosition.lat]
+        }
+
+        const result = await placeNameSearchBox!.suggest(value, options)
+        const items = (result.suggestions || []) as PlaceNameSuggestion[]
+        setPlaceNameSuggestions(items)
+        setIsPlaceNameDropdownOpen(items.length > 0)
+      } catch {
+        setPlaceNameSuggestions([])
+        setIsPlaceNameDropdownOpen(false)
+      }
+    }, PLACE_NAME_DEBOUNCE_MS)
+  }, [placeNameSearchBox, pinPosition])
+
+  // 施設名候補の選択ハンドラー
+  const handleSelectPlaceNameSuggestion = useCallback((suggestion: PlaceNameSuggestion) => {
+    setPlaceName(suggestion.name)
+    setPlaceNameSuggestions([])
+    setIsPlaceNameDropdownOpen(false)
+    placeNameSessionTokenRef.current = new SessionToken()
+  }, [])
+
+  // 施設名ドロップダウンの外側クリックで閉じる
+  useEffect(() => {
+    if (!isPlaceNameDropdownOpen) return
+    const handleClick = () => setIsPlaceNameDropdownOpen(false)
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [isPlaceNameDropdownOpen])
+
   const handleSubmit = async () => {
     // バリデーション
     if (!selectedFile) {
@@ -225,6 +306,7 @@ export function PhotoContributionDialog({
         await onSubmit({
           file: selectedFile,
           title,
+          placeName: placeName || undefined,
           categories: selectedCategories,
           tags,
           position: pinPosition,
@@ -282,6 +364,9 @@ export function PhotoContributionDialog({
     setSelectedFile(null)
     setPreviewUrl('')
     setTitle('')
+    setPlaceName('')
+    setPlaceNameSuggestions([])
+    setIsPlaceNameDropdownOpen(false)
     setSelectedCategories([])
     setPinPosition(null)
     setSelectedWeather('')
@@ -508,6 +593,41 @@ export function PhotoContributionDialog({
                   shootingDirection={shootingDirection}
                 />
               </div>
+            </div>
+
+            {/* 施設名・店名 */}
+            <div className="space-y-3">
+              <Label htmlFor="placeName" className="text-base flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                施設名・店名
+              </Label>
+              <div className="relative">
+                <Input
+                  id="placeName"
+                  value={placeName}
+                  onChange={(e) => handlePlaceNameSearch(e.target.value)}
+                  placeholder="例：東京タワー、スターバックス渋谷店"
+                  maxLength={PHOTO_UPLOAD.PLACE_NAME_MAX_LENGTH}
+                />
+                {isPlaceNameDropdownOpen && placeNameSuggestions.length > 0 && (
+                  <ul className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {placeNameSuggestions.map((suggestion) => (
+                      <li
+                        key={suggestion.mapbox_id}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleSelectPlaceNameSuggestion(suggestion)}
+                        className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="font-medium">{suggestion.name}</div>
+                        {suggestion.full_address && (
+                          <div className="text-xs text-gray-500">{suggestion.full_address}</div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <p className="text-sm text-gray-500">{placeName.length}/{PHOTO_UPLOAD.PLACE_NAME_MAX_LENGTH}文字</p>
             </div>
 
             {/* 撮影方向 */}

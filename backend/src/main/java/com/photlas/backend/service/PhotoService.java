@@ -110,6 +110,7 @@ public class PhotoService {
         photo.setUserId(user.getId());
         photo.setS3ObjectKey(request.getS3ObjectKey());
         photo.setTitle(request.getTitle());
+        photo.setPlaceName(request.getPlaceName());
         photo.setShotAt(takenAt);
         photo.setWeather(weather);
         photo.setTimeOfDay(calculateTimeOfDay(takenAt));
@@ -313,6 +314,9 @@ public class PhotoService {
                 isFavorited,
                 favoriteCount
         );
+
+        // 施設名・店名を設定
+        photoDTO.setPlaceName(photo.getPlaceName());
 
         // ピンポイント座標と撮影方向を設定
         photoDTO.setLatitude(photo.getLatitude());

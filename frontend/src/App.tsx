@@ -143,6 +143,7 @@ function MainContent({ onMapReady }: MainContentProps) {
   const handlePhotoSubmit = async (data: {
     file: File
     title: string
+    placeName?: string
     categories: string[]
     tags: string[]
     position: { lat: number; lng: number }
@@ -177,6 +178,7 @@ function MainContent({ onMapReady }: MainContentProps) {
       // 2. メタデータ保存（EXIF情報を含む）
       await createPhoto({
         title: data.title,
+        placeName: data.placeName,
         s3ObjectKey: objectKey,
         takenAt: data.takenAt || new Date().toISOString(),
         latitude: data.position.lat,

@@ -40,6 +40,8 @@ export const PHOTO_UPLOAD = {
   ALLOWED_FILE_TYPES_DISPLAY: 'JPEG、PNG、HEIC',
   /** タイトルの最大文字数 */
   TITLE_MAX_LENGTH: 20,
+  /** 施設名・店名の最大文字数 */
+  PLACE_NAME_MAX_LENGTH: 100,
 } as const
 
 /**
