@@ -15,6 +15,9 @@ public class CreatePhotoRequest {
     @Size(max = 20, message = "タイトルは20文字以内で入力してください")
     private String title;
 
+    @Size(max = 100, message = "施設名・店名は100文字以内で入力してください")
+    private String placeName;
+
     @NotBlank(message = "S3オブジェクトキーは必須です")
     private String s3ObjectKey;
 
@@ -66,6 +69,14 @@ public class CreatePhotoRequest {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getPlaceName() {
+        return placeName;
+    }
+
+    public void setPlaceName(String placeName) {
+        this.placeName = placeName;
     }
 
     public String getS3ObjectKey() {
