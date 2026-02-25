@@ -192,12 +192,6 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                        OR (:focalLengthRange = 'TELEPHOTO' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm > 70)
                   )
                   AND (:maxIso = -1 OR (p3.iso IS NOT NULL AND p3.iso <= :maxIso))
-                  AND (:hasTags = false OR EXISTS (
-                      SELECT 1 FROM photo_tags pt3
-                      JOIN tags t3 ON pt3.tag_id = t3.tag_id
-                      WHERE pt3.photo_id = p3.photo_id
-                        AND t3.name IN (:tagNames)
-                  ))
             ) as total_photo_count,
             (
                 SELECT p2.s3_object_key
@@ -249,12 +243,6 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                        OR (:focalLengthRange = 'TELEPHOTO' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 70)
                   )
                   AND (:maxIso = -1 OR (p2.iso IS NOT NULL AND p2.iso <= :maxIso))
-                  AND (:hasTags = false OR EXISTS (
-                      SELECT 1 FROM photo_tags pt2
-                      JOIN tags t2 ON pt2.tag_id = t2.tag_id
-                      WHERE pt2.photo_id = p2.photo_id
-                        AND t2.name IN (:tagNames)
-                  ))
                 ORDER BY p2.shot_at DESC
                 LIMIT 1
             ) as thumbnail_url
@@ -308,12 +296,6 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                OR (:focalLengthRange = 'TELEPHOTO' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 70)
           )
           AND (:maxIso = -1 OR (p.iso IS NOT NULL AND p.iso <= :maxIso))
-          AND (:hasTags = false OR EXISTS (
-              SELECT 1 FROM photo_tags pt
-              JOIN tags t ON pt.tag_id = t.tag_id
-              WHERE pt.photo_id = p.photo_id
-                AND t.name IN (:tagNames)
-          ))
         GROUP BY s.spot_id, s.latitude, s.longitude
         HAVING COUNT(DISTINCT p.photo_id) > 0
         ORDER BY total_photo_count DESC
@@ -334,8 +316,6 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("maxAgeDate") LocalDateTime maxAgeDate,
         @Param("aspectRatio") String aspectRatio,
         @Param("focalLengthRange") String focalLengthRange,
-        @Param("maxIso") int maxIso,
-        @Param("hasTags") boolean hasTags,
-        @Param("tagNames") List<String> tagNames
+        @Param("maxIso") int maxIso
     );
 }

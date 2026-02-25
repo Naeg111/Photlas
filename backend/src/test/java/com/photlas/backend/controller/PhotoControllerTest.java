@@ -673,7 +673,6 @@ public class PhotoControllerTest {
                     "latitude": 35.658581,
                     "longitude": 139.745433,
                     "categories": ["風景"],
-                    "shootingDirection": 180.50,
                     "cameraBody": "Canon EOS R5",
                     "cameraLens": "RF 24-70mm f/2.8L",
                     "focalLength35mm": 35,
@@ -693,7 +692,6 @@ public class PhotoControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.photo.photo_id").exists())
                 .andExpect(jsonPath("$.photo.title", is("EXIF付き投稿")))
-                .andExpect(jsonPath("$.photo.shooting_direction", is(180.50)))
                 .andExpect(jsonPath("$.photo.exif.camera_body", is("Canon EOS R5")))
                 .andExpect(jsonPath("$.photo.exif.camera_lens", is("RF 24-70mm f/2.8L")))
                 .andExpect(jsonPath("$.photo.exif.focal_length_35mm", is(35)))
@@ -722,7 +720,6 @@ public class PhotoControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.photo.shooting_direction").doesNotExist())
                 .andExpect(jsonPath("$.photo.exif").doesNotExist());
     }
 
@@ -740,7 +737,6 @@ public class PhotoControllerTest {
         photo.setSpotId(spot.getSpotId());
         photo.setLatitude(new BigDecimal("35.658600"));
         photo.setLongitude(new BigDecimal("139.745450"));
-        photo.setShootingDirection(new BigDecimal("270.00"));
         photo.setCameraBody("Nikon Z9");
         photo.setFocalLength35mm(70);
         photo.setIso(800);
@@ -753,7 +749,6 @@ public class PhotoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.photo.latitude", is(35.658600)))
                 .andExpect(jsonPath("$.photo.longitude", is(139.745450)))
-                .andExpect(jsonPath("$.photo.shooting_direction", is(270.00)))
                 .andExpect(jsonPath("$.photo.exif.camera_body", is("Nikon Z9")))
                 .andExpect(jsonPath("$.photo.exif.focal_length_35mm", is(70)))
                 .andExpect(jsonPath("$.photo.exif.iso", is(800)))
@@ -838,64 +833,4 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath("$.photo.crop_zoom", is(2.0)));
     }
 
-    // ===== Issue#43: タグシステム コントローラーテスト =====
-
-    @Test
-    @DisplayName("Issue#43 - タグ付き写真の投稿でタグがレスポンスに含まれる")
-    void testCreatePhoto_WithTags_ReturnsTagsInResponse() throws Exception {
-        String requestBody = """
-                {
-                    "title": "タグ付き投稿テスト",
-                    "s3ObjectKey": "photos/tagtest001.jpg",
-                    "takenAt": "2026-01-25T10:00:00Z",
-                    "latitude": 35.658581,
-                    "longitude": 139.745433,
-                    "tags": ["桜", "夕焼け"]
-                }
-                """;
-
-        mockMvc.perform(post(ENDPOINT_PHOTOS)
-                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.photo.tags", hasSize(2)))
-                .andExpect(jsonPath("$.photo.tags[*].name", containsInAnyOrder("桜", "夕焼け")))
-                .andExpect(jsonPath("$.photo.tags[*].tag_id").exists());
-    }
-
-    @Test
-    @DisplayName("Issue#43 - 写真詳細取得でタグが返される")
-    void testGetPhotoDetail_WithTags_ReturnsTagsInResponse() throws Exception {
-        // タグ付き写真を作成
-        String createBody = """
-                {
-                    "title": "タグ詳細テスト",
-                    "s3ObjectKey": "photos/tagdetail001.jpg",
-                    "takenAt": "2026-01-25T11:00:00Z",
-                    "latitude": 35.658581,
-                    "longitude": 139.745433,
-                    "tags": ["リフレクション", "湖"]
-                }
-                """;
-
-        String createResponse = mockMvc.perform(post(ENDPOINT_PHOTOS)
-                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(createBody))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-
-        // photoIdを取得
-        Long photoId = objectMapper.readTree(createResponse).get("photo").get("photo_id").asLong();
-
-        // 詳細取得
-        mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photoId)
-                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.photo.tags", hasSize(2)))
-                .andExpect(jsonPath("$.photo.tags[*].name", containsInAnyOrder("リフレクション", "湖")));
-    }
 }

@@ -29,7 +29,6 @@ describe('extractExif', () => {
         DateTimeOriginal: takenDate,
         latitude: 35.6762,
         longitude: 139.6503,
-        GPSImgDirection: 180.5,
         Make: 'Canon',
         Model: 'Canon EOS R5',
         LensModel: 'RF24-70mm F2.8 L IS USM',
@@ -49,7 +48,6 @@ describe('extractExif', () => {
       expect(result!.takenAt).toBe(takenDate.toISOString())
       expect(result!.latitude).toBe(35.6762)
       expect(result!.longitude).toBe(139.6503)
-      expect(result!.shootingDirection).toBe(180.5)
       expect(result!.cameraBody).toBe('Canon EOS R5')
       expect(result!.cameraLens).toBe('RF24-70mm F2.8 L IS USM')
       expect(result!.focalLength35mm).toBe(50)

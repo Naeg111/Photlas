@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS photo_tags;
+DROP TABLE IF EXISTS tags;
+ALTER TABLE photos DROP COLUMN IF EXISTS shooting_direction;

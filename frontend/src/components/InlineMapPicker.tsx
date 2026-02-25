@@ -7,7 +7,6 @@ import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
 import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
-import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 
 /**
  * InlineMapPicker コンポーネント
@@ -28,7 +27,6 @@ import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 interface InlineMapPickerProps {
   position: { lat: number; lng: number } | null
   onPositionChange: (position: { lat: number; lng: number }) => void
-  shootingDirection?: number
 }
 
 // Mapbox Search Box APIの検索結果型
@@ -95,7 +93,7 @@ const overlayStyles = {
   } as React.CSSProperties,
 }
 
-export function InlineMapPicker({ position, onPositionChange, shootingDirection }: InlineMapPickerProps) {
+export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerProps) {
   const mapRef = useRef<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
@@ -313,11 +311,6 @@ export function InlineMapPicker({ position, onPositionChange, shootingDirection 
         {/* 中央固定ピン */}
         <div style={overlayStyles.pin}>
           <MapPin style={{ width: 40, height: 40, color: '#ef4444', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
-          {shootingDirection != null && (
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, 0)' }}>
-              <ShootingDirectionArrow direction={shootingDirection} />
-            </div>
-          )}
         </div>
 
         {/* 現在地ボタン */}
