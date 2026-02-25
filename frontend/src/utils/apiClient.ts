@@ -72,7 +72,6 @@ export interface SpotSearchParams {
   months?: number[];
   times_of_day?: string[];
   weathers?: string[];
-  tags?: string[];
   device_type?: string;
   max_age_years?: number;
   aspect_ratio?: string;
@@ -165,9 +164,7 @@ export interface CreatePhotoRequest {
   latitude: number
   longitude: number
   categories: string[]
-  tags?: string[]
   weather?: string
-  shootingDirection?: number
   cameraBody?: string
   cameraLens?: string
   focalLength35mm?: number

@@ -79,14 +79,8 @@ public class PhotoResponse {
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private BigDecimal longitude;
 
-        @JsonProperty("shooting_direction")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        private BigDecimal shootingDirection;
-
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private ExifDTO exif;
-
-        private List<TagDTO> tags;
 
         @JsonProperty("crop_center_x")
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -213,28 +207,12 @@ public class PhotoResponse {
             this.longitude = longitude;
         }
 
-        public BigDecimal getShootingDirection() {
-            return shootingDirection;
-        }
-
-        public void setShootingDirection(BigDecimal shootingDirection) {
-            this.shootingDirection = shootingDirection;
-        }
-
         public ExifDTO getExif() {
             return exif;
         }
 
         public void setExif(ExifDTO exif) {
             this.exif = exif;
-        }
-
-        public List<TagDTO> getTags() {
-            return tags;
-        }
-
-        public void setTags(List<TagDTO> tags) {
-            this.tags = tags;
         }
 
         public Double getCropCenterX() {
@@ -356,41 +334,6 @@ public class PhotoResponse {
 
         public void setImageHeight(Integer imageHeight) {
             this.imageHeight = imageHeight;
-        }
-    }
-
-    /**
-     * タグDTO
-     * タグのIDと名前を格納します。
-     */
-    public static class TagDTO {
-        @JsonProperty("tag_id")
-        private Long tagId;
-
-        private String name;
-
-        public TagDTO() {
-        }
-
-        public TagDTO(Long tagId, String name) {
-            this.tagId = tagId;
-            this.name = name;
-        }
-
-        public Long getTagId() {
-            return tagId;
-        }
-
-        public void setTagId(Long tagId) {
-            this.tagId = tagId;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
         }
     }
 

@@ -5,7 +5,6 @@ import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
-import com.photlas.backend.entity.Tag;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.CategoryNotFoundException;
 import com.photlas.backend.exception.PhotoNotFoundException;
@@ -15,7 +14,6 @@ import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
-import com.photlas.backend.repository.TagRepository;
 import com.photlas.backend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +43,6 @@ public class PhotoService {
     private final PhotoRepository photoRepository;
     private final SpotRepository spotRepository;
     private final CategoryRepository categoryRepository;
-    private final TagRepository tagRepository;
     private final UserRepository userRepository;
     private final WeatherService weatherService;
     private final FavoriteRepository favoriteRepository;
@@ -55,7 +52,6 @@ public class PhotoService {
             PhotoRepository photoRepository,
             SpotRepository spotRepository,
             CategoryRepository categoryRepository,
-            TagRepository tagRepository,
             UserRepository userRepository,
             WeatherService weatherService,
             FavoriteRepository favoriteRepository,
@@ -64,7 +60,6 @@ public class PhotoService {
         this.photoRepository = photoRepository;
         this.spotRepository = spotRepository;
         this.categoryRepository = categoryRepository;
-        this.tagRepository = tagRepository;
         this.userRepository = userRepository;
         this.weatherService = weatherService;
         this.favoriteRepository = favoriteRepository;
@@ -99,11 +94,6 @@ public class PhotoService {
             weather = null;
         }
 
-        // 3.5. タグの変換（find-or-create）
-        List<Tag> tags = (request.getTags() != null && !request.getTags().isEmpty())
-                ? convertTagsToEntities(request.getTags())
-                : new ArrayList<>();
-
         // 4. 写真の保存
         Photo photo = new Photo();
         photo.setSpotId(spot.getSpotId());
@@ -117,7 +107,6 @@ public class PhotoService {
         photo.setCategories(categories);
         photo.setLatitude(request.getLatitude());
         photo.setLongitude(request.getLongitude());
-        photo.setShootingDirection(request.getShootingDirection());
         photo.setCameraBody(request.getCameraBody());
         photo.setCameraLens(request.getCameraLens());
         photo.setFocalLength35mm(request.getFocalLength35mm());
@@ -129,7 +118,6 @@ public class PhotoService {
         photo.setCropCenterX(request.getCropCenterX());
         photo.setCropCenterY(request.getCropCenterY());
         photo.setCropZoom(request.getCropZoom());
-        photo.setTags(tags);
 
         Photo savedPhoto = photoRepository.save(photo);
 
@@ -271,30 +259,6 @@ public class PhotoService {
     }
 
     /**
-     * タグ名のリストをTagエンティティのリストに変換する
-     * 既存のタグがあれば再利用し、なければ新規作成する
-     */
-    private List<Tag> convertTagsToEntities(List<String> tagNames) {
-        List<Tag> tags = new ArrayList<>();
-
-        for (String tagName : tagNames) {
-            String trimmedName = tagName.trim();
-            if (trimmedName.isEmpty()) {
-                continue;
-            }
-            Tag tag = tagRepository.findByName(trimmedName)
-                    .orElseGet(() -> {
-                        Tag newTag = new Tag();
-                        newTag.setName(trimmedName);
-                        return tagRepository.save(newTag);
-                    });
-            tags.add(tag);
-        }
-
-        return tags;
-    }
-
-    /**
      * PhotoResponseを構築する
      */
     private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited) {
@@ -318,10 +282,9 @@ public class PhotoService {
         // 施設名・店名を設定
         photoDTO.setPlaceName(photo.getPlaceName());
 
-        // ピンポイント座標と撮影方向を設定
+        // ピンポイント座標を設定
         photoDTO.setLatitude(photo.getLatitude());
         photoDTO.setLongitude(photo.getLongitude());
-        photoDTO.setShootingDirection(photo.getShootingDirection());
 
         // クロップ情報を設定
         photoDTO.setCropCenterX(photo.getCropCenterX());
@@ -331,12 +294,6 @@ public class PhotoService {
         // EXIF情報を設定（1つでも値があればExifDTOを生成）
         PhotoResponse.ExifDTO exifDTO = buildExifDTO(photo);
         photoDTO.setExif(exifDTO);
-
-        // タグ情報を設定
-        List<PhotoResponse.TagDTO> tagDTOs = photo.getTags().stream()
-                .map(tag -> new PhotoResponse.TagDTO(tag.getTagId(), tag.getName()))
-                .toList();
-        photoDTO.setTags(tagDTOs);
 
         PhotoResponse.SpotDTO spotDTO = new PhotoResponse.SpotDTO(
                 spot.getSpotId(),

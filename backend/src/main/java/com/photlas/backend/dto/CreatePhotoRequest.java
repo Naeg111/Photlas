@@ -34,8 +34,6 @@ public class CreatePhotoRequest {
 
     private String weather;
 
-    private BigDecimal shootingDirection;
-
     private String cameraBody;
 
     private String cameraLens;
@@ -53,8 +51,6 @@ public class CreatePhotoRequest {
     private Integer imageWidth;
 
     private Integer imageHeight;
-
-    private List<String> tags;
 
     private Double cropCenterX;
 
@@ -127,14 +123,6 @@ public class CreatePhotoRequest {
         this.weather = weather;
     }
 
-    public BigDecimal getShootingDirection() {
-        return shootingDirection;
-    }
-
-    public void setShootingDirection(BigDecimal shootingDirection) {
-        this.shootingDirection = shootingDirection;
-    }
-
     public String getCameraBody() {
         return cameraBody;
     }
@@ -197,14 +185,6 @@ public class CreatePhotoRequest {
 
     public void setImageHeight(Integer imageHeight) {
         this.imageHeight = imageHeight;
-    }
-
-    public List<String> getTags() {
-        return tags;
-    }
-
-    public void setTags(List<String> tags) {
-        this.tags = tags;
     }
 
     public Double getCropCenterX() {

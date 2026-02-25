@@ -3,13 +3,11 @@ package com.photlas.backend.controller;
 import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
-import com.photlas.backend.entity.Tag;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
-import com.photlas.backend.repository.TagRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,9 +49,6 @@ public class SpotControllerTest {
 
     @Autowired
     private CategoryRepository categoryRepository;
-
-    @Autowired
-    private TagRepository tagRepository;
 
     @Autowired
     private JwtService jwtService;
@@ -885,126 +880,6 @@ public class SpotControllerTest {
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
     }
 
-    // ============================================================
-    // Issue#47: タグフィルター機能テスト
-    // ============================================================
-
-    private static final String PARAM_TAGS = "tags";
-    private static final String TAG_NAME_SAKURA = "桜";
-    private static final String TAG_NAME_SUNSET = "夕焼け";
-    private static final String TAG_NAME_REFLECTION = "リフレクション";
-
-    @Test
-    @DisplayName("Issue#47 - タグフィルター: 単一タグで絞り込みができる")
-    void testGetSpots_WithSingleTag_ReturnsMatchingSpots() throws Exception {
-        Tag sakuraTag = createTag(TAG_NAME_SAKURA);
-
-        // 桜タグがついた写真
-        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-        Photo photo1 = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo1.setTags(new ArrayList<>(List.of(sakuraTag)));
-        photoRepository.save(photo1);
-
-        // タグなしの写真
-        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
-        createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
-
-        mockMvc.perform(get(SPOTS_ENDPOINT)
-                        .param(PARAM_NORTH, BOUND_NORTH)
-                        .param(PARAM_SOUTH, BOUND_SOUTH)
-                        .param(PARAM_EAST, BOUND_EAST)
-                        .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_TAGS, TAG_NAME_SAKURA))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
-    }
-
-    @Test
-    @DisplayName("Issue#47 - タグフィルター: 複数タグでOR条件の絞り込みができる")
-    void testGetSpots_WithMultipleTags_ReturnsOrCondition() throws Exception {
-        Tag sakuraTag = createTag(TAG_NAME_SAKURA);
-        Tag sunsetTag = createTag(TAG_NAME_SUNSET);
-        Tag reflectionTag = createTag(TAG_NAME_REFLECTION);
-
-        // 桜タグ
-        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-        Photo photo1 = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo1.setTags(new ArrayList<>(List.of(sakuraTag)));
-        photoRepository.save(photo1);
-
-        // 夕焼けタグ
-        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
-        Photo photo2 = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo2.setTags(new ArrayList<>(List.of(sunsetTag)));
-        photoRepository.save(photo2);
-
-        // リフレクションタグ（検索条件に含まれない）
-        Spot spot3 = createSpot(TEST_LATITUDE_3, TEST_LONGITUDE_3);
-        Photo photo3 = createPhoto(spot3, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo3.setTags(new ArrayList<>(List.of(reflectionTag)));
-        photoRepository.save(photo3);
-
-        mockMvc.perform(get(SPOTS_ENDPOINT)
-                        .param(PARAM_NORTH, BOUND_NORTH)
-                        .param(PARAM_SOUTH, BOUND_SOUTH)
-                        .param(PARAM_EAST, BOUND_EAST)
-                        .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_TAGS, TAG_NAME_SAKURA, TAG_NAME_SUNSET))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[*].spotId", containsInAnyOrder(
-                        spot1.getSpotId().intValue(),
-                        spot2.getSpotId().intValue()
-                )));
-    }
-
-    @Test
-    @DisplayName("Issue#47 - タグフィルター: 他のフィルターとAND条件で組み合わせできる")
-    void testGetSpots_WithTagAndWeather_ReturnsCombined() throws Exception {
-        Tag sakuraTag = createTag(TAG_NAME_SAKURA);
-
-        // 桜タグ + 晴れ
-        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-        Photo photo1 = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo1.setTags(new ArrayList<>(List.of(sakuraTag)));
-        photoRepository.save(photo1);
-
-        // 桜タグ + 曇り
-        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
-        Photo photo2 = createPhoto(spot2, TEST_SHOT_AT, WEATHER_CLOUDY);
-        photo2.setTags(new ArrayList<>(List.of(sakuraTag)));
-        photoRepository.save(photo2);
-
-        // 桜 AND 晴れ = spot1のみ
-        mockMvc.perform(get(SPOTS_ENDPOINT)
-                        .param(PARAM_NORTH, BOUND_NORTH)
-                        .param(PARAM_SOUTH, BOUND_SOUTH)
-                        .param(PARAM_EAST, BOUND_EAST)
-                        .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_TAGS, TAG_NAME_SAKURA)
-                        .param(PARAM_WEATHERS, WEATHER_SUNNY))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
-    }
-
-    @Test
-    @DisplayName("Issue#47 - タグフィルター: 存在しないタグで空結果が返る")
-    void testGetSpots_WithNonExistentTag_ReturnsEmpty() throws Exception {
-        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-        createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
-
-        mockMvc.perform(get(SPOTS_ENDPOINT)
-                        .param(PARAM_NORTH, BOUND_NORTH)
-                        .param(PARAM_SOUTH, BOUND_SOUTH)
-                        .param(PARAM_EAST, BOUND_EAST)
-                        .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_TAGS, "存在しないタグ"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
-    }
-
     // --- getSpotPhotoIds テスト ---
 
     @Test
@@ -1046,12 +921,6 @@ public class SpotControllerTest {
     }
 
     // ヘルパーメソッド
-    private Tag createTag(String name) {
-        Tag tag = new Tag();
-        tag.setName(name);
-        return tagRepository.save(tag);
-    }
-
     private Spot createSpot(BigDecimal latitude, BigDecimal longitude) {
         Spot spot = new Spot();
         spot.setLatitude(latitude);

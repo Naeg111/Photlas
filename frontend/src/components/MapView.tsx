@@ -7,7 +7,6 @@ import Supercluster from 'supercluster'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { PinSvg } from './PinSvg'
-import { ShootingDirectionArrow } from './ShootingDirectionArrow'
 
 // MapViewの公開メソッド型定義
 export interface MapViewHandle {
@@ -15,7 +14,7 @@ export interface MapViewHandle {
   refreshSpots: () => void
   zoomIn: () => void
   zoomOut: () => void
-  showShootingLocationPin: (lat: number, lng: number, shootingDirection?: number | null) => void
+  showShootingLocationPin: (lat: number, lng: number) => void
   clearShootingLocationPin: () => void
 }
 
@@ -41,7 +40,6 @@ export interface MapViewFilterParams {
   months?: number[]
   times_of_day?: string[]
   weathers?: string[]
-  tags?: string[]
   device_type?: string
   max_age_years?: number
   aspect_ratio?: string
@@ -212,7 +210,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const [showToast, setShowToast] = useState(false)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [userHeading, setUserHeading] = useState<number | null>(null)
-  const [shootingLocationPin, setShootingLocationPin] = useState<{ lat: number; lng: number; shootingDirection?: number | null } | null>(null)
+  const [shootingLocationPin, setShootingLocationPin] = useState<{ lat: number; lng: number } | null>(null)
   const onMapClickRef = useRef(onMapClick)
   onMapClickRef.current = onMapClick
   const initialMountRef = useRef(true)
@@ -282,7 +280,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         appendArrayParams(params, 'months', filterParams.months)
         appendArrayParams(params, 'times_of_day', filterParams.times_of_day)
         appendArrayParams(params, 'weathers', filterParams.weathers)
-        appendArrayParams(params, 'tags', filterParams.tags)
         appendScalarParam(params, 'device_type', filterParams.device_type)
         appendScalarParam(params, 'max_age_years', filterParams.max_age_years)
         appendScalarParam(params, 'aspect_ratio', filterParams.aspect_ratio)
@@ -361,10 +358,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         map.setZoom(current - 1)
       }
     },
-    showShootingLocationPin: (lat: number, lng: number, shootingDirection?: number | null) => {
+    showShootingLocationPin: (lat: number, lng: number) => {
       if (map) {
         map.flyTo({ center: [lng, lat], zoom: 16 })
-        setShootingLocationPin({ lat, lng, shootingDirection })
+        setShootingLocationPin({ lat, lng })
       }
     },
     clearShootingLocationPin: () => {
@@ -581,17 +578,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 </div>
               </div>
             </Marker>
-            {shootingLocationPin.shootingDirection != null && (
-              <Marker
-                longitude={shootingLocationPin.lng}
-                latitude={shootingLocationPin.lat}
-                anchor="center"
-              >
-                <div style={{ pointerEvents: 'none' }}>
-                  <ShootingDirectionArrow direction={shootingLocationPin.shootingDirection} />
-                </div>
-              </Marker>
-            )}
           </>
         )}
 

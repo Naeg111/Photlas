@@ -54,20 +54,18 @@ public class SpotService {
                                        List<Integer> subjectCategories, List<Integer> months,
                                        List<String> timesOfDay, List<String> weathers) {
         return getSpots(north, south, east, west, subjectCategories, months, timesOfDay, weathers,
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null);
     }
 
     /**
      * Issue#46: 詳細フィルター対応版
-     * Issue#47: タグフィルター対応
      */
     @Transactional(readOnly = true)
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
                                        List<Integer> subjectCategories, List<Integer> months,
                                        List<String> timesOfDay, List<String> weathers,
                                        Integer minResolution, String deviceType, Integer maxAgeYears,
-                                       String aspectRatio, String focalLengthRange, Integer maxIso,
-                                       List<String> tags) {
+                                       String aspectRatio, String focalLengthRange, Integer maxIso) {
         logger.info("Getting spots within bounds: north={}, south={}, east={}, west={}", north, south, east, west);
 
         // null/空リストをセンチネル値に変換（PostgreSQLのIN句で型推論問題を回避）
@@ -103,17 +101,11 @@ public class SpotService {
         String safeFocalLengthRange = (focalLengthRange != null) ? focalLengthRange : "__NONE__";
         int safeMaxIso = (maxIso != null) ? maxIso : -1;
 
-        // Issue#47: タグフィルターのセンチネル値変換
-        List<String> safeTags = (tags == null || tags.isEmpty())
-            ? List.of("__NONE__") : tags;
-        boolean hasTags = (tags != null && !tags.isEmpty());
-
         // リポジトリから集計結果を取得
         List<Object[]> results = spotRepository.findSpotsWithAdvancedFilters(
                 north, south, east, west, safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
                 cutoffTime, safeMinResolution, safeDeviceType,
-                hasMaxAge, safeMaxAgeDate, safeAspectRatio, safeFocalLengthRange, safeMaxIso,
-                hasTags, safeTags
+                hasMaxAge, safeMaxAgeDate, safeAspectRatio, safeFocalLengthRange, safeMaxIso
         );
 
         logger.info("Found {} spots", results.size());
