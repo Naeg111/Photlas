@@ -17,6 +17,7 @@ import { useProfileEdit } from '../hooks/useProfileEdit'
 import { useAuth } from '../contexts/AuthContext'
 import { getAuthHeaders } from '../utils/apiClient'
 import ProfileImageCropper from './ProfileImageCropper'
+import { ProtectedImage } from './figma/ProtectedImage'
 
 // API Endpoints
 const API_FAVORITES = '/api/v1/users/me/favorites'
@@ -324,7 +325,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             {/* 左側：プロフィール画像 */}
             <div className="shrink-0">
               {displayProfileImageUrl ? (
-                <img
+                <ProtectedImage
                   src={displayProfileImageUrl}
                   alt={userProfile.username}
                   className="w-28 h-28 rounded-full object-cover"
@@ -557,7 +558,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                         onClick={() => handlePhotoClick(item.spot.spot_id)}
                         className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                       >
-                        <img
+                        <ProtectedImage
                           src={item.photo.image_url}
                           alt={item.photo.title}
                           className="absolute inset-0 w-full h-full"
@@ -650,7 +651,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                           onClick={() => handlePhotoClick(favorite.spot.spot_id)}
                           className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                         >
-                          <img
+                          <ProtectedImage
                             src={favorite.photo.image_url}
                             alt={favorite.photo.title}
                             className="absolute inset-0 w-full h-full"

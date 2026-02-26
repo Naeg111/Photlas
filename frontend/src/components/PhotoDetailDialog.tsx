@@ -6,6 +6,7 @@ import useEmblaCarousel from 'embla-carousel-react'
 import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PinSvg } from './PinSvg'
+import { ProtectedImage } from './figma/ProtectedImage'
 import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
@@ -551,7 +552,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                                 }
                               }}
                             >
-                              <img
+                              <ProtectedImage
                                 src={photo.imageUrl}
                                 alt={photo.title}
                                 className="w-full h-full"
