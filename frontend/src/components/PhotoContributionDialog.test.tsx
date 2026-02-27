@@ -153,10 +153,12 @@ describe('PhotoContributionDialog', () => {
     it('renders all 12 category options', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      const categories = ['風景', '街並み', '植物', '動物', '自動車', 'バイク', '鉄道', '飛行機', '食べ物', 'ポートレート', '星空', 'その他']
+      const categories = ['風景', '街並み', '植物', '動物', '自動車', 'バイク', '鉄道', '飛行機', '食べ物', 'ポートレート', '星空']
       categories.forEach(category => {
         expect(screen.getByText(category)).toBeInTheDocument()
       })
+      // 「その他」はカテゴリと機材種別の両方に存在するため、getAllByTextで確認
+      expect(screen.getAllByText('その他').length).toBeGreaterThanOrEqual(1)
     })
 
     it('renders cancel button', () => {
@@ -336,6 +338,10 @@ describe('PhotoContributionDialog', () => {
       const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
 
+      // 機材種別を選択
+      const deviceTypeDiv = screen.getByText('ミラーレス').closest('div[class*="cursor-pointer"]')
+      if (deviceTypeDiv) await user.click(deviceTypeDiv)
+
       // 天気を選択
       const weatherDiv = screen.getByText('晴れ').closest('div[class*="cursor-pointer"]')
       if (weatherDiv) await user.click(weatherDiv)
@@ -460,6 +466,10 @@ describe('PhotoContributionDialog', () => {
       const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
 
+      // 機材種別を選択
+      const deviceTypeDiv = screen.getByText('一眼レフ').closest('div[class*="cursor-pointer"]')
+      if (deviceTypeDiv) await user.click(deviceTypeDiv)
+
       // 投稿
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
@@ -501,6 +511,10 @@ describe('PhotoContributionDialog', () => {
       const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
 
+      // 機材種別を選択
+      const deviceTypeDiv = screen.getByText('一眼レフ').closest('div[class*="cursor-pointer"]')
+      if (deviceTypeDiv) await user.click(deviceTypeDiv)
+
       // 投稿
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '投稿する' })).not.toBeDisabled()
@@ -538,6 +552,10 @@ describe('PhotoContributionDialog', () => {
       // カテゴリを選択
       const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
+
+      // 機材種別を選択
+      const deviceTypeDiv = screen.getByText('一眼レフ').closest('div[class*="cursor-pointer"]')
+      if (deviceTypeDiv) await user.click(deviceTypeDiv)
 
       // 投稿ボタンが有効になるのを待ってクリック
       await waitFor(() => {
@@ -585,6 +603,10 @@ describe('PhotoContributionDialog', () => {
       // カテゴリを選択
       const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
+
+      // 機材種別を選択
+      const deviceTypeDiv = screen.getByText('コンパクトデジカメ').closest('div[class*="cursor-pointer"]')
+      if (deviceTypeDiv) await user.click(deviceTypeDiv)
 
       // 投稿ボタンが有効になるのを待ってクリック
       await waitFor(() => {
@@ -644,6 +666,10 @@ describe('PhotoContributionDialog', () => {
       // カテゴリを選択
       const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
+
+      // 機材種別を選択
+      const deviceTypeDiv = screen.getByText('ミラーレス').closest('div[class*="cursor-pointer"]')
+      if (deviceTypeDiv) await user.click(deviceTypeDiv)
 
       // 投稿
       await waitFor(() => {

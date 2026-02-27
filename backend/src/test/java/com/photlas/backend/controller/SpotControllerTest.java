@@ -576,14 +576,19 @@ public class SpotControllerTest {
     private static final String PARAM_FOCAL_LENGTH_RANGE = "focal_length_range";
     private static final String PARAM_MAX_ISO = "max_iso";
 
-    private static final String DEVICE_TYPE_CAMERA = "CAMERA";
+    private static final String DEVICE_TYPE_SLR = "SLR";
+    private static final String DEVICE_TYPE_MIRRORLESS = "MIRRORLESS";
+    private static final String DEVICE_TYPE_COMPACT = "COMPACT";
     private static final String DEVICE_TYPE_SMARTPHONE = "SMARTPHONE";
+    private static final String DEVICE_TYPE_FILM = "FILM";
+    private static final String DEVICE_TYPE_OTHER = "OTHER";
     private static final String ASPECT_HORIZONTAL = "HORIZONTAL";
     private static final String ASPECT_VERTICAL = "VERTICAL";
     private static final String ASPECT_SQUARE = "SQUARE";
     private static final String FOCAL_WIDE = "WIDE";
     private static final String FOCAL_STANDARD = "STANDARD";
     private static final String FOCAL_TELEPHOTO = "TELEPHOTO";
+    private static final String FOCAL_SUPER_TELEPHOTO = "SUPER_TELEPHOTO";
 
     @Test
     @DisplayName("Issue#46 - 解像度フィルター: 高画質のみ（長辺1080px以上）の写真のスポットのみ返される")
@@ -639,45 +644,59 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 機材種別フィルター: CAMERAを指定するとスマートフォンの写真は除外される")
-    void testGetSpots_WithDeviceTypeCamera_ExcludesSmartphone() throws Exception {
-        // カメラの写真
+    @DisplayName("Issue#46 - 機材種別フィルター: SLRを指定するとSLRのみ返される")
+    void testGetSpots_WithDeviceTypeSLR_ReturnsSLROnly() throws Exception {
+        // 一眼レフの写真
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-        Photo cameraPhoto = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
-        cameraPhoto.setCameraBody("Canon EOS R5");
-        photoRepository.save(cameraPhoto);
+        Photo slrPhoto = createPhotoWithDeviceType(spot1, TEST_SHOT_AT, WEATHER_SUNNY, DEVICE_TYPE_SLR);
 
         // スマートフォンの写真
         Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
-        Photo phonePhoto = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
-        phonePhoto.setCameraBody("Apple iPhone 15 Pro");
-        photoRepository.save(phonePhoto);
+        createPhotoWithDeviceType(spot2, TEST_SHOT_AT, WEATHER_SUNNY, DEVICE_TYPE_SMARTPHONE);
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_DEVICE_TYPE, DEVICE_TYPE_CAMERA))
+                        .param(PARAM_DEVICE_TYPE, DEVICE_TYPE_SLR))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
     }
 
     @Test
-    @DisplayName("Issue#46 - 機材種別フィルター: SMARTPHONEを指定するとカメラの写真は除外される")
-    void testGetSpots_WithDeviceTypeSmartphone_ExcludesCamera() throws Exception {
-        // カメラの写真
+    @DisplayName("Issue#46 - 機材種別フィルター: MIRRORLESSを指定するとミラーレスのみ返される")
+    void testGetSpots_WithDeviceTypeMirrorless_ReturnsMirrorlessOnly() throws Exception {
+        // ミラーレスの写真
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-        Photo cameraPhoto = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
-        cameraPhoto.setCameraBody("Nikon Z9");
-        photoRepository.save(cameraPhoto);
+        createPhotoWithDeviceType(spot1, TEST_SHOT_AT, WEATHER_SUNNY, DEVICE_TYPE_MIRRORLESS);
+
+        // 一眼レフの写真
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        createPhotoWithDeviceType(spot2, TEST_SHOT_AT, WEATHER_SUNNY, DEVICE_TYPE_SLR);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_DEVICE_TYPE, DEVICE_TYPE_MIRRORLESS))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - 機材種別フィルター: SMARTPHONEを指定するとスマートフォンのみ返される")
+    void testGetSpots_WithDeviceTypeSmartphone_ReturnsSmartphoneOnly() throws Exception {
+        // ミラーレスの写真
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        createPhotoWithDeviceType(spot1, TEST_SHOT_AT, WEATHER_SUNNY, DEVICE_TYPE_MIRRORLESS);
 
         // スマートフォンの写真
         Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
-        Photo phonePhoto = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
-        phonePhoto.setCameraBody("Samsung Galaxy S24");
-        photoRepository.save(phonePhoto);
+        createPhotoWithDeviceType(spot2, TEST_SHOT_AT, WEATHER_SUNNY, DEVICE_TYPE_SMARTPHONE);
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
@@ -688,6 +707,28 @@ public class SpotControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot2.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - 機材種別フィルター: device_typeがnullの写真は除外される")
+    void testGetSpots_WithDeviceTypeFilter_ExcludesNullDeviceType() throws Exception {
+        // device_type設定済みの写真
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        createPhotoWithDeviceType(spot1, TEST_SHOT_AT, WEATHER_SUNNY, DEVICE_TYPE_COMPACT);
+
+        // device_type未設定の写真
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_DEVICE_TYPE, DEVICE_TYPE_COMPACT))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
     }
 
     @Test
@@ -795,7 +836,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 焦点距離フィルター: TELEPHOTOは70mm超のみ返される")
+    @DisplayName("Issue#46 - 焦点距離フィルター: TELEPHOTOは70mm超300mm以下のみ返される")
     void testGetSpots_WithFocalLengthTelephoto_ReturnsTelephotoOnly() throws Exception {
         // 望遠（200mm）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -815,6 +856,58 @@ public class SpotControllerTest {
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
                         .param(PARAM_FOCAL_LENGTH_RANGE, FOCAL_TELEPHOTO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - 焦点距離フィルター: TELEPHOTOは301mm以上を含まない")
+    void testGetSpots_WithFocalLengthTelephoto_ExcludesSuperTelephoto() throws Exception {
+        // 望遠（300mm - TELEPHOTOの上限）
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo tele = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        tele.setFocalLength35mm(300);
+        photoRepository.save(tele);
+
+        // 超望遠（500mm）
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo superTele = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        superTele.setFocalLength35mm(500);
+        photoRepository.save(superTele);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_FOCAL_LENGTH_RANGE, FOCAL_TELEPHOTO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#46 - 焦点距離フィルター: SUPER_TELEPHOTOは300mm超のみ返される")
+    void testGetSpots_WithFocalLengthSuperTelephoto_ReturnsSuperTelephotoOnly() throws Exception {
+        // 超望遠（500mm）
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo superTele = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        superTele.setFocalLength35mm(500);
+        photoRepository.save(superTele);
+
+        // 望遠（200mm）
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        Photo tele = createPhoto(spot2, TEST_SHOT_AT, WEATHER_SUNNY);
+        tele.setFocalLength35mm(200);
+        photoRepository.save(tele);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_FOCAL_LENGTH_RANGE, FOCAL_SUPER_TELEPHOTO))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -937,6 +1030,21 @@ public class SpotControllerTest {
         photo.setUserId(testUser.getId());
         photo.setShotAt(shotAt);
         photo.setWeather(weather);
+        List<Category> categories = new ArrayList<>();
+        categories.add(category1);
+        photo.setCategories(categories);
+        return photoRepository.save(photo);
+    }
+
+    private Photo createPhotoWithDeviceType(Spot spot, LocalDateTime shotAt, String weather, String deviceType) {
+        Photo photo = new Photo();
+        photo.setTitle(TEST_PHOTO_TITLE);
+        photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-" + System.nanoTime());
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setShotAt(shotAt);
+        photo.setWeather(weather);
+        photo.setDeviceType(deviceType);
         List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
