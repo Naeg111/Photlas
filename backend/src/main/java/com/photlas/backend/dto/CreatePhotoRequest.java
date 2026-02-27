@@ -34,6 +34,8 @@ public class CreatePhotoRequest {
 
     private String weather;
 
+    private String deviceType;
+
     private String cameraBody;
 
     private String cameraLens;
@@ -121,6 +123,14 @@ public class CreatePhotoRequest {
 
     public void setWeather(String weather) {
         this.weather = weather;
+    }
+
+    public String getDeviceType() {
+        return deviceType;
+    }
+
+    public void setDeviceType(String deviceType) {
+        this.deviceType = deviceType;
     }
 
     public String getCameraBody() {

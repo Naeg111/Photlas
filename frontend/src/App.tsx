@@ -147,6 +147,7 @@ function MainContent({ onMapReady }: MainContentProps) {
     position: { lat: number; lng: number }
     weather?: string
     takenAt?: string
+    deviceType: string
     cropCenterX?: number
     cropCenterY?: number
     cropZoom?: number
@@ -182,6 +183,7 @@ function MainContent({ onMapReady }: MainContentProps) {
         longitude: data.position.lng,
         categories: data.categories,
         weather: data.weather,
+        deviceType: data.deviceType,
         cameraBody: data.exif?.cameraBody,
         cameraLens: data.exif?.cameraLens,
         focalLength35mm: data.exif?.focalLength35mm,

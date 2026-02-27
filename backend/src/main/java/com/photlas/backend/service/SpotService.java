@@ -41,14 +41,6 @@ public class SpotService {
         this.photoRepository = photoRepository;
     }
 
-    /**
-     * Issue#46: スマートフォンメーカーの判定リスト
-     */
-    private static final List<String> SMARTPHONE_MAKERS = List.of(
-        "Apple", "iPhone", "Samsung", "Google", "Pixel",
-        "Huawei", "Xiaomi", "OPPO", "OnePlus", "Sony Xperia"
-    );
-
     @Transactional(readOnly = true)
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
                                        List<Integer> subjectCategories, List<Integer> months,
@@ -59,6 +51,7 @@ public class SpotService {
 
     /**
      * Issue#46: 詳細フィルター対応版
+     * 機材種別はphotos.device_typeカラムを直接参照してフィルタリングする
      */
     @Transactional(readOnly = true)
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,

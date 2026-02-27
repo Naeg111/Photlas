@@ -5,7 +5,7 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { CategoryIcon } from './CategoryIcon'
 import { Checkbox } from './ui/checkbox'
-import { Upload, X, Camera, MapPin } from 'lucide-react'
+import { Upload, X, Camera, MapPin, CameraIcon } from 'lucide-react'
 import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
 import { Progress } from './ui/progress'
@@ -34,6 +34,16 @@ import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
 const WEATHER_OPTIONS = ['晴れ', '曇り', '雨', '雪'] as const
 type WeatherOption = typeof WEATHER_OPTIONS[number]
 
+// Issue#46: 機材種別の選択肢
+const DEVICE_TYPE_OPTIONS = [
+  { label: '一眼レフ', value: 'SLR' },
+  { label: 'ミラーレス', value: 'MIRRORLESS' },
+  { label: 'コンパクトデジカメ', value: 'COMPACT' },
+  { label: 'スマートフォン', value: 'SMARTPHONE' },
+  { label: 'フィルム', value: 'FILM' },
+  { label: 'その他', value: 'OTHER' },
+] as const
+
 // 施設名・店名の検索候補型
 interface PlaceNameSuggestion {
   name: string
@@ -55,6 +65,7 @@ interface PhotoContributionDialogProps {
     position: { lat: number; lng: number }
     weather?: string
     takenAt?: string
+    deviceType: string
     exif?: {
       cameraBody?: string
       cameraLens?: string
@@ -84,6 +95,7 @@ export function PhotoContributionDialog({
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [pinPosition, setPinPosition] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedWeather, setSelectedWeather] = useState<WeatherOption | ''>('')
+  const [selectedDeviceType, setSelectedDeviceType] = useState<string>('')
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
   const [exifData, setExifData] = useState<ExifData | null>(null)
@@ -152,6 +164,11 @@ export function PhotoContributionDialog({
       // EXIF情報を抽出
       const exif = await extractExif(file)
       setExifData(exif)
+
+      // Issue#46: スマートフォン判定時に機材種別を自動選択
+      if (exif?.isSmartphone) {
+        setSelectedDeviceType('SMARTPHONE')
+      }
 
       // GPS座標がEXIFに含まれる場合はピンを自動配置
       if (exif?.latitude != null && exif?.longitude != null) {
@@ -262,6 +279,7 @@ export function PhotoContributionDialog({
           position: pinPosition,
           weather: selectedWeather || undefined,
           takenAt: exifData?.takenAt,
+          deviceType: selectedDeviceType,
           exif: exifData ? {
             cameraBody: exifData.cameraBody,
             cameraLens: exifData.cameraLens,
@@ -319,6 +337,7 @@ export function PhotoContributionDialog({
     setSelectedCategories([])
     setPinPosition(null)
     setSelectedWeather('')
+    setSelectedDeviceType('')
     setUploadStatus('idle')
     setUploadProgress(0)
     setExifData(null)
@@ -332,6 +351,7 @@ export function PhotoContributionDialog({
     setPreviewUrl('')
     setPinPosition(null)
     setExifData(null)
+    setSelectedDeviceType('')
     setCrop({ x: 0, y: 0 })
     setCropZoom(1)
     setCroppedArea(null)
@@ -340,7 +360,7 @@ export function PhotoContributionDialog({
     }
   }
 
-  const canSubmit = selectedFile && pinPosition && selectedCategories.length > 0
+  const canSubmit = selectedFile && pinPosition && selectedCategories.length > 0 && selectedDeviceType !== ''
 
   const hasExifInfo = exifData && (
     exifData.cameraBody || exifData.cameraLens || exifData.focalLength35mm ||
@@ -601,6 +621,31 @@ export function PhotoContributionDialog({
                       className="cursor-pointer flex-1"
                     >
                       {category}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 機材種別選択 */}
+            <div className="space-y-3">
+              <Label className="text-base flex items-center gap-2">
+                <CameraIcon className="w-4 h-4" />
+                機材種別 *
+              </Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {DEVICE_TYPE_OPTIONS.map((option) => (
+                  <div
+                    key={option.value}
+                    className={`flex items-center justify-center border rounded-lg p-3 cursor-pointer transition-colors ${
+                      selectedDeviceType === option.value
+                        ? 'border-primary bg-primary/5'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setSelectedDeviceType(option.value)}
+                  >
+                    <Label className="cursor-pointer">
+                      {option.label}
                     </Label>
                   </div>
                 ))}

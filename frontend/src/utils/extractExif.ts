@@ -23,6 +23,25 @@ export interface ExifData {
   shutterSpeed?: string
   imageWidth?: number
   imageHeight?: number
+  isSmartphone?: boolean
+}
+
+/**
+ * Issue#46: スマートフォンメーカーの判定リスト
+ * camera_body文字列に含まれるかで判定する（大文字小文字を区別しない）
+ */
+const SMARTPHONE_MAKERS = [
+  'apple', 'iphone', 'samsung', 'google', 'pixel',
+  'huawei', 'xiaomi', 'oppo', 'oneplus', 'sony xperia',
+]
+
+/**
+ * カメラ機種名からスマートフォンかどうかを判定する
+ */
+function isSmartphoneCamera(cameraBody?: string): boolean {
+  if (!cameraBody) return false
+  const lower = cameraBody.toLowerCase()
+  return SMARTPHONE_MAKERS.some((maker) => lower.includes(maker))
 }
 
 /**
@@ -103,6 +122,7 @@ export async function extractExif(file: File): Promise<ExifData | null> {
     const cameraBody = buildCameraBody(raw.Make, raw.Model)
     if (cameraBody) {
       result.cameraBody = cameraBody
+      result.isSmartphone = isSmartphoneCamera(cameraBody)
       hasAnyField = true
     }
 
