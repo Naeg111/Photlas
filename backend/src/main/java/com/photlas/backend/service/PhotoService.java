@@ -107,6 +107,7 @@ public class PhotoService {
         photo.setCategories(categories);
         photo.setLatitude(request.getLatitude());
         photo.setLongitude(request.getLongitude());
+        photo.setDeviceType(request.getDeviceType());
         photo.setCameraBody(request.getCameraBody());
         photo.setCameraLens(request.getCameraLens());
         photo.setFocalLength35mm(request.getFocalLength35mm());

@@ -54,6 +54,9 @@ public class Photo {
     @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
 
+    @Column(name = "device_type", length = 20)
+    private String deviceType;
+
     @Column(name = "camera_body", length = 100)
     private String cameraBody;
 
@@ -215,6 +218,14 @@ public class Photo {
 
     public void setLongitude(BigDecimal longitude) {
         this.longitude = longitude;
+    }
+
+    public String getDeviceType() {
+        return deviceType;
+    }
+
+    public void setDeviceType(String deviceType) {
+        this.deviceType = deviceType;
     }
 
     public String getCameraBody() {

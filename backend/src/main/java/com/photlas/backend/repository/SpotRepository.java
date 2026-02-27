@@ -131,10 +131,10 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
      *
      * 基本フィルターに加え、以下の詳細フィルターに対応:
      * - 解像度（最小長辺px）
-     * - 機材種別（カメラ/スマートフォン）- スマートフォン判定はcamera_bodyのLIKE条件
+     * - 機材種別（SLR/MIRRORLESS/COMPACT/SMARTPHONE/FILM/OTHER）- photos.device_typeカラムで判定
      * - 鮮度（撮影日からの年数）
      * - アスペクト比（横/縦/正方形）
-     * - 焦点距離帯（広角/標準/望遠）
+     * - 焦点距離帯（広角/標準/望遠/超望遠）
      * - ISO感度（最大値）
      */
     @Query(value = """
@@ -156,30 +156,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                         AND pc3.category_id IN (:subjectCategories)
                   ))
                   AND (:minResolution = -1 OR (p3.image_width IS NOT NULL AND p3.image_height IS NOT NULL AND GREATEST(p3.image_width, p3.image_height) >= :minResolution))
-                  AND ('__NONE__' = :deviceType
-                       OR (:deviceType = 'CAMERA' AND p3.camera_body IS NOT NULL
-                           AND LOWER(p3.camera_body) NOT LIKE '%apple%'
-                           AND LOWER(p3.camera_body) NOT LIKE '%iphone%'
-                           AND LOWER(p3.camera_body) NOT LIKE '%samsung%'
-                           AND LOWER(p3.camera_body) NOT LIKE '%google%'
-                           AND LOWER(p3.camera_body) NOT LIKE '%pixel%'
-                           AND LOWER(p3.camera_body) NOT LIKE '%huawei%'
-                           AND LOWER(p3.camera_body) NOT LIKE '%xiaomi%'
-                           AND LOWER(p3.camera_body) NOT LIKE '%oppo%'
-                           AND LOWER(p3.camera_body) NOT LIKE '%oneplus%'
-                           AND LOWER(p3.camera_body) NOT LIKE '%sony xperia%')
-                       OR (:deviceType = 'SMARTPHONE' AND p3.camera_body IS NOT NULL
-                           AND (LOWER(p3.camera_body) LIKE '%apple%'
-                                OR LOWER(p3.camera_body) LIKE '%iphone%'
-                                OR LOWER(p3.camera_body) LIKE '%samsung%'
-                                OR LOWER(p3.camera_body) LIKE '%google%'
-                                OR LOWER(p3.camera_body) LIKE '%pixel%'
-                                OR LOWER(p3.camera_body) LIKE '%huawei%'
-                                OR LOWER(p3.camera_body) LIKE '%xiaomi%'
-                                OR LOWER(p3.camera_body) LIKE '%oppo%'
-                                OR LOWER(p3.camera_body) LIKE '%oneplus%'
-                                OR LOWER(p3.camera_body) LIKE '%sony xperia%'))
-                  )
+                  AND ('__NONE__' = :deviceType OR p3.device_type = :deviceType)
                   AND (:hasMaxAge = false OR p3.shot_at >= :maxAgeDate)
                   AND ('__NONE__' = :aspectRatio
                        OR (:aspectRatio = 'HORIZONTAL' AND p3.image_width IS NOT NULL AND p3.image_height IS NOT NULL AND p3.image_width > p3.image_height)
@@ -189,7 +166,8 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                   AND ('__NONE__' = :focalLengthRange
                        OR (:focalLengthRange = 'WIDE' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm < 24)
                        OR (:focalLengthRange = 'STANDARD' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm >= 24 AND p3.focal_length_35mm <= 70)
-                       OR (:focalLengthRange = 'TELEPHOTO' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm > 70)
+                       OR (:focalLengthRange = 'TELEPHOTO' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm > 70 AND p3.focal_length_35mm <= 300)
+                       OR (:focalLengthRange = 'SUPER_TELEPHOTO' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm > 300)
                   )
                   AND (:maxIso = -1 OR (p3.iso IS NOT NULL AND p3.iso <= :maxIso))
             ) as total_photo_count,
@@ -207,30 +185,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                         AND pc2.category_id IN (:subjectCategories)
                   ))
                   AND (:minResolution = -1 OR (p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND GREATEST(p2.image_width, p2.image_height) >= :minResolution))
-                  AND ('__NONE__' = :deviceType
-                       OR (:deviceType = 'CAMERA' AND p2.camera_body IS NOT NULL
-                           AND LOWER(p2.camera_body) NOT LIKE '%apple%'
-                           AND LOWER(p2.camera_body) NOT LIKE '%iphone%'
-                           AND LOWER(p2.camera_body) NOT LIKE '%samsung%'
-                           AND LOWER(p2.camera_body) NOT LIKE '%google%'
-                           AND LOWER(p2.camera_body) NOT LIKE '%pixel%'
-                           AND LOWER(p2.camera_body) NOT LIKE '%huawei%'
-                           AND LOWER(p2.camera_body) NOT LIKE '%xiaomi%'
-                           AND LOWER(p2.camera_body) NOT LIKE '%oppo%'
-                           AND LOWER(p2.camera_body) NOT LIKE '%oneplus%'
-                           AND LOWER(p2.camera_body) NOT LIKE '%sony xperia%')
-                       OR (:deviceType = 'SMARTPHONE' AND p2.camera_body IS NOT NULL
-                           AND (LOWER(p2.camera_body) LIKE '%apple%'
-                                OR LOWER(p2.camera_body) LIKE '%iphone%'
-                                OR LOWER(p2.camera_body) LIKE '%samsung%'
-                                OR LOWER(p2.camera_body) LIKE '%google%'
-                                OR LOWER(p2.camera_body) LIKE '%pixel%'
-                                OR LOWER(p2.camera_body) LIKE '%huawei%'
-                                OR LOWER(p2.camera_body) LIKE '%xiaomi%'
-                                OR LOWER(p2.camera_body) LIKE '%oppo%'
-                                OR LOWER(p2.camera_body) LIKE '%oneplus%'
-                                OR LOWER(p2.camera_body) LIKE '%sony xperia%'))
-                  )
+                  AND ('__NONE__' = :deviceType OR p2.device_type = :deviceType)
                   AND (:hasMaxAge = false OR p2.shot_at >= :maxAgeDate)
                   AND ('__NONE__' = :aspectRatio
                        OR (:aspectRatio = 'HORIZONTAL' AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width > p2.image_height)
@@ -240,7 +195,8 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                   AND ('__NONE__' = :focalLengthRange
                        OR (:focalLengthRange = 'WIDE' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm < 24)
                        OR (:focalLengthRange = 'STANDARD' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm >= 24 AND p2.focal_length_35mm <= 70)
-                       OR (:focalLengthRange = 'TELEPHOTO' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 70)
+                       OR (:focalLengthRange = 'TELEPHOTO' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 70 AND p2.focal_length_35mm <= 300)
+                       OR (:focalLengthRange = 'SUPER_TELEPHOTO' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 300)
                   )
                   AND (:maxIso = -1 OR (p2.iso IS NOT NULL AND p2.iso <= :maxIso))
                 ORDER BY p2.shot_at DESC
@@ -260,30 +216,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                 AND pc.category_id IN (:subjectCategories)
           ))
           AND (:minResolution = -1 OR (p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND GREATEST(p.image_width, p.image_height) >= :minResolution))
-          AND ('__NONE__' = :deviceType
-               OR (:deviceType = 'CAMERA' AND p.camera_body IS NOT NULL
-                   AND LOWER(p.camera_body) NOT LIKE '%apple%'
-                   AND LOWER(p.camera_body) NOT LIKE '%iphone%'
-                   AND LOWER(p.camera_body) NOT LIKE '%samsung%'
-                   AND LOWER(p.camera_body) NOT LIKE '%google%'
-                   AND LOWER(p.camera_body) NOT LIKE '%pixel%'
-                   AND LOWER(p.camera_body) NOT LIKE '%huawei%'
-                   AND LOWER(p.camera_body) NOT LIKE '%xiaomi%'
-                   AND LOWER(p.camera_body) NOT LIKE '%oppo%'
-                   AND LOWER(p.camera_body) NOT LIKE '%oneplus%'
-                   AND LOWER(p.camera_body) NOT LIKE '%sony xperia%')
-               OR (:deviceType = 'SMARTPHONE' AND p.camera_body IS NOT NULL
-                   AND (LOWER(p.camera_body) LIKE '%apple%'
-                        OR LOWER(p.camera_body) LIKE '%iphone%'
-                        OR LOWER(p.camera_body) LIKE '%samsung%'
-                        OR LOWER(p.camera_body) LIKE '%google%'
-                        OR LOWER(p.camera_body) LIKE '%pixel%'
-                        OR LOWER(p.camera_body) LIKE '%huawei%'
-                        OR LOWER(p.camera_body) LIKE '%xiaomi%'
-                        OR LOWER(p.camera_body) LIKE '%oppo%'
-                        OR LOWER(p.camera_body) LIKE '%oneplus%'
-                        OR LOWER(p.camera_body) LIKE '%sony xperia%'))
-          )
+          AND ('__NONE__' = :deviceType OR p.device_type = :deviceType)
           AND (:hasMaxAge = false OR p.shot_at >= :maxAgeDate)
           AND ('__NONE__' = :aspectRatio
                OR (:aspectRatio = 'HORIZONTAL' AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width > p.image_height)
@@ -293,7 +226,8 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
           AND ('__NONE__' = :focalLengthRange
                OR (:focalLengthRange = 'WIDE' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm < 24)
                OR (:focalLengthRange = 'STANDARD' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm >= 24 AND p.focal_length_35mm <= 70)
-               OR (:focalLengthRange = 'TELEPHOTO' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 70)
+               OR (:focalLengthRange = 'TELEPHOTO' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 70 AND p.focal_length_35mm <= 300)
+               OR (:focalLengthRange = 'SUPER_TELEPHOTO' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 300)
           )
           AND (:maxIso = -1 OR (p.iso IS NOT NULL AND p.iso <= :maxIso))
         GROUP BY s.spot_id, s.latitude, s.longitude
