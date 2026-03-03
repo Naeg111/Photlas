@@ -133,13 +133,13 @@ public class UserService {
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
 
         if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException("Invalid email or password");
+            throw new IllegalArgumentException("メールアドレスまたはパスワードが正しくありません");
         }
 
         User user = userOptional.get();
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid email or password");
+            throw new IllegalArgumentException("メールアドレスまたはパスワードが正しくありません");
         }
 
         if (!user.isEmailVerified()) {

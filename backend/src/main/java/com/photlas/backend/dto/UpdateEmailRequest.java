@@ -8,12 +8,12 @@ import jakarta.validation.constraints.*;
  */
 public class UpdateEmailRequest {
     @JsonProperty("new_email")
-    @NotNull(message = "New email is required")
-    @Email(message = "Email should be valid")
+    @NotNull(message = "新しいメールアドレスは必須です")
+    @Email(message = "正しいメールアドレスの形式で入力してください")
     private String newEmail;
 
     @JsonProperty("current_password")
-    @NotNull(message = "Current password is required")
+    @NotNull(message = "現在のパスワードは必須です")
     private String currentPassword;
 
     public UpdateEmailRequest() {}

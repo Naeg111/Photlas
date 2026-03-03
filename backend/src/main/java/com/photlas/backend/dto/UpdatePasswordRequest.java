@@ -9,21 +9,21 @@ import jakarta.validation.constraints.*;
  */
 public class UpdatePasswordRequest {
     @JsonProperty("current_password")
-    @NotNull(message = "Current password is required")
+    @NotNull(message = "現在のパスワードは必須です")
     private String currentPassword;
 
     @JsonProperty("new_password")
-    @NotNull(message = "New password is required")
-    @Size(min = 8, max = 20, message = "Password must be between 8 and 20 characters")
+    @NotNull(message = "新しいパスワードは必須です")
+    @Size(min = 8, max = 20, message = "パスワードは8文字以上20文字以内で入力してください")
     // Issue#21: パスワードバリデーション統一 - 記号禁止、英数字のみ
     @Pattern(
         regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]+$",
-        message = "Password must contain at least one digit, one lowercase letter, one uppercase letter, and no special characters"
+        message = "パスワードには数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません"
     )
     private String newPassword;
 
     @JsonProperty("new_password_confirm")
-    @NotNull(message = "Password confirmation is required")
+    @NotNull(message = "パスワード（確認用）は必須です")
     private String newPasswordConfirm;
 
     public UpdatePasswordRequest() {}

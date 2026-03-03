@@ -54,7 +54,7 @@ public class AuthController {
             ))
             .collect(Collectors.toList());
 
-        ErrorResponse errorResponse = new ErrorResponse("Validation failed", fieldErrors);
+        ErrorResponse errorResponse = new ErrorResponse("バリデーションエラー", fieldErrors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
@@ -78,16 +78,16 @@ public class AuthController {
             List<ErrorResponse.FieldError> fieldErrors = List.of(
                 new ErrorResponse.FieldError("email", request.getEmail(), e.getMessage())
             );
-            ErrorResponse errorResponse = new ErrorResponse("Conflict", fieldErrors);
+            ErrorResponse errorResponse = new ErrorResponse("競合エラー", fieldErrors);
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         } catch (IllegalArgumentException e) {
             List<ErrorResponse.FieldError> fieldErrors = List.of(
                 new ErrorResponse.FieldError("email", request.getEmail(), e.getMessage())
             );
-            ErrorResponse errorResponse = new ErrorResponse("Validation failed", fieldErrors);
+            ErrorResponse errorResponse = new ErrorResponse("バリデーションエラー", fieldErrors);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("Internal server error");
+            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -118,7 +118,7 @@ public class AuthController {
             ErrorResponse errorResponse = new ErrorResponse("メールアドレスまたはパスワードが正しくありません");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("Internal server error");
+            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -141,7 +141,7 @@ public class AuthController {
             ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("Internal server error");
+            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -169,7 +169,7 @@ public class AuthController {
             ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("Internal server error");
+            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -196,7 +196,7 @@ public class AuthController {
             response.put("message", "パスワードリセット用のメールを送信しました。メールをご確認ください。");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("Internal server error");
+            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -225,7 +225,7 @@ public class AuthController {
             ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("Internal server error");
+            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.*;
  * Issue#20: アカウント設定機能 - アカウント削除リクエスト
  */
 public class DeleteAccountRequest {
-    @NotNull(message = "Password is required")
+    @NotNull(message = "パスワードは必須です")
     private String password;
 
     public DeleteAccountRequest() {}
