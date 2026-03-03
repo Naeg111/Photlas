@@ -175,7 +175,9 @@ export function SignUpDialog({
           await uploadSnsLinks(token, filledSnsLinks)
         }
 
-        toast('アカウント登録が完了しました')
+        toast('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。', {
+          duration: 8000,
+        })
         onOpenChange(false)
       } else if (response.status === 409) {
         setErrors({ email: 'このメールアドレスは既に登録されています' })

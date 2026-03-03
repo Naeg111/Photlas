@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
 import NotFoundPage from './pages/NotFoundPage'
+import EmailVerificationPage from './pages/EmailVerificationPage'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
 import { TopMenuPanel } from './components/TopMenuPanel'
@@ -556,6 +557,7 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/" element={<MainApp />} />
+        <Route path="/verify-email" element={<EmailVerificationPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AuthProvider>

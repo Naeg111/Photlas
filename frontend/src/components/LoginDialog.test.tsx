@@ -232,6 +232,67 @@ describe('LoginDialog', () => {
       })
     })
 
+    it('shows email not verified error and resend button when 403', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: () => Promise.resolve({
+          message: 'メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。',
+        }),
+      })
+
+      render(<LoginDialog {...defaultProps} />)
+
+      await user.type(screen.getByLabelText('メールアドレス'), 'test@example.com')
+      await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      await waitFor(() => {
+        expect(screen.getByText('メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。')).toBeInTheDocument()
+        expect(screen.getByText('認証メールを再送信する')).toBeInTheDocument()
+      })
+    })
+
+    it('resends verification email when resend button is clicked', async () => {
+      const { toast } = await import('sonner')
+      const user = userEvent.setup()
+      // 1) Login response: email not verified
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: () => Promise.resolve({
+          message: 'メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。',
+        }),
+      })
+
+      render(<LoginDialog {...defaultProps} />)
+
+      await user.type(screen.getByLabelText('メールアドレス'), 'test@example.com')
+      await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      await waitFor(() => {
+        expect(screen.getByText('認証メールを再送信する')).toBeInTheDocument()
+      })
+
+      // 2) Resend verification response
+      mockFetch.mockResolvedValueOnce({ ok: true })
+
+      await user.click(screen.getByText('認証メールを再送信する'))
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/auth/resend-verification'),
+          expect.objectContaining({
+            method: 'POST',
+            body: JSON.stringify({ email: 'test@example.com' }),
+          })
+        )
+        expect(toast).toHaveBeenCalledWith('認証メールを再送信しました。メールをご確認ください。')
+      })
+    })
+
     it('shows error message when network error occurs', async () => {
       const user = userEvent.setup()
       mockFetch.mockRejectedValueOnce(new Error('Network error'))

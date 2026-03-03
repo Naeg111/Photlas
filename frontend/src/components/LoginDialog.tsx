@@ -9,6 +9,9 @@ import { API_V1_URL } from '../config/api'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 
+/** メール未認証エラーメッセージのプレフィックス */
+const EMAIL_NOT_VERIFIED_PREFIX = 'メールアドレスが認証されていません'
+
 /**
  * LoginDialog コンポーネント
  * Issue#26: 認証機能のモーダルベース移行
@@ -35,10 +38,13 @@ export function LoginDialog({
   const [rememberMe, setRememberMe] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [isEmailNotVerified, setIsEmailNotVerified] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isResending, setIsResending] = useState(false)
 
   const handleSubmit = async () => {
     setError('')
+    setIsEmailNotVerified(false)
 
     if (!email.trim() || !password.trim()) {
       setError('メールアドレスとパスワードを入力してください')
@@ -62,6 +68,14 @@ export function LoginDialog({
         )
         toast('ログインしました')
         onOpenChange(false)
+      } else if (response.status === 403) {
+        const data = await response.json()
+        if (data.message?.startsWith(EMAIL_NOT_VERIFIED_PREFIX)) {
+          setIsEmailNotVerified(true)
+          setError(data.message)
+        } else {
+          setError('ログインに失敗しました')
+        }
       } else {
         setError('メールアドレスまたはパスワードが正しくありません')
       }
@@ -69,6 +83,30 @@ export function LoginDialog({
       setError('ログインに失敗しました')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  /**
+   * 認証メール再送ハンドラー
+   */
+  const handleResendVerification = async () => {
+    setIsResending(true)
+    try {
+      const response = await fetch(`${API_V1_URL}/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+
+      if (response.ok) {
+        toast('認証メールを再送信しました。メールをご確認ください。')
+      } else {
+        toast('認証メールの再送信に失敗しました')
+      }
+    } catch {
+      toast('認証メールの再送信に失敗しました')
+    } finally {
+      setIsResending(false)
     }
   }
 
@@ -96,6 +134,16 @@ export function LoginDialog({
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">
               <p className="text-sm text-red-600">{error}</p>
+              {isEmailNotVerified && (
+                <Button
+                  variant="link"
+                  className="p-0 h-auto text-sm mt-1"
+                  onClick={handleResendVerification}
+                  disabled={isResending}
+                >
+                  {isResending ? '送信中...' : '認証メールを再送信する'}
+                </Button>
+              )}
             </div>
           )}
 

@@ -110,9 +110,64 @@ public class AuthController {
             RegisterResponse response = userService.loginUser(request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            if (e.getMessage() != null && e.getMessage().contains("メールアドレスが認証されていません")) {
+                ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+            }
             logger.warn("Login failed - email: {}, IP: {}", request.getEmail(), httpRequest.getRemoteAddr());
             ErrorResponse errorResponse = new ErrorResponse("メールアドレスまたはパスワードが正しくありません");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        } catch (Exception e) {
+            ErrorResponse errorResponse = new ErrorResponse("Internal server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * メールアドレス認証エンドポイント
+     *
+     * @param token 認証トークン
+     * @return レスポンス
+     */
+    @GetMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(@RequestParam String token) {
+        try {
+            userService.verifyEmail(token);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "メールアドレスの認証が完了しました。ログインしてください。");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } catch (Exception e) {
+            ErrorResponse errorResponse = new ErrorResponse("Internal server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * 認証メール再送エンドポイント
+     *
+     * @param request メールアドレスを含むリクエスト
+     * @return レスポンス
+     */
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            if (email == null || email.isBlank()) {
+                ErrorResponse errorResponse = new ErrorResponse("メールアドレスは必須です");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            userService.resendVerificationEmail(email);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "認証メールを再送信しました。メールをご確認ください。");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
             ErrorResponse errorResponse = new ErrorResponse("Internal server error");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);

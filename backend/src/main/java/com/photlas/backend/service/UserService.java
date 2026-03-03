@@ -12,6 +12,8 @@ import com.photlas.backend.entity.UserSnsLink;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.exception.UserNotFoundException;
+import com.photlas.backend.entity.EmailVerificationToken;
+import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.repository.UserSnsLinkRepository;
@@ -42,6 +44,7 @@ public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private static final int PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES = 30;
+    private static final int EMAIL_VERIFICATION_TOKEN_EXPIRATION_HOURS = 24;
 
     // Issue#29: SNSプラットフォーム定数
     private static final List<String> ALLOWED_PLATFORMS = List.of("twitter", "instagram", "youtube", "tiktok");
@@ -58,6 +61,7 @@ public class UserService {
     private final JwtService jwtService;
     private final JavaMailSender mailSender;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final UserSnsLinkRepository userSnsLinkRepository;
     private final S3Service s3Service;
 
@@ -70,6 +74,7 @@ public class UserService {
             JwtService jwtService,
             JavaMailSender mailSender,
             PasswordResetTokenRepository passwordResetTokenRepository,
+            EmailVerificationTokenRepository emailVerificationTokenRepository,
             UserSnsLinkRepository userSnsLinkRepository,
             S3Service s3Service) {
         this.userRepository = userRepository;
@@ -77,10 +82,19 @@ public class UserService {
         this.jwtService = jwtService;
         this.mailSender = mailSender;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.userSnsLinkRepository = userSnsLinkRepository;
         this.s3Service = s3Service;
     }
 
+    /**
+     * ユーザー登録処理
+     * メール認証トークンを生成し、認証メールを送信する。
+     * JWTトークンも返すが、メール認証が完了するまでログインは不可。
+     *
+     * @param request 登録リクエスト
+     * @return 登録レスポンス（JWT付き、プロフィール設定用）
+     */
     public RegisterResponse registerUser(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ConflictException("このメールアドレスは既に登録されています");
@@ -99,7 +113,8 @@ public class UserService {
 
         String token = jwtService.generateToken(user.getEmail());
 
-        sendWelcomeEmail(user.getEmail(), user.getUsername());
+        // メール認証トークンを生成して送信
+        sendVerificationEmail(user);
 
         return new RegisterResponse(
             new RegisterResponse.UserResponse(user),
@@ -107,6 +122,13 @@ public class UserService {
         );
     }
 
+    /**
+     * ログイン処理
+     * メール認証が完了していない場合はログインを拒否する。
+     *
+     * @param request ログインリクエスト
+     * @return ログインレスポンス
+     */
     public RegisterResponse loginUser(LoginRequest request) {
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
 
@@ -118,6 +140,10 @@ public class UserService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid email or password");
+        }
+
+        if (!user.isEmailVerified()) {
+            throw new IllegalArgumentException("メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。");
         }
 
         String token = jwtService.generateToken(user.getEmail());
@@ -241,6 +267,99 @@ public class UserService {
             // Log the error but don't fail the request
             logger.error("Failed to send password reset email: {}", e.getMessage());
         }
+    }
+
+    /**
+     * メール認証トークンを生成して認証メールを送信
+     *
+     * @param user 対象ユーザー
+     */
+    private void sendVerificationEmail(User user) {
+        // 既存のトークンがあれば削除
+        emailVerificationTokenRepository.findByUserId(user.getId()).ifPresent(
+            token -> emailVerificationTokenRepository.delete(token)
+        );
+
+        String token = generateSecureToken();
+        Date expiryDate = new Date(System.currentTimeMillis()
+                + EMAIL_VERIFICATION_TOKEN_EXPIRATION_HOURS * 60 * 60 * 1000);
+
+        EmailVerificationToken verificationToken = new EmailVerificationToken(
+                user.getId(), token, expiryDate);
+        emailVerificationTokenRepository.save(verificationToken);
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(user.getEmail());
+            message.setSubject("【Photlas】メールアドレスの確認");
+            message.setText(user.getUsername() + " さん\n\n" +
+                           "Photlasへのご登録ありがとうございます！\n" +
+                           "以下のリンクをクリックして、メールアドレスを確認してください：\n\n" +
+                           frontendUrl + "/verify-email?token=" + token + "\n\n" +
+                           "このリンクの有効期限は24時間です。\n\n" +
+                           "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
+                           "Photlas チーム");
+
+            mailSender.send(message);
+        } catch (Exception e) {
+            logger.error("Failed to send verification email: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * メールアドレスを認証する
+     *
+     * @param token 認証トークン
+     */
+    @Transactional
+    public void verifyEmail(String token) {
+        Optional<EmailVerificationToken> tokenOptional =
+                emailVerificationTokenRepository.findByToken(token);
+
+        if (tokenOptional.isEmpty()) {
+            throw new IllegalArgumentException("認証トークンが無効または期限切れです");
+        }
+
+        EmailVerificationToken verificationToken = tokenOptional.get();
+
+        if (verificationToken.getExpiryDate().before(new Date())) {
+            emailVerificationTokenRepository.delete(verificationToken);
+            throw new IllegalArgumentException("認証トークンが無効または期限切れです");
+        }
+
+        Optional<User> userOptional = userRepository.findById(verificationToken.getUserId());
+        if (userOptional.isEmpty()) {
+            throw new IllegalArgumentException("ユーザーが見つかりません");
+        }
+
+        User user = userOptional.get();
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        emailVerificationTokenRepository.delete(verificationToken);
+    }
+
+    /**
+     * 認証メールを再送信する
+     *
+     * @param email メールアドレス
+     */
+    @Transactional
+    public void resendVerificationEmail(String email) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+
+        if (userOptional.isEmpty()) {
+            // セキュリティ上、メールアドレスが存在しない場合でも同じレスポンスを返す
+            return;
+        }
+
+        User user = userOptional.get();
+
+        if (user.isEmailVerified()) {
+            throw new IllegalArgumentException("このメールアドレスは既に認証済みです");
+        }
+
+        sendVerificationEmail(user);
     }
 
     private void sendWelcomeEmail(String email, String username) {
