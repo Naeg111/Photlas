@@ -535,22 +535,127 @@ describe('SignUpDialog', () => {
   })
 
   describe('SNS Links - SNSリンク', () => {
+    it('renders platform selector and URL input for SNS links', () => {
+      render(<SignUpDialog {...defaultProps} />)
+
+      // プラットフォーム選択とURL入力がある
+      expect(screen.getByTestId('sns-platform-select-0')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('https://...')).toBeInTheDocument()
+    })
+
     it('allows adding up to 3 SNS links', async () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
       // 最初は1つのSNSリンク入力欄がある
-      expect(screen.getAllByPlaceholderText('https://twitter.com/username')).toHaveLength(1)
+      expect(screen.getByTestId('sns-platform-select-0')).toBeInTheDocument()
 
       // SNSリンクを追加ボタンをクリック
       await user.click(screen.getByRole('button', { name: 'SNSリンクを追加' }))
-      expect(screen.getAllByPlaceholderText('https://twitter.com/username')).toHaveLength(2)
+      expect(screen.getByTestId('sns-platform-select-1')).toBeInTheDocument()
 
       await user.click(screen.getByRole('button', { name: 'SNSリンクを追加' }))
-      expect(screen.getAllByPlaceholderText('https://twitter.com/username')).toHaveLength(3)
+      expect(screen.getByTestId('sns-platform-select-2')).toBeInTheDocument()
 
       // 3つに達したら追加ボタンが非表示
       expect(screen.queryByRole('button', { name: 'SNSリンクを追加' })).not.toBeInTheDocument()
+    })
+
+    it('allows removing SNS link entries', async () => {
+      const user = userEvent.setup()
+      render(<SignUpDialog {...defaultProps} />)
+
+      // 2つ目を追加
+      await user.click(screen.getByRole('button', { name: 'SNSリンクを追加' }))
+      expect(screen.getByTestId('sns-platform-select-1')).toBeInTheDocument()
+
+      // 削除ボタンで削除
+      const removeButtons = screen.getAllByTestId(/^remove-sns-link-/)
+      await user.click(removeButtons[0])
+
+      // 1つに戻る
+      expect(screen.queryByTestId('sns-platform-select-1')).not.toBeInTheDocument()
+    })
+
+    it('sends SNS links to server after successful registration', async () => {
+      const user = userEvent.setup()
+      // 1) Registration API response
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
+          token: 'test-jwt-token',
+        }),
+      })
+      // 2) SNS links API response
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ snsLinks: [] }),
+      })
+
+      render(<SignUpDialog {...defaultProps} />)
+
+      // SNSリンクを入力
+      const urlInput = screen.getByPlaceholderText('https://...')
+      await user.type(urlInput, 'https://x.com/testuser')
+
+      // フォームを入力して送信
+      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+      await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
+      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      await waitFor(() => {
+        // SNSリンクAPIが呼ばれていること
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/users/me/sns-links'),
+          expect.objectContaining({
+            method: 'PUT',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer test-jwt-token',
+            }),
+            body: JSON.stringify({
+              snsLinks: [{ platform: 'twitter', url: 'https://x.com/testuser' }],
+            }),
+          })
+        )
+      })
+    })
+
+    it('does not send empty SNS links to server', async () => {
+      const { toast } = await import('sonner')
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
+          token: 'test-jwt-token',
+        }),
+      })
+
+      render(<SignUpDialog {...defaultProps} />)
+
+      // SNSリンクは入力しない（空のまま）
+
+      // フォームを入力して送信
+      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+      await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
+      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      await waitFor(() => {
+        expect(toast).toHaveBeenCalledWith('アカウント登録が完了しました')
+      })
+
+      // SNSリンクAPIが呼ばれていないこと
+      const snsCalls = mockFetch.mock.calls.filter(
+        (call) => typeof call[0] === 'string' && call[0].includes('/sns-links')
+      )
+      expect(snsCalls).toHaveLength(0)
     })
   })
 })

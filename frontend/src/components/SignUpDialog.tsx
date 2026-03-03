@@ -7,7 +7,7 @@ import { Checkbox } from './ui/checkbox'
 import { Separator } from './ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { ScrollArea } from './ui/scroll-area'
-import { Upload, Eye, EyeOff } from 'lucide-react'
+import { Upload, Eye, EyeOff, X as XIcon } from 'lucide-react'
 import { API_V1_URL } from '../config/api'
 import { toast } from 'sonner'
 import {
@@ -23,6 +23,19 @@ import {
  *
  * マップ画面を離れることなく新規登録を行えるダイアログ
  */
+
+// SNSプラットフォーム定義
+const SNS_PLATFORMS = [
+  { value: 'twitter', label: 'X (Twitter)' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'tiktok', label: 'TikTok' },
+] as const
+
+interface SnsLinkInput {
+  platform: string
+  url: string
+}
 
 interface SignUpDialogProps {
   open: boolean
@@ -43,7 +56,7 @@ export function SignUpDialog({
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [snsLinks, setSnsLinks] = useState<string[]>([''])
+  const [snsLinks, setSnsLinks] = useState<SnsLinkInput[]>([{ platform: 'twitter', url: '' }])
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -156,6 +169,12 @@ export function SignUpDialog({
           await uploadProfileImage(token, profileImageFile)
         }
 
+        // SNSリンクが入力されていれば送信
+        const filledSnsLinks = snsLinks.filter(link => link.url.trim() !== '')
+        if (filledSnsLinks.length > 0 && token) {
+          await uploadSnsLinks(token, filledSnsLinks)
+        }
+
         toast('アカウント登録が完了しました')
         onOpenChange(false)
       } else if (response.status === 409) {
@@ -190,7 +209,36 @@ export function SignUpDialog({
 
   const handleAddSnsLink = () => {
     if (snsLinks.length < MAX_SNS_LINKS) {
-      setSnsLinks([...snsLinks, ''])
+      setSnsLinks([...snsLinks, { platform: 'twitter', url: '' }])
+    }
+  }
+
+  const handleRemoveSnsLink = (index: number) => {
+    setSnsLinks(snsLinks.filter((_, i) => i !== index))
+  }
+
+  const handleUpdateSnsLink = (index: number, field: 'platform' | 'url', value: string) => {
+    const updated = [...snsLinks]
+    updated[index] = { ...updated[index], [field]: value }
+    setSnsLinks(updated)
+  }
+
+  /**
+   * 登録後にSNSリンクをサーバーに送信する
+   * SNSリンク送信の失敗は登録処理には影響しない
+   */
+  const uploadSnsLinks = async (token: string, links: SnsLinkInput[]) => {
+    try {
+      await fetch(`${API_V1_URL}/users/me/sns-links`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ snsLinks: links }),
+      })
+    } catch {
+      // SNSリンク送信の失敗は登録処理に影響しない
     }
   }
 
@@ -344,16 +392,35 @@ export function SignUpDialog({
           <div className="space-y-3">
             <Label>SNSリンク（任意）</Label>
             {snsLinks.map((link, index) => (
-              <Input
-                key={index}
-                value={link}
-                onChange={(e) => {
-                  const newLinks = [...snsLinks]
-                  newLinks[index] = e.target.value
-                  setSnsLinks(newLinks)
-                }}
-                placeholder="https://twitter.com/username"
-              />
+              <div key={index} className="flex gap-2 items-center">
+                <select
+                  data-testid={`sns-platform-select-${index}`}
+                  className="w-32 border rounded-md px-3 py-2"
+                  value={link.platform}
+                  onChange={(e) => handleUpdateSnsLink(index, 'platform', e.target.value)}
+                >
+                  {SNS_PLATFORMS.map((platform) => (
+                    <option key={platform.value} value={platform.value}>
+                      {platform.label}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  placeholder="https://..."
+                  className="flex-1"
+                  value={link.url}
+                  onChange={(e) => handleUpdateSnsLink(index, 'url', e.target.value)}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  data-testid={`remove-sns-link-${index}`}
+                  onClick={() => handleRemoveSnsLink(index)}
+                  type="button"
+                >
+                  <XIcon className="w-4 h-4" />
+                </Button>
+              </div>
             ))}
             {snsLinks.length < MAX_SNS_LINKS && (
               <Button
