@@ -358,7 +358,7 @@ describe('SignUpDialog', () => {
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
-        expect(toast).toHaveBeenCalledWith('アカウント登録が完了しました')
+        expect(toast).toHaveBeenCalledWith('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。', { duration: 8000 })
         expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
       })
     })
@@ -459,7 +459,7 @@ describe('SignUpDialog', () => {
 
       // 画像アップロードが失敗しても登録自体は成功する
       await waitFor(() => {
-        expect(toast).toHaveBeenCalledWith('アカウント登録が完了しました')
+        expect(toast).toHaveBeenCalledWith('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。', { duration: 8000 })
         expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
       })
     })
@@ -648,7 +648,7 @@ describe('SignUpDialog', () => {
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
-        expect(toast).toHaveBeenCalledWith('アカウント登録が完了しました')
+        expect(toast).toHaveBeenCalledWith('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。', { duration: 8000 })
       })
 
       // SNSリンクAPIが呼ばれていないこと
