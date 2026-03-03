@@ -38,6 +38,7 @@ export function SignUpDialog({
   onShowLogin,
 }: SignUpDialogProps) {
   const [profileImage, setProfileImage] = useState<string>('')
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -86,6 +87,49 @@ export function SignUpDialog({
     return Object.keys(newErrors).length === 0
   }
 
+  /**
+   * 登録後にプロフィール画像をアップロードする
+   * 画像アップロードの失敗は登録処理には影響しない
+   */
+  const uploadProfileImage = async (token: string, file: File) => {
+    try {
+      const extension = file.name.split('.').pop()?.toLowerCase() || 'png'
+      const contentType = file.type || 'image/png'
+
+      const presignedResponse = await fetch(
+        `${API_V1_URL}/users/me/profile-image/presigned-url`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ extension, contentType }),
+        }
+      )
+
+      if (!presignedResponse.ok) return
+
+      const { uploadUrl, objectKey } = await presignedResponse.json()
+
+      await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+      })
+
+      await fetch(`${API_V1_URL}/users/me/profile-image`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ objectKey }),
+      })
+    } catch {
+      // 画像アップロードの失敗は登録処理に影響しない
+    }
+  }
+
   const handleSubmit = async () => {
     if (!validateForm()) {
       return
@@ -104,6 +148,14 @@ export function SignUpDialog({
       })
 
       if (response.ok) {
+        const data = await response.json()
+        const token = data.token
+
+        // プロフィール画像が選択されていればアップロード
+        if (profileImageFile && token) {
+          await uploadProfileImage(token, profileImageFile)
+        }
+
         toast('アカウント登録が完了しました')
         onOpenChange(false)
       } else if (response.status === 409) {
@@ -123,6 +175,7 @@ export function SignUpDialog({
     if (file) {
       const url = URL.createObjectURL(file)
       setProfileImage(url)
+      setProfileImageFile(file)
     }
   }
 
