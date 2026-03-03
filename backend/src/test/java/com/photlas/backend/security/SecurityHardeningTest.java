@@ -70,12 +70,13 @@ public class SecurityHardeningTest {
         // クリーンアップ
         userRepository.deleteAll();
 
-        // テストユーザーを作成
+        // テストユーザーを作成（メール認証済み）
         testUser = new User();
         testUser.setUsername(TEST_USERNAME);
         testUser.setEmail(TEST_EMAIL);
         testUser.setPasswordHash(passwordEncoder.encode(TEST_PASSWORD));
         testUser.setRole(TEST_USER_ROLE);
+        testUser.setEmailVerified(true);
         testUser = userRepository.save(testUser);
 
         // JWTトークンを生成

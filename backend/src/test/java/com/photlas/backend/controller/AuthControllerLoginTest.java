@@ -51,12 +51,13 @@ public class AuthControllerLoginTest {
     void setUp() {
         userRepository.deleteAll();
 
-        // テスト用ユーザーを作成
+        // テスト用ユーザーを作成（メール認証済み）
         testUser = new User();
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
         testUser.setPasswordHash(passwordEncoder.encode("Password123"));
         testUser.setRole("USER");
+        testUser.setEmailVerified(true);
         userRepository.save(testUser);
     }
 
@@ -157,5 +158,28 @@ public class AuthControllerLoginTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("メール未認証ユーザーのログイン - 403 Forbidden")
+    void testLogin_EmailNotVerified_ReturnsForbidden() throws Exception {
+        // メール未認証のユーザーを作成
+        User unverifiedUser = new User();
+        unverifiedUser.setUsername("unverified");
+        unverifiedUser.setEmail("unverified@example.com");
+        unverifiedUser.setPasswordHash(passwordEncoder.encode("Password123"));
+        unverifiedUser.setRole("USER");
+        unverifiedUser.setEmailVerified(false);
+        userRepository.save(unverifiedUser);
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("unverified@example.com");
+        request.setPassword("Password123");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", is("メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。")));
     }
 }

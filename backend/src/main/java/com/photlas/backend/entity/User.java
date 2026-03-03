@@ -40,6 +40,9 @@ public class User {
     @Column(name = "profile_image_s3_key", length = 512)
     private String profileImageS3Key;
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -104,6 +107,14 @@ public class User {
 
     public void setProfileImageS3Key(String profileImageS3Key) {
         this.profileImageS3Key = profileImageS3Key;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 
     public LocalDateTime getCreatedAt() {
