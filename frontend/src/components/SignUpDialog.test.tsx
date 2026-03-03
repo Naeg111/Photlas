@@ -17,6 +17,10 @@ vi.mock('sonner', () => ({
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
+// URL.createObjectURLのモック
+global.URL.createObjectURL = vi.fn(() => 'blob:http://localhost/test-image')
+global.URL.revokeObjectURL = vi.fn()
+
 describe('SignUpDialog', () => {
   const defaultProps = {
     open: true,
@@ -302,7 +306,10 @@ describe('SignUpDialog', () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ id: 1, username: 'テストユーザー', email: 'test@example.com' }),
+        json: () => Promise.resolve({
+          user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
+          token: 'test-jwt-token',
+        }),
       })
 
       render(<SignUpDialog {...defaultProps} />)
@@ -335,7 +342,10 @@ describe('SignUpDialog', () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ id: 1 }),
+        json: () => Promise.resolve({
+          user: { id: 1 },
+          token: 'test-jwt-token',
+        }),
       })
 
       render(<SignUpDialog {...defaultProps} />)
@@ -347,6 +357,107 @@ describe('SignUpDialog', () => {
       await user.click(screen.getByLabelText('利用規約に同意します'))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
+      await waitFor(() => {
+        expect(toast).toHaveBeenCalledWith('アカウント登録が完了しました')
+        expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
+      })
+    })
+
+    it('uploads profile image after successful registration', async () => {
+      const user = userEvent.setup()
+      // 1) Registration API response
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
+          token: 'test-jwt-token',
+        }),
+      })
+      // 2) Presigned URL response
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          uploadUrl: 'https://s3.example.com/upload',
+          objectKey: 'profile-images/1/test.png',
+        }),
+      })
+      // 3) S3 upload response
+      mockFetch.mockResolvedValueOnce({ ok: true })
+      // 4) Register S3 key response
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ profileImageUrl: 'https://cdn.example.com/profile-images/1/test.png' }),
+      })
+
+      render(<SignUpDialog {...defaultProps} />)
+
+      // プロフィール画像を選択
+      const file = new File(['test'], 'test.png', { type: 'image/png' })
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(fileInput, file)
+
+      // フォームを入力して送信
+      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+      await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
+      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      await waitFor(() => {
+        // Presigned URL取得にJWTトークンが使われていること
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/users/me/profile-image/presigned-url'),
+          expect.objectContaining({
+            method: 'POST',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer test-jwt-token',
+            }),
+          })
+        )
+        // S3キー登録が呼ばれていること
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/users/me/profile-image'),
+          expect.objectContaining({
+            method: 'PUT',
+            headers: expect.objectContaining({
+              Authorization: 'Bearer test-jwt-token',
+            }),
+          })
+        )
+      })
+    })
+
+    it('registration succeeds even if profile image upload fails', async () => {
+      const { toast } = await import('sonner')
+      const user = userEvent.setup()
+      // 1) Registration API response
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
+          token: 'test-jwt-token',
+        }),
+      })
+      // 2) Presigned URL request fails
+      mockFetch.mockResolvedValueOnce({ ok: false, status: 500 })
+
+      render(<SignUpDialog {...defaultProps} />)
+
+      // プロフィール画像を選択
+      const file = new File(['test'], 'test.png', { type: 'image/png' })
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(fileInput, file)
+
+      // フォームを入力して送信
+      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+      await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
+      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      // 画像アップロードが失敗しても登録自体は成功する
       await waitFor(() => {
         expect(toast).toHaveBeenCalledWith('アカウント登録が完了しました')
         expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
