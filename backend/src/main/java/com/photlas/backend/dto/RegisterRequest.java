@@ -7,20 +7,20 @@ import jakarta.validation.constraints.*;
  * Issue#21: パスワードバリデーション統一
  */
 public class RegisterRequest {
-    @NotNull(message = "Username is required")
-    @Size(min = 2, max = 12, message = "Username must be between 2 and 12 characters")
+    @NotNull(message = "ユーザー名は必須です")
+    @Size(min = 2, max = 12, message = "ユーザー名は2文字以上12文字以内で入力してください")
     private String username;
 
-    @NotNull(message = "Email is required")
-    @Email(message = "Email should be valid")
+    @NotNull(message = "メールアドレスは必須です")
+    @Email(message = "正しいメールアドレスの形式で入力してください")
     private String email;
 
-    @NotNull(message = "Password is required")
-    @Size(min = 8, max = 20, message = "Password must be between 8 and 20 characters")
+    @NotNull(message = "パスワードは必須です")
+    @Size(min = 8, max = 20, message = "パスワードは8文字以上20文字以内で入力してください")
     // Issue#21: パスワードバリデーション統一 - 記号禁止、英数字のみ
     @Pattern(
         regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]+$",
-        message = "Password must contain at least one digit, one lowercase letter, one uppercase letter, and no special characters"
+        message = "パスワードには数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません"
     )
     private String password;
 
