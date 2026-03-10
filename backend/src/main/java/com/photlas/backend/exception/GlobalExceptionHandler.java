@@ -103,6 +103,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
+     * Issue#54: 自分のコンテンツ通報エラー（400 Bad Request）をハンドリング
+     */
+    @ExceptionHandler(SelfReportException.class)
+    public ResponseEntity<ErrorResponse> handleSelfReportException(SelfReportException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
      * 未ハンドル例外のcatch-all（スタックトレース漏洩防止）
      */
     @ExceptionHandler(Exception.class)
