@@ -332,6 +332,11 @@ public class PhotoService {
         photoDTO.setCropCenterY(photo.getCropCenterY());
         photoDTO.setCropZoom(photo.getCropZoom());
 
+        // Issue#54: モデレーションステータスを設定
+        if (photo.getModerationStatus() != null) {
+            photoDTO.setModerationStatus(photo.getModerationStatus().name());
+        }
+
         // EXIF情報を設定（1つでも値があればExifDTOを生成）
         PhotoResponse.ExifDTO exifDTO = buildExifDTO(photo);
         photoDTO.setExif(exifDTO);

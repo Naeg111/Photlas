@@ -96,6 +96,7 @@ function createMockApiResponse(overrides?: {
   cropCenterX?: number | null
   cropCenterY?: number | null
   cropZoom?: number | null
+  moderationStatus?: string | null
 }) {
   return {
     photo: {
@@ -112,6 +113,7 @@ function createMockApiResponse(overrides?: {
       crop_center_x: overrides?.cropCenterX ?? null,
       crop_center_y: overrides?.cropCenterY ?? null,
       crop_zoom: overrides?.cropZoom ?? null,
+      moderation_status: overrides?.moderationStatus ?? null,
     },
     spot: {
       spot_id: overrides?.spotId ?? TEST_SPOT_ID,
@@ -1033,6 +1035,91 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await user.click(screen.getByAltText(TEST_PHOTO_TITLE_1))
 
       expect(mockImageClick).toHaveBeenCalledWith(photoDetail.photo.image_url)
+    })
+  })
+
+  // Issue#54: モデレーションステータスバナーのテスト
+  describe('Issue#54: モデレーションステータスバナー', () => {
+    it('QUARANTINED状態の写真に非公開バナーが表示される', async () => {
+      mockUseAuth.mockReturnValue({ isAuthenticated: true, userId: TEST_USER_ID })
+
+      const photoDetail = createMockApiResponse({
+        moderationStatus: 'QUARANTINED',
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('quarantined-banner')).toBeInTheDocument()
+      })
+
+      expect(screen.getByText('この投稿はコンテンツポリシーに違反している可能性があるため、現在非公開です。')).toBeInTheDocument()
+    })
+
+    it('PENDING_REVIEW状態の写真に審査中バナーが表示される', async () => {
+      mockUseAuth.mockReturnValue({ isAuthenticated: true, userId: TEST_USER_ID })
+
+      const photoDetail = createMockApiResponse({
+        moderationStatus: 'PENDING_REVIEW',
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('pending-review-banner')).toBeInTheDocument()
+      })
+
+      expect(screen.getByText('この投稿は審査中です。審査完了後に公開されます。')).toBeInTheDocument()
+    })
+
+    it('PUBLISHED状態の写真にはバナーが表示されない', async () => {
+      mockUseAuth.mockReturnValue({ isAuthenticated: true, userId: TEST_USER_ID })
+
+      const photoDetail = createMockApiResponse({
+        moderationStatus: 'PUBLISHED',
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
+      })
+
+      expect(screen.queryByTestId('quarantined-banner')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('pending-review-banner')).not.toBeInTheDocument()
     })
   })
 })
