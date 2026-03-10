@@ -9,6 +9,7 @@ import com.photlas.backend.dto.UserProfileResponse;
 import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserSnsLink;
+import com.photlas.backend.exception.AccountSuspendedException;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.exception.UserNotFoundException;
@@ -148,7 +149,7 @@ public class UserService {
 
         // Issue#54: 永久停止アカウントのログインブロック
         if ("SUSPENDED".equals(user.getRole())) {
-            throw new IllegalArgumentException("アカウントが停止されています");
+            throw new AccountSuspendedException("アカウントが停止されています");
         }
 
         String token = jwtService.generateTokenWithRole(user.getEmail(), user.getRole());
