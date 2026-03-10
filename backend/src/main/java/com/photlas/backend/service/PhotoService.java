@@ -24,9 +24,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.photlas.backend.entity.ModerationStatus;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -173,13 +176,17 @@ public class PhotoService {
      */
     @Transactional(readOnly = true)
     public Map<String, Object> getUserPhotos(Long userId, Pageable pageable, String email) {
-        Page<Photo> photoPage = photoRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
-
-        // ログインユーザー情報を取得（お気に入り判定用）
+        // ログインユーザー情報を取得
         User currentUser = null;
         if (email != null) {
             currentUser = userRepository.findByEmail(email).orElse(null);
         }
+
+        // Issue#54: モデレーションステータスによるフィルタリング
+        Collection<ModerationStatus> visibleStatuses = getVisibleStatuses(userId, currentUser);
+        Page<Photo> photoPage = photoRepository.findByUserIdAndModerationStatusInOrderByCreatedAtDesc(
+                userId, visibleStatuses, pageable);
+
         final User finalCurrentUser = currentUser;
 
         Page<PhotoResponse> photoResponses = photoPage.map(photo -> {
@@ -308,6 +315,22 @@ public class PhotoService {
         );
 
         return new PhotoResponse(photoDTO, spotDTO, userDTO);
+    }
+
+    /**
+     * Issue#54: リクエスト者に対して表示可能なモデレーションステータスを返す
+     *
+     * @param targetUserId 対象ユーザーのID
+     * @param currentUser リクエスト者（未認証の場合はnull）
+     * @return 表示可能なステータスのコレクション
+     */
+    private Collection<ModerationStatus> getVisibleStatuses(Long targetUserId, User currentUser) {
+        if (currentUser != null && currentUser.getId().equals(targetUserId)) {
+            // 投稿者本人: PENDING_REVIEW, PUBLISHED, QUARANTINED が閲覧可能
+            return List.of(ModerationStatus.PENDING_REVIEW, ModerationStatus.PUBLISHED, ModerationStatus.QUARANTINED);
+        }
+        // 他ユーザー・未認証: PUBLISHEDのみ
+        return List.of(ModerationStatus.PUBLISHED);
     }
 
     /**

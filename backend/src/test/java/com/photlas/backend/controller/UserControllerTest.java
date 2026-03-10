@@ -1005,6 +1005,7 @@ public class UserControllerTest {
         photo.setTitle(title);
         photo.setShotAt(LocalDateTime.of(2026, 1, 15, 10, 0));
         photo.setWeather("sunny");
+        photo.setModerationStatus(com.photlas.backend.entity.ModerationStatus.PUBLISHED);
         return photoRepository.save(photo);
     }
 }
