@@ -103,6 +103,29 @@ public class PhotoController {
     }
 
     /**
+     * Issue#54: 写真のモデレーションステータスを取得する（ポーリング用）
+     *
+     * @param photoId 写真ID
+     * @param authentication 認証情報
+     * @return モデレーションステータス
+     */
+    @GetMapping("/{photoId}/status")
+    public ResponseEntity<java.util.Map<String, String>> getPhotoStatus(
+            @PathVariable Long photoId,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+
+        com.photlas.backend.entity.Photo photo = photoService.getPhotoForOwner(photoId, user.getId());
+        return ResponseEntity.ok(java.util.Map.of(
+                "photo_id", photo.getPhotoId().toString(),
+                "moderation_status", photo.getModerationStatus().name()
+        ));
+    }
+
+    /**
      * CategoryNotFoundExceptionをハンドリング
      */
     @ExceptionHandler(CategoryNotFoundException.class)
