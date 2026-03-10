@@ -318,4 +318,22 @@ public class ReportControllerTest {
                 .content(invalidRequest))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("Issue#54 - 自分の投稿を通報するとBadRequest")
+    void testCreateReport_SelfReport_ReturnsBadRequest() throws Exception {
+        // photoOwnerのトークンを生成
+        String ownerToken = jwtService.generateToken(PHOTO_OWNER_EMAIL);
+
+        com.photlas.backend.dto.ReportRequest request =
+            createReportRequest(REASON_ADULT_CONTENT, DETAILS_ADULT_CONTENT);
+
+        mockMvc.perform(post(getReportEndpoint(testPhoto.getPhotoId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(ownerToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath(JSON_PATH_MESSAGE).value(containsString("自分の投稿を通報")));
+    }
 }
