@@ -73,6 +73,9 @@ export function LoginDialog({
         if (data.message?.startsWith(EMAIL_NOT_VERIFIED_PREFIX)) {
           setIsEmailNotVerified(true)
           setError(data.message)
+        } else if (data.message === 'アカウントが停止されています') {
+          // Issue#54: 永久停止アカウント
+          setError('アカウントが停止されています。詳しくはお問い合わせください。')
         } else {
           setError('ログインに失敗しました')
         }

@@ -355,4 +355,26 @@ describe('LoginDialog', () => {
       expect(defaultProps.onShowPasswordReset).toHaveBeenCalled()
     })
   })
+
+  // Issue#54: アカウント停止テスト
+  describe('アカウント停止', () => {
+    it('永久停止アカウントのログイン時にエラーメッセージが表示される', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({ message: 'アカウントが停止されています' }),
+      })
+
+      const user = userEvent.setup()
+      render(<LoginDialog {...defaultProps} />)
+
+      await user.type(screen.getByLabelText('メールアドレス'), 'suspended@example.com')
+      await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      await waitFor(() => {
+        expect(screen.getByText('アカウントが停止されています。詳しくはお問い合わせください。')).toBeInTheDocument()
+      })
+    })
+  })
 })
