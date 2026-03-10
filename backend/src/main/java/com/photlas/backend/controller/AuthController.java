@@ -6,6 +6,7 @@ import com.photlas.backend.dto.PasswordResetRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.RegisterResponse;
 import com.photlas.backend.dto.ResetPasswordRequest;
+import com.photlas.backend.exception.AccountSuspendedException;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -109,6 +110,10 @@ public class AuthController {
         try {
             RegisterResponse response = userService.loginUser(request);
             return ResponseEntity.ok(response);
+        } catch (AccountSuspendedException e) {
+            // Issue#54: 永久停止アカウントのログイン拒否
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
         } catch (IllegalArgumentException e) {
             if (e.getMessage() != null && e.getMessage().contains("メールアドレスが認証されていません")) {
                 ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
