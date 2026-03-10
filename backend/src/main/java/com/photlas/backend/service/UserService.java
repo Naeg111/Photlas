@@ -146,6 +146,11 @@ public class UserService {
             throw new IllegalArgumentException("メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。");
         }
 
+        // Issue#54: 永久停止アカウントのログインブロック
+        if ("SUSPENDED".equals(user.getRole())) {
+            throw new IllegalArgumentException("アカウントが停止されています");
+        }
+
         String token = jwtService.generateTokenWithRole(user.getEmail(), user.getRole());
 
         return new RegisterResponse(
