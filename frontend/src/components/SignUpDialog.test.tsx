@@ -174,12 +174,20 @@ describe('SignUpDialog', () => {
       expect(screen.getByRole('button', { name: '登録する' })).toBeDisabled()
     })
 
-    it('shows error when email format is invalid', async () => {
+    it.each([
+      ['invalid-email', '@なし'],
+      ['@', '@のみ'],
+      ['user@', 'ドメインなし'],
+      ['@example.com', 'ローカル部なし'],
+      ['user@example', 'ドットなしドメイン'],
+      ['user @example.com', 'スペース含み'],
+      ['user@@example.com', '@が複数'],
+    ])('shows error when email format is invalid (%s - %s)', async (invalidEmail) => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
-      await user.type(screen.getByLabelText(/メールアドレス/), 'invalid-email')
+      await user.type(screen.getByLabelText(/メールアドレス/), invalidEmail)
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
       await user.click(screen.getByLabelText('利用規約に同意します'))
