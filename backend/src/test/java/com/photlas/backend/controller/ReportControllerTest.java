@@ -89,22 +89,22 @@ public class ReportControllerTest {
     private static final String TEST_TIME_OF_DAY = "朝";
     private static final String TEST_WEATHER = "晴れ";
 
-    // Test Data Constants - Report Reasons
-    private static final String REASON_INAPPROPRIATE_CONTENT = "INAPPROPRIATE_CONTENT";
+    // Test Data Constants - Report Reasons (Issue#54)
+    private static final String REASON_ADULT_CONTENT = "ADULT_CONTENT";
+    private static final String REASON_VIOLENCE = "VIOLENCE";
     private static final String REASON_PRIVACY_VIOLATION = "PRIVACY_VIOLATION";
-    private static final String REASON_WRONG_LOCATION = "WRONG_LOCATION";
     private static final String REASON_COPYRIGHT_INFRINGEMENT = "COPYRIGHT_INFRINGEMENT";
+    private static final String REASON_SPAM = "SPAM";
+    private static final String REASON_OTHER = "OTHER";
     private static final String REASON_INVALID = "INVALID_REASON";
 
     // Test Data Constants - Report Details
-    private static final String DETAILS_INAPPROPRIATE_CONTENT = "不適切な内容が含まれています";
+    private static final String DETAILS_ADULT_CONTENT = "不適切な内容が含まれています";
     private static final String DETAILS_PRIVACY_VIOLATION = "プライバシーの問題があります";
-    private static final String DETAILS_WRONG_LOCATION = "場所が間違っています";
     private static final String DETAILS_GENERIC = "詳細情報";
-    private static final String DETAILS_EMPTY = "";
 
     // Test Data Constants - Error Messages
-    private static final String ERROR_MESSAGE_ALREADY_REPORTED = "すでに報告済みです";
+    private static final String ERROR_MESSAGE_ALREADY_REPORTED = "すでに通報済みです";
 
     // Test Data Constants - Validation
     private static final int DETAILS_MAX_LENGTH = 300;
@@ -214,10 +214,10 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#19 - 正常ケース: レポート作成成功")
+    @DisplayName("Issue#54 - 正常ケース: 通報作成成功")
     void testCreateReport_ValidRequest_ReturnsCreated() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
-            createReportRequest(REASON_INAPPROPRIATE_CONTENT, DETAILS_INAPPROPRIATE_CONTENT);
+            createReportRequest(REASON_ADULT_CONTENT, DETAILS_ADULT_CONTENT);
 
         mockMvc.perform(post(getReportEndpoint(testPhoto.getPhotoId()))
                 .with(csrf())
@@ -227,20 +227,20 @@ public class ReportControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath(JSON_PATH_REPORTING_USER_ID).value(testUser.getId()))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_ID).value(testPhoto.getPhotoId()))
-                .andExpect(jsonPath(JSON_PATH_REASON).value(REASON_INAPPROPRIATE_CONTENT))
-                .andExpect(jsonPath(JSON_PATH_DETAILS).value(DETAILS_INAPPROPRIATE_CONTENT));
+                .andExpect(jsonPath(JSON_PATH_REASON).value(REASON_ADULT_CONTENT))
+                .andExpect(jsonPath(JSON_PATH_DETAILS).value(DETAILS_ADULT_CONTENT));
     }
 
     @Test
-    @DisplayName("Issue#19 - 重複ケース: 同じユーザーが同じ写真を再度報告")
+    @DisplayName("Issue#54 - 重複ケース: 同じユーザーが同じ写真を再度通報")
     void testCreateReport_DuplicateReport_ReturnsConflict() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
             createReportRequest(REASON_PRIVACY_VIOLATION, DETAILS_PRIVACY_VIOLATION);
 
-        // 1回目のレポート作成
+        // 1回目の通報作成
         performCreateReport(testPhoto.getPhotoId(), request);
 
-        // 2回目のレポート作成（重複）
+        // 2回目の通報作成（重複）
         mockMvc.perform(post(getReportEndpoint(testPhoto.getPhotoId()))
                 .with(csrf())
                 .header(HEADER_AUTHORIZATION, getBearerToken(token))
@@ -251,10 +251,10 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#19 - 未認証ケース: 認証なしでアクセス")
+    @DisplayName("Issue#54 - 未認証ケース: 認証なしでアクセス")
     void testCreateReport_Unauthorized_ReturnsUnauthorized() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
-            createReportRequest(REASON_WRONG_LOCATION, DETAILS_WRONG_LOCATION);
+            createReportRequest(REASON_SPAM, DETAILS_GENERIC);
 
         mockMvc.perform(post(getReportEndpoint(testPhoto.getPhotoId()))
                 .with(csrf())
@@ -264,7 +264,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#19 - バリデーションエラー: reasonが空")
+    @DisplayName("Issue#54 - バリデーションエラー: reasonが空")
     void testCreateReport_MissingReason_ReturnsBadRequest() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
             createReportRequest(null, DETAILS_GENERIC);
@@ -278,24 +278,24 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#19 - バリデーションエラー: detailsが空")
-    void testCreateReport_MissingDetails_ReturnsBadRequest() throws Exception {
+    @DisplayName("Issue#54 - 正常ケース: detailsが空でも通報可能")
+    void testCreateReport_EmptyDetails_ReturnsCreated() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
-            createReportRequest(REASON_COPYRIGHT_INFRINGEMENT, DETAILS_EMPTY);
+            createReportRequest(REASON_ADULT_CONTENT, null);
 
         mockMvc.perform(post(getReportEndpoint(testPhoto.getPhotoId()))
                 .with(csrf())
                 .header(HEADER_AUTHORIZATION, getBearerToken(token))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isCreated());
     }
 
     @Test
-    @DisplayName("Issue#19 - バリデーションエラー: detailsが300文字超過")
+    @DisplayName("Issue#54 - バリデーションエラー: detailsが300文字超過")
     void testCreateReport_DetailsTooLong_ReturnsBadRequest() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
-            createReportRequest(REASON_INAPPROPRIATE_CONTENT, LONG_DETAILS);
+            createReportRequest(REASON_ADULT_CONTENT, LONG_DETAILS);
 
         mockMvc.perform(post(getReportEndpoint(testPhoto.getPhotoId()))
                 .with(csrf())
@@ -306,7 +306,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#19 - バリデーションエラー: 不正なreason値")
+    @DisplayName("Issue#54 - バリデーションエラー: 不正なreason値")
     void testCreateReport_InvalidReason_ReturnsBadRequest() throws Exception {
         // JSON文字列を直接作成して不正なreason値を送信
         String invalidRequest = "{\"reason\":\"" + REASON_INVALID + "\",\"details\":\"" + DETAILS_GENERIC + "\"}";

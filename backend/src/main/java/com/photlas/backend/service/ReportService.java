@@ -2,59 +2,98 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.dto.ReportRequest;
 import com.photlas.backend.dto.ReportResponse;
+import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Report;
 import com.photlas.backend.entity.ReportReason;
+import com.photlas.backend.entity.ReportTargetType;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.PhotoNotFoundException;
+import com.photlas.backend.exception.SelfReportException;
+import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Issue#19: レポートサービス
+ * Issue#54: 通報サービス
  */
 @Service
 public class ReportService {
 
-    private final ReportRepository reportRepository;
+    private static final Logger logger = LoggerFactory.getLogger(ReportService.class);
 
-    public ReportService(ReportRepository reportRepository) {
+    /** 自動隔離に必要な通報件数の閾値 */
+    private static final long QUARANTINE_THRESHOLD = 2;
+
+    private final ReportRepository reportRepository;
+    private final PhotoRepository photoRepository;
+
+    public ReportService(ReportRepository reportRepository, PhotoRepository photoRepository) {
         this.reportRepository = reportRepository;
+        this.photoRepository = photoRepository;
     }
 
     /**
-     * レポートを作成する
-     * 同じユーザーが同じ写真を再度報告した場合はConflictExceptionをスロー
+     * 写真を通報する
      *
      * @param photoId 写真ID
-     * @param request レポート作成リクエスト
-     * @param userId 報告ユーザーID
+     * @param request 通報リクエスト
+     * @param userId 通報ユーザーID
      * @return ReportResponse
-     * @throws ConflictException すでに報告済みの場合
+     * @throws SelfReportException 自分の投稿を通報した場合
+     * @throws ConflictException すでに通報済みの場合
+     * @throws PhotoNotFoundException 写真が見つからない場合
      */
     @Transactional
     public ReportResponse createReport(Long photoId, ReportRequest request, Long userId) {
+        // 写真の存在確認
+        Photo photo = photoRepository.findById(photoId)
+                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+
+        // Issue#54: 自分の投稿は通報できない
+        if (photo.getUserId().equals(userId)) {
+            throw new SelfReportException("自分の投稿を通報することはできません");
+        }
+
         // 重複チェック
-        reportRepository.findByReportingUserIdAndPhotoId(userId, photoId)
+        reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
+                userId, ReportTargetType.PHOTO, photoId)
                 .ifPresent(report -> {
-                    throw new ConflictException("この写真はすでに報告済みです");
+                    throw new ConflictException("この写真はすでに通報済みです");
                 });
 
         // Report entityを作成
         Report report = new Report();
-        report.setReportingUserId(userId);
-        report.setPhotoId(photoId);
-        report.setReason(ReportReason.valueOf(request.getReason()));
-        report.setDetails(request.getDetails());
+        report.setReporterUserId(userId);
+        report.setTargetType(ReportTargetType.PHOTO);
+        report.setTargetId(photoId);
+        report.setReasonCategory(ReportReason.valueOf(request.getReason()));
+        report.setReasonText(request.getDetails());
 
-        // 保存
         Report savedReport = reportRepository.save(report);
 
-        // レスポンスを作成
+        // Issue#54: 通報件数が閾値に達したらQUARANTINEDに変更
+        long reportCount = reportRepository.countByTargetTypeAndTargetId(
+                ReportTargetType.PHOTO, photoId);
+        if (reportCount >= QUARANTINE_THRESHOLD
+                && photo.getModerationStatus() == ModerationStatus.PUBLISHED) {
+            photo.setModerationStatus(ModerationStatus.QUARANTINED);
+            photoRepository.save(photo);
+            logger.info("通報件数が閾値に達したため写真を隔離: photoId={}, reportCount={}",
+                    photoId, reportCount);
+        }
+
+        logger.info("通報を受け付けました: photoId={}, reporterUserId={}, reason={}",
+                photoId, userId, request.getReason());
+
         return new ReportResponse(
-                savedReport.getReportingUserId(),
-                savedReport.getPhotoId(),
-                savedReport.getReason().name(),
-                savedReport.getDetails()
+                savedReport.getReporterUserId(),
+                savedReport.getTargetId(),
+                savedReport.getReasonCategory().name(),
+                savedReport.getReasonText()
         );
     }
 }

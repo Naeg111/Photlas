@@ -1,10 +1,8 @@
 package com.photlas.backend.controller;
 
-import com.photlas.backend.dto.ErrorResponse;
 import com.photlas.backend.dto.ReportRequest;
 import com.photlas.backend.dto.ReportResponse;
 import com.photlas.backend.entity.User;
-import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.ReportService;
@@ -15,7 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Issue#19: レポートコントローラー
+ * Issue#54: 通報コントローラー
  */
 @RestController
 @RequestMapping("/api/v1/photos")
@@ -30,10 +28,10 @@ public class ReportController {
     }
 
     /**
-     * 写真を報告する
+     * 写真を通報する
      *
      * @param photoId 写真ID
-     * @param request レポート作成リクエスト
+     * @param request 通報リクエスト
      * @param authentication 認証情報
      * @return ReportResponse
      */
@@ -49,14 +47,5 @@ public class ReportController {
 
         ReportResponse response = reportService.createReport(photoId, request, user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    /**
-     * ConflictExceptionをハンドリング
-     */
-    @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ErrorResponse> handleConflictException(ConflictException e) {
-        ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 }
