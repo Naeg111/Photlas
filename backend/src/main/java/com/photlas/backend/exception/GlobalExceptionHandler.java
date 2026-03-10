@@ -112,6 +112,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
+     * Issue#54: アカウント停止エラー（403 Forbidden）をハンドリング
+     */
+    @ExceptionHandler(AccountSuspendedException.class)
+    public ResponseEntity<ErrorResponse> handleAccountSuspendedException(AccountSuspendedException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    /**
      * Issue#54: アクセス拒否エラー（403 Forbidden）をハンドリング
      */
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
