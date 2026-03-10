@@ -235,6 +235,41 @@ public class ModerationStatusTest {
         assertThat(response2).isNotNull();
     }
 
+    // ===== レスポンスにモデレーションステータスが含まれるテスト =====
+
+    @Test
+    @DisplayName("Issue#54 - 写真詳細レスポンスにmoderation_statusが含まれる")
+    void testGetPhotoDetail_ResponseContainsModerationStatus() {
+        Spot spot = createSpot();
+        Photo quarantined = createPhotoWithStatus(spot, "photos/quar020.jpg", "隔離写真", ModerationStatus.QUARANTINED);
+
+        PhotoResponse response = photoService.getPhotoDetail(quarantined.getPhotoId(), testUser.getEmail());
+
+        assertThat(response.getPhoto().getModerationStatus()).isEqualTo("QUARANTINED");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PENDING_REVIEW写真のレスポンスにmoderation_statusが含まれる")
+    void testGetPhotoDetail_PendingReviewResponseContainsModerationStatus() {
+        Spot spot = createSpot();
+        Photo pending = createPhotoWithStatus(spot, "photos/pend020.jpg", "審査中写真", ModerationStatus.PENDING_REVIEW);
+
+        PhotoResponse response = photoService.getPhotoDetail(pending.getPhotoId(), testUser.getEmail());
+
+        assertThat(response.getPhoto().getModerationStatus()).isEqualTo("PENDING_REVIEW");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PUBLISHED写真のレスポンスにmoderation_statusがPUBLISHEDで含まれる")
+    void testGetPhotoDetail_PublishedResponseContainsModerationStatus() {
+        Spot spot = createSpot();
+        Photo published = createPhotoWithStatus(spot, "photos/pub020.jpg", "公開写真", ModerationStatus.PUBLISHED);
+
+        PhotoResponse response = photoService.getPhotoDetail(published.getPhotoId(), testUser.getEmail());
+
+        assertThat(response.getPhoto().getModerationStatus()).isEqualTo("PUBLISHED");
+    }
+
     // ===== テストヘルパーメソッド =====
 
     private CreatePhotoRequest createPhotoRequest(String s3Key, String title) {
