@@ -44,4 +44,10 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
      */
     Page<Photo> findByUserIdAndModerationStatusInOrderByCreatedAtDesc(
             Long userId, Collection<ModerationStatus> statuses, Pageable pageable);
+
+    /**
+     * Issue#54: モデレーションステータスで写真を検索（管理者用、ページネーション対応）
+     */
+    Page<Photo> findByModerationStatusOrderByUpdatedAtDesc(
+            ModerationStatus status, Pageable pageable);
 }
