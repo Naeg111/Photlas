@@ -11,8 +11,10 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * JWTトークンを検証して認証情報をSecurityContextに設定するフィルター
@@ -45,12 +47,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     if (jwtService.isTokenValid(token, email)) {
+                        // Issue#54: JWTからロール情報を抽出してAuthorityに設定
+                        String role = jwtService.extractRole(token);
+                        List<SimpleGrantedAuthority> authorities = List.of(
+                                new SimpleGrantedAuthority("ROLE_" + role)
+                        );
+
                         // 認証情報をSecurityContextに設定
                         UsernamePasswordAuthenticationToken authentication =
                                 new UsernamePasswordAuthenticationToken(
                                         email,
                                         null,
-                                        new ArrayList<>()
+                                        authorities
                                 );
                         authentication.setDetails(
                                 new WebAuthenticationDetailsSource().buildDetails(request)

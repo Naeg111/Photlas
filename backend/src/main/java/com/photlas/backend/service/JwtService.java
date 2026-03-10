@@ -67,6 +67,33 @@ public class JwtService {
     }
 
     /**
+     * Issue#54: ユーザー名とロール情報からJWTトークンを生成
+     *
+     * @param username ユーザー名（email）
+     * @param role ユーザーロール（USER, ADMIN）
+     * @return 生成されたJWTトークン
+     */
+    public String generateTokenWithRole(String username, String role) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
+        return generateToken(claims, username);
+    }
+
+    /**
+     * Issue#54: トークンからロール情報を抽出
+     *
+     * @param token JWTトークン
+     * @return ロール文字列（存在しない場合は"USER"）
+     */
+    public String extractRole(String token) {
+        try {
+            return extractClaim(token, claims -> claims.get("role", String.class));
+        } catch (Exception e) {
+            return "USER";
+        }
+    }
+
+    /**
      * ユーザー名と追加クレームからJWTトークンを生成
      *
      * @param extraClaims 追加クレーム

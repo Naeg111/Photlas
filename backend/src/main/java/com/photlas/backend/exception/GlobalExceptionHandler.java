@@ -112,6 +112,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
+     * Issue#54: アクセス拒否エラー（403 Forbidden）をハンドリング
+     */
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            org.springframework.security.access.AccessDeniedException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("アクセスが拒否されました");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    /**
      * 未ハンドル例外のcatch-all（スタックトレース漏洩防止）
      */
     @ExceptionHandler(Exception.class)
