@@ -222,6 +222,27 @@ public class PhotoService {
     }
 
     /**
+     * Issue#54: 投稿者本人用に写真を取得する（ポーリング用）
+     * 投稿者本人でない場合は例外をスロー
+     *
+     * @param photoId 写真ID
+     * @param userId ユーザーID
+     * @return 写真エンティティ
+     * @throws PhotoNotFoundException 写真が見つからないか、投稿者でない場合
+     */
+    @Transactional(readOnly = true)
+    public Photo getPhotoForOwner(Long photoId, Long userId) {
+        Photo photo = photoRepository.findById(photoId)
+                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+
+        if (!photo.getUserId().equals(userId)) {
+            throw new PhotoNotFoundException("写真が見つかりません");
+        }
+
+        return photo;
+    }
+
+    /**
      * スポットを検索または新規作成する
      * 半径200m以内に既存スポットがあれば最も近いものを返し、なければ新規作成する
      */
