@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 写真リポジトリ
@@ -50,4 +51,9 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
      */
     Page<Photo> findByModerationStatusOrderByUpdatedAtDesc(
             ModerationStatus status, Pageable pageable);
+
+    /**
+     * Issue#54: S3オブジェクトキーで写真を検索（Lambdaコールバック用）
+     */
+    Optional<Photo> findByS3ObjectKey(String s3ObjectKey);
 }
