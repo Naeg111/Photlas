@@ -7,9 +7,11 @@ interface TopMenuPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isLoggedIn: boolean;
+  isAdmin?: boolean;
   onMyPageClick: () => void;
   onFavoritesClick: () => void;
   onAccountSettingsClick: () => void;
+  onModerationClick?: () => void;
   onTermsClick: () => void;
   onPrivacyClick: () => void;
   onAboutClick: () => void;
@@ -22,9 +24,11 @@ export function TopMenuPanel({
   open,
   onOpenChange,
   isLoggedIn,
+  isAdmin,
   onMyPageClick,
   onFavoritesClick,
   onAccountSettingsClick,
+  onModerationClick,
   onAboutClick,
   onTermsClick,
   onPrivacyClick,
@@ -93,6 +97,23 @@ export function TopMenuPanel({
                   アカウント設定
                 </Button>
                 <Separator />
+                {isAdmin && onModerationClick && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      className="justify-start gap-3"
+                      onClick={() => {
+                        onModerationClick();
+                        onOpenChange(false);
+                      }}
+                      data-testid="moderation-menu-button"
+                    >
+                      <Shield className="w-5 h-5" />
+                      モデレーション管理
+                    </Button>
+                    <Separator />
+                  </>
+                )}
               </>
             ) : (
               <>

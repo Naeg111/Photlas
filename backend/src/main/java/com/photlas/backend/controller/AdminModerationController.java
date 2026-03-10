@@ -1,17 +1,24 @@
 package com.photlas.backend.controller;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
+import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.AdminModerationService;
+import com.photlas.backend.service.S3Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Issue#54: 管理者モデレーションコントローラー
@@ -24,32 +31,71 @@ public class AdminModerationController {
 
     private final AdminModerationService adminModerationService;
     private final PhotoRepository photoRepository;
+    private final UserRepository userRepository;
+    private final S3Service s3Service;
 
     public AdminModerationController(
             AdminModerationService adminModerationService,
-            PhotoRepository photoRepository
+            PhotoRepository photoRepository,
+            UserRepository userRepository,
+            S3Service s3Service
     ) {
         this.adminModerationService = adminModerationService;
         this.photoRepository = photoRepository;
+        this.userRepository = userRepository;
+        this.s3Service = s3Service;
     }
 
     /**
      * 隔離キューを取得する
      *
      * @param pageable ページネーション情報
-     * @return 隔離中の写真一覧
+     * @return 隔離中の写真一覧（画像URL付き）
      */
     @GetMapping("/queue")
     public ResponseEntity<Map<String, Object>> getModerationQueue(Pageable pageable) {
         Page<Photo> quarantinedPhotos = photoRepository.findByModerationStatusOrderByUpdatedAtDesc(
                 ModerationStatus.QUARANTINED, pageable);
 
+        List<ModerationQueueItem> items = quarantinedPhotos.getContent().stream()
+                .map(this::toQueueItem)
+                .collect(Collectors.toList());
+
         Map<String, Object> response = new HashMap<>();
-        response.put("content", quarantinedPhotos.getContent());
+        response.put("content", items);
         response.put("total_elements", quarantinedPhotos.getTotalElements());
         response.put("total_pages", quarantinedPhotos.getTotalPages());
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * PhotoエンティティからModerationQueueItemに変換する
+     */
+    private ModerationQueueItem toQueueItem(Photo photo) {
+        String imageUrl = s3Service.generateCdnUrl(photo.getS3ObjectKey());
+        String username = userRepository.findById(photo.getUserId())
+                .map(User::getUsername)
+                .orElse("不明");
+        String createdAt = photo.getCreatedAt() != null
+                ? photo.getCreatedAt().format(DateTimeFormatter.ISO_DATE_TIME) : null;
+
+        return new ModerationQueueItem(
+                photo.getPhotoId(), photo.getTitle(), imageUrl,
+                photo.getUserId(), username, createdAt
+        );
+    }
+
+    /**
+     * モデレーションキューアイテムDTO
+     */
+    record ModerationQueueItem(
+            @JsonProperty("photo_id") Long photoId,
+            String title,
+            @JsonProperty("image_url") String imageUrl,
+            @JsonProperty("user_id") Long userId,
+            String username,
+            @JsonProperty("created_at") String createdAt
+    ) {}
 
     /**
      * 写真を承認する（問題なし判定）

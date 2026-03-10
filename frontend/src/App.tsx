@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
 import NotFoundPage from './pages/NotFoundPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
+import AdminModerationPage from './pages/AdminModerationPage'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
 import { TopMenuPanel } from './components/TopMenuPanel'
@@ -58,6 +59,7 @@ interface MainContentProps {
  */
 function MainContent({ onMapReady }: MainContentProps) {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const dialog = useDialogState()
   const mapRef = useRef<MapViewHandle>(null)
 
@@ -459,9 +461,11 @@ function MainContent({ onMapReady }: MainContentProps) {
       <TopMenuPanel
         {...dialog.getProps('topMenu')}
         isLoggedIn={!!user}
+        isAdmin={user?.role === 'ADMIN'}
         onMyPageClick={handleShowProfile}
         onFavoritesClick={handleShowWantToGoList}
         onAccountSettingsClick={() => dialog.open('accountSettings')}
+        onModerationClick={() => navigate('/manage/moderation')}
         onAboutClick={() => dialog.open('about')}
         onTermsClick={() => dialog.open('terms')}
         onPrivacyClick={() => dialog.open('privacy')}
@@ -630,6 +634,7 @@ function App() {
       <Routes>
         <Route path="/" element={<MainApp />} />
         <Route path="/verify-email" element={<EmailVerificationPage />} />
+        <Route path="/manage/moderation" element={<AdminModerationPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AuthProvider>
