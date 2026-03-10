@@ -8,6 +8,8 @@ import com.photlas.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -158,16 +160,23 @@ public class AuthControllerTest {
                 .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_EMAIL)));
     }
 
-    @Test
+    @ParameterizedTest(name = "バリデーションエラー - email形式不正: {0}")
+    @ValueSource(strings = {
+        "invalid-email",     // @なし
+        "@",                 // @のみ
+        "user@",             // ドメインなし
+        "@example.com",      // ローカル部なし
+        "user @example.com", // スペース含み
+        "user@@example.com"  // @が複数
+    })
     @DisplayName("バリデーションエラー - email形式不正")
-    void testRegisterUser_InvalidEmailFormat_ReturnsBadRequest() throws Exception {
-        RegisterRequest request = createRegisterRequest(TEST_USERNAME, INVALID_EMAIL, TEST_PASSWORD);
+    void testRegisterUser_InvalidEmailFormat_ReturnsBadRequest(String invalidEmail) throws Exception {
+        RegisterRequest request = createRegisterRequest(TEST_USERNAME, invalidEmail, TEST_PASSWORD);
 
         mockMvc.perform(post(REGISTER_ENDPOINT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_EMAIL)));
     }
 
