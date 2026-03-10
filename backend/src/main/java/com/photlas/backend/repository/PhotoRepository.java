@@ -1,11 +1,13 @@
 package com.photlas.backend.repository;
 
+import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -31,4 +33,15 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
      * @return 写真のページ
      */
     Page<Photo> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
+    /**
+     * Issue#54: ユーザーIDとモデレーションステータスで写真を検索（ページネーション対応）
+     *
+     * @param userId ユーザーID
+     * @param statuses 許可するモデレーションステータスのコレクション
+     * @param pageable ページネーション情報
+     * @return 写真のページ
+     */
+    Page<Photo> findByUserIdAndModerationStatusInOrderByCreatedAtDesc(
+            Long userId, Collection<ModerationStatus> statuses, Pageable pageable);
 }

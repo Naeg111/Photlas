@@ -90,6 +90,10 @@ public class Photo {
     @Column(name = "crop_zoom")
     private Double cropZoom;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation_status", nullable = false, length = 20)
+    private ModerationStatus moderationStatus = ModerationStatus.PENDING_REVIEW;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -314,6 +318,14 @@ public class Photo {
 
     public void setCropZoom(Double cropZoom) {
         this.cropZoom = cropZoom;
+    }
+
+    public ModerationStatus getModerationStatus() {
+        return moderationStatus;
+    }
+
+    public void setModerationStatus(ModerationStatus moderationStatus) {
+        this.moderationStatus = moderationStatus;
     }
 
     public List<Category> getCategories() {

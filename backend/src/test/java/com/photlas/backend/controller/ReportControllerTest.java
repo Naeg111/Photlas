@@ -186,6 +186,7 @@ public class ReportControllerTest {
         photo.setTimeOfDay(TEST_TIME_OF_DAY);
         photo.setWeather(TEST_WEATHER);
         photo.setShotAt(LocalDateTime.now());
+        photo.setModerationStatus(com.photlas.backend.entity.ModerationStatus.PUBLISHED);
         return photoRepository.save(photo);
     }
 
