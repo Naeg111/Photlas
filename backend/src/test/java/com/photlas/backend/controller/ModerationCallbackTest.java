@@ -20,12 +20,16 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -57,6 +61,9 @@ public class ModerationCallbackTest {
 
     @Autowired
     private RateLimitFilter rateLimitFilter;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private Photo testPhoto;
 
@@ -141,6 +148,44 @@ public class ModerationCallbackTest {
                 .header(API_KEY_HEADER, "invalid-key")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PENDING_REVIEW滞留チェック: 滞留なし")
+    void testStaleCheck_NoStale_ReturnsZero() throws Exception {
+        // testPhotoは直前に作成されたため滞留していない
+        mockMvc.perform(get("/api/v1/internal/moderation/stale-check")
+                .header(API_KEY_HEADER, TEST_API_KEY)
+                .param("threshold_minutes", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stale_count").value(0));
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PENDING_REVIEW滞留チェック: 滞留あり")
+    void testStaleCheck_HasStale_ReturnsCount() throws Exception {
+        // created_atをネイティブクエリで10分前に更新（updatable=falseのため）
+        entityManager.createNativeQuery(
+                "UPDATE photos SET created_at = :createdAt WHERE photo_id = :photoId")
+                .setParameter("createdAt", LocalDateTime.now().minusMinutes(10))
+                .setParameter("photoId", testPhoto.getPhotoId())
+                .executeUpdate();
+        entityManager.flush();
+
+        mockMvc.perform(get("/api/v1/internal/moderation/stale-check")
+                .header(API_KEY_HEADER, TEST_API_KEY)
+                .param("threshold_minutes", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stale_count").value(1));
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PENDING_REVIEW滞留チェック: 不正なAPIキー")
+    void testStaleCheck_InvalidApiKey_Returns401() throws Exception {
+        mockMvc.perform(get("/api/v1/internal/moderation/stale-check")
+                .header(API_KEY_HEADER, "invalid-key")
+                .param("threshold_minutes", "5"))
                 .andExpect(status().isUnauthorized());
     }
 }
