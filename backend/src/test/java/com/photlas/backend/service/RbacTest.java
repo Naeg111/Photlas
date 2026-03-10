@@ -5,6 +5,7 @@ import com.photlas.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.photlas.backend.filter.RateLimitFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,6 +34,9 @@ public class RbacTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
+
     private User adminUser;
     private User normalUser;
     private String adminToken;
@@ -40,6 +44,7 @@ public class RbacTest {
 
     @BeforeEach
     void setUp() {
+        rateLimitFilter.clearCache();
         userRepository.deleteAll();
 
         adminUser = new User();

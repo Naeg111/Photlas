@@ -29,6 +29,7 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 public class SecurityConfig {
 
     // CORS許可オリジン（環境変数から取得、カンマ区切り）
