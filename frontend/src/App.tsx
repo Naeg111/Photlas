@@ -25,12 +25,14 @@ import type { MapViewFilterParams, MapViewHandle } from './components/MapView'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useDialogState } from './hooks/useDialogState'
 import { transformMonths, transformTimesOfDay, transformWeathers, transformCategories, categoryNamesToIds } from './utils/filterTransform'
-import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto, ApiError } from './utils/apiClient'
+import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto, ApiError, getAuthHeaders } from './utils/apiClient'
 import { stripExif } from './utils/stripExif'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
 import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed } from 'lucide-react'
 import { Button } from './components/ui/button'
 import { Toaster } from './components/ui/sonner'
+import { toast } from 'sonner'
+import { API_V1_URL } from './config/api'
 
 /**
  * App コンポーネント
@@ -84,6 +86,70 @@ function MainContent({ onMapReady }: MainContentProps) {
   // refはReactのレンダリングサイクルとは独立しているため、flushSyncの影響を受けず、
   // プレビュー期間中ずっとonCloseを確実にガードできる。
   const isInPreviewRef = useRef(false)
+
+  // Issue#54: モデレーションステータスポーリング
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const startModerationPolling = useCallback((photoId: number) => {
+    // 既存のポーリングをクリア
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+    }
+
+    const POLLING_INTERVAL_MS = 5000
+    const MAX_POLLING_COUNT = 60 // 最大5分間
+
+    let pollCount = 0
+
+    pollingIntervalRef.current = setInterval(async () => {
+      pollCount++
+
+      if (pollCount > MAX_POLLING_COUNT) {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current)
+          pollingIntervalRef.current = null
+        }
+        return
+      }
+
+      try {
+        const response = await fetch(`${API_V1_URL}/photos/${photoId}/status`, {
+          headers: getAuthHeaders(),
+        })
+
+        if (!response.ok) return
+
+        const data = await response.json()
+        const status = data.moderation_status
+
+        if (status === 'PUBLISHED') {
+          toast.success('写真が公開されました')
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current)
+            pollingIntervalRef.current = null
+          }
+          mapRef.current?.refreshSpots()
+        } else if (status === 'QUARANTINED') {
+          toast.error('写真がコンテンツポリシーに違反している可能性があります')
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current)
+            pollingIntervalRef.current = null
+          }
+        }
+      } catch {
+        // ネットワークエラーは無視（次回ポーリングで再試行）
+      }
+    }, POLLING_INTERVAL_MS)
+  }, [])
+
+  // コンポーネントアンマウント時にポーリングをクリア
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+      }
+    }
+  }, [])
 
   // カテゴリマップの取得
   useEffect(() => {
@@ -175,7 +241,7 @@ function MainContent({ onMapReady }: MainContentProps) {
       })
 
       // 2. メタデータ保存（EXIF情報を含む）
-      await createPhoto({
+      const photoResponse = await createPhoto({
         title: data.title,
         placeName: data.placeName,
         s3ObjectKey: objectKey,
@@ -206,6 +272,11 @@ function MainContent({ onMapReady }: MainContentProps) {
 
       // 5. マップ更新
       mapRef.current?.refreshSpots()
+
+      // 6. Issue#54: モデレーションステータスのポーリング開始
+      if (photoResponse?.photo?.photoId) {
+        startModerationPolling(photoResponse.photo.photoId)
+      }
     } catch (error) {
       // 認証エラーの場合はログアウトしてログインダイアログを表示
       if (error instanceof ApiError && error.isUnauthorized) {
