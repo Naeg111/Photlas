@@ -94,6 +94,10 @@ public class PhotoResponse {
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private Double cropZoom;
 
+        @JsonProperty("moderation_status")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private String moderationStatus;
+
         public PhotoDTO() {
         }
 
@@ -237,6 +241,14 @@ public class PhotoResponse {
 
         public void setCropZoom(Double cropZoom) {
             this.cropZoom = cropZoom;
+        }
+
+        public String getModerationStatus() {
+            return moderationStatus;
+        }
+
+        public void setModerationStatus(String moderationStatus) {
+            this.moderationStatus = moderationStatus;
         }
     }
 

@@ -94,6 +94,7 @@ interface PhotoApiResponse {
     crop_center_x?: number | null
     crop_center_y?: number | null
     crop_zoom?: number | null
+    moderation_status?: string | null
   }
   spot: {
     spot_id: number
@@ -133,6 +134,7 @@ interface PhotoDetail {
   cropCenterX?: number | null
   cropCenterY?: number | null
   cropZoom?: number | null
+  moderationStatus?: string | null
   user: {
     userId: number
     username: string
@@ -189,6 +191,7 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
     cropCenterX: response.photo.crop_center_x,
     cropCenterY: response.photo.crop_center_y,
     cropZoom: response.photo.crop_zoom,
+    moderationStatus: response.photo.moderation_status,
     user: {
       userId: response.user.user_id,
       username: response.user.username,
@@ -651,6 +654,24 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
               {displayedPhoto && (
                 <div className="min-h-0 p-6 pb-8 space-y-4 overflow-y-auto">
                   <h2 className="text-2xl font-bold min-h-[2rem]">{displayedPhoto.title}</h2>
+
+                  {/* Issue#54: モデレーションステータスバナー */}
+                  {displayedPhoto.moderationStatus === 'QUARANTINED' && (
+                    <div
+                      className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700"
+                      data-testid="quarantined-banner"
+                    >
+                      この投稿はコンテンツポリシーに違反している可能性があるため、現在非公開です。
+                    </div>
+                  )}
+                  {displayedPhoto.moderationStatus === 'PENDING_REVIEW' && (
+                    <div
+                      className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700"
+                      data-testid="pending-review-banner"
+                    >
+                      この投稿は審査中です。審査完了後に公開されます。
+                    </div>
+                  )}
 
                   {/* ユーザー情報 */}
                   <div
