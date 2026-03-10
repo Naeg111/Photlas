@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -56,4 +57,9 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
      * Issue#54: S3オブジェクトキーで写真を検索（Lambdaコールバック用）
      */
     Optional<Photo> findByS3ObjectKey(String s3ObjectKey);
+
+    /**
+     * Issue#54: 指定ステータスで指定日時より前に作成された写真の件数を取得（滞留チェック用）
+     */
+    long countByModerationStatusAndCreatedAtBefore(ModerationStatus status, LocalDateTime createdAt);
 }
