@@ -1,13 +1,15 @@
 package com.photlas.backend.entity;
 
 /**
- * Issue#19: レポート理由のEnum
+ * Issue#54: 通報理由のEnum
  */
 public enum ReportReason {
-    INAPPROPRIATE_CONTENT("不適切なコンテンツ"),
-    PRIVACY_VIOLATION("プライバシーの侵害"),
-    WRONG_LOCATION("場所が違う"),
-    COPYRIGHT_INFRINGEMENT("著作権侵害");
+    ADULT_CONTENT("成人向け"),
+    VIOLENCE("暴力的"),
+    COPYRIGHT_INFRINGEMENT("著作権侵害"),
+    PRIVACY_VIOLATION("プライバシー侵害"),
+    SPAM("スパム"),
+    OTHER("その他");
 
     private final String displayName;
 
