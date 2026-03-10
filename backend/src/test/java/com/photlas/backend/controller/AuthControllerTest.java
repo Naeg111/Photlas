@@ -1,6 +1,7 @@
 package com.photlas.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.photlas.backend.dto.LoginRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.filter.RateLimitFilter;
@@ -18,6 +19,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -41,6 +44,9 @@ public class AuthControllerTest {
 
     @Autowired
     private RateLimitFilter rateLimitFilter;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     // テストデータ定数
     private static final String TEST_USERNAME = "testuser";
@@ -260,5 +266,31 @@ public class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_PASSWORD)));
+    }
+
+    // ===== Issue#54: アカウント停止テスト =====
+
+    @Test
+    @DisplayName("Issue#54 - 永久停止アカウントのログインが403で拒否される")
+    void testLogin_SuspendedAccount_ReturnsForbidden() throws Exception {
+        // Given: 永久停止アカウントを作成
+        User suspendedUser = new User();
+        suspendedUser.setUsername("suspended");
+        suspendedUser.setEmail("suspended@example.com");
+        suspendedUser.setPasswordHash(passwordEncoder.encode(TEST_PASSWORD));
+        suspendedUser.setRole("SUSPENDED");
+        suspendedUser.setEmailVerified(true);
+        userRepository.save(suspendedUser);
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("suspended@example.com");
+        request.setPassword(TEST_PASSWORD);
+
+        // When & Then: 403 Forbiddenが返される
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", is("アカウントが停止されています")));
     }
 }
