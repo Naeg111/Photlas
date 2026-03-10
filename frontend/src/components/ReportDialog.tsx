@@ -11,21 +11,23 @@ import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 /**
- * Issue#19: 報告機能 - 報告ダイアログ
+ * Issue#54: 通報ダイアログ
  */
 
 interface ReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: { reason: string; details: string }) => void;
+  onSubmit: (data: { reason: string; details?: string }) => void;
   isLoading: boolean;
 }
 
 const REPORT_REASONS = [
-  { value: "INAPPROPRIATE_CONTENT", label: "不適切なコンテンツ" },
-  { value: "PRIVACY_VIOLATION", label: "プライバシーの侵害" },
-  { value: "WRONG_LOCATION", label: "場所が違う" },
+  { value: "ADULT_CONTENT", label: "成人向け" },
+  { value: "VIOLENCE", label: "暴力的" },
   { value: "COPYRIGHT_INFRINGEMENT", label: "著作権侵害" },
+  { value: "PRIVACY_VIOLATION", label: "プライバシー侵害" },
+  { value: "SPAM", label: "スパム" },
+  { value: "OTHER", label: "その他" },
 ];
 
 const MAX_DETAILS_LENGTH = 300;
@@ -48,28 +50,31 @@ export function ReportDialog({
   }, [open]);
 
   const handleSubmit = () => {
-    if (selectedReason && details) {
-      onSubmit({ reason: selectedReason, details });
+    if (selectedReason) {
+      onSubmit({
+        reason: selectedReason,
+        details: details || undefined,
+      });
     }
   };
 
+  const isOtherSelected = selectedReason === "OTHER";
   const isSubmitDisabled =
-    !selectedReason || !details || details.length === 0 || isLoading;
-
+    !selectedReason || (isOtherSelected && !details) || isLoading;
   const isOverLimit = details.length > MAX_DETAILS_LENGTH;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogTitle>この投稿を報告</DialogTitle>
+        <DialogTitle>この投稿を通報</DialogTitle>
         <DialogDescription className="sr-only">
-          不適切なコンテンツや問題のある投稿を報告
+          不適切なコンテンツや問題のある投稿を通報
         </DialogDescription>
 
         <div className="space-y-4">
-          {/* 報告理由選択 */}
+          {/* 通報理由選択 */}
           <div className="space-y-3">
-            <Label>報告理由</Label>
+            <Label>通報理由</Label>
             <RadioGroup value={selectedReason} onValueChange={setSelectedReason}>
               {REPORT_REASONS.map((reason) => (
                 <div key={reason.value} className="flex items-center space-x-2">
@@ -88,12 +93,14 @@ export function ReportDialog({
             </RadioGroup>
           </div>
 
-          {/* 詳細説明入力 */}
+          {/* 詳細説明入力（「その他」選択時は必須、それ以外は任意） */}
           <div className="space-y-2">
-            <Label htmlFor="details">詳細説明</Label>
+            <Label htmlFor="details">
+              詳細説明{isOtherSelected ? "（必須）" : "（任意）"}
+            </Label>
             <Textarea
               id="details"
-              placeholder="報告理由の詳細を入力してください（300文字以内）"
+              placeholder="通報理由の詳細を入力してください（300文字以内）"
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               className="min-h-[100px]"
@@ -118,9 +125,9 @@ export function ReportDialog({
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitDisabled}
+              disabled={isSubmitDisabled || isOverLimit}
             >
-              報告する
+              通報する
             </Button>
           </div>
         </div>
