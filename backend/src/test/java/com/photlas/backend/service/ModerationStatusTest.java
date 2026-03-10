@@ -172,6 +172,69 @@ public class ModerationStatusTest {
         assertThat(content).hasSize(1);
     }
 
+    // ===== 写真詳細のステータスフィルタリングテスト =====
+
+    @Test
+    @DisplayName("Issue#54 - REMOVED状態の写真は詳細取得できない")
+    void testGetPhotoDetail_RemovedPhoto_ThrowsException() {
+        Spot spot = createSpot();
+        Photo removed = createPhotoWithStatus(spot, "photos/rem010.jpg", "削除写真", ModerationStatus.REMOVED);
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.photlas.backend.exception.PhotoNotFoundException.class,
+                () -> photoService.getPhotoDetail(removed.getPhotoId(), testUser.getEmail())
+        );
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PENDING_REVIEW状態の写真は投稿者本人のみ詳細取得できる")
+    void testGetPhotoDetail_PendingPhoto_OnlyOwnerCanView() {
+        Spot spot = createSpot();
+        Photo pending = createPhotoWithStatus(spot, "photos/pend010.jpg", "審査中写真", ModerationStatus.PENDING_REVIEW);
+
+        // 投稿者本人は取得可能
+        PhotoResponse response = photoService.getPhotoDetail(pending.getPhotoId(), testUser.getEmail());
+        assertThat(response).isNotNull();
+
+        // 他ユーザーは取得不可
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.photlas.backend.exception.PhotoNotFoundException.class,
+                () -> photoService.getPhotoDetail(pending.getPhotoId(), otherUser.getEmail())
+        );
+    }
+
+    @Test
+    @DisplayName("Issue#54 - QUARANTINED状態の写真は投稿者本人のみ詳細取得できる")
+    void testGetPhotoDetail_QuarantinedPhoto_OnlyOwnerCanView() {
+        Spot spot = createSpot();
+        Photo quarantined = createPhotoWithStatus(spot, "photos/quar010.jpg", "隔離写真", ModerationStatus.QUARANTINED);
+
+        // 投稿者本人は取得可能
+        PhotoResponse response = photoService.getPhotoDetail(quarantined.getPhotoId(), testUser.getEmail());
+        assertThat(response).isNotNull();
+
+        // 未認証ユーザーは取得不可
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.photlas.backend.exception.PhotoNotFoundException.class,
+                () -> photoService.getPhotoDetail(quarantined.getPhotoId(), null)
+        );
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PUBLISHED状態の写真は誰でも詳細取得できる")
+    void testGetPhotoDetail_PublishedPhoto_AnyoneCanView() {
+        Spot spot = createSpot();
+        Photo published = createPhotoWithStatus(spot, "photos/pub010.jpg", "公開写真", ModerationStatus.PUBLISHED);
+
+        // 他ユーザーが取得可能
+        PhotoResponse response = photoService.getPhotoDetail(published.getPhotoId(), otherUser.getEmail());
+        assertThat(response).isNotNull();
+
+        // 未認証ユーザーも取得可能
+        PhotoResponse response2 = photoService.getPhotoDetail(published.getPhotoId(), null);
+        assertThat(response2).isNotNull();
+    }
+
     // ===== テストヘルパーメソッド =====
 
     private CreatePhotoRequest createPhotoRequest(String s3Key, String title) {

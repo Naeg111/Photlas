@@ -215,6 +215,7 @@ public class PhotoControllerTest {
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(testUser.getId());
         photo.setSpotId(spotId);
+        photo.setModerationStatus(com.photlas.backend.entity.ModerationStatus.PUBLISHED);
         return photoRepository.save(photo);
     }
 

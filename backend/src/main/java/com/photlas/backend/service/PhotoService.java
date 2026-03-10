@@ -144,6 +144,10 @@ public class PhotoService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
 
+        // Issue#54: モデレーションステータスによるアクセス制御
+        User currentUser = (email != null) ? userRepository.findByEmail(email).orElse(null) : null;
+        validatePhotoVisibility(photo, currentUser);
+
         Spot spot = spotRepository.findById(photo.getSpotId())
                 .orElseThrow(() -> new SpotNotFoundException("スポットが見つかりません"));
 
@@ -152,11 +156,8 @@ public class PhotoService {
 
         // お気に入り状態をチェック
         boolean isFavorited = false;
-        if (email != null) {
-            User currentUser = userRepository.findByEmail(email).orElse(null);
-            if (currentUser != null) {
-                isFavorited = favoriteRepository.findByUserIdAndPhotoId(currentUser.getId(), photoId).isPresent();
-            }
+        if (currentUser != null) {
+            isFavorited = favoriteRepository.findByUserIdAndPhotoId(currentUser.getId(), photoId).isPresent();
         }
 
         // Issue#30: お気に入り数を取得
@@ -315,6 +316,31 @@ public class PhotoService {
         );
 
         return new PhotoResponse(photoDTO, spotDTO, userDTO);
+    }
+
+    /**
+     * Issue#54: 写真の閲覧権限を検証する
+     * REMOVED: 誰も閲覧不可
+     * PENDING_REVIEW, QUARANTINED: 投稿者本人のみ閲覧可能
+     * PUBLISHED: 誰でも閲覧可能
+     *
+     * @param photo 対象の写真
+     * @param currentUser リクエスト者（未認証の場合はnull）
+     * @throws PhotoNotFoundException 閲覧権限がない場合
+     */
+    private void validatePhotoVisibility(Photo photo, User currentUser) {
+        ModerationStatus status = photo.getModerationStatus();
+
+        if (status == ModerationStatus.REMOVED) {
+            throw new PhotoNotFoundException("写真が見つかりません");
+        }
+
+        if (status == ModerationStatus.PENDING_REVIEW || status == ModerationStatus.QUARANTINED) {
+            boolean isOwner = currentUser != null && currentUser.getId().equals(photo.getUserId());
+            if (!isOwner) {
+                throw new PhotoNotFoundException("写真が見つかりません");
+            }
+        }
     }
 
     /**
