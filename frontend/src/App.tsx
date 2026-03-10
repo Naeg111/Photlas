@@ -96,8 +96,8 @@ function MainContent({ onMapReady }: MainContentProps) {
       clearInterval(pollingIntervalRef.current)
     }
 
-    const POLLING_INTERVAL_MS = 5000
-    const MAX_POLLING_COUNT = 60 // 最大5分間
+    const POLLING_INTERVAL_MS = 2000
+    const MAX_POLLING_COUNT = 15 // 最大30秒間
 
     let pollCount = 0
 
@@ -109,6 +109,7 @@ function MainContent({ onMapReady }: MainContentProps) {
           clearInterval(pollingIntervalRef.current)
           pollingIntervalRef.current = null
         }
+        toast.info('写真は審査中です。審査完了後に公開されます。')
         return
       }
 
