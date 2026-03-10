@@ -93,4 +93,32 @@ public class ModerationCallbackController {
 
         return ResponseEntity.ok(Map.of("message", "ステータスを更新しました"));
     }
+
+    /**
+     * PENDING_REVIEW滞留チェック
+     * 監視用Lambda関数から呼び出され、指定時間以上PENDING_REVIEWのまま滞留している投稿数を返す
+     *
+     * @param apiKey APIキー
+     * @param thresholdMinutes 滞留閾値（分）
+     * @return 滞留件数
+     */
+    @GetMapping("/stale-check")
+    public ResponseEntity<?> checkStalePendingReviews(
+            @RequestHeader(API_KEY_HEADER) String apiKey,
+            @RequestParam(value = "threshold_minutes", defaultValue = "5") int thresholdMinutes
+    ) {
+        if (!validApiKey.equals(apiKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("無効なAPIキーです"));
+        }
+
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(thresholdMinutes);
+        long staleCount = photoRepository.countByModerationStatusAndCreatedAtBefore(
+                ModerationStatus.PENDING_REVIEW, threshold
+        );
+
+        logger.info("PENDING_REVIEW滞留チェック: threshold={}分, staleCount={}", thresholdMinutes, staleCount);
+
+        return ResponseEntity.ok(Map.of("stale_count", staleCount));
+    }
 }
