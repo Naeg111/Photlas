@@ -3,16 +3,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ReportDialog } from './ReportDialog'
 
 /**
- * Issue#19: 報告機能 (UI + API) - 報告ダイアログ
- * TDD Red段階: 実装前のテストケース定義
+ * Issue#54: 通報ダイアログ
  *
  * UI要件:
- * - ダイアログタイトル: 「この投稿を報告」
- * - 報告理由の選択（ラジオボタン）
- * - 詳細説明の入力（テキストエリア）
+ * - ダイアログタイトル: 「この投稿を通報」
+ * - 通報理由の選択（ラジオボタン）: 6種類
+ * - 詳細説明の入力（テキストエリア）: 「その他」選択時は必須、それ以外は任意
  * - 文字数カウンター（0/300）
- * - キャンセルボタンと報告するボタン
- * - 理由と詳細が両方入力されている場合のみ報告ボタンを有効化
+ * - キャンセルボタンと通報するボタン
  */
 
 describe('ReportDialog', () => {
@@ -34,10 +32,10 @@ describe('ReportDialog', () => {
         />
       )
 
-      expect(screen.getByText('この投稿を報告')).toBeInTheDocument()
+      expect(screen.getByText('この投稿を通報')).toBeInTheDocument()
     })
 
-    it('displays dialog title', () => {
+    it('displays six report reason radio buttons', () => {
       render(
         <ReportDialog
           open={true}
@@ -47,23 +45,12 @@ describe('ReportDialog', () => {
         />
       )
 
-      expect(screen.getByText('この投稿を報告')).toBeInTheDocument()
-    })
-
-    it('displays four report reason radio buttons', () => {
-      render(
-        <ReportDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          onSubmit={mockOnSubmit}
-          isLoading={false}
-        />
-      )
-
-      expect(screen.getByText('不適切なコンテンツ')).toBeInTheDocument()
-      expect(screen.getByText('プライバシーの侵害')).toBeInTheDocument()
-      expect(screen.getByText('場所が違う')).toBeInTheDocument()
+      expect(screen.getByText('成人向け')).toBeInTheDocument()
+      expect(screen.getByText('暴力的')).toBeInTheDocument()
       expect(screen.getByText('著作権侵害')).toBeInTheDocument()
+      expect(screen.getByText('プライバシー侵害')).toBeInTheDocument()
+      expect(screen.getByText('スパム')).toBeInTheDocument()
+      expect(screen.getByText('その他')).toBeInTheDocument()
     })
 
     it('displays details textarea', () => {
@@ -76,7 +63,7 @@ describe('ReportDialog', () => {
         />
       )
 
-      const textarea = screen.getByPlaceholderText(/報告理由の詳細を入力してください/)
+      const textarea = screen.getByPlaceholderText(/通報理由の詳細を入力してください/)
       expect(textarea).toBeInTheDocument()
     })
 
@@ -93,7 +80,7 @@ describe('ReportDialog', () => {
       expect(screen.getByText('0 / 300')).toBeInTheDocument()
     })
 
-    it('displays cancel button', () => {
+    it('displays cancel and submit buttons', () => {
       render(
         <ReportDialog
           open={true}
@@ -104,19 +91,7 @@ describe('ReportDialog', () => {
       )
 
       expect(screen.getByRole('button', { name: /キャンセル/i })).toBeInTheDocument()
-    })
-
-    it('displays submit button', () => {
-      render(
-        <ReportDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          onSubmit={mockOnSubmit}
-          isLoading={false}
-        />
-      )
-
-      expect(screen.getByRole('button', { name: /報告する/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /通報する/i })).toBeInTheDocument()
     })
   })
 
@@ -131,11 +106,11 @@ describe('ReportDialog', () => {
         />
       )
 
-      const submitButton = screen.getByRole('button', { name: /報告する/i })
+      const submitButton = screen.getByRole('button', { name: /通報する/i })
       expect(submitButton).toBeDisabled()
     })
 
-    it('submit button is disabled when only reason is selected', () => {
+    it('submit button is enabled when a non-OTHER reason is selected (details optional)', () => {
       render(
         <ReportDialog
           open={true}
@@ -145,48 +120,65 @@ describe('ReportDialog', () => {
         />
       )
 
-      const reasonRadio = screen.getByLabelText('不適切なコンテンツ')
+      const reasonRadio = screen.getByLabelText('成人向け')
       fireEvent.click(reasonRadio)
 
-      const submitButton = screen.getByRole('button', { name: /報告する/i })
-      expect(submitButton).toBeDisabled()
-    })
-
-    it('submit button is disabled when only details are entered', () => {
-      render(
-        <ReportDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          onSubmit={mockOnSubmit}
-          isLoading={false}
-        />
-      )
-
-      const textarea = screen.getByPlaceholderText(/報告理由の詳細を入力してください/)
-      fireEvent.change(textarea, { target: { value: 'テスト詳細' } })
-
-      const submitButton = screen.getByRole('button', { name: /報告する/i })
-      expect(submitButton).toBeDisabled()
-    })
-
-    it('submit button is enabled when both reason and details are provided', () => {
-      render(
-        <ReportDialog
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          onSubmit={mockOnSubmit}
-          isLoading={false}
-        />
-      )
-
-      const reasonRadio = screen.getByLabelText('不適切なコンテンツ')
-      fireEvent.click(reasonRadio)
-
-      const textarea = screen.getByPlaceholderText(/報告理由の詳細を入力してください/)
-      fireEvent.change(textarea, { target: { value: 'テスト詳細' } })
-
-      const submitButton = screen.getByRole('button', { name: /報告する/i })
+      const submitButton = screen.getByRole('button', { name: /通報する/i })
       expect(submitButton).toBeEnabled()
+    })
+
+    it('submit button is disabled when OTHER is selected without details', () => {
+      render(
+        <ReportDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onSubmit={mockOnSubmit}
+          isLoading={false}
+        />
+      )
+
+      const reasonRadio = screen.getByLabelText('その他')
+      fireEvent.click(reasonRadio)
+
+      const submitButton = screen.getByRole('button', { name: /通報する/i })
+      expect(submitButton).toBeDisabled()
+    })
+
+    it('submit button is enabled when OTHER is selected with details', () => {
+      render(
+        <ReportDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onSubmit={mockOnSubmit}
+          isLoading={false}
+        />
+      )
+
+      const reasonRadio = screen.getByLabelText('その他')
+      fireEvent.click(reasonRadio)
+
+      const textarea = screen.getByPlaceholderText(/通報理由の詳細を入力してください/)
+      fireEvent.change(textarea, { target: { value: 'テスト詳細' } })
+
+      const submitButton = screen.getByRole('button', { name: /通報する/i })
+      expect(submitButton).toBeEnabled()
+    })
+
+    it('submit button is disabled when only details are entered without reason', () => {
+      render(
+        <ReportDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onSubmit={mockOnSubmit}
+          isLoading={false}
+        />
+      )
+
+      const textarea = screen.getByPlaceholderText(/通報理由の詳細を入力してください/)
+      fireEvent.change(textarea, { target: { value: 'テスト詳細' } })
+
+      const submitButton = screen.getByRole('button', { name: /通報する/i })
+      expect(submitButton).toBeDisabled()
     })
 
     it('submit button is disabled when isLoading is true', () => {
@@ -199,14 +191,43 @@ describe('ReportDialog', () => {
         />
       )
 
-      const reasonRadio = screen.getByLabelText('不適切なコンテンツ')
+      const reasonRadio = screen.getByLabelText('成人向け')
       fireEvent.click(reasonRadio)
 
-      const textarea = screen.getByPlaceholderText(/報告理由の詳細を入力してください/)
-      fireEvent.change(textarea, { target: { value: 'テスト詳細' } })
-
-      const submitButton = screen.getByRole('button', { name: /報告する/i })
+      const submitButton = screen.getByRole('button', { name: /通報する/i })
       expect(submitButton).toBeDisabled()
+    })
+
+    it('details label shows required when OTHER is selected', () => {
+      render(
+        <ReportDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onSubmit={mockOnSubmit}
+          isLoading={false}
+        />
+      )
+
+      const reasonRadio = screen.getByLabelText('その他')
+      fireEvent.click(reasonRadio)
+
+      expect(screen.getByText(/詳細説明（必須）/)).toBeInTheDocument()
+    })
+
+    it('details label shows optional when non-OTHER reason is selected', () => {
+      render(
+        <ReportDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onSubmit={mockOnSubmit}
+          isLoading={false}
+        />
+      )
+
+      const reasonRadio = screen.getByLabelText('成人向け')
+      fireEvent.click(reasonRadio)
+
+      expect(screen.getByText(/詳細説明（任意）/)).toBeInTheDocument()
     })
   })
 
@@ -221,7 +242,7 @@ describe('ReportDialog', () => {
         />
       )
 
-      const textarea = screen.getByPlaceholderText(/報告理由の詳細を入力してください/)
+      const textarea = screen.getByPlaceholderText(/通報理由の詳細を入力してください/)
       fireEvent.change(textarea, { target: { value: 'あいうえお' } })
 
       expect(screen.getByText('5 / 300')).toBeInTheDocument()
@@ -237,12 +258,11 @@ describe('ReportDialog', () => {
         />
       )
 
-      const textarea = screen.getByPlaceholderText(/報告理由の詳細を入力してください/)
+      const textarea = screen.getByPlaceholderText(/通報理由の詳細を入力してください/)
       const longText = 'あ'.repeat(301)
       fireEvent.change(textarea, { target: { value: longText } })
 
       expect(screen.getByText('301 / 300')).toBeInTheDocument()
-      // 警告表示の確認（赤色のテキスト）
       const counter = screen.getByText('301 / 300')
       expect(counter).toHaveClass('text-red-500')
     })
@@ -265,7 +285,7 @@ describe('ReportDialog', () => {
       expect(mockOnOpenChange).toHaveBeenCalledWith(false)
     })
 
-    it('calls onSubmit with correct data when submit button is clicked', async () => {
+    it('calls onSubmit with reason only when details not provided', async () => {
       render(
         <ReportDialog
           open={true}
@@ -275,19 +295,43 @@ describe('ReportDialog', () => {
         />
       )
 
-      const reasonRadio = screen.getByLabelText('不適切なコンテンツ')
+      const reasonRadio = screen.getByLabelText('成人向け')
       fireEvent.click(reasonRadio)
 
-      const textarea = screen.getByPlaceholderText(/報告理由の詳細を入力してください/)
-      fireEvent.change(textarea, { target: { value: 'テスト詳細内容' } })
-
-      const submitButton = screen.getByRole('button', { name: /報告する/i })
+      const submitButton = screen.getByRole('button', { name: /通報する/i })
       fireEvent.click(submitButton)
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith({
-          reason: 'INAPPROPRIATE_CONTENT',
-          details: 'テスト詳細内容'
+          reason: 'ADULT_CONTENT',
+          details: undefined,
+        })
+      })
+    })
+
+    it('calls onSubmit with reason and details when both provided', async () => {
+      render(
+        <ReportDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onSubmit={mockOnSubmit}
+          isLoading={false}
+        />
+      )
+
+      const reasonRadio = screen.getByLabelText('著作権侵害')
+      fireEvent.click(reasonRadio)
+
+      const textarea = screen.getByPlaceholderText(/通報理由の詳細を入力してください/)
+      fireEvent.change(textarea, { target: { value: 'テスト詳細内容' } })
+
+      const submitButton = screen.getByRole('button', { name: /通報する/i })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledWith({
+          reason: 'COPYRIGHT_INFRINGEMENT',
+          details: 'テスト詳細内容',
         })
       })
     })
@@ -302,10 +346,10 @@ describe('ReportDialog', () => {
         />
       )
 
-      const reasonRadio = screen.getByLabelText('不適切なコンテンツ')
+      const reasonRadio = screen.getByLabelText('成人向け')
       fireEvent.click(reasonRadio)
 
-      const textarea = screen.getByPlaceholderText(/報告理由の詳細を入力してください/)
+      const textarea = screen.getByPlaceholderText(/通報理由の詳細を入力してください/)
       fireEvent.change(textarea, { target: { value: 'テスト詳細' } })
 
       // ダイアログを閉じる
