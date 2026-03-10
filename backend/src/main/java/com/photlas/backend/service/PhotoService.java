@@ -6,10 +6,13 @@ import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.entity.AccountSanction;
+import com.photlas.backend.exception.AccountSuspendedException;
 import com.photlas.backend.exception.CategoryNotFoundException;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.SpotNotFoundException;
 import com.photlas.backend.exception.UserNotFoundException;
+import com.photlas.backend.repository.AccountSanctionRepository;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
@@ -43,6 +46,8 @@ public class PhotoService {
 
     private static final Logger logger = LoggerFactory.getLogger(PhotoService.class);
 
+    private static final String ROLE_SUSPENDED = "SUSPENDED";
+
     private final PhotoRepository photoRepository;
     private final SpotRepository spotRepository;
     private final CategoryRepository categoryRepository;
@@ -50,6 +55,7 @@ public class PhotoService {
     private final WeatherService weatherService;
     private final FavoriteRepository favoriteRepository;
     private final S3Service s3Service;
+    private final AccountSanctionRepository accountSanctionRepository;
 
     public PhotoService(
             PhotoRepository photoRepository,
@@ -58,7 +64,8 @@ public class PhotoService {
             UserRepository userRepository,
             WeatherService weatherService,
             FavoriteRepository favoriteRepository,
-            S3Service s3Service
+            S3Service s3Service,
+            AccountSanctionRepository accountSanctionRepository
     ) {
         this.photoRepository = photoRepository;
         this.spotRepository = spotRepository;
@@ -67,6 +74,7 @@ public class PhotoService {
         this.weatherService = weatherService;
         this.favoriteRepository = favoriteRepository;
         this.s3Service = s3Service;
+        this.accountSanctionRepository = accountSanctionRepository;
     }
 
     /**
@@ -81,6 +89,9 @@ public class PhotoService {
         // ユーザー情報を取得
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+
+        // Issue#54: アカウント停止チェック
+        validateAccountNotSuspended(user);
 
         // 1. スポットの集約と作成
         Spot spot = findOrCreateSpot(request, user);
@@ -378,6 +389,31 @@ public class PhotoService {
         }
         // 他ユーザー・未認証: PUBLISHEDのみ
         return List.of(ModerationStatus.PUBLISHED);
+    }
+
+    /**
+     * Issue#54: アカウントが停止されていないか検証する
+     * 永久停止またはアクティブな一時停止中の場合は例外をスローする
+     *
+     * @param user ユーザー
+     * @throws AccountSuspendedException アカウント停止中の場合
+     */
+    private void validateAccountNotSuspended(User user) {
+        // 永久停止チェック
+        if (ROLE_SUSPENDED.equals(user.getRole())) {
+            throw new AccountSuspendedException("アカウントが停止されています");
+        }
+
+        // 一時停止チェック
+        List<AccountSanction> sanctions = accountSanctionRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        for (AccountSanction sanction : sanctions) {
+            if ("TEMPORARY_SUSPENSION".equals(sanction.getSanctionType())
+                    && sanction.getSuspendedUntil() != null
+                    && sanction.getSuspendedUntil().isAfter(LocalDateTime.now())) {
+                throw new AccountSuspendedException(
+                        "投稿機能が一時停止中です（" + sanction.getSuspendedUntil().toLocalDate() + " まで）");
+            }
+        }
     }
 
     /**
