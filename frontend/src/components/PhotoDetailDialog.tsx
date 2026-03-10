@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -11,6 +11,8 @@ import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { useAuth } from '../contexts/AuthContext'
+import { ReportDialog } from './ReportDialog'
+import { toast } from 'sonner'
 
 // API Endpoints
 const API_SPOTS_PHOTOS = `${API_V1_URL}/spots`
@@ -315,6 +317,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const [favoriteCount, setFavoriteCount] = useState(0)
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false)
 
+  // Issue#54: 通報状態管理
+  const [isReportOpen, setIsReportOpen] = useState(false)
+  const [isReportLoading, setIsReportLoading] = useState(false)
+
   // refで最新のphotoDetailsを参照（依存配列ループ回避）
   const photoDetailsRef = useRef(photoDetails)
   photoDetailsRef.current = photoDetails
@@ -477,6 +483,43 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       setIsFavoriteLoading(false)
     }
   }, [currentPhotoId, isFavorited, favoriteCount, isFavoriteLoading])
+
+  // Issue#54: 通報送信処理
+  const handleReport = useCallback(async (data: { reason: string; details?: string }) => {
+    if (!currentPhotoId) return
+
+    setIsReportLoading(true)
+    try {
+      const response = await fetch(`${API_PHOTOS}/${currentPhotoId}/report`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reason: data.reason,
+          details: data.details,
+        }),
+      })
+
+      if (response.ok) {
+        toast.success('通報を受け付けました')
+        setIsReportOpen(false)
+      } else if (response.status === 409) {
+        toast.error('この写真は既に通報済みです')
+        setIsReportOpen(false)
+      } else if (response.status === 400) {
+        toast.error('自分の写真は通報できません')
+        setIsReportOpen(false)
+      } else {
+        toast.error('通報に失敗しました')
+      }
+    } catch {
+      toast.error('通報に失敗しました')
+    } finally {
+      setIsReportLoading(false)
+    }
+  }, [currentPhotoId])
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal={false}>
@@ -739,7 +782,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     </div>
                   )}
 
-                  {/* Issue#30: お気に入りボタン（design-assets準拠） */}
+                  {/* Issue#30: お気に入りボタン / Issue#54: 通報ボタン */}
                   <div className="flex gap-2 pt-4">
                     <Button
                       variant="outline"
@@ -764,7 +807,25 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         ({favoriteCount})
                       </span>
                     </Button>
+                    {isAuthenticated && (
+                      <Button
+                        variant="outline"
+                        data-testid="report-button"
+                        onClick={() => setIsReportOpen(true)}
+                        aria-label="この写真を通報"
+                      >
+                        <Flag className="w-5 h-5" />
+                      </Button>
+                    )}
                   </div>
+
+                  {/* Issue#54: 通報ダイアログ */}
+                  <ReportDialog
+                    open={isReportOpen}
+                    onOpenChange={setIsReportOpen}
+                    onSubmit={handleReport}
+                    isLoading={isReportLoading}
+                  />
                 </div>
               )}
             </div>
