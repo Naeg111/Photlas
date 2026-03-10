@@ -111,7 +111,7 @@ public class UserService {
 
         user = userRepository.save(user);
 
-        String token = jwtService.generateToken(user.getEmail());
+        String token = jwtService.generateTokenWithRole(user.getEmail(), user.getRole());
 
         // メール認証トークンを生成して送信
         sendVerificationEmail(user);
@@ -146,7 +146,7 @@ public class UserService {
             throw new IllegalArgumentException("メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。");
         }
 
-        String token = jwtService.generateToken(user.getEmail());
+        String token = jwtService.generateTokenWithRole(user.getEmail(), user.getRole());
 
         return new RegisterResponse(
             new RegisterResponse.UserResponse(user),
@@ -360,25 +360,6 @@ public class UserService {
         }
 
         sendVerificationEmail(user);
-    }
-
-    private void sendWelcomeEmail(String email, String username) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email);
-            message.setSubject("【Photlas】ご登録ありがとうございます");
-            message.setText(username + " さん\n\n" +
-                           "Photlasへのご登録ありがとうございます！\n" +
-                           "アカウントが作成されました。\n\n" +
-                           "さっそく撮影スポットを探してみましょう：\n" +
-                           frontendUrl + "\n\n" +
-                           "Photlas チーム");
-
-            mailSender.send(message);
-        } catch (Exception e) {
-            // Log the error but don't fail registration
-            logger.error("Failed to send welcome email: {}", e.getMessage());
-        }
     }
 
     /**
