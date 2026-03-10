@@ -142,6 +142,7 @@ public class FavoriteControllerTest {
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(user.getId());
         photo.setSpotId(spot.getSpotId());
+        photo.setModerationStatus(com.photlas.backend.entity.ModerationStatus.PUBLISHED);
         return photoRepository.save(photo);
     }
 
