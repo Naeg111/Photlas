@@ -114,6 +114,36 @@ describe('AdminModerationPage', () => {
     expect(screen.getByText('2件の審査待ち')).toBeInTheDocument()
   })
 
+  it('画像をクリックするとぼかしが解除される', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: 'ADMIN' },
+      isAuthenticated: true,
+    })
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        content: MOCK_QUEUE_ITEMS,
+        total_elements: 2,
+        total_pages: 1,
+      }),
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('moderation-image-1')).toBeInTheDocument()
+    })
+
+    const image = screen.getByTestId('moderation-image-1')
+    expect(image.className).toContain('blur-lg')
+
+    const user = userEvent.setup()
+    await user.click(screen.getByTestId('moderation-image-container-1'))
+
+    expect(image.className).not.toContain('blur-lg')
+  })
+
   it('審査待ちの写真がない場合はメッセージが表示される', async () => {
     mockUseAuth.mockReturnValue({
       user: { userId: 1, role: 'ADMIN' },
