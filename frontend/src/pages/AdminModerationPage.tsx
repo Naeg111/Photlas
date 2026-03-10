@@ -38,6 +38,7 @@ export default function AdminModerationPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set())
+  const [revealedIds, setRevealedIds] = useState<Set<number>>(new Set())
 
   const isAdmin = user?.role === 'ADMIN'
 
@@ -183,19 +184,35 @@ export default function AdminModerationPage() {
                 className="bg-white rounded-lg shadow overflow-hidden"
                 data-testid={`moderation-item-${item.photo_id}`}
               >
-                {/* ぼかし画像 */}
-                <div className="aspect-square relative overflow-hidden">
+                {/* 画像（クリックでぼかし切替） */}
+                <div
+                  className="aspect-square relative overflow-hidden cursor-pointer"
+                  onClick={() => setRevealedIds(prev => {
+                    const next = new Set(prev)
+                    if (next.has(item.photo_id)) {
+                      next.delete(item.photo_id)
+                    } else {
+                      next.add(item.photo_id)
+                    }
+                    return next
+                  })}
+                  data-testid={`moderation-image-container-${item.photo_id}`}
+                >
                   <img
                     src={item.image_url}
                     alt={item.title}
-                    className="w-full h-full object-cover blur-lg"
+                    className={`w-full h-full object-cover transition-all duration-300 ${
+                      revealedIds.has(item.photo_id) ? '' : 'blur-lg'
+                    }`}
                     data-testid={`moderation-image-${item.photo_id}`}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <span className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">
-                      要審査
-                    </span>
-                  </div>
+                  {!revealedIds.has(item.photo_id) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <span className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">
+                        クリックで表示
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* 情報 */}
