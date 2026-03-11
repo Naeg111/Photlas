@@ -152,6 +152,7 @@ jobs:
         DEPLOY_SMTP_PORT: ${{ secrets.SMTP_PORT }}
         DEPLOY_SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
         DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        DEPLOY_MODERATION_API_KEY: ${{ secrets.MODERATION_API_KEY }}
       run: |
         # デプロイスクリプトを生成してbase64エンコード
         cat > /tmp/deploy_script.sh << 'SCRIPT_END'
@@ -173,6 +174,7 @@ jobs:
         export SMTP_PORT='__SMTP_PORT__'
         export SMTP_USERNAME='__SMTP_USERNAME__'
         export SMTP_PASSWORD='__SMTP_PASSWORD__'
+        export MODERATION_API_KEY='__MODERATION_API_KEY__'
 
         echo '=== Environment variables set ==='
         echo "IMAGE_TAG: $IMAGE_TAG"
@@ -250,6 +252,7 @@ jobs:
         sed -i "s|__SMTP_PORT__|${DEPLOY_SMTP_PORT}|g" /tmp/deploy_script.sh
         sed -i "s|__SMTP_USERNAME__|${DEPLOY_SMTP_USERNAME}|g" /tmp/deploy_script.sh
         sed -i "s|__SMTP_PASSWORD__|${DEPLOY_SMTP_PASSWORD}|g" /tmp/deploy_script.sh
+        sed -i "s|__MODERATION_API_KEY__|${DEPLOY_MODERATION_API_KEY}|g" /tmp/deploy_script.sh
 
         # base64エンコード
         ENCODED_SCRIPT=$(base64 -w 0 /tmp/deploy_script.sh)
@@ -373,6 +376,7 @@ jobs:
         DEPLOY_SMTP_PORT: ${{ secrets.SMTP_PORT }}
         DEPLOY_SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
         DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        DEPLOY_MODERATION_API_KEY: ${{ secrets.MODERATION_API_KEY }}
         DEPLOY_AWS_CLOUDFRONT_DOMAIN: ${{ secrets.PRODUCTION_CLOUDFRONT_DOMAIN }}
       run: |
         # デプロイスクリプトを生成してbase64エンコード
@@ -395,6 +399,7 @@ jobs:
         export SMTP_PORT='__SMTP_PORT__'
         export SMTP_USERNAME='__SMTP_USERNAME__'
         export SMTP_PASSWORD='__SMTP_PASSWORD__'
+        export MODERATION_API_KEY='__MODERATION_API_KEY__'
         export AWS_CLOUDFRONT_DOMAIN='__AWS_CLOUDFRONT_DOMAIN__'
 
         echo '=== Environment variables set ==='
@@ -461,6 +466,7 @@ jobs:
         sed -i "s|__SMTP_PORT__|${DEPLOY_SMTP_PORT}|g" /tmp/deploy_script.sh
         sed -i "s|__SMTP_USERNAME__|${DEPLOY_SMTP_USERNAME}|g" /tmp/deploy_script.sh
         sed -i "s|__SMTP_PASSWORD__|${DEPLOY_SMTP_PASSWORD}|g" /tmp/deploy_script.sh
+        sed -i "s|__MODERATION_API_KEY__|${DEPLOY_MODERATION_API_KEY}|g" /tmp/deploy_script.sh
         sed -i "s|__AWS_CLOUDFRONT_DOMAIN__|${DEPLOY_AWS_CLOUDFRONT_DOMAIN}|g" /tmp/deploy_script.sh
 
         # base64エンコード
