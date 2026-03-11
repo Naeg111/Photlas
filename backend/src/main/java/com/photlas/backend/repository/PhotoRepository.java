@@ -62,4 +62,9 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
      * Issue#54: 指定ステータスで指定日時より前に作成された写真の件数を取得（滞留チェック用）
      */
     long countByModerationStatusAndCreatedAtBefore(ModerationStatus status, LocalDateTime createdAt);
+
+    /**
+     * Issue#54: 指定ステータスで指定日時より前に更新された写真を取得（物理削除用）
+     */
+    List<Photo> findByModerationStatusAndUpdatedAtBefore(ModerationStatus status, LocalDateTime updatedAt);
 }
