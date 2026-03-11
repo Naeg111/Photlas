@@ -42,19 +42,22 @@ public class AdminModerationService {
     private final ReportRepository reportRepository;
     private final AccountSanctionRepository accountSanctionRepository;
     private final UserRepository userRepository;
+    private final ModerationNotificationService notificationService;
 
     public AdminModerationService(
             PhotoRepository photoRepository,
             ViolationRepository violationRepository,
             ReportRepository reportRepository,
             AccountSanctionRepository accountSanctionRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            ModerationNotificationService notificationService
     ) {
         this.photoRepository = photoRepository;
         this.violationRepository = violationRepository;
         this.reportRepository = reportRepository;
         this.accountSanctionRepository = accountSanctionRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -123,21 +126,35 @@ public class AdminModerationService {
         sanction.setUserId(userId);
         sanction.setReason(reason);
 
+        User user = userRepository.findById(userId).orElse(null);
+        String email = user != null ? user.getEmail() : null;
+        String username = user != null ? user.getUsername() : null;
+
         if (violationCount >= 3) {
             // 3回目以降: 永久停止
             sanction.setSanctionType(SANCTION_PERMANENT_SUSPENSION);
             accountSanctionRepository.save(sanction);
             applyPermanentSuspension(userId);
+            if (email != null) {
+                notificationService.sendPermanentSuspensionNotification(email, username, reason);
+            }
         } else if (violationCount == 2) {
             // 2回目: 60日間投稿停止
             sanction.setSanctionType(SANCTION_TEMPORARY_SUSPENSION);
             sanction.setSuspendedUntil(LocalDateTime.now().plusDays(TEMPORARY_SUSPENSION_DAYS));
             accountSanctionRepository.save(sanction);
+            if (email != null) {
+                notificationService.sendTemporarySuspensionNotification(
+                        email, username, reason, sanction.getSuspendedUntil().toLocalDate());
+            }
             logger.info("一時停止を適用: userId={}, until={}", userId, sanction.getSuspendedUntil());
         } else {
             // 1回目: 警告
             sanction.setSanctionType(SANCTION_WARNING);
             accountSanctionRepository.save(sanction);
+            if (email != null) {
+                notificationService.sendWarningNotification(email, username, reason);
+            }
             logger.info("警告を適用: userId={}", userId);
         }
     }
