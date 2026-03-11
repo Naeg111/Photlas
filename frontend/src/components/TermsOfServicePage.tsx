@@ -139,7 +139,16 @@ export function TermsOfServicePage({
                 <li>他のユーザーになりすます行為</li>
                 <li>1人が複数のアカウントを作成・運用する行為</li>
                 <li>反社会的勢力に対して直接または間接に利益を供与する行為</li>
-                <li>わいせつ、暴力的、差別的その他不快感を与えるコンテンツを投稿する行為</li>
+                <li>
+                  以下に該当するコンテンツを投稿する行為
+                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
+                    <li>わいせつ、露骨な性的表現を含むコンテンツ</li>
+                    <li>暴力的、残虐な表現を含むコンテンツ</li>
+                    <li>児童の性的搾取に関するコンテンツ（CSAM/IHC）</li>
+                    <li>差別的、ヘイトスピーチに該当するコンテンツ</li>
+                    <li>その他不快感を与えるコンテンツ</li>
+                  </ul>
+                </li>
                 <li>本サービスの運営を妨害するおそれのある行為</li>
                 <li>その他、運営者が不適切と判断する行為</li>
               </ol>
@@ -189,7 +198,30 @@ export function TermsOfServicePage({
             </section>
 
             <section>
-              <h2 className="mb-3">第9条（本サービスの停止・変更・終了）</h2>
+              <h2 className="mb-3">第9条（コンテンツモデレーション）</h2>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                <li>
+                  運営者は、投稿データが本規約および運営者が別途定めるコンテンツポリシーに適合するかを確認するため、自動的な審査（AI技術による画像分析を含みます）および人的な審査を実施する場合があります。
+                </li>
+                <li>
+                  審査の結果、投稿データがコンテンツポリシーに違反している、またはその可能性があると判断された場合、運営者は当該投稿データを非公開にする、または削除する措置を講じることができます。
+                </li>
+                <li>
+                  コンテンツポリシーに違反したユーザーに対して、運営者は以下の段階的な措置を講じることができます。
+                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
+                    <li>1回目の違反：警告</li>
+                    <li>2回目の違反：一定期間の投稿機能の停止</li>
+                    <li>3回目以降の違反：アカウントの永久停止</li>
+                  </ul>
+                </li>
+                <li>
+                  児童の性的搾取に関するコンテンツ（CSAM/IHC）が検出された場合、運営者は法令に基づき関係機関への通報を行うとともに、直ちにアカウントの永久停止その他必要な措置を講じます。
+                </li>
+              </ol>
+            </section>
+
+            <section>
+              <h2 className="mb-3">第10条（本サービスの停止・変更・終了）</h2>
               <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
                 <li>
                   運営者は、以下のいずれかの事由があると判断した場合、ユーザーに事前に通知することなく本サービスの全部または一部の提供を停止または中断することができるものとします。
@@ -207,7 +239,7 @@ export function TermsOfServicePage({
             </section>
 
             <section>
-              <h2 className="mb-3">第10条（免責事項）</h2>
+              <h2 className="mb-3">第11条（免責事項）</h2>
               <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
                 <li>
                   運営者は、本サービスに事実上または法律上の瑕疵（安全性、信頼性、正確性、完全性、有効性、特定の目的への適合性、セキュリティなどに関する欠陥、エラーやバグ、権利侵害などを含みます）がないことを明示的にも黙示的にも保証しておりません。
@@ -228,7 +260,7 @@ export function TermsOfServicePage({
             </section>
 
             <section>
-              <h2 className="mb-3">第11条（規約の変更）</h2>
+              <h2 className="mb-3">第12条（規約の変更）</h2>
               <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
                 <li>
                   運営者は、必要と判断した場合には、ユーザーの同意を得ることなく、本規約を変更することができるものとします。
@@ -246,14 +278,14 @@ export function TermsOfServicePage({
             </section>
 
             <section>
-              <h2 className="mb-3">第12条（通知）</h2>
+              <h2 className="mb-3">第13条（通知）</h2>
               <p className="text-sm text-gray-700">
                 運営者からユーザーへの通知は、登録されたメールアドレスへのメール送信または本サービス上の掲示その他運営者が適当と判断する方法により行うものとします。メールによる通知は、運営者がメールを送信した時点でユーザーに到達したものとみなします。
               </p>
             </section>
 
             <section>
-              <h2 className="mb-3">第13条（権利義務の譲渡禁止）</h2>
+              <h2 className="mb-3">第14条（権利義務の譲渡禁止）</h2>
               <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
                 <li>
                   ユーザーは、運営者の書面による事前の承諾なく、本規約上の地位または本規約に基づく権利もしくは義務を第三者に譲渡し、または担保に供することはできません。
@@ -265,14 +297,14 @@ export function TermsOfServicePage({
             </section>
 
             <section>
-              <h2 className="mb-3">第14条（分離可能性）</h2>
+              <h2 className="mb-3">第15条（分離可能性）</h2>
               <p className="text-sm text-gray-700">
                 本規約のいずれかの条項またはその一部が、法令等により無効または執行不能と判断された場合であっても、本規約の残りの規定および一部が無効または執行不能と判断された規定の残りの部分は、継続して完全に効力を有するものとします。
               </p>
             </section>
 
             <section>
-              <h2 className="mb-3">第15条（準拠法・管轄裁判所）</h2>
+              <h2 className="mb-3">第16条（準拠法・管轄裁判所）</h2>
               <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
                 <li>
                   本規約の解釈にあたっては、日本法を準拠法とします。
@@ -292,7 +324,7 @@ export function TermsOfServicePage({
             </section>
 
             <section>
-              <h2 className="mb-3">第16条（お問い合わせ）</h2>
+              <h2 className="mb-3">第17条（お問い合わせ）</h2>
               <p className="text-sm text-gray-700">
                 本規約に関するお問い合わせは、以下の窓口までご連絡ください。
               </p>
@@ -305,7 +337,7 @@ export function TermsOfServicePage({
             <section className="pt-6 border-t">
               <p className="text-sm text-gray-500">
                 制定日：2026年2月16日<br />
-                最終改定日：2026年2月16日
+                最終改定日：2026年3月11日
               </p>
             </section>
           </div>

@@ -89,7 +89,8 @@ export function PrivacyPolicyPage({
               <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（6）利用データ</h3>
               <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
                 <li>お気に入り登録情報</li>
-                <li>通報情報</li>
+                <li>通報情報（通報理由、通報対象）</li>
+                <li>コンテンツモデレーション情報（審査結果、違反履歴、制裁情報）</li>
               </ul>
 
               <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（7）技術情報</h3>
@@ -164,7 +165,7 @@ export function PrivacyPolicyPage({
                   運営者は、本サービスの提供にあたり、以下の外部サービスを利用しています。これらのサービスにユーザーの情報の一部が送信される場合があります。
                   <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
                     <li>
-                      <span className="font-semibold">Amazon Web Services（AWS S3、CloudFront、SES）</span>：画像ファイルの保存・配信、メール送信に使用します。データはAWSの東京リージョン（ap-northeast-1）に保存されます。
+                      <span className="font-semibold">Amazon Web Services（AWS S3、CloudFront、SES、Rekognition）</span>：画像ファイルの保存・配信、メール送信、およびコンテンツの自動審査に使用します。データはAWSの東京リージョン（ap-northeast-1）で処理されます。
                     </li>
                     <li>
                       <span className="font-semibold">Mapbox</span>：地図の表示および撮影地点の位置情報の表示に使用します。Mapboxのプライバシーポリシーは
@@ -200,7 +201,25 @@ export function PrivacyPolicyPage({
             </section>
 
             <section>
-              <h2 className="mb-3">第8条（Cookie等の利用）</h2>
+              <h2 className="mb-3">第8条（コンテンツの自動審査）</h2>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                <li>
+                  運営者は、コンテンツポリシーの遵守を確保するため、ユーザーが投稿した写真について、AI技術（Amazon Rekognition Content Moderation）を用いた自動画像分析を実施します。
+                </li>
+                <li>
+                  自動審査では、投稿された画像が不適切なコンテンツ（性的表現、暴力的表現、児童の性的搾取等）に該当するかどうかを分析します。画像データはAWSの東京リージョンで処理され、分析結果のみが保存されます。
+                </li>
+                <li>
+                  自動審査により不適切と判断された投稿は、一時的に非公開（隔離）状態となり、運営者による人的確認が行われます。
+                </li>
+                <li>
+                  自動審査の結果および違反履歴は、コンテンツモデレーションおよびアカウント管理の目的で保存されます。
+                </li>
+              </ol>
+            </section>
+
+            <section>
+              <h2 className="mb-3">第9条（Cookie等の利用）</h2>
               <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
                 <li>
                   本サービスでは、認証目的でのCookieは使用しません。認証にはJSON Web Token（JWT）を使用し、以下の方法でブラウザに保存します。
@@ -216,7 +235,7 @@ export function PrivacyPolicyPage({
             </section>
 
             <section>
-              <h2 className="mb-3">第9条（個人情報の開示・訂正・削除）</h2>
+              <h2 className="mb-3">第10条（個人情報の開示・訂正・削除）</h2>
               <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
                 <li>
                   ユーザーは、自身の個人情報について、以下の権利を有します。
@@ -236,7 +255,7 @@ export function PrivacyPolicyPage({
             </section>
 
             <section>
-              <h2 className="mb-3">第10条（アカウント削除時のデータ取り扱い）</h2>
+              <h2 className="mb-3">第11条（アカウント削除時のデータ取り扱い）</h2>
               <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
                 <li>
                   ユーザーが退会した場合、以下のデータは不正利用の調査・対応を目的として90日間保持した後、バックアップを含め完全に削除します。ただし、利用規約に基づきプロモーション目的で既に公開された投稿データについてはこの限りではありません。
@@ -254,21 +273,21 @@ export function PrivacyPolicyPage({
             </section>
 
             <section>
-              <h2 className="mb-3">第11条（未成年者の利用）</h2>
+              <h2 className="mb-3">第12条（未成年者の利用）</h2>
               <p className="text-sm text-gray-700">
                 未成年者が本サービスを利用する場合は、法定代理人（保護者）の同意を得た上で利用するものとします。未成年者が本サービスを利用した場合、法定代理人の同意を得ているものとみなします。
               </p>
             </section>
 
             <section>
-              <h2 className="mb-3">第12条（利用目的の変更）</h2>
+              <h2 className="mb-3">第13条（利用目的の変更）</h2>
               <p className="text-sm text-gray-700">
                 運営者は、利用目的が変更前と関連性を有すると合理的に認められる場合に限り、個人情報の利用目的を変更するものとします。利用目的の変更を行った場合には、変更後の目的について、ユーザーに通知し、または本サービス上に公表するものとします。
               </p>
             </section>
 
             <section>
-              <h2 className="mb-3">第13条（プライバシーポリシーの変更）</h2>
+              <h2 className="mb-3">第14条（プライバシーポリシーの変更）</h2>
               <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
                 <li>
                   運営者は、法令の改正やサービスの変更に伴い、本ポリシーを変更する場合があります。
@@ -283,7 +302,7 @@ export function PrivacyPolicyPage({
             </section>
 
             <section>
-              <h2 className="mb-3">第14条（お問い合わせ窓口）</h2>
+              <h2 className="mb-3">第15条（お問い合わせ窓口）</h2>
               <p className="text-sm text-gray-700">
                 本ポリシーに関するお問い合わせは、以下の窓口までご連絡ください。
               </p>
@@ -296,7 +315,7 @@ export function PrivacyPolicyPage({
             <section className="pt-6 border-t">
               <p className="text-sm text-gray-500">
                 制定日：2026年2月16日<br />
-                最終改定日：2026年2月16日
+                最終改定日：2026年3月11日
               </p>
             </section>
           </div>
