@@ -5,9 +5,11 @@ import com.photlas.backend.entity.ModerationDetail;
 import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.ReportTargetType;
+import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.repository.ModerationDetailRepository;
 import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,15 +34,20 @@ public class ModerationCallbackController {
     @Value("${moderation.api-key:test-moderation-api-key}")
     private String validApiKey;
 
+    private static final String PROFILE_IMAGE_PREFIX = "profile-images/";
+
     private final PhotoRepository photoRepository;
     private final ModerationDetailRepository moderationDetailRepository;
+    private final UserRepository userRepository;
 
     public ModerationCallbackController(
             PhotoRepository photoRepository,
-            ModerationDetailRepository moderationDetailRepository
+            ModerationDetailRepository moderationDetailRepository,
+            UserRepository userRepository
     ) {
         this.photoRepository = photoRepository;
         this.moderationDetailRepository = moderationDetailRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -68,30 +75,76 @@ public class ModerationCallbackController {
                 ? ((Number) request.get("confidence_score")).doubleValue()
                 : null;
 
+        ModerationStatus newStatus = ModerationStatus.valueOf(statusStr);
+
+        // Issue#54: プロフィール画像の場合は別処理
+        if (s3ObjectKey.startsWith(PROFILE_IMAGE_PREFIX)) {
+            return handleProfileImageCallback(s3ObjectKey, newStatus, confidenceScore);
+        }
+
         // S3オブジェクトキーから写真を検索
         Photo photo = photoRepository.findByS3ObjectKey(s3ObjectKey)
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません: " + s3ObjectKey));
 
         // ステータスを更新
-        ModerationStatus newStatus = ModerationStatus.valueOf(statusStr);
         photo.setModerationStatus(newStatus);
         photoRepository.save(photo);
 
         // モデレーション詳細を保存
-        ModerationDetail detail = new ModerationDetail();
-        detail.setTargetType(ReportTargetType.PHOTO);
-        detail.setTargetId(photo.getPhotoId());
-        detail.setSource("AI_SCAN");
-        detail.setAiConfidenceScore(confidenceScore);
-        if (newStatus == ModerationStatus.QUARANTINED) {
-            detail.setQuarantinedAt(LocalDateTime.now());
-        }
-        moderationDetailRepository.save(detail);
+        saveModerationDetail(ReportTargetType.PHOTO, photo.getPhotoId(), confidenceScore, newStatus);
 
         logger.info("モデレーションコールバック処理完了: s3Key={}, status={}, confidence={}",
                 s3ObjectKey, newStatus, confidenceScore);
 
         return ResponseEntity.ok(Map.of("message", "ステータスを更新しました"));
+    }
+
+    /**
+     * Issue#54: プロフィール画像のモデレーションコールバック処理
+     * QUARANTINEDの場合はプロフィール画像をリセット（デフォルトに戻す）
+     */
+    private ResponseEntity<?> handleProfileImageCallback(
+            String s3ObjectKey, ModerationStatus status, Double confidenceScore) {
+
+        User user = userRepository.findByProfileImageS3Key(s3ObjectKey).orElse(null);
+
+        if (user == null) {
+            logger.warn("プロフィール画像の所有者が見つかりません: s3Key={}", s3ObjectKey);
+            return ResponseEntity.ok(Map.of("message", "対象ユーザーが見つかりませんでした"));
+        }
+
+        if (status == ModerationStatus.QUARANTINED) {
+            // プロフィール画像をデフォルトにリセット
+            user.setProfileImageS3Key(null);
+            userRepository.save(user);
+            logger.info("プロフィール画像をリセット: userId={}, s3Key={}", user.getId(), s3ObjectKey);
+        }
+
+        // モデレーション詳細を保存
+        saveModerationDetail(ReportTargetType.PROFILE, user.getId(), confidenceScore, status);
+
+        logger.info("プロフィール画像モデレーション完了: userId={}, status={}, confidence={}",
+                user.getId(), status, confidenceScore);
+
+        return ResponseEntity.ok(Map.of("message", "プロフィール画像のステータスを更新しました"));
+    }
+
+    /**
+     * モデレーション詳細を保存する
+     */
+    private void saveModerationDetail(
+            ReportTargetType targetType, Long targetId,
+            Double confidenceScore, ModerationStatus status) {
+
+        ModerationDetail detail = new ModerationDetail();
+        detail.setTargetType(targetType);
+        detail.setTargetId(targetId);
+        detail.setSource("AI_SCAN");
+        detail.setAiConfidenceScore(confidenceScore);
+        if (status == ModerationStatus.QUARANTINED) {
+            detail.setQuarantinedAt(LocalDateTime.now());
+        }
+        moderationDetailRepository.save(detail);
     }
 
     /**

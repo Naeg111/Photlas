@@ -36,4 +36,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return ユーザー（存在しない場合はOptional.empty()）
      */
     Optional<User> findByUsername(String username);
+
+    /**
+     * Issue#54: プロフィール画像S3キーでユーザーを検索
+     *
+     * @param profileImageS3Key プロフィール画像のS3オブジェクトキー
+     * @return ユーザー（存在しない場合はOptional.empty()）
+     */
+    Optional<User> findByProfileImageS3Key(String profileImageS3Key);
 }
