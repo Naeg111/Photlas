@@ -10,6 +10,7 @@ import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.repository.ModerationDetailRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.service.ModerationNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,15 +40,18 @@ public class ModerationCallbackController {
     private final PhotoRepository photoRepository;
     private final ModerationDetailRepository moderationDetailRepository;
     private final UserRepository userRepository;
+    private final ModerationNotificationService notificationService;
 
     public ModerationCallbackController(
             PhotoRepository photoRepository,
             ModerationDetailRepository moderationDetailRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            ModerationNotificationService notificationService
     ) {
         this.photoRepository = photoRepository;
         this.moderationDetailRepository = moderationDetailRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -92,6 +96,13 @@ public class ModerationCallbackController {
 
         // モデレーション詳細を保存
         saveModerationDetail(ReportTargetType.PHOTO, photo.getPhotoId(), confidenceScore, newStatus);
+
+        // Issue#54: 隔離時にユーザーへメール通知
+        if (newStatus == ModerationStatus.QUARANTINED) {
+            userRepository.findById(photo.getUserId()).ifPresent(user ->
+                    notificationService.sendQuarantineNotification(
+                            user.getEmail(), user.getUsername(), photo.getTitle()));
+        }
 
         logger.info("モデレーションコールバック処理完了: s3Key={}, status={}, confidence={}",
                 s3ObjectKey, newStatus, confidenceScore);
