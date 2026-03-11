@@ -62,13 +62,14 @@ describe('PrivacyPolicyPage', () => {
     it('renders additional sections', () => {
       render(<PrivacyPolicyPage {...defaultProps} />)
 
-      expect(screen.getByText(/第8条（Cookie等の利用）/)).toBeInTheDocument()
-      expect(screen.getByText(/第9条（個人情報の開示・訂正・削除）/)).toBeInTheDocument()
-      expect(screen.getByText(/第10条（アカウント削除時のデータ取り扱い）/)).toBeInTheDocument()
-      expect(screen.getByText(/第11条（未成年者の利用）/)).toBeInTheDocument()
-      expect(screen.getByText(/第12条（利用目的の変更）/)).toBeInTheDocument()
-      expect(screen.getByText(/第13条（プライバシーポリシーの変更）/)).toBeInTheDocument()
-      expect(screen.getByText(/第14条（お問い合わせ窓口）/)).toBeInTheDocument()
+      expect(screen.getByText(/第8条（コンテンツの自動審査）/)).toBeInTheDocument()
+      expect(screen.getByText(/第9条（Cookie等の利用）/)).toBeInTheDocument()
+      expect(screen.getByText(/第10条（個人情報の開示・訂正・削除）/)).toBeInTheDocument()
+      expect(screen.getByText(/第11条（アカウント削除時のデータ取り扱い）/)).toBeInTheDocument()
+      expect(screen.getByText(/第12条（未成年者の利用）/)).toBeInTheDocument()
+      expect(screen.getByText(/第13条（利用目的の変更）/)).toBeInTheDocument()
+      expect(screen.getByText(/第14条（プライバシーポリシーの変更）/)).toBeInTheDocument()
+      expect(screen.getByText(/第15条（お問い合わせ窓口）/)).toBeInTheDocument()
     })
 
     it('renders contact email address', () => {
