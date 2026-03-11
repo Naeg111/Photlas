@@ -188,4 +188,60 @@ public class ModerationCallbackTest {
                 .param("threshold_minutes", "5"))
                 .andExpect(status().isUnauthorized());
     }
+
+    // ===== Issue#54: プロフィール画像モデレーションテスト =====
+
+    @Test
+    @DisplayName("Issue#54 - プロフィール画像: QUARANTINED → 画像リセット")
+    void testModerationCallback_ProfileImage_Quarantined_ResetsImage() throws Exception {
+        // Given: プロフィール画像を設定
+        User user = userRepository.findByEmail("test@example.com").orElseThrow();
+        String profileS3Key = "profile-images/" + user.getId() + "/photo.jpg";
+        user.setProfileImageS3Key(profileS3Key);
+        userRepository.save(user);
+
+        Map<String, Object> request = Map.of(
+                "s3_object_key", profileS3Key,
+                "status", "QUARANTINED",
+                "confidence_score", 0.9
+        );
+
+        // When
+        mockMvc.perform(post("/api/v1/internal/moderation/callback")
+                .header(API_KEY_HEADER, TEST_API_KEY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        // Then: プロフィール画像がリセットされる
+        User updated = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(updated.getProfileImageS3Key()).isNull();
+    }
+
+    @Test
+    @DisplayName("Issue#54 - プロフィール画像: PUBLISHED → 画像そのまま")
+    void testModerationCallback_ProfileImage_Published_KeepsImage() throws Exception {
+        // Given: プロフィール画像を設定
+        User user = userRepository.findByEmail("test@example.com").orElseThrow();
+        String profileS3Key = "profile-images/" + user.getId() + "/safe.jpg";
+        user.setProfileImageS3Key(profileS3Key);
+        userRepository.save(user);
+
+        Map<String, Object> request = Map.of(
+                "s3_object_key", profileS3Key,
+                "status", "PUBLISHED",
+                "confidence_score", 0.05
+        );
+
+        // When
+        mockMvc.perform(post("/api/v1/internal/moderation/callback")
+                .header(API_KEY_HEADER, TEST_API_KEY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        // Then: プロフィール画像はそのまま
+        User updated = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(updated.getProfileImageS3Key()).isEqualTo(profileS3Key);
+    }
 }
