@@ -23,7 +23,7 @@ public class TestUtilityController {
 
     private static final String API_KEY_HEADER = "X-API-Key";
 
-    @Value("${moderation.api-key:test-moderation-api-key}")
+    @Value("${test.utility.api-key:e2e-test-api-key}")
     private String validApiKey;
 
     private final UserRepository userRepository;
