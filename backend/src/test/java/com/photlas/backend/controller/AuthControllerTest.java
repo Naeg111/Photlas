@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.hamcrest.Matchers.is;
@@ -265,6 +266,57 @@ public class AuthControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_PASSWORD)));
+    }
+
+    @Test
+    @DisplayName("登録成功後、パスワードがbcryptハッシュ化されてDBに保存される")
+    void testRegisterUser_ValidRequest_PasswordIsHashedInDb() throws Exception {
+        RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        User savedUser = userRepository.findByEmail(TEST_EMAIL).orElseThrow();
+        assertThat(savedUser.getPasswordHash()).startsWith("$2a$");
+        assertThat(savedUser.getPasswordHash()).isNotEqualTo(TEST_PASSWORD);
+        assertThat(passwordEncoder.matches(TEST_PASSWORD, savedUser.getPasswordHash())).isTrue();
+    }
+
+    @Test
+    @DisplayName("バリデーションエラー - username空文字")
+    void testRegisterUser_EmptyUsername_ReturnsBadRequest() throws Exception {
+        RegisterRequest request = createRegisterRequest("", TEST_EMAIL, TEST_PASSWORD);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_USERNAME)));
+    }
+
+    @Test
+    @DisplayName("バリデーションエラー - email空文字")
+    void testRegisterUser_EmptyEmail_ReturnsBadRequest() throws Exception {
+        RegisterRequest request = createRegisterRequest(TEST_USERNAME, "", TEST_PASSWORD);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("バリデーションエラー - password空文字")
+    void testRegisterUser_EmptyPassword_ReturnsBadRequest() throws Exception {
+        RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, "");
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_PASSWORD)));
     }
 

@@ -189,6 +189,59 @@ public class ModerationCallbackTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    @DisplayName("Issue#54 - 存在しないS3キーでコールバック → 404")
+    void testModerationCallback_NonExistentS3Key_Returns404() throws Exception {
+        Map<String, Object> request = Map.of(
+                "s3_object_key", "uploads/999/nonexistent.jpg",
+                "status", "PUBLISHED",
+                "confidence_score", 0.1
+        );
+
+        mockMvc.perform(post("/api/v1/internal/moderation/callback")
+                .header(API_KEY_HEADER, TEST_API_KEY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PENDING_REVIEWでない写真は滞留チェックでカウントされない")
+    void testStaleCheck_NonPendingReview_NotCounted() throws Exception {
+        // testPhotoをPUBLISHEDに変更
+        testPhoto.setModerationStatus(ModerationStatus.PUBLISHED);
+        photoRepository.save(testPhoto);
+
+        // created_atを10分前に更新
+        entityManager.createNativeQuery(
+                "UPDATE photos SET created_at = :createdAt WHERE photo_id = :photoId")
+                .setParameter("createdAt", LocalDateTime.now().minusMinutes(10))
+                .setParameter("photoId", testPhoto.getPhotoId())
+                .executeUpdate();
+        entityManager.flush();
+
+        mockMvc.perform(get("/api/v1/internal/moderation/stale-check")
+                .header(API_KEY_HEADER, TEST_API_KEY)
+                .param("threshold_minutes", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stale_count").value(0));
+    }
+
+    @Test
+    @DisplayName("Issue#54 - APIキーヘッダーなしでコールバック → 400")
+    void testModerationCallback_NoApiKeyHeader_Returns400() throws Exception {
+        Map<String, Object> request = Map.of(
+                "s3_object_key", testPhoto.getS3ObjectKey(),
+                "status", "PUBLISHED",
+                "confidence_score", 0.1
+        );
+
+        mockMvc.perform(post("/api/v1/internal/moderation/callback")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
     // ===== Issue#54: プロフィール画像モデレーションテスト =====
 
     @Test

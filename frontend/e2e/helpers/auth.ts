@@ -7,6 +7,19 @@ import { Page, expect } from '@playwright/test'
 // テストで使用する定数
 export const TEST_PASSWORD = 'TestPass123'
 export const SPLASH_WAIT_MS = 3000
+const TEST_API_KEY = 'test-moderation-api-key'
+
+/**
+ * バックエンドAPIのベースURLを取得
+ * ステージング環境ではtest.photlas.jpのAPI、ローカルではlocalhost:8080を使用
+ */
+function getApiBaseUrl(page: Page): string {
+  const baseURL = page.url()
+  if (baseURL.includes('test.photlas.jp')) {
+    return 'https://test.photlas.jp/api/v1'
+  }
+  return 'http://localhost:8080/api/v1'
+}
 
 /**
  * ユニークなメールアドレスを生成
@@ -78,6 +91,23 @@ export async function performSignUp(
 }
 
 /**
+ * メール認証をバイパスする（テスト用内部APIを使用）
+ */
+export async function verifyEmailByApi(page: Page, email: string): Promise<void> {
+  const apiBaseUrl = getApiBaseUrl(page)
+  const response = await page.request.post(`${apiBaseUrl}/internal/test/verify-email`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': TEST_API_KEY,
+    },
+    data: { email },
+  })
+  if (!response.ok()) {
+    throw new Error(`メール認証バイパスに失敗: ${response.status()} ${await response.text()}`)
+  }
+}
+
+/**
  * 認証済み状態を確認
  */
 export async function expectAuthenticated(page: Page): Promise<void> {
@@ -126,7 +156,10 @@ export async function createAccountAndLogin(
   await performSignUp(page, email, TEST_PASSWORD)
 
   // トースト表示を待機
-  await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({ timeout: 10000 })
+
+  // メール認証をバイパス
+  await verifyEmailByApi(page, email)
 
   // ログインダイアログに切り替わるのを待機
   await page.waitForTimeout(1000)

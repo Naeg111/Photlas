@@ -11,7 +11,7 @@ public class RegisterRequest {
     @Size(min = 2, max = 12, message = "ユーザー名は2文字以上12文字以内で入力してください")
     private String username;
 
-    @NotNull(message = "メールアドレスは必須です")
+    @NotBlank(message = "メールアドレスは必須です")
     @Email(message = "正しいメールアドレスの形式で入力してください")
     private String email;
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.LoginRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,8 +16,10 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.hamcrest.Matchers.is;
@@ -45,11 +48,15 @@ public class AuthControllerLoginTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
+
     private User testUser;
 
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
+        rateLimitFilter.clearCache();
 
         // テスト用ユーザーを作成（メール認証済み）
         testUser = new User();
@@ -158,6 +165,61 @@ public class AuthControllerLoginTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("バリデーションエラー - email空文字")
+    void testLogin_EmptyEmail_ReturnsBadRequest() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("");
+        request.setPassword("Password123");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field", is("email")))
+                .andExpect(jsonPath("$.errors[0].message").exists());
+    }
+
+    @Test
+    @DisplayName("バリデーションエラー - password空文字")
+    void testLogin_EmptyPassword_ReturnsBadRequest() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@example.com");
+        request.setPassword("");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field", is("password")))
+                .andExpect(jsonPath("$.errors[0].message").exists());
+    }
+
+    @Test
+    @DisplayName("ログインで取得したJWTトークンが認証済みエンドポイントで使用できる")
+    void testLogin_ReturnedToken_CanBeUsedForAuthenticatedEndpoints() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@example.com");
+        request.setPassword("Password123");
+
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").exists())
+                .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        String token = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(responseBody).get("token").asText();
+
+        // 取得したトークンで認証済みエンドポイントにアクセスできる
+        mockMvc.perform(get("/api/v1/users/me")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email", is("test@example.com")));
     }
 
     @Test
