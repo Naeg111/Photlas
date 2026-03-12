@@ -6,6 +6,7 @@ import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.SelfReportException;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
@@ -112,6 +113,40 @@ public class ReportModerationTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getReason()).isEqualTo("SPAM");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 同じユーザーが同じ写真を2回通報するとConflictExceptionが発生する")
+    void testCreateReport_DuplicateReport_ThrowsConflictException() {
+        ReportRequest request1 = new ReportRequest("ADULT_CONTENT", "不適切な画像です");
+        ReportRequest request2 = new ReportRequest("VIOLENCE", "暴力的な内容です");
+
+        reportService.createReport(testPhoto.getPhotoId(), request1, reporter1.getId());
+
+        assertThatThrownBy(() ->
+                reportService.createReport(testPhoto.getPhotoId(), request2, reporter1.getId())
+        ).isInstanceOf(ConflictException.class);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - すでにQUARANTINEDの写真は追加通報でもステータスが変わらない")
+    void testCreateReport_AlreadyQuarantined_StatusRemainsQuarantined() {
+        // Given: 写真を事前にQUARANTINEDに設定
+        testPhoto.setModerationStatus(ModerationStatus.QUARANTINED);
+        photoRepository.save(testPhoto);
+
+        User reporter3 = createUser("reporter3", "reporter3@example.com");
+
+        // When: 通報が閾値に達しても
+        ReportRequest request1 = new ReportRequest("ADULT_CONTENT", "不適切");
+        reportService.createReport(testPhoto.getPhotoId(), request1, reporter1.getId());
+
+        ReportRequest request2 = new ReportRequest("VIOLENCE", "暴力的");
+        reportService.createReport(testPhoto.getPhotoId(), request2, reporter3.getId());
+
+        // Then: ステータスはQUARANTINEDのまま（REMOVEDにはならない）
+        Photo updatedPhoto = photoRepository.findById(testPhoto.getPhotoId()).orElseThrow();
+        assertThat(updatedPhoto.getModerationStatus()).isEqualTo(ModerationStatus.QUARANTINED);
     }
 
     // ===== テストヘルパーメソッド =====

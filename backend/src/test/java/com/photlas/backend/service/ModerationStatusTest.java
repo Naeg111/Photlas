@@ -2,11 +2,15 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.dto.PhotoResponse;
+import com.photlas.backend.entity.AccountSanction;
 import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.AccountSuspendedException;
+import com.photlas.backend.exception.PhotoNotFoundException;
+import com.photlas.backend.repository.AccountSanctionRepository;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoCategoryRepository;
@@ -29,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Issue#54: 投稿ステータス管理のテスト
@@ -59,12 +64,16 @@ public class ModerationStatusTest {
     @Autowired
     private FavoriteRepository favoriteRepository;
 
+    @Autowired
+    private AccountSanctionRepository accountSanctionRepository;
+
     private User testUser;
     private User otherUser;
     private Category landscapeCategory;
 
     @BeforeEach
     void setUp() {
+        accountSanctionRepository.deleteAll();
         photoCategoryRepository.deleteAll();
         favoriteRepository.deleteAll();
         photoRepository.deleteAll();
@@ -268,6 +277,101 @@ public class ModerationStatusTest {
         PhotoResponse response = photoService.getPhotoDetail(published.getPhotoId(), testUser.getEmail());
 
         assertThat(response.getPhoto().getModerationStatus()).isEqualTo("PUBLISHED");
+    }
+
+    // ===== REMOVED写真の投稿者本人アクセステスト =====
+
+    @Test
+    @DisplayName("Issue#54 - REMOVED状態の写真は投稿者本人でも詳細取得できない")
+    void testGetPhotoDetail_RemovedPhoto_OwnerCannotView() {
+        Spot spot = createSpot();
+        Photo removed = createPhotoWithStatus(spot, "photos/rem011.jpg", "削除写真", ModerationStatus.REMOVED);
+
+        assertThatThrownBy(() ->
+                photoService.getPhotoDetail(removed.getPhotoId(), testUser.getEmail())
+        ).isInstanceOf(PhotoNotFoundException.class);
+    }
+
+    // ===== getPhotoForOwnerテスト =====
+
+    @Test
+    @DisplayName("Issue#54 - getPhotoForOwnerで投稿者本人は写真を取得できる")
+    void testGetPhotoForOwner_Owner_ReturnsPhoto() {
+        Spot spot = createSpot();
+        Photo photo = createPhotoWithStatus(spot, "photos/owner001.jpg", "オーナーテスト", ModerationStatus.PENDING_REVIEW);
+
+        Photo result = photoService.getPhotoForOwner(photo.getPhotoId(), testUser.getId());
+
+        assertThat(result).isNotNull();
+        assertThat(result.getPhotoId()).isEqualTo(photo.getPhotoId());
+    }
+
+    @Test
+    @DisplayName("Issue#54 - getPhotoForOwnerで他ユーザーは写真を取得できない")
+    void testGetPhotoForOwner_OtherUser_ThrowsException() {
+        Spot spot = createSpot();
+        Photo photo = createPhotoWithStatus(spot, "photos/owner002.jpg", "オーナーテスト", ModerationStatus.PENDING_REVIEW);
+
+        assertThatThrownBy(() ->
+                photoService.getPhotoForOwner(photo.getPhotoId(), otherUser.getId())
+        ).isInstanceOf(PhotoNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - getPhotoForOwnerで存在しない写真IDは例外")
+    void testGetPhotoForOwner_NonExistentPhoto_ThrowsException() {
+        assertThatThrownBy(() ->
+                photoService.getPhotoForOwner(99999L, testUser.getId())
+        ).isInstanceOf(PhotoNotFoundException.class);
+    }
+
+    // ===== アカウント停止チェックテスト =====
+
+    @Test
+    @DisplayName("Issue#54 - 永久停止ユーザーは写真を投稿できない")
+    void testCreatePhoto_PermanentlySuspendedUser_ThrowsException() {
+        testUser.setRole("SUSPENDED");
+        userRepository.save(testUser);
+
+        CreatePhotoRequest request = createPhotoRequest("photos/suspended001.jpg", "停止テスト");
+
+        assertThatThrownBy(() ->
+                photoService.createPhoto(request, testUser.getEmail())
+        ).isInstanceOf(AccountSuspendedException.class);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 一時停止中のユーザーは写真を投稿できない")
+    void testCreatePhoto_TemporarilySuspendedUser_ThrowsException() {
+        AccountSanction sanction = new AccountSanction();
+        sanction.setUserId(testUser.getId());
+        sanction.setSanctionType("TEMPORARY_SUSPENSION");
+        sanction.setSuspendedUntil(LocalDateTime.now().plusDays(30));
+        sanction.setReason("違反行為");
+        accountSanctionRepository.save(sanction);
+
+        CreatePhotoRequest request = createPhotoRequest("photos/tempsuspended001.jpg", "一時停止テスト");
+
+        assertThatThrownBy(() ->
+                photoService.createPhoto(request, testUser.getEmail())
+        ).isInstanceOf(AccountSuspendedException.class);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 一時停止期間が終了したユーザーは写真を投稿できる")
+    void testCreatePhoto_ExpiredTemporarySuspension_CanPost() {
+        AccountSanction sanction = new AccountSanction();
+        sanction.setUserId(testUser.getId());
+        sanction.setSanctionType("TEMPORARY_SUSPENSION");
+        sanction.setSuspendedUntil(LocalDateTime.now().minusDays(1));
+        sanction.setReason("違反行為");
+        accountSanctionRepository.save(sanction);
+
+        CreatePhotoRequest request = createPhotoRequest("photos/expired001.jpg", "停止解除テスト");
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
     }
 
     // ===== テストヘルパーメソッド =====

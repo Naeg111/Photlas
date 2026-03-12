@@ -17,6 +17,29 @@ import { test, expect, Page } from '@playwright/test'
 
 // テストで使用する定数
 const VALID_PASSWORD = 'TestPass123'
+const TEST_API_KEY = 'test-moderation-api-key'
+
+/**
+ * バックエンドAPIのベースURLを取得
+ */
+function getApiBaseUrl(page: Page): string {
+  const baseURL = page.url()
+  if (baseURL.includes('test.photlas.jp')) {
+    return 'https://test.photlas.jp/api/v1'
+  }
+  return 'http://localhost:8080/api/v1'
+}
+
+/**
+ * メール認証をバイパスする（テスト用内部API）
+ */
+async function verifyEmailByApi(page: Page, email: string) {
+  const apiBaseUrl = getApiBaseUrl(page)
+  await page.request.post(`${apiBaseUrl}/internal/test/verify-email`, {
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': TEST_API_KEY },
+    data: { email },
+  })
+}
 
 /**
  * ユニークなメールアドレスを生成
@@ -109,9 +132,12 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       // 1. 新規登録
       await openSignUpDialog(page)
       await fillValidFormAndSubmit(page, uniqueEmail, password)
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
+
+      // メール認証をバイパス
+      await verifyEmailByApi(page, uniqueEmail)
 
       // 2. ログイン
       await openLoginDialog(page)
@@ -129,9 +155,12 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       // 1. 新規登録
       await openSignUpDialog(page)
       await fillValidFormAndSubmit(page, uniqueEmail, password)
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
+
+      // メール認証をバイパス
+      await verifyEmailByApi(page, uniqueEmail)
 
       // 2. ログイン
       await openLoginDialog(page)
@@ -165,9 +194,12 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       // ユーザー作成
       await openSignUpDialog(page)
       await fillValidFormAndSubmit(page, uniqueEmail, password)
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
+
+      // メール認証をバイパス
+      await verifyEmailByApi(page, uniqueEmail)
 
       // ログイン（Remember Me ON）
       await openLoginDialog(page)
@@ -189,9 +221,12 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       // ユーザー作成
       await openSignUpDialog(page)
       await fillValidFormAndSubmit(page, uniqueEmail, password)
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
+
+      // メール認証をバイパス
+      await verifyEmailByApi(page, uniqueEmail)
 
       // ログイン（Remember Me OFF）
       await openLoginDialog(page)
@@ -231,9 +266,12 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       // ユーザー作成
       await openSignUpDialog(page)
       await fillValidFormAndSubmit(page, uniqueEmail, password)
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 15000,
       })
+
+      // メール認証をバイパス
+      await verifyEmailByApi(page, uniqueEmail)
 
       // ログイン
       await openLoginDialog(page)
@@ -312,9 +350,12 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       // ユーザー作成
       await openSignUpDialog(page)
       await fillValidFormAndSubmit(page, uniqueEmail, password)
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
+
+      // メール認証をバイパス
+      await verifyEmailByApi(page, uniqueEmail)
 
       // ログイン（Remember Me ON）
       await openLoginDialog(page)
@@ -328,6 +369,42 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       // 認証状態が維持されていることを確認
       await expectAuthenticated(page)
     })
+
+    test('「ログイン状態を保持する」OFFでページリロード後に認証状態が失われる（sessionStorage使用時）', async ({
+      page,
+    }) => {
+      const uniqueEmail = generateUniqueEmail('flow-no-persist')
+      const password = VALID_PASSWORD
+
+      // ユーザー作成
+      await openSignUpDialog(page)
+      await fillValidFormAndSubmit(page, uniqueEmail, password)
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
+        timeout: 10000,
+      })
+
+      // メール認証をバイパス
+      await verifyEmailByApi(page, uniqueEmail)
+
+      // ログイン（Remember Me OFF）
+      await openLoginDialog(page)
+      await performLogin(page, uniqueEmail, password, false)
+      await expect(page.getByText('ログインしました')).toBeVisible({ timeout: 10000 })
+
+      // sessionStorageにトークンが保存されていることを確認
+      const token = await page.evaluate(() => sessionStorage.getItem('auth_token'))
+      expect(token).not.toBeNull()
+
+      // ページリロード（sessionStorageはタブ内で維持されるが、新しいナビゲーションでクリアされる場合がある）
+      // 新しいページコンテキストとして開き直す（sessionStorageがクリアされる）
+      await page.context().clearCookies()
+      await page.evaluate(() => sessionStorage.clear())
+      await page.goto('/')
+      await page.waitForTimeout(3000)
+
+      // 未認証状態になっていることを確認
+      await expectUnauthenticated(page)
+    })
   })
 
   test.describe('エッジケース', () => {
@@ -340,9 +417,12 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       // 1. 新規登録
       await openSignUpDialog(page)
       await fillValidFormAndSubmit(page, uniqueEmail, password)
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
+
+      // メール認証をバイパス
+      await verifyEmailByApi(page, uniqueEmail)
 
       // 2. すぐにログイン
       await openLoginDialog(page)
@@ -359,9 +439,12 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       // ユーザー作成
       await openSignUpDialog(page)
       await fillValidFormAndSubmit(page, uniqueEmail, password)
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
+
+      // メール認証をバイパス
+      await verifyEmailByApi(page, uniqueEmail)
 
       // 3回ログイン/ログアウトを繰り返す
       for (let i = 0; i < 3; i++) {
