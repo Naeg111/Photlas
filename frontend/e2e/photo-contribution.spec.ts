@@ -103,9 +103,9 @@ test.describe('写真投稿機能', () => {
       await createAccountAndLogin(page, 'photo-categories')
       await openPhotoContributionDialog(page)
 
-      // 全カテゴリが表示されていることを確認
+      // 全カテゴリがチェックボックスとして表示されていることを確認
       for (const category of PHOTO_CATEGORIES) {
-        await expect(page.getByText(category, { exact: true })).toBeVisible()
+        await expect(page.getByRole('checkbox', { name: category })).toBeVisible()
       }
     })
   })
@@ -172,13 +172,15 @@ test.describe('写真投稿機能', () => {
         await createAccountAndLogin(page, 'validation-title')
         await openPhotoContributionDialog(page)
 
-        // 写真とカテゴリを選択（タイトルは入力しない）
+        // 写真・カテゴリ・機材種別を選択（タイトルは入力しない）
         const testImagePath = getTestImagePath('small')
         await page.locator('input[type="file"]').setInputFiles(testImagePath)
         await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
         // カテゴリのチェックボックスをクリック
         await page.getByRole('checkbox', { name: '風景' }).click()
         await expect(page.getByRole('checkbox', { name: '風景' })).toBeChecked()
+        // 機材種別を選択
+        await page.getByText('一眼レフ', { exact: true }).click()
 
         // タイトルは任意項目のため、投稿ボタンが有効であることを確認
         const submitButton = page.getByRole('button', { name: '投稿する' })
@@ -387,17 +389,20 @@ test.describe('写真投稿機能', () => {
       await page.getByPlaceholder('例：夕暮れの東京タワー').fill(uniqueTitle)
 
       // 3. カテゴリを選択（チェックボックスをクリック）
-      await page.getByRole('checkbox', { name: 'その他' }).click()
-      await expect(page.getByRole('checkbox', { name: 'その他' })).toBeChecked()
+      await page.getByRole('checkbox', { name: '風景' }).click()
+      await expect(page.getByRole('checkbox', { name: '風景' })).toBeChecked()
 
-      // 4. 投稿ボタンが有効になっていることを確認
+      // 4. 機材種別を選択
+      await page.getByText('一眼レフ', { exact: true }).click()
+
+      // 5. 投稿ボタンが有効になっていることを確認
       const submitButton = page.getByRole('button', { name: '投稿する' })
       await expect(submitButton).toBeEnabled({ timeout: 3000 })
 
-      // 5. 投稿ボタンをクリック
+      // 6. 投稿ボタンをクリック
       await submitButton.click()
 
-      // 6. アップロード完了を待機（成功またはエラー）
+      // 7. アップロード完了を待機（成功またはエラー）
       const successMessage = page.getByText('完了しました')
       const errorMessage = page.getByText('エラー 時間をおいて再度お試しください')
       await expect(successMessage.or(errorMessage)).toBeVisible({ timeout: 30000 })
@@ -420,8 +425,10 @@ test.describe('写真投稿機能', () => {
       await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
       await page.getByPlaceholder('例：夕暮れの東京タワー').fill('リセットテスト')
       // カテゴリをチェックボックスで選択
-      await page.getByRole('checkbox', { name: 'その他' }).click()
-      await expect(page.getByRole('checkbox', { name: 'その他' })).toBeChecked()
+      await page.getByRole('checkbox', { name: '風景' }).click()
+      await expect(page.getByRole('checkbox', { name: '風景' })).toBeChecked()
+      // 機材種別を選択
+      await page.getByText('一眼レフ', { exact: true }).click()
 
       // 投稿ボタンが有効になっていることを確認
       await expect(page.getByRole('button', { name: '投稿する' })).toBeEnabled({ timeout: 3000 })
@@ -455,10 +462,15 @@ test.describe('写真投稿機能', () => {
       await createAccountAndLogin(page, 'device-type-list')
       await openPhotoContributionDialog(page)
 
-      const deviceTypes = ['一眼レフ', 'ミラーレス', 'コンパクトデジカメ', 'スマートフォン', 'フィルム', 'その他']
-      for (const type of deviceTypes) {
+      // 「その他」はカテゴリにも存在するため、重複しない5種類で確認し、
+      // 「その他」は機材種別セクション内で確認する
+      const uniqueDeviceTypes = ['一眼レフ', 'ミラーレス', 'コンパクトデジカメ', 'スマートフォン', 'フィルム']
+      for (const type of uniqueDeviceTypes) {
         await expect(page.getByText(type, { exact: true })).toBeVisible()
       }
+      // 機材種別の「その他」: カテゴリのチェックボックスではないほうを確認
+      const deviceOther = page.getByText('その他', { exact: true }).nth(1)
+      await expect(deviceOther).toBeVisible()
     })
 
     test('機材種別を選択できる', async ({ page }) => {

@@ -26,22 +26,23 @@ import { getTestImagePath, ensureFixtures } from './helpers/test-image'
  * 地図が読み込まれるのを待機
  */
 async function waitForMapLoad(page: Page): Promise<void> {
-  await expect(page.locator('[data-testid="map-container"], .gm-style')).toBeVisible({ timeout: 15000 })
+  await expect(page.locator('.mapboxgl-map')).toBeVisible({ timeout: 15000 })
   await page.waitForTimeout(2000)
 }
 
 /**
- * ズームインしてピンを表示（Google Maps APIで直接ズーム制御）
+ * ズームインしてピンを表示（Mapbox GL JSで直接ズーム制御）
  */
 async function zoomInToShowPins(page: Page): Promise<void> {
   await page.evaluate(() => {
     const map = (window as unknown as Record<string, any>).__photlas_map
-    if (map?.setZoom) {
+    if (map?.easeTo) {
       const currentZoom = map.getZoom?.() ?? 11
-      map.setZoom(currentZoom + 3)
+      // easeToでmoveendイベントを発火させ、スポットデータの再取得をトリガー
+      map.easeTo({ zoom: currentZoom + 3, duration: 500 })
     }
   })
-  await page.waitForTimeout(2000)
+  await page.waitForTimeout(3000)
 }
 
 /**
@@ -77,8 +78,11 @@ async function createTestPost(page: Page, title: string): Promise<void> {
   await page.getByPlaceholder('例：夕暮れの東京タワー').fill(truncatedTitle)
 
   // カテゴリを選択（チェックボックスをクリック）
-  await page.getByRole('checkbox', { name: 'その他' }).click()
-  await expect(page.getByRole('checkbox', { name: 'その他' })).toBeChecked()
+  await page.getByRole('checkbox', { name: '風景' }).click()
+  await expect(page.getByRole('checkbox', { name: '風景' })).toBeChecked()
+
+  // 機材種別を選択
+  await page.getByText('一眼レフ', { exact: true }).click()
 
   // 投稿ボタンが有効になることを確認
   const submitButton = page.getByRole('button', { name: '投稿する' })
@@ -439,7 +443,7 @@ test.describe('写真詳細・お気に入り機能', () => {
         await reportButton.click()
 
         // 通報ダイアログが開く
-        await expect(page.getByText('通報')).toBeVisible({ timeout: 5000 })
+        await expect(page.getByRole('heading', { name: 'この投稿を通報' })).toBeVisible({ timeout: 5000 })
       } else {
         test.skip()
       }
