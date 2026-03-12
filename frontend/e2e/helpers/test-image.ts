@@ -53,11 +53,12 @@ export function ensureFixtures(): void {
 
 /**
  * テスト用画像を保存（ユーティリティ関数）
+ * createImageBitmapで読み込み可能な10x10 PNG画像を生成
  */
 export function saveTestImage(
   filePath: string,
-  width: number = 100,
-  height: number = 100,
+  width: number = 10,
+  height: number = 10,
   color: [number, number, number] = [0, 128, 255]
 ): void {
   const dir = path.dirname(filePath)
@@ -65,18 +66,61 @@ export function saveTestImage(
     fs.mkdirSync(dir, { recursive: true })
   }
 
-  // 最小限のPNG画像を作成（1x1ピクセル）
-  const MINIMAL_PNG = Buffer.from([
-    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-    0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
-    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-    0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
-    0xde, 0x00, 0x00, 0x00, 0x0c, 0x49, 0x44, 0x41,
-    0x54, 0x08, 0xd7, 0x63, 0x00, 0x00, 0xff, 0x00,
-    0x00, 0x02, 0x00, 0x01, 0xe2, 0x21, 0xbc, 0x33,
-    0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44,
-    0xae, 0x42, 0x60, 0x82
+  const zlib = require('zlib')
+
+  // Raw image data: filter byte (0=None) + RGB pixels per row
+  const rawData = Buffer.alloc((width * 3 + 1) * height)
+  for (let y = 0; y < height; y++) {
+    rawData[y * (width * 3 + 1)] = 0
+    for (let x = 0; x < width; x++) {
+      const offset = y * (width * 3 + 1) + 1 + x * 3
+      rawData[offset] = color[0]
+      rawData[offset + 1] = color[1]
+      rawData[offset + 2] = color[2]
+    }
+  }
+  const deflated = zlib.deflateSync(rawData)
+
+  // CRC32 calculation
+  const crc32Table = new Int32Array(256)
+  for (let i = 0; i < 256; i++) {
+    let c = i
+    for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1)
+    crc32Table[i] = c
+  }
+  function crc32(buf: Buffer): number {
+    let crc = 0xFFFFFFFF
+    for (let i = 0; i < buf.length; i++) {
+      crc = crc32Table[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8)
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0
+  }
+
+  function pngChunk(type: string, data: Buffer): Buffer {
+    const typeBytes = Buffer.from(type, 'ascii')
+    const len = Buffer.alloc(4)
+    len.writeUInt32BE(data.length)
+    const crcBuf = Buffer.alloc(4)
+    crcBuf.writeUInt32BE(crc32(Buffer.concat([typeBytes, data])))
+    return Buffer.concat([len, typeBytes, data, crcBuf])
+  }
+
+  const ihdr = Buffer.alloc(13)
+  ihdr.writeUInt32BE(width, 0)
+  ihdr.writeUInt32BE(height, 4)
+  ihdr[8] = 8   // bit depth
+  ihdr[9] = 2   // color type: RGB
+  ihdr[10] = 0  // compression
+  ihdr[11] = 0  // filter
+  ihdr[12] = 0  // interlace
+
+  const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  const png = Buffer.concat([
+    signature,
+    pngChunk('IHDR', ihdr),
+    pngChunk('IDAT', deflated),
+    pngChunk('IEND', Buffer.alloc(0)),
   ])
 
-  fs.writeFileSync(filePath, MINIMAL_PNG)
+  fs.writeFileSync(filePath, png)
 }
