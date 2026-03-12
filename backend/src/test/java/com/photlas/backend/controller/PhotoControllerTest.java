@@ -834,4 +834,93 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath("$.photo.crop_zoom", is(2.0)));
     }
 
+    // ===== 署名付きURL追加バリデーションテスト =====
+
+    @Test
+    @DisplayName("Issue#9 - バリデーションエラー: 対応していないファイル拡張子（gif）")
+    void testGetUploadUrl_UnsupportedExtension_ReturnsBadRequest() throws Exception {
+        com.photlas.backend.dto.UploadUrlRequest request =
+            new com.photlas.backend.dto.UploadUrlRequest("gif", S3_CONTENT_TYPE_JPEG);
+
+        mockMvc.perform(post(ENDPOINT_UPLOAD_URL)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#9 - バリデーションエラー: 対応していないcontentType（image/gif）")
+    void testGetUploadUrl_UnsupportedContentType_ReturnsBadRequest() throws Exception {
+        com.photlas.backend.dto.UploadUrlRequest request =
+            new com.photlas.backend.dto.UploadUrlRequest(S3_EXTENSION_JPG, "image/gif");
+
+        mockMvc.perform(post(ENDPOINT_UPLOAD_URL)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ===== Issue#54: 写真ステータス取得エンドポイントテスト =====
+
+    @Test
+    @DisplayName("Issue#54 - 正常ケース: オーナーが写真のモデレーションステータスを取得")
+    void testGetPhotoStatus_Owner_ReturnsStatus() throws Exception {
+        Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
+        Photo photo = createPhoto(PHOTO_TITLE_TEST_EN, "photos/status-api001.jpg", spot.getSpotId());
+
+        mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId() + "/status")
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photo_id", is(photo.getPhotoId().toString())))
+                .andExpect(jsonPath("$.moderation_status", is("PUBLISHED")));
+    }
+
+    @Test
+    @DisplayName("Issue#54 - エラー: 存在しない写真IDのステータス取得")
+    void testGetPhotoStatus_NonExistentPhoto_ReturnsNotFound() throws Exception {
+        mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + "99999/status")
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
+                .andExpect(status().isNotFound());
+    }
+
+    // ===== 写真詳細: 存在しない写真テスト =====
+
+    @Test
+    @DisplayName("写真詳細取得 - 存在しないphotoIdは404を返す")
+    void testGetPhotoDetail_NonExistentPhoto_ReturnsNotFound() throws Exception {
+        mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + "99999")
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
+                .andExpect(status().isNotFound());
+    }
+
+    // ===== バリデーションエラー: placeName文字数制限テスト =====
+
+    @Test
+    @DisplayName("バリデーションエラー - placeName文字数制限（100文字超過）")
+    void testCreatePhoto_PlaceNameTooLong_ReturnsBadRequest() throws Exception {
+        String longPlaceName = "あ".repeat(101);
+        String requestJson = String.format("""
+                {
+                    "title": "テスト",
+                    "placeName": "%s",
+                    "s3ObjectKey": "photos/placename001.jpg",
+                    "takenAt": "2026-01-15T10:00:00Z",
+                    "latitude": 35.658581,
+                    "longitude": 139.745433,
+                    "categories": ["風景"]
+                }
+                """, longPlaceName);
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+                .andExpect(status().isBadRequest());
+    }
+
 }

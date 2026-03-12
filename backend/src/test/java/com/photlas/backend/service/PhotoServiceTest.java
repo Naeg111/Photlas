@@ -2,11 +2,16 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.dto.PhotoResponse;
+import com.photlas.backend.entity.AccountSanction;
 import com.photlas.backend.entity.Category;
+import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.AccountSuspendedException;
 import com.photlas.backend.exception.CategoryNotFoundException;
+import com.photlas.backend.exception.PhotoNotFoundException;
+import com.photlas.backend.repository.AccountSanctionRepository;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoCategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
@@ -53,6 +58,9 @@ public class PhotoServiceTest {
     @Autowired
     private PhotoCategoryRepository photoCategoryRepository;
 
+    @Autowired
+    private AccountSanctionRepository accountSanctionRepository;
+
     private User testUser;
     private Category landscapeCategory;
     private Category cityCategory;
@@ -60,6 +68,7 @@ public class PhotoServiceTest {
     @BeforeEach
     void setUp() {
         // クリーンアップ
+        accountSanctionRepository.deleteAll();
         photoCategoryRepository.deleteAll();
         photoRepository.deleteAll();
         spotRepository.deleteAll();
@@ -886,5 +895,284 @@ public class PhotoServiceTest {
         photo.setWeather(weather);
         photo.setCategories(List.of(landscapeCategory));
         return photoRepository.save(photo);
+    }
+
+    private Photo createPhotoWithStatus(Spot spot, String s3Key, ModerationStatus status) {
+        Photo photo = new Photo();
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setS3ObjectKey(s3Key);
+        photo.setTitle("テスト写真");
+        photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 15, 10, 0));
+        photo.setModerationStatus(status);
+        photo.setCategories(List.of(landscapeCategory));
+        return photoRepository.save(photo);
+    }
+
+    // ===== Issue#54: アカウント停止テスト =====
+
+    @Test
+    @DisplayName("Issue#54 - 永久停止ユーザーは写真投稿が拒否される")
+    void testCreatePhoto_PermanentlySuspendedUser_ThrowsException() {
+        testUser.setRole("SUSPENDED");
+        userRepository.save(testUser);
+
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("テスト");
+        request.setS3ObjectKey("photos/suspended001.jpg");
+        request.setTakenAt("2026-01-15T10:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+
+        assertThatThrownBy(() -> photoService.createPhoto(request, testUser.getEmail()))
+                .isInstanceOf(AccountSuspendedException.class)
+                .hasMessageContaining("アカウントが停止されています");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 一時停止中ユーザーは写真投稿が拒否される")
+    void testCreatePhoto_TemporarilySuspendedUser_ThrowsException() {
+        AccountSanction sanction = new AccountSanction();
+        sanction.setUserId(testUser.getId());
+        sanction.setSanctionType("TEMPORARY_SUSPENSION");
+        sanction.setReason("テスト用一時停止");
+        sanction.setSuspendedUntil(java.time.LocalDateTime.now().plusDays(7));
+        accountSanctionRepository.save(sanction);
+
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("テスト");
+        request.setS3ObjectKey("photos/tempsuspend001.jpg");
+        request.setTakenAt("2026-01-15T10:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+
+        assertThatThrownBy(() -> photoService.createPhoto(request, testUser.getEmail()))
+                .isInstanceOf(AccountSuspendedException.class)
+                .hasMessageContaining("投稿機能が一時停止中です");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 一時停止期間が過ぎたユーザーは写真投稿が可能")
+    void testCreatePhoto_ExpiredTemporarySuspension_Succeeds() {
+        AccountSanction sanction = new AccountSanction();
+        sanction.setUserId(testUser.getId());
+        sanction.setSanctionType("TEMPORARY_SUSPENSION");
+        sanction.setReason("期限切れ停止");
+        sanction.setSuspendedUntil(java.time.LocalDateTime.now().minusDays(1));
+        accountSanctionRepository.save(sanction);
+
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setTitle("復帰後の投稿");
+        request.setS3ObjectKey("photos/expired001.jpg");
+        request.setTakenAt("2026-01-15T10:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoto().getPhotoId()).isNotNull();
+    }
+
+    // ===== Issue#54: モデレーションステータスによる閲覧制御テスト =====
+
+    @Test
+    @DisplayName("Issue#54 - REMOVED写真はオーナーでも閲覧不可（404）")
+    void testGetPhotoDetail_RemovedPhoto_ThrowsNotFoundForOwner() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo photo = createPhotoWithStatus(spot, "photos/removed001.jpg", ModerationStatus.REMOVED);
+
+        assertThatThrownBy(() -> photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail()))
+                .isInstanceOf(PhotoNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PENDING_REVIEW写真はオーナーのみ閲覧可能")
+    void testGetPhotoDetail_PendingReviewPhoto_VisibleToOwnerOnly() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo photo = createPhotoWithStatus(spot, "photos/pending001.jpg", ModerationStatus.PENDING_REVIEW);
+
+        // オーナーは閲覧可能
+        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoto().getPhotoId()).isEqualTo(photo.getPhotoId());
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PENDING_REVIEW写真は他ユーザーから閲覧不可（404）")
+    void testGetPhotoDetail_PendingReviewPhoto_NotVisibleToOtherUser() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo photo = createPhotoWithStatus(spot, "photos/pending002.jpg", ModerationStatus.PENDING_REVIEW);
+
+        // 別ユーザーを作成
+        User otherUser = new User();
+        otherUser.setUsername("otheruser");
+        otherUser.setEmail("other@example.com");
+        otherUser.setPasswordHash("hashedpassword");
+        otherUser.setRole("USER");
+        userRepository.save(otherUser);
+
+        assertThatThrownBy(() -> photoService.getPhotoDetail(photo.getPhotoId(), otherUser.getEmail()))
+                .isInstanceOf(PhotoNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PENDING_REVIEW写真は未認証ユーザーから閲覧不可（404）")
+    void testGetPhotoDetail_PendingReviewPhoto_NotVisibleToAnonymous() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo photo = createPhotoWithStatus(spot, "photos/pending003.jpg", ModerationStatus.PENDING_REVIEW);
+
+        assertThatThrownBy(() -> photoService.getPhotoDetail(photo.getPhotoId(), null))
+                .isInstanceOf(PhotoNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - QUARANTINED写真はオーナーのみ閲覧可能")
+    void testGetPhotoDetail_QuarantinedPhoto_VisibleToOwnerOnly() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo photo = createPhotoWithStatus(spot, "photos/quarantined001.jpg", ModerationStatus.QUARANTINED);
+
+        // オーナーは閲覧可能
+        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+        assertThat(response).isNotNull();
+
+        // 他ユーザーは閲覧不可
+        User otherUser = new User();
+        otherUser.setUsername("otheruser2");
+        otherUser.setEmail("other2@example.com");
+        otherUser.setPasswordHash("hashedpassword");
+        otherUser.setRole("USER");
+        userRepository.save(otherUser);
+
+        assertThatThrownBy(() -> photoService.getPhotoDetail(photo.getPhotoId(), otherUser.getEmail()))
+                .isInstanceOf(PhotoNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PUBLISHED写真は誰でも閲覧可能")
+    void testGetPhotoDetail_PublishedPhoto_VisibleToEveryone() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo photo = createPhotoWithStatus(spot, "photos/published001.jpg", ModerationStatus.PUBLISHED);
+
+        // オーナー
+        assertThat(photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail())).isNotNull();
+
+        // 他ユーザー
+        User otherUser = new User();
+        otherUser.setUsername("otheruser3");
+        otherUser.setEmail("other3@example.com");
+        otherUser.setPasswordHash("hashedpassword");
+        otherUser.setRole("USER");
+        userRepository.save(otherUser);
+        assertThat(photoService.getPhotoDetail(photo.getPhotoId(), otherUser.getEmail())).isNotNull();
+
+        // 未認証
+        assertThat(photoService.getPhotoDetail(photo.getPhotoId(), null)).isNotNull();
+    }
+
+    // ===== Issue#54: ユーザー投稿一覧 ModerationStatusフィルタリングテスト =====
+
+    @Test
+    @DisplayName("Issue#54 - ユーザー投稿一覧: オーナーはPENDING_REVIEW/PUBLISHED/QUARANTINEDが見える")
+    @SuppressWarnings("unchecked")
+    void testGetUserPhotos_OwnerSeesAllNonRemovedStatuses() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        createPhotoWithStatus(spot, "photos/vis-pending.jpg", ModerationStatus.PENDING_REVIEW);
+        createPhotoWithStatus(spot, "photos/vis-published.jpg", ModerationStatus.PUBLISHED);
+        createPhotoWithStatus(spot, "photos/vis-quarantined.jpg", ModerationStatus.QUARANTINED);
+        createPhotoWithStatus(spot, "photos/vis-removed.jpg", ModerationStatus.REMOVED);
+
+        Pageable pageable = PageRequest.of(0, 20);
+        Map<String, Object> result = photoService.getUserPhotos(
+                testUser.getId(), pageable, testUser.getEmail());
+
+        List<PhotoResponse> content = (List<PhotoResponse>) result.get("content");
+        assertThat(content).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - ユーザー投稿一覧: 他ユーザーはPUBLISHEDのみ見える")
+    @SuppressWarnings("unchecked")
+    void testGetUserPhotos_OtherUserSeesOnlyPublished() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        createPhotoWithStatus(spot, "photos/vis2-pending.jpg", ModerationStatus.PENDING_REVIEW);
+        createPhotoWithStatus(spot, "photos/vis2-published.jpg", ModerationStatus.PUBLISHED);
+        createPhotoWithStatus(spot, "photos/vis2-quarantined.jpg", ModerationStatus.QUARANTINED);
+
+        User otherUser = new User();
+        otherUser.setUsername("viewer");
+        otherUser.setEmail("viewer@example.com");
+        otherUser.setPasswordHash("hashedpassword");
+        otherUser.setRole("USER");
+        userRepository.save(otherUser);
+
+        Pageable pageable = PageRequest.of(0, 20);
+        Map<String, Object> result = photoService.getUserPhotos(
+                testUser.getId(), pageable, otherUser.getEmail());
+
+        List<PhotoResponse> content = (List<PhotoResponse>) result.get("content");
+        assertThat(content).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - ユーザー投稿一覧: 未認証ユーザーはPUBLISHEDのみ見える")
+    @SuppressWarnings("unchecked")
+    void testGetUserPhotos_AnonymousSeesOnlyPublished() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        createPhotoWithStatus(spot, "photos/vis3-pending.jpg", ModerationStatus.PENDING_REVIEW);
+        createPhotoWithStatus(spot, "photos/vis3-published.jpg", ModerationStatus.PUBLISHED);
+
+        Pageable pageable = PageRequest.of(0, 20);
+        Map<String, Object> result = photoService.getUserPhotos(
+                testUser.getId(), pageable, null);
+
+        List<PhotoResponse> content = (List<PhotoResponse>) result.get("content");
+        assertThat(content).hasSize(1);
+    }
+
+    // ===== Issue#54: getPhotoForOwnerテスト =====
+
+    @Test
+    @DisplayName("Issue#54 - 写真ステータス取得: オーナーは自分の写真のステータスを取得できる")
+    void testGetPhotoForOwner_OwnerCanAccessOwnPhoto() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo photo = createPhotoWithStatus(spot, "photos/status001.jpg", ModerationStatus.PENDING_REVIEW);
+
+        Photo result = photoService.getPhotoForOwner(photo.getPhotoId(), testUser.getId());
+        assertThat(result).isNotNull();
+        assertThat(result.getModerationStatus()).isEqualTo(ModerationStatus.PENDING_REVIEW);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 写真ステータス取得: 他ユーザーは取得不可（404）")
+    void testGetPhotoForOwner_NonOwnerCannotAccess() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo photo = createPhotoWithStatus(spot, "photos/status002.jpg", ModerationStatus.PENDING_REVIEW);
+
+        User otherUser = new User();
+        otherUser.setUsername("nonowner");
+        otherUser.setEmail("nonowner@example.com");
+        otherUser.setPasswordHash("hashedpassword");
+        otherUser.setRole("USER");
+        otherUser = userRepository.save(otherUser);
+
+        Long otherUserId = otherUser.getId();
+        assertThatThrownBy(() -> photoService.getPhotoForOwner(photo.getPhotoId(), otherUserId))
+                .isInstanceOf(PhotoNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 写真ステータス取得: 存在しない写真は404")
+    void testGetPhotoForOwner_NonExistentPhoto_ThrowsNotFound() {
+        assertThatThrownBy(() -> photoService.getPhotoForOwner(99999L, testUser.getId()))
+                .isInstanceOf(PhotoNotFoundException.class);
+    }
+
+    // ===== 写真詳細: 存在しない写真テスト =====
+
+    @Test
+    @DisplayName("写真詳細取得 - 存在しない写真IDは404エラー")
+    void testGetPhotoDetail_NonExistentPhoto_ThrowsNotFound() {
+        assertThatThrownBy(() -> photoService.getPhotoDetail(99999L, testUser.getEmail()))
+                .isInstanceOf(PhotoNotFoundException.class);
     }
 }

@@ -397,15 +397,13 @@ test.describe('写真投稿機能', () => {
       // 5. 投稿ボタンをクリック
       await submitButton.click()
 
-      // 7. アップロード完了を待機（成功またはエラー）
+      // 6. アップロード完了を待機（成功またはエラー）
       const successMessage = page.getByText('完了しました')
       const errorMessage = page.getByText('エラー 時間をおいて再度お試しください')
       await expect(successMessage.or(errorMessage)).toBeVisible({ timeout: 30000 })
 
-      // 成功メッセージであることを確認（エラーの場合はデバッグ情報を表示）
-      if (await errorMessage.isVisible().catch(() => false)) {
-        throw new Error(`投稿API失敗: ${debugLog.join(' | ') || 'ログなし'}`)
-      }
+      // 成功メッセージであることを確認
+      await expect(successMessage).toBeVisible()
 
       // 7. ダイアログが最終的に閉じることを確認
       const dialogHeading = page.getByRole('heading', { name: '写真を投稿' })
@@ -445,6 +443,114 @@ test.describe('写真投稿機能', () => {
       await expect(page.locator('[data-testid="photo-crop-area"]')).not.toBeVisible()
       const titleInput = page.getByPlaceholder('例：夕暮れの東京タワー')
       await expect(titleInput).toHaveValue('')
+    })
+  })
+
+  // ============================================================
+  // 機材種別選択テスト
+  // ============================================================
+
+  test.describe('機材種別選択', () => {
+    test('6種類の機材種別が表示される', async ({ page }) => {
+      await createAccountAndLogin(page, 'device-type-list')
+      await openPhotoContributionDialog(page)
+
+      const deviceTypes = ['一眼レフ', 'ミラーレス', 'コンパクトデジカメ', 'スマートフォン', 'フィルム', 'その他']
+      for (const type of deviceTypes) {
+        await expect(page.getByText(type, { exact: true })).toBeVisible()
+      }
+    })
+
+    test('機材種別を選択できる', async ({ page }) => {
+      await createAccountAndLogin(page, 'device-type-select')
+      await openPhotoContributionDialog(page)
+
+      // 一眼レフを選択
+      const slrOption = page.getByText('一眼レフ', { exact: true })
+      await slrOption.click()
+
+      // 選択状態のスタイルが適用される（border-primaryクラス）
+      const container = slrOption.locator('..')
+      await expect(container).toHaveClass(/border-primary/)
+    })
+
+    test('機材種別が未選択の場合は投稿できない', async ({ page }) => {
+      await createAccountAndLogin(page, 'device-type-required')
+      await openPhotoContributionDialog(page)
+
+      // 写真・カテゴリを選択（機材種別は選択しない）
+      const testImagePath = getTestImagePath('small')
+      await page.locator('input[type="file"]').setInputFiles(testImagePath)
+      await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
+      await page.getByRole('checkbox', { name: '風景' }).click()
+
+      // 投稿ボタンがdisabledであることを確認
+      const submitButton = page.getByRole('button', { name: '投稿する' })
+      await expect(submitButton).toBeDisabled()
+    })
+  })
+
+  // ============================================================
+  // 天気選択テスト
+  // ============================================================
+
+  test.describe('天気選択', () => {
+    test('4種類の天気が表示される', async ({ page }) => {
+      await createAccountAndLogin(page, 'weather-list')
+      await openPhotoContributionDialog(page)
+
+      const weatherOptions = ['晴れ', '曇り', '雨', '雪']
+      for (const weather of weatherOptions) {
+        await expect(page.getByText(weather, { exact: true })).toBeVisible()
+      }
+    })
+
+    test('天気を選択・解除できる（トグル動作）', async ({ page }) => {
+      await createAccountAndLogin(page, 'weather-toggle')
+      await openPhotoContributionDialog(page)
+
+      // 晴れを選択
+      const sunnyOption = page.getByText('晴れ', { exact: true })
+      await sunnyOption.click()
+
+      // 選択状態のスタイルが適用される
+      const container = sunnyOption.locator('..')
+      await expect(container).toHaveClass(/border-primary/)
+
+      // 同じ天気をクリックして解除
+      await sunnyOption.click()
+
+      // 選択解除される
+      await expect(container).not.toHaveClass(/border-primary/)
+    })
+  })
+
+  // ============================================================
+  // 施設名・店名入力テスト
+  // ============================================================
+
+  test.describe('施設名・店名入力', () => {
+    test('施設名の入力欄と文字数カウンターが表示される', async ({ page }) => {
+      await createAccountAndLogin(page, 'place-name-display')
+      await openPhotoContributionDialog(page)
+
+      // 施設名入力欄が表示される
+      const placeNameInput = page.getByPlaceholder('例：東京タワー、スターバックス渋谷店')
+      await expect(placeNameInput).toBeVisible()
+
+      // 文字数カウンターが表示される
+      await expect(page.getByText('0/100文字')).toBeVisible()
+    })
+
+    test('施設名を入力すると文字数カウンターが更新される', async ({ page }) => {
+      await createAccountAndLogin(page, 'place-name-counter')
+      await openPhotoContributionDialog(page)
+
+      const placeNameInput = page.getByPlaceholder('例：東京タワー、スターバックス渋谷店')
+      await placeNameInput.fill('東京タワー')
+
+      // カウンターが更新される
+      await expect(page.getByText('5/100文字')).toBeVisible()
     })
   })
 
