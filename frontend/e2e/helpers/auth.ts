@@ -7,7 +7,7 @@ import { Page, expect } from '@playwright/test'
 // テストで使用する定数
 export const TEST_PASSWORD = 'TestPass123'
 export const SPLASH_WAIT_MS = 3000
-const TEST_API_KEY = 'test-moderation-api-key'
+const TEST_API_KEY = 'e2e-test-api-key'
 
 /**
  * バックエンドAPIのベースURLを取得

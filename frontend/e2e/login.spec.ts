@@ -18,7 +18,7 @@ import { test, expect, Page } from '@playwright/test'
 
 // テストで使用する定数
 const VALID_PASSWORD = 'TestPass123'
-const TEST_API_KEY = 'test-moderation-api-key'
+const TEST_API_KEY = 'e2e-test-api-key'
 
 /**
  * バックエンドAPIのベースURLを取得
