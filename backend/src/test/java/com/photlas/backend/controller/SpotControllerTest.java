@@ -385,26 +385,28 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("正常ケース - 期間外のみの写真しかないスポットは返されない")
-    void testGetSpots_PhotoOutsidePeriod_SpotNotReturned() throws Exception {
+    @DisplayName("正常ケース - 期間外のみの写真しかないスポットもGreenピンで表示される")
+    void testGetSpots_PhotoOutsidePeriod_SpotReturnedWithGreenPin() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
 
         // 期間外の写真（500時間前 > 336時間）
         createPhoto(spot, TEST_SHOT_AT_OUTSIDE_PERIOD, WEATHER_SUNNY);
 
-        // 期間外のみなのでスポットが返されない
+        // 期間外のみでもスポットは表示される（Greenピン、photoCount=1）
         mockMvc.perform(get(SPOTS_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_PIN_COLOR, is(PIN_COLOR_GREEN)))
+                .andExpect(jsonPath(JSON_PATH_PHOTO_COUNT, is(1)));
     }
 
     @Test
-    @DisplayName("正常ケース - photoCountは全期間のトータル件数、pinColorは期間内の件数で決定")
-    void testGetSpots_MixedPeriodPhotos_PhotoCountIsTotalAndPinColorIsRecent() throws Exception {
+    @DisplayName("正常ケース - photoCountは全期間のトータル件数、pinColorも全写真数で決定")
+    void testGetSpots_MixedPeriodPhotos_PhotoCountAndPinColorBasedOnTotal() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
 
         // 期間内の写真1枚
@@ -415,7 +417,7 @@ public class SpotControllerTest {
             createPhoto(spot, TEST_SHOT_AT_OUTSIDE_PERIOD.minusHours(i), WEATHER_SUNNY);
         }
 
-        // photoCountは全期間のトータル5枚、pinColorは期間内1枚ベースでGreen
+        // photoCountは全期間のトータル5枚、pinColorも全5枚ベースでYellow
         mockMvc.perform(get(SPOTS_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
                         .param(PARAM_SOUTH, BOUND_SOUTH)
@@ -423,7 +425,7 @@ public class SpotControllerTest {
                         .param(PARAM_WEST, BOUND_WEST))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath(JSON_PATH_PIN_COLOR, is(PIN_COLOR_GREEN)))
+                .andExpect(jsonPath(JSON_PATH_PIN_COLOR, is(PIN_COLOR_YELLOW)))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_COUNT, is(5)));
     }
 
