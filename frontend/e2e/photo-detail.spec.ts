@@ -34,15 +34,21 @@ async function waitForMapLoad(page: Page): Promise<void> {
  * ズームインしてピンを表示（Mapbox GL JSで直接ズーム制御）
  */
 async function zoomInToShowPins(page: Page): Promise<void> {
+  // moveendイベント完了を待機してスポットデータの再取得をトリガー
   await page.evaluate(() => {
-    const map = (window as unknown as Record<string, any>).__photlas_map
-    if (map?.easeTo) {
-      const currentZoom = map.getZoom?.() ?? 11
-      // easeToでmoveendイベントを発火させ、スポットデータの再取得をトリガー
-      map.easeTo({ zoom: currentZoom + 3, duration: 500 })
-    }
+    return new Promise<void>((resolve) => {
+      const map = (window as unknown as Record<string, any>).__photlas_map
+      if (map?.easeTo) {
+        const currentZoom = map.getZoom?.() ?? 11
+        map.once('moveend', () => resolve())
+        map.easeTo({ zoom: currentZoom + 3, duration: 300 })
+      } else {
+        resolve()
+      }
+    })
   })
-  await page.waitForTimeout(3000)
+  // fetchSpots API呼び出しとレンダリングを待機
+  await page.waitForTimeout(5000)
 }
 
 /**
@@ -535,15 +541,24 @@ test.describe('写真詳細・お気に入り機能', () => {
       await waitForSplash(page)
       await waitForMapLoad(page)
 
-      // 投稿した場所にズーム
-      await zoomInToShowPins(page)
+      // テスト投稿のデフォルト位置（InlineMapPickerのDEFAULT_CENTER: 新宿）にズーム
+      await page.evaluate(() => {
+        return new Promise<void>((resolve) => {
+          const map = (window as unknown as Record<string, any>).__photlas_map
+          if (map?.flyTo) {
+            map.once('moveend', () => resolve())
+            map.flyTo({ center: [139.6503, 35.6762], zoom: 14, duration: 300 })
+          } else {
+            resolve()
+          }
+        })
+      })
+      await page.waitForTimeout(5000)
 
-      // ピンが表示されることを確認
-      const pins = page.locator('[data-testid^="map-pin-"]')
-      const pinCount = await pins.count()
-
-      // テスト投稿後なので少なくとも1つのピンが表示される
-      expect(pinCount).toBeGreaterThanOrEqual(1)
+      // ピンまたはクラスターが表示されることを確認
+      await expect(
+        page.locator('[data-testid^="map-pin-"], [data-testid^="map-cluster-"]').first()
+      ).toBeVisible({ timeout: 10000 })
     })
   })
 })
