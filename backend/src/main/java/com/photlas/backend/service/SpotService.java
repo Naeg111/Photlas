@@ -8,7 +8,6 @@ import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,9 +28,6 @@ public class SpotService {
     private static final int PHOTO_COUNT_THRESHOLD_ORANGE = 10;
     private static final int PHOTO_COUNT_THRESHOLD_YELLOW = 5;
     private static final int MAX_SPOTS_LIMIT = 50;
-
-    @Value("${spot.pin-color.period-hours}")
-    private int pinColorPeriodHours;
 
     private final SpotRepository spotRepository;
     private final PhotoRepository photoRepository;
@@ -72,17 +68,6 @@ public class SpotService {
         List<String> safeWeathers = (weathers == null || weathers.isEmpty())
             ? List.of("__NONE__") : weathers;
 
-        // ピン色判定期間の基準時刻を計算
-        // Issue#46: max_age_yearsが指定された場合、cutoffTimeをmax_age_yearsベースに拡張
-        LocalDateTime defaultCutoffTime = LocalDateTime.now().minusHours(pinColorPeriodHours);
-        LocalDateTime cutoffTime;
-        if (maxAgeYears != null) {
-            LocalDateTime maxAgeCutoff = LocalDateTime.now().minusYears(maxAgeYears);
-            cutoffTime = maxAgeCutoff.isBefore(defaultCutoffTime) ? maxAgeCutoff : defaultCutoffTime;
-        } else {
-            cutoffTime = defaultCutoffTime;
-        }
-
         // Issue#46: 詳細フィルターのセンチネル値変換
         int safeMinResolution = (minResolution != null) ? minResolution : -1;
         String safeDeviceType = (deviceType != null) ? deviceType : "__NONE__";
@@ -97,7 +82,7 @@ public class SpotService {
         // リポジトリから集計結果を取得
         List<Object[]> results = spotRepository.findSpotsWithAdvancedFilters(
                 north, south, east, west, safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
-                cutoffTime, safeMinResolution, safeDeviceType,
+                safeMinResolution, safeDeviceType,
                 hasMaxAge, safeMaxAgeDate, safeAspectRatio, safeFocalLengthRange, safeMaxIso
         );
 
@@ -124,7 +109,7 @@ public class SpotService {
         Integer totalPhotoCount = ((Number) result[4]).intValue();
         String thumbnailUrl = (String) result[5];
 
-        // ピンの色はカットオフ期間内の写真数で決定
+        // ピンの色はフィルター条件に合致する写真数で決定
         String pinColor = determinePinColor(recentPhotoCount);
 
         // titleは現在nullまたは空文字列（将来的に緯度経度から生成する可能性がある）

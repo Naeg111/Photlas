@@ -58,8 +58,8 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
      * [0] spot_id (Long)
      * [1] latitude (BigDecimal)
      * [2] longitude (BigDecimal)
-     * [3] photo_count (Integer) - ピン色判定用（カットオフ期間内の写真枚数）
-     * [4] total_photo_count (Integer) - 表示用（全期間の写真枚数、フィルター条件適用済み）
+     * [3] photo_count (Integer) - ピン色判定用（フィルター条件に合致する写真枚数）
+     * [4] total_photo_count (Integer) - 表示用（フィルター条件に合致する写真枚数）
      * [5] thumbnail_url (String) - 最新の写真のS3 URL
      */
     @Query(value = """
@@ -68,24 +68,11 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
             s.latitude,
             s.longitude,
             COUNT(DISTINCT p.photo_id) as photo_count,
-            (
-                SELECT COUNT(DISTINCT p3.photo_id)
-                FROM photos p3
-                WHERE p3.spot_id = s.spot_id
-                  AND (-1 IN (:months) OR EXTRACT(MONTH FROM p3.shot_at) IN (:months))
-                  AND ('__NONE__' IN (:timesOfDay) OR p3.time_of_day IN (:timesOfDay))
-                  AND ('__NONE__' IN (:weathers) OR p3.weather IN (:weathers))
-                  AND (-1 IN (:subjectCategories) OR EXISTS (
-                      SELECT 1 FROM photo_categories pc3
-                      WHERE pc3.photo_id = p3.photo_id
-                        AND pc3.category_id IN (:subjectCategories)
-                  ))
-            ) as total_photo_count,
+            COUNT(DISTINCT p.photo_id) as total_photo_count,
             (
                 SELECT p2.s3_object_key
                 FROM photos p2
                 WHERE p2.spot_id = s.spot_id
-                  AND p2.shot_at >= :cutoffTime
                   AND (-1 IN (:months) OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
                   AND ('__NONE__' IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
                   AND ('__NONE__' IN (:weathers) OR p2.weather IN (:weathers))
@@ -101,7 +88,6 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         INNER JOIN photos p ON s.spot_id = p.spot_id
         WHERE s.latitude BETWEEN :south AND :north
           AND s.longitude BETWEEN :west AND :east
-          AND p.shot_at >= :cutoffTime
           AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
           AND ('__NONE__' IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
           AND ('__NONE__' IN (:weathers) OR p.weather IN (:weathers))
@@ -122,8 +108,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("subjectCategories") List<Integer> subjectCategories,
         @Param("months") List<Integer> months,
         @Param("timesOfDay") List<String> timesOfDay,
-        @Param("weathers") List<String> weathers,
-        @Param("cutoffTime") LocalDateTime cutoffTime
+        @Param("weathers") List<String> weathers
     );
 
     /**
@@ -143,39 +128,11 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
             s.latitude,
             s.longitude,
             COUNT(DISTINCT p.photo_id) as photo_count,
-            (
-                SELECT COUNT(DISTINCT p3.photo_id)
-                FROM photos p3
-                WHERE p3.spot_id = s.spot_id
-                  AND (-1 IN (:months) OR EXTRACT(MONTH FROM p3.shot_at) IN (:months))
-                  AND ('__NONE__' IN (:timesOfDay) OR p3.time_of_day IN (:timesOfDay))
-                  AND ('__NONE__' IN (:weathers) OR p3.weather IN (:weathers))
-                  AND (-1 IN (:subjectCategories) OR EXISTS (
-                      SELECT 1 FROM photo_categories pc3
-                      WHERE pc3.photo_id = p3.photo_id
-                        AND pc3.category_id IN (:subjectCategories)
-                  ))
-                  AND (:minResolution = -1 OR (p3.image_width IS NOT NULL AND p3.image_height IS NOT NULL AND GREATEST(p3.image_width, p3.image_height) >= :minResolution))
-                  AND ('__NONE__' = :deviceType OR p3.device_type = :deviceType)
-                  AND (:hasMaxAge = false OR p3.shot_at >= :maxAgeDate)
-                  AND ('__NONE__' = :aspectRatio
-                       OR (:aspectRatio = 'HORIZONTAL' AND p3.image_width IS NOT NULL AND p3.image_height IS NOT NULL AND p3.image_width > p3.image_height)
-                       OR (:aspectRatio = 'VERTICAL' AND p3.image_width IS NOT NULL AND p3.image_height IS NOT NULL AND p3.image_width < p3.image_height)
-                       OR (:aspectRatio = 'SQUARE' AND p3.image_width IS NOT NULL AND p3.image_height IS NOT NULL AND ABS(p3.image_width - p3.image_height) <= GREATEST(p3.image_width, p3.image_height) * 0.05)
-                  )
-                  AND ('__NONE__' = :focalLengthRange
-                       OR (:focalLengthRange = 'WIDE' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm < 24)
-                       OR (:focalLengthRange = 'STANDARD' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm >= 24 AND p3.focal_length_35mm <= 70)
-                       OR (:focalLengthRange = 'TELEPHOTO' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm > 70 AND p3.focal_length_35mm <= 300)
-                       OR (:focalLengthRange = 'SUPER_TELEPHOTO' AND p3.focal_length_35mm IS NOT NULL AND p3.focal_length_35mm > 300)
-                  )
-                  AND (:maxIso = -1 OR (p3.iso IS NOT NULL AND p3.iso <= :maxIso))
-            ) as total_photo_count,
+            COUNT(DISTINCT p.photo_id) as total_photo_count,
             (
                 SELECT p2.s3_object_key
                 FROM photos p2
                 WHERE p2.spot_id = s.spot_id
-                  AND p2.shot_at >= :cutoffTime
                   AND (-1 IN (:months) OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
                   AND ('__NONE__' IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
                   AND ('__NONE__' IN (:weathers) OR p2.weather IN (:weathers))
@@ -206,7 +163,6 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         INNER JOIN photos p ON s.spot_id = p.spot_id
         WHERE s.latitude BETWEEN :south AND :north
           AND s.longitude BETWEEN :west AND :east
-          AND p.shot_at >= :cutoffTime
           AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
           AND ('__NONE__' IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
           AND ('__NONE__' IN (:weathers) OR p.weather IN (:weathers))
@@ -243,7 +199,6 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("months") List<Integer> months,
         @Param("timesOfDay") List<String> timesOfDay,
         @Param("weathers") List<String> weathers,
-        @Param("cutoffTime") LocalDateTime cutoffTime,
         @Param("minResolution") int minResolution,
         @Param("deviceType") String deviceType,
         @Param("hasMaxAge") boolean hasMaxAge,
