@@ -18,6 +18,18 @@ import { test, expect, Page } from '@playwright/test'
 
 // テストで使用する定数
 const VALID_PASSWORD = 'TestPass123'
+const TEST_API_KEY = 'test-moderation-api-key'
+
+/**
+ * バックエンドAPIのベースURLを取得
+ */
+function getApiBaseUrl(page: Page): string {
+  const baseURL = page.url()
+  if (baseURL.includes('test.photlas.jp')) {
+    return 'https://test.photlas.jp/api/v1'
+  }
+  return 'http://localhost:8080/api/v1'
+}
 
 /**
  * ユニークなメールアドレスを生成
@@ -79,7 +91,14 @@ async function createAccount(page: Page, email: string, password: string) {
   await page.getByPlaceholder('パスワードを再入力').fill(password)
   await page.getByRole('checkbox').check()
   await page.getByRole('button', { name: '登録する' }).click()
-  await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({ timeout: 10000 })
+
+  // メール認証をバイパス（テスト用内部API）
+  const apiBaseUrl = getApiBaseUrl(page)
+  await page.request.post(`${apiBaseUrl}/internal/test/verify-email`, {
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': TEST_API_KEY },
+    data: { email },
+  })
 }
 
 /**

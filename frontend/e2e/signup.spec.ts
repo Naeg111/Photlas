@@ -95,7 +95,7 @@ test.describe('アカウント作成フロー E2Eテスト', () => {
       await page.getByRole('button', { name: '登録する' }).click()
 
       // 成功トーストが表示されることを確認
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
 
@@ -114,7 +114,7 @@ test.describe('アカウント作成フロー E2Eテスト', () => {
       await page.getByRole('button', { name: '登録する' }).click()
 
       // 成功トーストが表示されることを確認
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
     })
@@ -142,7 +142,7 @@ test.describe('アカウント作成フロー E2Eテスト', () => {
       await page.getByRole('button', { name: '登録する' }).click()
 
       // 成功トーストが表示されることを確認
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
     })
@@ -158,7 +158,7 @@ test.describe('アカウント作成フロー E2Eテスト', () => {
 
       await page.getByRole('button', { name: '登録する' }).click()
 
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
     })
@@ -174,7 +174,7 @@ test.describe('アカウント作成フロー E2Eテスト', () => {
 
       await page.getByRole('button', { name: '登録する' }).click()
 
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
     })
@@ -195,6 +195,38 @@ test.describe('アカウント作成フロー E2Eテスト', () => {
         // 登録ボタンが無効であることを確認（空白のみは有効な表示名として扱われない）
         const submitButton = page.getByRole('button', { name: '登録する' })
         await expect(submitButton).toBeDisabled()
+      })
+
+      test('表示名が1文字の場合、登録が失敗する（最小境界値未満）', async ({ page }) => {
+        await openSignUpDialog(page)
+
+        const uniqueEmail = generateUniqueEmail('signup-name-short')
+        await fillValidForm(page, {
+          displayName: 'A',
+          email: uniqueEmail,
+        })
+
+        await page.getByRole('button', { name: '登録する' }).click()
+
+        // サーバーサイドバリデーションエラーが表示されることを確認
+        const errorMessage = page.locator('text=登録に失敗しました')
+        await expect(errorMessage).toBeVisible({ timeout: 10000 })
+      })
+
+      test('表示名が13文字の場合、登録が失敗する（最大境界値超過）', async ({ page }) => {
+        await openSignUpDialog(page)
+
+        const uniqueEmail = generateUniqueEmail('signup-name-long')
+        await fillValidForm(page, {
+          displayName: '1234567890123', // 13文字
+          email: uniqueEmail,
+        })
+
+        await page.getByRole('button', { name: '登録する' }).click()
+
+        // サーバーサイドバリデーションエラーが表示されることを確認
+        const errorMessage = page.locator('text=登録に失敗しました')
+        await expect(errorMessage).toBeVisible({ timeout: 10000 })
       })
     })
 
@@ -388,7 +420,7 @@ test.describe('アカウント作成フロー E2Eテスト', () => {
       await openSignUpDialog(page)
       await fillValidForm(page, { email: duplicateEmail })
       await page.getByRole('button', { name: '登録する' }).click()
-      await expect(page.getByText('アカウント登録が完了しました')).toBeVisible({
+      await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({
         timeout: 10000,
       })
 

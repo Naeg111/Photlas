@@ -96,6 +96,24 @@ public class AdminModerationServiceTest {
     }
 
     @Test
+    @DisplayName("Issue#54 - PENDING_REVIEW状態の写真を承認するとPUBLISHEDになる")
+    void testApprovePhoto_PendingReviewPhoto_BecomesPublished() {
+        Photo photo = createPhotoWithStatus("photos/approve002.jpg", ModerationStatus.PENDING_REVIEW);
+
+        adminModerationService.approvePhoto(photo.getPhotoId());
+
+        Photo updated = photoRepository.findById(photo.getPhotoId()).orElseThrow();
+        assertThat(updated.getModerationStatus()).isEqualTo(ModerationStatus.PUBLISHED);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 存在しない写真を拒否しようとすると例外")
+    void testRejectPhoto_NonExistentPhoto_ThrowsException() {
+        assertThatThrownBy(() -> adminModerationService.rejectPhoto(99999L, "違反理由"))
+                .isInstanceOf(PhotoNotFoundException.class);
+    }
+
+    @Test
     @DisplayName("Issue#54 - 存在しない写真を承認しようとすると例外")
     void testApprovePhoto_NonExistentPhoto_ThrowsException() {
         assertThatThrownBy(() -> adminModerationService.approvePhoto(99999L))
