@@ -114,6 +114,9 @@ public class PhotoController {
             @PathVariable Long photoId,
             Authentication authentication
     ) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
