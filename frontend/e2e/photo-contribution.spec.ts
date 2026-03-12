@@ -395,20 +395,13 @@ test.describe('写真投稿機能', () => {
       // 4. 機材種別を選択
       await page.getByText('一眼レフ', { exact: true }).click()
 
-      // 5. 投稿ボタンが有効になっていることを確認
+      // 5. 投稿ボタンが有効になっていることを確認してクリック
       const submitButton = page.getByRole('button', { name: '投稿する' })
       await expect(submitButton).toBeEnabled({ timeout: 3000 })
-
-      // 6. 投稿ボタンをクリック
       await submitButton.click()
 
-      // 7. アップロード完了を待機（成功またはエラー）
-      const successMessage = page.getByText('完了しました')
-      const errorMessage = page.getByText('エラー 時間をおいて再度お試しください')
-      await expect(successMessage.or(errorMessage)).toBeVisible({ timeout: 30000 })
-
-      // 成功メッセージであることを確認
-      await expect(successMessage).toBeVisible()
+      // 6. アップロード成功を待機
+      await expect(page.getByText('完了しました')).toBeVisible({ timeout: 30000 })
 
       // 7. ダイアログが最終的に閉じることを確認
       const dialogHeading = page.getByRole('heading', { name: '写真を投稿' })
