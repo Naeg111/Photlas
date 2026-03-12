@@ -26,6 +26,11 @@ import static org.hamcrest.Matchers.is;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@org.springframework.test.context.TestPropertySource(properties = {
+    "rate-limit.auth=10",
+    "rate-limit.photo=30",
+    "rate-limit.general=60"
+})
 public class RateLimitFilterTest {
 
     @Autowired
