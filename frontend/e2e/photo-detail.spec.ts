@@ -31,24 +31,29 @@ async function waitForMapLoad(page: Page): Promise<void> {
 }
 
 /**
- * ズームインしてピンを表示（Mapbox GL JSで直接ズーム制御）
+ * 指定座標にflyToしてスポットデータの取得を待機
  */
-async function zoomInToShowPins(page: Page): Promise<void> {
-  // moveendイベント完了を待機してスポットデータの再取得をトリガー
-  await page.evaluate(() => {
+async function flyToLocation(page: Page, lng: number, lat: number, zoom: number): Promise<void> {
+  await page.evaluate(({ lng, lat, zoom }) => {
     return new Promise<void>((resolve) => {
       const map = (window as unknown as Record<string, any>).__photlas_map
-      if (map?.easeTo) {
-        const currentZoom = map.getZoom?.() ?? 11
+      if (map?.flyTo) {
         map.once('moveend', () => resolve())
-        map.easeTo({ zoom: currentZoom + 3, duration: 300 })
+        map.flyTo({ center: [lng, lat], zoom, duration: 300 })
       } else {
         resolve()
       }
     })
-  })
+  }, { lng, lat, zoom })
   // fetchSpots API呼び出しとレンダリングを待機
   await page.waitForTimeout(5000)
+}
+
+/**
+ * 東京駅付近（中央区テストデータ密集エリア）にズームしてピンを表示
+ */
+async function zoomInToShowPins(page: Page): Promise<void> {
+  await flyToLocation(page, 139.7671, 35.6812, 15)
 }
 
 /**
@@ -542,18 +547,7 @@ test.describe('写真詳細・お気に入り機能', () => {
       await waitForMapLoad(page)
 
       // テスト投稿のデフォルト位置（InlineMapPickerのDEFAULT_CENTER: 新宿）にズーム
-      await page.evaluate(() => {
-        return new Promise<void>((resolve) => {
-          const map = (window as unknown as Record<string, any>).__photlas_map
-          if (map?.flyTo) {
-            map.once('moveend', () => resolve())
-            map.flyTo({ center: [139.6503, 35.6762], zoom: 14, duration: 300 })
-          } else {
-            resolve()
-          }
-        })
-      })
-      await page.waitForTimeout(5000)
+      await flyToLocation(page, 139.6503, 35.6762, 14)
 
       // ピンまたはクラスターが表示されることを確認
       await expect(
