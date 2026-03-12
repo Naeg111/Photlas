@@ -880,6 +880,16 @@ public class PhotoControllerTest {
     }
 
     @Test
+    @DisplayName("Issue#54 - エラー: 未認証でステータス取得すると401を返す")
+    void testGetPhotoStatus_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
+        Photo photo = createPhoto(PHOTO_TITLE_TEST_EN, "photos/status-unauth001.jpg", spot.getSpotId());
+
+        mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId() + "/status"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("Issue#54 - エラー: 存在しない写真IDのステータス取得")
     void testGetPhotoStatus_NonExistentPhoto_ReturnsNotFound() throws Exception {
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + "99999/status")
