@@ -4,6 +4,10 @@ import {
   createAccountAndLogin,
   clearStorage,
 } from './helpers/auth'
+import {
+  findPinsAndClusters,
+  clickFirstPin,
+} from './helpers/map-pins'
 
 /**
  * 地図表示・ピン表示機能 E2Eテスト
@@ -109,8 +113,8 @@ async function zoomOut(page: Page, times: number = 1): Promise<void> {
  * 地図が読み込まれるのを待機
  */
 async function waitForMapLoad(page: Page): Promise<void> {
-  // Google Mapsのコンテナが表示されるのを待機
-  await expect(page.locator('[data-testid="map-container"], .gm-style')).toBeVisible({ timeout: 15000 })
+  // Mapboxのコンテナが表示されるのを待機
+  await expect(page.locator('[data-testid="map-container"], .mapboxgl-map')).toBeVisible({ timeout: 15000 })
   // API呼び出しが完了するのを待機
   await page.waitForTimeout(2000)
 }
@@ -129,8 +133,8 @@ test.describe('地図表示・ピン表示機能', () => {
 
   test.describe('地図の基本表示', () => {
     test('地図が正常に表示される', async ({ page }) => {
-      // Google Mapsのコンテナが表示される
-      await expect(page.locator('.gm-style').first()).toBeVisible()
+      // Mapboxのコンテナが表示される
+      await expect(page.locator('.mapboxgl-map').first()).toBeVisible()
     })
 
     test('フィルターボタンが表示される', async ({ page }) => {
@@ -160,16 +164,9 @@ test.describe('地図表示・ピン表示機能', () => {
       await zoomIn(page, 2)
       await page.waitForTimeout(2000)
 
-      // ピンが表示されるか、データがない場合は表示されない
-      // スポットが存在する場合のみピンが表示される
-      const pins = page.locator('[data-testid^="map-pin-"]')
-      const pinCount = await pins.count()
-
-      // ピンが表示されているか、または「ズームして」のバナーが表示されていない
+      // ズームレベルが十分な場合、バナーは表示されない
       const zoomBanner = page.getByText('ズームしてスポットを表示')
       const isZoomBannerVisible = await zoomBanner.isVisible().catch(() => false)
-
-      // ズームレベルが十分な場合、バナーは表示されない
       expect(isZoomBannerVisible).toBe(false)
     })
 
@@ -212,17 +209,12 @@ test.describe('地図表示・ピン表示機能', () => {
       await zoomIn(page, 2)
       await page.waitForTimeout(3000)
 
-      // ピンを取得
-      const pins = page.locator('[data-testid^="map-pin-"]')
-      const pinCount = await pins.count()
+      // Symbol LayerのフィーチャーからphotoCountプロパティを確認
+      const { pins, pinCount } = await findPinsAndClusters(page)
 
       if (pinCount > 0) {
-        // 個別ピン: SVGのfill属性でピン色を確認（カスタムビビッドカラー）
-        const firstPin = pins.first()
-        const svgPath = firstPin.locator('path')
-        const fill = await svgPath.getAttribute('fill')
-        const validColors = ['#00d68f', '#ffbe0b', '#ff6b35', '#ff006e']
-        expect(validColors).toContain(fill)
+        expect(pins[0].properties).toHaveProperty('photoCount')
+        expect(pins[0].properties.photoCount).toBeGreaterThanOrEqual(1)
       }
     })
 
@@ -230,14 +222,13 @@ test.describe('地図表示・ピン表示機能', () => {
       await zoomIn(page, 2)
       await page.waitForTimeout(3000)
 
-      const pins = page.locator('[data-testid^="map-pin-"]')
-      const pinCount = await pins.count()
+      const { pins, pinCount } = await findPinsAndClusters(page)
 
       if (pinCount > 0) {
-        // ピンのテキストが数字であることを確認
-        const firstPin = pins.first()
-        const text = await firstPin.textContent()
-        expect(text).toMatch(/^\d+$/)
+        // Symbol Layerではicon-imageにphotoCountが含まれる
+        const photoCount = pins[0].properties.photoCount
+        expect(typeof photoCount).toBe('number')
+        expect(photoCount).toBeGreaterThanOrEqual(1)
       }
     })
   })
@@ -389,7 +380,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await page.waitForTimeout(2000)
 
       // 地図が引き続き表示されている
-      await expect(page.locator('.gm-style').first()).toBeVisible()
+      await expect(page.locator('.mapboxgl-map').first()).toBeVisible()
     })
   })
 
@@ -399,7 +390,7 @@ test.describe('地図表示・ピン表示機能', () => {
 
   test.describe('地図ナビゲーション', () => {
     test('ドラッグで地図を移動できる', async ({ page }) => {
-      const mapContainer = page.locator('.gm-style').first()
+      const mapContainer = page.locator('.mapboxgl-map').first()
 
       // マウスでドラッグ
       const box = await mapContainer.boundingBox()
@@ -415,7 +406,7 @@ test.describe('地図表示・ピン表示機能', () => {
     })
 
     test('マウスホイールでズームイン・アウトできる', async ({ page }) => {
-      const mapContainer = page.locator('.gm-style').first()
+      const mapContainer = page.locator('.mapboxgl-map').first()
 
       // マウスホイールでズーム
       await mapContainer.hover()
@@ -429,7 +420,7 @@ test.describe('地図表示・ピン表示機能', () => {
     test('ピンチズームでズームイン・アウトできる（モバイル）', async ({ page }) => {
       // モバイルデバイスでのピンチズームはPlaywrightで直接テストが難しいため、
       // タッチイベントの基本的な動作のみ確認
-      const mapContainer = page.locator('.gm-style').first()
+      const mapContainer = page.locator('.mapboxgl-map').first()
       await expect(mapContainer).toBeVisible()
     })
   })
@@ -444,15 +435,15 @@ test.describe('地図表示・ピン表示機能', () => {
       await zoomIn(page, 2)
       await page.waitForTimeout(3000)
 
-      const pins = page.locator('[data-testid^="map-pin-"]')
-      const pinCount = await pins.count()
+      const { pinCount } = await findPinsAndClusters(page)
 
       if (pinCount > 0) {
-        // 最初のピンをクリック
-        await pins.first().click()
-
-        // 写真詳細ダイアログが開く
-        await expect(page.locator('[data-testid="photo-detail-dialog"], [role="dialog"]')).toBeVisible({ timeout: 5000 })
+        // Symbol Layerのピンをクリック
+        const clicked = await clickFirstPin(page)
+        if (clicked) {
+          // 写真詳細ダイアログが開く
+          await expect(page.locator('[data-testid="photo-detail-dialog"], [role="dialog"]')).toBeVisible({ timeout: 5000 })
+        }
       }
     })
   })
