@@ -60,8 +60,8 @@ const CLUSTER_MAX_ZOOM = 17
 // UI設定
 const TOAST_DURATION_MS = 3000
 const SHOOTING_PIN_SCALE = 1.4
-// クラスタ展開・集約時のフェードインアニメーション時間 (ms)
-const CLUSTER_FADE_DURATION_MS = 300
+// クラスタ展開・集約時の位置アニメーション時間 (ms)
+const CLUSTER_ANIMATION_DURATION_MS = 300
 
 /**
  * 偶数ピクセルに丸める
@@ -86,6 +86,8 @@ function appendScalarParam(params: URLSearchParams, key: string, value?: string 
 const SOURCE_ID = 'spots'
 const CLUSTER_LAYER_ID = 'clusters'
 const UNCLUSTERED_LAYER_ID = 'unclustered-point'
+const ANIMATION_SOURCE_ID = 'spots-animation'
+const ANIMATION_LAYER_ID = 'animation-point'
 
 // 撮影地点プレビューのホワイト+ブラックボーダー
 const SHOOTING_PIN_COLOR = '#ffffff'
@@ -113,6 +115,53 @@ function buildPinColorExpression(countProperty: string): ExpressionSpecification
     ['>=', ['get', countProperty], 5], PIN_COLOR_MAP.Yellow,
     PIN_COLOR_MAP.Green,
   ]
+}
+
+/** Cubic ease-out（減速曲線） */
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3)
+}
+
+/** 候補座標の中からターゲットに最も近い座標を返す */
+function findNearestPosition(
+  target: [number, number],
+  candidates: Array<[number, number]>,
+): [number, number] | null {
+  if (candidates.length === 0) return null
+  let nearest = candidates[0]
+  let minDist = Infinity
+  for (const c of candidates) {
+    const dx = c[0] - target[0]
+    const dy = c[1] - target[1]
+    const dist = dx * dx + dy * dy
+    if (dist < minDist) {
+      minDist = dist
+      nearest = c
+    }
+  }
+  return nearest
+}
+
+/** フィーチャーpropertiesからピン画像IDを生成 */
+function buildIconImageId(properties: Record<string, any> | null): string {
+  if (!properties) return `pin-${PIN_COLOR_MAP.Green}-1`
+  if (properties.totalPhotoCount !== undefined) {
+    const count = properties.totalPhotoCount
+    const color = count >= 30 ? PIN_COLOR_MAP.Red
+      : count >= 10 ? PIN_COLOR_MAP.Orange
+      : count >= 5 ? PIN_COLOR_MAP.Yellow
+      : PIN_COLOR_MAP.Green
+    return `pin-${color}-${count}`
+  }
+  const color = PIN_COLOR_MAP[properties.pinColor as keyof typeof PIN_COLOR_MAP] || PIN_COLOR_MAP.Green
+  return `pin-${color}-${properties.photoCount || 1}`
+}
+
+/** ズーム変更前のスナップショット */
+interface PreZoomSnapshot {
+  zoom: number
+  clusterPositions: Array<[number, number]>
+  unclustered: Map<number, { coordinates: [number, number]; properties: Record<string, any> }>
 }
 
 interface MapViewProps {
@@ -205,6 +254,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const initialMountRef = useRef(true)
   const watchIdRef = useRef<number | null>(null)
   const layersInitializedRef = useRef(false)
+  const animFrameRef = useRef<number | null>(null)
+  const preZoomRef = useRef<PreZoomSnapshot | null>(null)
 
   // watchPositionのクリーンアップ
   useEffect(() => {
@@ -212,6 +263,16 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current)
         watchIdRef.current = null
+      }
+    }
+  }, [])
+
+  // アニメーションフレームのクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current)
+        animFrameRef.current = null
       }
     }
   }, [])
@@ -296,10 +357,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         'icon-anchor': 'bottom',
         'icon-size': ICON_SIZE_EXPRESSION,
       },
-      paint: {
-        'icon-opacity': 1,
-        'icon-opacity-transition': { duration: CLUSTER_FADE_DURATION_MS, delay: 0 },
-      },
     })
 
     // 個別ピン用 Symbol Layer
@@ -326,29 +383,229 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         'icon-anchor': 'bottom',
         'icon-size': ICON_SIZE_EXPRESSION,
       },
-      paint: {
-        'icon-opacity': 1,
-        'icon-opacity-transition': { duration: CLUSTER_FADE_DURATION_MS, delay: 0 },
+    })
+
+    // アニメーション用Source・Layer（クラスタリングなし）
+    mapInstance.addSource(ANIMATION_SOURCE_ID, {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    })
+    mapInstance.addLayer({
+      id: ANIMATION_LAYER_ID,
+      type: 'symbol',
+      source: ANIMATION_SOURCE_ID,
+      layout: {
+        'icon-image': ['get', 'iconImage'],
+        'icon-allow-overlap': true,
+        'icon-anchor': 'bottom',
+        'icon-size': ICON_SIZE_EXPRESSION,
+        'visibility': 'none',
       },
     })
 
-    // ズーム変更時のフェードインアニメーション
-    // ズーム開始時にピンを透明にし、ズーム終了後にトランジション付きで復元
+    // クラスタ展開・集約アニメーション
     mapInstance.on('zoomstart', () => {
+      // 進行中のアニメーションをキャンセル
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current)
+        animFrameRef.current = null
+        try {
+          mapInstance.setLayoutProperty(UNCLUSTERED_LAYER_ID, 'visibility', 'visible')
+          mapInstance.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'none')
+          const animSource = mapInstance.getSource(ANIMATION_SOURCE_ID) as any
+          if (animSource) animSource.setData({ type: 'FeatureCollection', features: [] })
+        } catch { /* Layer未初期化 */ }
+      }
+
+      // ズーム前の状態をスナップショット
       try {
-        mapInstance.setPaintProperty(CLUSTER_LAYER_ID, 'icon-opacity', 0)
-        mapInstance.setPaintProperty(UNCLUSTERED_LAYER_ID, 'icon-opacity', 0)
+        const clusterFeatures = mapInstance.queryRenderedFeatures({ layers: [CLUSTER_LAYER_ID] })
+        const unclusteredFeatures = mapInstance.queryRenderedFeatures({ layers: [UNCLUSTERED_LAYER_ID] })
+
+        const unclustered = new Map<number, { coordinates: [number, number]; properties: Record<string, any> }>()
+        for (const f of unclusteredFeatures) {
+          const spotId = f.properties?.spotId
+          if (spotId != null) {
+            unclustered.set(spotId, {
+              coordinates: (f.geometry as GeoJSON.Point).coordinates as [number, number],
+              properties: { ...f.properties },
+            })
+          }
+        }
+
+        preZoomRef.current = {
+          zoom: mapInstance.getZoom(),
+          clusterPositions: clusterFeatures.map(f =>
+            (f.geometry as GeoJSON.Point).coordinates as [number, number]
+          ),
+          unclustered,
+        }
       } catch {
-        // Layer未初期化の場合はスキップ
+        preZoomRef.current = null
       }
     })
+
     mapInstance.on('zoomend', () => {
+      const preZoom = preZoomRef.current
+      if (!preZoom) return
+      preZoomRef.current = null
+
+      const currentZoom = mapInstance.getZoom()
+      if (Math.abs(currentZoom - preZoom.zoom) < 0.01) return
+
+      const isZoomIn = currentZoom > preZoom.zoom
+
       try {
-        mapInstance.setPaintProperty(CLUSTER_LAYER_ID, 'icon-opacity', 1)
-        mapInstance.setPaintProperty(UNCLUSTERED_LAYER_ID, 'icon-opacity', 1)
-      } catch {
-        // Layer未初期化の場合はスキップ
-      }
+        const newUnclusteredFeatures = mapInstance.queryRenderedFeatures({ layers: [UNCLUSTERED_LAYER_ID] })
+        const newClusterFeatures = mapInstance.queryRenderedFeatures({ layers: [CLUSTER_LAYER_ID] })
+
+        if (isZoomIn) {
+          // ズームイン: 新たに出現した個別ピンを旧クラスタ中心からアニメーション
+          const newSpotIds = new Set<number>()
+          const allNewUnclustered: Array<{ coordinates: [number, number]; properties: Record<string, any> }> = []
+          for (const f of newUnclusteredFeatures) {
+            const spotId = f.properties?.spotId
+            if (spotId != null && !newSpotIds.has(spotId)) {
+              newSpotIds.add(spotId)
+              allNewUnclustered.push({
+                coordinates: (f.geometry as GeoJSON.Point).coordinates as [number, number],
+                properties: { ...f.properties },
+              })
+            }
+          }
+
+          const animatingFeatures: Array<{
+            startCoords: [number, number]
+            destCoords: [number, number]
+            properties: Record<string, any>
+          }> = []
+          const stationaryFeatures: Array<{
+            coordinates: [number, number]
+            properties: Record<string, any>
+          }> = []
+
+          for (const feat of allNewUnclustered) {
+            if (preZoom.unclustered.has(feat.properties.spotId)) {
+              stationaryFeatures.push(feat)
+            } else {
+              const nearestCluster = findNearestPosition(feat.coordinates, preZoom.clusterPositions)
+              animatingFeatures.push({
+                startCoords: nearestCluster || feat.coordinates,
+                destCoords: feat.coordinates,
+                properties: feat.properties,
+              })
+            }
+          }
+
+          if (animatingFeatures.length === 0) return
+
+          mapInstance.setLayoutProperty(UNCLUSTERED_LAYER_ID, 'visibility', 'none')
+          mapInstance.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'visible')
+
+          const startTime = performance.now()
+          const runAnimation = (now: number) => {
+            const progress = Math.min((now - startTime) / CLUSTER_ANIMATION_DURATION_MS, 1)
+            const eased = easeOutCubic(progress)
+
+            const features: GeoJSON.Feature[] = []
+            for (const af of animatingFeatures) {
+              features.push({
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [
+                    af.startCoords[0] + (af.destCoords[0] - af.startCoords[0]) * eased,
+                    af.startCoords[1] + (af.destCoords[1] - af.startCoords[1]) * eased,
+                  ],
+                },
+                properties: { iconImage: buildIconImageId(af.properties) },
+              })
+            }
+            for (const sf of stationaryFeatures) {
+              features.push({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: sf.coordinates },
+                properties: { iconImage: buildIconImageId(sf.properties) },
+              })
+            }
+
+            const animSource = mapInstance.getSource(ANIMATION_SOURCE_ID) as any
+            if (animSource) {
+              animSource.setData({ type: 'FeatureCollection', features })
+            }
+
+            if (progress < 1) {
+              animFrameRef.current = requestAnimationFrame(runAnimation)
+            } else {
+              mapInstance.setLayoutProperty(UNCLUSTERED_LAYER_ID, 'visibility', 'visible')
+              mapInstance.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'none')
+              if (animSource) animSource.setData({ type: 'FeatureCollection', features: [] })
+              animFrameRef.current = null
+            }
+          }
+          animFrameRef.current = requestAnimationFrame(runAnimation)
+        } else {
+          // ズームアウト: 消えた個別ピンを新クラスタ中心へアニメーション
+          const newUnclusteredSpotIds = new Set<number>()
+          for (const f of newUnclusteredFeatures) {
+            const spotId = f.properties?.spotId
+            if (spotId != null) newUnclusteredSpotIds.add(spotId)
+          }
+
+          const disappeared: Array<{ coordinates: [number, number]; properties: Record<string, any> }> = []
+          for (const [spotId, data] of preZoom.unclustered) {
+            if (!newUnclusteredSpotIds.has(spotId)) {
+              disappeared.push(data)
+            }
+          }
+
+          if (disappeared.length === 0) return
+
+          const newClusterPositions = newClusterFeatures.map(f =>
+            (f.geometry as GeoJSON.Point).coordinates as [number, number]
+          )
+
+          const animatingFeatures = disappeared.map(feat => ({
+            startCoords: feat.coordinates,
+            destCoords: findNearestPosition(feat.coordinates, newClusterPositions) || feat.coordinates,
+            properties: feat.properties,
+          }))
+
+          mapInstance.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'visible')
+
+          const startTime = performance.now()
+          const runAnimation = (now: number) => {
+            const progress = Math.min((now - startTime) / CLUSTER_ANIMATION_DURATION_MS, 1)
+            const eased = easeOutCubic(progress)
+
+            const features: GeoJSON.Feature[] = animatingFeatures.map(af => ({
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [
+                  af.startCoords[0] + (af.destCoords[0] - af.startCoords[0]) * eased,
+                  af.startCoords[1] + (af.destCoords[1] - af.startCoords[1]) * eased,
+                ],
+              },
+              properties: { iconImage: buildIconImageId(af.properties) },
+            }))
+
+            const animSource = mapInstance.getSource(ANIMATION_SOURCE_ID) as any
+            if (animSource) {
+              animSource.setData({ type: 'FeatureCollection', features })
+            }
+
+            if (progress < 1) {
+              animFrameRef.current = requestAnimationFrame(runAnimation)
+            } else {
+              mapInstance.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'none')
+              if (animSource) animSource.setData({ type: 'FeatureCollection', features: [] })
+              animFrameRef.current = null
+            }
+          }
+          animFrameRef.current = requestAnimationFrame(runAnimation)
+        }
+      } catch { /* フィーチャー取得失敗時はアニメーションをスキップ */ }
     })
 
     // 個別ピンのクリックイベント
@@ -400,6 +657,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     try {
       map.setLayoutProperty(CLUSTER_LAYER_ID, 'visibility', visibility)
       map.setLayoutProperty(UNCLUSTERED_LAYER_ID, 'visibility', visibility)
+      map.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'none')
     } catch {
       // Layer未初期化の場合はスキップ
     }
