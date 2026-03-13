@@ -61,7 +61,7 @@ const CLUSTER_MAX_ZOOM = 17
 const TOAST_DURATION_MS = 3000
 const SHOOTING_PIN_SCALE = 1.4
 // クラスタ展開・集約時の位置アニメーション時間 (ms)
-const CLUSTER_ANIMATION_DURATION_MS = 300
+const CLUSTER_ANIMATION_DURATION_MS = 600
 
 /**
  * 偶数ピクセルに丸める
@@ -499,14 +499,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
           if (animatingFeatures.length === 0) return
 
-          mapInstance.setLayoutProperty(UNCLUSTERED_LAYER_ID, 'visibility', 'none')
-          mapInstance.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'visible')
-
-          const startTime = performance.now()
-          const runAnimation = (now: number) => {
-            const progress = Math.min((now - startTime) / CLUSTER_ANIMATION_DURATION_MS, 1)
-            const eased = easeOutCubic(progress)
-
+          // 初期フレームのデータを先にセットしてからレイヤーを切り替え（点滅防止）
+          const buildFrame = (eased: number): GeoJSON.Feature[] => {
             const features: GeoJSON.Feature[] = []
             for (const af of animatingFeatures) {
               features.push({
@@ -528,10 +522,23 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 properties: { iconImage: buildIconImageId(sf.properties) },
               })
             }
+            return features
+          }
 
-            const animSource = mapInstance.getSource(ANIMATION_SOURCE_ID) as any
+          const animSource = mapInstance.getSource(ANIMATION_SOURCE_ID) as any
+          if (animSource) {
+            animSource.setData({ type: 'FeatureCollection', features: buildFrame(0) })
+          }
+          mapInstance.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'visible')
+          mapInstance.setLayoutProperty(UNCLUSTERED_LAYER_ID, 'visibility', 'none')
+
+          const startTime = performance.now()
+          const runAnimation = (now: number) => {
+            const progress = Math.min((now - startTime) / CLUSTER_ANIMATION_DURATION_MS, 1)
+            const eased = easeOutCubic(progress)
+
             if (animSource) {
-              animSource.setData({ type: 'FeatureCollection', features })
+              animSource.setData({ type: 'FeatureCollection', features: buildFrame(eased) })
             }
 
             if (progress < 1) {
@@ -571,17 +578,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
             properties: feat.properties,
           }))
 
-          mapInstance.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'visible')
-
-          const startTime = performance.now()
-          const runAnimation = (now: number) => {
-            const progress = Math.min((now - startTime) / CLUSTER_ANIMATION_DURATION_MS, 1)
-            const eased = easeOutCubic(progress)
-
-            const features: GeoJSON.Feature[] = animatingFeatures.map(af => ({
-              type: 'Feature',
+          const buildFrame = (eased: number): GeoJSON.Feature[] =>
+            animatingFeatures.map(af => ({
+              type: 'Feature' as const,
               geometry: {
-                type: 'Point',
+                type: 'Point' as const,
                 coordinates: [
                   af.startCoords[0] + (af.destCoords[0] - af.startCoords[0]) * eased,
                   af.startCoords[1] + (af.destCoords[1] - af.startCoords[1]) * eased,
@@ -590,9 +591,20 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               properties: { iconImage: buildIconImageId(af.properties) },
             }))
 
-            const animSource = mapInstance.getSource(ANIMATION_SOURCE_ID) as any
+          // 初期フレームのデータを先にセットしてからレイヤーを表示（点滅防止）
+          const animSource = mapInstance.getSource(ANIMATION_SOURCE_ID) as any
+          if (animSource) {
+            animSource.setData({ type: 'FeatureCollection', features: buildFrame(0) })
+          }
+          mapInstance.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'visible')
+
+          const startTime = performance.now()
+          const runAnimation = (now: number) => {
+            const progress = Math.min((now - startTime) / CLUSTER_ANIMATION_DURATION_MS, 1)
+            const eased = easeOutCubic(progress)
+
             if (animSource) {
-              animSource.setData({ type: 'FeatureCollection', features })
+              animSource.setData({ type: 'FeatureCollection', features: buildFrame(eased) })
             }
 
             if (progress < 1) {
