@@ -15,9 +15,9 @@ export const PIN_COLOR_MAP: Record<string, string> = {
 }
 
 /** ピンの基準サイズ (px) */
-const BASE_PIN_SIZE = 32
+export const BASE_PIN_SIZE = 32
 /** ピンの高さ比率 */
-const PIN_HEIGHT_RATIO = 1.2
+export const PIN_HEIGHT_RATIO = 1.2
 /** シャドウ用の余白 (px) */
 const SHADOW_PADDING = 4
 /** 999件超の表示上限 */
