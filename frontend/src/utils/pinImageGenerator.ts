@@ -22,6 +22,8 @@ export const PIN_HEIGHT_RATIO = 1.2
 const SHADOW_PADDING = 4
 /** 999件超の表示上限 */
 const PIN_COUNT_DISPLAY_LIMIT = 999
+/** 高DPI対応のピクセル比率（Retina対応） */
+export const PIN_PIXEL_RATIO = 2
 
 /**
  * 投稿件数からピン色のHEXカラーを決定
@@ -98,8 +100,11 @@ export function generatePinImage(
 ): { width: number; height: number; data: Uint8ClampedArray } {
   const pinWidth = Math.round(BASE_PIN_SIZE * scale)
   const pinHeight = Math.round(BASE_PIN_SIZE * PIN_HEIGHT_RATIO * scale)
-  const canvasWidth = pinWidth + SHADOW_PADDING
-  const canvasHeight = pinHeight + SHADOW_PADDING
+  const logicalWidth = pinWidth + SHADOW_PADDING
+  const logicalHeight = pinHeight + SHADOW_PADDING
+  // 高DPI対応: Canvas物理ピクセルをPIN_PIXEL_RATIO倍で描画
+  const canvasWidth = logicalWidth * PIN_PIXEL_RATIO
+  const canvasHeight = logicalHeight * PIN_PIXEL_RATIO
 
   const canvas = document.createElement('canvas')
   canvas.width = canvasWidth
@@ -109,6 +114,9 @@ export function generatePinImage(
   if (!ctx) {
     return { width: canvasWidth, height: canvasHeight, data: new Uint8ClampedArray(canvasWidth * canvasHeight * 4) }
   }
+
+  // PIN_PIXEL_RATIO倍の座標系にスケールアップして描画
+  ctx.scale(PIN_PIXEL_RATIO, PIN_PIXEL_RATIO)
 
   const pathScale = pinWidth / 32 // PinSvgのviewBox基準(32)に対するスケール
 
