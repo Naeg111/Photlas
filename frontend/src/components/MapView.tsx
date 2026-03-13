@@ -422,7 +422,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         const clusterFeatures = mapInstance.queryRenderedFeatures({ layers: [CLUSTER_LAYER_ID] })
         const unclusteredFeatures = mapInstance.queryRenderedFeatures({ layers: [UNCLUSTERED_LAYER_ID] })
 
-        const unclustered = new Map<number, { coordinates: [number, number]; properties: Record<string, any> }>()
+        const unclustered = new globalThis.Map<number, { coordinates: [number, number]; properties: Record<string, any> }>()
         for (const f of unclusteredFeatures) {
           const spotId = f.properties?.spotId
           if (spotId != null) {
