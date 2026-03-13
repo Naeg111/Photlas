@@ -15,12 +15,6 @@ vi.mock('../config/api', () => ({
 
 // pinImageGeneratorのモック
 vi.mock('../utils/pinImageGenerator', () => ({
-  determinePinColor: (count: number) => {
-    if (count >= 30) return '#ff006e'
-    if (count >= 10) return '#ff6b35'
-    if (count >= 5) return '#ffbe0b'
-    return '#00d68f'
-  },
   generatePinImage: vi.fn(() => ({
     width: 36,
     height: 44,
@@ -33,6 +27,8 @@ vi.mock('../utils/pinImageGenerator', () => ({
     Orange: '#ff6b35',
     Red: '#ff006e',
   },
+  BASE_PIN_SIZE: 32,
+  PIN_HEIGHT_RATIO: 1.2,
 }))
 
 // Mapbox GL JS のモックマップインスタンス
@@ -147,6 +143,26 @@ vi.mock('react-map-gl', () => ({
 // fetch APIのモック
 global.fetch = vi.fn()
 
+// テスト用スポットデータ
+const TEST_SPOT = {
+  spotId: 1,
+  latitude: 35.6585,
+  longitude: 139.7454,
+  pinColor: 'Green' as const,
+  thumbnailUrl: 'https://example.com/thumb.jpg',
+  photoCount: 1,
+}
+
+/** 指定したスポット配列を返すfetchモックを設定 */
+function setupFetchMock(spots: typeof TEST_SPOT[] = []) {
+  const mockFetch = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => spots,
+  })
+  global.fetch = mockFetch
+  return mockFetch
+}
+
 describe('MapView Component - Issue#53, Issue#55', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -160,20 +176,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
   describe('地図操作・状態に伴うピンの更新', () => {
     it('初回読み込み時にスポットAPIが呼ばれる', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 1,
-          },
-        ],
-      })
-      global.fetch = mockFetch
+      const mockFetch = setupFetchMock([TEST_SPOT])
 
       render(<MapView />)
 
@@ -192,11 +195,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
 
     it('地図移動後（onMoveEnd イベント）にAPIが呼ばれる', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [],
-      })
-      global.fetch = mockFetch
+      const mockFetch = setupFetchMock()
 
       render(<MapView />)
 
@@ -241,20 +240,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
   describe('Issue#55: Symbol Layer によるピン描画', () => {
     it('GeoJSON SourceがクラスタリングONで登録される', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 1,
-          },
-        ],
-      })
-      global.fetch = mockFetch
+      setupFetchMock([TEST_SPOT])
 
       render(<MapView />)
 
@@ -272,11 +258,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
 
     it('クラスタ用と個別ピン用のSymbol Layerが追加される', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [],
-      })
-      global.fetch = mockFetch
+      setupFetchMock()
 
       render(<MapView />)
 
@@ -301,20 +283,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
 
     it('スポットデータ更新時にGeoJSON Sourceのデータが更新される', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 3,
-          },
-        ],
-      })
-      global.fetch = mockFetch
+      setupFetchMock([{ ...TEST_SPOT, photoCount: 3 }])
 
       render(<MapView />)
 
@@ -325,20 +294,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
 
     it('ピン画像がmap.addImageで登録される', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 1,
-          },
-        ],
-      })
-      global.fetch = mockFetch
+      setupFetchMock([TEST_SPOT])
 
       render(<MapView />)
 
@@ -348,20 +304,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
 
     it('個別ピンクリック時にonSpotClickが呼ばれる', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 1,
-          },
-        ],
-      })
-      global.fetch = mockFetch
+      setupFetchMock([TEST_SPOT])
 
       const mockSpotClick = vi.fn()
       render(<MapView onSpotClick={mockSpotClick} />)
@@ -393,28 +336,10 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
 
     it('クラスタクリック時にonClusterClickが呼ばれる', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 50,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb1.jpg',
-            photoCount: 3,
-          },
-          {
-            spotId: 51,
-            latitude: 35.6586,
-            longitude: 139.7455,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb2.jpg',
-            photoCount: 2,
-          },
-        ],
-      })
-      global.fetch = mockFetch
+      setupFetchMock([
+        { ...TEST_SPOT, spotId: 50, thumbnailUrl: 'https://example.com/thumb1.jpg', photoCount: 3 },
+        { ...TEST_SPOT, spotId: 51, latitude: 35.6586, longitude: 139.7455, thumbnailUrl: 'https://example.com/thumb2.jpg', photoCount: 2 },
+      ])
 
       const mockClusterClick = vi.fn()
       render(<MapView onClusterClick={mockClusterClick} />)
@@ -456,11 +381,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
 
     it('GeoJSON SourceにclusterPropertiesでtotalPhotoCountの集約が設定される', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [],
-      })
-      global.fetch = mockFetch
+      setupFetchMock()
 
       render(<MapView />)
 
@@ -480,11 +401,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
   describe('撮影地点プレビュー', () => {
     it('showShootingLocationPinで白色のピンが表示される', async () => {
       mockMap.getZoom.mockReturnValue(16)
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [],
-      })
-      global.fetch = mockFetch
+      setupFetchMock()
 
       const ref = { current: null as any }
       render(<MapView ref={ref} />)
@@ -512,11 +429,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
     it('clearShootingLocationPinで白色のピンが消える', async () => {
       mockMap.getZoom.mockReturnValue(16)
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [],
-      })
-      global.fetch = mockFetch
+      setupFetchMock()
 
       const ref = { current: null as any }
       render(<MapView ref={ref} />)
@@ -540,20 +453,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
     it('showShootingLocationPin中はSymbol Layerのピンが非表示になる', async () => {
       mockMap.getZoom.mockReturnValue(16)
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 1,
-          },
-        ],
-      })
-      global.fetch = mockFetch
+      setupFetchMock([TEST_SPOT])
 
       const ref = { current: null as any }
       render(<MapView ref={ref} />)
@@ -576,11 +476,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
     it('onMapClickコールバックが地図クリック時に呼ばれる', async () => {
       mockMap.getZoom.mockReturnValue(11)
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [],
-      })
-      global.fetch = mockFetch
+      setupFetchMock()
 
       const onMapClick = vi.fn()
       render(<MapView onMapClick={onMapClick} />)
@@ -594,35 +490,31 @@ describe('MapView Component - Issue#53, Issue#55', () => {
   })
 
   describe('エラーハンドリング', () => {
-    it('APIエラー時にトースト通知が表示される', async () => {
-      const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
-      global.fetch = mockFetch
+    function setupFetchError() {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
+    }
 
+    it('APIエラー時にトースト通知が表示される', async () => {
+      setupFetchError()
       render(<MapView />)
 
       await waitFor(() => {
-        const toast = screen.getByText(/データの取得に失敗しました/i)
-        expect(toast).toBeInTheDocument()
+        expect(screen.getByText(/データの取得に失敗しました/i)).toBeInTheDocument()
       })
     })
 
     it('トースト通知は画面中央上部に表示される', async () => {
-      const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
-      global.fetch = mockFetch
-
+      setupFetchError()
       render(<MapView />)
 
       await waitFor(() => {
         const toast = screen.getByText(/データの取得に失敗しました/i)
-        const container = toast.closest('[data-testid="toast-container"]')
-        expect(container).toHaveClass('top-center')
+        expect(toast.closest('[data-testid="toast-container"]')).toHaveClass('top-center')
       })
     })
 
     it('トースト通知は赤系の背景色で表示される', async () => {
-      const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
-      global.fetch = mockFetch
-
+      setupFetchError()
       render(<MapView />)
 
       await waitFor(() => {

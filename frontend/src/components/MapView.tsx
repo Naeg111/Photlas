@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react'
 import Map, { Marker } from 'react-map-gl'
 import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
-import type { Map as MapboxMap } from 'mapbox-gl'
+import type { Map as MapboxMap, ExpressionSpecification } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { PinSvg } from './PinSvg'
-import { generatePinImage, getPinImageId, PIN_COLOR_MAP } from '../utils/pinImageGenerator'
+import { generatePinImage, getPinImageId, PIN_COLOR_MAP, BASE_PIN_SIZE, PIN_HEIGHT_RATIO } from '../utils/pinImageGenerator'
 
 // MapViewの公開メソッド型定義
 export interface MapViewHandle {
@@ -59,11 +59,7 @@ const CLUSTER_MAX_ZOOM = 17
 
 // UI設定
 const TOAST_DURATION_MS = 3000
-const PIN_HEIGHT_RATIO = 1.2
 const SHOOTING_PIN_SCALE = 1.4
-
-// ピンの基準サイズ (px)
-const BASE_PIN_SIZE = 32
 
 /**
  * 偶数ピクセルに丸める
@@ -92,6 +88,27 @@ const UNCLUSTERED_LAYER_ID = 'unclustered-point'
 // 撮影地点プレビューのホワイト+ブラックボーダー
 const SHOOTING_PIN_COLOR = '#ffffff'
 const SHOOTING_PIN_STROKE = '#000000'
+
+// Symbol Layer共通: ズームレベルに応じたアイコンサイズ補間
+const ICON_SIZE_EXPRESSION: ExpressionSpecification = [
+  'interpolate', ['linear'], ['zoom'],
+  10, 1.0,
+  16, 1.4,
+]
+
+/**
+ * 投稿件数プロパティからピン色HEXを決定するMapbox Expression
+ * @param countProperty - 件数を取得するプロパティ名
+ */
+function buildPinColorExpression(countProperty: string): ExpressionSpecification {
+  return [
+    'case',
+    ['>=', ['get', countProperty], 30], PIN_COLOR_MAP.Red,
+    ['>=', ['get', countProperty], 10], PIN_COLOR_MAP.Orange,
+    ['>=', ['get', countProperty], 5], PIN_COLOR_MAP.Yellow,
+    PIN_COLOR_MAP.Green,
+  ]
+}
 
 interface MapViewProps {
   filterParams?: MapViewFilterParams
@@ -164,9 +181,6 @@ function registerPinImages(mapInstance: MapboxMap, spots: SpotResponse[]): void 
       registeredIds.add(imageId)
     }
   }
-
-  // クラスタ用にいくつかのバリエーションを事前登録（必要に応じて動的追加）
-  // クラスタの合計件数は動的に決まるため、styleimagemissing イベントで対応
 }
 
 const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady }, ref) {
@@ -269,23 +283,13 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         'icon-image': [
           'concat',
           'pin-',
-          [
-            'case',
-            ['>=', ['get', 'totalPhotoCount'], 30], PIN_COLOR_MAP.Red,
-            ['>=', ['get', 'totalPhotoCount'], 10], PIN_COLOR_MAP.Orange,
-            ['>=', ['get', 'totalPhotoCount'], 5], PIN_COLOR_MAP.Yellow,
-            PIN_COLOR_MAP.Green,
-          ],
+          buildPinColorExpression('totalPhotoCount'),
           '-',
           ['to-string', ['get', 'totalPhotoCount']],
         ],
         'icon-allow-overlap': true,
         'icon-anchor': 'bottom',
-        'icon-size': [
-          'interpolate', ['linear'], ['zoom'],
-          10, 1.0,
-          16, 1.4,
-        ],
+        'icon-size': ICON_SIZE_EXPRESSION,
       },
     })
 
@@ -311,11 +315,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         ],
         'icon-allow-overlap': true,
         'icon-anchor': 'bottom',
-        'icon-size': [
-          'interpolate', ['linear'], ['zoom'],
-          10, 1.0,
-          16, 1.4,
-        ],
+        'icon-size': ICON_SIZE_EXPRESSION,
       },
     })
 
