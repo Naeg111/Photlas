@@ -5,6 +5,7 @@ import {
   clearStorage,
 } from './helpers/auth'
 import { getTestImagePath, ensureFixtures } from './helpers/test-image'
+import { findPinsAndClusters, clickFirstPin } from './helpers/map-pins'
 
 /**
  * 写真詳細・お気に入り機能 E2Eテスト
@@ -20,6 +21,8 @@ import { getTestImagePath, ensureFixtures } from './helpers/test-image'
  * 前提条件:
  * - テスト環境（test.photlas.jp）が稼働していること
  * - テスト用の投稿データが存在すること
+ *
+ * Issue#55: Symbol Layer移行に伴い、ピン検出を queryRenderedFeatures ベースに変更
  */
 
 /**
@@ -58,17 +61,14 @@ async function zoomInToShowPins(page: Page): Promise<void> {
 
 /**
  * ピンをクリックして写真詳細ダイアログを開く
+ * Issue#55: queryRenderedFeatures + map.project でピンクリック
  */
 async function openPhotoDetailFromPin(page: Page): Promise<boolean> {
-  const pins = page.locator('[data-testid^="map-pin-"]')
-  const pinCount = await pins.count()
+  const clicked = await clickFirstPin(page)
+  if (!clicked) return false
 
-  if (pinCount > 0) {
-    await pins.first().click()
-    await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 })
-    return true
-  }
-  return false
+  await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 })
+  return true
 }
 
 /**
@@ -198,7 +198,6 @@ test.describe('写真詳細・お気に入り機能', () => {
         // ダイアログ内にテキストコンテンツが存在することを確認
         const dialogText = await page.locator('[role="dialog"]').textContent()
         expect(dialogText).toBeTruthy()
-        // ダイアログに何らかのテキスト（ユーザー名含む）が表示されている
         expect(dialogText!.length).toBeGreaterThan(0)
       } else {
         test.skip()
@@ -217,19 +216,15 @@ test.describe('写真詳細・お気に入り機能', () => {
       if (await openPhotoDetailFromPin(page)) {
         await page.waitForTimeout(2000)
 
-        // 前後ナビゲーションボタンを探す
         const nextButton = page.locator('[role="dialog"] button[aria-label="次の写真"], [role="dialog"] button:has(svg.lucide-chevron-right)')
 
         const hasNext = await nextButton.isVisible()
 
         if (hasNext) {
-          // 次ボタンが表示されている = 複数写真あり
           await nextButton.click()
           await page.waitForTimeout(1000)
-          // クリック後もダイアログが表示されている
           await expect(page.locator('[role="dialog"]')).toBeVisible()
         } else {
-          // 単一写真のスポットの場合、ナビゲーションボタンは非表示
           test.skip()
         }
       } else {
@@ -243,16 +238,13 @@ test.describe('写真詳細・お気に入り機能', () => {
       if (await openPhotoDetailFromPin(page)) {
         await page.waitForTimeout(2000)
 
-        // ドットインジケーターを探す
         const dots = page.locator('[role="dialog"] .dot-indicator, [role="dialog"] [class*="rounded-full"][class*="w-2"]')
         const dotCount = await dots.count()
 
         if (dotCount === 0) {
-          // 単一写真のスポットの場合はスキップ
           test.skip()
         }
 
-        // 複数写真がある場合、ドットが2つ以上表示される
         expect(dotCount).toBeGreaterThanOrEqual(2)
       } else {
         test.skip()
@@ -272,7 +264,6 @@ test.describe('写真詳細・お気に入り機能', () => {
         const favoriteButton = page.locator('[data-testid="favorite-button"]')
         await expect(favoriteButton).toBeVisible({ timeout: 5000 })
 
-        // 未ログイン状態ではボタンがdisabledである
         await expect(favoriteButton).toBeDisabled()
       } else {
         test.skip()
@@ -288,13 +279,11 @@ test.describe('写真詳細・お気に入り機能', () => {
         const favoriteButton = page.locator('[data-testid="favorite-button"]')
         await expect(favoriteButton).toBeVisible({ timeout: 5000 })
 
-        // 初期状態: お気に入りに追加
         await expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りに追加')
 
         await favoriteButton.click()
         await page.waitForTimeout(1000)
 
-        // 追加後: お気に入りから削除に変わる
         await expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りから削除')
       } else {
         test.skip()
@@ -309,12 +298,10 @@ test.describe('写真詳細・お気に入り機能', () => {
         const favoriteButton = page.locator('[data-testid="favorite-button"]')
         await expect(favoriteButton).toBeVisible({ timeout: 5000 })
 
-        // 追加
         await favoriteButton.click()
         await page.waitForTimeout(1000)
         await expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りから削除')
 
-        // 解除
         await favoriteButton.click()
         await page.waitForTimeout(1000)
         await expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りに追加')
@@ -331,16 +318,13 @@ test.describe('写真詳細・お気に入り機能', () => {
         const favoriteButton = page.locator('[data-testid="favorite-button"]')
         await expect(favoriteButton).toBeVisible({ timeout: 5000 })
 
-        // 初期カウントを取得
         const countElement = page.locator('[data-testid="favorite-count"]')
         const initialText = await countElement.textContent()
         const initialCount = parseInt(initialText?.match(/\d+/)?.[0] || '0')
 
-        // お気に入りを追加
         await favoriteButton.click()
         await page.waitForTimeout(1500)
 
-        // カウントが変化していることを確認
         const newText = await countElement.textContent()
         const newCount = parseInt(newText?.match(/\d+/)?.[0] || '0')
         expect(newCount).not.toBe(initialCount)
@@ -362,16 +346,12 @@ test.describe('写真詳細・お気に入り機能', () => {
         await page.waitForTimeout(2000)
 
         const dialog = page.locator('[role="dialog"]')
-
-        // EXIF情報がある投稿かどうかを確認（「カメラ」ラベルの存在で判定）
         const cameraLabel = dialog.getByText('カメラ', { exact: false })
         const hasExif = await cameraLabel.isVisible()
 
         if (hasExif) {
-          // EXIF情報がある場合、ラベルが正しく表示されていることを検証
           await expect(cameraLabel).toBeVisible()
         } else {
-          // EXIF情報がない投稿の場合はスキップ
           test.skip()
         }
       } else {
@@ -386,22 +366,17 @@ test.describe('写真詳細・お気に入り機能', () => {
         await page.waitForTimeout(2000)
 
         const dialog = page.locator('[role="dialog"]')
-
-        // 実装に合わせたラベル名（PhotoDetailDialog.tsx参照）
         const labels = ['カメラ', 'レンズ', 'F値', 'シャッタースピード', 'ISO']
 
-        // EXIF情報がある投稿かチェック
         const firstLabel = dialog.getByText('カメラ', { exact: false })
         if (!(await firstLabel.isVisible())) {
           test.skip()
           return
         }
 
-        // 各ラベルの存在を検証
         for (const label of labels) {
           const element = dialog.getByText(label, { exact: false })
           const isVisible = await element.isVisible()
-          // EXIF項目は値がある場合のみ表示される（任意項目）
           if (isVisible) {
             await expect(element).toBeVisible()
           }
@@ -421,7 +396,6 @@ test.describe('写真詳細・お気に入り機能', () => {
       await zoomInToShowPins(page)
 
       if (await openPhotoDetailFromPin(page)) {
-        // 通報ボタンが表示されないことを確認
         const reportButton = page.locator('[data-testid="report-button"]')
         await expect(reportButton).not.toBeVisible()
       } else {
@@ -434,7 +408,6 @@ test.describe('写真詳細・お気に入り機能', () => {
       await zoomInToShowPins(page)
 
       if (await openPhotoDetailFromPin(page)) {
-        // 通報ボタンが表示されることを確認
         const reportButton = page.locator('[data-testid="report-button"]')
         await expect(reportButton).toBeVisible({ timeout: 5000 })
         await expect(reportButton).toHaveAttribute('aria-label', 'この写真を通報')
@@ -453,7 +426,6 @@ test.describe('写真詳細・お気に入り機能', () => {
 
         await reportButton.click()
 
-        // 通報ダイアログが開く
         await expect(page.getByRole('heading', { name: 'この投稿を通報' })).toBeVisible({ timeout: 5000 })
       } else {
         test.skip()
@@ -473,14 +445,12 @@ test.describe('写真詳細・お気に入り機能', () => {
         await page.waitForTimeout(2000)
 
         const dialog = page.locator('[role="dialog"]')
-        // 撮影日時は「年」を含む形式で表示される
         const dateText = dialog.getByText(/\d{4}年/)
         const hasDate = await dateText.isVisible()
 
         if (hasDate) {
           await expect(dateText).toBeVisible()
         } else {
-          // 日時情報がない投稿の場合はスキップ
           test.skip()
         }
       } else {
@@ -495,10 +465,7 @@ test.describe('写真詳細・お気に入り機能', () => {
         await page.waitForTimeout(2000)
 
         const dialog = page.locator('[role="dialog"]')
-        // MapPinアイコンの隣に施設名が表示される（存在する投稿の場合のみ）
-        // 施設名は任意項目のため、表示されない場合もある
         const dialogContent = await dialog.textContent()
-        // テスト成功：ダイアログの表示自体は正常
         expect(dialogContent).toBeTruthy()
       } else {
         test.skip()
@@ -512,15 +479,12 @@ test.describe('写真詳細・お気に入り機能', () => {
         await page.waitForTimeout(2000)
 
         const dialog = page.locator('[role="dialog"]')
-        // 天気情報がある投稿かどうか確認
         const weatherLabel = dialog.getByText('天気:', { exact: false })
         const hasWeather = await weatherLabel.isVisible()
 
         if (hasWeather) {
-          // 天気ラベルが正しく表示されている
           await expect(weatherLabel).toBeVisible()
         } else {
-          // 天気情報がない投稿の場合はスキップ
           test.skip()
         }
       } else {
@@ -549,10 +513,9 @@ test.describe('写真詳細・お気に入り機能', () => {
       // テスト投稿のデフォルト位置（InlineMapPickerのDEFAULT_CENTER: 新宿）にズーム
       await flyToLocation(page, 139.6503, 35.6762, 14)
 
-      // ピンまたはクラスターが表示されることを確認
-      await expect(
-        page.locator('[data-testid^="map-pin-"], [data-testid^="map-cluster-"]').first()
-      ).toBeVisible({ timeout: 10000 })
+      // ピンまたはクラスタが表示されることを確認（queryRenderedFeatures）
+      const { pinCount, clusterCount } = await findPinsAndClusters(page)
+      expect(pinCount + clusterCount).toBeGreaterThan(0)
     })
   })
 })

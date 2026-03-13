@@ -36,6 +36,15 @@ const { mockMap, MapMock } = vi.hoisted(() => {
     setLanguage: vi.fn(),
     on: vi.fn(),
     off: vi.fn(),
+    addSource: vi.fn(),
+    addLayer: vi.fn(),
+    addImage: vi.fn(),
+    hasImage: vi.fn(() => false),
+    getSource: vi.fn(() => ({ setData: vi.fn() })),
+    removeSource: vi.fn(),
+    removeLayer: vi.fn(),
+    getLayer: vi.fn(() => undefined),
+    setLayoutProperty: vi.fn(),
   }
 
   const MapMock = ({ children, onLoad }: any) => {
