@@ -19,7 +19,7 @@ export const BASE_PIN_SIZE = 32
 /** ピンの高さ比率 */
 export const PIN_HEIGHT_RATIO = 1.2
 /** シャドウ用の余白 (px) */
-const SHADOW_PADDING = 4
+export const SHADOW_PADDING = 4
 /** 999件超の表示上限 */
 const PIN_COUNT_DISPLAY_LIMIT = 999
 /** 高DPI対応のピクセル比率（Retina対応） */

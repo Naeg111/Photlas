@@ -6,7 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { PinSvg } from './PinSvg'
-import { generatePinImage, getPinImageId, PIN_COLOR_MAP, BASE_PIN_SIZE, PIN_HEIGHT_RATIO, PIN_PIXEL_RATIO } from '../utils/pinImageGenerator'
+import { generatePinImage, getPinImageId, PIN_COLOR_MAP, BASE_PIN_SIZE, PIN_HEIGHT_RATIO, PIN_PIXEL_RATIO, SHADOW_PADDING } from '../utils/pinImageGenerator'
 
 // MapViewの公開メソッド型定義
 export interface MapViewHandle {
@@ -60,9 +60,8 @@ const CLUSTER_MAX_ZOOM = 17
 // UI設定
 const TOAST_DURATION_MS = 3000
 const SHOOTING_PIN_SCALE = 1.4
-// Symbol Layerのフェードトランジション時間 (ms)
-// クラスタ展開・集約時のクロスフェードアニメーションに使用
-const SYMBOL_FADE_DURATION_MS = 300
+// クラスタ展開・集約時のフェードインアニメーション時間 (ms)
+const CLUSTER_FADE_DURATION_MS = 300
 
 /**
  * 偶数ピクセルに丸める
@@ -92,11 +91,14 @@ const UNCLUSTERED_LAYER_ID = 'unclustered-point'
 const SHOOTING_PIN_COLOR = '#ffffff'
 const SHOOTING_PIN_STROKE = '#000000'
 
-// Symbol Layer共通: ズームレベルに応じたアイコンサイズ補間
+// Symbol Layer共通: ズームレベルに応じたアイコンサイズ
+// Canvas画像はSHADOW_PADDING分大きいため、icon-sizeで補正して
+// Issue#55以前のPinSvg（32x38px表示）と同じサイズにする
+const PIN_SIZE_CORRECTION = BASE_PIN_SIZE / (BASE_PIN_SIZE + SHADOW_PADDING)
 const ICON_SIZE_EXPRESSION: ExpressionSpecification = [
-  'interpolate', ['linear'], ['zoom'],
-  10, 1.0,
-  16, 1.4,
+  'step', ['zoom'],
+  PIN_SIZE_CORRECTION,               // zoom < 16: 通常サイズ
+  16, PIN_SIZE_CORRECTION * 1.4,     // zoom >= 16: 1.4倍
 ]
 
 /**
@@ -294,6 +296,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         'icon-anchor': 'bottom',
         'icon-size': ICON_SIZE_EXPRESSION,
       },
+      paint: {
+        'icon-opacity': 1,
+        'icon-opacity-transition': { duration: CLUSTER_FADE_DURATION_MS, delay: 0 },
+      },
     })
 
     // 個別ピン用 Symbol Layer
@@ -320,6 +326,29 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         'icon-anchor': 'bottom',
         'icon-size': ICON_SIZE_EXPRESSION,
       },
+      paint: {
+        'icon-opacity': 1,
+        'icon-opacity-transition': { duration: CLUSTER_FADE_DURATION_MS, delay: 0 },
+      },
+    })
+
+    // ズーム変更時のフェードインアニメーション
+    // ズーム開始時にピンを透明にし、ズーム終了後にトランジション付きで復元
+    mapInstance.on('zoomstart', () => {
+      try {
+        mapInstance.setPaintProperty(CLUSTER_LAYER_ID, 'icon-opacity', 0)
+        mapInstance.setPaintProperty(UNCLUSTERED_LAYER_ID, 'icon-opacity', 0)
+      } catch {
+        // Layer未初期化の場合はスキップ
+      }
+    })
+    mapInstance.on('zoomend', () => {
+      try {
+        mapInstance.setPaintProperty(CLUSTER_LAYER_ID, 'icon-opacity', 1)
+        mapInstance.setPaintProperty(UNCLUSTERED_LAYER_ID, 'icon-opacity', 1)
+      } catch {
+        // Layer未初期化の場合はスキップ
+      }
     })
 
     // 個別ピンのクリックイベント
@@ -542,7 +571,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         style={{ width: '100%', height: '100%' }}
         mapStyle={MAPBOX_STYLE}
         language="ja"
-        fadeDuration={SYMBOL_FADE_DURATION_MS}
+        fadeDuration={0}
         renderWorldCopies={false}
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}
