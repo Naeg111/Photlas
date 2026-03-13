@@ -6,7 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { PinSvg } from './PinSvg'
-import { generatePinImage, getPinImageId, PIN_COLOR_MAP, BASE_PIN_SIZE, PIN_HEIGHT_RATIO } from '../utils/pinImageGenerator'
+import { generatePinImage, getPinImageId, PIN_COLOR_MAP, BASE_PIN_SIZE, PIN_HEIGHT_RATIO, PIN_PIXEL_RATIO } from '../utils/pinImageGenerator'
 
 // MapViewの公開メソッド型定義
 export interface MapViewHandle {
@@ -60,6 +60,9 @@ const CLUSTER_MAX_ZOOM = 17
 // UI設定
 const TOAST_DURATION_MS = 3000
 const SHOOTING_PIN_SCALE = 1.4
+// Symbol Layerのフェードトランジション時間 (ms)
+// クラスタ展開・集約時のクロスフェードアニメーションに使用
+const SYMBOL_FADE_DURATION_MS = 300
 
 /**
  * 偶数ピクセルに丸める
@@ -177,7 +180,7 @@ function registerPinImages(mapInstance: MapboxMap, spots: SpotResponse[]): void 
     const imageId = getPinImageId(color, spot.photoCount)
     if (!registeredIds.has(imageId) && !mapInstance.hasImage(imageId)) {
       const imageData = generatePinImage(color, spot.photoCount, 1.0)
-      mapInstance.addImage(imageId, imageData)
+      mapInstance.addImage(imageId, imageData, { pixelRatio: PIN_PIXEL_RATIO })
       registeredIds.add(imageId)
     }
   }
@@ -268,7 +271,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         const count = parseInt(match[2], 10)
         const imageData = generatePinImage(color, count, 1.0)
         if (!mapInstance.hasImage(e.id)) {
-          mapInstance.addImage(e.id, imageData)
+          mapInstance.addImage(e.id, imageData, { pixelRatio: PIN_PIXEL_RATIO })
         }
       }
     })
@@ -539,7 +542,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         style={{ width: '100%', height: '100%' }}
         mapStyle={MAPBOX_STYLE}
         language="ja"
-        fadeDuration={0}
+        fadeDuration={SYMBOL_FADE_DURATION_MS}
         renderWorldCopies={false}
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}

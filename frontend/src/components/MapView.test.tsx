@@ -29,6 +29,7 @@ vi.mock('../utils/pinImageGenerator', () => ({
   },
   BASE_PIN_SIZE: 32,
   PIN_HEIGHT_RATIO: 1.2,
+  PIN_PIXEL_RATIO: 2,
 }))
 
 // Mapbox GL JS のモックマップインスタンス
