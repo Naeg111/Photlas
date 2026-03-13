@@ -4,6 +4,7 @@ import {
   generatePinImage,
   getPinImageId,
   PIN_COLOR_MAP,
+  PIN_PIXEL_RATIO,
 } from './pinImageGenerator'
 
 /**
@@ -153,12 +154,19 @@ describe('pinImageGenerator - Issue#55', () => {
       )
     })
 
-    it('スケール1.0でベースサイズのCanvasが生成される', () => {
+    it('スケール1.0でベースサイズのPIN_PIXEL_RATIO倍のCanvasが生成される', () => {
       const result = generatePinImage('#00d68f', 1, 1.0)
 
-      // BASE_PIN_SIZE=32, PIN_HEIGHT_RATIO=1.2 → 32x38 (+ padding for shadow)
-      expect(result.width).toBeGreaterThanOrEqual(32)
-      expect(result.height).toBeGreaterThanOrEqual(38)
+      // BASE_PIN_SIZE=32, SHADOW_PADDING=4 → 論理幅36, PIN_PIXEL_RATIO倍 → 72
+      // BASE_PIN_SIZE*1.2=38, SHADOW_PADDING=4 → 論理高42, PIN_PIXEL_RATIO倍 → 84
+      expect(result.width).toBeGreaterThanOrEqual(32 * PIN_PIXEL_RATIO)
+      expect(result.height).toBeGreaterThanOrEqual(38 * PIN_PIXEL_RATIO)
+    })
+
+    it('高DPI対応でctx.scaleがPIN_PIXEL_RATIOで呼ばれる', () => {
+      generatePinImage('#00d68f', 1, 1.0)
+
+      expect(mockContext.scale).toHaveBeenCalledWith(PIN_PIXEL_RATIO, PIN_PIXEL_RATIO)
     })
 
     it('スケール1.4で拡大されたCanvasが生成される', () => {
