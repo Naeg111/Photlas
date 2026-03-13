@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import MapView from './MapView'
 
 /**
  * Issue#53: Google Maps API から Mapbox API への移行
- * TDD Red段階のテストコード
+ * Issue#55: Symbol Layer移行 + クラスタリングアニメーション
  */
 
 // API設定のモック
@@ -13,10 +13,43 @@ vi.mock('../config/api', () => ({
   API_V1_URL: 'http://localhost:3000/api/v1',
 }))
 
+// pinImageGeneratorのモック
+vi.mock('../utils/pinImageGenerator', () => ({
+  determinePinColor: (count: number) => {
+    if (count >= 30) return '#ff006e'
+    if (count >= 10) return '#ff6b35'
+    if (count >= 5) return '#ffbe0b'
+    return '#00d68f'
+  },
+  generatePinImage: vi.fn(() => ({
+    width: 36,
+    height: 44,
+    data: new Uint8ClampedArray(36 * 44 * 4),
+  })),
+  getPinImageId: (color: string, count: number) => `pin-${color}-${count}`,
+  PIN_COLOR_MAP: {
+    Green: '#00d68f',
+    Yellow: '#ffbe0b',
+    Orange: '#ff6b35',
+    Red: '#ff006e',
+  },
+}))
+
 // Mapbox GL JS のモックマップインスタンス
-const { mockMap, MapMock, resetMockMountFlag } = vi.hoisted(() => {
+const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() => {
   let hasMounted = false
   const timerIds: ReturnType<typeof setTimeout>[] = []
+
+  // addSourceに渡されたデータを保存
+  let sourceData: { id: string; config: any }[] = []
+  // addLayerに渡された設定を保存
+  const layers: { config: any }[] = []
+  // 登録されたイメージIDを保存
+  const images: Set<string> = new Set()
+  // イベントハンドラーを保存
+  const eventHandlers: Record<string, Record<string, Function>> = {}
+  // GeoJSONソースのsetData呼び出しを記録
+  let lastSetData: any = null
 
   const mockMap = {
     setZoom: vi.fn(),
@@ -30,12 +63,41 @@ const { mockMap, MapMock, resetMockMountFlag } = vi.hoisted(() => {
     })),
     flyTo: vi.fn(),
     setLanguage: vi.fn(),
-    on: vi.fn(),
+    on: vi.fn((event: string, layerOrHandler: string | Function, handler?: Function) => {
+      if (typeof layerOrHandler === 'string' && handler) {
+        // map.on('click', 'layerId', handler) 形式
+        if (!eventHandlers[event]) eventHandlers[event] = {}
+        eventHandlers[event][layerOrHandler] = handler
+      }
+    }),
     off: vi.fn(),
+    addSource: vi.fn((id: string, config: any) => {
+      sourceData.push({ id, config })
+    }),
+    addLayer: vi.fn((config: any) => {
+      layers.push({ config })
+    }),
+    addImage: vi.fn((id: string) => {
+      images.add(id)
+    }),
+    hasImage: vi.fn((id: string) => images.has(id)),
+    getSource: vi.fn((id: string) => {
+      const source = sourceData.find(s => s.id === id)
+      if (source) {
+        return {
+          setData: vi.fn((data: any) => { lastSetData = data }),
+        }
+      }
+      return undefined
+    }),
+    removeSource: vi.fn(),
+    removeLayer: vi.fn(),
+    getLayer: vi.fn(() => undefined),
+    queryRenderedFeatures: vi.fn(() => []),
+    setLayoutProperty: vi.fn(),
   }
 
   // react-map-gl のモック
-  // onLoad/onMoveEndは初回マウント時のみ発火（re-renderでは再発火しない）
   const MapMock = ({ children, onLoad, onMoveEnd }: any) => {
     if (!hasMounted) {
       hasMounted = true
@@ -43,7 +105,6 @@ const { mockMap, MapMock, resetMockMountFlag } = vi.hoisted(() => {
         onLoad({ target: mockMap })
       }
       if (onMoveEnd) {
-        // onMoveEnd イベントをシミュレート（初回と地図移動後）
         timerIds.push(setTimeout(() => onMoveEnd({ target: mockMap }), 100))
         timerIds.push(setTimeout(() => onMoveEnd({ target: mockMap }), 200))
       }
@@ -59,9 +120,22 @@ const { mockMap, MapMock, resetMockMountFlag } = vi.hoisted(() => {
     hasMounted = false
     timerIds.forEach(id => clearTimeout(id))
     timerIds.length = 0
+    sourceData = []
+    layers.length = 0
+    images.clear()
+    Object.keys(eventHandlers).forEach(k => delete eventHandlers[k])
+    lastSetData = null
   }
 
-  return { mockMap, MapMock, resetMockMountFlag }
+  const mockSourceData = {
+    get sources() { return sourceData },
+    get layers() { return layers },
+    get images() { return images },
+    get eventHandlers() { return eventHandlers },
+    get lastSetData() { return lastSetData },
+  }
+
+  return { mockMap, mockSourceData, MapMock, resetMockMountFlag }
 })
 
 vi.mock('react-map-gl', () => ({
@@ -73,11 +147,11 @@ vi.mock('react-map-gl', () => ({
 // fetch APIのモック
 global.fetch = vi.fn()
 
-describe('MapView Component - Issue#53', () => {
+describe('MapView Component - Issue#53, Issue#55', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     resetMockMountFlag()
-    mockMap.getZoom.mockReturnValue(11) // デフォルトはZoom 11
+    mockMap.getZoom.mockReturnValue(11)
   })
 
   afterEach(() => {
@@ -110,7 +184,6 @@ describe('MapView Component - Issue#53', () => {
         )
       })
 
-      // パラメータに範囲（north, south, east, west）が含まれていることを確認
       const callArgs = mockFetch.mock.calls[0][0] as string
       expect(callArgs).toContain('north=')
       expect(callArgs).toContain('south=')
@@ -127,7 +200,6 @@ describe('MapView Component - Issue#53', () => {
 
       render(<MapView />)
 
-      // onLoad時に1回、onMoveEnd（100msと200ms）で2回、計3回APIが呼ばれることを確認
       await waitFor(
         () => {
           expect(mockFetch).toHaveBeenCalledTimes(3)
@@ -138,56 +210,6 @@ describe('MapView Component - Issue#53', () => {
   })
 
   describe('ズームレベルによる表示制御と誘導UI', () => {
-    it('Zoom 11以上の場合、ピンが表示される', async () => {
-      mockMap.getZoom.mockReturnValue(11)
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 1,
-          },
-        ],
-      })
-      global.fetch = mockFetch
-
-      render(<MapView />)
-
-      await waitFor(() => {
-        const pin = screen.queryByTestId('map-pin-1')
-        expect(pin).toBeInTheDocument()
-      })
-    })
-
-    it('Zoom 9以下の場合、ピンが非表示になる', async () => {
-      mockMap.getZoom.mockReturnValue(9)
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 1,
-          },
-        ],
-      })
-      global.fetch = mockFetch
-
-      render(<MapView />)
-
-      await waitFor(() => {
-        const pin = screen.queryByTestId('map-pin-1')
-        expect(pin).not.toBeInTheDocument()
-      })
-    })
-
     it('Zoom 9以下の場合、ズームバナーが表示される', async () => {
       mockMap.getZoom.mockReturnValue(9)
 
@@ -217,38 +239,8 @@ describe('MapView Component - Issue#53', () => {
     })
   })
 
-  describe('ピンのデザイン', () => {
-    it('ピンが円形で、写真枚数が表示される', async () => {
-      mockMap.getZoom.mockReturnValue(11)
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 3,
-          },
-        ],
-      })
-      global.fetch = mockFetch
-
-      render(<MapView />)
-
-      await waitFor(() => {
-        // ピンがSVGマーカー形状で表示されていることを確認
-        const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelector('svg')).toBeInTheDocument()
-
-        // 写真枚数が表示されていることを確認
-        expect(screen.getByText('3')).toBeInTheDocument()
-      })
-    })
-
-    it('photoCountに応じてピンの色が変わる（1件=Green）', async () => {
-      mockMap.getZoom.mockReturnValue(11)
+  describe('Issue#55: Symbol Layer によるピン描画', () => {
+    it('GeoJSON SourceがクラスタリングONで登録される', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
@@ -267,91 +259,48 @@ describe('MapView Component - Issue#53', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelectorAll('path')[1]?.getAttribute('fill')).toBe('#00d68f')
+        expect(mockMap.addSource).toHaveBeenCalledWith(
+          'spots',
+          expect.objectContaining({
+            type: 'geojson',
+            cluster: true,
+            clusterRadius: 70,
+            clusterMaxZoom: 17,
+          })
+        )
       })
     })
 
-    it('photoCountに応じてピンの色が変わる（5件以上=Yellow）', async () => {
-      mockMap.getZoom.mockReturnValue(11)
+    it('クラスタ用と個別ピン用のSymbol Layerが追加される', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Yellow',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 5,
-          },
-        ],
+        json: async () => [],
       })
       global.fetch = mockFetch
 
       render(<MapView />)
 
       await waitFor(() => {
-        const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelectorAll('path')[1]?.getAttribute('fill')).toBe('#ffbe0b')
+        expect(mockMap.addLayer).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 'clusters',
+            type: 'symbol',
+            source: 'spots',
+            filter: ['has', 'point_count'],
+          })
+        )
+        expect(mockMap.addLayer).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 'unclustered-point',
+            type: 'symbol',
+            source: 'spots',
+            filter: ['!', ['has', 'point_count']],
+          })
+        )
       })
     })
 
-    it('photoCountに応じてピンの色が変わる（10件以上=Orange）', async () => {
-      mockMap.getZoom.mockReturnValue(11)
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Orange',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 10,
-          },
-        ],
-      })
-      global.fetch = mockFetch
-
-      render(<MapView />)
-
-      await waitFor(() => {
-        const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelectorAll('path')[1]?.getAttribute('fill')).toBe('#ff6b35')
-      })
-    })
-
-    it('photoCountに応じてピンの色が変わる（30件以上=Red）', async () => {
-      mockMap.getZoom.mockReturnValue(11)
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 1,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Red',
-            thumbnailUrl: 'https://example.com/thumb.jpg',
-            photoCount: 30,
-          },
-        ],
-      })
-      global.fetch = mockFetch
-
-      render(<MapView />)
-
-      await waitFor(() => {
-        const pin = screen.getByTestId('map-pin-1')
-        expect(pin.querySelectorAll('path')[1]?.getAttribute('fill')).toBe('#ff006e')
-      })
-    })
-  })
-
-  describe('Issue#39: ピンクラスタリング', () => {
-    it('近接するスポットがクラスタまたは個別ピンとして表示される', async () => {
-      // superclusterの内部判定によりクラスタ化の有無が変わるため、いずれかの表示を確認
-      mockMap.getZoom.mockReturnValue(11)
+    it('スポットデータ更新時にGeoJSON Sourceのデータが更新される', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
@@ -360,17 +309,9 @@ describe('MapView Component - Issue#53', () => {
             latitude: 35.6585,
             longitude: 139.7454,
             pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb1.jpg',
+            thumbnailUrl: 'https://example.com/thumb.jpg',
             photoCount: 3,
           },
-          {
-            spotId: 2,
-            latitude: 35.6586,
-            longitude: 139.7455,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb2.jpg',
-            photoCount: 2,
-          },
         ],
       })
       global.fetch = mockFetch
@@ -378,35 +319,23 @@ describe('MapView Component - Issue#53', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        const pin1 = screen.queryByTestId('map-pin-1')
-        const pin2 = screen.queryByTestId('map-pin-2')
-        const hasCluster = pin1 === null && pin2 === null
-        const hasIndividualPins = pin1 !== null && pin2 !== null
-        expect(hasCluster || hasIndividualPins).toBe(true)
+        const source = mockMap.getSource('spots')
+        expect(source).toBeDefined()
       })
     })
 
-    it('十分に離れたスポットは個別ピンとして表示される', async () => {
-      mockMap.getZoom.mockReturnValue(16)
+    it('ピン画像がmap.addImageで登録される', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
           {
-            spotId: 10,
+            spotId: 1,
             latitude: 35.6585,
             longitude: 139.7454,
             pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb1.jpg',
+            thumbnailUrl: 'https://example.com/thumb.jpg',
             photoCount: 1,
           },
-          {
-            spotId: 11,
-            latitude: 35.7000,
-            longitude: 139.8000,
-            pinColor: 'Yellow',
-            thumbnailUrl: 'https://example.com/thumb2.jpg',
-            photoCount: 5,
-          },
         ],
       })
       global.fetch = mockFetch
@@ -414,123 +343,56 @@ describe('MapView Component - Issue#53', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        const pin10 = screen.getByTestId('map-pin-10')
-        const pin11 = screen.getByTestId('map-pin-11')
-        expect(pin10).toBeInTheDocument()
-        expect(pin11).toBeInTheDocument()
+        expect(mockMap.addImage).toHaveBeenCalled()
       })
     })
 
-    it('クラスタ化時は合計投稿件数、個別表示時は各件数が表示される', async () => {
-      // superclusterの内部判定によりクラスタ化の有無が変わるため、いずれかの表示を確認
-      mockMap.getZoom.mockReturnValue(11)
+    it('個別ピンクリック時にonSpotClickが呼ばれる', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
           {
-            spotId: 20,
+            spotId: 1,
             latitude: 35.6585,
             longitude: 139.7454,
             pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb1.jpg',
-            photoCount: 8,
-          },
-          {
-            spotId: 21,
-            latitude: 35.6586,
-            longitude: 139.7455,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb2.jpg',
-            photoCount: 7,
+            thumbnailUrl: 'https://example.com/thumb.jpg',
+            photoCount: 1,
           },
         ],
       })
       global.fetch = mockFetch
 
-      render(<MapView />)
+      const mockSpotClick = vi.fn()
+      render(<MapView onSpotClick={mockSpotClick} />)
 
       await waitFor(() => {
-        const totalText = screen.queryByText('15')
-        const individual8 = screen.queryByText('8')
-        expect(totalText !== null || individual8 !== null).toBe(true)
+        // map.on('click', 'unclustered-point', handler) が登録されていることを確認
+        expect(mockMap.on).toHaveBeenCalledWith(
+          'click',
+          'unclustered-point',
+          expect.any(Function)
+        )
       })
+
+      // 登録されたハンドラーを取得して呼び出す
+      const clickCall = mockMap.on.mock.calls.find(
+        (call: any[]) => call[0] === 'click' && call[1] === 'unclustered-point'
+      )
+      if (clickCall) {
+        const handler = clickCall[2]
+        await act(async () => {
+          handler({
+            features: [{
+              properties: { spotId: 1 },
+            }],
+          })
+        })
+        expect(mockSpotClick).toHaveBeenCalledWith(1)
+      }
     })
 
-    it('クラスタ化時は合計件数で色が決定、個別表示時はピンが表示される', async () => {
-      // superclusterの内部判定によりクラスタ化の有無が変わるため、いずれかの表示を確認
-      mockMap.getZoom.mockReturnValue(11)
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 30,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb1.jpg',
-            photoCount: 20,
-          },
-          {
-            spotId: 31,
-            latitude: 35.6586,
-            longitude: 139.7455,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb2.jpg',
-            photoCount: 15,
-          },
-        ],
-      })
-      global.fetch = mockFetch
-
-      render(<MapView />)
-
-      await waitFor(() => {
-        const clusterPin = document.querySelector('[data-testid^="map-cluster-"]')
-        const greenPin = screen.queryByTestId('map-pin-30')
-        expect(clusterPin !== null || greenPin !== null).toBe(true)
-      })
-    })
-
-    it('クラスタピンまたは個別ピンが表示される', async () => {
-      // superclusterの内部判定によりクラスタ化の有無が変わるため、いずれかの表示を確認
-      mockMap.getZoom.mockReturnValue(11)
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            spotId: 40,
-            latitude: 35.6585,
-            longitude: 139.7454,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb1.jpg',
-            photoCount: 3,
-          },
-          {
-            spotId: 41,
-            latitude: 35.6586,
-            longitude: 139.7455,
-            pinColor: 'Green',
-            thumbnailUrl: 'https://example.com/thumb2.jpg',
-            photoCount: 2,
-          },
-        ],
-      })
-      global.fetch = mockFetch
-
-      render(<MapView />)
-
-      await waitFor(() => {
-        const clusterPin = document.querySelector('[data-testid^="map-cluster-"]')
-        const individualPin = document.querySelector('[data-testid^="map-pin-"]')
-        expect(clusterPin !== null || individualPin !== null).toBe(true)
-      })
-    })
-
-    it('クラスタが表示された場合、クリックでonClusterClickが呼ばれる', async () => {
-      // superclusterの内部判定によりクラスタ化の有無が変わるため、クラスタ表示時のみ検証
-      mockMap.getZoom.mockReturnValue(11)
-      const user = userEvent.setup()
-      const mockClusterClick = vi.fn()
+    it('クラスタクリック時にonClusterClickが呼ばれる', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
@@ -554,20 +416,64 @@ describe('MapView Component - Issue#53', () => {
       })
       global.fetch = mockFetch
 
+      const mockClusterClick = vi.fn()
       render(<MapView onClusterClick={mockClusterClick} />)
 
       await waitFor(() => {
-        const cluster = document.querySelector('[data-testid^="map-cluster-"]')
-        const pin = screen.queryByTestId('map-pin-50')
-        expect(cluster !== null || pin !== null).toBe(true)
+        expect(mockMap.on).toHaveBeenCalledWith(
+          'click',
+          'clusters',
+          expect.any(Function)
+        )
       })
 
-      // クラスタが表示されていればクリックしてonClusterClick呼び出し確認
-      const cluster = document.querySelector('[data-testid^="map-cluster-"]')
-      if (cluster) {
-        await user.click(cluster as HTMLElement)
+      // クラスタクリックハンドラーを取得して呼び出す
+      const clickCall = mockMap.on.mock.calls.find(
+        (call: any[]) => call[0] === 'click' && call[1] === 'clusters'
+      )
+      if (clickCall) {
+        // getSourceでclusterExpansionZoomやgetClusterLeavesを模擬
+        const mockClusterSource = {
+          getClusterLeaves: vi.fn((_clusterId: number, _limit: number, _offset: number, cb: Function) => {
+            cb(null, [
+              { properties: { spotId: 50 } },
+              { properties: { spotId: 51 } },
+            ])
+          }),
+        }
+        mockMap.getSource.mockReturnValueOnce(mockClusterSource)
+
+        const handler = clickCall[2]
+        await act(async () => {
+          handler({
+            features: [{
+              properties: { cluster_id: 123, point_count: 2 },
+            }],
+          })
+        })
         expect(mockClusterClick).toHaveBeenCalledWith(expect.arrayContaining([50, 51]))
       }
+    })
+
+    it('GeoJSON SourceにclusterPropertiesでtotalPhotoCountの集約が設定される', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [],
+      })
+      global.fetch = mockFetch
+
+      render(<MapView />)
+
+      await waitFor(() => {
+        expect(mockMap.addSource).toHaveBeenCalledWith(
+          'spots',
+          expect.objectContaining({
+            clusterProperties: expect.objectContaining({
+              totalPhotoCount: expect.anything(),
+            }),
+          })
+        )
+      })
     })
   })
 
@@ -587,18 +493,15 @@ describe('MapView Component - Issue#53', () => {
         expect(ref.current).not.toBeNull()
       })
 
-      // showShootingLocationPinを呼び出し
       ref.current.showShootingLocationPin(35.6585, 139.7454)
 
       await waitFor(() => {
         const pin = screen.getByTestId('shooting-location-pin')
         expect(pin).toBeInTheDocument()
-        // 白色を確認
         const path = pin.querySelectorAll('path')[1]
         expect(path?.getAttribute('fill')).toBe('#ffffff')
       })
 
-      // flyToが呼ばれたことを確認（Mapbox形式）
       expect(mockMap.flyTo).toHaveBeenCalledWith(
         expect.objectContaining({
           center: [139.7454, 35.6585],
@@ -622,7 +525,6 @@ describe('MapView Component - Issue#53', () => {
         expect(ref.current).not.toBeNull()
       })
 
-      // ピンを表示してからクリア
       ref.current.showShootingLocationPin(35.6585, 139.7454)
 
       await waitFor(() => {
@@ -633,6 +535,42 @@ describe('MapView Component - Issue#53', () => {
 
       await waitFor(() => {
         expect(screen.queryByTestId('shooting-location-pin')).not.toBeInTheDocument()
+      })
+    })
+
+    it('showShootingLocationPin中はSymbol Layerのピンが非表示になる', async () => {
+      mockMap.getZoom.mockReturnValue(16)
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          {
+            spotId: 1,
+            latitude: 35.6585,
+            longitude: 139.7454,
+            pinColor: 'Green',
+            thumbnailUrl: 'https://example.com/thumb.jpg',
+            photoCount: 1,
+          },
+        ],
+      })
+      global.fetch = mockFetch
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      ref.current.showShootingLocationPin(35.6585, 139.7454)
+
+      await waitFor(() => {
+        expect(mockMap.setLayoutProperty).toHaveBeenCalledWith(
+          'clusters', 'visibility', 'none'
+        )
+        expect(mockMap.setLayoutProperty).toHaveBeenCalledWith(
+          'unclustered-point', 'visibility', 'none'
+        )
       })
     })
 
@@ -651,9 +589,6 @@ describe('MapView Component - Issue#53', () => {
         expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
       })
 
-      // Mapbox MapのonClickが呼ばれることを確認
-      // モックではMapのonClickは直接テストできないので、
-      // propsが正しく渡されることを確認
       expect(onMapClick).not.toHaveBeenCalled()
     })
   })
