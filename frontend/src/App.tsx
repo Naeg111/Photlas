@@ -79,6 +79,9 @@ function MainContent({ onMapReady }: MainContentProps) {
   // 他ユーザーのプロフィール表示用の状態
   const [viewingUser, setViewingUser] = useState<{ userId: number; username: string } | null>(null)
 
+  // Issue#57: プロフィール投稿一覧からPhotoDetailDialogを開いたかのフラグ
+  const [isPhotoFromProfile, setIsPhotoFromProfile] = useState(false)
+
   // 撮影地点プレビュー状態
   const [shootingLocationPreview, setShootingLocationPreview] = useState<{ lat: number; lng: number } | null>(null)
   const shootingLocationPreviewRef = useRef(shootingLocationPreview)
@@ -332,6 +335,14 @@ function MainContent({ onMapReady }: MainContentProps) {
       handleReturnFromPreview()
       return
     }
+    setIsPhotoFromProfile(false)
+    setSelectedSpotIds([spotId])
+    dialog.open('photoDetail')
+  }
+
+  // Issue#57: プロフィール投稿一覧からの写真クリックハンドラー
+  const handleProfilePhotoClick = (spotId: number) => {
+    setIsPhotoFromProfile(true)
     setSelectedSpotIds([spotId])
     dialog.open('photoDetail')
   }
@@ -548,7 +559,7 @@ function MainContent({ onMapReady }: MainContentProps) {
             snsLinks: [],
           }}
           isOwnProfile={!viewingUser}
-          onSpotClick={handleSpotClick}
+          onSpotClick={!viewingUser ? handleProfilePhotoClick : handleSpotClick}
           initialTab={profileInitialTab}
         />
       )}
@@ -574,6 +585,7 @@ function MainContent({ onMapReady }: MainContentProps) {
           isLightboxOpen={dialog.isOpen('lightbox')}
           onMinimapClick={handleMinimapClick}
           isSlideDown={!!shootingLocationPreview}
+          isDeletable={isPhotoFromProfile}
         />
       )}
 
