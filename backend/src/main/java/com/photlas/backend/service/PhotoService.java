@@ -15,9 +15,13 @@ import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.AccountSanctionRepository;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.FavoriteRepository;
+import com.photlas.backend.repository.ModerationDetailRepository;
+import com.photlas.backend.repository.PhotoCategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.ReportRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.entity.ReportTargetType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,6 +60,9 @@ public class PhotoService {
     private final FavoriteRepository favoriteRepository;
     private final S3Service s3Service;
     private final AccountSanctionRepository accountSanctionRepository;
+    private final PhotoCategoryRepository photoCategoryRepository;
+    private final ReportRepository reportRepository;
+    private final ModerationDetailRepository moderationDetailRepository;
 
     public PhotoService(
             PhotoRepository photoRepository,
@@ -65,7 +72,10 @@ public class PhotoService {
             WeatherService weatherService,
             FavoriteRepository favoriteRepository,
             S3Service s3Service,
-            AccountSanctionRepository accountSanctionRepository
+            AccountSanctionRepository accountSanctionRepository,
+            PhotoCategoryRepository photoCategoryRepository,
+            ReportRepository reportRepository,
+            ModerationDetailRepository moderationDetailRepository
     ) {
         this.photoRepository = photoRepository;
         this.spotRepository = spotRepository;
@@ -75,6 +85,9 @@ public class PhotoService {
         this.favoriteRepository = favoriteRepository;
         this.s3Service = s3Service;
         this.accountSanctionRepository = accountSanctionRepository;
+        this.photoCategoryRepository = photoCategoryRepository;
+        this.reportRepository = reportRepository;
+        this.moderationDetailRepository = moderationDetailRepository;
     }
 
     /**
@@ -251,6 +264,42 @@ public class PhotoService {
         }
 
         return photo;
+    }
+
+    /**
+     * Issue#57: ユーザーが自分の写真を削除する（ソフトデリート）
+     *
+     * @param photoId 写真ID
+     * @param email ログイン中ユーザーのメールアドレス
+     * @throws PhotoNotFoundException 写真が見つからないか、既にREMOVEDの場合
+     * @throws org.springframework.security.access.AccessDeniedException オーナーでない場合
+     */
+    @Transactional
+    public void deletePhoto(Long photoId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+
+        Photo photo = photoRepository.findById(photoId)
+                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+
+        if (photo.getModerationStatus() == ModerationStatus.REMOVED) {
+            throw new PhotoNotFoundException("写真が見つかりません");
+        }
+
+        if (!photo.getUserId().equals(user.getId())) {
+            throw new org.springframework.security.access.AccessDeniedException("この写真を削除する権限がありません");
+        }
+
+        // 関連レコードの削除
+        photoCategoryRepository.deleteByPhotoId(photoId);
+        reportRepository.deleteByTargetTypeAndTargetId(ReportTargetType.PHOTO, photoId);
+        moderationDetailRepository.deleteByTargetTypeAndTargetId(ReportTargetType.PHOTO, photoId);
+
+        // ソフトデリート
+        photo.setModerationStatus(ModerationStatus.REMOVED);
+        photoRepository.save(photo);
+
+        logger.info("写真を削除しました: photoId={}, userId={}", photoId, user.getId());
     }
 
     /**
