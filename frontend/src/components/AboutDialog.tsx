@@ -67,6 +67,21 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
               </li>
             </ol>
           </section>
+
+          <section>
+            <h3 className="font-bold text-base mb-2">お問い合わせ</h3>
+            <p>
+              ご意見・ご要望・不具合のご報告などは、下記メールアドレスまでお気軽にご連絡ください。
+            </p>
+            <p className="mt-2">
+              <a
+                href="mailto:support@photlas.jp"
+                className="text-blue-600 underline hover:text-blue-800"
+              >
+                support@photlas.jp
+              </a>
+            </p>
+          </section>
         </div>
       </DialogContent>
     </Dialog>
