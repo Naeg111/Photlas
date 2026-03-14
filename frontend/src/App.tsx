@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Routes, Route, useNavigate } from 'react-router-dom'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
 import NotFoundPage from './pages/NotFoundPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
 import AdminModerationPage from './pages/AdminModerationPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
 import { TopMenuPanel } from './components/TopMenuPanel'
@@ -60,6 +61,7 @@ interface MainContentProps {
 function MainContent({ onMapReady }: MainContentProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const dialog = useDialogState()
   const mapRef = useRef<MapViewHandle>(null)
 
@@ -153,6 +155,14 @@ function MainContent({ onMapReady }: MainContentProps) {
       }
     }
   }, [])
+
+  // Issue#56: パスワードリセット完了後のLoginDialog自動表示
+  useEffect(() => {
+    if (location.state?.openLogin) {
+      dialog.open('login')
+      window.history.replaceState({}, '')
+    }
+  }, [location.state])
 
   // カテゴリマップの取得
   useEffect(() => {
@@ -634,6 +644,7 @@ function App() {
       <Routes>
         <Route path="/" element={<MainApp />} />
         <Route path="/verify-email" element={<EmailVerificationPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/manage/moderation" element={<AdminModerationPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
