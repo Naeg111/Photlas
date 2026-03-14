@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2 } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -12,6 +12,16 @@ import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { useAuth } from '../contexts/AuthContext'
 import { ReportDialog } from './ReportDialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog'
 import { toast } from 'sonner'
 
 // API Endpoints
@@ -66,6 +76,10 @@ interface PhotoDetailDialogProps {
   isLightboxOpen?: boolean
   onMinimapClick?: (location: { lat: number; lng: number }) => void
   isSlideDown?: boolean
+  /** Issue#57: プロフィール投稿一覧から開いた場合にtrueを渡し、削除ボタンを表示する */
+  isDeletable?: boolean
+  /** Issue#57: 写真削除後のコールバック */
+  onPhotoDeleted?: () => void
 }
 
 // APIレスポンスの型定義
@@ -289,8 +303,8 @@ function DetailMiniMap({
   )
 }
 
-export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown }: PhotoDetailDialogProps) {
-  const { isAuthenticated } = useAuth()
+export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted }: PhotoDetailDialogProps) {
+  const { isAuthenticated, user } = useAuth()
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [photoDetails, setPhotoDetails] = useState<Map<number, PhotoDetail>>(new Map())
@@ -323,6 +337,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   // Issue#54: 通報状態管理
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isReportLoading, setIsReportLoading] = useState(false)
+
+  // Issue#57: 写真削除状態管理
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false)
 
   // refで最新のphotoDetailsを参照（依存配列ループ回避）
   const photoDetailsRef = useRef(photoDetails)
@@ -523,6 +541,32 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       setIsReportLoading(false)
     }
   }, [currentPhotoId])
+
+  // Issue#57: 写真削除処理
+  const handleDeletePhoto = useCallback(async () => {
+    if (!currentPhotoId) return
+
+    setIsDeleteLoading(true)
+    try {
+      const response = await fetch(`${API_PHOTOS}/${currentPhotoId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+
+      if (response.ok) {
+        toast.success('写真を削除しました')
+        setIsDeleteDialogOpen(false)
+        onPhotoDeleted?.()
+        onClose()
+      } else {
+        toast.error('写真の削除に失敗しました')
+      }
+    } catch {
+      toast.error('写真の削除に失敗しました')
+    } finally {
+      setIsDeleteLoading(false)
+    }
+  }, [currentPhotoId, onClose, onPhotoDeleted])
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal={false}>
@@ -828,7 +872,18 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         ({favoriteCount})
                       </span>
                     </Button>
-                    {isAuthenticated && (
+                    {isAuthenticated && isDeletable && currentPhoto?.user?.userId === user?.userId && (
+                      <Button
+                        variant="outline"
+                        data-testid="delete-photo-button"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                        className="text-red-500 border-red-300 hover:bg-red-50"
+                        aria-label="この写真を削除"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </Button>
+                    )}
+                    {isAuthenticated && !isDeletable && (
                       <Button
                         variant="outline"
                         data-testid="report-button"
@@ -847,6 +902,28 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     onSubmit={handleReport}
                     isLoading={isReportLoading}
                   />
+
+                  {/* Issue#57: 写真削除確認ダイアログ */}
+                  <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>写真の削除</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          この写真を削除しますか？この操作は取り消せません。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleteLoading}>キャンセル</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeletePhoto}
+                          disabled={isDeleteLoading}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          {isDeleteLoading ? '削除中...' : '削除する'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
             </div>

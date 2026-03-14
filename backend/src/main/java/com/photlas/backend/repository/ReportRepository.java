@@ -23,4 +23,9 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
      * 対象種別・対象IDで通報件数をカウント
      */
     long countByTargetTypeAndTargetId(ReportTargetType targetType, Long targetId);
+
+    /**
+     * Issue#57: 対象種別・対象IDで通報を全て削除する
+     */
+    void deleteByTargetTypeAndTargetId(ReportTargetType targetType, Long targetId);
 }

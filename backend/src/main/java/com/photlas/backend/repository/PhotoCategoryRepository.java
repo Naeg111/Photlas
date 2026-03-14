@@ -10,4 +10,11 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface PhotoCategoryRepository extends JpaRepository<PhotoCategory, PhotoCategory.PhotoCategoryId> {
+
+    /**
+     * Issue#57: 指定した写真IDに関連するカテゴリを全て削除する
+     *
+     * @param photoId 写真ID
+     */
+    void deleteByPhotoId(Long photoId);
 }
