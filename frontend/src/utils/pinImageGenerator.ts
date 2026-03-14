@@ -22,8 +22,8 @@ export const PIN_HEIGHT_RATIO = 1.2
 export const SHADOW_PADDING = 4
 /** 999件超の表示上限 */
 const PIN_COUNT_DISPLAY_LIMIT = 999
-/** 高DPI対応のピクセル比率（Retina対応） */
-export const PIN_PIXEL_RATIO = 2
+/** 高DPI対応のピクセル比率（デバイスのピクセル密度に応じて自動調整） */
+export const PIN_PIXEL_RATIO = Math.max(2, Math.ceil(window.devicePixelRatio || 2))
 
 /**
  * 投稿件数からピン色のHEXカラーを決定

@@ -284,6 +284,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       id: CLUSTER_LAYER_ID,
       type: 'symbol',
       source: SOURCE_ID,
+      minzoom: MIN_ZOOM_FOR_PINS,
       filter: ['has', 'point_count'],
       layout: {
         'icon-image': [
@@ -304,6 +305,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       id: UNCLUSTERED_LAYER_ID,
       type: 'symbol',
       source: SOURCE_ID,
+      minzoom: MIN_ZOOM_FOR_PINS,
       filter: ['!', ['has', 'point_count']],
       layout: {
         'icon-image': [
