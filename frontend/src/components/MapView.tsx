@@ -423,10 +423,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           mapInstance.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'none')
           const animSource = mapInstance.getSource(ANIMATION_SOURCE_ID) as any
           if (animSource) animSource.setData({ type: 'FeatureCollection', features: [] })
+          // アニメーション中にopacity 0だった場合は復元
+          mapInstance.setPaintProperty(UNCLUSTERED_LAYER_ID, 'icon-opacity', 1)
         } catch { /* Layer未初期化 */ }
       }
 
-      // ズーム前の状態をスナップショット（opacity 0にする前に取得）
+      // ズーム前の状態をスナップショット
       try {
         const clusterFeatures = mapInstance.queryRenderedFeatures({ layers: [CLUSTER_LAYER_ID] })
         const unclusteredFeatures = mapInstance.queryRenderedFeatures({ layers: [UNCLUSTERED_LAYER_ID] })
@@ -453,13 +455,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         preZoomRef.current = null
       }
 
-      // ズーム中はピンを即時非表示にしてMapbox内部の再描画による点滅を防止
-      // icon-opacity: 0 はvisibility: noneと異なりqueryRenderedFeaturesが引き続き機能する
-      try {
-        mapInstance.setPaintProperty(CLUSTER_LAYER_ID, 'icon-opacity', 0)
-        mapInstance.setPaintProperty(UNCLUSTERED_LAYER_ID, 'icon-opacity', 0)
-      } catch { /* Layer未初期化 */ }
-
       isZoomingRef.current = true
     })
 
@@ -471,12 +466,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       const preZoom = preZoomRef.current
       preZoomRef.current = null
 
-      // スナップショットなし or ズーム変化なしの場合はopacity復元のみ
+      // スナップショットなし or ズーム変化なしの場合は何もしない
       if (!preZoom || Math.abs(mapInstance.getZoom() - preZoom.zoom) < 0.01) {
-        try {
-          mapInstance.setPaintProperty(CLUSTER_LAYER_ID, 'icon-opacity', 1)
-          mapInstance.setPaintProperty(UNCLUSTERED_LAYER_ID, 'icon-opacity', 1)
-        } catch { /* Layer未初期化 */ }
         return
       }
 
@@ -484,12 +475,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       const isZoomIn = currentZoom > preZoom.zoom
 
       try {
-        // opacity 0でもqueryRenderedFeaturesは機能する
         const newUnclusteredFeatures = mapInstance.queryRenderedFeatures({ layers: [UNCLUSTERED_LAYER_ID] })
         const newClusterFeatures = mapInstance.queryRenderedFeatures({ layers: [CLUSTER_LAYER_ID] })
-
-        // クラスタは即座に表示
-        mapInstance.setPaintProperty(CLUSTER_LAYER_ID, 'icon-opacity', 1)
 
         if (isZoomIn) {
           // ズームイン: 新たに出現した個別ピンを旧クラスタ中心からアニメーション
@@ -530,11 +517,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           }
 
           if (animatingFeatures.length === 0) {
-            mapInstance.setPaintProperty(UNCLUSTERED_LAYER_ID, 'icon-opacity', 1)
             return
           }
 
-          // アニメーションレイヤーで全個別ピンを表示（メインはopacity 0のまま）
+          // アニメーションレイヤーで全個別ピンを表示
           const buildFrame = (eased: number): GeoJSON.Feature[] => {
             const features: GeoJSON.Feature[] = []
             for (const af of animatingFeatures) {
@@ -565,6 +551,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
             animSource.setData({ type: 'FeatureCollection', features: buildFrame(0) })
           }
           mapInstance.setLayoutProperty(ANIMATION_LAYER_ID, 'visibility', 'visible')
+          // アニメーションレイヤー表示後にメインレイヤーを非表示（同一フレームでスワップ）
+          mapInstance.setPaintProperty(UNCLUSTERED_LAYER_ID, 'icon-opacity', 0)
 
           const startTime = performance.now()
           const runAnimation = (now: number) => {
@@ -587,8 +575,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           animFrameRef.current = requestAnimationFrame(runAnimation)
         } else {
           // ズームアウト: 消えた個別ピンを新クラスタ中心へアニメーション
-          // 残った個別ピンは即座に表示
-          mapInstance.setPaintProperty(UNCLUSTERED_LAYER_ID, 'icon-opacity', 1)
 
           const newUnclusteredSpotIds = new Set<number>()
           for (const f of newUnclusteredFeatures) {
@@ -654,9 +640,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           animFrameRef.current = requestAnimationFrame(runAnimation)
         }
       } catch {
-        // フィーチャー取得失敗時はopacity復元のみ
+        // フィーチャー取得失敗時はopacityが変更されていれば復元
         try {
-          mapInstance.setPaintProperty(CLUSTER_LAYER_ID, 'icon-opacity', 1)
           mapInstance.setPaintProperty(UNCLUSTERED_LAYER_ID, 'icon-opacity', 1)
         } catch { /* Layer未初期化 */ }
       }
