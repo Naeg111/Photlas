@@ -129,6 +129,23 @@ public class PhotoController {
     }
 
     /**
+     * Issue#57: ユーザーが自分の写真を削除する
+     *
+     * @param photoId 写真ID
+     * @param authentication 認証情報
+     * @return 204 No Content
+     */
+    @DeleteMapping("/{photoId}")
+    public ResponseEntity<Void> deletePhoto(
+            @PathVariable Long photoId,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        photoService.deletePhoto(photoId, email);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * CategoryNotFoundExceptionをハンドリング
      */
     @ExceptionHandler(CategoryNotFoundException.class)
