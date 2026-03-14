@@ -4,6 +4,12 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { validatePassword } from '../utils/validation'
 import { API_V1_URL } from '../config/api'
 
+/** ページ共通のレイアウトクラス */
+const PAGE_LAYOUT_CLASS = 'min-h-screen flex items-center justify-center bg-gray-50'
+
+/** カードコンテナの共通クラス */
+const CARD_CLASS = 'max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8'
+
 /**
  * パスワードリセット完了ページ
  *
@@ -72,8 +78,8 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8 text-center">
+      <div className={PAGE_LAYOUT_CLASS}>
+        <div className={`${CARD_CLASS} text-center`}>
           <div className="text-red-500 text-5xl mb-4">&#10007;</div>
           <h2 className="text-xl font-bold mb-2">無効なリンクです</h2>
           <p className="text-gray-600 mb-4">
@@ -92,8 +98,8 @@ export default function ResetPasswordPage() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8 text-center">
+      <div className={PAGE_LAYOUT_CLASS}>
+        <div className={`${CARD_CLASS} text-center`}>
           <div className="text-green-500 text-5xl mb-4">&#10003;</div>
           <h2 className="text-xl font-bold mb-2">パスワードを再設定しました</h2>
           <p className="text-gray-600 mb-4">
@@ -111,8 +117,8 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8">
+    <div className={PAGE_LAYOUT_CLASS}>
+      <div className={CARD_CLASS}>
         <h2 className="text-xl font-bold mb-6 text-center">パスワードの再設定</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
