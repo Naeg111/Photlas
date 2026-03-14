@@ -117,6 +117,16 @@ function skipSplashScreen() {
 }
 
 /**
+ * Radix UIのPresenceコンポーネントがfake timersで無限ループするため、
+ * ダイアログ操作を行うテストではスプラッシュ画面スキップ後にreal timersへ切り替える。
+ * 戻り値のuserEventインスタンスをダイアログ操作に使用すること。
+ */
+function switchToRealTimers() {
+  vi.useRealTimers()
+  return userEvent.setup()
+}
+
+/**
  * AppをMemoryRouterでラップしてレンダリングする
  */
 function renderApp(initialEntries: string[] = ['/']) {
@@ -239,9 +249,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
   describe('Dialog Transitions - ダイアログ間遷移', () => {
     it('transitions from LoginRequiredDialog to LoginDialog when login button is clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
+      const user = switchToRealTimers()
 
       // 投稿ボタンをクリックしてLoginRequiredDialogを開く
       const postButton = screen.getByRole('button', { name: /投稿/i })
@@ -262,9 +272,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
 
     it('transitions from LoginRequiredDialog to SignUpDialog when signup button is clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
+      const user = switchToRealTimers()
 
       // 投稿ボタンをクリックしてLoginRequiredDialogを開く
       const postButton = screen.getByRole('button', { name: /投稿/i })
@@ -285,9 +295,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
 
     it('transitions from TopMenuPanel to LoginDialog when login is clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
+      const user = switchToRealTimers()
 
       // メニューボタンをクリック
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
@@ -308,9 +318,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
 
     it('transitions from TopMenuPanel to SignUpDialog when signup is clicked', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
+      const user = switchToRealTimers()
 
       // メニューボタンをクリック
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
@@ -331,9 +341,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
 
     it('transitions from LoginDialog to PasswordResetDialog', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
+      const user = switchToRealTimers()
 
       // メニュー → ログインダイアログを開く
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
@@ -361,9 +371,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
 
     it('transitions from LoginDialog to SignUpDialog', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
+      const user = switchToRealTimers()
 
       // メニュー → ログインダイアログを開く
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
@@ -391,9 +401,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
 
     it('transitions from SignUpDialog to LoginDialog', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
+      const user = switchToRealTimers()
 
       // メニュー → 新規アカウント作成ダイアログを開く
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
@@ -423,9 +433,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
   describe('Terms and Privacy Dialogs - 利用規約・プライバシーポリシー', () => {
     it('opens TermsOfServicePage when terms link is clicked from SignUpDialog', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
+      const user = switchToRealTimers()
 
       // SignUpDialogを開く
       const postButton = screen.getByRole('button', { name: /投稿/i })
@@ -473,9 +483,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
 
     it('opens PhotoContributionDialog when post button is clicked while authenticated', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
+      const user = switchToRealTimers()
 
       const postButton = screen.getByRole('button', { name: /投稿/i })
       await user.click(postButton)
@@ -488,9 +498,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
 
     it('shows authenticated menu items in TopMenuPanel', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
+      const user = switchToRealTimers()
 
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
       await user.click(menuButton)
@@ -509,24 +519,19 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
 
     it('opens AccountSettingsDialog from TopMenuPanel', async () => {
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       renderApp()
       skipSplashScreen()
-
-      // Radix UIのPresenceコンポーネントがfake timersで無限ループするため、
-      // スプラッシュ画面スキップ後にreal timersへ切り替える
-      vi.useRealTimers()
-      const realUser = userEvent.setup()
+      const user = switchToRealTimers()
 
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
-      await realUser.click(menuButton)
+      await user.click(menuButton)
 
       await waitFor(() => {
         expect(screen.getByText(/アカウント設定/)).toBeInTheDocument()
       })
 
       const accountSettingsButton = screen.getByText(/アカウント設定/)
-      await realUser.click(accountSettingsButton)
+      await user.click(accountSettingsButton)
 
       // AccountSettingsDialogが表示される
       await waitFor(() => {
