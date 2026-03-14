@@ -89,14 +89,17 @@ const UNCLUSTERED_LAYER_ID = 'unclustered-point'
 const SHOOTING_PIN_COLOR = '#ffffff'
 const SHOOTING_PIN_STROKE = '#000000'
 
+// ピン画像の生成スケール（最大表示サイズに合わせて生成し、縮小表示で鮮明さを維持）
+const PIN_IMAGE_SCALE = 1.4
 // Symbol Layer共通: ズームレベルに応じたアイコンサイズ
-// Canvas画像はSHADOW_PADDING分大きいため、icon-sizeで補正して
-// Issue#55以前のPinSvg（32x38px表示）と同じサイズにする
-const PIN_SIZE_CORRECTION = BASE_PIN_SIZE / (BASE_PIN_SIZE + SHADOW_PADDING)
+// Canvas画像は最大スケール(1.4倍)+SHADOW_PADDING分で生成されるため、
+// icon-sizeで縮小補正してIssue#55以前のPinSvg（32x38px表示）と同じサイズにする
+const PIN_IMAGE_LOGICAL_WIDTH = Math.round(BASE_PIN_SIZE * PIN_IMAGE_SCALE) + SHADOW_PADDING
+const PIN_SIZE_CORRECTION = BASE_PIN_SIZE / PIN_IMAGE_LOGICAL_WIDTH
 const ICON_SIZE_EXPRESSION: ExpressionSpecification = [
   'step', ['zoom'],
-  PIN_SIZE_CORRECTION,               // zoom < 16: 通常サイズ
-  16, PIN_SIZE_CORRECTION * 1.4,     // zoom >= 16: 1.4倍
+  PIN_SIZE_CORRECTION,                          // zoom < 16: 通常サイズ（縮小表示）
+  16, PIN_SIZE_CORRECTION * PIN_IMAGE_SCALE,    // zoom >= 16: 1.4倍（ほぼ等倍表示）
 ]
 
 /**
@@ -182,7 +185,7 @@ function registerPinImages(mapInstance: MapboxMap, spots: SpotResponse[]): void 
     const color = PIN_COLOR_MAP[spot.pinColor]
     const imageId = getPinImageId(color, spot.photoCount)
     if (!registeredIds.has(imageId) && !mapInstance.hasImage(imageId)) {
-      const imageData = generatePinImage(color, spot.photoCount, 1.0)
+      const imageData = generatePinImage(color, spot.photoCount, PIN_IMAGE_SCALE)
       mapInstance.addImage(imageId, imageData, { pixelRatio: PIN_PIXEL_RATIO })
       registeredIds.add(imageId)
     }
@@ -272,7 +275,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       if (match) {
         const color = match[1]
         const count = parseInt(match[2], 10)
-        const imageData = generatePinImage(color, count, 1.0)
+        const imageData = generatePinImage(color, count, PIN_IMAGE_SCALE)
         if (!mapInstance.hasImage(e.id)) {
           mapInstance.addImage(e.id, imageData, { pixelRatio: PIN_PIXEL_RATIO })
         }
