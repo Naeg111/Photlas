@@ -513,15 +513,20 @@ describe('App - Issue#28: App.tsx再構築', () => {
       renderApp()
       skipSplashScreen()
 
+      // Radix UIのPresenceコンポーネントがfake timersで無限ループするため、
+      // スプラッシュ画面スキップ後にreal timersへ切り替える
+      vi.useRealTimers()
+      const realUser = userEvent.setup()
+
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
-      await user.click(menuButton)
+      await realUser.click(menuButton)
 
       await waitFor(() => {
         expect(screen.getByText(/アカウント設定/)).toBeInTheDocument()
       })
 
       const accountSettingsButton = screen.getByText(/アカウント設定/)
-      await user.click(accountSettingsButton)
+      await realUser.click(accountSettingsButton)
 
       // AccountSettingsDialogが表示される
       await waitFor(() => {
