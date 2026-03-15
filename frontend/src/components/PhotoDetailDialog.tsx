@@ -264,43 +264,57 @@ function DetailMiniMap({
   longitude: number
   onClick?: () => void
 }) {
+  // ダイアログの開閉アニメーション完了を待ってからMapGLを描画する。
+  // singlePhotoIdモード（ディープリンク）ではデータ取得が速く、
+  // アニメーション中にMapGLが初期化されるとMarkerの位置計算が失敗する。
+  const [isMapReady, setIsMapReady] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setIsMapReady(true), 500)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <div
       data-testid="detail-minimap"
       className={`w-full h-[200px] rounded-lg overflow-hidden ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
-      <MapGL
-        mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
-        initialViewState={{
-          longitude: longitude,
-          latitude: latitude,
-          zoom: 15,
-        }}
-        style={{ width: '100%', height: '100%' }}
-        mapStyle={MAPBOX_STYLE}
-        language="ja"
-        interactive={false}
-      >
-        <Marker longitude={longitude} latitude={latitude} anchor="bottom">
-          <div
-            style={{
-              width: '27px',
-              height: '43px',
-            }}
-          >
-            <PinSvg
-              fill="#ffffff"
-              stroke="#000000"
-              strokeWidth={2}
-              strokeLinejoin="round"
-              shapeRendering="geometricPrecision"
+      {isMapReady ? (
+        <MapGL
+          key={`${latitude}-${longitude}`}
+          mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+          initialViewState={{
+            longitude: longitude,
+            latitude: latitude,
+            zoom: 15,
+          }}
+          style={{ width: '100%', height: '100%' }}
+          mapStyle={MAPBOX_STYLE}
+          language="ja"
+          interactive={false}
+        >
+          <Marker longitude={longitude} latitude={latitude} anchor="bottom">
+            <div
+              style={{
+                width: '27px',
+                height: '43px',
+              }}
             >
-              <circle cx="16" cy="14" r="6" fill="#000000" stroke="#000000" strokeWidth="1" />
-            </PinSvg>
-          </div>
-        </Marker>
-      </MapGL>
+              <PinSvg
+                fill="#ffffff"
+                stroke="#000000"
+                strokeWidth={2}
+                strokeLinejoin="round"
+                shapeRendering="geometricPrecision"
+              >
+                <circle cx="16" cy="14" r="6" fill="#000000" stroke="#000000" strokeWidth="1" />
+              </PinSvg>
+            </div>
+          </Marker>
+        </MapGL>
+      ) : (
+        <div className="w-full h-full bg-gray-200 animate-pulse" />
+      )}
     </div>
   )
 }
