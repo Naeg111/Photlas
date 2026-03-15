@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
 import NotFoundPage from './pages/NotFoundPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
 import AdminModerationPage from './pages/AdminModerationPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
-import PhotoViewerPage from './pages/PhotoViewerPage'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
 import { TopMenuPanel } from './components/TopMenuPanel'
@@ -82,6 +81,12 @@ function MainContent({ onMapReady }: MainContentProps) {
 
   // Issue#57: プロフィール投稿一覧からPhotoDetailDialogを開いたかのフラグ
   const [isPhotoFromProfile, setIsPhotoFromProfile] = useState(false)
+
+  // Issue#58: ディープリンク用の写真ID
+  const { photoId: deepLinkPhotoIdParam } = useParams<{ photoId?: string }>()
+  const [deepLinkPhotoId, setDeepLinkPhotoId] = useState<number | undefined>(
+    deepLinkPhotoIdParam ? Number(deepLinkPhotoIdParam) : undefined
+  )
 
   // 撮影地点プレビュー状態
   const [shootingLocationPreview, setShootingLocationPreview] = useState<{ lat: number; lng: number } | null>(null)
@@ -167,6 +172,13 @@ function MainContent({ onMapReady }: MainContentProps) {
       window.history.replaceState({}, '')
     }
   }, [location.state])
+
+  // Issue#58: ディープリンクでPhotoDetailDialogを自動表示
+  useEffect(() => {
+    if (deepLinkPhotoId) {
+      dialog.open('photoDetail')
+    }
+  }, [deepLinkPhotoId])
 
   // カテゴリマップの取得
   useEffect(() => {
@@ -566,20 +578,23 @@ function MainContent({ onMapReady }: MainContentProps) {
       )}
 
       {/* PhotoDetailDialog - 写真詳細表示 */}
-      {selectedSpotIds !== null && (
+      {(selectedSpotIds !== null || deepLinkPhotoId) && (
         <PhotoDetailDialog
           open={dialog.isOpen('photoDetail')}
-          spotIds={selectedSpotIds}
+          spotIds={selectedSpotIds ?? []}
+          singlePhotoId={deepLinkPhotoId}
           onClose={() => {
             // プレビューモード中はダイアログを閉じない（Radix flushSync対策）
-            // モバイルタッチ時、RadixがflushSyncでisSlideDown=falseをコミットした後に
-            // onPointerDownOutsideが評価されるため、state依存では防げない。
-            // refはflushSyncの影響を受けないため、プレビュー中を確実にガードできる。
             if (isInPreviewRef.current) return
             dialog.close('photoDetail')
             setSelectedSpotIds(null)
             setShootingLocationPreview(null)
             mapRef.current?.clearShootingLocationPin()
+            // Issue#58: ディープリンクから閉じた場合はトップページに遷移
+            if (deepLinkPhotoId) {
+              setDeepLinkPhotoId(undefined)
+              navigate('/', { replace: true })
+            }
           }}
           onUserClick={handleUserClick}
           onImageClick={handleShowLightbox}
@@ -658,7 +673,7 @@ function App() {
         <Route path="/" element={<MainApp />} />
         <Route path="/verify-email" element={<EmailVerificationPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/photo-viewer/:photoId" element={<PhotoViewerPage />} />
+        <Route path="/photo-viewer/:photoId" element={<MainApp />} />
         <Route path="/manage/moderation" element={<AdminModerationPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
