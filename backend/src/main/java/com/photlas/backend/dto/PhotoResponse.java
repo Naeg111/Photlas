@@ -98,6 +98,10 @@ public class PhotoResponse {
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private String moderationStatus;
 
+        @JsonProperty("thumbnail_url")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private String thumbnailUrl;
+
         public PhotoDTO() {
         }
 
@@ -249,6 +253,14 @@ public class PhotoResponse {
 
         public void setModerationStatus(String moderationStatus) {
             this.moderationStatus = moderationStatus;
+        }
+
+        public String getThumbnailUrl() {
+            return thumbnailUrl;
+        }
+
+        public void setThumbnailUrl(String thumbnailUrl) {
+            this.thumbnailUrl = thumbnailUrl;
         }
     }
 

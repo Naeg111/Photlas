@@ -31,10 +31,12 @@ public class SpotService {
 
     private final SpotRepository spotRepository;
     private final PhotoRepository photoRepository;
+    private final S3Service s3Service;
 
-    public SpotService(SpotRepository spotRepository, PhotoRepository photoRepository) {
+    public SpotService(SpotRepository spotRepository, PhotoRepository photoRepository, S3Service s3Service) {
         this.spotRepository = spotRepository;
         this.photoRepository = photoRepository;
+        this.s3Service = s3Service;
     }
 
     @Transactional(readOnly = true)
@@ -107,7 +109,10 @@ public class SpotService {
         BigDecimal longitude = (BigDecimal) result[2];
         Integer recentPhotoCount = ((Number) result[3]).intValue();
         Integer totalPhotoCount = ((Number) result[4]).intValue();
-        String thumbnailUrl = (String) result[5];
+        String s3ObjectKey = (String) result[5];
+
+        // Issue#59: S3キーからサムネイルCDN URLに変換
+        String thumbnailUrl = s3Service.generateThumbnailCdnUrl(s3ObjectKey);
 
         // ピンの色はフィルター条件に合致する写真数で決定
         String pinColor = determinePinColor(recentPhotoCount);

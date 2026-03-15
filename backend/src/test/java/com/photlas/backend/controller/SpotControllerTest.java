@@ -483,7 +483,7 @@ public class SpotControllerTest {
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath(JSON_PATH_THUMBNAIL_URL, containsString(NEW_PHOTO_KEY)));
+                .andExpect(jsonPath(JSON_PATH_THUMBNAIL_URL, containsString("thumbnails/" + NEW_PHOTO_KEY)));
     }
 
     @Test
