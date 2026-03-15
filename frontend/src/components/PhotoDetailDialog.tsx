@@ -264,19 +264,6 @@ function DetailMiniMap({
   longitude: number
   onClick?: () => void
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mapRef = useRef<any>(null)
-
-  // ダイアログのアニメーション完了後にマップをリサイズし、
-  // タイルとMarkerが正しく描画されるようにする
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleLoad = useCallback((e: { target: any }) => {
-    mapRef.current = e.target
-    setTimeout(() => {
-      mapRef.current?.resize()
-    }, 400)
-  }, [])
-
   return (
     <div
       data-testid="detail-minimap"
@@ -294,7 +281,6 @@ function DetailMiniMap({
         mapStyle={MAPBOX_STYLE}
         language="ja"
         interactive={false}
-        onLoad={handleLoad}
       >
         <Marker longitude={longitude} latitude={latitude} anchor="bottom">
           <div
