@@ -68,6 +68,7 @@ interface UserPhotoItem {
     photo_id: number
     title: string
     image_url: string
+    thumbnail_url?: string | null
     crop_center_x?: number | null
     crop_center_y?: number | null
     crop_zoom?: number | null
@@ -94,6 +95,7 @@ interface FavoritePhoto {
     photo_id: number
     title: string
     image_url: string
+    thumbnail_url?: string | null
     crop_center_x?: number
     crop_center_y?: number
     crop_zoom?: number
@@ -559,7 +561,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                         className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                       >
                         <ProtectedImage
-                          src={item.photo.image_url}
+                          src={item.photo.thumbnail_url || item.photo.image_url}
                           alt={item.photo.title}
                           className="absolute inset-0 w-full h-full"
                           style={{
@@ -652,7 +654,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                           className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                         >
                           <ProtectedImage
-                            src={favorite.photo.image_url}
+                            src={favorite.photo.thumbnail_url || favorite.photo.image_url}
                             alt={favorite.photo.title}
                             className="absolute inset-0 w-full h-full"
                             style={{
