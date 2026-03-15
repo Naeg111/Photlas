@@ -386,6 +386,9 @@ public class PhotoService {
             photoDTO.setModerationStatus(photo.getModerationStatus().name());
         }
 
+        // Issue#59: サムネイルURLを設定
+        photoDTO.setThumbnailUrl(s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey()));
+
         // EXIF情報を設定（1つでも値があればExifDTOを生成）
         PhotoResponse.ExifDTO exifDTO = buildExifDTO(photo);
         photoDTO.setExif(exifDTO);
