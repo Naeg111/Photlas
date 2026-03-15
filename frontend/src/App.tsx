@@ -6,6 +6,7 @@ import NotFoundPage from './pages/NotFoundPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
 import AdminModerationPage from './pages/AdminModerationPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import PhotoViewerPage from './pages/PhotoViewerPage'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
 import { TopMenuPanel } from './components/TopMenuPanel'
@@ -657,6 +658,7 @@ function App() {
         <Route path="/" element={<MainApp />} />
         <Route path="/verify-email" element={<EmailVerificationPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/photo-viewer/:photoId" element={<PhotoViewerPage />} />
         <Route path="/manage/moderation" element={<AdminModerationPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

@@ -1354,13 +1354,12 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
 
     it('Web Share API非対応の場合、クリックでURLがクリップボードにコピーされる', async () => {
-      const mockClipboard = { writeText: vi.fn().mockResolvedValue(undefined) }
+      const mockWriteText = vi.fn().mockResolvedValue(undefined)
       Object.defineProperty(navigator, 'clipboard', {
-        value: mockClipboard,
+        value: { writeText: mockWriteText },
         writable: true,
         configurable: true,
       })
-      // navigator.share を未定義にする
       Object.defineProperty(navigator, 'share', {
         value: undefined,
         writable: true,
@@ -1370,15 +1369,15 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const photoDetail = createMockApiResponse()
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
-      const { rerender } = render(
-        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
-      )
-
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
         writable: true,
         configurable: true,
       })
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
 
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
@@ -1386,11 +1385,12 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(screen.getByTestId('share-button')).toBeInTheDocument()
       })
 
-      const user = userEvent.setup()
-      await user.click(screen.getByTestId('share-button'))
+      // fireEvent で直接クリック
+      const shareButton = screen.getByTestId('share-button')
+      shareButton.click()
 
       await waitFor(() => {
-        expect(mockClipboard.writeText).toHaveBeenCalledWith(
+        expect(mockWriteText).toHaveBeenCalledWith(
           expect.stringContaining(`/photo-viewer/${TEST_PHOTO_ID_1}`)
         )
       })
