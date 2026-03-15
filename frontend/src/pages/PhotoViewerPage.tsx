@@ -5,6 +5,12 @@ import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
 import PhotoDetailDialog from '../components/PhotoDetailDialog'
 
+/** ページ共通のレイアウトクラス */
+const PAGE_LAYOUT_CLASS = 'min-h-screen flex items-center justify-center bg-gray-50'
+
+/** カードコンテナの共通クラス */
+const CARD_CLASS = 'max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8'
+
 /**
  * 写真ディープリンクページ
  *
@@ -58,8 +64,8 @@ export default function PhotoViewerPage() {
 
   if (status === 'error') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8 text-center">
+      <div className={PAGE_LAYOUT_CLASS}>
+        <div className={`${CARD_CLASS} text-center`}>
           <div className="text-red-500 text-5xl mb-4">&#10007;</div>
           <h2 className="text-xl font-bold mb-2">エラー</h2>
           <p className="text-gray-600 mb-4">{errorMessage}</p>
