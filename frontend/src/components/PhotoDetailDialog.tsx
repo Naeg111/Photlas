@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2 } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2, Share2 } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -80,6 +80,8 @@ interface PhotoDetailDialogProps {
   isDeletable?: boolean
   /** Issue#57: 写真削除後のコールバック */
   onPhotoDeleted?: () => void
+  /** Issue#58: 単体写真表示モード（ディープリンク用）。指定時はスポットの写真一覧取得をスキップ */
+  singlePhotoId?: number
 }
 
 // APIレスポンスの型定義
@@ -303,7 +305,7 @@ function DetailMiniMap({
   )
 }
 
-export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted }: PhotoDetailDialogProps) {
+export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted, singlePhotoId }: PhotoDetailDialogProps) {
   const { isAuthenticated, user } = useAuth()
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -370,6 +372,17 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       setError(null)
 
       try {
+        // Issue#58: 単体写真モード
+        if (singlePhotoId) {
+          const detail = await fetchPhotoDetailById(singlePhotoId)
+          setPhotoIds([singlePhotoId])
+          setPhotoDetails(new Map().set(singlePhotoId, detail))
+          setDisplayedPhoto(detail)
+          setCurrentIndex(0)
+          setLoading(false)
+          return
+        }
+
         const ids = await fetchPhotoIdsForSpots(spotIds)
         setPhotoIds(ids)
         setCurrentIndex(0)
@@ -389,7 +402,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, JSON.stringify(spotIds)])
+  }, [open, JSON.stringify(spotIds), singlePhotoId])
 
   // 写真詳細を取得（refで依存配列ループを回避、429時にエラー表示しない）
   const fetchPhotoDetail = useCallback(async (photoId: number) => {
@@ -567,6 +580,26 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       setIsDeleteLoading(false)
     }
   }, [currentPhotoId, onClose, onPhotoDeleted])
+
+  // Issue#58: 共有処理
+  const handleShare = useCallback(async () => {
+    if (!currentPhotoId) return
+
+    const shareUrl = `${window.location.origin}/photo-viewer/${currentPhotoId}`
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: currentPhoto?.title || 'Photlas', url: shareUrl })
+      } else {
+        await navigator.clipboard.writeText(shareUrl)
+        toast.success('URLをコピーしました')
+      }
+    } catch (error) {
+      // ユーザーが共有シートをキャンセルした場合（AbortError）は無視
+      if (error instanceof Error && error.name === 'AbortError') return
+      toast.error('共有に失敗しました')
+    }
+  }, [currentPhotoId, currentPhoto?.title])
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal={false}>
@@ -893,6 +926,15 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         <Flag className="w-5 h-5" />
                       </Button>
                     )}
+                    {/* Issue#58: 共有ボタン（認証状態に関係なく常に表示） */}
+                    <Button
+                      variant="outline"
+                      data-testid="share-button"
+                      onClick={handleShare}
+                      aria-label="この写真を共有"
+                    >
+                      <Share2 className="w-5 h-5" />
+                    </Button>
                   </div>
 
                   {/* Issue#54: 通報ダイアログ */}

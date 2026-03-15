@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://photlas.jp/sitemap.xml
+Sitemap: https://photlas.jp/api/v1/sitemap.xml

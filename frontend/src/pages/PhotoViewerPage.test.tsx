@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import PhotoViewerPage from './PhotoViewerPage'
 
 // Mapbox GL JS のモック
@@ -67,7 +67,9 @@ const mockFetch = vi.fn()
 function renderWithRoute(photoId: number) {
   return render(
     <MemoryRouter initialEntries={[`/photo-viewer/${photoId}`]}>
-      <PhotoViewerPage />
+      <Routes>
+        <Route path="/photo-viewer/:photoId" element={<PhotoViewerPage />} />
+      </Routes>
     </MemoryRouter>
   )
 }
@@ -93,9 +95,11 @@ describe('PhotoViewerPage', () => {
   })
 
   it('写真詳細を取得してPhotoDetailDialogに表示する', async () => {
-    mockFetch.mockResolvedValueOnce({
+    const response = createMockPhotoResponse()
+    // PhotoViewerPage の fetch + PhotoDetailDialog の singlePhotoId fetch
+    mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => createMockPhotoResponse(),
+      json: async () => response,
     })
 
     renderWithRoute(TEST_PHOTO_ID)
@@ -130,9 +134,10 @@ describe('PhotoViewerPage', () => {
   })
 
   it('document.titleが写真タイトルに設定される', async () => {
-    mockFetch.mockResolvedValueOnce({
+    const response = createMockPhotoResponse()
+    mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => createMockPhotoResponse(),
+      json: async () => response,
     })
 
     renderWithRoute(TEST_PHOTO_ID)
