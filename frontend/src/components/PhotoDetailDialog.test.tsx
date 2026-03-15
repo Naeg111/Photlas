@@ -1296,4 +1296,104 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
   })
+
+  // ============================================================
+  // Issue#58: 共有ボタンテスト
+  // ============================================================
+
+  describe('Issue#58: 共有ボタン', () => {
+    it('共有ボタンが表示される', async () => {
+      const photoDetail = createMockApiResponse()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('share-button')).toBeInTheDocument()
+      })
+    })
+
+    it('未ログイン状態でも共有ボタンが表示される', async () => {
+      mockUseAuth.mockReturnValue({
+        isAuthenticated: false,
+        user: null,
+        login: vi.fn(),
+        logout: vi.fn(),
+        getAuthToken: () => null,
+        updateUser: vi.fn(),
+      })
+
+      const photoDetail = createMockApiResponse()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('share-button')).toBeInTheDocument()
+      })
+    })
+
+    it('Web Share API非対応の場合、クリックでURLがクリップボードにコピーされる', async () => {
+      const mockClipboard = { writeText: vi.fn().mockResolvedValue(undefined) }
+      Object.defineProperty(navigator, 'clipboard', {
+        value: mockClipboard,
+        writable: true,
+        configurable: true,
+      })
+      // navigator.share を未定義にする
+      Object.defineProperty(navigator, 'share', {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      })
+
+      const photoDetail = createMockApiResponse()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('share-button')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('share-button'))
+
+      await waitFor(() => {
+        expect(mockClipboard.writeText).toHaveBeenCalledWith(
+          expect.stringContaining(`/photo-viewer/${TEST_PHOTO_ID_1}`)
+        )
+      })
+    })
+  })
 })
