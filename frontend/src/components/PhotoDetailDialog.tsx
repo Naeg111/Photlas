@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dial
 import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2, Share2 } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
-import MapGL, { Marker } from 'react-map-gl'
+import MapGL from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PinSvg } from './PinSvg'
 import { ProtectedImage } from './figma/ProtectedImage'
@@ -276,42 +276,48 @@ function DetailMiniMap({
   return (
     <div
       data-testid="detail-minimap"
-      className={`w-full h-[200px] rounded-lg overflow-hidden ${onClick ? 'cursor-pointer' : ''}`}
+      className={`relative w-full h-[200px] rounded-lg overflow-hidden ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
       {isMapReady ? (
-        <MapGL
-          key={`${latitude}-${longitude}`}
-          mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
-          initialViewState={{
-            longitude: longitude,
-            latitude: latitude,
-            zoom: 15,
-          }}
-          style={{ width: '100%', height: '100%' }}
-          mapStyle={MAPBOX_STYLE}
-          language="ja"
-          interactive={false}
-        >
-          <Marker longitude={longitude} latitude={latitude} anchor="bottom">
-            <div
-              style={{
-                width: '27px',
-                height: '43px',
-              }}
+        <>
+          <MapGL
+            key={`${latitude}-${longitude}`}
+            mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+            initialViewState={{
+              longitude: longitude,
+              latitude: latitude,
+              zoom: 15,
+            }}
+            style={{ width: '100%', height: '100%' }}
+            mapStyle={MAPBOX_STYLE}
+            language="ja"
+            interactive={false}
+          />
+          {/* ピンをHTML要素として中央に配置（Mapbox Markerのtransform干渉を回避） */}
+          <div
+            data-testid="minimap-pin"
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -100%)',
+              width: '27px',
+              height: '43px',
+              pointerEvents: 'none',
+            }}
+          >
+            <PinSvg
+              fill="#ffffff"
+              stroke="#000000"
+              strokeWidth={2}
+              strokeLinejoin="round"
+              shapeRendering="geometricPrecision"
             >
-              <PinSvg
-                fill="#ffffff"
-                stroke="#000000"
-                strokeWidth={2}
-                strokeLinejoin="round"
-                shapeRendering="geometricPrecision"
-              >
-                <circle cx="16" cy="14" r="6" fill="#000000" stroke="#000000" strokeWidth="1" />
-              </PinSvg>
-            </div>
-          </Marker>
-        </MapGL>
+              <circle cx="16" cy="14" r="6" fill="#000000" stroke="#000000" strokeWidth="1" />
+            </PinSvg>
+          </div>
+        </>
       ) : (
         <div className="w-full h-full bg-gray-200 animate-pulse" />
       )}
