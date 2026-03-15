@@ -4,7 +4,6 @@ import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2, Share2 } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import MapGL, { Marker } from 'react-map-gl'
-import type mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PinSvg } from './PinSvg'
 import { ProtectedImage } from './figma/ProtectedImage'
@@ -265,11 +264,13 @@ function DetailMiniMap({
   longitude: number
   onClick?: () => void
 }) {
-  const mapRef = useRef<mapboxgl.Map | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null)
 
   // ダイアログのアニメーション完了後にマップをリサイズし、
   // タイルとMarkerが正しく描画されるようにする
-  const handleLoad = useCallback((e: { target: mapboxgl.Map }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleLoad = useCallback((e: { target: any }) => {
     mapRef.current = e.target
     setTimeout(() => {
       mapRef.current?.resize()
