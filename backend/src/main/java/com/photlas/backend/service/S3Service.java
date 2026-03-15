@@ -96,6 +96,23 @@ public class S3Service {
     }
 
     /**
+     * Issue#59: S3オブジェクトキーからサムネイルのCDN URLを生成する
+     * 命名規則: uploads/1/abc.jpg → thumbnails/uploads/1/abc.webp
+     *
+     * @param s3ObjectKey 元画像のS3オブジェクトキー
+     * @return サムネイルのCDN URL
+     */
+    public String generateThumbnailCdnUrl(String s3ObjectKey) {
+        if (s3ObjectKey == null) {
+            return null;
+        }
+        int dotIndex = s3ObjectKey.lastIndexOf('.');
+        String baseName = dotIndex > 0 ? s3ObjectKey.substring(0, dotIndex) : s3ObjectKey;
+        String thumbnailKey = "thumbnails/" + baseName + ".webp";
+        return generateCdnUrl(thumbnailKey);
+    }
+
+    /**
      * 署名付きURL生成結果を保持するクラス
      */
     public static class UploadUrlResult {
