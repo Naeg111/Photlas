@@ -466,13 +466,13 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     zoomIn: () => {
       if (map) {
         const current = map.getZoom() ?? DEFAULT_ZOOM
-        map.easeTo({ zoom: current + 1, duration: 300 })
+        map.easeTo({ zoom: current + 1, duration: 375 })
       }
     },
     zoomOut: () => {
       if (map) {
         const current = map.getZoom() ?? DEFAULT_ZOOM
-        map.easeTo({ zoom: current - 1, duration: 300 })
+        map.easeTo({ zoom: current - 1, duration: 375 })
       }
     },
     showShootingLocationPin: (lat: number, lng: number) => {
@@ -529,7 +529,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // ズームバナーをクリックしたときの処理
   const handleZoomBannerClick = () => {
     if (map) {
-      map.easeTo({ zoom: MIN_ZOOM_FOR_PINS, duration: 500 })
+      map.easeTo({ zoom: MIN_ZOOM_FOR_PINS, duration: 1667 })
     }
   }
 
