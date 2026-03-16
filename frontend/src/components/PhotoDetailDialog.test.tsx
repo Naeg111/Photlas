@@ -1396,4 +1396,118 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
   })
+
+  // ============================================================
+  // Issue#61: 写真メタデータ編集機能テスト
+  // ============================================================
+
+  describe('Issue#61: 写真メタデータ編集', () => {
+    it('自分の写真の場合、編集ボタンが表示される', async () => {
+      const photoDetail = createMockApiResponse({ userId: TEST_USER_ID })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('edit-photo-button')).toBeInTheDocument()
+      })
+    })
+
+    it('他人の写真の場合、編集ボタンが表示されない', async () => {
+      const photoDetail = createMockApiResponse({ userId: 999 })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
+      })
+
+      expect(screen.queryByTestId('edit-photo-button')).not.toBeInTheDocument()
+    })
+
+    it('編集ボタンを押すと編集モードになり保存・キャンセルボタンが表示される', async () => {
+      const photoDetail = createMockApiResponse({ userId: TEST_USER_ID })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('edit-photo-button')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('edit-photo-button'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('edit-save-button')).toBeInTheDocument()
+        expect(screen.getByTestId('edit-cancel-button')).toBeInTheDocument()
+      })
+    })
+
+    it('キャンセルボタンを押すと表示モードに戻る', async () => {
+      const photoDetail = createMockApiResponse({ userId: TEST_USER_ID })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('edit-photo-button')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('edit-photo-button'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('edit-cancel-button')).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByTestId('edit-cancel-button'))
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('edit-save-button')).not.toBeInTheDocument()
+        expect(screen.getByTestId('edit-photo-button')).toBeInTheDocument()
+      })
+    })
+  })
 })
