@@ -140,6 +140,8 @@ export async function clearStorage(page: Page): Promise<void> {
   await page.evaluate(() => {
     localStorage.clear()
     sessionStorage.clear()
+    // Cookie同意バナーが表示されないよう、同意済み状態を設定
+    localStorage.setItem('cookie_consent_acknowledged', 'true')
   })
 }
 

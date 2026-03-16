@@ -301,6 +301,8 @@ test.describe('認証フロー全体 E2Eテスト', () => {
     }) => {
       await page.goto('/')
       await page.waitForTimeout(3000)
+      // Cookie同意バナーを非表示にする
+      await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
 
       // 写真投稿ボタンをクリック
       await page.getByRole('button', { name: '投稿' }).click()
@@ -312,6 +314,8 @@ test.describe('認証フロー全体 E2Eテスト', () => {
     test('LoginRequiredDialogの「ログイン」ボタンでLoginDialogが開く', async ({ page }) => {
       await page.goto('/')
       await page.waitForTimeout(3000)
+      // Cookie同意バナーを非表示にする
+      await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
 
       // 写真投稿ボタンをクリック
       await page.getByRole('button', { name: '投稿' }).click()
@@ -328,6 +332,8 @@ test.describe('認証フロー全体 E2Eテスト', () => {
     }) => {
       await page.goto('/')
       await page.waitForTimeout(3000)
+      // Cookie同意バナーを非表示にする
+      await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
 
       // 写真投稿ボタンをクリック
       await page.getByRole('button', { name: '投稿' }).click()
