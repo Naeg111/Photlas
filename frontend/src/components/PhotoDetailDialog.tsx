@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2, Share2 } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2, Share2, Pencil } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import MapGL from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -364,6 +364,13 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleteLoading, setIsDeleteLoading] = useState(false)
 
+  // Issue#61: 写真メタデータ編集状態管理
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState('')
+  const [editWeather, setEditWeather] = useState('')
+  const [editPlaceName, setEditPlaceName] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
   // refで最新のphotoDetailsを参照（依存配列ループ回避）
   const photoDetailsRef = useRef(photoDetails)
   photoDetailsRef.current = photoDetails
@@ -621,6 +628,75 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }
   }, [currentPhotoId, currentPhoto?.title])
 
+  // Issue#61: 編集モード開始
+  const handleStartEdit = useCallback(() => {
+    if (!currentPhoto) return
+    setEditTitle(currentPhoto.title || '')
+    setEditWeather(currentPhoto.weather || '')
+    setEditPlaceName(currentPhoto.placeName || '')
+    setIsEditing(true)
+  }, [currentPhoto])
+
+  // Issue#61: 編集キャンセル
+  const handleCancelEdit = useCallback(() => {
+    setIsEditing(false)
+  }, [])
+
+  // Issue#61: 編集保存
+  const handleSaveEdit = useCallback(async () => {
+    if (!currentPhotoId) return
+
+    setIsSaving(true)
+    try {
+      const response = await fetch(`${API_PHOTOS}/${currentPhotoId}`, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          weather: editWeather,
+          placeName: editPlaceName,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        // 表示中の写真情報を更新
+        setPhotoDetails(prev => {
+          const next = new Map(prev)
+          const existing = next.get(currentPhotoId)
+          if (existing) {
+            next.set(currentPhotoId, {
+              ...existing,
+              title: data.photo.title,
+              weather: data.photo.weather,
+              placeName: data.photo.place_name,
+              moderationStatus: data.photo.moderation_status,
+            })
+          }
+          return next
+        })
+        setDisplayedPhoto(prev => prev ? {
+          ...prev,
+          title: data.photo.title,
+          weather: data.photo.weather,
+          placeName: data.photo.place_name,
+          moderationStatus: data.photo.moderation_status,
+        } : prev)
+        toast.success('写真情報を更新しました')
+        setIsEditing(false)
+      } else {
+        toast.error('更新に失敗しました')
+      }
+    } catch {
+      toast.error('更新に失敗しました')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [currentPhotoId, editTitle, editWeather, editPlaceName])
+
   return (
     <Dialog open={open} onOpenChange={onClose} modal={false}>
       <DialogContent
@@ -750,7 +826,83 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
               {/* 写真情報（displayedPhotoで表示し、スライド切替時の点滅を防止） */}
               {displayedPhoto && (
                 <div className="min-h-0 p-6 pb-8 space-y-4 overflow-y-auto">
-                  <h2 className="text-2xl font-bold min-h-[2rem]">{displayedPhoto.title}</h2>
+                  {/* Issue#61: タイトル（表示/編集モード切替） */}
+                  <div className="flex items-center gap-2">
+                    {isEditing ? (
+                      <input
+                        data-testid="edit-title-input"
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="text-2xl font-bold min-h-[2rem] flex-1 border-b-2 border-primary outline-none bg-transparent"
+                        maxLength={20}
+                      />
+                    ) : (
+                      <h2 className="text-2xl font-bold min-h-[2rem] flex-1">{displayedPhoto.title}</h2>
+                    )}
+                    {isAuthenticated && currentPhoto?.user?.userId === user?.userId && !isEditing && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        data-testid="edit-photo-button"
+                        onClick={handleStartEdit}
+                        aria-label="写真情報を編集"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Issue#61: 編集モード - 天気・場所名 */}
+                  {isEditing && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm text-gray-500">天気</label>
+                        <select
+                          data-testid="edit-weather-select"
+                          value={editWeather}
+                          onChange={(e) => setEditWeather(e.target.value)}
+                          className="w-full border rounded-md px-3 py-2 text-sm"
+                        >
+                          <option value="">未設定</option>
+                          <option value="晴れ">晴れ</option>
+                          <option value="曇り">曇り</option>
+                          <option value="雨">雨</option>
+                          <option value="雪">雪</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-500">場所名</label>
+                        <input
+                          data-testid="edit-place-name-input"
+                          type="text"
+                          value={editPlaceName}
+                          onChange={(e) => setEditPlaceName(e.target.value)}
+                          className="w-full border rounded-md px-3 py-2 text-sm"
+                          maxLength={100}
+                          placeholder="施設名・店名"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          data-testid="edit-save-button"
+                          onClick={handleSaveEdit}
+                          disabled={isSaving}
+                          className="flex-1"
+                        >
+                          {isSaving ? '保存中...' : '保存'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          data-testid="edit-cancel-button"
+                          onClick={handleCancelEdit}
+                          disabled={isSaving}
+                        >
+                          キャンセル
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Issue#54: モデレーションステータスバナー */}
                   {displayedPhoto.moderationStatus === 'QUARANTINED' && (
