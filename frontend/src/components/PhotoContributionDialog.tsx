@@ -107,6 +107,7 @@ export function PhotoContributionDialog({
   const [croppedArea, setCroppedArea] = useState<Area | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // 施設名検索用SearchBoxCore
   const placeNameSearchBox = useMemo(() => {
@@ -117,6 +118,15 @@ export function PhotoContributionDialog({
   }, [])
   const placeNameSessionTokenRef = useRef(new SessionToken())
   const placeNameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // アンマウント時にステータスタイマーをクリア
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current) {
+        clearTimeout(statusTimerRef.current)
+      }
+    }
+  }, [])
 
   // ダイアログ表示時にスクロール位置を先頭にリセット
   useEffect(() => {
@@ -301,7 +311,7 @@ export function PhotoContributionDialog({
       setUploadStatus('success')
 
       // 成功後にダイアログを閉じてリセット
-      setTimeout(() => {
+      statusTimerRef.current = setTimeout(() => {
         resetForm()
         onOpenChange(false)
       }, UPLOAD_STATUS.SUCCESS_CLOSE_DELAY)
@@ -311,7 +321,7 @@ export function PhotoContributionDialog({
       // 認証エラーの場合はダイアログを閉じる（App側でログイン画面へ遷移）
       if (error instanceof ApiError && error.isUnauthorized) {
         setUploadStatus('auth_error')
-        setTimeout(() => {
+        statusTimerRef.current = setTimeout(() => {
           resetForm()
         }, UPLOAD_STATUS.ERROR_RESET_DELAY)
         return
@@ -320,7 +330,7 @@ export function PhotoContributionDialog({
       setUploadStatus('error')
 
       // エラー後にリセット
-      setTimeout(() => {
+      statusTimerRef.current = setTimeout(() => {
         setUploadStatus('idle')
         setUploadProgress(0)
       }, UPLOAD_STATUS.ERROR_RESET_DELAY)
