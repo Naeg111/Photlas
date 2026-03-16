@@ -541,7 +541,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // ズームバナーをクリックしたときの処理
   const handleZoomBannerClick = () => {
     if (map) {
-      map.easeTo({ zoom: MIN_ZOOM_FOR_PINS, duration: 16670 })
+      map.easeTo({ zoom: MIN_ZOOM_FOR_PINS, duration: 11113 })
     }
   }
 
