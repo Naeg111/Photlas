@@ -494,6 +494,117 @@ test.describe('写真詳細・お気に入り機能', () => {
   })
 
   // ============================================================
+  // ライトボックステスト
+  // ============================================================
+
+  test.describe('ライトボックス', () => {
+    test('写真をクリックするとライトボックスが開く', async ({ page }) => {
+      await zoomInToShowPins(page)
+
+      if (await openPhotoDetailFromPin(page)) {
+        // ダイアログ内の写真画像をクリック
+        const photo = page.locator('[role="dialog"] img').first()
+        await expect(photo).toBeVisible({ timeout: 10000 })
+        await photo.click()
+
+        // ライトボックスが表示される（ズーム倍率テキストで確認）
+        await expect(page.getByText(/拡大: \d+%/)).toBeVisible({ timeout: 5000 })
+      } else {
+        test.skip()
+      }
+    })
+
+    test('ライトボックスにズーム倍率が表示される', async ({ page }) => {
+      await zoomInToShowPins(page)
+
+      if (await openPhotoDetailFromPin(page)) {
+        const photo = page.locator('[role="dialog"] img').first()
+        await expect(photo).toBeVisible({ timeout: 10000 })
+        await photo.click()
+
+        // ライトボックスが開いたことをズーム倍率テキストで確認
+        await expect(page.getByText(/拡大: \d+%/)).toBeVisible({ timeout: 5000 })
+      } else {
+        test.skip()
+      }
+    })
+  })
+
+  // ============================================================
+  // ミニマップ表示テスト
+  // ============================================================
+
+  test.describe('ミニマップ表示', () => {
+    test('写真詳細ダイアログにミニマップが表示される', async ({ page }) => {
+      await zoomInToShowPins(page)
+
+      if (await openPhotoDetailFromPin(page)) {
+        // ミニマップ（Mapbox GLコンテナ）がダイアログ内に表示される
+        const dialog = page.locator('[role="dialog"]')
+        const minimap = dialog.locator('.mapboxgl-map')
+        // ミニマップは500ms遅延で読み込まれる
+        await expect(minimap).toBeVisible({ timeout: 5000 })
+      } else {
+        test.skip()
+      }
+    })
+  })
+
+  // ============================================================
+  // 通報送信テスト
+  // ============================================================
+
+  test.describe('通報送信', () => {
+    test('通報ダイアログで理由を選択して送信できる', async ({ page }) => {
+      await createAccountAndLogin(page, 'report-submit')
+      await zoomInToShowPins(page)
+
+      if (await openPhotoDetailFromPin(page)) {
+        const reportButton = page.locator('[data-testid="report-button"]')
+        await expect(reportButton).toBeVisible({ timeout: 5000 })
+
+        await reportButton.click()
+        await expect(page.getByRole('heading', { name: 'この投稿を通報' })).toBeVisible({ timeout: 5000 })
+
+        // 通報理由を選択
+        await page.getByText('スパム').click()
+
+        // 送信ボタンが有効化される
+        const submitButton = page.getByRole('button', { name: '通報する' })
+        await expect(submitButton).toBeEnabled()
+      } else {
+        test.skip()
+      }
+    })
+
+    test('通報理由「その他」選択時は詳細が必須になる', async ({ page }) => {
+      await createAccountAndLogin(page, 'report-other')
+      await zoomInToShowPins(page)
+
+      if (await openPhotoDetailFromPin(page)) {
+        const reportButton = page.locator('[data-testid="report-button"]')
+        await expect(reportButton).toBeVisible({ timeout: 5000 })
+
+        await reportButton.click()
+        await expect(page.getByRole('heading', { name: 'この投稿を通報' })).toBeVisible({ timeout: 5000 })
+
+        // 「その他」を選択
+        await page.getByText('その他', { exact: true }).click()
+
+        // 詳細未入力では送信ボタンが無効
+        const submitButton = page.getByRole('button', { name: '通報する' })
+        await expect(submitButton).toBeDisabled()
+
+        // 詳細を入力すると有効化
+        await page.getByPlaceholder('通報理由の詳細を入力してください（300文字以内）').fill('テスト通報理由')
+        await expect(submitButton).toBeEnabled()
+      } else {
+        test.skip()
+      }
+    })
+  })
+
+  // ============================================================
   // 投稿後の表示確認テスト
   // ============================================================
 
