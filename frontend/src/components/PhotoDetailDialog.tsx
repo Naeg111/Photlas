@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2, Share2, Pencil } from 'lucide-react'
@@ -23,6 +23,10 @@ import {
   AlertDialogTitle,
 } from './ui/alert-dialog'
 import { toast } from 'sonner'
+import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
+import { Checkbox } from './ui/checkbox'
+import { CategoryIcon } from './CategoryIcon'
+import { PHOTO_CATEGORIES } from '../utils/constants'
 
 // API Endpoints
 const API_SPOTS_PHOTOS = `${API_V1_URL}/spots`
@@ -369,7 +373,21 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const [editTitle, setEditTitle] = useState('')
   const [editWeather, setEditWeather] = useState('')
   const [editPlaceName, setEditPlaceName] = useState('')
+  const [editCategories, setEditCategories] = useState<string[]>([])
   const [isSaving, setIsSaving] = useState(false)
+  const [isTitleChangeWarningOpen, setIsTitleChangeWarningOpen] = useState(false)
+
+  // Issue#61: Mapbox Search Box（場所名検索）
+  const [placeNameSuggestions, setPlaceNameSuggestions] = useState<{ name: string; full_address?: string; mapbox_id: string }[]>([])
+  const [isPlaceNameDropdownOpen, setIsPlaceNameDropdownOpen] = useState(false)
+  const placeNameSearchBox = useMemo(() => {
+    if (MAPBOX_ACCESS_TOKEN) {
+      return new SearchBoxCore({ accessToken: MAPBOX_ACCESS_TOKEN })
+    }
+    return null
+  }, [])
+  const placeNameSessionTokenRef = useRef(new SessionToken())
+  const placeNameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // refで最新のphotoDetailsを参照（依存配列ループ回避）
   const photoDetailsRef = useRef(photoDetails)
@@ -634,18 +652,86 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     setEditTitle(currentPhoto.title || '')
     setEditWeather(currentPhoto.weather || '')
     setEditPlaceName(currentPhoto.placeName || '')
+    setEditCategories([]) // カテゴリは現在APIレスポンスに含まれないため空で初期化
     setIsEditing(true)
   }, [currentPhoto])
 
   // Issue#61: 編集キャンセル
   const handleCancelEdit = useCallback(() => {
     setIsEditing(false)
+    setPlaceNameSuggestions([])
+    setIsPlaceNameDropdownOpen(false)
   }, [])
+
+  // Issue#61: カテゴリ切替
+  const handleEditCategoryToggle = useCallback((category: string) => {
+    setEditCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    )
+  }, [])
+
+  // Issue#61: 場所名検索（Mapbox Search Box）
+  const handleEditPlaceNameSearch = useCallback((value: string) => {
+    setEditPlaceName(value)
+
+    if (placeNameDebounceRef.current) {
+      clearTimeout(placeNameDebounceRef.current)
+    }
+
+    if (!value.trim() || !placeNameSearchBox) {
+      setPlaceNameSuggestions([])
+      setIsPlaceNameDropdownOpen(false)
+      return
+    }
+
+    placeNameDebounceRef.current = setTimeout(async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const options: any = {
+          sessionToken: placeNameSessionTokenRef.current,
+          country: 'jp',
+          language: 'ja',
+          types: 'poi',
+        }
+
+        const result = await placeNameSearchBox.suggest(value, options)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const items = (result.suggestions || []) as any[]
+        setPlaceNameSuggestions(items)
+        setIsPlaceNameDropdownOpen(items.length > 0)
+      } catch {
+        setPlaceNameSuggestions([])
+        setIsPlaceNameDropdownOpen(false)
+      }
+    }, 300)
+  }, [placeNameSearchBox])
+
+  // Issue#61: 場所名候補選択
+  const handleSelectPlaceNameSuggestion = useCallback((suggestion: { name: string }) => {
+    setEditPlaceName(suggestion.name)
+    setPlaceNameSuggestions([])
+    setIsPlaceNameDropdownOpen(false)
+    placeNameSessionTokenRef.current = new SessionToken()
+  }, [])
+
+  // Issue#61: 保存前チェック（タイトル変更時は警告表示）
+  const handleSaveClick = useCallback(() => {
+    if (!currentPhoto) return
+    const isTitleChanged = editTitle !== (currentPhoto.title || '')
+    if (isTitleChanged && currentPhoto.moderationStatus === 'PUBLISHED') {
+      setIsTitleChangeWarningOpen(true)
+    } else {
+      handleSaveEdit()
+    }
+  }, [currentPhoto, editTitle])
 
   // Issue#61: 編集保存
   const handleSaveEdit = useCallback(async () => {
     if (!currentPhotoId) return
 
+    setIsTitleChangeWarningOpen(false)
     setIsSaving(true)
     try {
       const response = await fetch(`${API_PHOTOS}/${currentPhotoId}`, {
@@ -656,14 +742,14 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         },
         body: JSON.stringify({
           title: editTitle,
-          weather: editWeather,
-          placeName: editPlaceName,
+          weather: editWeather || null,
+          placeName: editPlaceName || null,
+          categories: editCategories.length > 0 ? editCategories : null,
         }),
       })
 
       if (response.ok) {
         const data = await response.json()
-        // 表示中の写真情報を更新
         setPhotoDetails(prev => {
           const next = new Map(prev)
           const existing = next.get(currentPhotoId)
@@ -695,7 +781,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     } finally {
       setIsSaving(false)
     }
-  }, [currentPhotoId, editTitle, editWeather, editPlaceName])
+  }, [currentPhotoId, editTitle, editWeather, editPlaceName, editCategories])
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal={false}>
@@ -853,9 +939,37 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     )}
                   </div>
 
-                  {/* Issue#61: 編集モード - 天気・場所名 */}
+                  {/* Issue#61: 編集モード */}
                   {isEditing && (
                     <div className="space-y-3">
+                      {/* カテゴリ選択 */}
+                      <div>
+                        <label className="text-sm text-gray-500">カテゴリ</label>
+                        <div className="grid grid-cols-2 gap-2 mt-1">
+                          {PHOTO_CATEGORIES.map((category) => (
+                            <div
+                              key={category}
+                              className={`flex items-center space-x-2 border rounded-lg p-2 cursor-pointer transition-colors text-sm ${
+                                editCategories.includes(category)
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              onClick={() => handleEditCategoryToggle(category)}
+                            >
+                              <Checkbox
+                                checked={editCategories.includes(category)}
+                                onCheckedChange={() => handleEditCategoryToggle(category)}
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label={category}
+                              />
+                              <CategoryIcon category={category} className="w-4 h-4" />
+                              <span className="flex-1">{category}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 天気選択 */}
                       <div>
                         <label className="text-sm text-gray-500">天気</label>
                         <select
@@ -871,22 +985,45 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                           <option value="雪">雪</option>
                         </select>
                       </div>
+
+                      {/* 場所名（Mapbox Search Box） */}
                       <div>
                         <label className="text-sm text-gray-500">場所名</label>
-                        <input
-                          data-testid="edit-place-name-input"
-                          type="text"
-                          value={editPlaceName}
-                          onChange={(e) => setEditPlaceName(e.target.value)}
-                          className="w-full border rounded-md px-3 py-2 text-sm"
-                          maxLength={100}
-                          placeholder="施設名・店名"
-                        />
+                        <div className="relative">
+                          <input
+                            data-testid="edit-place-name-input"
+                            type="text"
+                            value={editPlaceName}
+                            onChange={(e) => handleEditPlaceNameSearch(e.target.value)}
+                            className="w-full border rounded-md px-3 py-2 text-sm"
+                            maxLength={100}
+                            placeholder="例：東京タワー、スターバックス渋谷店"
+                          />
+                          {isPlaceNameDropdownOpen && placeNameSuggestions.length > 0 && (
+                            <ul className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                              {placeNameSuggestions.map((suggestion) => (
+                                <li
+                                  key={suggestion.mapbox_id}
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => handleSelectPlaceNameSuggestion(suggestion)}
+                                  className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                                >
+                                  <div className="font-medium">{suggestion.name}</div>
+                                  {suggestion.full_address && (
+                                    <div className="text-xs text-gray-500">{suggestion.full_address}</div>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                       </div>
+
+                      {/* 保存・キャンセル */}
                       <div className="flex gap-2">
                         <Button
                           data-testid="edit-save-button"
-                          onClick={handleSaveEdit}
+                          onClick={handleSaveClick}
                           disabled={isSaving}
                           className="flex-1"
                         >
@@ -903,6 +1040,24 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       </div>
                     </div>
                   )}
+
+                  {/* Issue#61: タイトル変更時の再モデレーション警告ダイアログ */}
+                  <AlertDialog open={isTitleChangeWarningOpen} onOpenChange={setIsTitleChangeWarningOpen}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>タイトルの変更</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          タイトルを変更すると再審査が行われ、審査完了まで写真が非公開になります。保存しますか？
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleSaveEdit}>
+                          保存する
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
 
                   {/* Issue#54: モデレーションステータスバナー */}
                   {displayedPhoto.moderationStatus === 'QUARANTINED' && (
