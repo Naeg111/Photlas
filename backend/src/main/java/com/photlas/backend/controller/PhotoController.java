@@ -3,6 +3,7 @@ package com.photlas.backend.controller;
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.dto.ErrorResponse;
 import com.photlas.backend.dto.PhotoResponse;
+import com.photlas.backend.dto.UpdatePhotoRequest;
 import com.photlas.backend.dto.UploadUrlRequest;
 import com.photlas.backend.dto.UploadUrlResponse;
 import com.photlas.backend.entity.User;
@@ -126,6 +127,25 @@ public class PhotoController {
                 "photo_id", photo.getPhotoId().toString(),
                 "moderation_status", photo.getModerationStatus().name()
         ));
+    }
+
+    /**
+     * Issue#61: 写真メタデータを更新する
+     *
+     * @param photoId 写真ID
+     * @param request 更新リクエスト
+     * @param authentication 認証情報
+     * @return 更新後の写真詳細情報
+     */
+    @PutMapping("/{photoId}")
+    public ResponseEntity<PhotoResponse> updatePhoto(
+            @PathVariable Long photoId,
+            @Valid @RequestBody UpdatePhotoRequest request,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        PhotoResponse response = photoService.updatePhoto(photoId, request, email);
+        return ResponseEntity.ok(response);
     }
 
     /**

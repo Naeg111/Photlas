@@ -2,6 +2,7 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.dto.PhotoResponse;
+import com.photlas.backend.dto.UpdatePhotoRequest;
 import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
@@ -300,6 +301,67 @@ public class PhotoService {
         photoRepository.save(photo);
 
         logger.info("写真を削除しました: photoId={}, userId={}", photoId, user.getId());
+    }
+
+    /**
+     * Issue#61: 写真メタデータを更新する
+     *
+     * @param photoId 写真ID
+     * @param request 更新リクエスト
+     * @param email ログイン中ユーザーのメールアドレス
+     * @return 更新後の写真詳細レスポンス
+     * @throws PhotoNotFoundException 写真が見つからないか、既にREMOVEDの場合
+     * @throws org.springframework.security.access.AccessDeniedException オーナーでない場合
+     */
+    @Transactional
+    public PhotoResponse updatePhoto(Long photoId, UpdatePhotoRequest request, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+
+        Photo photo = photoRepository.findById(photoId)
+                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+
+        if (photo.getModerationStatus() == ModerationStatus.REMOVED) {
+            throw new PhotoNotFoundException("写真が見つかりません");
+        }
+
+        if (!photo.getUserId().equals(user.getId())) {
+            throw new org.springframework.security.access.AccessDeniedException("この写真を編集する権限がありません");
+        }
+
+        // タイトル変更の判定
+        boolean isTitleChanged = request.getTitle() != null
+                && !request.getTitle().equals(photo.getTitle());
+
+        // フィールド更新
+        if (request.getTitle() != null) {
+            photo.setTitle(request.getTitle());
+        }
+        if (request.getWeather() != null) {
+            photo.setWeather(request.getWeather());
+        }
+        if (request.getPlaceName() != null) {
+            photo.setPlaceName(request.getPlaceName());
+        }
+        if (request.getCategories() != null) {
+            List<Category> categories = convertCategoriesToEntities(request.getCategories());
+            photo.setCategories(categories);
+        }
+
+        // タイトル変更時は再モデレーション
+        if (isTitleChanged) {
+            photo.setModerationStatus(ModerationStatus.PENDING_REVIEW);
+        }
+
+        Photo savedPhoto = photoRepository.save(photo);
+
+        Spot spot = spotRepository.findById(photo.getSpotId())
+                .orElseThrow(() -> new SpotNotFoundException("スポットが見つかりません"));
+
+        logger.info("写真を更新しました: photoId={}, userId={}, titleChanged={}",
+                photoId, user.getId(), isTitleChanged);
+
+        return buildPhotoResponse(savedPhoto, spot, user, false, 0L);
     }
 
     /**
