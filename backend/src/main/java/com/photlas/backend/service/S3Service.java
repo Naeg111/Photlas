@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
@@ -92,6 +94,27 @@ public class S3Service {
         } else {
             // CloudFrontが設定されていない場合はS3 URLを返す
             return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, s3ObjectKey);
+        }
+    }
+
+    /**
+     * Issue#62: S3オブジェクトを削除する
+     * オブジェクトが存在しない場合もエラーにならない（S3の仕様で冪等）。
+     *
+     * @param s3ObjectKey 削除するS3オブジェクトキー
+     */
+    public void deleteS3Object(String s3ObjectKey) {
+        try (S3Client s3Client = S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build()) {
+
+            DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3ObjectKey)
+                    .build();
+
+            s3Client.deleteObject(deleteRequest);
         }
     }
 
