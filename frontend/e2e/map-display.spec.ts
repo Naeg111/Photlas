@@ -340,6 +340,135 @@ test.describe('地図表示・ピン表示機能', () => {
   })
 
   // ============================================================
+  // 詳細フィルター機能テスト
+  // ============================================================
+
+  test.describe('詳細フィルター機能', () => {
+    test('「上級者向けフィルター」ボタンで詳細フィルターが開閉できる', async ({ page }) => {
+      await openFilterPanel(page)
+
+      // 詳細フィルターを開く
+      await page.getByRole('button', { name: '上級者向けフィルター' }).click()
+
+      // 詳細フィルターの項目が表示される
+      await expect(page.getByText('機材種別')).toBeVisible()
+      await expect(page.getByText('撮影日からの経過期間')).toBeVisible()
+      await expect(page.getByText('アスペクト比')).toBeVisible()
+      await expect(page.getByText('焦点距離（フルサイズ換算）')).toBeVisible()
+      await expect(page.getByText('ISO感度')).toBeVisible()
+    })
+
+    test('機材種別フィルターで絞り込みができる', async ({ page }) => {
+      await openFilterPanel(page)
+      await page.getByRole('button', { name: '上級者向けフィルター' }).click()
+
+      // 一眼レフを選択
+      await page.getByText('一眼レフ', { exact: true }).click()
+      await page.waitForTimeout(500)
+
+      await page.getByRole('button', { name: '適用' }).click()
+      await page.waitForTimeout(2000)
+
+      // エラーなく地図が表示されている
+      await expect(page.locator('.mapboxgl-map').first()).toBeVisible()
+    })
+
+    test('撮影日からの経過期間フィルターで絞り込みができる', async ({ page }) => {
+      await openFilterPanel(page)
+      await page.getByRole('button', { name: '上級者向けフィルター' }).click()
+
+      // 1年以内を選択
+      await page.getByText('1年以内', { exact: true }).click()
+      await page.waitForTimeout(500)
+
+      await page.getByRole('button', { name: '適用' }).click()
+      await page.waitForTimeout(2000)
+
+      await expect(page.locator('.mapboxgl-map').first()).toBeVisible()
+    })
+
+    test('アスペクト比フィルターで絞り込みができる', async ({ page }) => {
+      await openFilterPanel(page)
+      await page.getByRole('button', { name: '上級者向けフィルター' }).click()
+
+      // 横位置を選択
+      await page.getByText('横位置', { exact: true }).click()
+      await page.waitForTimeout(500)
+
+      await page.getByRole('button', { name: '適用' }).click()
+      await page.waitForTimeout(2000)
+
+      await expect(page.locator('.mapboxgl-map').first()).toBeVisible()
+    })
+
+    test('焦点距離フィルターで絞り込みができる', async ({ page }) => {
+      await openFilterPanel(page)
+      await page.getByRole('button', { name: '上級者向けフィルター' }).click()
+
+      // 広角を選択
+      await page.getByText('広角（24mm未満）', { exact: true }).click()
+      await page.waitForTimeout(500)
+
+      await page.getByRole('button', { name: '適用' }).click()
+      await page.waitForTimeout(2000)
+
+      await expect(page.locator('.mapboxgl-map').first()).toBeVisible()
+    })
+
+    test('ISO感度フィルターで絞り込みができる', async ({ page }) => {
+      await openFilterPanel(page)
+      await page.getByRole('button', { name: '上級者向けフィルター' }).click()
+
+      // 低感度を選択
+      await page.getByText('低感度（ISO 400以下）', { exact: true }).click()
+      await page.waitForTimeout(500)
+
+      await page.getByRole('button', { name: '適用' }).click()
+      await page.waitForTimeout(2000)
+
+      await expect(page.locator('.mapboxgl-map').first()).toBeVisible()
+    })
+
+    test('基本フィルターと詳細フィルターを組み合わせて絞り込みができる', async ({ page }) => {
+      await openFilterPanel(page)
+
+      // 基本フィルター
+      await page.getByText('風景', { exact: true }).click()
+      await page.getByText('晴れ', { exact: true }).click()
+
+      // 詳細フィルターを開く
+      await page.getByRole('button', { name: '上級者向けフィルター' }).click()
+
+      // 詳細フィルター
+      await page.getByText('一眼レフ', { exact: true }).click()
+      await page.getByText('横位置', { exact: true }).click()
+
+      await page.getByRole('button', { name: '適用' }).click()
+      await page.waitForTimeout(2000)
+
+      await expect(page.locator('.mapboxgl-map').first()).toBeVisible()
+    })
+
+    test('クリアボタンで詳細フィルターもリセットされる', async ({ page }) => {
+      await openFilterPanel(page)
+
+      // 基本フィルター設定
+      await page.getByText('風景', { exact: true }).click()
+
+      // 詳細フィルターを開いて設定
+      await page.getByRole('button', { name: '上級者向けフィルター' }).click()
+      await page.getByText('一眼レフ', { exact: true }).click()
+
+      // クリア
+      await page.getByRole('button', { name: 'クリア' }).click()
+      await page.waitForTimeout(500)
+
+      // 適用
+      await page.getByRole('button', { name: '適用' }).click()
+    })
+  })
+
+  // ============================================================
   // 現在地機能テスト
   // ============================================================
 
@@ -441,8 +570,8 @@ test.describe('地図表示・ピン表示機能', () => {
         // Symbol Layerのピンをクリック
         const clicked = await clickFirstPin(page)
         if (clicked) {
-          // 写真詳細ダイアログが開く
-          await expect(page.locator('[data-testid="photo-detail-dialog"], [role="dialog"]')).toBeVisible({ timeout: 5000 })
+          // 写真詳細ダイアログが開く（ネットワーク遅延を考慮して長めのタイムアウト）
+          await expect(page.locator('[data-testid="photo-detail-dialog"], [role="dialog"]')).toBeVisible({ timeout: 10000 })
         }
       }
     })

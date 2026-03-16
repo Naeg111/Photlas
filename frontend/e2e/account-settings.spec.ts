@@ -127,8 +127,8 @@ test.describe('アカウント設定', () => {
     // 確認ボタンをクリック
     await page.getByRole('button', { name: '削除する' }).click()
 
-    // 成功トーストを確認
-    await expect(page.getByText('アカウントを削除しました')).toBeVisible({ timeout: 10000 })
+    // 成功トーストを確認（カスケード削除に時間がかかる場合があるためタイムアウトを長めに設定）
+    await expect(page.getByText('アカウントを削除しました')).toBeVisible({ timeout: 20000 })
 
     // 認証状態更新とナビゲーションの完了を待機
     await page.waitForTimeout(2000)

@@ -9,6 +9,8 @@ test.describe('Navigation Tests', () => {
     await page.goto('/')
     // スプラッシュ画面が消えるまで待機
     await page.waitForTimeout(3000)
+    // Cookie同意バナーを非表示にする
+    await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
   })
 
   test('メニューボタンをクリックするとメニューパネルが開く', async ({ page }) => {

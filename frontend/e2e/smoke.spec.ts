@@ -13,7 +13,7 @@ test.describe('Smoke Tests', () => {
     await page.waitForTimeout(3000)
 
     // メインコンテンツ（地図）が表示されることを確認
-    await expect(page.locator('[data-testid="map-container"], .gm-style')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('.mapboxgl-map')).toBeVisible({ timeout: 10000 })
   })
 
   test('フィルターボタンが表示される', async ({ page }) => {
