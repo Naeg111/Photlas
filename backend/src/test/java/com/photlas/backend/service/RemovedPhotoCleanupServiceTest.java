@@ -19,7 +19,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import org.springframework.boot.test.mock.mockito.MockBean;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 /**
  * Issue#54: REMOVED投稿の180日後物理削除サービスのテスト
@@ -43,6 +48,9 @@ public class RemovedPhotoCleanupServiceTest {
 
     @Autowired
     private EntityManager entityManager;
+
+    @MockBean
+    private S3Service s3Service;
 
     private User testUser;
     private Spot testSpot;
@@ -119,6 +127,29 @@ public class RemovedPhotoCleanupServiceTest {
         assertThat(photoRepository.findById(old1.getPhotoId())).isEmpty();
         assertThat(photoRepository.findById(old2.getPhotoId())).isEmpty();
         assertThat(photoRepository.findById(recent.getPhotoId())).isPresent();
+    }
+
+    // ===== Issue#62: S3削除テスト =====
+
+    @Test
+    @DisplayName("Issue#62 - 物理削除時にS3の元画像とサムネイルが削除される")
+    void testCleanup_deletesS3Objects() {
+        Photo photo = createPhoto("uploads/1/abc.jpg", ModerationStatus.REMOVED);
+        updateUpdatedAt(photo.getPhotoId(), LocalDateTime.now().minusDays(200));
+
+        cleanupService.cleanupRemovedPhotos();
+
+        verify(s3Service).deleteS3Object("uploads/1/abc.jpg");
+        verify(s3Service).deleteS3Object("thumbnails/uploads/1/abc.webp");
+        assertThat(photoRepository.findById(photo.getPhotoId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#62 - 削除対象がない場合はS3削除が呼ばれない")
+    void testCleanup_noPhotos_noS3Delete() {
+        cleanupService.cleanupRemovedPhotos();
+
+        verify(s3Service, never()).deleteS3Object(anyString());
     }
 
     // ===== ヘルパーメソッド =====
