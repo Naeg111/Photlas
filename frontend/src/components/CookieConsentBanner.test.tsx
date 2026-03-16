@@ -5,6 +5,16 @@ import { CookieConsentBanner } from './CookieConsentBanner'
 
 const STORAGE_KEY = 'cookie_consent_acknowledged'
 
+const mockStorage: Record<string, string> = {}
+const mockLocalStorage = {
+  getItem: vi.fn((key: string) => mockStorage[key] ?? null),
+  setItem: vi.fn((key: string, value: string) => { mockStorage[key] = value }),
+  removeItem: vi.fn((key: string) => { delete mockStorage[key] }),
+  clear: vi.fn(() => { Object.keys(mockStorage).forEach(k => delete mockStorage[k]) }),
+  length: 0,
+  key: vi.fn(),
+}
+
 function renderBanner() {
   return render(
     <MemoryRouter>
@@ -15,7 +25,8 @@ function renderBanner() {
 
 describe('CookieConsentBanner', () => {
   beforeEach(() => {
-    localStorage.clear()
+    Object.keys(mockStorage).forEach(k => delete mockStorage[k])
+    vi.stubGlobal('localStorage', mockLocalStorage)
   })
 
   it('初回訪問時にバナーが表示される', () => {
@@ -50,11 +61,11 @@ describe('CookieConsentBanner', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'OK' }))
 
-    expect(localStorage.getItem(STORAGE_KEY)).toBe('true')
+    expect(mockLocalStorage.setItem).toHaveBeenCalledWith(STORAGE_KEY, 'true')
   })
 
   it('localStorageに同意済みが保存されている場合、バナーは表示されない', () => {
-    localStorage.setItem(STORAGE_KEY, 'true')
+    mockStorage[STORAGE_KEY] = 'true'
 
     renderBanner()
 
