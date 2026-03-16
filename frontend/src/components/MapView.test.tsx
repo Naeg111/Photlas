@@ -52,6 +52,7 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() =
   const mockMap = {
     setZoom: vi.fn(),
     getZoom: vi.fn(),
+    easeTo: vi.fn(),
     getCenter: vi.fn(() => ({ lng: 139.7454, lat: 35.6585 })),
     getBounds: vi.fn(() => ({
       getNorth: () => 35.7,
@@ -222,7 +223,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('ズームバナーをタップするとZoom 10にズームアップする', async () => {
+    it('ズームバナーをタップするとアニメーション付きでZoom 10にズームアップする', async () => {
       mockMap.getZoom.mockReturnValue(9)
       const user = userEvent.setup()
 
@@ -236,7 +237,9 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       const banner = screen.getByText(/ズームしてスポットを表示/i)
       await user.click(banner)
 
-      expect(mockMap.setZoom).toHaveBeenCalledWith(10)
+      expect(mockMap.easeTo).toHaveBeenCalledWith(
+        expect.objectContaining({ zoom: 10 })
+      )
     })
   })
 
