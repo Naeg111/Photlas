@@ -200,6 +200,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [userHeading, setUserHeading] = useState<number | null>(null)
   const [shootingLocationPin, setShootingLocationPin] = useState<{ lat: number; lng: number } | null>(null)
+  const savedMapStateRef = useRef<{ center: [number, number]; zoom: number } | null>(null)
   const onMapClickRef = useRef(onMapClick)
   onMapClickRef.current = onMapClick
   const onSpotClickRef = useRef(onSpotClick)
@@ -477,11 +478,22 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     },
     showShootingLocationPin: (lat: number, lng: number) => {
       if (map) {
+        savedMapStateRef.current = {
+          center: [map.getCenter().lng, map.getCenter().lat],
+          zoom: map.getZoom(),
+        }
         map.flyTo({ center: [lng, lat], zoom: 16 })
         setShootingLocationPin({ lat, lng })
       }
     },
     clearShootingLocationPin: () => {
+      if (map && savedMapStateRef.current) {
+        map.flyTo({
+          center: savedMapStateRef.current.center,
+          zoom: savedMapStateRef.current.zoom,
+        })
+        savedMapStateRef.current = null
+      }
       setShootingLocationPin(null)
     },
   }), [map, requestOrientationPermission, fetchSpots])
