@@ -33,8 +33,8 @@ describe('CategoryButtons', () => {
   it('includes expected categories', () => {
     // Red: 期待されるカテゴリが含まれている
     render(<CategoryButtons />)
-    expect(screen.getByRole('button', { name: /風景/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /建築/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /自然風景/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /街並み/ })).toBeInTheDocument()
   })
 
   it('all category buttons are clickable', () => {
