@@ -32,6 +32,7 @@ import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto, ApiErr
 import { stripExif } from './utils/stripExif'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
 import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed } from 'lucide-react'
+import { CompassIcon } from './components/CompassIcon'
 import { Button } from './components/ui/button'
 import { Toaster } from './components/ui/sonner'
 import { toast } from 'sonner'
@@ -463,6 +464,17 @@ function MainContent({ onMapReady }: MainContentProps) {
             <Minus className="w-5 h-5" />
           </Button>
         </div>
+
+        {/* ノースヘディングボタン */}
+        <Button
+          variant="secondary"
+          className="rounded-full shadow-lg hover:bg-secondary"
+          style={{ width: '42px', height: '42px' }}
+          onClick={() => mapRef.current?.resetNorthHeading()}
+          aria-label="ノースヘディング"
+        >
+          <CompassIcon className="w-5 h-5" />
+        </Button>
 
         {/* 現在位置ボタン */}
         <Button
