@@ -4,16 +4,17 @@ import userEvent from '@testing-library/user-event'
 import { FilterPanel } from './FilterPanel'
 
 /**
- * Issue#11: フロントエンドデザインのコード導入 - フィルターパネル
- * TDD Red段階: 実装前のテストケース定義
+ * Issue#63: フィルター機能の見直し
+ * TDD Red段階: 新仕様に合わせたテストケース定義
  *
- * UI要件:
- * - スライドインアニメーションを持つパネル
- * - 被写体種別フィルター（12種類のチップボタン）
- * - 時期フィルター（1月〜12月の12種類のチップボタン）
- * - 時間帯フィルター（朝・昼・夕方・夜の4種類のチップボタン）
- * - 天候フィルター（晴れ・曇り・雨・雪の4種類のチップボタン）
- * - クリアボタンと適用ボタン
+ * 変更点:
+ * - ジャンル: 14種類（ポートレート削除、建造物・夜景・野鳥追加、風景→自然風景、食べ物→グルメ）
+ * - 通常フィルターにセクションラベルを追加
+ * - 撮影日からの経過期間・写真の向きを通常フィルターに移動
+ * - 撮影日からの経過期間: 5種類（3ヶ月以内追加）
+ * - ISO感度: 4種類に拡張
+ * - maxAgeYears → maxAgeDays に変更
+ * - 横位置→横向き、縦位置→縦向き
  */
 
 describe('FilterPanel', () => {
@@ -23,22 +24,218 @@ describe('FilterPanel', () => {
     vi.clearAllMocks()
   })
 
-  describe('UI Elements', () => {
+  describe('Issue#63: ジャンルフィルター', () => {
+    it('14種類のジャンルボタンが表示される', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      const genres = [
+        '自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物', '動物',
+        '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星空', 'その他',
+      ]
+
+      genres.forEach(genre => {
+        expect(screen.getByRole('button', { name: new RegExp(genre) })).toBeInTheDocument()
+      })
+    })
+
+    it('ポートレートボタンが表示されない', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      const allButtons = screen.getAllByRole('button')
+      const portraitButton = allButtons.find(btn => btn.textContent?.includes('ポートレート'))
+      expect(portraitButton).toBeUndefined()
+    })
+
+    it('風景ボタンが表示されない（自然風景に変更済み）', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      // 「風景」単体のボタンは存在しない（「自然風景」のみ）
+      const allButtons = screen.getAllByRole('button')
+      const exactLandscapeButton = allButtons.find(btn => btn.textContent?.trim() === '風景')
+      expect(exactLandscapeButton).toBeUndefined()
+    })
+
+    it('食べ物ボタンが表示されない（グルメに変更済み）', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      const allButtons = screen.getAllByRole('button')
+      const foodButton = allButtons.find(btn => btn.textContent?.includes('食べ物'))
+      expect(foodButton).toBeUndefined()
+    })
+  })
+
+  describe('Issue#63: セクションラベル', () => {
+    it('通常フィルターにセクションラベルが表示される', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      expect(screen.getByText('写真のジャンル')).toBeInTheDocument()
+      expect(screen.getByText('撮影日からの経過期間')).toBeInTheDocument()
+      expect(screen.getByText('撮影時期')).toBeInTheDocument()
+      expect(screen.getByText('撮影された時間帯')).toBeInTheDocument()
+      expect(screen.getByText('撮影時の天候')).toBeInTheDocument()
+      expect(screen.getByText('写真の向き')).toBeInTheDocument()
+    })
+  })
+
+  describe('Issue#63: 撮影日からの経過期間（通常フィルターに移動）', () => {
+    it('上級者向けフィルターを開かずに経過期間の選択肢が表示される', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      expect(screen.getByText('1週間以内')).toBeInTheDocument()
+      expect(screen.getByText('1ヶ月以内')).toBeInTheDocument()
+      expect(screen.getByText('3ヶ月以内')).toBeInTheDocument()
+      expect(screen.getByText('1年以内')).toBeInTheDocument()
+      expect(screen.getByText('3年以内')).toBeInTheDocument()
+    })
+  })
+
+  describe('Issue#63: 写真の向き（通常フィルターに移動）', () => {
+    it('上級者向けフィルターを開かずに写真の向きの選択肢が表示される', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      expect(screen.getByText('横向き')).toBeInTheDocument()
+      expect(screen.getByText('縦向き')).toBeInTheDocument()
+      expect(screen.getByText('正方形')).toBeInTheDocument()
+    })
+
+    it('横位置・縦位置の旧名称は表示されない', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      expect(screen.queryByText('横位置')).not.toBeInTheDocument()
+      expect(screen.queryByText('縦位置')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Issue#63: 上級者向けフィルター（3項目のみ）', () => {
+    it('上級者向けフィルターを開くと機材種別・焦点距離・ISO感度のみ表示される', async () => {
+      const user = userEvent.setup()
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+
+      // 機材種別
+      expect(screen.getByText('機材種別')).toBeInTheDocument()
+      expect(screen.getByText('一眼レフ')).toBeInTheDocument()
+      expect(screen.getByText('ミラーレス')).toBeInTheDocument()
+
+      // 焦点距離
+      expect(screen.getByText('焦点距離（フルサイズ換算）')).toBeInTheDocument()
+      expect(screen.getByText(/広角（24mm未満）/)).toBeInTheDocument()
+
+      // ISO感度（4段階）
+      expect(screen.getByText('ISO感度')).toBeInTheDocument()
+      expect(screen.getByText('ISO 400以下')).toBeInTheDocument()
+      expect(screen.getByText('ISO 1600以下')).toBeInTheDocument()
+      expect(screen.getByText('ISO 6400以下')).toBeInTheDocument()
+      expect(screen.getByText('ISO 12800以下')).toBeInTheDocument()
+    })
+
+    it('上級者向けフィルターに撮影日からの経過期間が含まれない', async () => {
+      const user = userEvent.setup()
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      // 上級者向けフィルターを開く前に経過期間が表示されていることを確認（通常フィルターにある）
+      expect(screen.getByText('1週間以内')).toBeInTheDocument()
+
+      // 上級者向けフィルターを開いても、撮影日からの経過期間のラベルは上級者セクションにない
+      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+
+      // 撮影日からの経過期間のラベルは通常フィルターにのみ存在する（1つだけ）
+      const periodLabels = screen.getAllByText('撮影日からの経過期間')
+      expect(periodLabels).toHaveLength(1)
+    })
+
+    it('上級者向けフィルターにアスペクト比/写真の向きが含まれない', async () => {
+      const user = userEvent.setup()
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+
+      // 写真の向きのラベルは通常フィルターにのみ存在する（1つだけ）
+      const orientationLabels = screen.getAllByText('写真の向き')
+      expect(orientationLabels).toHaveLength(1)
+    })
+  })
+
+  describe('Issue#63: maxAgeDays（APIパラメータ変更）', () => {
+    it('onApplyコールバックにmaxAgeDaysが含まれる（maxAgeYearsではない）', async () => {
+      const mockOnApply = vi.fn()
+      const user = userEvent.setup()
+
+      render(
+        <FilterPanel
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onApply={mockOnApply}
+        />
+      )
+
+      // 経過期間を選択
+      await user.click(screen.getByText('3ヶ月以内'))
+
+      // 適用
+      await user.click(screen.getByRole('button', { name: '適用' }))
+
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          maxAgeDays: 90,
+        })
+      )
+      // maxAgeYearsは含まれない
+      const calledWith = mockOnApply.mock.calls[0][0]
+      expect(calledWith).not.toHaveProperty('maxAgeYears')
+    })
+  })
+
+  describe('Issue#63: クリア動作', () => {
+    it('クリアボタンで全フィルター（通常+上級者）がリセットされる', async () => {
+      const mockOnApply = vi.fn()
+      const user = userEvent.setup()
+
+      render(
+        <FilterPanel
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onApply={mockOnApply}
+        />
+      )
+
+      // 通常フィルターで選択
+      await user.click(screen.getByRole('button', { name: /自然風景/ }))
+      await user.click(screen.getByText('3ヶ月以内'))
+      await user.click(screen.getByText('横向き'))
+
+      // 上級者フィルターを開いて選択
+      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+      await user.click(screen.getByText('ミラーレス'))
+
+      // クリア
+      await user.click(screen.getByRole('button', { name: 'クリア' }))
+
+      // 適用
+      await user.click(screen.getByRole('button', { name: '適用' }))
+
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          categories: [],
+          months: [],
+          timesOfDay: [],
+          weathers: [],
+          deviceType: undefined,
+          maxAgeDays: undefined,
+          aspectRatio: undefined,
+          focalLengthRange: undefined,
+          maxIso: undefined,
+        })
+      )
+    })
+  })
+
+  describe('UI Elements（基本）', () => {
     it('renders when open prop is true', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      // sr-onlyだが、SheetTitleは存在する
       expect(screen.getByText('フィルター')).toBeInTheDocument()
-    })
-
-    it('renders all category filter buttons', () => {
-      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
-
-      const categories = ['風景', '街並み', '植物', '動物', '自動車', 'バイク', '鉄道', '飛行機', '食べ物', 'ポートレート', '星空', 'その他']
-
-      categories.forEach(category => {
-        expect(screen.getByRole('button', { name: new RegExp(category) })).toBeInTheDocument()
-      })
     })
 
     it('renders all month filter buttons', () => {
@@ -46,7 +243,6 @@ describe('FilterPanel', () => {
 
       const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 
-      // 各月のボタンが存在することを確認（アイコンと月名を含むボタン）
       const allButtons = screen.getAllByRole('button')
       months.forEach(month => {
         const monthButton = allButtons.find(btn =>
@@ -76,139 +272,16 @@ describe('FilterPanel', () => {
       })
     })
 
-    it('renders clear button', () => {
+    it('renders clear and apply buttons', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
       expect(screen.getByRole('button', { name: 'クリア' })).toBeInTheDocument()
-    })
-
-    it('renders apply button', () => {
-      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
-
       expect(screen.getByRole('button', { name: '適用' })).toBeInTheDocument()
     })
   })
 
-  describe('Category Icons', () => {
-    it('renders category icons for each category button', () => {
-      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
-
-      // カテゴリアイコンがレンダリングされることを確認
-      // SVGまたはアイコンコンポーネントが存在するか
-      const buttons = screen.getAllByRole('button')
-      const categoryButtons = buttons.filter(btn =>
-        ['風景', '街並み', '植物'].some(cat => btn.textContent?.includes(cat))
-      )
-
-      expect(categoryButtons.length).toBeGreaterThan(0)
-    })
-  })
-
-  describe('Month Icons', () => {
-    it('renders month icons for each month button', () => {
-      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
-
-      // 月のボタンが正しくレンダリングされることを確認
-      const monthButtons = screen.getAllByRole('button').filter(btn =>
-        ['1月', '2月', '3月'].some(month => btn.textContent?.includes(month))
-      )
-
-      expect(monthButtons.length).toBeGreaterThan(0)
-    })
-  })
-
-  describe('Time of Day Icons', () => {
-    it('renders time icons for each time period button', () => {
-      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
-
-      // 時間帯のボタンが正しくレンダリングされることを確認
-      const timeButtons = screen.getAllByRole('button').filter(btn =>
-        ['朝', '昼', '夕方', '夜'].some(time => btn.textContent?.includes(time))
-      )
-
-      expect(timeButtons.length).toBe(4)
-    })
-  })
-
-  describe('Weather Icons', () => {
-    it('renders weather icons for each weather condition button', () => {
-      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
-
-      // 天候のボタンが正しくレンダリングされることを確認
-      const weatherButtons = screen.getAllByRole('button').filter(btn =>
-        ['晴れ', '曇り', '雨', '雪'].some(weather => btn.textContent?.includes(weather))
-      )
-
-      expect(weatherButtons.length).toBe(4)
-    })
-  })
-
-  describe('Issue#46: Advanced Filter UI', () => {
-    it('renders advanced filter toggle button', () => {
-      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
-
-      expect(screen.getByRole('button', { name: /上級者向けフィルター/ })).toBeInTheDocument()
-    })
-
-    it('advanced filter section is hidden by default', () => {
-      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
-
-      // 詳細フィルター項目はデフォルトで非表示
-      expect(screen.queryByText('ミラーレス')).not.toBeInTheDocument()
-    })
-
-    it('shows advanced filter items when toggle button is clicked', async () => {
-      const user = userEvent.setup()
-      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
-
-      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
-
-      // 機材種別
-      expect(screen.getByText('一眼レフ')).toBeInTheDocument()
-      expect(screen.getByText('ミラーレス')).toBeInTheDocument()
-      expect(screen.getByText('コンパクトデジカメ')).toBeInTheDocument()
-      expect(screen.getByText('スマートフォン')).toBeInTheDocument()
-      expect(screen.getByText('フィルム')).toBeInTheDocument()
-      // 「その他」はカテゴリと機材種別の両方にあるため、getAllByRoleを使用
-      const otherButtons = screen.getAllByRole('button', { name: 'その他' })
-      expect(otherButtons.length).toBe(2)
-
-      // 撮影日からの経過期間
-      expect(screen.getByText('1週間以内')).toBeInTheDocument()
-      expect(screen.getByText('1ヶ月以内')).toBeInTheDocument()
-      expect(screen.getByText('1年以内')).toBeInTheDocument()
-      expect(screen.getByText('3年以内')).toBeInTheDocument()
-
-      // アスペクト比
-      expect(screen.getByText('縦位置')).toBeInTheDocument()
-      expect(screen.getByText('横位置')).toBeInTheDocument()
-      expect(screen.getByText('正方形')).toBeInTheDocument()
-
-      // 焦点距離（フルサイズ換算）
-      expect(screen.getByText('焦点距離（フルサイズ換算）')).toBeInTheDocument()
-      expect(screen.getByText(/広角（24mm未満）/)).toBeInTheDocument()
-      expect(screen.getByText(/標準（24-70mm）/)).toBeInTheDocument()
-      expect(screen.getByText(/望遠（70-300mm）/)).toBeInTheDocument()
-      expect(screen.getByText(/超望遠（301mm以上）/)).toBeInTheDocument()
-
-      // ISO感度
-      expect(screen.getByText(/低感度/)).toBeInTheDocument()
-    })
-
-    it('hides advanced filter items when toggle is clicked again', async () => {
-      const user = userEvent.setup()
-      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
-
-      // 開く
-      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
-      expect(screen.getByText('ミラーレス')).toBeInTheDocument()
-
-      // 閉じる
-      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
-      expect(screen.queryByText('ミラーレス')).not.toBeInTheDocument()
-    })
-
-    it('includes advanced filter conditions in onApply callback', async () => {
+  describe('フィルター適用', () => {
+    it('選択したジャンルがonApplyに渡される', async () => {
       const mockOnApply = vi.fn()
       const user = userEvent.setup()
 
@@ -220,23 +293,18 @@ describe('FilterPanel', () => {
         />
       )
 
-      // 詳細フィルターを開く
-      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
-
-      // ミラーレスを選択
-      await user.click(screen.getByText('ミラーレス'))
-
-      // 適用
+      await user.click(screen.getByRole('button', { name: /自然風景/ }))
+      await user.click(screen.getByRole('button', { name: /街並み/ }))
       await user.click(screen.getByRole('button', { name: '適用' }))
 
       expect(mockOnApply).toHaveBeenCalledWith(
         expect.objectContaining({
-          deviceType: 'MIRRORLESS',
+          categories: expect.arrayContaining(['自然風景', '街並み']),
         })
       )
     })
 
-    it('clears advanced filter selections when clear button is clicked', async () => {
+    it('何も選択せずに適用すると空の配列が渡される', async () => {
       const mockOnApply = vi.fn()
       const user = userEvent.setup()
 
@@ -248,149 +316,14 @@ describe('FilterPanel', () => {
         />
       )
 
-      // 詳細フィルターを開く
-      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
-
-      // ミラーレスを選択
-      await user.click(screen.getByText('ミラーレス'))
-
-      // クリア
-      await user.click(screen.getByRole('button', { name: 'クリア' }))
-
-      // 適用
       await user.click(screen.getByRole('button', { name: '適用' }))
 
-      // 詳細フィルターがリセットされている
-      expect(mockOnApply).toHaveBeenCalledWith(
-        expect.objectContaining({
-          deviceType: undefined,
-          maxAgeYears: undefined,
-          aspectRatio: undefined,
-          focalLengthRange: undefined,
-          maxIso: undefined,
-        })
-      )
-    })
-  })
-
-  describe('Issue#16: Filter Application', () => {
-    it('calls onApply callback with selected filters when apply button is clicked', async () => {
-      const mockOnApply = vi.fn()
-      const user = userEvent.setup()
-
-      render(
-        <FilterPanel
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          onApply={mockOnApply}
-        />
-      )
-
-      // フィルター条件を選択
-      const landscapeButton = screen.getByRole('button', { name: /風景/ })
-      await user.click(landscapeButton)
-
-      // 月のボタンは複数候補があるため、getAllByRoleとfilterを使用
-      const monthButtons = screen.getAllByRole('button').filter(btn => btn.textContent === '1月')
-      await user.click(monthButtons[0])
-
-      const morningButton = screen.getByRole('button', { name: /朝/ })
-      await user.click(morningButton)
-
-      const sunnyButton = screen.getByRole('button', { name: /晴れ/ })
-      await user.click(sunnyButton)
-
-      // 「適用」ボタンをクリック
-      const applyButton = screen.getByRole('button', { name: '適用' })
-      await user.click(applyButton)
-
-      // onApplyが選択されたフィルター条件とともに呼び出されることを確認
-      expect(mockOnApply).toHaveBeenCalledWith(
-        expect.objectContaining({
-          categories: ['風景'],
-          months: ['1月'],
-          timesOfDay: ['朝'],
-          weathers: ['晴れ'],
-
-        })
-      )
-    })
-
-    it('calls onApply with empty arrays when no filters are selected', async () => {
-      const mockOnApply = vi.fn()
-      const user = userEvent.setup()
-
-      render(
-        <FilterPanel
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          onApply={mockOnApply}
-        />
-      )
-
-      // 「適用」ボタンをクリック（何も選択せずに）
-      const applyButton = screen.getByRole('button', { name: '適用' })
-      await user.click(applyButton)
-
-      // onApplyが空の配列とともに呼び出されることを確認
       expect(mockOnApply).toHaveBeenCalledWith(
         expect.objectContaining({
           categories: [],
           months: [],
           timesOfDay: [],
           weathers: [],
-
-        })
-      )
-    })
-
-    it('resets all filters when clear button is clicked', async () => {
-      const user = userEvent.setup()
-
-      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
-
-      // フィルター条件を選択
-      const landscapeButton = screen.getByRole('button', { name: /風景/ })
-      await user.click(landscapeButton)
-
-      // 選択されたことを確認（variant="default"のスタイルが適用される）
-      // Note: この確認方法は実装に依存するため、実際のDOMを確認する必要がある
-
-      // 「クリア」ボタンをクリック
-      const clearButton = screen.getByRole('button', { name: 'クリア' })
-      await userEvent.click(clearButton)
-
-      // すべてのフィルターがリセットされることを確認
-      // Note: 実装後、選択状態が解除されることを確認する方法を追加
-    })
-
-    it('maintains filter selection state until apply or clear is clicked', async () => {
-      const mockOnApply = vi.fn()
-      const user = userEvent.setup()
-
-      render(
-        <FilterPanel
-          open={true}
-          onOpenChange={mockOnOpenChange}
-          onApply={mockOnApply}
-        />
-      )
-
-      // 複数のフィルター条件を選択
-      const landscapeButton = screen.getByRole('button', { name: /風景/ })
-      await user.click(landscapeButton)
-
-      const cityscapeButton = screen.getByRole('button', { name: /街並み/ })
-      await user.click(cityscapeButton)
-
-      // 「適用」ボタンをクリック
-      const applyButton = screen.getByRole('button', { name: '適用' })
-      await user.click(applyButton)
-
-      // 複数選択されたフィルター条件が渡されることを確認
-      expect(mockOnApply).toHaveBeenCalledWith(
-        expect.objectContaining({
-          categories: expect.arrayContaining(['風景', '街並み'])
         })
       )
     })
