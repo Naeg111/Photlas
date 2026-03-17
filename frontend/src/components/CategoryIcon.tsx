@@ -34,7 +34,8 @@ export function CategoryIcon({
         fill="currentColor"
         className={className}
       >
-        <path d="M12 2L3 9v12h6v-6h6v6h6V9L12 2z" />
+        {/* 寺社・建築物をイメージした柱と屋根 */}
+        <path d="M12 3L4 9h2v9H4v2h16v-2h-2V9h2L12 3zM10 18H8v-7h2v7zm4 0h-2v-7h2v7z" />
       </svg>
     ),
     夜景: (
@@ -43,7 +44,9 @@ export function CategoryIcon({
         fill="currentColor"
         className={className}
       >
-        <path d="M12.43 2.3c-2.38-.59-4.68-.27-6.63.64-.35.16-.41.64-.1.86C8.3 5.6 10 8.6 10 12c0 3.4-1.7 6.4-4.3 8.2-.32.22-.26.7.09.86 1.28.6 2.71.94 4.21.94 6.05 0 10.85-5.38 9.87-11.6-.61-3.92-3.59-7.16-7.44-8.1z" />
+        {/* 都市のビル群と星 */}
+        <path d="M1 21h22v-2H1v2zM3 19h4V9H3v10zM9 19h4V5H9v14zM15 19h4v-8h-4v8z" />
+        <path d="M19 3l.5 1.5L21 5l-1.5.5L19 7l-.5-1.5L17 5l1.5-.5L19 3z" />
       </svg>
     ),
     グルメ: (
@@ -118,7 +121,8 @@ export function CategoryIcon({
         fill="currentColor"
         className={className}
       >
-        <path d="M22 3.85l-1.78-.92L12 8.76 3.78 2.93 2 3.85l8.63 4.47L2 12.78l1.78.92L12 8.88l8.22 4.82L22 12.78l-8.63-4.46L22 3.85zM12 18l-4 2v2h8v-2l-4-2z" />
+        {/* 飛翔する鳥のシルエット */}
+        <path d="M3 8c0 0 4-2 7 0s5-1 7-3c-1 2-2 3.5-3 4 1 1 2 3 2 5-2-2-4-3-6-3s-5 2-7 4c0-2 1-4 3-5C4 9 3 8 3 8z" />
       </svg>
     ),
     飛行機: (

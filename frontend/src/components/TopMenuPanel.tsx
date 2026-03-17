@@ -46,7 +46,7 @@ export function TopMenuPanel({
               アプリケーションのメインメニュー
             </SheetDescription>
           </SheetHeader>
-          <div className="flex flex-col gap-2 mt-[30px]">
+          <div className="flex flex-col gap-2 mt-[25px]">
             <Button
               variant="ghost"
               className="justify-start gap-3"
