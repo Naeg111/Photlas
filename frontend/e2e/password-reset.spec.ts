@@ -150,6 +150,51 @@ test.describe('パスワードリセット機能', () => {
       await expect(page.getByText('パスワードは8文字以上20文字以内で入力してください')).toBeVisible()
     })
 
+    test('パスワードに大文字が含まれない場合エラーが表示される', async ({ page }) => {
+      await page.goto('/reset-password?token=test-token')
+      await page.waitForTimeout(1000)
+
+      await page.getByLabel('新しいパスワード', { exact: true }).fill('password1')
+      await page.getByLabel('新しいパスワード（確認）').fill('password1')
+      await page.getByRole('button', { name: 'パスワードを再設定' }).click()
+
+      await expect(page.getByText(/大文字/)).toBeVisible({ timeout: 5000 })
+    })
+
+    test('パスワードに小文字が含まれない場合エラーが表示される', async ({ page }) => {
+      await page.goto('/reset-password?token=test-token')
+      await page.waitForTimeout(1000)
+
+      await page.getByLabel('新しいパスワード', { exact: true }).fill('PASSWORD1')
+      await page.getByLabel('新しいパスワード（確認）').fill('PASSWORD1')
+      await page.getByRole('button', { name: 'パスワードを再設定' }).click()
+
+      await expect(page.getByText(/小文字/)).toBeVisible({ timeout: 5000 })
+    })
+
+    test('パスワードに数字が含まれない場合エラーが表示される', async ({ page }) => {
+      await page.goto('/reset-password?token=test-token')
+      await page.waitForTimeout(1000)
+
+      await page.getByLabel('新しいパスワード', { exact: true }).fill('Passwords')
+      await page.getByLabel('新しいパスワード（確認）').fill('Passwords')
+      await page.getByRole('button', { name: 'パスワードを再設定' }).click()
+
+      await expect(page.getByText(/数字/)).toBeVisible({ timeout: 5000 })
+    })
+
+    test('パスワードが20文字を超える場合エラーが表示される', async ({ page }) => {
+      await page.goto('/reset-password?token=test-token')
+      await page.waitForTimeout(1000)
+
+      const longPassword = 'Abcdefghij1234567890k'
+      await page.getByLabel('新しいパスワード', { exact: true }).fill(longPassword)
+      await page.getByLabel('新しいパスワード（確認）').fill(longPassword)
+      await page.getByRole('button', { name: 'パスワードを再設定' }).click()
+
+      await expect(page.getByText(/20文字/)).toBeVisible({ timeout: 5000 })
+    })
+
     test('パスワードの表示/非表示を切り替えられる', async ({ page }) => {
       await page.goto('/reset-password?token=test-token')
 

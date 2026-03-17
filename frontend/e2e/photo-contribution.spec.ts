@@ -27,8 +27,8 @@ import { getTestImagePath, ensureFixtures, saveTestImage } from './helpers/test-
 
 // テスト用定数
 const PHOTO_CATEGORIES = [
-  '風景', '街並み', '植物', '動物', '自動車', 'バイク',
-  '鉄道', '飛行機', '食べ物', 'ポートレート', '星空', 'その他',
+  '自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物',
+  '動物', '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星空', 'その他',
 ]
 
 // テスト用の固定アカウント（E2Eテスト用に事前作成）
@@ -99,14 +99,15 @@ test.describe('写真投稿機能', () => {
       await expect(page.getByPlaceholder('例：夕暮れの東京タワー')).toBeVisible()
     })
 
-    test('投稿ダイアログに12種類のカテゴリが表示される', async ({ page }) => {
+    test('投稿ダイアログに14種類のジャンルが表示される', async ({ page }) => {
       await createAccountAndLogin(page, 'photo-categories')
       await openPhotoContributionDialog(page)
 
-      // 全カテゴリがチェックボックスとして表示されていることを確認
+      // 全ジャンルがチェックボックスとして表示されていることを確認
       for (const category of PHOTO_CATEGORIES) {
         await expect(page.getByRole('checkbox', { name: category })).toBeVisible()
       }
+      expect(PHOTO_CATEGORIES).toHaveLength(14)
     })
   })
 
@@ -161,7 +162,7 @@ test.describe('写真投稿機能', () => {
         // タイトルとカテゴリを入力
         await page.getByPlaceholder('例：夕暮れの東京タワー').fill('テストタイトル')
         // カテゴリのチェックボックスをクリック
-        await page.getByRole('checkbox', { name: '風景' }).click()
+        await page.getByRole('checkbox', { name: '自然風景' }).click()
 
         // 投稿ボタンがdisabledであることを確認
         const submitButton = page.getByRole('button', { name: '投稿する' })
@@ -177,8 +178,8 @@ test.describe('写真投稿機能', () => {
         await page.locator('input[type="file"]').setInputFiles(testImagePath)
         await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
         // カテゴリのチェックボックスをクリック
-        await page.getByRole('checkbox', { name: '風景' }).click()
-        await expect(page.getByRole('checkbox', { name: '風景' })).toBeChecked()
+        await page.getByRole('checkbox', { name: '自然風景' }).click()
+        await expect(page.getByRole('checkbox', { name: '自然風景' })).toBeChecked()
         // 機材種別を選択
         await page.getByText('一眼レフ', { exact: true }).click()
 
@@ -211,17 +212,17 @@ test.describe('写真投稿機能', () => {
         // 大きいファイルを選択
         const largeImagePath = getTestImagePath('large')
 
-        // アラートハンドラーを設定
-        page.once('dialog', async (dialog) => {
-          expect(dialog.message()).toContain('50MB')
-          await dialog.accept()
-        })
+        // アラートハンドラーを設定（Promiseで確実にダイアログを待機）
+        const dialogPromise = page.waitForEvent('dialog')
 
         const fileInput = page.locator('input[type="file"]')
         await fileInput.setInputFiles(largeImagePath)
 
+        const dialog = await dialogPromise
+        expect(dialog.message()).toContain('50MB')
+        await dialog.accept()
+
         // プレビューが表示されないことを確認
-        await page.waitForTimeout(1000)
         await expect(page.locator('[data-testid="photo-crop-area"]')).not.toBeVisible()
       })
 
@@ -232,17 +233,17 @@ test.describe('写真投稿機能', () => {
         // 無効な形式のファイルを選択
         const invalidImagePath = getTestImagePath('invalid')
 
-        // アラートハンドラーを設定
-        page.once('dialog', async (dialog) => {
-          expect(dialog.message()).toContain('JPEG、PNG、HEIC')
-          await dialog.accept()
-        })
+        // アラートハンドラーを設定（Promiseで確実にダイアログを待機）
+        const dialogPromise = page.waitForEvent('dialog')
 
         const fileInput = page.locator('input[type="file"]')
         await fileInput.setInputFiles(invalidImagePath)
 
+        const dialog = await dialogPromise
+        expect(dialog.message()).toContain('JPEG、PNG、HEIC')
+        await dialog.accept()
+
         // プレビューが表示されないことを確認
-        await page.waitForTimeout(1000)
         await expect(page.locator('[data-testid="photo-crop-area"]')).not.toBeVisible()
       })
     })
@@ -288,7 +289,7 @@ test.describe('写真投稿機能', () => {
       await openPhotoContributionDialog(page)
 
       // カテゴリのチェックボックスをクリック（aria-labelで指定）
-      const categoryCheckbox = page.getByRole('checkbox', { name: '風景' })
+      const categoryCheckbox = page.getByRole('checkbox', { name: '自然風景' })
       await categoryCheckbox.click()
 
       // チェックされていることを確認
@@ -300,12 +301,12 @@ test.describe('写真投稿機能', () => {
       await openPhotoContributionDialog(page)
 
       // 複数のカテゴリを選択
-      await page.getByRole('checkbox', { name: '風景' }).click()
+      await page.getByRole('checkbox', { name: '自然風景' }).click()
       await page.getByRole('checkbox', { name: '街並み' }).click()
       await page.getByRole('checkbox', { name: '星空' }).click()
 
       // 3つとも選択されている
-      await expect(page.getByRole('checkbox', { name: '風景' })).toBeChecked()
+      await expect(page.getByRole('checkbox', { name: '自然風景' })).toBeChecked()
       await expect(page.getByRole('checkbox', { name: '街並み' })).toBeChecked()
       await expect(page.getByRole('checkbox', { name: '星空' })).toBeChecked()
     })
@@ -314,7 +315,7 @@ test.describe('写真投稿機能', () => {
       await createAccountAndLogin(page, 'category-deselect')
       await openPhotoContributionDialog(page)
 
-      const categoryCheckbox = page.getByRole('checkbox', { name: '風景' })
+      const categoryCheckbox = page.getByRole('checkbox', { name: '自然風景' })
 
       // 選択
       await categoryCheckbox.click()
@@ -389,8 +390,8 @@ test.describe('写真投稿機能', () => {
       await page.getByPlaceholder('例：夕暮れの東京タワー').fill(uniqueTitle)
 
       // 3. カテゴリを選択（チェックボックスをクリック）
-      await page.getByRole('checkbox', { name: '風景' }).click()
-      await expect(page.getByRole('checkbox', { name: '風景' })).toBeChecked()
+      await page.getByRole('checkbox', { name: '自然風景' }).click()
+      await expect(page.getByRole('checkbox', { name: '自然風景' })).toBeChecked()
 
       // 4. 機材種別を選択
       await page.getByText('一眼レフ', { exact: true }).click()
@@ -418,8 +419,8 @@ test.describe('写真投稿機能', () => {
       await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
       await page.getByPlaceholder('例：夕暮れの東京タワー').fill('リセットテスト')
       // カテゴリをチェックボックスで選択
-      await page.getByRole('checkbox', { name: '風景' }).click()
-      await expect(page.getByRole('checkbox', { name: '風景' })).toBeChecked()
+      await page.getByRole('checkbox', { name: '自然風景' }).click()
+      await expect(page.getByRole('checkbox', { name: '自然風景' })).toBeChecked()
       // 機材種別を選択
       await page.getByText('一眼レフ', { exact: true }).click()
 
@@ -427,11 +428,9 @@ test.describe('写真投稿機能', () => {
       await expect(page.getByRole('button', { name: '投稿する' })).toBeEnabled({ timeout: 3000 })
       await page.getByRole('button', { name: '投稿する' }).click()
 
-      // アップロード完了を待機（成功またはエラー）
+      // アップロード完了を待機
       const successMsg = page.getByText('完了しました')
-      const errorMsg = page.getByText('エラー 時間をおいて再度お試しください')
-      await expect(successMsg.or(errorMsg)).toBeVisible({ timeout: 30000 })
-      await expect(successMsg).toBeVisible()
+      await expect(successMsg).toBeVisible({ timeout: 30000 })
 
       // ダイアログが閉じるのを待機
       await page.waitForTimeout(2000)
@@ -487,7 +486,7 @@ test.describe('写真投稿機能', () => {
       const testImagePath = getTestImagePath('small')
       await page.locator('input[type="file"]').setInputFiles(testImagePath)
       await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
-      await page.getByRole('checkbox', { name: '風景' }).click()
+      await page.getByRole('checkbox', { name: '自然風景' }).click()
 
       // 投稿ボタンがdisabledであることを確認
       const submitButton = page.getByRole('button', { name: '投稿する' })

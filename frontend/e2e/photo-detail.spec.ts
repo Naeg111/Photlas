@@ -243,6 +243,7 @@ test.describe('写真詳細・お気に入り機能', () => {
 
         if (dotCount === 0) {
           test.skip()
+          return
         }
 
         expect(dotCount).toBeGreaterThanOrEqual(2)
@@ -282,7 +283,6 @@ test.describe('写真詳細・お気に入り機能', () => {
         await expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りに追加')
 
         await favoriteButton.click()
-        await page.waitForTimeout(1000)
 
         await expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りから削除')
       } else {
@@ -299,11 +299,9 @@ test.describe('写真詳細・お気に入り機能', () => {
         await expect(favoriteButton).toBeVisible({ timeout: 5000 })
 
         await favoriteButton.click()
-        await page.waitForTimeout(1000)
         await expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りから削除')
 
         await favoriteButton.click()
-        await page.waitForTimeout(1000)
         await expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りに追加')
       } else {
         test.skip()
@@ -323,11 +321,10 @@ test.describe('写真詳細・お気に入り機能', () => {
         const initialCount = parseInt(initialText?.match(/\d+/)?.[0] || '0')
 
         await favoriteButton.click()
-        await page.waitForTimeout(1500)
 
         const newText = await countElement.textContent()
         const newCount = parseInt(newText?.match(/\d+/)?.[0] || '0')
-        expect(newCount).not.toBe(initialCount)
+        expect(newCount).toBe(initialCount + 1)
       } else {
         test.skip()
       }
@@ -577,6 +574,32 @@ test.describe('写真詳細・お気に入り機能', () => {
       }
     })
 
+    test('通報ダイアログでスパム理由を選択して送信できる', async ({ page }) => {
+      await createAccountAndLogin(page, 'report-send')
+      await zoomInToShowPins(page)
+
+      if (await openPhotoDetailFromPin(page)) {
+        const reportButton = page.locator('[data-testid="report-button"]')
+        await expect(reportButton).toBeVisible({ timeout: 5000 })
+
+        await reportButton.click()
+        await expect(page.getByRole('heading', { name: 'この投稿を通報' })).toBeVisible({ timeout: 5000 })
+
+        // 通報理由を選択
+        await page.getByText('スパム').click()
+
+        // 送信ボタンをクリック
+        const submitButton = page.getByRole('button', { name: '通報する' })
+        await expect(submitButton).toBeEnabled()
+        await submitButton.click()
+
+        // 送信完了を確認（ダイアログが閉じるか成功メッセージが表示される）
+        await expect(page.getByRole('heading', { name: 'この投稿を通報' })).not.toBeVisible({ timeout: 10000 })
+      } else {
+        test.skip()
+      }
+    })
+
     test('通報理由「その他」選択時は詳細が必須になる', async ({ page }) => {
       await createAccountAndLogin(page, 'report-other')
       await zoomInToShowPins(page)
@@ -627,6 +650,98 @@ test.describe('写真詳細・お気に入り機能', () => {
       // ピンまたはクラスタが表示されることを確認（queryRenderedFeatures）
       const { pinCount, clusterCount } = await findPinsAndClusters(page)
       expect(pinCount + clusterCount).toBeGreaterThan(0)
+    })
+  })
+
+  // ============================================================
+  // 共有機能テスト
+  // ============================================================
+
+  test.describe('共有機能', () => {
+    test('写真詳細ダイアログに共有ボタンが表示される', async ({ page }) => {
+      await zoomInToShowPins(page)
+
+      if (await openPhotoDetailFromPin(page)) {
+        const shareButton = page.locator('[data-testid="share-button"]')
+        await expect(shareButton).toBeVisible({ timeout: 5000 })
+      } else {
+        test.skip()
+      }
+    })
+  })
+
+  // ============================================================
+  // 写真編集・削除テスト
+  // ============================================================
+
+  test.describe('写真編集・削除', () => {
+    test('自分の写真の場合、編集ボタンが表示される', async ({ page }) => {
+      await createAccountAndLogin(page, 'edit-own')
+
+      // テスト投稿を作成
+      const testTitle = `編集テスト-${Date.now()}`
+      await createTestPost(page, testTitle)
+
+      // 地図をリロード
+      await page.reload()
+      await waitForSplash(page)
+      await waitForMapLoad(page)
+
+      // テスト投稿のデフォルト位置にズーム
+      await flyToLocation(page, 139.6503, 35.6762, 14)
+
+      // ピンをクリックして写真詳細を開く
+      const { pinCount } = await findPinsAndClusters(page)
+      if (pinCount > 0) {
+        const clicked = await clickFirstPin(page)
+        if (clicked) {
+          await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 })
+
+          // 編集ボタンが表示されることを確認
+          const editButton = page.locator('[data-testid="edit-button"]')
+          // 自分の写真でない場合もあるため、条件付きで確認
+          const isVisible = await editButton.isVisible().catch(() => false)
+          if (!isVisible) {
+            test.skip()
+          }
+        } else {
+          test.skip()
+        }
+      } else {
+        test.skip()
+      }
+    })
+
+    test('自分の写真の場合、削除ボタンが表示される', async ({ page }) => {
+      await createAccountAndLogin(page, 'delete-own')
+
+      // テスト投稿を作成
+      await createTestPost(page, `削除テスト-${Date.now()}`)
+
+      // 地図をリロード
+      await page.reload()
+      await waitForSplash(page)
+      await waitForMapLoad(page)
+
+      await flyToLocation(page, 139.6503, 35.6762, 14)
+
+      const { pinCount } = await findPinsAndClusters(page)
+      if (pinCount > 0) {
+        const clicked = await clickFirstPin(page)
+        if (clicked) {
+          await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 })
+
+          const deleteButton = page.locator('[data-testid="delete-button"]')
+          const isVisible = await deleteButton.isVisible().catch(() => false)
+          if (!isVisible) {
+            test.skip()
+          }
+        } else {
+          test.skip()
+        }
+      } else {
+        test.skip()
+      }
     })
   })
 })

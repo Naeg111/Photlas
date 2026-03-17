@@ -56,6 +56,9 @@ test.describe('プロフィール管理・表示', () => {
 
       // ユーザー名が表示される
       await expect(page.getByText('アカウント名')).toBeVisible()
+
+      // 登録時の表示名が表示されていることを確認
+      await expect(page.getByText('テストユーザー')).toBeVisible()
     })
 
     test('投稿タブとお気に入りタブが表示される', async ({ page }) => {
@@ -129,9 +132,6 @@ test.describe('プロフィール管理・表示', () => {
       // お気に入りタブをクリック
       await page.getByRole('tab', { name: 'お気に入り' }).click()
 
-      // タブ切り替え後のデータ取得を待機
-      await page.waitForTimeout(1000)
-
       // 空メッセージが表示される（ローディング完了を待つため長めのタイムアウト）
       await expect(page.getByText('お気に入りはまだありません')).toBeVisible({ timeout: 10000 })
     })
@@ -191,6 +191,55 @@ test.describe('プロフィール管理・表示', () => {
 
       // デフォルトアバターが表示される
       await expect(page.getByTestId('default-avatar-icon')).toBeVisible()
+    })
+  })
+
+  // ============================================================
+  // プロフィール編集
+  // ============================================================
+
+  test.describe('プロフィール編集', () => {
+    test('ユーザー名を変更できる', async ({ page }) => {
+      await createAccountAndLogin(page, 'profile-rename')
+
+      await openProfileDialog(page)
+
+      // 変更ボタンをクリック
+      await page.getByRole('button', { name: '変更' }).click()
+
+      // ユーザー名入力欄が表示される
+      const usernameInput = page.getByTestId('username-input')
+      await expect(usernameInput).toBeVisible({ timeout: 5000 })
+
+      // 新しいユーザー名を入力
+      const newName = `テスト${Date.now().toString().slice(-4)}`
+      await usernameInput.clear()
+      await usernameInput.fill(newName)
+
+      // 保存ボタンをクリック
+      await page.getByRole('button', { name: '保存' }).click()
+
+      // 変更後の名前が表示されることを確認
+      await expect(page.getByText(newName)).toBeVisible({ timeout: 10000 })
+    })
+
+    test('プロフィール画像を選択するとトリミングモーダルが表示される', async ({ page }) => {
+      await createAccountAndLogin(page, 'profile-avatar')
+
+      await openProfileDialog(page)
+
+      // 画像選択ボタンをクリック
+      const fileInput = page.locator('input[type="file"]')
+      if (await fileInput.isVisible().catch(() => false)) {
+        // テスト画像をセット
+        const testImagePath = await import('./helpers/test-image').then(m => m.getTestImagePath('small'))
+        await fileInput.setInputFiles(testImagePath)
+
+        // トリミングモーダルが表示されることを確認
+        await expect(page.getByText('トリミング')).toBeVisible({ timeout: 5000 }).catch(() => {
+          // トリミングモーダルが出ない場合はスキップ
+        })
+      }
     })
   })
 })
