@@ -42,7 +42,7 @@ export interface MapViewFilterParams {
   times_of_day?: string[]
   weathers?: string[]
   device_type?: string
-  max_age_years?: number
+  max_age_days?: number
   aspect_ratio?: string
   focal_length_range?: string
   max_iso?: number
@@ -404,7 +404,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         appendArrayParams(params, 'times_of_day', filterParams.times_of_day)
         appendArrayParams(params, 'weathers', filterParams.weathers)
         appendScalarParam(params, 'device_type', filterParams.device_type)
-        appendScalarParam(params, 'max_age_years', filterParams.max_age_years)
+        appendScalarParam(params, 'max_age_days', filterParams.max_age_days)
         appendScalarParam(params, 'aspect_ratio', filterParams.aspect_ratio)
         appendScalarParam(params, 'focal_length_range', filterParams.focal_length_range)
         appendScalarParam(params, 'max_iso', filterParams.max_iso)
