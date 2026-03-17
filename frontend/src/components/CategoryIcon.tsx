@@ -10,7 +10,7 @@ export function CategoryIcon({
   className = "w-4 h-4",
 }: CategoryIconProps) {
   const icons: Record<string, JSX.Element> = {
-    風景: (
+    自然風景: (
       <svg
         viewBox="0 0 24 24"
         fill="currentColor"
@@ -28,14 +28,31 @@ export function CategoryIcon({
         <path d="M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm6 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z" />
       </svg>
     ),
-    ポートレート: (
+    建造物: (
       <svg
         viewBox="0 0 24 24"
         fill="currentColor"
         className={className}
       >
-        <circle cx="12" cy="8" r="4" />
-        <path d="M12 14c-4.42 0-8 2.69-8 6v2h16v-2c0-3.31-3.58-6-8-6z" />
+        <path d="M12 2L3 9v12h6v-6h6v6h6V9L12 2z" />
+      </svg>
+    ),
+    夜景: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className={className}
+      >
+        <path d="M12.43 2.3c-2.38-.59-4.68-.27-6.63.64-.35.16-.41.64-.1.86C8.3 5.6 10 8.6 10 12c0 3.4-1.7 6.4-4.3 8.2-.32.22-.26.7.09.86 1.28.6 2.71.94 4.21.94 6.05 0 10.85-5.38 9.87-11.6-.61-3.92-3.59-7.16-7.44-8.1z" />
+      </svg>
+    ),
+    グルメ: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className={className}
+      >
+        <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z" />
       </svg>
     ),
     植物: (
@@ -95,6 +112,15 @@ export function CategoryIcon({
         <path d="M4 15.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V5c0-3.5-3.58-4-8-4s-8 .5-8 4v10.5zm8 1.5c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm6-7H6V5h12v5z" />
       </svg>
     ),
+    野鳥: (
+      <svg
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className={className}
+      >
+        <path d="M22 3.85l-1.78-.92L12 8.76 3.78 2.93 2 3.85l8.63 4.47L2 12.78l1.78.92L12 8.88l8.22 4.82L22 12.78l-8.63-4.46L22 3.85zM12 18l-4 2v2h8v-2l-4-2z" />
+      </svg>
+    ),
     飛行機: (
       <svg
         viewBox="0 0 24 24"
@@ -112,15 +138,6 @@ export function CategoryIcon({
       >
         {/* 星ひとつ */}
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-      </svg>
-    ),
-    食べ物: (
-      <svg
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        className={className}
-      >
-        <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z" />
       </svg>
     ),
     その他: (

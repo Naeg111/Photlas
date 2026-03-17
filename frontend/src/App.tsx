@@ -210,7 +210,7 @@ function MainContent({ onMapReady }: MainContentProps) {
       times_of_day: conditions.timesOfDay.length > 0 ? transformTimesOfDay(conditions.timesOfDay) : undefined,
       weathers: conditions.weathers.length > 0 ? transformWeathers(conditions.weathers) : undefined,
       device_type: conditions.deviceType,
-      max_age_years: conditions.maxAgeYears,
+      max_age_days: conditions.maxAgeDays,
       aspect_ratio: conditions.aspectRatio,
       focal_length_range: conditions.focalLengthRange,
       max_iso: conditions.maxIso,

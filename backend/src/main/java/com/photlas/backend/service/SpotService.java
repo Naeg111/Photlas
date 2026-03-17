@@ -55,7 +55,7 @@ public class SpotService {
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
                                        List<Integer> subjectCategories, List<Integer> months,
                                        List<String> timesOfDay, List<String> weathers,
-                                       Integer minResolution, String deviceType, Integer maxAgeYears,
+                                       Integer minResolution, String deviceType, Integer maxAgeDays,
                                        String aspectRatio, String focalLengthRange, Integer maxIso) {
         logger.info("Getting spots within bounds: north={}, south={}, east={}, west={}", north, south, east, west);
 
@@ -70,13 +70,13 @@ public class SpotService {
         List<String> safeWeathers = (weathers == null || weathers.isEmpty())
             ? List.of("__NONE__") : weathers;
 
-        // Issue#46: 詳細フィルターのセンチネル値変換
+        // Issue#63: 詳細フィルターのセンチネル値変換（max_age_years → max_age_days）
         int safeMinResolution = (minResolution != null) ? minResolution : -1;
         String safeDeviceType = (deviceType != null) ? deviceType : "__NONE__";
-        LocalDateTime safeMaxAgeDate = (maxAgeYears != null)
-            ? LocalDateTime.now().minusYears(maxAgeYears)
+        LocalDateTime safeMaxAgeDate = (maxAgeDays != null)
+            ? LocalDateTime.now().minusDays(maxAgeDays)
             : LocalDateTime.of(1900, 1, 1, 0, 0);
-        boolean hasMaxAge = (maxAgeYears != null);
+        boolean hasMaxAge = (maxAgeDays != null);
         String safeAspectRatio = (aspectRatio != null) ? aspectRatio : "__NONE__";
         String safeFocalLengthRange = (focalLengthRange != null) ? focalLengthRange : "__NONE__";
         int safeMaxIso = (maxIso != null) ? maxIso : -1;
