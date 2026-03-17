@@ -46,6 +46,9 @@ import { API_V1_URL } from './config/api'
  * 全てのダイアログ状態をuseDialogStateフックで集中管理。
  */
 
+/** フローティングボタンの共通サイズ */
+const FLOATING_BUTTON_SIZE = { width: '42px', height: '42px' } as const
+
 /** フローティングボタンの共通スタイル */
 const FLOATING_BUTTON_STYLES = {
   outline: 'bg-white shadow-lg gap-2',
@@ -448,7 +451,7 @@ function MainContent({ onMapReady }: MainContentProps) {
           <Button
             variant="secondary"
             className="rounded-full shadow-lg hover:bg-secondary"
-            style={{ width: '42px', height: '42px' }}
+            style={FLOATING_BUTTON_SIZE}
             onClick={() => mapRef.current?.zoomIn()}
             aria-label="ズームイン"
           >
@@ -457,7 +460,7 @@ function MainContent({ onMapReady }: MainContentProps) {
           <Button
             variant="secondary"
             className="rounded-full shadow-lg hover:bg-secondary"
-            style={{ width: '42px', height: '42px' }}
+            style={FLOATING_BUTTON_SIZE}
             onClick={() => mapRef.current?.zoomOut()}
             aria-label="ズームアウト"
           >
@@ -469,7 +472,7 @@ function MainContent({ onMapReady }: MainContentProps) {
         <Button
           variant="secondary"
           className="rounded-full shadow-lg hover:bg-secondary"
-          style={{ width: '42px', height: '42px' }}
+          style={FLOATING_BUTTON_SIZE}
           onClick={() => mapRef.current?.resetNorthHeading()}
           aria-label="ノースヘディング"
         >
@@ -479,8 +482,8 @@ function MainContent({ onMapReady }: MainContentProps) {
         {/* 現在位置ボタン */}
         <Button
           variant="secondary"
-          className="w-10.5 h-10.5 rounded-full shadow-lg hover:bg-secondary"
-          style={{ width: '42px', height: '42px' }}
+          className="rounded-full shadow-lg hover:bg-secondary"
+          style={FLOATING_BUTTON_SIZE}
           onClick={() => mapRef.current?.centerOnUserLocation()}
           aria-label="現在位置"
         >
