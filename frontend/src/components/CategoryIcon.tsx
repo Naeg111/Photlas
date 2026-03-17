@@ -122,13 +122,13 @@ export function CategoryIcon({
         fill="currentColor"
         className={className}
       >
-        {/* 左向きで止まっている鳥（丸い頭・長い嘴・閉じた羽） */}
-        <circle cx="7" cy="7.5" r="3" />
-        <path d="M2 7.5L4 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <ellipse cx="12" cy="12" rx="7" ry="5" />
-        <path d="M17 15L20 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M15 15L17 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <circle cx="5.5" cy="7" r="0.8" fill="currentColor" />
+        {/* 左向きで止まっている鳥（大きな頭・長い嘴・ふっくらした胴体） */}
+        <circle cx="7.5" cy="7" r="3.5" />
+        <line x1="1.5" y1="7" x2="4" y2="6.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <ellipse cx="13" cy="12.5" rx="8" ry="5.5" />
+        <path d="M18 16L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M16 16L18 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="6" cy="6.3" r="1" fill="currentColor" />
       </svg>
     ),
     飛行機: (
