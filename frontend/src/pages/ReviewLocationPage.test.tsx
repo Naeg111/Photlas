@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import ReviewLocationPage from './ReviewLocationPage'
 
 /**
@@ -25,6 +25,17 @@ vi.mock('react-map-gl', () => ({
   ),
 }))
 
+// Mapbox設定のモック
+vi.mock('../config/mapbox', () => ({
+  MAPBOX_ACCESS_TOKEN: 'test-token',
+  MAPBOX_STYLE: 'mapbox://styles/test',
+}))
+
+// API設定のモック
+vi.mock('../config/api', () => ({
+  API_V1_URL: 'http://localhost:3000/api/v1',
+}))
+
 // AuthContextのモック
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -43,14 +54,16 @@ const renderWithToken = (token?: string) => {
 
   return render(
     <MemoryRouter initialEntries={initialEntries}>
-      <ReviewLocationPage />
+      <Routes>
+        <Route path="/review-location" element={<ReviewLocationPage />} />
+      </Routes>
     </MemoryRouter>
   )
 }
 
 describe('ReviewLocationPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    mockFetch.mockReset()
     global.fetch = mockFetch
   })
 
@@ -61,7 +74,7 @@ describe('ReviewLocationPage', () => {
   })
 
   it('should show accept and reject buttons when review data is loaded', async () => {
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
         suggestionId: 1,
@@ -80,7 +93,7 @@ describe('ReviewLocationPage', () => {
   })
 
   it('should display a map with the review data', async () => {
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
         suggestionId: 1,
