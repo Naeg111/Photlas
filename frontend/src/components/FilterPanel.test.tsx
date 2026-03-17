@@ -257,8 +257,10 @@ describe('FilterPanel', () => {
 
       const times = ['朝', '昼', '夕方', '夜']
 
+      const allButtons = screen.getAllByRole('button')
       times.forEach(time => {
-        expect(screen.getByRole('button', { name: new RegExp(time) })).toBeInTheDocument()
+        const timeButton = allButtons.find(btn => btn.textContent?.trim() === time)
+        expect(timeButton).toBeTruthy()
       })
     })
 
