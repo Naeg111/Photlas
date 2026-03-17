@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -115,16 +116,9 @@ public class LocationSuggestionService {
         photo.setSpotId(newSpot.getSpotId());
         photoRepository.save(photo);
 
-        // ステータスを更新
-        suggestion.setStatus(LocationSuggestionStatus.ACCEPTED);
-        suggestion.setResolvedAt(LocalDateTime.now());
-        locationSuggestionRepository.save(suggestion);
-
+        resolveSuggestion(suggestion, LocationSuggestionStatus.ACCEPTED);
         logger.info("位置情報の指摘を受け入れました: suggestionId={}, newSpotId={}",
                 suggestion.getId(), newSpot.getSpotId());
-
-        // 次の未通知指摘のメール送信
-        sendNextPendingEmail(suggestion.getPhotoId());
     }
 
     /**
@@ -134,22 +128,15 @@ public class LocationSuggestionService {
     public void rejectSuggestion(String reviewToken, String ownerEmail) {
         LocationSuggestion suggestion = findAndValidateSuggestion(reviewToken, ownerEmail);
 
-        // ステータスを更新
-        suggestion.setStatus(LocationSuggestionStatus.REJECTED);
-        suggestion.setResolvedAt(LocalDateTime.now());
-        locationSuggestionRepository.save(suggestion);
+        resolveSuggestion(suggestion, LocationSuggestionStatus.REJECTED);
 
         // 指摘者にメールで拒否を通知
-        User suggester = userRepository.findById(suggestion.getSuggesterId())
-                .orElse(null);
+        User suggester = userRepository.findById(suggestion.getSuggesterId()).orElse(null);
         if (suggester != null) {
             sendRejectionNotification(suggester.getEmail());
         }
 
         logger.info("位置情報の指摘を拒否しました: suggestionId={}", suggestion.getId());
-
-        // 次の未通知指摘のメール送信
-        sendNextPendingEmail(suggestion.getPhotoId());
     }
 
     /**
@@ -172,6 +159,13 @@ public class LocationSuggestionService {
     // private メソッド
     // ========================================
 
+    private void resolveSuggestion(LocationSuggestion suggestion, LocationSuggestionStatus status) {
+        suggestion.setStatus(status);
+        suggestion.setResolvedAt(LocalDateTime.now());
+        locationSuggestionRepository.save(suggestion);
+        sendNextPendingEmail(suggestion.getPhotoId());
+    }
+
     private LocationSuggestion findAndValidateSuggestion(String reviewToken, String ownerEmail) {
         User owner = userRepository.findByEmail(ownerEmail)
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
@@ -183,7 +177,7 @@ public class LocationSuggestionService {
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
 
         if (!photo.getUserId().equals(owner.getId())) {
-            throw new org.springframework.security.access.AccessDeniedException("この指摘をレビューする権限がありません");
+            throw new AccessDeniedException("この指摘をレビューする権限がありません");
         }
 
         return suggestion;
