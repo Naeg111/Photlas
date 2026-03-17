@@ -32,6 +32,8 @@ function generateUniqueEmail(prefix: string = VALID_EMAIL_BASE): string {
  */
 async function openSignUpDialog(page: Page) {
   await page.goto('/')
+  // Cookie同意バナーが表示されないよう、同意済み状態を設定
+  await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
   // スプラッシュ画面が消えるまで待機
   await page.waitForTimeout(3000)
   // メニューを開いて新規登録ダイアログを表示
