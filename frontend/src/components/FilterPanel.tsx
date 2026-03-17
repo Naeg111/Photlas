@@ -303,7 +303,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
             </Button>
 
             {isAdvancedOpen && (
-              <div className="space-y-6 mt-4">
+              <div className="space-y-[30px] mt-4">
                 {/* 機材種別 */}
                 <div>
                   <p className="text-sm font-medium mb-2 text-muted-foreground">機材種別</p>
