@@ -148,7 +148,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-8 pb-6 mt-[30px]">
+        <div className="space-y-[30px] pb-6 mt-[30px]">
           {/* Issue#63: 写真のジャンル */}
           <div>
             <p className="text-sm font-medium mb-2 text-muted-foreground">写真のジャンル</p>
