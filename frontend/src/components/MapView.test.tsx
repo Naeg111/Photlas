@@ -528,4 +528,38 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
   })
+
+  describe('Issue#64: ノースヘディング', () => {
+    it('resetNorthHeadingメソッドがrefから呼び出せる', async () => {
+      setupFetchMock()
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      expect(typeof ref.current.resetNorthHeading).toBe('function')
+    })
+
+    it('resetNorthHeadingがbearing=0, pitch=0, duration=500でeaseToを呼び出す', async () => {
+      setupFetchMock()
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      ref.current.resetNorthHeading()
+
+      expect(mockMap.easeTo).toHaveBeenCalledWith({
+        bearing: 0,
+        pitch: 0,
+        duration: 500,
+      })
+    })
+  })
 })
