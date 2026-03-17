@@ -5,7 +5,7 @@
  * 写真カテゴリーの選択・切り替え機能を提供する横スクロール可能なボタン群。
  */
 function CategoryButtons() {
-  const categories = ['風景', '建築', 'ストリート', 'ポートレート', '乗り物'];
+  const categories = ['自然風景', '街並み', '建造物', '夜景', 'グルメ'];
 
   return (
     <div

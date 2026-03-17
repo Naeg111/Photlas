@@ -214,7 +214,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
       // FilterPanelが表示される（カテゴリボタンの存在で確認）
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /風景/ })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /自然風景/ })).toBeInTheDocument()
       })
     })
 

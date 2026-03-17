@@ -150,10 +150,11 @@ describe('PhotoContributionDialog', () => {
       expect(screen.getByText(/カテゴリ \*/)).toBeInTheDocument()
     })
 
-    it('renders all 12 category options', () => {
+    it('renders all 14 genre options', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      const categories = ['風景', '街並み', '植物', '動物', '自動車', 'バイク', '鉄道', '飛行機', '食べ物', 'ポートレート', '星空']
+      // Issue#63: 14ジャンルに変更（「その他」はカテゴリと機材種別で重複のため除外）
+      const categories = ['自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物', '動物', '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星空']
       categories.forEach(category => {
         expect(screen.getByText(category)).toBeInTheDocument()
       })
@@ -218,7 +219,7 @@ describe('PhotoContributionDialog', () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      const categoryButton = screen.getByText('風景').closest('div[class*="cursor-pointer"]') ||
+      const categoryButton = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]') ||
                             screen.getByLabelText('風景')
 
       if (categoryButton) {
@@ -226,7 +227,7 @@ describe('PhotoContributionDialog', () => {
       }
 
       // カテゴリが選択されていることを確認（チェックボックスの状態）
-      const checkbox = screen.getByRole('checkbox', { name: /風景/ })
+      const checkbox = screen.getByRole('checkbox', { name: /自然風景/ })
       expect(checkbox).toBeChecked()
     })
 
@@ -235,7 +236,7 @@ describe('PhotoContributionDialog', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
       // 複数のカテゴリを選択（親divをクリック）
-      const landscapeDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      const landscapeDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')
       const cityDiv = screen.getByText('街並み').closest('div[class*="cursor-pointer"]')
 
       if (landscapeDiv) await user.click(landscapeDiv)
@@ -243,7 +244,7 @@ describe('PhotoContributionDialog', () => {
 
       // チェックボックスの状態を確認
       await waitFor(() => {
-        const landscapeCheckbox = screen.getByRole('checkbox', { name: /風景/ })
+        const landscapeCheckbox = screen.getByRole('checkbox', { name: /自然風景/ })
         const cityCheckbox = screen.getByRole('checkbox', { name: /街並み/ })
         expect(landscapeCheckbox).toBeChecked()
         expect(cityCheckbox).toBeChecked()
@@ -335,7 +336,7 @@ describe('PhotoContributionDialog', () => {
       await user.type(titleInput, 'テスト写真')
 
       // カテゴリを選択（親divをクリック）
-      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      const categoryDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
 
       // 機材種別を選択
@@ -463,7 +464,7 @@ describe('PhotoContributionDialog', () => {
       if (weatherDiv) await user.click(weatherDiv)
 
       // カテゴリを選択
-      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      const categoryDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
 
       // 機材種別を選択
@@ -508,7 +509,7 @@ describe('PhotoContributionDialog', () => {
       if (weatherDiv) await user.click(weatherDiv)
 
       // カテゴリを選択
-      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      const categoryDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
 
       // 機材種別を選択
@@ -550,7 +551,7 @@ describe('PhotoContributionDialog', () => {
       if (weatherDiv) await user.click(weatherDiv)
 
       // カテゴリを選択
-      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      const categoryDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
 
       // 機材種別を選択
@@ -601,7 +602,7 @@ describe('PhotoContributionDialog', () => {
       if (weatherDiv) await user.click(weatherDiv)
 
       // カテゴリを選択
-      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      const categoryDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
 
       // 機材種別を選択
@@ -664,7 +665,7 @@ describe('PhotoContributionDialog', () => {
       if (weatherDiv) await user.click(weatherDiv)
 
       // カテゴリを選択
-      const categoryDiv = screen.getByText('風景').closest('div[class*="cursor-pointer"]')
+      const categoryDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')
       if (categoryDiv) await user.click(categoryDiv)
 
       // 機材種別を選択
