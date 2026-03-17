@@ -14,6 +14,7 @@ export interface MapViewHandle {
   refreshSpots: () => void
   zoomIn: () => void
   zoomOut: () => void
+  resetNorthHeading: () => void
   showShootingLocationPin: (lat: number, lng: number) => void
   clearShootingLocationPin: () => void
 }
@@ -474,6 +475,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       if (map) {
         const current = map.getZoom() ?? DEFAULT_ZOOM
         map.easeTo({ zoom: current - 1, duration: 375 })
+      }
+    },
+    resetNorthHeading: () => {
+      if (map) {
+        map.easeTo({ bearing: 0, pitch: 0, duration: 500 })
       }
     },
     showShootingLocationPin: (lat: number, lng: number) => {
