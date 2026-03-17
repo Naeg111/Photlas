@@ -43,6 +43,8 @@ function generateUniqueEmail(prefix: string): string {
  */
 async function openLoginDialog(page: Page) {
   await page.goto('/')
+  // Cookie同意バナーが表示されないよう、同意済み状態を設定
+  await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
   // スプラッシュ画面が消えるまで待機
   await page.waitForTimeout(3000)
   // メニューを開いてログインダイアログを表示
@@ -57,6 +59,8 @@ async function openLoginDialog(page: Page) {
  */
 async function openSignUpDialog(page: Page) {
   await page.goto('/')
+  // Cookie同意バナーが表示されないよう、同意済み状態を設定
+  await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
   await page.waitForTimeout(3000)
   await page.getByRole('button', { name: 'メニュー' }).click()
   await page.getByRole('button', { name: '新規アカウント作成' }).click()

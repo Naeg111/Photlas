@@ -5,6 +5,11 @@ import { test, expect } from '@playwright/test'
  * アプリケーションの基本的な動作を確認
  */
 test.describe('Smoke Tests', () => {
+  test.beforeEach(async ({ page }) => {
+    // Cookie同意バナーが表示されないよう、同意済み状態を設定
+    await page.addInitScript(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
+  })
+
   test('アプリケーションが正常に読み込まれる', async ({ page }) => {
     await page.goto('/')
 
