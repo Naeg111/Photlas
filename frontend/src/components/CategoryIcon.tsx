@@ -25,7 +25,8 @@ export function CategoryIcon({
         fill="currentColor"
         className={className}
       >
-        <path d="M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm6 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z" />
+        {/* ビル群のスカイライン（夜景から星を除いたもの） */}
+        <path d="M1 21h22v-2H1v2zM3 19h4V9H3v10zM9 19h4V5H9v14zM15 19h4v-8h-4v8z" />
       </svg>
     ),
     建造物: (
@@ -34,8 +35,8 @@ export function CategoryIcon({
         fill="currentColor"
         className={className}
       >
-        {/* 寺社・建築物をイメージした柱と屋根 */}
-        <path d="M12 3L4 9h2v9H4v2h16v-2h-2V9h2L12 3zM10 18H8v-7h2v7zm4 0h-2v-7h2v7z" />
+        {/* 窓のある単一建物（旧・街並みアイコン） */}
+        <path d="M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm6 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z" />
       </svg>
     ),
     夜景: (
@@ -44,9 +45,9 @@ export function CategoryIcon({
         fill="currentColor"
         className={className}
       >
-        {/* 都市のビル群と星 */}
+        {/* ビル群のスカイラインと大きめの星 */}
         <path d="M1 21h22v-2H1v2zM3 19h4V9H3v10zM9 19h4V5H9v14zM15 19h4v-8h-4v8z" />
-        <path d="M19 3l.5 1.5L21 5l-1.5.5L19 7l-.5-1.5L17 5l1.5-.5L19 3z" />
+        <path d="M19 2l.75 2.25L22 5l-2.25.75L19 8l-.75-2.25L16 5l2.25-.75L19 2z" />
       </svg>
     ),
     グルメ: (
@@ -121,8 +122,13 @@ export function CategoryIcon({
         fill="currentColor"
         className={className}
       >
-        {/* 飛翔する鳥のシルエット */}
-        <path d="M3 8c0 0 4-2 7 0s5-1 7-3c-1 2-2 3.5-3 4 1 1 2 3 2 5-2-2-4-3-6-3s-5 2-7 4c0-2 1-4 3-5C4 9 3 8 3 8z" />
+        {/* 左向きで止まっている鳥（丸い頭・長い嘴・閉じた羽） */}
+        <circle cx="7" cy="7.5" r="3" />
+        <path d="M2 7.5L4 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <ellipse cx="12" cy="12" rx="7" ry="5" />
+        <path d="M17 15L20 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M15 15L17 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="5.5" cy="7" r="0.8" fill="currentColor" />
       </svg>
     ),
     飛行機: (
