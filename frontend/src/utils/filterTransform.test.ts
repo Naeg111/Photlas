@@ -80,12 +80,16 @@ describe('filterTransform', () => {
   })
 
   describe('transformCategories', () => {
-    it('全12カテゴリを正しく変換する', () => {
-      const categories = [
-        '風景', '街並み', '植物', '動物', '自動車', 'バイク',
-        '鉄道', '飛行機', '食べ物', 'ポートレート', '星空', 'その他',
+    it('Issue#63 - 全14ジャンルを正しく変換する', () => {
+      const genres = [
+        '自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物', '動物',
+        '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星空', 'その他',
       ]
-      expect(transformCategories(categories)).toEqual(categories)
+      expect(transformCategories(genres)).toEqual(genres)
+    })
+
+    it('Issue#63 - 旧カテゴリ名（風景、食べ物、ポートレート）はフィルタリングされる', () => {
+      expect(transformCategories(['風景', '食べ物', 'ポートレート'])).toEqual([])
     })
 
     it('空配列で空配列を返す', () => {
@@ -93,7 +97,7 @@ describe('filterTransform', () => {
     })
 
     it('未定義カテゴリをフィルタリングする', () => {
-      expect(transformCategories(['風景', '未知のカテゴリ'])).toEqual(['風景'])
+      expect(transformCategories(['自然風景', '未知のカテゴリ'])).toEqual(['自然風景'])
     })
   })
 

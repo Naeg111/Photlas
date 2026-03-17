@@ -573,7 +573,7 @@ public class SpotControllerTest {
     // Test Data Constants - Issue#46 Advanced Filters
     private static final String PARAM_MIN_RESOLUTION = "min_resolution";
     private static final String PARAM_DEVICE_TYPE = "device_type";
-    private static final String PARAM_MAX_AGE_YEARS = "max_age_years";
+    private static final String PARAM_MAX_AGE_DAYS = "max_age_days";
     private static final String PARAM_ASPECT_RATIO = "aspect_ratio";
     private static final String PARAM_FOCAL_LENGTH_RANGE = "focal_length_range";
     private static final String PARAM_MAX_ISO = "max_iso";
@@ -734,13 +734,13 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 鮮度フィルター: 1年以内の写真のスポットのみ返される（cutoffTimeが拡張される）")
-    void testGetSpots_WithMaxAgeYears1_ReturnsRecentOnly() throws Exception {
-        // 半年前の写真（1年以内、通常cutoff=14日を超えるがmax_age_yearsで拡張される）
+    @DisplayName("Issue#63 - 鮮度フィルター: 365日以内の写真のスポットのみ返される")
+    void testGetSpots_WithMaxAgeDays365_ReturnsRecentOnly() throws Exception {
+        // 半年前の写真（365日以内）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         createPhoto(spot1, LocalDateTime.now().minusMonths(6), WEATHER_SUNNY);
 
-        // 2年前の写真（1年超え）
+        // 2年前の写真（365日超え）
         Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
         createPhoto(spot2, LocalDateTime.now().minusYears(2), WEATHER_SUNNY);
 
@@ -749,7 +749,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_MAX_AGE_YEARS, "1"))
+                        .param(PARAM_MAX_AGE_DAYS, "365"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
