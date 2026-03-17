@@ -1,16 +1,25 @@
 package com.photlas.backend.service;
 
-import com.photlas.backend.entity.LocationSuggestion;
+import com.photlas.backend.entity.*;
+import com.photlas.backend.exception.PhotoNotFoundException;
+import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.LocationSuggestionRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Issue#65: 位置情報修正の指摘サービス
@@ -25,6 +34,9 @@ public class LocationSuggestionService {
     private final SpotRepository spotRepository;
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
+
+    @Value("${app.frontend-url:https://photlas.jp}")
+    private String frontendUrl;
 
     public LocationSuggestionService(
             LocationSuggestionRepository locationSuggestionRepository,
@@ -42,41 +54,209 @@ public class LocationSuggestionService {
     /**
      * 位置情報の指摘を作成する
      */
+    @Transactional
     public LocationSuggestion createSuggestion(Long photoId, String suggesterEmail,
                                                 BigDecimal latitude, BigDecimal longitude) {
-        // TODO: Green段階で実装
-        throw new UnsupportedOperationException("未実装");
+        User suggester = userRepository.findByEmail(suggesterEmail)
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+
+        Photo photo = photoRepository.findById(photoId)
+                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+
+        // 自分の写真には指摘できない
+        if (photo.getUserId().equals(suggester.getId())) {
+            throw new IllegalStateException("自分の投稿に対して撮影場所の指摘はできません");
+        }
+
+        // 同じ写真に対して既に指摘済みの場合はエラー
+        if (locationSuggestionRepository.existsByPhotoIdAndSuggesterId(photoId, suggester.getId())) {
+            throw new IllegalStateException("この写真に対して既に撮影場所の指摘を行っています");
+        }
+
+        LocationSuggestion suggestion = new LocationSuggestion();
+        suggestion.setPhotoId(photoId);
+        suggestion.setSuggesterId(suggester.getId());
+        suggestion.setSuggestedLatitude(latitude);
+        suggestion.setSuggestedLongitude(longitude);
+        suggestion.setStatus(LocationSuggestionStatus.PENDING);
+
+        // 未解決のメール通知済み指摘があるか確認
+        boolean hasPendingNotified = locationSuggestionRepository
+                .existsByPhotoIdAndStatusAndEmailSent(photoId, LocationSuggestionStatus.PENDING, true);
+
+        if (hasPendingNotified) {
+            // メール送信しない（投稿者が最初の指摘を解決するまで待つ）
+            suggestion.setEmailSent(false);
+        } else {
+            // メールを送信する
+            suggestion.setReviewToken(generateSecureToken());
+            suggestion.setEmailSent(true);
+            sendSuggestionNotification(photo, suggestion);
+        }
+
+        LocationSuggestion saved = locationSuggestionRepository.save(suggestion);
+        logger.info("位置情報の指摘を作成しました: photoId={}, suggesterId={}, emailSent={}",
+                photoId, suggester.getId(), saved.isEmailSent());
+        return saved;
     }
 
     /**
      * 指摘を受け入れる
      */
+    @Transactional
     public void acceptSuggestion(String reviewToken, String ownerEmail) {
-        // TODO: Green段階で実装
-        throw new UnsupportedOperationException("未実装");
+        LocationSuggestion suggestion = findAndValidateSuggestion(reviewToken, ownerEmail);
+
+        // Spotの更新: 指摘された地点に最寄りのSpotを検索、なければ新規作成
+        Photo photo = photoRepository.findById(suggestion.getPhotoId())
+                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+
+        Spot newSpot = findOrCreateSpot(suggestion.getSuggestedLatitude(), suggestion.getSuggestedLongitude());
+        photo.setSpotId(newSpot.getSpotId());
+        photoRepository.save(photo);
+
+        // ステータスを更新
+        suggestion.setStatus(LocationSuggestionStatus.ACCEPTED);
+        suggestion.setResolvedAt(LocalDateTime.now());
+        locationSuggestionRepository.save(suggestion);
+
+        logger.info("位置情報の指摘を受け入れました: suggestionId={}, newSpotId={}",
+                suggestion.getId(), newSpot.getSpotId());
+
+        // 次の未通知指摘のメール送信
+        sendNextPendingEmail(suggestion.getPhotoId());
     }
 
     /**
      * 指摘を拒否する
      */
+    @Transactional
     public void rejectSuggestion(String reviewToken, String ownerEmail) {
-        // TODO: Green段階で実装
-        throw new UnsupportedOperationException("未実装");
+        LocationSuggestion suggestion = findAndValidateSuggestion(reviewToken, ownerEmail);
+
+        // ステータスを更新
+        suggestion.setStatus(LocationSuggestionStatus.REJECTED);
+        suggestion.setResolvedAt(LocalDateTime.now());
+        locationSuggestionRepository.save(suggestion);
+
+        // 指摘者にメールで拒否を通知
+        User suggester = userRepository.findById(suggestion.getSuggesterId())
+                .orElse(null);
+        if (suggester != null) {
+            sendRejectionNotification(suggester.getEmail());
+        }
+
+        logger.info("位置情報の指摘を拒否しました: suggestionId={}", suggestion.getId());
+
+        // 次の未通知指摘のメール送信
+        sendNextPendingEmail(suggestion.getPhotoId());
     }
 
     /**
      * レビュー情報を取得する
      */
     public LocationSuggestion getReviewInfo(String reviewToken, String ownerEmail) {
-        // TODO: Green段階で実装
-        throw new UnsupportedOperationException("未実装");
+        return findAndValidateSuggestion(reviewToken, ownerEmail);
     }
 
     /**
      * ユーザーが指定の写真に対して指摘済みかどうかを返す
      */
     public boolean hasSuggested(Long photoId, String userEmail) {
-        // TODO: Green段階で実装
-        throw new UnsupportedOperationException("未実装");
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+        return locationSuggestionRepository.existsByPhotoIdAndSuggesterId(photoId, user.getId());
+    }
+
+    // ========================================
+    // private メソッド
+    // ========================================
+
+    private LocationSuggestion findAndValidateSuggestion(String reviewToken, String ownerEmail) {
+        User owner = userRepository.findByEmail(ownerEmail)
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+
+        LocationSuggestion suggestion = locationSuggestionRepository.findByReviewToken(reviewToken)
+                .orElseThrow(() -> new IllegalArgumentException("無効なトークンです"));
+
+        Photo photo = photoRepository.findById(suggestion.getPhotoId())
+                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+
+        if (!photo.getUserId().equals(owner.getId())) {
+            throw new org.springframework.security.access.AccessDeniedException("この指摘をレビューする権限がありません");
+        }
+
+        return suggestion;
+    }
+
+    private Spot findOrCreateSpot(BigDecimal latitude, BigDecimal longitude) {
+        List<Spot> nearbySpots = spotRepository.findSpotsWithin200m(latitude, longitude);
+        if (!nearbySpots.isEmpty()) {
+            return nearbySpots.get(0);
+        }
+        Spot newSpot = new Spot();
+        newSpot.setLatitude(latitude);
+        newSpot.setLongitude(longitude);
+        newSpot.setCreatedByUserId(0L);
+        return spotRepository.save(newSpot);
+    }
+
+    private void sendNextPendingEmail(Long photoId) {
+        List<LocationSuggestion> pending = locationSuggestionRepository
+                .findByPhotoIdAndStatusAndEmailSentOrderByCreatedAtAsc(
+                        photoId, LocationSuggestionStatus.PENDING, false);
+
+        if (!pending.isEmpty()) {
+            LocationSuggestion next = pending.get(0);
+            next.setReviewToken(generateSecureToken());
+            next.setEmailSent(true);
+            locationSuggestionRepository.save(next);
+
+            Photo photo = photoRepository.findById(photoId).orElse(null);
+            if (photo != null) {
+                sendSuggestionNotification(photo, next);
+            }
+        }
+    }
+
+    private void sendSuggestionNotification(Photo photo, LocationSuggestion suggestion) {
+        try {
+            User owner = userRepository.findById(photo.getUserId()).orElse(null);
+            if (owner == null) return;
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(owner.getEmail());
+            message.setSubject("【Photlas】撮影場所について指摘がありました");
+            message.setText(
+                    owner.getUsername() + " 様\n\n" +
+                    "あなたの投稿写真について、撮影場所の指摘がありました。\n\n" +
+                    "以下のリンクから指摘内容を確認し、受け入れるか拒否するかを判断してください：\n" +
+                    frontendUrl + "/review-location?token=" + suggestion.getReviewToken() + "\n\n" +
+                    "Photlas チーム\nsupport@photlas.jp"
+            );
+            mailSender.send(message);
+        } catch (Exception e) {
+            logger.error("位置情報指摘通知メールの送信に失敗しました: {}", e.getMessage());
+        }
+    }
+
+    private void sendRejectionNotification(String suggesterEmail) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(suggesterEmail);
+            message.setSubject("【Photlas】撮影場所の指摘について");
+            message.setText(
+                    "撮影場所の指摘について、投稿者が指摘を受け入れませんでした。\n\n" +
+                    "Photlas チーム\nsupport@photlas.jp"
+            );
+            mailSender.send(message);
+        } catch (Exception e) {
+            logger.error("拒否通知メールの送信に失敗しました: {}", e.getMessage());
+        }
+    }
+
+    private String generateSecureToken() {
+        String uuid = UUID.randomUUID().toString() + UUID.randomUUID().toString();
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(uuid.getBytes());
     }
 }
