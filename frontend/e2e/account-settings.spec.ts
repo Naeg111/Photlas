@@ -108,7 +108,7 @@ test.describe('アカウント設定', () => {
   })
 
   test('アカウントを削除できる', async ({ page }) => {
-    await createAccountAndLogin(page, 'settings-delete')
+    const email = await createAccountAndLogin(page, 'settings-delete')
 
     // メニュー → アカウント設定
     await page.getByRole('button', { name: 'メニュー' }).click()
@@ -136,5 +136,13 @@ test.describe('アカウント設定', () => {
     // ホーム画面に遷移し、未認証状態になる
     await page.getByRole('button', { name: 'メニュー' }).click()
     await expect(page.getByRole('button', { name: 'ログイン' })).toBeVisible({ timeout: 5000 })
+
+    // 削除したアカウントでログインを試みる
+    await page.keyboard.press('Escape')
+    await openLoginDialog(page)
+    await performLogin(page, email, TEST_PASSWORD)
+
+    // ログインが失敗することを確認
+    await expect(page.getByText('メールアドレスまたはパスワードが正しくありません')).toBeVisible({ timeout: 10000 })
   })
 })

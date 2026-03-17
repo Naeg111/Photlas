@@ -263,7 +263,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       if (!isBannerVisible) {
         const afterTotal = afterPins.pinCount + afterPins.clusterCount
         // データが存在する場合、何らかのマーカーが表示されている
-        expect(afterTotal).toBeGreaterThanOrEqual(0)
+        expect(afterTotal).toBeGreaterThan(0)
       }
     })
 
@@ -309,7 +309,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
           // ズームイン後、ピン/クラスタが表示されている
           const afterPins = await findPinsAndClusters(page)
           const afterTotal = afterPins.pinCount + afterPins.clusterCount
-          expect(afterTotal).toBeGreaterThanOrEqual(0)
+          expect(afterTotal).toBeGreaterThan(0)
         }
       }
     })
@@ -348,7 +348,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       await createAccountAndLogin(page, 'pin-post')
 
       // 投稿実行
-      await submitPhoto(page, { title: 'ピン表示テスト', category: '風景' })
+      await submitPhoto(page, { title: 'ピン表示テスト', category: '自然風景' })
 
       // 地図に戻ってピンを確認
       await page.waitForTimeout(2000)
@@ -357,7 +357,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
 
       // ピンまたはクラスタが存在すること
       const { pinCount, clusterCount } = await findPinsAndClusters(page)
-      expect(pinCount + clusterCount).toBeGreaterThanOrEqual(0)
+      expect(pinCount + clusterCount).toBeGreaterThan(0)
     })
 
     test('タイトルなしで投稿してもピンが正常表示される', async ({ page }) => {
@@ -365,7 +365,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       await createAccountAndLogin(page, 'pin-no-title')
 
       // タイトルなしで投稿
-      await submitPhoto(page, { category: '風景' })
+      await submitPhoto(page, { category: '自然風景' })
 
       // 地図でピンを確認
       await page.waitForTimeout(2000)
@@ -388,10 +388,10 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
 
       // フィルターパネルを開く
       await page.getByRole('button', { name: 'フィルター' }).click()
-      await expect(page.getByRole('button', { name: '風景' })).toBeVisible({ timeout: 5000 })
+      await expect(page.getByRole('button', { name: '自然風景' })).toBeVisible({ timeout: 5000 })
 
       // カテゴリフィルターを選択
-      await page.getByText('風景', { exact: true }).click()
+      await page.getByText('自然風景', { exact: true }).click()
       await page.waitForTimeout(500)
 
       // 適用
