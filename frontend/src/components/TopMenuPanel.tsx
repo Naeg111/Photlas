@@ -38,7 +38,7 @@ export function TopMenuPanel({
 }: TopMenuPanelProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="top" className="w-full h-full bg-transparent p-0 gap-0 border-none shadow-none">
+      <SheetContent side="top" className="w-full h-full bg-transparent p-0 gap-0 border-none shadow-none [&>button[class*='absolute']]:right-16 [&>button[class*='absolute']]:top-8">
         <div className="bg-background w-full px-16 py-10 border-b shadow-lg">
           <SheetHeader className="sr-only">
             <SheetTitle>メニュー</SheetTitle>
