@@ -145,12 +145,12 @@ export default function ReviewLocationPage() {
         >
           {/* 現在の撮影地点（赤） */}
           <Marker latitude={reviewData.currentLatitude} longitude={reviewData.currentLongitude}>
-            <PinSvg color="#EF4444" size={32} />
+            <div style={{ width: 32, height: 38 }}><PinSvg fill="#EF4444" stroke="#B91C1C" /></div>
           </Marker>
 
           {/* 指摘された地点（青） */}
           <Marker latitude={reviewData.suggestedLatitude} longitude={reviewData.suggestedLongitude}>
-            <PinSvg color="#3B82F6" size={32} />
+            <div style={{ width: 32, height: 38 }}><PinSvg fill="#3B82F6" stroke="#1D4ED8" /></div>
           </Marker>
         </Map>
       </div>
