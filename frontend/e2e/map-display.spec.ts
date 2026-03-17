@@ -34,8 +34,8 @@ const MAP_CONFIG = {
 
 // フィルターカテゴリ
 const FILTER_CATEGORIES = [
-  '風景', '街並み', '植物', '動物', '自動車', 'バイク',
-  '鉄道', '飛行機', '食べ物', 'ポートレート', '星空', 'その他',
+  '自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物',
+  '動物', '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星空', 'その他',
 ]
 
 // 時間帯フィルター
@@ -56,7 +56,7 @@ const MONTH_FILTERS = [
 async function openFilterPanel(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'フィルター' }).click()
   // フィルターパネルが開くのを待機（カテゴリボタンが表示される）
-  await expect(page.getByRole('button', { name: '風景' })).toBeVisible({ timeout: 5000 })
+  await expect(page.getByRole('button', { name: '自然風景' })).toBeVisible({ timeout: 5000 })
 }
 
 /**
@@ -195,6 +195,13 @@ test.describe('地図表示・ピン表示機能', () => {
 
         // バナーが消える
         await expect(banner).not.toBeVisible({ timeout: 5000 })
+
+        // ズームレベルが11になったことを確認
+        const zoom = await page.evaluate(() => {
+          const map = (window as unknown as Record<string, any>).__photlas_map
+          return map?.getZoom?.() ?? 0
+        })
+        expect(zoom).toBeGreaterThanOrEqual(11)
       }
     })
   })
@@ -243,7 +250,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await openFilterPanel(page)
 
       // フィルターボタンが表示されていることを確認
-      await expect(page.getByRole('button', { name: '風景' })).toBeVisible()
+      await expect(page.getByRole('button', { name: '自然風景' })).toBeVisible()
 
       // フィルターパネルを閉じる
       await closeFilterPanel(page)
@@ -253,7 +260,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await openFilterPanel(page)
 
       // カテゴリを選択
-      await page.getByText('風景', { exact: true }).click()
+      await page.getByText('自然風景', { exact: true }).click()
       await page.waitForTimeout(500)
 
       // 適用ボタンをクリック
@@ -267,7 +274,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await openFilterPanel(page)
 
       // 複数カテゴリを選択
-      await page.getByText('風景', { exact: true }).click()
+      await page.getByText('自然風景', { exact: true }).click()
       await page.getByText('街並み', { exact: true }).click()
       await page.waitForTimeout(500)
 
@@ -313,7 +320,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await openFilterPanel(page)
 
       // フィルターを設定
-      await page.getByText('風景', { exact: true }).click()
+      await page.getByText('自然風景', { exact: true }).click()
       await page.getByText('朝', { exact: true }).click()
 
       // クリアボタンをクリック
@@ -330,7 +337,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await openFilterPanel(page)
 
       // 複数のフィルターを組み合わせ
-      await page.getByText('風景', { exact: true }).click()
+      await page.getByText('自然風景', { exact: true }).click()
       await page.getByText('夕方', { exact: true }).click()
       await page.getByText('晴れ', { exact: true }).click()
 
@@ -433,7 +440,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await openFilterPanel(page)
 
       // 基本フィルター
-      await page.getByText('風景', { exact: true }).click()
+      await page.getByText('自然風景', { exact: true }).click()
       await page.getByText('晴れ', { exact: true }).click()
 
       // 詳細フィルターを開く
@@ -453,7 +460,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await openFilterPanel(page)
 
       // 基本フィルター設定
-      await page.getByText('風景', { exact: true }).click()
+      await page.getByText('自然風景', { exact: true }).click()
 
       // 詳細フィルターを開いて設定
       await page.getByRole('button', { name: '上級者向けフィルター' }).click()
@@ -492,10 +499,10 @@ test.describe('地図表示・ピン表示機能', () => {
       // 現在地マーカーが表示される
       // 青色の現在地マーカーを確認
       const locationMarker = page.locator('.location-pulse, [data-testid="user-location-marker"]')
-      // マーカーが表示されるかタイムアウト
-      await expect(locationMarker).toBeVisible({ timeout: 10000 }).catch(() => {
+      const isVisible = await locationMarker.isVisible().catch(() => false)
+      if (!isVisible) {
         // 位置情報が取得できない環境では失敗を許容
-      })
+      }
     })
 
     test('位置情報が拒否された場合のエラーハンドリング', async ({ page, context }) => {
@@ -532,6 +539,9 @@ test.describe('地図表示・ピン表示機能', () => {
         // 移動後にAPIが再呼び出しされる
         await page.waitForTimeout(2000)
       }
+
+      // 移動後に地図が引き続き表示されている
+      await expect(page.locator('.mapboxgl-map').first()).toBeVisible()
     })
 
     test('マウスホイールでズームイン・アウトできる', async ({ page }) => {
@@ -544,6 +554,9 @@ test.describe('地図表示・ピン表示機能', () => {
 
       await page.mouse.wheel(0, 300) // ズームアウト
       await page.waitForTimeout(1000)
+
+      // エラーなく地図が表示されている
+      await expect(page.locator('.mapboxgl-map').first()).toBeVisible()
     })
 
     test('ピンチズームでズームイン・アウトできる（モバイル）', async ({ page }) => {

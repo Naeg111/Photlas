@@ -376,7 +376,7 @@ test.describe('認証フロー全体 E2Eテスト', () => {
       await expectAuthenticated(page)
     })
 
-    test('「ログイン状態を保持する」OFFでページリロード後に認証状態が失われる（sessionStorage使用時）', async ({
+    test('「ログイン状態を保持する」OFFの場合、sessionStorageクリア後に認証状態が失われる', async ({
       page,
     }) => {
       const uniqueEmail = generateUniqueEmail('flow-no-persist')

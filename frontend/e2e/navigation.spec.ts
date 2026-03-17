@@ -71,4 +71,37 @@ test.describe('Navigation Tests', () => {
     // メニューが閉じることを確認
     await expect(page.getByRole('button', { name: 'ログイン' })).not.toBeVisible()
   })
+
+  test('メニューから利用規約を開くとダイアログが表示される', async ({ page }) => {
+    // メニューを開く
+    await page.getByRole('button', { name: 'メニュー' }).click()
+
+    // 利用規約をクリック
+    await page.getByRole('button', { name: '利用規約' }).click()
+
+    // ダイアログが表示される
+    await expect(page.getByText('利用規約')).toBeVisible({ timeout: 5000 })
+  })
+
+  test('メニューからプライバシーポリシーを開くとダイアログが表示される', async ({ page }) => {
+    // メニューを開く
+    await page.getByRole('button', { name: 'メニュー' }).click()
+
+    // プライバシーポリシーをクリック
+    await page.getByRole('button', { name: 'プライバシーポリシー' }).click()
+
+    // ダイアログが表示される
+    await expect(page.getByText('プライバシーポリシー')).toBeVisible({ timeout: 5000 })
+  })
+
+  test('メニューからPhotlasとは？を開くとダイアログが表示される', async ({ page }) => {
+    // メニューを開く
+    await page.getByRole('button', { name: 'メニュー' }).click()
+
+    // Photlasとは？をクリック
+    await page.getByRole('button', { name: 'Photlasとは？' }).click()
+
+    // ダイアログが表示される
+    await expect(page.getByText('Photlasとは？')).toBeVisible({ timeout: 5000 })
+  })
 })
