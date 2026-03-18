@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -49,11 +50,27 @@ public class SitemapControllerTest {
 
     private static final String ENDPOINT_SITEMAP = "/api/v1/sitemap.xml";
 
+    private User testUser;
+    private Spot testSpot;
+
     @BeforeEach
     void setUp() {
         photoRepository.deleteAll();
         spotRepository.deleteAll();
         userRepository.deleteAll();
+
+        testUser = new User();
+        testUser.setUsername("sitemapuser");
+        testUser.setEmail("sitemap@example.com");
+        testUser.setPasswordHash("hashedpassword");
+        testUser.setRole("USER");
+        testUser = userRepository.save(testUser);
+
+        testSpot = new Spot();
+        testSpot.setLatitude(new BigDecimal("35.658581"));
+        testSpot.setLongitude(new BigDecimal("139.745433"));
+        testSpot.setCreatedByUserId(testUser.getId());
+        testSpot = spotRepository.save(testSpot);
     }
 
     @Test
@@ -76,30 +93,9 @@ public class SitemapControllerTest {
     }
 
     @Test
-    @DisplayName("サイトマップ - 写真ページが含まれる")
+    @DisplayName("サイトマップ - PUBLISHED写真ページが含まれる")
     void testGetSitemap_ContainsPhotoPages() throws Exception {
-        // テストデータ作成
-        User user = new User();
-        user.setUsername("sitemapuser");
-        user.setEmail("sitemap@example.com");
-        user.setPasswordHash("hashedpassword");
-        user.setRole("USER");
-        user = userRepository.save(user);
-
-        Spot spot = new Spot();
-        spot.setLatitude(new BigDecimal("35.658581"));
-        spot.setLongitude(new BigDecimal("139.745433"));
-        spot.setCreatedByUserId(user.getId());
-        spot = spotRepository.save(spot);
-
-        Photo photo = new Photo();
-        photo.setTitle("サイトマップテスト写真");
-        photo.setS3ObjectKey("photos/sitemap-test.jpg");
-        photo.setShotAt(LocalDateTime.now());
-        photo.setUserId(user.getId());
-        photo.setSpotId(spot.getSpotId());
-        photo.setModerationStatus(ModerationStatus.PUBLISHED);
-        photo = photoRepository.save(photo);
+        Photo photo = createPhoto("photos/sitemap-test.jpg", ModerationStatus.PUBLISHED);
 
         mockMvc.perform(get(ENDPOINT_SITEMAP))
                 .andExpect(status().isOk())
@@ -109,76 +105,35 @@ public class SitemapControllerTest {
     @Test
     @DisplayName("Issue#54 - QUARANTINED写真はサイトマップに含まれない")
     void testGetSitemap_ExcludesQuarantinedPhotos() throws Exception {
-        // Given: QUARANTINED写真
-        User user = new User();
-        user.setUsername("sitemapuser2");
-        user.setEmail("sitemap2@example.com");
-        user.setPasswordHash("hashedpassword");
-        user.setRole("USER");
-        user = userRepository.save(user);
+        Photo quarantinedPhoto = createPhoto("photos/quarantined.jpg", ModerationStatus.QUARANTINED);
 
-        Spot spot = new Spot();
-        spot.setLatitude(new BigDecimal("35.658581"));
-        spot.setLongitude(new BigDecimal("139.745433"));
-        spot.setCreatedByUserId(user.getId());
-        spot = spotRepository.save(spot);
-
-        Photo quarantinedPhoto = new Photo();
-        quarantinedPhoto.setTitle("隔離写真");
-        quarantinedPhoto.setS3ObjectKey("photos/quarantined.jpg");
-        quarantinedPhoto.setShotAt(LocalDateTime.now());
-        quarantinedPhoto.setUserId(user.getId());
-        quarantinedPhoto.setSpotId(spot.getSpotId());
-        quarantinedPhoto.setModerationStatus(ModerationStatus.QUARANTINED);
-        quarantinedPhoto = photoRepository.save(quarantinedPhoto);
-
-        // When & Then: QUARANTINED写真のURLが含まれない
         mockMvc.perform(get(ENDPOINT_SITEMAP))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.not(
+                .andExpect(content().string(not(
                         containsString("/photo-viewer/" + quarantinedPhoto.getPhotoId()))));
     }
 
     @Test
     @DisplayName("Issue#54 - PUBLISHED写真のみがサイトマップに含まれる")
     void testGetSitemap_OnlyPublishedPhotosIncluded() throws Exception {
-        // Given: PUBLISHED写真1枚、REMOVED写真1枚
-        User user = new User();
-        user.setUsername("sitemapuser3");
-        user.setEmail("sitemap3@example.com");
-        user.setPasswordHash("hashedpassword");
-        user.setRole("USER");
-        user = userRepository.save(user);
+        Photo publishedPhoto = createPhoto("photos/published.jpg", ModerationStatus.PUBLISHED);
+        Photo removedPhoto = createPhoto("photos/removed.jpg", ModerationStatus.REMOVED);
 
-        Spot spot = new Spot();
-        spot.setLatitude(new BigDecimal("35.658581"));
-        spot.setLongitude(new BigDecimal("139.745433"));
-        spot.setCreatedByUserId(user.getId());
-        spot = spotRepository.save(spot);
-
-        Photo publishedPhoto = new Photo();
-        publishedPhoto.setTitle("公開写真");
-        publishedPhoto.setS3ObjectKey("photos/published.jpg");
-        publishedPhoto.setShotAt(LocalDateTime.now());
-        publishedPhoto.setUserId(user.getId());
-        publishedPhoto.setSpotId(spot.getSpotId());
-        publishedPhoto.setModerationStatus(ModerationStatus.PUBLISHED);
-        publishedPhoto = photoRepository.save(publishedPhoto);
-
-        Photo removedPhoto = new Photo();
-        removedPhoto.setTitle("削除写真");
-        removedPhoto.setS3ObjectKey("photos/removed.jpg");
-        removedPhoto.setShotAt(LocalDateTime.now());
-        removedPhoto.setUserId(user.getId());
-        removedPhoto.setSpotId(spot.getSpotId());
-        removedPhoto.setModerationStatus(ModerationStatus.REMOVED);
-        removedPhoto = photoRepository.save(removedPhoto);
-
-        // When & Then: PUBLISHEDのみ含まれる
         mockMvc.perform(get(ENDPOINT_SITEMAP))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("/photo-viewer/" + publishedPhoto.getPhotoId())))
-                .andExpect(content().string(org.hamcrest.Matchers.not(
+                .andExpect(content().string(not(
                         containsString("/photo-viewer/" + removedPhoto.getPhotoId()))));
+    }
+
+    private Photo createPhoto(String s3ObjectKey, ModerationStatus status) {
+        Photo photo = new Photo();
+        photo.setTitle("テスト写真");
+        photo.setS3ObjectKey(s3ObjectKey);
+        photo.setShotAt(LocalDateTime.now());
+        photo.setUserId(testUser.getId());
+        photo.setSpotId(testSpot.getSpotId());
+        photo.setModerationStatus(status);
+        return photoRepository.save(photo);
     }
 }
