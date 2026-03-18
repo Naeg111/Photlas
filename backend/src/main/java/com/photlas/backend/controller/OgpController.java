@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -58,6 +59,11 @@ public class OgpController {
         }
 
         Photo photo = photoOpt.get();
+
+        // Issue#54: 非公開写真のOGPは404を返す
+        if (photo.getModerationStatus() != ModerationStatus.PUBLISHED) {
+            return ResponseEntity.notFound().build();
+        }
         String imageUrl = s3Service.generateCdnUrl(photo.getS3ObjectKey());
         String title = photo.getTitle() != null ? photo.getTitle() : SITE_NAME;
         String pageUrl = frontendUrl + "/photo-viewer/" + photoId;

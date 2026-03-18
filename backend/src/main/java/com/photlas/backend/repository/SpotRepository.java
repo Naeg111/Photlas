@@ -73,6 +73,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                 SELECT p2.s3_object_key
                 FROM photos p2
                 WHERE p2.spot_id = s.spot_id
+                  AND p2.moderation_status = 'PUBLISHED'
                   AND (-1 IN (:months) OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
                   AND ('__NONE__' IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
                   AND ('__NONE__' IN (:weathers) OR p2.weather IN (:weathers))
@@ -88,6 +89,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         INNER JOIN photos p ON s.spot_id = p.spot_id
         WHERE s.latitude BETWEEN :south AND :north
           AND s.longitude BETWEEN :west AND :east
+          AND p.moderation_status = 'PUBLISHED'
           AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
           AND ('__NONE__' IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
           AND ('__NONE__' IN (:weathers) OR p.weather IN (:weathers))
@@ -133,6 +135,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                 SELECT p2.s3_object_key
                 FROM photos p2
                 WHERE p2.spot_id = s.spot_id
+                  AND p2.moderation_status = 'PUBLISHED'
                   AND (-1 IN (:months) OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
                   AND ('__NONE__' IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
                   AND ('__NONE__' IN (:weathers) OR p2.weather IN (:weathers))
@@ -163,6 +166,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         INNER JOIN photos p ON s.spot_id = p.spot_id
         WHERE s.latitude BETWEEN :south AND :north
           AND s.longitude BETWEEN :west AND :east
+          AND p.moderation_status = 'PUBLISHED'
           AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
           AND ('__NONE__' IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
           AND ('__NONE__' IN (:weathers) OR p.weather IN (:weathers))

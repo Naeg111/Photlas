@@ -81,6 +81,7 @@ public class OgpControllerTest {
         testPhoto.setShotAt(LocalDateTime.of(2025, 8, 15, 18, 30));
         testPhoto.setUserId(testUser.getId());
         testPhoto.setSpotId(testSpot.getSpotId());
+        testPhoto.setModerationStatus(ModerationStatus.PUBLISHED);
         testPhoto = photoRepository.save(testPhoto);
 
         when(s3Service.generateCdnUrl(anyString())).thenReturn(TEST_CDN_URL);

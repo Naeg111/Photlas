@@ -201,6 +201,7 @@ public class SpotControllerTest {
         photo.setUserId(testUser.getId());
         photo.setShotAt(TEST_SHOT_AT);
         photo.setWeather(WEATHER_SUNNY);
+        photo.setModerationStatus(ModerationStatus.PUBLISHED);
         List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
@@ -1117,6 +1118,7 @@ public class SpotControllerTest {
         photo.setUserId(testUser.getId());
         photo.setShotAt(shotAt);
         photo.setWeather(weather);
+        photo.setModerationStatus(ModerationStatus.PUBLISHED);
         List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
@@ -1132,6 +1134,7 @@ public class SpotControllerTest {
         photo.setShotAt(shotAt);
         photo.setWeather(weather);
         photo.setDeviceType(deviceType);
+        photo.setModerationStatus(ModerationStatus.PUBLISHED);
         List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
@@ -1147,6 +1150,7 @@ public class SpotControllerTest {
         photo.setShotAt(shotAt);
         photo.setWeather(weather);
         photo.setTimeOfDay(timeOfDay);
+        photo.setModerationStatus(ModerationStatus.PUBLISHED);
         List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
