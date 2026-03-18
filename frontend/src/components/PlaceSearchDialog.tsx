@@ -86,6 +86,7 @@ export function PlaceSearchDialog({
           sessionToken: sessionTokenRef.current,
           country: 'jp',
           language: 'ja',
+          types: 'region,district,place,city,locality,neighborhood,street,address,poi',
         })
         setSuggestions((result.suggestions || []) as SearchSuggestion[])
       } catch {
