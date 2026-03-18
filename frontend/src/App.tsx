@@ -96,6 +96,8 @@ function MainContent({ onMapReady }: MainContentProps) {
 
   // 撮影地点プレビュー状態
   const [shootingLocationPreview, setShootingLocationPreview] = useState<{ lat: number; lng: number } | null>(null)
+  // Issue#66: ズームアニメーション中のUI制御
+  const [isZoomAnimating, setIsZoomAnimating] = useState(false)
   const shootingLocationPreviewRef = useRef(shootingLocationPreview)
   shootingLocationPreviewRef.current = shootingLocationPreview
   // Issue#50: プレビューモード中フラグ（Radix flushSync対策）
@@ -416,11 +418,12 @@ function MainContent({ onMapReady }: MainContentProps) {
           onClusterClick={handleClusterClick}
           onMapClick={handleReturnFromPreview}
           onMapReady={onMapReady}
+          onZoomAnimationChange={setIsZoomAnimating}
         />
       </div>
 
-      {/* フローティングUI - 左上: フィルターボタン、右上: メニューボタン（プレビュー中は非表示） */}
-      {!shootingLocationPreview && <div className="absolute top-4 left-6 right-6 z-10 flex items-start justify-between gap-3">
+      {/* フローティングUI - 左上: フィルターボタン、右上: メニューボタン（プレビュー中・ズームアニメーション中は非表示） */}
+      {!shootingLocationPreview && !isZoomAnimating && <div className="absolute top-4 left-6 right-6 z-10 flex items-start justify-between gap-3">
         <Button
           variant="secondary"
           size="icon"
@@ -442,8 +445,8 @@ function MainContent({ onMapReady }: MainContentProps) {
         </Button>
       </div>}
 
-      {/* フローティングUI - 右下: 現在位置ボタン + ズームボタン + 投稿ボタン */}
-      <div
+      {/* フローティングUI - 右下: 現在位置ボタン + ズームボタン + 投稿ボタン（ズームアニメーション中は非表示） */}
+      {!isZoomAnimating && <div
         className="absolute right-6 z-10 flex flex-col items-center gap-3"
         style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
       >
@@ -501,7 +504,7 @@ function MainContent({ onMapReady }: MainContentProps) {
             <Plus className="w-6 h-6" />
           </Button>
         )}
-      </div>
+      </div>}
 
       {/* パネル・ダイアログ群 */}
       <FilterPanel
