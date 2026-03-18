@@ -128,6 +128,34 @@ public class LocationSuggestionControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    @DisplayName("Issue#65 - 指摘作成: 緯度が範囲外（91）の場合400が返る")
+    void testCreateSuggestion_LatitudeOutOfRange_Returns400() throws Exception {
+        LocationSuggestionRequest request = new LocationSuggestionRequest();
+        request.setLatitude(new BigDecimal("91.0"));
+        request.setLongitude(SUGGESTED_LNG);
+
+        mockMvc.perform(post("/api/v1/photos/" + photo.getPhotoId() + "/location-suggestions")
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + suggesterToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#65 - 指摘作成: 経度が範囲外（-181）の場合400が返る")
+    void testCreateSuggestion_LongitudeOutOfRange_Returns400() throws Exception {
+        LocationSuggestionRequest request = new LocationSuggestionRequest();
+        request.setLatitude(SUGGESTED_LAT);
+        request.setLongitude(new BigDecimal("-181.0"));
+
+        mockMvc.perform(post("/api/v1/photos/" + photo.getPhotoId() + "/location-suggestions")
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + suggesterToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
     // ========================================
     // GET /api/v1/photos/{photoId}/location-suggestions/status
     // ========================================
