@@ -1,6 +1,7 @@
 package com.photlas.backend.controller;
 
 import com.photlas.backend.dto.LocationSuggestionRequest;
+import jakarta.validation.Valid;
 import com.photlas.backend.dto.LocationSuggestionReviewResponse;
 import com.photlas.backend.entity.LocationSuggestion;
 import com.photlas.backend.service.LocationSuggestionService;
@@ -30,7 +31,7 @@ public class LocationSuggestionController {
     @PostMapping("/photos/{photoId}/location-suggestions")
     public ResponseEntity<?> createSuggestion(
             @PathVariable Long photoId,
-            @RequestBody LocationSuggestionRequest request,
+            @Valid @RequestBody LocationSuggestionRequest request,
             Authentication authentication) {
         try {
             String email = authentication.getName();
