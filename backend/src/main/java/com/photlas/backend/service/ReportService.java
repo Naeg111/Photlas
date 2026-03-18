@@ -7,11 +7,14 @@ import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Report;
 import com.photlas.backend.entity.ReportReason;
 import com.photlas.backend.entity.ReportTargetType;
+import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.SelfReportException;
+import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
+import com.photlas.backend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -30,10 +33,13 @@ public class ReportService {
 
     private final ReportRepository reportRepository;
     private final PhotoRepository photoRepository;
+    private final UserRepository userRepository;
 
-    public ReportService(ReportRepository reportRepository, PhotoRepository photoRepository) {
+    public ReportService(ReportRepository reportRepository, PhotoRepository photoRepository,
+                         UserRepository userRepository) {
         this.reportRepository = reportRepository;
         this.photoRepository = photoRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -88,6 +94,63 @@ public class ReportService {
 
         logger.info("通報を受け付けました: photoId={}, reporterUserId={}, reason={}",
                 photoId, userId, request.getReason());
+
+        return new ReportResponse(
+                savedReport.getReporterUserId(),
+                savedReport.getTargetId(),
+                savedReport.getReasonCategory().name(),
+                savedReport.getReasonText()
+        );
+    }
+
+    /**
+     * Issue#54: プロフィールを通報する
+     *
+     * @param targetUserId 通報対象ユーザーID
+     * @param request 通報リクエスト
+     * @param reporterUserId 通報ユーザーID
+     * @return ReportResponse
+     */
+    @Transactional
+    public ReportResponse createProfileReport(Long targetUserId, ReportRequest request, Long reporterUserId) {
+        // 対象ユーザーの存在確認
+        User targetUser = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+
+        // 自分のプロフィールは通報できない
+        if (targetUser.getId().equals(reporterUserId)) {
+            throw new SelfReportException("自分のプロフィールを通報することはできません");
+        }
+
+        // 重複チェック
+        reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
+                reporterUserId, ReportTargetType.PROFILE, targetUserId)
+                .ifPresent(report -> {
+                    throw new ConflictException("このプロフィールはすでに通報済みです");
+                });
+
+        // Report entityを作成
+        Report report = new Report();
+        report.setReporterUserId(reporterUserId);
+        report.setTargetType(ReportTargetType.PROFILE);
+        report.setTargetId(targetUserId);
+        report.setReasonCategory(ReportReason.valueOf(request.getReason()));
+        report.setReasonText(request.getDetails());
+
+        Report savedReport = reportRepository.save(report);
+
+        // 通報件数が閾値に達したらプロフィール画像をリセット
+        long reportCount = reportRepository.countByTargetTypeAndTargetId(
+                ReportTargetType.PROFILE, targetUserId);
+        if (reportCount >= QUARANTINE_THRESHOLD && targetUser.getProfileImageS3Key() != null) {
+            targetUser.setProfileImageS3Key(null);
+            userRepository.save(targetUser);
+            logger.info("通報件数が閾値に達したためプロフィール画像をリセット: userId={}, reportCount={}",
+                    targetUserId, reportCount);
+        }
+
+        logger.info("プロフィール通報を受け付けました: targetUserId={}, reporterUserId={}, reason={}",
+                targetUserId, reporterUserId, request.getReason());
 
         return new ReportResponse(
                 savedReport.getReporterUserId(),

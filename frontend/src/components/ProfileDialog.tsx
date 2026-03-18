@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import { Button } from './ui/button'
@@ -12,11 +12,12 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from './ui/pagination'
-import { User, X as XIcon } from 'lucide-react'
+import { User, X as XIcon, Flag } from 'lucide-react'
 import { useProfileEdit } from '../hooks/useProfileEdit'
 import { useAuth } from '../contexts/AuthContext'
 import { getAuthHeaders } from '../utils/apiClient'
 import ProfileImageCropper from './ProfileImageCropper'
+import { ReportDialog } from './ReportDialog'
 import { ProtectedImage } from './figma/ProtectedImage'
 
 // API Endpoints
@@ -258,6 +259,36 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     }
   }, [open, initialTab, favoritesFetched, fetchFavorites])
 
+  // Issue#54: プロフィール通報状態管理
+  const [isReportOpen, setIsReportOpen] = useState(false)
+  const [isReportLoading, setIsReportLoading] = useState(false)
+
+  const handleProfileReport = useCallback(async (data: { reason: string; details?: string }) => {
+    setIsReportLoading(true)
+    try {
+      const response = await fetch(`/api/v1/users/${userProfile.userId}/report`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason: data.reason, details: data.details }),
+      })
+
+      if (response.ok) {
+        setIsReportOpen(false)
+      } else if (response.status === 409) {
+        setIsReportOpen(false)
+      } else if (response.status === 400) {
+        setIsReportOpen(false)
+      }
+    } catch {
+      // エラー時は何もしない
+    } finally {
+      setIsReportLoading(false)
+    }
+  }, [userProfile.userId])
+
   // 写真クリックハンドラー（spotIdを渡してPhotoDetailDialogを開く）
   const handlePhotoClick = useCallback((spotId: number) => {
     onSpotClick?.(spotId)
@@ -404,11 +435,30 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                       変更
                     </Button>
                   )}
+                  {/* Issue#54: プロフィール通報ボタン（他人のプロフィールのみ） */}
+                  {!isOwnProfile && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsReportOpen(true)}
+                      aria-label="このプロフィールを通報"
+                    >
+                      <Flag className="w-4 h-4" />
+                    </Button>
+                  )}
                 </>
               )}
             </div>
             {usernameError && <p className="text-sm text-red-500">{usernameError}</p>}
           </div>
+
+          {/* Issue#54: プロフィール通報ダイアログ */}
+          <ReportDialog
+            open={isReportOpen}
+            onOpenChange={setIsReportOpen}
+            onSubmit={handleProfileReport}
+            isLoading={isReportLoading}
+          />
 
           {/* SNSリンク */}
           {!isEditingSnsLinks && displaySnsLinks.length > 0 && (

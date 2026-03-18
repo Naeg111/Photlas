@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
  * Issue#54: 通報コントローラー
  */
 @RestController
-@RequestMapping("/api/v1/photos")
+@RequestMapping("/api/v1")
 public class ReportController {
 
     private final ReportService reportService;
@@ -35,7 +35,7 @@ public class ReportController {
      * @param authentication 認証情報
      * @return ReportResponse
      */
-    @PostMapping("/{photoId}/report")
+    @PostMapping("/photos/{photoId}/report")
     public ResponseEntity<ReportResponse> createReport(
             @PathVariable Long photoId,
             @Valid @RequestBody ReportRequest request,
@@ -46,6 +46,28 @@ public class ReportController {
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
         ReportResponse response = reportService.createReport(photoId, request, user.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Issue#54: プロフィールを通報する
+     *
+     * @param userId 通報対象ユーザーID
+     * @param request 通報リクエスト
+     * @param authentication 認証情報
+     * @return ReportResponse
+     */
+    @PostMapping("/users/{userId}/report")
+    public ResponseEntity<ReportResponse> createProfileReport(
+            @PathVariable Long userId,
+            @Valid @RequestBody ReportRequest request,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        User reporter = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+
+        ReportResponse response = reportService.createProfileReport(userId, request, reporter.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
