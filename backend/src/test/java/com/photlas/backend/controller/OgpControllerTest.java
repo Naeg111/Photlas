@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -115,5 +116,29 @@ public class OgpControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("http-equiv=\"refresh\"")))
                 .andExpect(content().string(containsString("/photo-viewer/" + testPhoto.getPhotoId())));
+    }
+
+    @Test
+    @DisplayName("Issue#54 - QUARANTINED写真のOGPリクエストは404を返す")
+    void testGetPhotoOgp_QuarantinedPhoto_Returns404() throws Exception {
+        // Given: QUARANTINED写真
+        testPhoto.setModerationStatus(ModerationStatus.QUARANTINED);
+        photoRepository.save(testPhoto);
+
+        // When & Then
+        mockMvc.perform(get(ENDPOINT_OGP_PHOTO + testPhoto.getPhotoId()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Issue#54 - REMOVED写真のOGPリクエストは404を返す")
+    void testGetPhotoOgp_RemovedPhoto_Returns404() throws Exception {
+        // Given: REMOVED写真
+        testPhoto.setModerationStatus(ModerationStatus.REMOVED);
+        photoRepository.save(testPhoto);
+
+        // When & Then
+        mockMvc.perform(get(ENDPOINT_OGP_PHOTO + testPhoto.getPhotoId()))
+                .andExpect(status().isNotFound());
     }
 }
