@@ -256,6 +256,56 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
       globalThis.requestAnimationFrame = originalRaf
     })
+
+    it('Issue#66 - ズーム中はバナーが非表示になる', async () => {
+      mockMap.getZoom.mockReturnValue(9)
+      const user = userEvent.setup()
+
+      const rafCallbacks: FrameRequestCallback[] = []
+      const originalRaf = globalThis.requestAnimationFrame
+      globalThis.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
+        rafCallbacks.push(cb)
+        return rafCallbacks.length
+      }) as unknown as typeof requestAnimationFrame
+
+      render(<MapView />)
+
+      await waitFor(() => {
+        expect(screen.getByText(/ズームしてスポットを表示/i)).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByText(/ズームしてスポットを表示/i))
+
+      // ズーム開始後、バナーが非表示になる
+      expect(screen.queryByText(/ズームしてスポットを表示/i)).not.toBeInTheDocument()
+
+      globalThis.requestAnimationFrame = originalRaf
+    })
+
+    it('Issue#66 - ズーム中はonZoomAnimationChangeがtrueで呼ばれる', async () => {
+      mockMap.getZoom.mockReturnValue(9)
+      const user = userEvent.setup()
+      const onZoomAnimationChange = vi.fn()
+
+      const rafCallbacks: FrameRequestCallback[] = []
+      const originalRaf = globalThis.requestAnimationFrame
+      globalThis.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
+        rafCallbacks.push(cb)
+        return rafCallbacks.length
+      }) as unknown as typeof requestAnimationFrame
+
+      render(<MapView onZoomAnimationChange={onZoomAnimationChange} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(/ズームしてスポットを表示/i)).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByText(/ズームしてスポットを表示/i))
+
+      expect(onZoomAnimationChange).toHaveBeenCalledWith(true)
+
+      globalThis.requestAnimationFrame = originalRaf
+    })
   })
 
   describe('Issue#55: Symbol Layer によるピン描画', () => {
