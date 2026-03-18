@@ -240,6 +240,50 @@ public class LocationSuggestionServiceTest {
     }
 
     // ========================================
+    // 解決済み指摘への再操作防止
+    // ========================================
+
+    @Test
+    @DisplayName("Issue#65 - 受け入れ: ACCEPTED済みの指摘を再度受け入れるとエラー")
+    void testAcceptSuggestion_AlreadyAccepted_ThrowsException() {
+        // Arrange: ステータスがACCEPTEDの指摘
+        LocationSuggestion suggestion = createMockSuggestion();
+        suggestion.setStatus(LocationSuggestionStatus.ACCEPTED);
+
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("解決済み");
+    }
+
+    @Test
+    @DisplayName("Issue#65 - 拒否: REJECTED済みの指摘を再度拒否するとエラー")
+    void testRejectSuggestion_AlreadyRejected_ThrowsException() {
+        // Arrange: ステータスがREJECTEDの指摘
+        LocationSuggestion suggestion = createMockSuggestion();
+        suggestion.setStatus(LocationSuggestionStatus.REJECTED);
+
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.rejectSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("解決済み");
+    }
+
+    // ========================================
     // ヘルパーメソッド
     // ========================================
 
