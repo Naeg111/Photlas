@@ -51,6 +51,10 @@ const LABEL_REMOVE_FAVORITE = 'お気に入りから削除'
 const SR_TITLE = '写真詳細'
 const SR_DESCRIPTION = '写真の詳細情報と撮影コンテクスト'
 
+// Issue#65: 撮影場所の指摘メッセージ
+const MSG_LOCATION_SUGGESTION_SUCCESS = '撮影場所の指摘を送信しました'
+const MSG_LOCATION_SUGGESTION_ERROR = '撮影場所の指摘に失敗しました'
+
 // Weather labels（DB値は日本語・英語どちらもありうるため両方対応）
 const WEATHER_LABELS: Record<string, string> = {
   Sunny: '晴れ',
@@ -363,8 +367,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
   // Issue#54: 通報状態管理
   const [isReportOpen, setIsReportOpen] = useState(false)
-  const [isLocationSuggestionOpen, setIsLocationSuggestionOpen] = useState(false)
   const [isReportLoading, setIsReportLoading] = useState(false)
+
+  // Issue#65: 撮影場所の指摘状態管理
+  const [isLocationSuggestionOpen, setIsLocationSuggestionOpen] = useState(false)
 
   // Issue#57: 写真削除状態管理
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -617,17 +623,17 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       })
 
       if (response.ok) {
-        toast.success('撮影場所の指摘を送信しました')
+        toast.success(MSG_LOCATION_SUGGESTION_SUCCESS)
         setIsLocationSuggestionOpen(false)
       } else if (response.status === 400) {
         const data = await response.json()
-        toast.error(data.message || '撮影場所の指摘に失敗しました')
+        toast.error(data.message || MSG_LOCATION_SUGGESTION_ERROR)
         setIsLocationSuggestionOpen(false)
       } else {
-        toast.error('撮影場所の指摘に失敗しました')
+        toast.error(MSG_LOCATION_SUGGESTION_ERROR)
       }
     } catch {
-      toast.error('撮影場所の指摘に失敗しました')
+      toast.error(MSG_LOCATION_SUGGESTION_ERROR)
     }
   }, [currentPhotoId])
 

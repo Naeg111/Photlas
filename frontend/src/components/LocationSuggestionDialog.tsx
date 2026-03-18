@@ -20,7 +20,7 @@ interface LocationSuggestionDialogProps {
   photoId: number
   currentLatitude: number
   currentLongitude: number
-  onSubmit?: (latitude: number, longitude: number) => void
+  onSubmit?: (latitude: number, longitude: number) => void | Promise<void>
 }
 
 export function LocationSuggestionDialog({
@@ -39,10 +39,14 @@ export function LocationSuggestionDialog({
     setSuggestedLng(e.lngLat.lng)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (suggestedLat !== null && suggestedLng !== null && onSubmit) {
       setIsSubmitting(true)
-      onSubmit(suggestedLat, suggestedLng)
+      try {
+        await onSubmit(suggestedLat, suggestedLng)
+      } finally {
+        setIsSubmitting(false)
+      }
     }
   }
 
