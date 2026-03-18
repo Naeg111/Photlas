@@ -1678,5 +1678,36 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(mockToast.error).toHaveBeenCalledWith('撮影場所の指摘に失敗しました')
       })
     })
+
+    it('指摘済みの場合は指摘ボタンが表示されない', async () => {
+      // ステータスAPIがhasSuggested=trueを返すモック
+      const photoDetail = createMockApiResponse({ userId: 999, username: 'otheruser' })
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/location-suggestions/status')) {
+          return Promise.resolve({ ok: true, json: async () => ({ hasSuggested: true }) })
+        }
+        if (url.includes('/spots/') && url.includes('/photos')) {
+          return Promise.resolve({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        }
+        if (url.includes(`/photos/${TEST_PHOTO_ID_1}`)) {
+          return Promise.resolve({ ok: true, json: async () => photoDetail })
+        }
+        return Promise.resolve({ ok: false, status: 404, json: async () => ({}) })
+      })
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+      Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      // 写真が読み込まれるのを待つ
+      await waitFor(() => {
+        expect(screen.getByText('otheruser')).toBeInTheDocument()
+      })
+
+      // 指摘ボタンが表示されない
+      expect(screen.queryByTestId('location-suggestion-button')).not.toBeInTheDocument()
+    })
   })
 })
