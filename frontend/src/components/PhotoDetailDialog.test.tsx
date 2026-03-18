@@ -25,6 +25,43 @@ vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
 }))
 
+// Issue#65: sonnerのモック
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}))
+vi.mock('sonner', () => ({
+  toast: mockToast,
+}))
+
+// Issue#65: LocationSuggestionDialogのモック
+const TEST_SUGGESTED_LAT = 35.68
+const TEST_SUGGESTED_LNG = 139.76
+const { MockLocationSuggestionDialog } = vi.hoisted(() => {
+  const MockLocationSuggestionDialog = ({ open, onSubmit }: {
+    open: boolean
+    onSubmit?: (lat: number, lng: number) => void
+  }) => {
+    if (!open) return null
+    return (
+      <div data-testid="location-suggestion-dialog">
+        <button
+          data-testid="mock-suggestion-submit"
+          onClick={() => onSubmit?.(35.68, 139.76)}
+        >
+          送信
+        </button>
+      </div>
+    )
+  }
+  return { MockLocationSuggestionDialog }
+})
+vi.mock('./LocationSuggestionDialog', () => ({
+  LocationSuggestionDialog: MockLocationSuggestionDialog,
+}))
+
 /**
  * Issue#14: 写真詳細表示 (UI + API)
  * TDD Red段階のテストコード
@@ -1507,6 +1544,138 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await waitFor(() => {
         expect(screen.queryByTestId('edit-save-button')).not.toBeInTheDocument()
         expect(screen.getByTestId('edit-photo-button')).toBeInTheDocument()
+      })
+    })
+  })
+
+  // ============================================================
+  // Issue#65: 撮影場所の指摘API連携テスト
+  // ============================================================
+  describe('Issue#65: 撮影場所の指摘API連携', () => {
+    function createLocationSuggestionMockFetch(
+      postConfig: { ok: boolean; status?: number; body?: Record<string, unknown> } | 'reject'
+    ) {
+      const photoDetail = createMockApiResponse({ userId: 999, username: 'otheruser' })
+      return vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/location-suggestions') && options?.method === 'POST') {
+          if (postConfig === 'reject') {
+            return Promise.reject(new Error('Network error'))
+          }
+          return Promise.resolve({
+            ok: postConfig.ok,
+            status: postConfig.status ?? (postConfig.ok ? 201 : 400),
+            json: async () => postConfig.body ?? {},
+          })
+        }
+        if (url.includes('/spots/') && url.includes('/photos')) {
+          return Promise.resolve({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        }
+        if (url.includes(`/photos/${TEST_PHOTO_ID_1}`)) {
+          return Promise.resolve({ ok: true, json: async () => photoDetail })
+        }
+        return Promise.resolve({ ok: false, status: 404, json: async () => ({}) })
+      })
+    }
+
+    async function renderAndOpenSuggestionDialog(mockFetch: ReturnType<typeof vi.fn>) {
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+      Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('location-suggestion-button')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('location-suggestion-button'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mock-suggestion-submit')).toBeInTheDocument()
+      })
+
+      return user
+    }
+
+    it('指摘送信時にAPIにPOSTリクエストが送信される', async () => {
+      const mockFetch = createLocationSuggestionMockFetch({ ok: true, status: 201, body: { id: 1 } })
+      const user = await renderAndOpenSuggestionDialog(mockFetch)
+
+      await user.click(screen.getByTestId('mock-suggestion-submit'))
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining(`/photos/${TEST_PHOTO_ID_1}/location-suggestions`),
+          expect.objectContaining({
+            method: 'POST',
+            headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ latitude: TEST_SUGGESTED_LAT, longitude: TEST_SUGGESTED_LNG }),
+          })
+        )
+      })
+    })
+
+    it('指摘送信成功時に成功トーストが表示される', async () => {
+      const mockFetch = createLocationSuggestionMockFetch({ ok: true, status: 201, body: { id: 1 } })
+      const user = await renderAndOpenSuggestionDialog(mockFetch)
+
+      await user.click(screen.getByTestId('mock-suggestion-submit'))
+
+      await waitFor(() => {
+        expect(mockToast.success).toHaveBeenCalledWith('撮影場所の指摘を送信しました')
+      })
+    })
+
+    it('指摘送信成功時にダイアログが閉じる', async () => {
+      const mockFetch = createLocationSuggestionMockFetch({ ok: true, status: 201, body: { id: 1 } })
+      const user = await renderAndOpenSuggestionDialog(mockFetch)
+
+      await user.click(screen.getByTestId('mock-suggestion-submit'))
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('location-suggestion-dialog')).not.toBeInTheDocument()
+      })
+    })
+
+    it('400エラー時にサーバーのメッセージがエラートーストに表示される', async () => {
+      const mockFetch = createLocationSuggestionMockFetch({
+        ok: false,
+        status: 400,
+        body: { message: '自分の投稿に対して撮影場所の指摘はできません' },
+      })
+      const user = await renderAndOpenSuggestionDialog(mockFetch)
+
+      await user.click(screen.getByTestId('mock-suggestion-submit'))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('自分の投稿に対して撮影場所の指摘はできません')
+      })
+    })
+
+    it('400エラー時にダイアログが閉じる', async () => {
+      const mockFetch = createLocationSuggestionMockFetch({
+        ok: false,
+        status: 400,
+        body: { message: '自分の投稿に対して撮影場所の指摘はできません' },
+      })
+      const user = await renderAndOpenSuggestionDialog(mockFetch)
+
+      await user.click(screen.getByTestId('mock-suggestion-submit'))
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('location-suggestion-dialog')).not.toBeInTheDocument()
+      })
+    })
+
+    it('ネットワークエラー時にエラートーストが表示される', async () => {
+      const mockFetch = createLocationSuggestionMockFetch('reject')
+      const user = await renderAndOpenSuggestionDialog(mockFetch)
+
+      await user.click(screen.getByTestId('mock-suggestion-submit'))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('撮影場所の指摘に失敗しました')
       })
     })
   })
