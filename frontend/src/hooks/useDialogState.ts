@@ -20,6 +20,7 @@ export type DialogName =
   | 'lightbox'
   | 'wantToGoList'
   | 'about'
+  | 'placeSearch'
 
 /**
  * ダイアログの開閉状態
@@ -66,6 +67,7 @@ const INITIAL_STATE: DialogState = {
   lightbox: false,
   wantToGoList: false,
   about: false,
+  placeSearch: false,
 }
 
 /**
