@@ -130,6 +130,27 @@ describe('FilterPanel', () => {
       expect(screen.getByText('ISO 12800以下')).toBeInTheDocument()
     })
 
+    it('Issue#67 - 機材種別ボタンが指定の順序で並んでいる', async () => {
+      const user = userEvent.setup()
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+
+      const buttons = screen.getAllByRole('button')
+      const deviceTypeLabels = ['スマートフォン', 'ミラーレス', '一眼レフ', 'コンパクトデジカメ', 'フィルム', 'その他']
+      const deviceButtons = buttons.filter(btn =>
+        deviceTypeLabels.includes(btn.textContent?.trim() ?? '')
+      )
+
+      expect(deviceButtons).toHaveLength(6)
+      expect(deviceButtons[0]).toHaveTextContent('スマートフォン')
+      expect(deviceButtons[1]).toHaveTextContent('ミラーレス')
+      expect(deviceButtons[2]).toHaveTextContent('一眼レフ')
+      expect(deviceButtons[3]).toHaveTextContent('コンパクトデジカメ')
+      expect(deviceButtons[4]).toHaveTextContent('フィルム')
+      expect(deviceButtons[5]).toHaveTextContent('その他')
+    })
+
     it('上級者向けフィルターに撮影日からの経過期間が含まれない', async () => {
       const user = userEvent.setup()
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
