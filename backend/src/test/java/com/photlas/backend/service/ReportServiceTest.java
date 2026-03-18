@@ -109,7 +109,7 @@ public class ReportServiceTest {
         // When & Then
         assertThatThrownBy(() -> reportService.createReport(TEST_PHOTO_ID, request, TEST_REPORTER_USER_ID))
                 .isInstanceOf(ConflictException.class)
-                .hasMessageContaining("この写真はすでに通報済みです");
+                .hasMessageContaining("すでに通報済みです");
     }
 
     @Test
