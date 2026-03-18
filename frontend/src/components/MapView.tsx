@@ -54,6 +54,10 @@ const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 const DEFAULT_ZOOM = 11
 const MIN_ZOOM_FOR_PINS = 10
 
+// Issue#66: ズームバナーのズーム速度（zoom/ms）
+// 元の速度: 11113msでzoom0→10（1zoom/1111ms）。1.5倍速: 1zoom/741ms
+const ZOOM_BANNER_SPEED = 1 / 741
+
 // クラスタリング設定（Issue#39, Issue#55）
 const CLUSTER_RADIUS = 70
 const CLUSTER_MAX_ZOOM = 17
@@ -548,9 +552,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const zoomAnimationRef = useRef<number | null>(null)
   const lastZoomFrameTimeRef = useRef<number>(0)
 
-  // 元の速度: 11113msでzoom0→10（1zoom/1111ms）。1.5倍速: 1zoom/741ms
-  const ZOOM_SPEED = 1 / 741 // zoom per ms
-
   const animateZoom = useCallback((timestamp: number) => {
     if (!map) return
 
@@ -568,7 +569,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       return
     }
 
-    const newZoom = Math.min(currentZoom + ZOOM_SPEED * deltaMs, MIN_ZOOM_FOR_PINS)
+    const newZoom = Math.min(currentZoom + ZOOM_BANNER_SPEED * deltaMs, MIN_ZOOM_FOR_PINS)
     map.setZoom(newZoom)
 
     zoomAnimationRef.current = requestAnimationFrame(animateZoom)
