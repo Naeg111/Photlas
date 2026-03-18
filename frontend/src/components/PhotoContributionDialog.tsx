@@ -35,11 +35,12 @@ const WEATHER_OPTIONS = ['晴れ', '曇り', '雨', '雪'] as const
 type WeatherOption = typeof WEATHER_OPTIONS[number]
 
 // Issue#46: 機材種別の選択肢
+// Issue#67: 投稿数の多い機材順に並び替え
 const DEVICE_TYPE_OPTIONS = [
-  { label: '一眼レフ', value: 'SLR' },
-  { label: 'ミラーレス', value: 'MIRRORLESS' },
-  { label: 'コンパクトデジカメ', value: 'COMPACT' },
   { label: 'スマートフォン', value: 'SMARTPHONE' },
+  { label: 'ミラーレス', value: 'MIRRORLESS' },
+  { label: '一眼レフ', value: 'SLR' },
+  { label: 'コンパクトデジカメ', value: 'COMPACT' },
   { label: 'フィルム', value: 'FILM' },
   { label: 'その他', value: 'OTHER' },
 ] as const
