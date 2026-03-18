@@ -223,7 +223,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('ズームバナーをタップするとアニメーション付きでZoom 10にズームアップする', async () => {
+    it('ズームバナーをタップするとsetZoomで段階的にズームアップする（easeToではない）', async () => {
       mockMap.getZoom.mockReturnValue(9)
       const user = userEvent.setup()
 
@@ -237,9 +237,10 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       const banner = screen.getByText(/ズームしてスポットを表示/i)
       await user.click(banner)
 
-      expect(mockMap.easeTo).toHaveBeenCalledWith(
-        expect.objectContaining({ zoom: 10 })
-      )
+      // easeTo（一括アニメーション）ではなく、setZoom（段階的ズーム）が呼ばれる
+      expect(mockMap.easeTo).not.toHaveBeenCalled()
+      // requestAnimationFrameベースの段階的ズームが開始される
+      expect(mockMap.setZoom).toHaveBeenCalled()
     })
   })
 
