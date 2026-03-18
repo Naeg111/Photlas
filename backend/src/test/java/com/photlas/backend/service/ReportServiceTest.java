@@ -180,33 +180,6 @@ public class ReportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 既にQUARANTINEDの写真は再隔離されない")
-    void createReport_AlreadyQuarantined_NotReQuarantined() {
-        // Given
-        Photo photo = createTestPhoto();
-        photo.setModerationStatus(ModerationStatus.QUARANTINED);
-        when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
-        when(reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
-                TEST_REPORTER_USER_ID, ReportTargetType.PHOTO, TEST_PHOTO_ID))
-                .thenReturn(Optional.empty());
-
-        Report savedReport = createSavedReport();
-        when(reportRepository.save(any(Report.class))).thenReturn(savedReport);
-
-        // 閾値以上だがステータスがQUARANTINED
-        when(reportRepository.countByTargetTypeAndTargetId(ReportTargetType.PHOTO, TEST_PHOTO_ID))
-                .thenReturn(3L);
-
-        ReportRequest request = createTestReportRequest();
-
-        // When
-        reportService.createReport(TEST_PHOTO_ID, request, TEST_REPORTER_USER_ID);
-
-        // Then: photoRepository.save は呼ばれない（ステータスがPUBLISHEDでないため条件不一致）
-        verify(photoRepository, never()).save(any(Photo.class));
-    }
-
-    @Test
     @DisplayName("Issue#54 - 正常な通報で正しいReportResponseが返される")
     void createReport_ValidReport_ReturnsCorrectResponse() {
         // Given

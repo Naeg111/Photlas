@@ -129,24 +129,19 @@ public class ReportModerationTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - すでにQUARANTINEDの写真は追加通報でもステータスが変わらない")
-    void testCreateReport_AlreadyQuarantined_StatusRemainsQuarantined() {
+    @DisplayName("Issue#54 - すでにQUARANTINEDの写真への通報はIllegalStateExceptionがスローされる")
+    void testCreateReport_AlreadyQuarantined_ThrowsIllegalStateException() {
         // Given: 写真を事前にQUARANTINEDに設定
         testPhoto.setModerationStatus(ModerationStatus.QUARANTINED);
         photoRepository.save(testPhoto);
 
-        User reporter3 = createUser("reporter3", "reporter3@example.com");
+        ReportRequest request = new ReportRequest("ADULT_CONTENT", "不適切");
 
-        // When: 通報が閾値に達しても
-        ReportRequest request1 = new ReportRequest("ADULT_CONTENT", "不適切");
-        reportService.createReport(testPhoto.getPhotoId(), request1, reporter1.getId());
-
-        ReportRequest request2 = new ReportRequest("VIOLENCE", "暴力的");
-        reportService.createReport(testPhoto.getPhotoId(), request2, reporter3.getId());
-
-        // Then: ステータスはQUARANTINEDのまま（REMOVEDにはならない）
-        Photo updatedPhoto = photoRepository.findById(testPhoto.getPhotoId()).orElseThrow();
-        assertThat(updatedPhoto.getModerationStatus()).isEqualTo(ModerationStatus.QUARANTINED);
+        // When & Then: 公開中でない写真への通報はブロックされる
+        assertThatThrownBy(() -> reportService.createReport(
+                testPhoto.getPhotoId(), request, reporter1.getId()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("公開中の写真のみ");
     }
 
     // ===== テストヘルパーメソッド =====

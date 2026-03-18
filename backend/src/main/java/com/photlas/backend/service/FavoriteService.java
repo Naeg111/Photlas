@@ -2,6 +2,7 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.entity.Favorite;
+import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -72,8 +73,13 @@ public class FavoriteService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
-        photoRepository.findById(photoId)
+        Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
+
+        // Issue#54: 公開中の写真のみお気に入り登録可能
+        if (photo.getModerationStatus() != ModerationStatus.PUBLISHED) {
+            throw new IllegalStateException("公開中の写真のみお気に入り登録できます");
+        }
 
         // 通常フローでの重複チェック
         if (favoriteRepository.findByUserIdAndPhotoId(user.getId(), photoId).isPresent()) {
