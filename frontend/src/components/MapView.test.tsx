@@ -218,7 +218,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        expect(screen.getByText(/地図を拡大してください/)).toBeInTheDocument()
+        expect(screen.getByText(/投稿を表示するには地図を拡大してください/)).toBeInTheDocument()
       })
     })
 
@@ -228,7 +228,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       render(<MapView />)
 
       await waitFor(() => {
-        const message = screen.getByText(/地図を拡大してください/)
+        const message = screen.getByText(/投稿を表示するには地図を拡大してください/)
         expect(message.closest('div[class*="cursor-pointer"]')).toBeNull()
       })
     })
