@@ -10,6 +10,7 @@ import ReviewLocationPage from './pages/ReviewLocationPage'
 import { CookieConsentBanner } from './components/CookieConsentBanner'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
+import { PlaceSearchDialog } from './components/PlaceSearchDialog'
 import { TopMenuPanel } from './components/TopMenuPanel'
 import { LoginRequiredDialog } from './components/LoginRequiredDialog'
 import { LoginDialog } from './components/LoginDialog'
@@ -32,7 +33,7 @@ import { transformMonths, transformTimesOfDay, transformWeathers, transformCateg
 import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto, ApiError, getAuthHeaders } from './utils/apiClient'
 import { stripExif } from './utils/stripExif'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
-import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed } from 'lucide-react'
+import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed, Search } from 'lucide-react'
 import { CompassIcon } from './components/CompassIcon'
 import { Button } from './components/ui/button'
 import { Toaster } from './components/ui/sonner'
@@ -447,6 +448,17 @@ function MainContent({ onMapReady }: MainContentProps) {
         className="absolute right-6 z-10 flex flex-col items-center gap-3"
         style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
       >
+        {/* Issue#69: 場所検索ボタン（PC表示: ズームボタンの上） */}
+        <Button
+          variant="secondary"
+          className="hidden md:flex rounded-full shadow-lg hover:bg-secondary"
+          style={FLOATING_BUTTON_SIZE}
+          onClick={() => dialog.open('placeSearch')}
+          aria-label="場所検索"
+        >
+          <Search className="w-5 h-5" />
+        </Button>
+
         {/* ズームボタン（PC表示のみ） */}
         <div className="hidden md:flex flex-col items-center gap-1.5">
           <Button
@@ -468,6 +480,17 @@ function MainContent({ onMapReady }: MainContentProps) {
             <Minus className="w-5 h-5" />
           </Button>
         </div>
+
+        {/* Issue#69: 場所検索ボタン（モバイル表示: ノースヘディングの上） */}
+        <Button
+          variant="secondary"
+          className="md:hidden rounded-full shadow-lg hover:bg-secondary"
+          style={FLOATING_BUTTON_SIZE}
+          onClick={() => dialog.open('placeSearch')}
+          aria-label="場所検索"
+        >
+          <Search className="w-5 h-5" />
+        </Button>
 
         {/* ノースヘディングボタン */}
         <Button
@@ -502,6 +525,14 @@ function MainContent({ onMapReady }: MainContentProps) {
           </Button>
         )}
       </div>
+
+      {/* Issue#69: 場所検索ダイアログ */}
+      <PlaceSearchDialog
+        {...dialog.getProps('placeSearch')}
+        onPlaceSelect={(lng, lat, zoom) => {
+          mapRef.current?.flyToPlace(lng, lat, zoom)
+        }}
+      />
 
       {/* パネル・ダイアログ群 */}
       <FilterPanel

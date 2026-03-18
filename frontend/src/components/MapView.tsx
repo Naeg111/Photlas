@@ -17,6 +17,8 @@ export interface MapViewHandle {
   resetNorthHeading: () => void
   showShootingLocationPin: (lat: number, lng: number) => void
   clearShootingLocationPin: () => void
+  /** Issue#69: 場所検索結果にマップを移動する */
+  flyToPlace: (lng: number, lat: number, zoom: number) => void
 }
 
 /**
@@ -501,6 +503,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         savedMapStateRef.current = null
       }
       setShootingLocationPin(null)
+    },
+    flyToPlace: (lng: number, lat: number, zoom: number) => {
+      if (map) {
+        map.flyTo({ center: [lng, lat], zoom })
+      }
     },
   }), [map, requestOrientationPermission, fetchSpots])
 
