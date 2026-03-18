@@ -602,6 +602,35 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }
   }, [currentPhotoId])
 
+  // Issue#65: 撮影場所の指摘送信処理
+  const handleLocationSuggestion = useCallback(async (latitude: number, longitude: number) => {
+    if (!currentPhotoId) return
+
+    try {
+      const response = await fetch(`${API_PHOTOS}/${currentPhotoId}/location-suggestions`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ latitude, longitude }),
+      })
+
+      if (response.ok) {
+        toast.success('撮影場所の指摘を送信しました')
+        setIsLocationSuggestionOpen(false)
+      } else if (response.status === 400) {
+        const data = await response.json()
+        toast.error(data.message || '撮影場所の指摘に失敗しました')
+        setIsLocationSuggestionOpen(false)
+      } else {
+        toast.error('撮影場所の指摘に失敗しました')
+      }
+    } catch {
+      toast.error('撮影場所の指摘に失敗しました')
+    }
+  }, [currentPhotoId])
+
   // Issue#57: 写真削除処理
   const handleDeletePhoto = useCallback(async () => {
     if (!currentPhotoId) return
@@ -1293,6 +1322,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       photoId={currentPhoto.photoId}
                       currentLatitude={currentPhoto.spot.latitude}
                       currentLongitude={currentPhoto.spot.longitude}
+                      onSubmit={handleLocationSuggestion}
                     />
                   )}
 
