@@ -12,6 +12,7 @@ import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { useAuth } from '../contexts/AuthContext'
 import { ReportDialog } from './ReportDialog'
+import { LocationSuggestionDialog } from './LocationSuggestionDialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -362,6 +363,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
   // Issue#54: 通報状態管理
   const [isReportOpen, setIsReportOpen] = useState(false)
+  const [isLocationSuggestionOpen, setIsLocationSuggestionOpen] = useState(false)
   const [isReportLoading, setIsReportLoading] = useState(false)
 
   // Issue#57: 写真削除状態管理
@@ -1253,6 +1255,17 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         <Flag className="w-5 h-5" />
                       </Button>
                     )}
+                    {/* Issue#65: 撮影場所の指摘ボタン（ログイン済み・他人の写真のみ） */}
+                    {isAuthenticated && !isDeletable && (
+                      <Button
+                        variant="outline"
+                        data-testid="location-suggestion-button"
+                        onClick={() => setIsLocationSuggestionOpen(true)}
+                        aria-label="撮影場所の指摘"
+                      >
+                        <MapPin className="w-5 h-5" />
+                      </Button>
+                    )}
                     {/* Issue#58: 共有ボタン（認証状態に関係なく常に表示） */}
                     <Button
                       variant="outline"
@@ -1271,6 +1284,17 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     onSubmit={handleReport}
                     isLoading={isReportLoading}
                   />
+
+                  {/* Issue#65: 撮影場所の指摘ダイアログ */}
+                  {currentPhoto && (
+                    <LocationSuggestionDialog
+                      open={isLocationSuggestionOpen}
+                      onOpenChange={setIsLocationSuggestionOpen}
+                      photoId={currentPhoto.photo.photoId}
+                      currentLatitude={currentPhoto.spot.latitude}
+                      currentLongitude={currentPhoto.spot.longitude}
+                    />
+                  )}
 
                   {/* Issue#57: 写真削除確認ダイアログ */}
                   <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
