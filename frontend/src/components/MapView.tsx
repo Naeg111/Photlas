@@ -573,6 +573,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       lastZoomFrameTimeRef.current = 0
       setIsZoomAnimating(false)
       onZoomAnimationChange?.(false)
+      fetchSpots(map)
       return
     }
 
@@ -580,7 +581,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     map.setZoom(newZoom)
 
     zoomAnimationRef.current = requestAnimationFrame(animateZoom)
-  }, [map, onZoomAnimationChange])
+  }, [map, onZoomAnimationChange, fetchSpots])
 
   const handleZoomBannerClick = useCallback(() => {
     if (!map || zoomAnimationRef.current) return
