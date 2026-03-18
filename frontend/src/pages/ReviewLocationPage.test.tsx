@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { userEvent } from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import ReviewLocationPage from './ReviewLocationPage'
@@ -10,6 +11,7 @@ import ReviewLocationPage from './ReviewLocationPage'
  * - トークンなしでアクセスするとエラー表示
  * - マップ上に現在地点と指摘地点の2つのピンが表示される
  * - 「受け入れる」「拒否する」ボタンが表示される
+ * - 未ログイン時にログイン案内が表示される
  */
 
 // react-map-glのモック
@@ -36,12 +38,16 @@ vi.mock('../config/api', () => ({
   API_V1_URL: 'http://localhost:3000/api/v1',
 }))
 
-// AuthContextのモック
+// AuthContextのモック（動的）
+const mockUseAuth = vi.fn()
 vi.mock('../contexts/AuthContext', () => ({
-  useAuth: () => ({
-    user: { id: 1, email: 'owner@example.com' },
-    getAuthToken: () => 'mock-token',
-  }),
+  useAuth: () => mockUseAuth(),
+}))
+
+// LoginDialogのモック
+vi.mock('../components/LoginDialog', () => ({
+  LoginDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="login-dialog">ログインダイアログ</div> : null,
 }))
 
 // APIモック
@@ -63,8 +69,15 @@ const renderWithToken = (token?: string) => {
 
 describe('ReviewLocationPage', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     mockFetch.mockReset()
     global.fetch = mockFetch
+    // デフォルトはログイン済み状態
+    mockUseAuth.mockReturnValue({
+      user: { id: 1, email: 'owner@example.com' },
+      isAuthenticated: true,
+      getAuthToken: () => 'mock-token',
+    })
   })
 
   it('should show error message when no token is provided', () => {
@@ -108,5 +121,45 @@ describe('ReviewLocationPage', () => {
     renderWithToken('valid-token')
 
     expect(await screen.findByTestId('mapbox-map')).toBeInTheDocument()
+  })
+
+  // ============================================================
+  // Issue#65: 未ログイン時のログイン案内テスト
+  // ============================================================
+  describe('未ログイン時のログイン案内', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isAuthenticated: false,
+        getAuthToken: () => null,
+      })
+    })
+
+    it('未ログイン時に「ログインが必要です」メッセージが表示される', () => {
+      renderWithToken('valid-token')
+
+      expect(screen.getByText('ログインが必要です')).toBeInTheDocument()
+    })
+
+    it('未ログイン時にログインボタンが表示される', () => {
+      renderWithToken('valid-token')
+
+      expect(screen.getByRole('button', { name: 'ログイン' })).toBeInTheDocument()
+    })
+
+    it('ログインボタンクリックでLoginDialogが開く', async () => {
+      renderWithToken('valid-token')
+
+      const user = userEvent.setup()
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      expect(screen.getByTestId('login-dialog')).toBeInTheDocument()
+    })
+
+    it('未ログイン時にAPIリクエストを送信しない', () => {
+      renderWithToken('valid-token')
+
+      expect(mockFetch).not.toHaveBeenCalled()
+    })
   })
 })
