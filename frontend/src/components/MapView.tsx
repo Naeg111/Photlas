@@ -55,8 +55,8 @@ const DEFAULT_ZOOM = 11
 const MIN_ZOOM_FOR_PINS = 10
 
 // Issue#66: ズームバナーのズーム速度（zoom/ms）
-// 7zoomレベルを3.5秒で到達: 1zoom/500ms
-const ZOOM_BANNER_SPEED = 1 / 500
+// 7zoomレベルを4秒で到達: 1zoom/571ms
+const ZOOM_BANNER_SPEED = 1 / 571
 
 // クラスタリング設定（Issue#39, Issue#55）
 const CLUSTER_RADIUS = 70
@@ -567,7 +567,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     const deltaMs = timestamp - lastZoomFrameTimeRef.current
     lastZoomFrameTimeRef.current = timestamp
 
-    const currentZoom = map.getZoom()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const transform = (map as any).transform
+    const currentZoom = transform.zoom
     if (currentZoom >= MIN_ZOOM_FOR_PINS) {
       zoomAnimationRef.current = null
       lastZoomFrameTimeRef.current = 0
@@ -578,7 +580,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }
 
     const newZoom = Math.min(currentZoom + ZOOM_BANNER_SPEED * deltaMs, MIN_ZOOM_FOR_PINS)
-    map.setZoom(newZoom)
+    // イベントを発火せずにズームを変更（ドラッグジェスチャーと競合しない）
+    transform.zoom = newZoom
+    map.triggerRepaint()
 
     zoomAnimationRef.current = requestAnimationFrame(animateZoom)
   }, [map, onZoomAnimationChange, fetchSpots])
