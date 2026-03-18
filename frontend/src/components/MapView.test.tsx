@@ -53,6 +53,8 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() =
     setZoom: vi.fn(),
     getZoom: vi.fn(),
     easeTo: vi.fn(),
+    transform: { zoom: 9 },
+    triggerRepaint: vi.fn(),
     getCenter: vi.fn(() => ({ lng: 139.7454, lat: 35.6585 })),
     getBounds: vi.fn(() => ({
       getNorth: () => 35.7,
@@ -250,9 +252,9 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         act(() => { rafCallbacks[0](performance.now()) })
       }
 
-      // easeTo（一括アニメーション）ではなく、setZoom（段階的ズーム）が呼ばれる
+      // easeTo（一括アニメーション）ではなく、transform.zoom直接操作で段階的にズームする
       expect(mockMap.easeTo).not.toHaveBeenCalled()
-      expect(mockMap.setZoom).toHaveBeenCalled()
+      expect(mockMap.triggerRepaint).toHaveBeenCalled()
 
       globalThis.requestAnimationFrame = originalRaf
     })
