@@ -13,6 +13,16 @@ import { Toaster } from '../components/ui/sonner'
  * 隔離キューの写真を承認・拒否する管理画面
  */
 
+// Issue#54: 通報理由の日本語マッピング
+const REPORT_REASON_LABELS: Record<string, string> = {
+  ADULT_CONTENT: '成人向けコンテンツ',
+  VIOLENCE: '暴力的なコンテンツ',
+  COPYRIGHT_INFRINGEMENT: '著作権侵害',
+  PRIVACY_VIOLATION: 'プライバシー侵害',
+  SPAM: 'スパム',
+  OTHER: 'その他',
+}
+
 interface ModerationQueueItem {
   photo_id: number
   title: string
@@ -20,6 +30,8 @@ interface ModerationQueueItem {
   user_id: number
   username: string
   created_at: string | null
+  report_count: number
+  report_reasons: string[]
 }
 
 interface ModerationQueueResponse {
@@ -225,6 +237,23 @@ export default function AdminModerationPage() {
                     <p className="text-xs text-gray-400">
                       {new Date(item.created_at).toLocaleString('ja-JP')}
                     </p>
+                  )}
+
+                  {/* Issue#54: 通報情報 */}
+                  {item.report_count > 0 && (
+                    <div className="text-sm">
+                      <p className="font-medium text-orange-600">通報 {item.report_count}件</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {item.report_reasons.map((reason) => (
+                          <span
+                            key={reason}
+                            className="px-2 py-0.5 text-xs bg-orange-100 text-orange-700 rounded"
+                          >
+                            {REPORT_REASON_LABELS[reason] || reason}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
 
                   {/* アクションボタン */}

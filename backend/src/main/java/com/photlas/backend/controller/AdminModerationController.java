@@ -3,8 +3,11 @@ package com.photlas.backend.controller;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
+import com.photlas.backend.entity.Report;
+import com.photlas.backend.entity.ReportTargetType;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.ReportRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.AdminModerationService;
 import com.photlas.backend.service.S3Service;
@@ -32,17 +35,20 @@ public class AdminModerationController {
     private final AdminModerationService adminModerationService;
     private final PhotoRepository photoRepository;
     private final UserRepository userRepository;
+    private final ReportRepository reportRepository;
     private final S3Service s3Service;
 
     public AdminModerationController(
             AdminModerationService adminModerationService,
             PhotoRepository photoRepository,
             UserRepository userRepository,
+            ReportRepository reportRepository,
             S3Service s3Service
     ) {
         this.adminModerationService = adminModerationService;
         this.photoRepository = photoRepository;
         this.userRepository = userRepository;
+        this.reportRepository = reportRepository;
         this.s3Service = s3Service;
     }
 
@@ -79,9 +85,19 @@ public class AdminModerationController {
         String createdAt = photo.getCreatedAt() != null
                 ? photo.getCreatedAt().format(DateTimeFormatter.ISO_DATE_TIME) : null;
 
+        // Issue#54: 通報情報を取得
+        List<Report> reports = reportRepository.findByTargetTypeAndTargetId(
+                ReportTargetType.PHOTO, photo.getPhotoId());
+        int reportCount = reports.size();
+        List<String> reportReasons = reports.stream()
+                .map(r -> r.getReasonCategory().name())
+                .distinct()
+                .collect(Collectors.toList());
+
         return new ModerationQueueItem(
                 photo.getPhotoId(), photo.getTitle(), imageUrl,
-                photo.getUserId(), username, createdAt
+                photo.getUserId(), username, createdAt,
+                reportCount, reportReasons
         );
     }
 
@@ -94,7 +110,9 @@ public class AdminModerationController {
             @JsonProperty("image_url") String imageUrl,
             @JsonProperty("user_id") Long userId,
             String username,
-            @JsonProperty("created_at") String createdAt
+            @JsonProperty("created_at") String createdAt,
+            @JsonProperty("report_count") int reportCount,
+            @JsonProperty("report_reasons") List<String> reportReasons
     ) {}
 
     /**
