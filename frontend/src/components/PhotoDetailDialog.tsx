@@ -1290,7 +1290,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     <LocationSuggestionDialog
                       open={isLocationSuggestionOpen}
                       onOpenChange={setIsLocationSuggestionOpen}
-                      photoId={currentPhoto.photo.photoId}
+                      photoId={currentPhoto.photoId}
                       currentLatitude={currentPhoto.spot.latitude}
                       currentLongitude={currentPhoto.spot.longitude}
                     />
