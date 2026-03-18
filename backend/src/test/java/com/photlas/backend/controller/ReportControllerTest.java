@@ -336,4 +336,69 @@ public class ReportControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath(JSON_PATH_MESSAGE).value(containsString("自分の投稿を通報")));
     }
+
+    // ===== Issue#54: プロフィール通報テスト =====
+
+    private static final String PROFILE_REPORT_ENDPOINT_PREFIX = "/api/v1/users/";
+    private static final String PROFILE_REPORT_ENDPOINT_SUFFIX = "/report";
+
+    private String getProfileReportEndpoint(Long userId) {
+        return PROFILE_REPORT_ENDPOINT_PREFIX + userId + PROFILE_REPORT_ENDPOINT_SUFFIX;
+    }
+
+    @Test
+    @DisplayName("Issue#54 - プロフィール通報: 正常ケース")
+    void testCreateProfileReport_ValidRequest_ReturnsCreated() throws Exception {
+        // photoOwner（他人）のプロフィールを通報
+        User targetUser = userRepository.findByEmail(PHOTO_OWNER_EMAIL).orElseThrow();
+
+        com.photlas.backend.dto.ReportRequest request =
+            createReportRequest(REASON_ADULT_CONTENT, DETAILS_ADULT_CONTENT);
+
+        mockMvc.perform(post(getProfileReportEndpoint(targetUser.getId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("Issue#54 - プロフィール通報: 自分のプロフィールを通報するとBadRequest")
+    void testCreateProfileReport_SelfReport_ReturnsBadRequest() throws Exception {
+        com.photlas.backend.dto.ReportRequest request =
+            createReportRequest(REASON_ADULT_CONTENT, DETAILS_ADULT_CONTENT);
+
+        mockMvc.perform(post(getProfileReportEndpoint(testUser.getId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#54 - プロフィール通報: 重複通報はConflict")
+    void testCreateProfileReport_DuplicateReport_ReturnsConflict() throws Exception {
+        User targetUser = userRepository.findByEmail(PHOTO_OWNER_EMAIL).orElseThrow();
+
+        com.photlas.backend.dto.ReportRequest request =
+            createReportRequest(REASON_ADULT_CONTENT, DETAILS_ADULT_CONTENT);
+
+        // 1回目
+        mockMvc.perform(post(getProfileReportEndpoint(targetUser.getId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        // 2回目（重複）
+        mockMvc.perform(post(getProfileReportEndpoint(targetUser.getId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict());
+    }
 }

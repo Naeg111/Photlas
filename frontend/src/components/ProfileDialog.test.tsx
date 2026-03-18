@@ -1152,4 +1152,37 @@ describe('ProfileDialog', () => {
       })
     })
   })
+
+  // ============================================================
+  // Issue#54: プロフィール通報ボタンテスト
+  // ============================================================
+  describe('Issue#54: プロフィール通報', () => {
+    it('他人のプロフィールには通報ボタンが表示される', () => {
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockOtherUserProfile}
+          isOwnProfile={false}
+          onSpotClick={mockOnSpotClick}
+        />
+      )
+
+      expect(screen.getByLabelText('このプロフィールを通報')).toBeInTheDocument()
+    })
+
+    it('自分のプロフィールには通報ボタンが表示されない', () => {
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onSpotClick={mockOnSpotClick}
+        />
+      )
+
+      expect(screen.queryByLabelText('このプロフィールを通報')).not.toBeInTheDocument()
+    })
+  })
 })
