@@ -655,7 +655,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       {zoom < MIN_ZOOM_FOR_PINS && (
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg">
           <p className="text-center text-gray-700 font-semibold">
-            表示範囲が広すぎるため、投稿を表示するためには地図を拡大してください
+            投稿を表示するには地図を拡大してください
           </p>
         </div>
       )}
