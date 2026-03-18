@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.LocationSuggestionReviewResponse;
 import com.photlas.backend.entity.*;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.UserNotFoundException;
@@ -144,6 +145,29 @@ public class LocationSuggestionService {
      */
     public LocationSuggestion getReviewInfo(String reviewToken, String ownerEmail) {
         return findAndValidateSuggestion(reviewToken, ownerEmail);
+    }
+
+    /**
+     * レビューページ用のレスポンスDTOを組み立てて返す
+     */
+    public LocationSuggestionReviewResponse getReviewResponse(String reviewToken, String ownerEmail) {
+        LocationSuggestion suggestion = findAndValidateSuggestion(reviewToken, ownerEmail);
+
+        Photo photo = photoRepository.findById(suggestion.getPhotoId()).orElse(null);
+        Spot spot = (photo != null) ? spotRepository.findById(photo.getSpotId()).orElse(null) : null;
+
+        LocationSuggestionReviewResponse response = new LocationSuggestionReviewResponse();
+        response.setSuggestionId(suggestion.getId());
+        response.setSuggestedLatitude(suggestion.getSuggestedLatitude());
+        response.setSuggestedLongitude(suggestion.getSuggestedLongitude());
+        if (spot != null) {
+            response.setCurrentLatitude(spot.getLatitude());
+            response.setCurrentLongitude(spot.getLongitude());
+        }
+        if (photo != null) {
+            response.setPhotoTitle(photo.getTitle());
+        }
+        return response;
     }
 
     /**
