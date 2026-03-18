@@ -59,6 +59,11 @@ public class ReportService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
 
+        // Issue#54: 公開中の写真のみ通報可能
+        if (photo.getModerationStatus() != ModerationStatus.PUBLISHED) {
+            throw new IllegalStateException("公開中の写真のみ通報できます");
+        }
+
         // Issue#54: 自分の投稿は通報できない
         if (photo.getUserId().equals(userId)) {
             throw new SelfReportException("自分の投稿を通報することはできません");

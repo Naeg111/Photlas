@@ -85,6 +85,7 @@ public class FavoriteServiceTest {
         photo.setTitle("テスト写真");
         photo.setShotAt(LocalDateTime.of(2026, 1, 1, 12, 0));
         photo.setWeather("晴れ");
+        photo.setModerationStatus(ModerationStatus.PUBLISHED);
         return photo;
     }
 
