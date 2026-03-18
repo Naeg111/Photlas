@@ -1,6 +1,7 @@
 package com.photlas.backend.service;
 
 import com.photlas.backend.entity.Favorite;
+import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -234,5 +235,39 @@ public class FavoriteServiceTest {
         Map<String, Object> pageableInfo = (Map<String, Object>) result.get("pageable");
         assertThat(pageableInfo.get("page_number")).isEqualTo(0);
         assertThat(pageableInfo.get("page_size")).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - addFavorite: QUARANTINED写真はお気に入り登録できない")
+    void addFavorite_QuarantinedPhoto_ThrowsException() {
+        // Given
+        User user = createTestUser();
+        Photo photo = createTestPhoto();
+        photo.setModerationStatus(ModerationStatus.QUARANTINED);
+
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
+
+        // When & Then
+        assertThatThrownBy(() -> favoriteService.addFavorite(TEST_PHOTO_ID, TEST_EMAIL))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("公開中の写真のみ");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - addFavorite: PENDING_REVIEW写真はお気に入り登録できない")
+    void addFavorite_PendingReviewPhoto_ThrowsException() {
+        // Given
+        User user = createTestUser();
+        Photo photo = createTestPhoto();
+        photo.setModerationStatus(ModerationStatus.PENDING_REVIEW);
+
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
+
+        // When & Then
+        assertThatThrownBy(() -> favoriteService.addFavorite(TEST_PHOTO_ID, TEST_EMAIL))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("公開中の写真のみ");
     }
 }
