@@ -98,6 +98,7 @@ public class SitemapControllerTest {
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(user.getId());
         photo.setSpotId(spot.getSpotId());
+        photo.setModerationStatus(ModerationStatus.PUBLISHED);
         photo = photoRepository.save(photo);
 
         mockMvc.perform(get(ENDPOINT_SITEMAP))

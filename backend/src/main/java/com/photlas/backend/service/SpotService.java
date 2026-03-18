@@ -1,6 +1,7 @@
 package com.photlas.backend.service;
 
 import com.photlas.backend.dto.SpotResponse;
+import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.exception.SpotNotFoundException;
@@ -150,7 +151,8 @@ public class SpotService {
         Spot spot = spotRepository.findById(spotId)
                 .orElseThrow(() -> new SpotNotFoundException("Spot not found"));
 
-        List<Photo> photos = photoRepository.findBySpotIdOrderByShotAtAsc(spotId);
+        List<Photo> photos = photoRepository.findBySpotIdAndModerationStatusOrderByShotAtAsc(
+                spotId, ModerationStatus.PUBLISHED);
 
         List<Long> photoIds = photos.stream()
                 .map(Photo::getPhotoId)

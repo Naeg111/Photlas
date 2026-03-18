@@ -28,6 +28,16 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     List<Photo> findBySpotIdOrderByShotAtAsc(Long spotId);
 
     /**
+     * Issue#54: スポットIDとモデレーションステータスで写真を検索し、撮影日時の古い順で返す
+     */
+    List<Photo> findBySpotIdAndModerationStatusOrderByShotAtAsc(Long spotId, ModerationStatus moderationStatus);
+
+    /**
+     * Issue#54: モデレーションステータスで写真を検索
+     */
+    List<Photo> findByModerationStatus(ModerationStatus moderationStatus);
+
+    /**
      * ユーザーIDで写真を検索し、作成日時の新しい順で返す（ページネーション対応）
      *
      * @param userId ユーザーID

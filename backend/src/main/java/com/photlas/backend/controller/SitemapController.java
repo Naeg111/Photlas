@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.repository.PhotoRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,7 +37,7 @@ public class SitemapController {
      */
     @GetMapping(value = "/api/v1/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> getSitemap() {
-        List<Photo> photos = photoRepository.findAll();
+        List<Photo> photos = photoRepository.findByModerationStatus(ModerationStatus.PUBLISHED);
 
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
