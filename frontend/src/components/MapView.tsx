@@ -55,8 +55,8 @@ const DEFAULT_ZOOM = 11
 const MIN_ZOOM_FOR_PINS = 10
 
 // Issue#66: ズームバナーのズーム速度（zoom/ms）
-// 元の速度: 11113msでzoom0→10（1zoom/1111ms）。1.5倍速: 1zoom/741ms
-const ZOOM_BANNER_SPEED = 1 / 741
+// 7zoomレベルを3.5秒で到達: 1zoom/500ms
+const ZOOM_BANNER_SPEED = 1 / 500
 
 // クラスタリング設定（Issue#39, Issue#55）
 const CLUSTER_RADIUS = 70
@@ -130,6 +130,7 @@ interface MapViewProps {
   onClusterClick?: (spotIds: number[]) => void
   onMapClick?: () => void
   onMapReady?: () => void
+  onZoomAnimationChange?: (isAnimating: boolean) => void
 }
 
 /**
@@ -197,10 +198,11 @@ function registerPinImages(mapInstance: MapboxMap, spots: SpotResponse[]): void 
   }
 }
 
-const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady }, ref) {
+const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady, onZoomAnimationChange }, ref) {
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<MapboxMap | null>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
+  const [isZoomAnimating, setIsZoomAnimating] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [userHeading, setUserHeading] = useState<number | null>(null)
@@ -532,7 +534,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     if (currentZoom !== undefined) {
       setZoom(currentZoom)
     }
-    fetchSpots(mapInstance)
+    // Issue#66: ズームアニメーション中はスポット取得をスキップ
+    if (!zoomAnimationRef.current) {
+      fetchSpots(mapInstance)
+    }
   }, [fetchSpots])
 
   // フィルター条件が変更されたときにスポットを再取得
@@ -566,6 +571,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     if (currentZoom >= MIN_ZOOM_FOR_PINS) {
       zoomAnimationRef.current = null
       lastZoomFrameTimeRef.current = 0
+      setIsZoomAnimating(false)
+      onZoomAnimationChange?.(false)
       return
     }
 
@@ -573,14 +580,16 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     map.setZoom(newZoom)
 
     zoomAnimationRef.current = requestAnimationFrame(animateZoom)
-  }, [map])
+  }, [map, onZoomAnimationChange])
 
   const handleZoomBannerClick = useCallback(() => {
     if (!map || zoomAnimationRef.current) return
 
+    setIsZoomAnimating(true)
+    onZoomAnimationChange?.(true)
     lastZoomFrameTimeRef.current = 0
     zoomAnimationRef.current = requestAnimationFrame(animateZoom)
-  }, [map, animateZoom])
+  }, [map, animateZoom, onZoomAnimationChange])
 
   // クリーンアップ
   useEffect(() => {
@@ -698,8 +707,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         )}
       </Map>
 
-      {/* Zoom 10以下の場合、ズームバナーを表示 */}
-      {zoom < MIN_ZOOM_FOR_PINS && (
+      {/* Zoom 10以下かつズームアニメーション中でない場合、ズームバナーを表示 */}
+      {zoom < MIN_ZOOM_FOR_PINS && !isZoomAnimating && (
         <div
           className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg cursor-pointer"
           onClick={handleZoomBannerClick}
