@@ -1,6 +1,7 @@
 package com.photlas.backend.controller;
 
 import com.photlas.backend.entity.Category;
+import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -1013,6 +1014,90 @@ public class SpotControllerTest {
         // When & Then
         mockMvc.perform(get(SPOTS_ENDPOINT + "/99999/photos"))
                 .andExpect(status().isNotFound());
+    }
+
+    // --- Issue#54: モデレーションステータスによるフィルタリングテスト ---
+
+    @Test
+    @DisplayName("Issue#54 - QUARANTINED写真はスポット検索結果に含まれない")
+    void testGetSpots_QuarantinedPhotosExcluded() throws Exception {
+        // Given: スポットにQUARANTINED写真のみ
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo photo = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+        photo.setModerationStatus(ModerationStatus.QUARANTINED);
+        photoRepository.save(photo);
+
+        // When & Then: スポットが結果に含まれない
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("Issue#54 - REMOVED写真はスポット検索結果に含まれない")
+    void testGetSpots_RemovedPhotosExcluded() throws Exception {
+        // Given: スポットにREMOVED写真のみ
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo photo = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+        photo.setModerationStatus(ModerationStatus.REMOVED);
+        photoRepository.save(photo);
+
+        // When & Then: スポットが結果に含まれない
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PENDING_REVIEW写真はスポット検索結果に含まれない")
+    void testGetSpots_PendingReviewPhotosExcluded() throws Exception {
+        // Given: スポットにPENDING_REVIEW写真のみ
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo photo = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+        photo.setModerationStatus(ModerationStatus.PENDING_REVIEW);
+        photoRepository.save(photo);
+
+        // When & Then: スポットが結果に含まれない
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PUBLISHED写真のみがスポット写真一覧に含まれる")
+    void testGetSpotPhotoIds_OnlyPublishedPhotosReturned() throws Exception {
+        // Given: PUBLISHED1枚、QUARANTINED1枚、REMOVED1枚
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+
+        Photo publishedPhoto = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+        publishedPhoto.setModerationStatus(ModerationStatus.PUBLISHED);
+        photoRepository.save(publishedPhoto);
+
+        Photo quarantinedPhoto = createPhoto(spot, TEST_SHOT_AT.minusHours(1), WEATHER_SUNNY);
+        quarantinedPhoto.setModerationStatus(ModerationStatus.QUARANTINED);
+        photoRepository.save(quarantinedPhoto);
+
+        Photo removedPhoto = createPhoto(spot, TEST_SHOT_AT.minusHours(2), WEATHER_SUNNY);
+        removedPhoto.setModerationStatus(ModerationStatus.REMOVED);
+        photoRepository.save(removedPhoto);
+
+        // When & Then: PUBLISHEDの1枚のみ返る
+        mockMvc.perform(get(SPOTS_ENDPOINT + "/" + spot.getSpotId() + "/photos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0]", is(publishedPhoto.getPhotoId().intValue())));
     }
 
     // ヘルパーメソッド
