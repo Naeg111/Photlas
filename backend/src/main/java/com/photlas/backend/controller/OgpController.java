@@ -64,6 +64,7 @@ public class OgpController {
         if (photo.getModerationStatus() != ModerationStatus.PUBLISHED) {
             return ResponseEntity.notFound().build();
         }
+
         String imageUrl = s3Service.generateCdnUrl(photo.getS3ObjectKey());
         String title = photo.getTitle() != null ? photo.getTitle() : SITE_NAME;
         String pageUrl = frontendUrl + "/photo-viewer/" + photoId;
