@@ -232,4 +232,34 @@ public class ReportServiceTest {
         assertThat(response.getReason()).isEqualTo("SPAM");
         assertThat(response.getDetails()).isEqualTo("スパム投稿です");
     }
+
+    @Test
+    @DisplayName("Issue#54 - QUARANTINED写真を通報するとIllegalStateExceptionがスローされる")
+    void createReport_QuarantinedPhoto_ThrowsIllegalStateException() {
+        // Given
+        Photo photo = createTestPhoto();
+        photo.setModerationStatus(ModerationStatus.QUARANTINED);
+        when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
+        ReportRequest request = createTestReportRequest();
+
+        // When & Then
+        assertThatThrownBy(() -> reportService.createReport(TEST_PHOTO_ID, request, TEST_REPORTER_USER_ID))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("公開中の写真のみ");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - REMOVED写真を通報するとIllegalStateExceptionがスローされる")
+    void createReport_RemovedPhoto_ThrowsIllegalStateException() {
+        // Given
+        Photo photo = createTestPhoto();
+        photo.setModerationStatus(ModerationStatus.REMOVED);
+        when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
+        ReportRequest request = createTestReportRequest();
+
+        // When & Then
+        assertThatThrownBy(() -> reportService.createReport(TEST_PHOTO_ID, request, TEST_REPORTER_USER_ID))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("公開中の写真のみ");
+    }
 }
