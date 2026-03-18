@@ -38,6 +38,8 @@ const MOCK_QUEUE_ITEMS = [
     user_id: 10,
     username: 'testuser1',
     created_at: '2026-03-10T12:00:00',
+    report_count: 2,
+    report_reasons: ['ADULT_CONTENT', 'VIOLENCE'],
   },
   {
     photo_id: 2,
@@ -46,6 +48,8 @@ const MOCK_QUEUE_ITEMS = [
     user_id: 20,
     username: 'testuser2',
     created_at: '2026-03-10T13:00:00',
+    report_count: 0,
+    report_reasons: [],
   },
 ]
 
@@ -164,6 +168,35 @@ describe('AdminModerationPage', () => {
     await waitFor(() => {
       expect(screen.getByText('審査待ちの写真はありません')).toBeInTheDocument()
     })
+  })
+
+  it('Issue#54 - 通報件数と通報理由が表示される', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: 'ADMIN' },
+      isAuthenticated: true,
+    })
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        content: MOCK_QUEUE_ITEMS,
+        total_elements: 2,
+        total_pages: 1,
+      }),
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('テスト写真1')).toBeInTheDocument()
+    })
+
+    // 通報件数が表示される
+    expect(screen.getByText('通報 2件')).toBeInTheDocument()
+
+    // 通報理由が表示される
+    expect(screen.getByText('成人向けコンテンツ')).toBeInTheDocument()
+    expect(screen.getByText('暴力的なコンテンツ')).toBeInTheDocument()
   })
 
   it('承認ボタンをクリックすると写真が承認される', async () => {

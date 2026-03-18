@@ -1,11 +1,9 @@
 package com.photlas.backend.controller;
 
-import com.photlas.backend.entity.ModerationStatus;
-import com.photlas.backend.entity.Photo;
-import com.photlas.backend.entity.Spot;
-import com.photlas.backend.entity.User;
+import com.photlas.backend.entity.*;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.ReportRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.JwtService;
@@ -52,6 +50,9 @@ public class AdminModerationControllerTest {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private ReportRepository reportRepository;
 
     @Autowired
     private JwtService jwtService;
@@ -105,6 +106,7 @@ public class AdminModerationControllerTest {
 
     @BeforeEach
     void setUp() {
+        reportRepository.deleteAll();
         photoRepository.deleteAll();
         spotRepository.deleteAll();
         categoryRepository.deleteAll();
@@ -288,6 +290,40 @@ public class AdminModerationControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    // ===== Issue#54: 隔離キューに通報理由が含まれることのテスト =====
+
+    @Test
+    @DisplayName("Issue#54 - 隔離キュー: 通報件数と通報理由が含まれる")
+    void testGetQueue_IncludesReportCountAndReasons() throws Exception {
+        Photo photo = createPhotoWithStatus(TEST_S3_KEY, ModerationStatus.QUARANTINED);
+
+        // 2件の通報を作成（異なるユーザー、異なる理由）
+        createReport(normalUser.getId(), ReportTargetType.PHOTO, photo.getPhotoId(),
+                ReportReason.ADULT_CONTENT);
+        createReport(adminUser.getId(), ReportTargetType.PHOTO, photo.getPhotoId(),
+                ReportReason.VIOLENCE);
+
+        mockMvc.perform(get(QUEUE_ENDPOINT)
+                .header(HEADER_AUTHORIZATION, getBearerToken(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].report_count").value(2))
+                .andExpect(jsonPath("$.content[0].report_reasons", hasSize(2)))
+                .andExpect(jsonPath("$.content[0].report_reasons",
+                        containsInAnyOrder("ADULT_CONTENT", "VIOLENCE")));
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 隔離キュー: 通報がない場合は0件で空配列が返る")
+    void testGetQueue_NoReports_ReturnsZeroCountAndEmptyReasons() throws Exception {
+        createPhotoWithStatus(TEST_S3_KEY, ModerationStatus.QUARANTINED);
+
+        mockMvc.perform(get(QUEUE_ENDPOINT)
+                .header(HEADER_AUTHORIZATION, getBearerToken(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].report_count").value(0))
+                .andExpect(jsonPath("$.content[0].report_reasons", hasSize(0)));
+    }
+
     // ===== ヘルパーメソッド =====
 
     private User createUser(String username, String email, String role) {
@@ -329,5 +365,15 @@ public class AdminModerationControllerTest {
 
     private String getRejectEndpoint(Long photoId) {
         return REJECT_ENDPOINT_PREFIX + photoId + REJECT_ENDPOINT_SUFFIX;
+    }
+
+    private Report createReport(Long reporterUserId, ReportTargetType targetType,
+                                Long targetId, ReportReason reason) {
+        Report report = new Report();
+        report.setReporterUserId(reporterUserId);
+        report.setTargetType(targetType);
+        report.setTargetId(targetId);
+        report.setReasonCategory(reason);
+        return reportRepository.save(report);
     }
 }
