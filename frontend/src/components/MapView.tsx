@@ -54,10 +54,6 @@ const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 const DEFAULT_ZOOM = 11
 const MIN_ZOOM_FOR_PINS = 10
 
-// Issue#66: ズームバナーのズーム速度（zoom/ms）
-// 7zoomレベルを4秒で到達: 1zoom/571ms
-const ZOOM_BANNER_SPEED = 1 / 571
-
 // クラスタリング設定（Issue#39, Issue#55）
 const CLUSTER_RADIUS = 70
 const CLUSTER_MAX_ZOOM = 17
@@ -130,7 +126,6 @@ interface MapViewProps {
   onClusterClick?: (spotIds: number[]) => void
   onMapClick?: () => void
   onMapReady?: () => void
-  onZoomAnimationChange?: (isAnimating: boolean) => void
 }
 
 /**
@@ -198,11 +193,10 @@ function registerPinImages(mapInstance: MapboxMap, spots: SpotResponse[]): void 
   }
 }
 
-const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady, onZoomAnimationChange }, ref) {
+const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady }, ref) {
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<MapboxMap | null>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
-  const [isZoomAnimating, setIsZoomAnimating] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [userHeading, setUserHeading] = useState<number | null>(null)
@@ -534,10 +528,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     if (currentZoom !== undefined) {
       setZoom(currentZoom)
     }
-    // Issue#66: ズームアニメーション中はスポット取得をスキップ
-    if (!zoomAnimationRef.current) {
-      fetchSpots(mapInstance)
-    }
+    fetchSpots(mapInstance)
   }, [fetchSpots])
 
   // フィルター条件が変更されたときにスポットを再取得
@@ -552,58 +543,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterParams])
-
-  // Issue#66: ズームバナーの段階的ズーム
-  const zoomAnimationRef = useRef<number | null>(null)
-  const lastZoomFrameTimeRef = useRef<number>(0)
-
-  const animateZoom = useCallback((timestamp: number) => {
-    if (!map) return
-
-    if (lastZoomFrameTimeRef.current === 0) {
-      lastZoomFrameTimeRef.current = timestamp
-    }
-
-    const deltaMs = timestamp - lastZoomFrameTimeRef.current
-    lastZoomFrameTimeRef.current = timestamp
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transform = (map as any).transform
-    const currentZoom = transform.zoom
-    if (currentZoom >= MIN_ZOOM_FOR_PINS) {
-      zoomAnimationRef.current = null
-      lastZoomFrameTimeRef.current = 0
-      setIsZoomAnimating(false)
-      onZoomAnimationChange?.(false)
-      fetchSpots(map)
-      return
-    }
-
-    const newZoom = Math.min(currentZoom + ZOOM_BANNER_SPEED * deltaMs, MIN_ZOOM_FOR_PINS)
-    // イベントを発火せずにズームを変更（ドラッグジェスチャーと競合しない）
-    transform.zoom = newZoom
-    map.triggerRepaint()
-
-    zoomAnimationRef.current = requestAnimationFrame(animateZoom)
-  }, [map, onZoomAnimationChange, fetchSpots])
-
-  const handleZoomBannerClick = useCallback(() => {
-    if (!map || zoomAnimationRef.current) return
-
-    setIsZoomAnimating(true)
-    onZoomAnimationChange?.(true)
-    lastZoomFrameTimeRef.current = 0
-    zoomAnimationRef.current = requestAnimationFrame(animateZoom)
-  }, [map, animateZoom, onZoomAnimationChange])
-
-  // クリーンアップ
-  useEffect(() => {
-    return () => {
-      if (zoomAnimationRef.current) {
-        cancelAnimationFrame(zoomAnimationRef.current)
-      }
-    }
-  }, [])
 
   // アクセストークンが空の場合はフォールバックUIを表示
   if (!MAPBOX_ACCESS_TOKEN) {
@@ -712,14 +651,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         )}
       </Map>
 
-      {/* Zoom 10以下かつズームアニメーション中でない場合、ズームバナーを表示 */}
-      {zoom < MIN_ZOOM_FOR_PINS && !isZoomAnimating && (
-        <div
-          className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg cursor-pointer"
-          onClick={handleZoomBannerClick}
-        >
+      {/* Issue#68: Zoom 10未満の場合、拡大を促す静的メッセージを表示 */}
+      {zoom < MIN_ZOOM_FOR_PINS && (
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg">
           <p className="text-center text-gray-700 font-semibold">
-            ズームしてスポットを表示
+            表示範囲が広すぎるため、投稿を表示するためには地図を拡大してください
           </p>
         </div>
       )}

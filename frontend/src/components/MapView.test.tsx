@@ -53,8 +53,6 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() =
     setZoom: vi.fn(),
     getZoom: vi.fn(),
     easeTo: vi.fn(),
-    transform: { zoom: 9 },
-    triggerRepaint: vi.fn(),
     getCenter: vi.fn(() => ({ lng: 139.7454, lat: 35.6585 })),
     getBounds: vi.fn(() => ({
       getNorth: () => 35.7,
