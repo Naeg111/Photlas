@@ -6,11 +6,15 @@ import { PinSvg } from '../components/PinSvg'
 import { Button } from '../components/ui/button'
 import { LoginDialog } from '../components/LoginDialog'
 import { useAuth } from '../contexts/AuthContext'
+import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
 
 /**
  * Issue#65: 位置情報修正のレビューページ
  */
+
+const MSG_FETCH_ERROR = 'レビュー情報の取得に失敗しました'
+const MSG_ACTION_ERROR = '処理に失敗しました'
 
 interface ReviewData {
   suggestionId: number
@@ -24,7 +28,7 @@ interface ReviewData {
 export default function ReviewLocationPage() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')
-  const { user, getAuthToken } = useAuth()
+  const { user } = useAuth()
 
   const [reviewData, setReviewData] = useState<ReviewData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -39,23 +43,22 @@ export default function ReviewLocationPage() {
     const fetchReviewData = async () => {
       setIsLoading(true)
       try {
-        const authToken = getAuthToken()
         const response = await fetch(
           `${API_V1_URL}/location-suggestions/review?token=${token}`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              ...getAuthHeaders(),
               'Content-Type': 'application/json',
             },
           }
         )
         if (!response.ok) {
-          throw new Error('レビュー情報の取得に失敗しました')
+          throw new Error(MSG_FETCH_ERROR)
         }
         const data = await response.json()
         setReviewData(data)
       } catch {
-        setError('レビュー情報の取得に失敗しました')
+        setError(MSG_FETCH_ERROR)
       } finally {
         setIsLoading(false)
       }
@@ -69,19 +72,18 @@ export default function ReviewLocationPage() {
     if (!token) return
     setIsLoading(true)
     try {
-      const authToken = getAuthToken()
       const response = await fetch(
         `${API_V1_URL}/location-suggestions/review/${action}?token=${token}`,
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${authToken}`,
+            ...getAuthHeaders(),
             'Content-Type': 'application/json',
           },
         }
       )
       if (!response.ok) {
-        throw new Error('処理に失敗しました')
+        throw new Error(MSG_ACTION_ERROR)
       }
       setIsResolved(true)
       setResolvedMessage(
@@ -90,7 +92,7 @@ export default function ReviewLocationPage() {
           : '撮影場所の指摘を拒否しました。'
       )
     } catch {
-      setError('処理に失敗しました')
+      setError(MSG_ACTION_ERROR)
     } finally {
       setIsLoading(false)
     }
