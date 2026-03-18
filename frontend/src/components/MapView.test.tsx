@@ -227,6 +227,14 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       mockMap.getZoom.mockReturnValue(9)
       const user = userEvent.setup()
 
+      // requestAnimationFrameをモック: コールバックを即時実行
+      const rafCallbacks: FrameRequestCallback[] = []
+      const originalRaf = globalThis.requestAnimationFrame
+      globalThis.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
+        rafCallbacks.push(cb)
+        return rafCallbacks.length
+      }) as unknown as typeof requestAnimationFrame
+
       render(<MapView />)
 
       await waitFor(() => {
@@ -237,10 +245,16 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       const banner = screen.getByText(/ズームしてスポットを表示/i)
       await user.click(banner)
 
+      // rAFコールバックを手動実行（1フレーム分）
+      if (rafCallbacks.length > 0) {
+        act(() => { rafCallbacks[0](performance.now()) })
+      }
+
       // easeTo（一括アニメーション）ではなく、setZoom（段階的ズーム）が呼ばれる
       expect(mockMap.easeTo).not.toHaveBeenCalled()
-      // requestAnimationFrameベースの段階的ズームが開始される
       expect(mockMap.setZoom).toHaveBeenCalled()
+
+      globalThis.requestAnimationFrame = originalRaf
     })
   })
 

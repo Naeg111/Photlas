@@ -544,12 +544,51 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterParams])
 
-  // ズームバナーをクリックしたときの処理
-  const handleZoomBannerClick = () => {
-    if (map) {
-      map.easeTo({ zoom: MIN_ZOOM_FOR_PINS, duration: 11113 })
+  // Issue#66: ズームバナーの段階的ズーム
+  const zoomAnimationRef = useRef<number | null>(null)
+  const lastZoomFrameTimeRef = useRef<number>(0)
+
+  // 元の速度: 11113msでzoom0→10（1zoom/1111ms）。1.5倍速: 1zoom/741ms
+  const ZOOM_SPEED = 1 / 741 // zoom per ms
+
+  const animateZoom = useCallback((timestamp: number) => {
+    if (!map) return
+
+    if (lastZoomFrameTimeRef.current === 0) {
+      lastZoomFrameTimeRef.current = timestamp
     }
-  }
+
+    const deltaMs = timestamp - lastZoomFrameTimeRef.current
+    lastZoomFrameTimeRef.current = timestamp
+
+    const currentZoom = map.getZoom()
+    if (currentZoom >= MIN_ZOOM_FOR_PINS) {
+      zoomAnimationRef.current = null
+      lastZoomFrameTimeRef.current = 0
+      return
+    }
+
+    const newZoom = Math.min(currentZoom + ZOOM_SPEED * deltaMs, MIN_ZOOM_FOR_PINS)
+    map.setZoom(newZoom)
+
+    zoomAnimationRef.current = requestAnimationFrame(animateZoom)
+  }, [map])
+
+  const handleZoomBannerClick = useCallback(() => {
+    if (!map || zoomAnimationRef.current) return
+
+    lastZoomFrameTimeRef.current = 0
+    zoomAnimationRef.current = requestAnimationFrame(animateZoom)
+  }, [map, animateZoom])
+
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (zoomAnimationRef.current) {
+        cancelAnimationFrame(zoomAnimationRef.current)
+      }
+    }
+  }, [])
 
   // アクセストークンが空の場合はフォールバックUIを表示
   if (!MAPBOX_ACCESS_TOKEN) {
