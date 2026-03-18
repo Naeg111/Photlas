@@ -4,6 +4,7 @@ import Map, { Marker } from 'react-map-gl'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { PinSvg } from '../components/PinSvg'
 import { Button } from '../components/ui/button'
+import { LoginDialog } from '../components/LoginDialog'
 import { useAuth } from '../contexts/AuthContext'
 import { API_V1_URL } from '../config/api'
 
@@ -30,6 +31,7 @@ export default function ReviewLocationPage() {
   const [error, setError] = useState<string | null>(null)
   const [isResolved, setIsResolved] = useState(false)
   const [resolvedMessage, setResolvedMessage] = useState('')
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false)
 
   useEffect(() => {
     if (!token || !user) return
@@ -98,6 +100,24 @@ export default function ReviewLocationPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-lg text-red-600">無効なリンクです</p>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-lg">ログインが必要です</p>
+        <p className="text-sm text-gray-600">レビューを行うにはログインしてください。</p>
+        <Button onClick={() => setIsLoginDialogOpen(true)}>
+          ログイン
+        </Button>
+        <LoginDialog
+          open={isLoginDialogOpen}
+          onOpenChange={setIsLoginDialogOpen}
+          onShowSignUp={() => setIsLoginDialogOpen(false)}
+          onShowPasswordReset={() => setIsLoginDialogOpen(false)}
+        />
       </div>
     )
   }
