@@ -64,22 +64,7 @@ public class ReportService {
             throw new SelfReportException("自分の投稿を通報することはできません");
         }
 
-        // 重複チェック
-        reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
-                userId, ReportTargetType.PHOTO, photoId)
-                .ifPresent(report -> {
-                    throw new ConflictException("この写真はすでに通報済みです");
-                });
-
-        // Report entityを作成
-        Report report = new Report();
-        report.setReporterUserId(userId);
-        report.setTargetType(ReportTargetType.PHOTO);
-        report.setTargetId(photoId);
-        report.setReasonCategory(ReportReason.valueOf(request.getReason()));
-        report.setReasonText(request.getDetails());
-
-        Report savedReport = reportRepository.save(report);
+        Report savedReport = saveReport(userId, ReportTargetType.PHOTO, photoId, request);
 
         // Issue#54: 通報件数が閾値に達したらQUARANTINEDに変更
         long reportCount = reportRepository.countByTargetTypeAndTargetId(
@@ -95,12 +80,7 @@ public class ReportService {
         logger.info("通報を受け付けました: photoId={}, reporterUserId={}, reason={}",
                 photoId, userId, request.getReason());
 
-        return new ReportResponse(
-                savedReport.getReporterUserId(),
-                savedReport.getTargetId(),
-                savedReport.getReasonCategory().name(),
-                savedReport.getReasonText()
-        );
+        return toResponse(savedReport);
     }
 
     /**
@@ -122,22 +102,7 @@ public class ReportService {
             throw new SelfReportException("自分のプロフィールを通報することはできません");
         }
 
-        // 重複チェック
-        reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
-                reporterUserId, ReportTargetType.PROFILE, targetUserId)
-                .ifPresent(report -> {
-                    throw new ConflictException("このプロフィールはすでに通報済みです");
-                });
-
-        // Report entityを作成
-        Report report = new Report();
-        report.setReporterUserId(reporterUserId);
-        report.setTargetType(ReportTargetType.PROFILE);
-        report.setTargetId(targetUserId);
-        report.setReasonCategory(ReportReason.valueOf(request.getReason()));
-        report.setReasonText(request.getDetails());
-
-        Report savedReport = reportRepository.save(report);
+        Report savedReport = saveReport(reporterUserId, ReportTargetType.PROFILE, targetUserId, request);
 
         // 通報件数が閾値に達したらプロフィール画像をリセット
         long reportCount = reportRepository.countByTargetTypeAndTargetId(
@@ -152,11 +117,36 @@ public class ReportService {
         logger.info("プロフィール通報を受け付けました: targetUserId={}, reporterUserId={}, reason={}",
                 targetUserId, reporterUserId, request.getReason());
 
+        return toResponse(savedReport);
+    }
+
+    /**
+     * 通報の重複チェック・保存を行う共通メソッド
+     */
+    private Report saveReport(Long reporterUserId, ReportTargetType targetType,
+                              Long targetId, ReportRequest request) {
+        reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
+                reporterUserId, targetType, targetId)
+                .ifPresent(report -> {
+                    throw new ConflictException("すでに通報済みです");
+                });
+
+        Report report = new Report();
+        report.setReporterUserId(reporterUserId);
+        report.setTargetType(targetType);
+        report.setTargetId(targetId);
+        report.setReasonCategory(ReportReason.valueOf(request.getReason()));
+        report.setReasonText(request.getDetails());
+
+        return reportRepository.save(report);
+    }
+
+    private ReportResponse toResponse(Report report) {
         return new ReportResponse(
-                savedReport.getReporterUserId(),
-                savedReport.getTargetId(),
-                savedReport.getReasonCategory().name(),
-                savedReport.getReasonText()
+                report.getReporterUserId(),
+                report.getTargetId(),
+                report.getReasonCategory().name(),
+                report.getReasonText()
         );
     }
 }
