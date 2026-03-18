@@ -214,99 +214,25 @@ describe('MapView Component - Issue#53, Issue#55', () => {
   })
 
   describe('ズームレベルによる表示制御と誘導UI', () => {
-    it('Zoom 9以下の場合、ズームバナーが表示される', async () => {
+    it('Issue#68 - Zoom 10未満の場合、拡大を促す静的メッセージが表示される', async () => {
       mockMap.getZoom.mockReturnValue(9)
 
       render(<MapView />)
 
       await waitFor(() => {
-        const banner = screen.getByText(/ズームしてスポットを表示/i)
-        expect(banner).toBeInTheDocument()
+        expect(screen.getByText(/地図を拡大してください/)).toBeInTheDocument()
       })
     })
 
-    it('ズームバナーをタップするとsetZoomで段階的にズームアップする（easeToではない）', async () => {
+    it('Issue#68 - メッセージはクリック不可である（cursor-pointerなし）', async () => {
       mockMap.getZoom.mockReturnValue(9)
-      const user = userEvent.setup()
-
-      // requestAnimationFrameをモック: コールバックを即時実行
-      const rafCallbacks: FrameRequestCallback[] = []
-      const originalRaf = globalThis.requestAnimationFrame
-      globalThis.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
-        rafCallbacks.push(cb)
-        return rafCallbacks.length
-      }) as unknown as typeof requestAnimationFrame
 
       render(<MapView />)
 
       await waitFor(() => {
-        const banner = screen.getByText(/ズームしてスポットを表示/i)
-        expect(banner).toBeInTheDocument()
+        const message = screen.getByText(/地図を拡大してください/)
+        expect(message.closest('div[class*="cursor-pointer"]')).toBeNull()
       })
-
-      const banner = screen.getByText(/ズームしてスポットを表示/i)
-      await user.click(banner)
-
-      // rAFコールバックを手動実行（1フレーム分）
-      if (rafCallbacks.length > 0) {
-        act(() => { rafCallbacks[0](performance.now()) })
-      }
-
-      // easeTo（一括アニメーション）ではなく、transform.zoom直接操作で段階的にズームする
-      expect(mockMap.easeTo).not.toHaveBeenCalled()
-      expect(mockMap.triggerRepaint).toHaveBeenCalled()
-
-      globalThis.requestAnimationFrame = originalRaf
-    })
-
-    it('Issue#66 - ズーム中はバナーが非表示になる', async () => {
-      mockMap.getZoom.mockReturnValue(9)
-      const user = userEvent.setup()
-
-      const rafCallbacks: FrameRequestCallback[] = []
-      const originalRaf = globalThis.requestAnimationFrame
-      globalThis.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
-        rafCallbacks.push(cb)
-        return rafCallbacks.length
-      }) as unknown as typeof requestAnimationFrame
-
-      render(<MapView />)
-
-      await waitFor(() => {
-        expect(screen.getByText(/ズームしてスポットを表示/i)).toBeInTheDocument()
-      })
-
-      await user.click(screen.getByText(/ズームしてスポットを表示/i))
-
-      // ズーム開始後、バナーが非表示になる
-      expect(screen.queryByText(/ズームしてスポットを表示/i)).not.toBeInTheDocument()
-
-      globalThis.requestAnimationFrame = originalRaf
-    })
-
-    it('Issue#66 - ズーム中はonZoomAnimationChangeがtrueで呼ばれる', async () => {
-      mockMap.getZoom.mockReturnValue(9)
-      const user = userEvent.setup()
-      const onZoomAnimationChange = vi.fn()
-
-      const rafCallbacks: FrameRequestCallback[] = []
-      const originalRaf = globalThis.requestAnimationFrame
-      globalThis.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
-        rafCallbacks.push(cb)
-        return rafCallbacks.length
-      }) as unknown as typeof requestAnimationFrame
-
-      render(<MapView onZoomAnimationChange={onZoomAnimationChange} />)
-
-      await waitFor(() => {
-        expect(screen.getByText(/ズームしてスポットを表示/i)).toBeInTheDocument()
-      })
-
-      await user.click(screen.getByText(/ズームしてスポットを表示/i))
-
-      expect(onZoomAnimationChange).toHaveBeenCalledWith(true)
-
-      globalThis.requestAnimationFrame = originalRaf
     })
   })
 
