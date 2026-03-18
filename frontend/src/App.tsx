@@ -6,6 +6,7 @@ import NotFoundPage from './pages/NotFoundPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
 import AdminModerationPage from './pages/AdminModerationPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import ReviewLocationPage from './pages/ReviewLocationPage'
 import { CookieConsentBanner } from './components/CookieConsentBanner'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
@@ -689,6 +690,7 @@ function App() {
         <Route path="/" element={<MainApp />} />
         <Route path="/verify-email" element={<EmailVerificationPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/review-location" element={<ReviewLocationPage />} />
         <Route path="/photo-viewer/:photoId" element={<MainApp />} />
         <Route path="/manage/moderation" element={<AdminModerationPage />} />
         <Route path="*" element={<NotFoundPage />} />
