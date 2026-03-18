@@ -204,6 +204,11 @@ public class LocationSuggestionService {
             throw new AccessDeniedException("この指摘をレビューする権限がありません");
         }
 
+        // Issue#65: 解決済みの指摘への再操作を防止
+        if (suggestion.getStatus() != LocationSuggestionStatus.PENDING) {
+            throw new IllegalStateException("この指摘は既に解決済みです");
+        }
+
         return suggestion;
     }
 
