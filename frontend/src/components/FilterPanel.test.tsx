@@ -136,19 +136,24 @@ describe('FilterPanel', () => {
 
       await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
 
-      const buttons = screen.getAllByRole('button')
+      // 機材種別セクション内のボタンをdata-testid無しで取得するため、
+      // 「機材種別」見出しの後に並ぶボタン群を特定
       const deviceTypeLabels = ['スマートフォン', 'ミラーレス', '一眼レフ', 'コンパクトデジカメ', 'フィルム', 'その他']
-      const deviceButtons = buttons.filter(btn =>
-        deviceTypeLabels.includes(btn.textContent?.trim() ?? '')
-      )
+      const allButtons = screen.getAllByRole('button')
+      const deviceButtons = allButtons.filter(btn => {
+        const text = btn.textContent?.trim() ?? ''
+        return deviceTypeLabels.includes(text) && text !== ''
+      })
+      // 「その他」がジャンルにも存在するため、機材種別の6つのみに絞る（後半6つ）
+      const lastSixDeviceButtons = deviceButtons.slice(-6)
 
-      expect(deviceButtons).toHaveLength(6)
-      expect(deviceButtons[0]).toHaveTextContent('スマートフォン')
-      expect(deviceButtons[1]).toHaveTextContent('ミラーレス')
-      expect(deviceButtons[2]).toHaveTextContent('一眼レフ')
-      expect(deviceButtons[3]).toHaveTextContent('コンパクトデジカメ')
-      expect(deviceButtons[4]).toHaveTextContent('フィルム')
-      expect(deviceButtons[5]).toHaveTextContent('その他')
+      expect(lastSixDeviceButtons).toHaveLength(6)
+      expect(lastSixDeviceButtons[0]).toHaveTextContent('スマートフォン')
+      expect(lastSixDeviceButtons[1]).toHaveTextContent('ミラーレス')
+      expect(lastSixDeviceButtons[2]).toHaveTextContent('一眼レフ')
+      expect(lastSixDeviceButtons[3]).toHaveTextContent('コンパクトデジカメ')
+      expect(lastSixDeviceButtons[4]).toHaveTextContent('フィルム')
+      expect(lastSixDeviceButtons[5]).toHaveTextContent('その他')
     })
 
     it('上級者向けフィルターに撮影日からの経過期間が含まれない', async () => {
