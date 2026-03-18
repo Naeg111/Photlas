@@ -371,6 +371,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
   // Issue#65: 撮影場所の指摘状態管理
   const [isLocationSuggestionOpen, setIsLocationSuggestionOpen] = useState(false)
+  const [hasAlreadySuggested, setHasAlreadySuggested] = useState(false)
 
   // Issue#57: 写真削除状態管理
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -532,6 +533,29 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       setFavoriteCount(currentPhoto.favoriteCount ?? 0)
     }
   }, [currentPhoto])
+
+  // Issue#65: 指摘済みステータスを取得
+  useEffect(() => {
+    if (!currentPhotoId || !isAuthenticated) {
+      setHasAlreadySuggested(false)
+      return
+    }
+    const checkSuggestionStatus = async () => {
+      try {
+        const response = await fetch(
+          `${API_PHOTOS}/${currentPhotoId}/location-suggestions/status`,
+          { headers: getAuthHeaders() }
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setHasAlreadySuggested(data.hasSuggested === true)
+        }
+      } catch {
+        // エラー時はデフォルト（非表示にしない）
+      }
+    }
+    checkSuggestionStatus()
+  }, [currentPhotoId, isAuthenticated])
 
   // Issue#30: お気に入りトグル処理（エラー時リバート）
   const handleToggleFavorite = useCallback(async () => {
@@ -1290,8 +1314,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         <Flag className="w-5 h-5" />
                       </Button>
                     )}
-                    {/* Issue#65: 撮影場所の指摘ボタン（ログイン済み・他人の写真のみ） */}
-                    {isAuthenticated && !isDeletable && (
+                    {/* Issue#65: 撮影場所の指摘ボタン（ログイン済み・他人の写真・未指摘のみ） */}
+                    {isAuthenticated && !isDeletable && !hasAlreadySuggested && (
                       <Button
                         variant="outline"
                         data-testid="location-suggestion-button"

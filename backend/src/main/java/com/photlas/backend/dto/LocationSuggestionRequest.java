@@ -1,5 +1,9 @@
 package com.photlas.backend.dto;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+
 import java.math.BigDecimal;
 
 /**
@@ -7,7 +11,14 @@ import java.math.BigDecimal;
  */
 public class LocationSuggestionRequest {
 
+    @NotNull
+    @DecimalMin("-90")
+    @DecimalMax("90")
     private BigDecimal latitude;
+
+    @NotNull
+    @DecimalMin("-180")
+    @DecimalMax("180")
     private BigDecimal longitude;
 
     public BigDecimal getLatitude() { return latitude; }

@@ -196,6 +196,12 @@ function setupMockFetch(photoIds: number[], photoDetails: any[]) {
     })
   })
 
+  // Issue#65: ステータスAPI等の追加呼び出しに対するデフォルトレスポンス
+  mockFetch.mockResolvedValue({
+    ok: true,
+    json: async () => ({}),
+  })
+
   return mockFetch
 }
 
@@ -579,6 +585,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
         .mockImplementationOnce(() => new Promise(() => {})) // 永続的にpending
 
       const { rerender } = render(
@@ -611,6 +618,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
         .mockResolvedValueOnce({ ok: true }) // POST /favorite
 
       const { rerender } = render(
