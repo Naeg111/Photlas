@@ -10,14 +10,10 @@ import { PlaceSearchDialog } from './PlaceSearchDialog'
 // Mapbox Search JS Coreのモック
 const mockSuggest = vi.fn()
 const mockRetrieve = vi.fn()
-const mockForward = vi.fn()
 vi.mock('@mapbox/search-js-core', () => ({
   SearchBoxCore: vi.fn(() => ({
     suggest: mockSuggest,
     retrieve: mockRetrieve,
-  })),
-  GeocodingCore: vi.fn(() => ({
-    forward: mockForward,
   })),
   SessionToken: vi.fn(),
 }))
@@ -26,31 +22,6 @@ vi.mock('@mapbox/search-js-core', () => ({
 vi.mock('../config/mapbox', () => ({
   MAPBOX_ACCESS_TOKEN: 'test-token',
 }))
-
-/** テスト用のGeocodingFeatureを生成する */
-function createFeature(
-  id: string,
-  name: string,
-  placeFormatted: string,
-  coordinates: [number, number],
-  featureType: string,
-) {
-  return {
-    id,
-    type: 'Feature' as const,
-    geometry: { type: 'Point' as const, coordinates },
-    properties: {
-      mapbox_id: id,
-      feature_type: featureType,
-      name,
-      name_preferred: name,
-      place_formatted: placeFormatted,
-      full_address: `${name}, ${placeFormatted}`,
-      coordinates: { longitude: coordinates[0], latitude: coordinates[1] },
-      context: {},
-    },
-  }
-}
 
 /** テスト用のSearchBoxSuggestionを生成する */
 function createSuggestion(
@@ -96,10 +67,10 @@ describe('PlaceSearchDialog', () => {
   })
 
   it('検索入力後にサジェストが表示される', async () => {
-    mockForward.mockResolvedValue({
-      features: [
-        createFeature('id-1', '東京タワー', '東京都港区芝公園4丁目', [139.745433, 35.658581], 'address'),
-        createFeature('id-2', '東京駅', '東京都千代田区丸の内1丁目', [139.767125, 35.681236], 'address'),
+    mockSuggest.mockResolvedValue({
+      suggestions: [
+        createSuggestion('id-1', '東京タワー', '東京都港区芝公園4丁目', 'address'),
+        createSuggestion('id-2', '東京駅', '東京都千代田区丸の内1丁目', 'poi'),
       ],
     })
 
@@ -115,11 +86,14 @@ describe('PlaceSearchDialog', () => {
   })
 
   it('候補を選択するとonPlaceSelectが座標とズームレベルで呼ばれる', async () => {
-    mockForward.mockResolvedValue({
-      features: [
-        createFeature('id-1', '東京タワー', '東京都港区芝公園4丁目', [139.745433, 35.658581], 'address'),
+    mockSuggest.mockResolvedValue({
+      suggestions: [
+        createSuggestion('id-1', '東京タワー', '東京都港区芝公園4丁目', 'poi'),
       ],
     })
+    mockRetrieve.mockResolvedValue(
+      createRetrieveResponse([139.745433, 35.658581], 'poi'),
+    )
 
     render(<PlaceSearchDialog {...defaultProps} />)
 
@@ -142,11 +116,14 @@ describe('PlaceSearchDialog', () => {
   })
 
   it('候補を選択するとダイアログが閉じる', async () => {
-    mockForward.mockResolvedValue({
-      features: [
-        createFeature('id-1', '東京タワー', '東京都港区', [139.745433, 35.658581], 'address'),
+    mockSuggest.mockResolvedValue({
+      suggestions: [
+        createSuggestion('id-1', '東京タワー', '東京都港区', 'poi'),
       ],
     })
+    mockRetrieve.mockResolvedValue(
+      createRetrieveResponse([139.745433, 35.658581], 'poi'),
+    )
 
     render(<PlaceSearchDialog {...defaultProps} />)
 
@@ -179,10 +156,10 @@ describe('PlaceSearchDialog', () => {
     expect(input).not.toHaveFocus()
   })
 
-  it('Geocoding APIで市区町村が検索結果に表示される', async () => {
-    mockForward.mockResolvedValue({
-      features: [
-        createFeature('id-shibuya', '渋谷区', '東京都, 日本', [139.6989, 35.6580], 'district'),
+  it('市区町村が検索結果に表示される', async () => {
+    mockSuggest.mockResolvedValue({
+      suggestions: [
+        createSuggestion('id-shibuya', '渋谷区', '東京都, 日本', 'district'),
       ],
     })
 
@@ -198,11 +175,14 @@ describe('PlaceSearchDialog', () => {
   })
 
   it('市区町村の候補を選択するとonPlaceSelectが座標とズームレベルで呼ばれる', async () => {
-    mockForward.mockResolvedValue({
-      features: [
-        createFeature('id-shibuya', '渋谷区', '東京都, 日本', [139.6989, 35.6580], 'district'),
+    mockSuggest.mockResolvedValue({
+      suggestions: [
+        createSuggestion('id-shibuya', '渋谷区', '東京都, 日本', 'district'),
       ],
     })
+    mockRetrieve.mockResolvedValue(
+      createRetrieveResponse([139.6989, 35.6580], 'district'),
+    )
 
     render(<PlaceSearchDialog {...defaultProps} />)
 
@@ -223,8 +203,6 @@ describe('PlaceSearchDialog', () => {
       )
     })
   })
-
-  // --- 新規テスト（Red段階） ---
 
   it('閉じるボタンが表示されない', () => {
     render(<PlaceSearchDialog {...defaultProps} />)
@@ -254,7 +232,7 @@ describe('PlaceSearchDialog', () => {
     render(<PlaceSearchDialog {...defaultProps} />)
 
     const input = screen.getByPlaceholderText('場所を検索')
-    expect(input).toHaveStyle({ backgroundColor: 'white' })
+    expect(input).toHaveStyle({ backgroundColor: '#ffffff' })
   })
 
   it('検索ボックスのフォントサイズが16pxでモバイルズームを防止する', () => {
