@@ -204,6 +204,14 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const postButton = screen.getByRole('button', { name: /投稿/i })
       expect(postButton).toBeInTheDocument()
     })
+
+    it('Issue#70 - フィルター/メニューボタンのコンテナがsafe-area-inset-topを考慮している', () => {
+      renderApp()
+      skipSplashScreen()
+      const filterButton = screen.getByRole('button', { name: /フィルター/i })
+      const container = filterButton.parentElement
+      expect(container?.className).toContain('safe-area-inset-top')
+    })
   })
 
   describe('Dialog State Management - ダイアログ状態管理', () => {
