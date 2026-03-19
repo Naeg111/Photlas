@@ -7,25 +7,43 @@ import { PlaceSearchDialog } from './PlaceSearchDialog'
  * Issue#69: PlaceSearchDialog のテスト
  */
 
-// Mapbox Search JS Coreのモック
-const mockSuggest = vi.fn()
-const mockRetrieve = vi.fn()
+// Mapbox Geocoding APIのモック
 const mockForward = vi.fn()
 vi.mock('@mapbox/search-js-core', () => ({
-  SearchBoxCore: vi.fn(() => ({
-    suggest: mockSuggest,
-    retrieve: mockRetrieve,
-  })),
   GeocodingCore: vi.fn(() => ({
     forward: mockForward,
   })),
-  SessionToken: vi.fn(),
 }))
 
 // Mapbox設定のモック
 vi.mock('../config/mapbox', () => ({
   MAPBOX_ACCESS_TOKEN: 'test-token',
 }))
+
+/** テスト用のGeocodingFeatureを生成する */
+function createFeature(
+  id: string,
+  name: string,
+  placeFormatted: string,
+  coordinates: [number, number],
+  featureType: string,
+) {
+  return {
+    id,
+    type: 'Feature' as const,
+    geometry: { type: 'Point' as const, coordinates },
+    properties: {
+      mapbox_id: id,
+      feature_type: featureType,
+      name,
+      name_preferred: name,
+      place_formatted: placeFormatted,
+      full_address: `${name}, ${placeFormatted}`,
+      coordinates: { longitude: coordinates[0], latitude: coordinates[1] },
+      context: {},
+    },
+  }
+}
 
 describe('PlaceSearchDialog', () => {
   const defaultProps = {
@@ -51,10 +69,10 @@ describe('PlaceSearchDialog', () => {
   })
 
   it('検索入力後にサジェストが表示される', async () => {
-    mockSuggest.mockResolvedValue({
-      suggestions: [
-        { name: '東京タワー', full_address: '東京都港区芝公園4丁目', mapbox_id: 'id-1' },
-        { name: '東京駅', full_address: '東京都千代田区丸の内1丁目', mapbox_id: 'id-2' },
+    mockForward.mockResolvedValue({
+      features: [
+        createFeature('id-1', '東京タワー', '東京都港区芝公園4丁目', [139.745433, 35.658581], 'address'),
+        createFeature('id-2', '東京駅', '東京都千代田区丸の内1丁目', [139.767125, 35.681236], 'address'),
       ],
     })
 
@@ -70,16 +88,10 @@ describe('PlaceSearchDialog', () => {
   })
 
   it('候補を選択するとonPlaceSelectが座標とズームレベルで呼ばれる', async () => {
-    mockSuggest.mockResolvedValue({
-      suggestions: [
-        { name: '東京タワー', full_address: '東京都港区芝公園4丁目', mapbox_id: 'id-1', feature_type: 'poi' },
+    mockForward.mockResolvedValue({
+      features: [
+        createFeature('id-1', '東京タワー', '東京都港区芝公園4丁目', [139.745433, 35.658581], 'address'),
       ],
-    })
-    mockRetrieve.mockResolvedValue({
-      features: [{
-        geometry: { coordinates: [139.745433, 35.658581] },
-        properties: { feature_type: 'poi' },
-      }],
     })
 
     render(<PlaceSearchDialog {...defaultProps} />)
@@ -97,22 +109,16 @@ describe('PlaceSearchDialog', () => {
       expect(defaultProps.onPlaceSelect).toHaveBeenCalledWith(
         139.745433,
         35.658581,
-        expect.any(Number)
+        16
       )
     })
   })
 
   it('候補を選択するとダイアログが閉じる', async () => {
-    mockSuggest.mockResolvedValue({
-      suggestions: [
-        { name: '東京タワー', full_address: '東京都港区', mapbox_id: 'id-1' },
+    mockForward.mockResolvedValue({
+      features: [
+        createFeature('id-1', '東京タワー', '東京都港区', [139.745433, 35.658581], 'address'),
       ],
-    })
-    mockRetrieve.mockResolvedValue({
-      features: [{
-        geometry: { coordinates: [139.745433, 35.658581] },
-        properties: { feature_type: 'poi' },
-      }],
     })
 
     render(<PlaceSearchDialog {...defaultProps} />)
@@ -149,21 +155,7 @@ describe('PlaceSearchDialog', () => {
   it('Geocoding APIで市区町村が検索結果に表示される', async () => {
     mockForward.mockResolvedValue({
       features: [
-        {
-          id: 'id-shibuya',
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [139.6989, 35.6580] },
-          properties: {
-            mapbox_id: 'id-shibuya',
-            feature_type: 'district',
-            name: '渋谷区',
-            name_preferred: '渋谷区',
-            place_formatted: '東京都, 日本',
-            full_address: '渋谷区, 東京都, 日本',
-            coordinates: { longitude: 139.6989, latitude: 35.6580 },
-            context: {},
-          },
-        },
+        createFeature('id-shibuya', '渋谷区', '東京都, 日本', [139.6989, 35.6580], 'district'),
       ],
     })
 
@@ -181,21 +173,7 @@ describe('PlaceSearchDialog', () => {
   it('市区町村の候補を選択するとonPlaceSelectが座標とズームレベルで呼ばれる', async () => {
     mockForward.mockResolvedValue({
       features: [
-        {
-          id: 'id-shibuya',
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [139.6989, 35.6580] },
-          properties: {
-            mapbox_id: 'id-shibuya',
-            feature_type: 'district',
-            name: '渋谷区',
-            name_preferred: '渋谷区',
-            place_formatted: '東京都, 日本',
-            full_address: '渋谷区, 東京都, 日本',
-            coordinates: { longitude: 139.6989, latitude: 35.6580 },
-            context: {},
-          },
-        },
+        createFeature('id-shibuya', '渋谷区', '東京都, 日本', [139.6989, 35.6580], 'district'),
       ],
     })
 
