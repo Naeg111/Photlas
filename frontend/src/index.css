@@ -108,18 +108,11 @@
     overflow: hidden;
   }
 
-  /* Issue#70: iOS PWA (black-translucent) 時、ビューポートの高さにステータスバー分が
-     含まれないため、safe-area-inset-top分を加算して全画面を確保する。
-     CSSメディアクエリとJS検出（navigator.standalone）の両方で対応。 */
-  @media all and (display-mode: standalone) {
-    #root {
-      bottom: auto;
-      height: calc(100dvh + env(safe-area-inset-top, 0px));
-    }
-  }
+  /* Issue#70: iOS PWA (black-translucent) 時、CSSビューポート単位ではステータスバー分が
+     含まれないため、JSで取得したscreen.heightを--app-heightに設定して全画面を確保する。 */
   html.standalone #root {
     bottom: auto;
-    height: calc(100dvh + env(safe-area-inset-top, 0px));
+    height: var(--app-height, 100vh);
   }
 }
 
