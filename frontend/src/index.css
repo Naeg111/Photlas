@@ -108,11 +108,15 @@
     overflow: hidden;
   }
 
-  /* Issue#70: iOS PWA (black-translucent) 時、CSSビューポート単位ではステータスバー分が
-     含まれないため、JSで取得したscreen.heightを--app-heightに設定して全画面を確保する。 */
+  /* Issue#70: iOS PWA (black-translucent) 時、position: fixedのビューポート計算が
+     ステータスバー分を含まないため、absoluteに切り替えてhtml/bodyから高さを継承する。 */
+  html.standalone,
+  html.standalone body {
+    height: -webkit-fill-available;
+  }
   html.standalone #root {
-    bottom: auto;
-    height: var(--app-height, 100vh);
+    position: absolute;
+    height: -webkit-fill-available;
   }
 }
 
