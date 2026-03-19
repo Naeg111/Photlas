@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef, useMemo } from 'react'
 import { Input } from './ui/input'
 import { SearchBoxCore, GeocodingCore, SessionToken } from '@mapbox/search-js-core'
-import type { GeocodingFeature } from '@mapbox/search-js-core'
 import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
 
 /**
