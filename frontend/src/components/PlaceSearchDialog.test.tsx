@@ -10,10 +10,14 @@ import { PlaceSearchDialog } from './PlaceSearchDialog'
 // Mapbox Search JS Coreのモック
 const mockSuggest = vi.fn()
 const mockRetrieve = vi.fn()
+const mockForward = vi.fn()
 vi.mock('@mapbox/search-js-core', () => ({
   SearchBoxCore: vi.fn(() => ({
     suggest: mockSuggest,
     retrieve: mockRetrieve,
+  })),
+  GeocodingCore: vi.fn(() => ({
+    forward: mockForward,
   })),
   SessionToken: vi.fn(),
 }))
@@ -40,6 +44,31 @@ function createRetrieveResponse(coordinates: [number, number], featureType: stri
       geometry: { coordinates },
       properties: { feature_type: featureType },
     }],
+  }
+}
+
+/** テスト用のGeocodingFeatureを生成する */
+function createGeocodingFeature(
+  id: string,
+  name: string,
+  placeFormatted: string,
+  coordinates: [number, number],
+  featureType: string,
+) {
+  return {
+    id,
+    type: 'Feature' as const,
+    geometry: { type: 'Point' as const, coordinates },
+    properties: {
+      mapbox_id: id,
+      feature_type: featureType,
+      name,
+      name_preferred: name,
+      place_formatted: placeFormatted,
+      full_address: `${name}, ${placeFormatted}`,
+      coordinates: { longitude: coordinates[0], latitude: coordinates[1] },
+      context: {},
+    },
   }
 }
 
@@ -73,6 +102,7 @@ describe('PlaceSearchDialog', () => {
         createSuggestion('id-2', '東京駅', '東京都千代田区丸の内1丁目', 'poi'),
       ],
     })
+    mockForward.mockResolvedValue({ features: [] })
 
     render(<PlaceSearchDialog {...defaultProps} />)
 
@@ -91,6 +121,7 @@ describe('PlaceSearchDialog', () => {
         createSuggestion('id-1', '東京タワー', '東京都港区芝公園4丁目', 'poi'),
       ],
     })
+    mockForward.mockResolvedValue({ features: [] })
     mockRetrieve.mockResolvedValue(
       createRetrieveResponse([139.745433, 35.658581], 'poi'),
     )
@@ -121,6 +152,7 @@ describe('PlaceSearchDialog', () => {
         createSuggestion('id-1', '東京タワー', '東京都港区', 'poi'),
       ],
     })
+    mockForward.mockResolvedValue({ features: [] })
     mockRetrieve.mockResolvedValue(
       createRetrieveResponse([139.745433, 35.658581], 'poi'),
     )
@@ -156,76 +188,10 @@ describe('PlaceSearchDialog', () => {
     expect(input).not.toHaveFocus()
   })
 
-  it('市区町村が検索結果に表示される', async () => {
-    mockSuggest.mockResolvedValue({
-      suggestions: [
-        createSuggestion('id-shibuya', '渋谷区', '東京都, 日本', 'district'),
-      ],
-    })
-
-    render(<PlaceSearchDialog {...defaultProps} />)
-
-    const input = screen.getByPlaceholderText('場所を検索')
-    await userEvent.setup().type(input, '渋谷')
-
-    await waitFor(() => {
-      expect(screen.getByText('渋谷区')).toBeInTheDocument()
-      expect(screen.getByText('東京都, 日本')).toBeInTheDocument()
-    })
-  })
-
-  it('市区町村の候補を選択するとonPlaceSelectが座標とズームレベルで呼ばれる', async () => {
-    mockSuggest.mockResolvedValue({
-      suggestions: [
-        createSuggestion('id-shibuya', '渋谷区', '東京都, 日本', 'district'),
-      ],
-    })
-    mockRetrieve.mockResolvedValue(
-      createRetrieveResponse([139.6989, 35.6580], 'district'),
-    )
-
-    render(<PlaceSearchDialog {...defaultProps} />)
-
-    const user = userEvent.setup()
-    await user.type(screen.getByPlaceholderText('場所を検索'), '渋谷')
-
-    await waitFor(() => {
-      expect(screen.getByText('渋谷区')).toBeInTheDocument()
-    })
-
-    await user.click(screen.getByText('渋谷区'))
-
-    await waitFor(() => {
-      expect(defaultProps.onPlaceSelect).toHaveBeenCalledWith(
-        139.6989,
-        35.6580,
-        12
-      )
-    })
-  })
-
   it('閉じるボタンが表示されない', () => {
     render(<PlaceSearchDialog {...defaultProps} />)
 
     expect(screen.queryByLabelText('閉じる')).not.toBeInTheDocument()
-  })
-
-  it('POI検索結果が表示される', async () => {
-    mockSuggest.mockResolvedValue({
-      suggestions: [
-        createSuggestion('poi-1', '渋谷駅', '東京都渋谷区道玄坂', 'poi'),
-      ],
-    })
-
-    render(<PlaceSearchDialog {...defaultProps} />)
-
-    const input = screen.getByPlaceholderText('場所を検索')
-    await userEvent.setup().type(input, '渋谷駅')
-
-    await waitFor(() => {
-      expect(screen.getByText('渋谷駅')).toBeInTheDocument()
-      expect(screen.getByText('東京都渋谷区道玄坂')).toBeInTheDocument()
-    })
   })
 
   it('検索ボックスが不透明な白色背景を持つ', () => {
@@ -240,5 +206,55 @@ describe('PlaceSearchDialog', () => {
 
     const input = screen.getByPlaceholderText('場所を検索')
     expect(input).toHaveStyle({ fontSize: '16px' })
+  })
+
+  // --- 新規テスト: API併用（Red段階） ---
+
+  it('SearchBoxCoreとGeocodingCoreの両方の結果がマージされて表示される', async () => {
+    mockSuggest.mockResolvedValue({
+      suggestions: [
+        createSuggestion('poi-1', '渋谷駅', '東京都渋谷区道玄坂', 'poi'),
+      ],
+    })
+    mockForward.mockResolvedValue({
+      features: [
+        createGeocodingFeature('geo-1', '渋谷区', '東京都, 日本', [139.6989, 35.6580], 'district'),
+      ],
+    })
+
+    render(<PlaceSearchDialog {...defaultProps} />)
+
+    const input = screen.getByPlaceholderText('場所を検索')
+    await userEvent.setup().type(input, '渋谷')
+
+    await waitFor(() => {
+      expect(screen.getByText('渋谷駅')).toBeInTheDocument()
+      expect(screen.getByText('渋谷区')).toBeInTheDocument()
+    })
+  })
+
+  it('GeocodingCore由来の結果を選択するとretrieveなしで座標が取得される', async () => {
+    mockSuggest.mockResolvedValue({ suggestions: [] })
+    mockForward.mockResolvedValue({
+      features: [
+        createGeocodingFeature('geo-1', '渋谷区', '東京都, 日本', [139.6989, 35.6580], 'district'),
+      ],
+    })
+
+    render(<PlaceSearchDialog {...defaultProps} />)
+
+    const user = userEvent.setup()
+    await user.type(screen.getByPlaceholderText('場所を検索'), '渋谷')
+
+    await waitFor(() => {
+      expect(screen.getByText('渋谷区')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('渋谷区'))
+
+    await waitFor(() => {
+      expect(defaultProps.onPlaceSelect).toHaveBeenCalledWith(139.6989, 35.6580, 12)
+      expect(mockRetrieve).not.toHaveBeenCalled()
+    })
   })
 })
