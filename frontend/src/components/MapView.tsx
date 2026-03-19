@@ -665,9 +665,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
       {/* Issue#68: Zoom 10未満の場合、拡大を促す静的メッセージを表示 */}
       {zoom < MIN_ZOOM_FOR_PINS && (
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg">
-          <p className="text-center text-gray-700 font-semibold">
-            投稿を表示するには地図を拡大してください
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg pointer-events-none select-none">
+          <p className="text-center text-gray-700 font-semibold whitespace-nowrap md:whitespace-normal">
+            投稿を表示するには<br className="md:hidden" />地図を拡大してください
           </p>
         </div>
       )}
