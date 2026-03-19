@@ -7,12 +7,19 @@ import { PlaceSearchDialog } from './PlaceSearchDialog'
  * Issue#69: PlaceSearchDialog のテスト
  */
 
-// Mapbox Geocoding APIのモック
+// Mapbox Search JS Coreのモック
+const mockSuggest = vi.fn()
+const mockRetrieve = vi.fn()
 const mockForward = vi.fn()
 vi.mock('@mapbox/search-js-core', () => ({
+  SearchBoxCore: vi.fn(() => ({
+    suggest: mockSuggest,
+    retrieve: mockRetrieve,
+  })),
   GeocodingCore: vi.fn(() => ({
     forward: mockForward,
   })),
+  SessionToken: vi.fn(),
 }))
 
 // Mapbox設定のモック
@@ -42,6 +49,26 @@ function createFeature(
       coordinates: { longitude: coordinates[0], latitude: coordinates[1] },
       context: {},
     },
+  }
+}
+
+/** テスト用のSearchBoxSuggestionを生成する */
+function createSuggestion(
+  mapboxId: string,
+  name: string,
+  fullAddress: string,
+  featureType: string,
+) {
+  return { name, full_address: fullAddress, mapbox_id: mapboxId, feature_type: featureType }
+}
+
+/** テスト用のSearchBoxRetrieveレスポンスを生成する */
+function createRetrieveResponse(coordinates: [number, number], featureType: string) {
+  return {
+    features: [{
+      geometry: { coordinates },
+      properties: { feature_type: featureType },
+    }],
   }
 }
 
@@ -195,5 +222,45 @@ describe('PlaceSearchDialog', () => {
         12
       )
     })
+  })
+
+  // --- 新規テスト（Red段階） ---
+
+  it('閉じるボタンが表示されない', () => {
+    render(<PlaceSearchDialog {...defaultProps} />)
+
+    expect(screen.queryByLabelText('閉じる')).not.toBeInTheDocument()
+  })
+
+  it('POI検索結果が表示される', async () => {
+    mockSuggest.mockResolvedValue({
+      suggestions: [
+        createSuggestion('poi-1', '渋谷駅', '東京都渋谷区道玄坂', 'poi'),
+      ],
+    })
+
+    render(<PlaceSearchDialog {...defaultProps} />)
+
+    const input = screen.getByPlaceholderText('場所を検索')
+    await userEvent.setup().type(input, '渋谷駅')
+
+    await waitFor(() => {
+      expect(screen.getByText('渋谷駅')).toBeInTheDocument()
+      expect(screen.getByText('東京都渋谷区道玄坂')).toBeInTheDocument()
+    })
+  })
+
+  it('検索ボックスが不透明な白色背景を持つ', () => {
+    render(<PlaceSearchDialog {...defaultProps} />)
+
+    const input = screen.getByPlaceholderText('場所を検索')
+    expect(input).toHaveStyle({ backgroundColor: 'white' })
+  })
+
+  it('検索ボックスのフォントサイズが16pxでモバイルズームを防止する', () => {
+    render(<PlaceSearchDialog {...defaultProps} />)
+
+    const input = screen.getByPlaceholderText('場所を検索')
+    expect(input).toHaveStyle({ fontSize: '16px' })
   })
 })
