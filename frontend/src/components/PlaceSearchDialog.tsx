@@ -54,6 +54,49 @@ function getZoomForFeatureType(featureType?: string): number {
   return ZOOM_BY_FEATURE_TYPE[featureType] ?? DEFAULT_ZOOM
 }
 
+/** GeocodingCoreとSearchBoxCoreの結果を統一フォーマットにマージする */
+function mergeSearchResults(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  geocodingFeatures: any[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  searchBoxSuggestions: any[],
+): SearchResult[] {
+  const merged: SearchResult[] = []
+  const seenIds = new Set<string>()
+
+  for (const feature of geocodingFeatures) {
+    const id = feature.properties.mapbox_id
+    if (!seenIds.has(id)) {
+      seenIds.add(id)
+      merged.push({
+        name: feature.properties.name,
+        description: feature.properties.place_formatted,
+        mapbox_id: id,
+        feature_type: feature.properties.feature_type,
+        source: 'geocoding',
+        coordinates: feature.geometry.coordinates as [number, number],
+      })
+    }
+  }
+
+  for (const suggestion of searchBoxSuggestions) {
+    const id = suggestion.mapbox_id
+    if (!seenIds.has(id)) {
+      seenIds.add(id)
+      merged.push({
+        name: suggestion.name,
+        description: suggestion.full_address,
+        mapbox_id: id,
+        feature_type: suggestion.feature_type,
+        source: 'searchbox',
+        originalSuggestion: suggestion,
+      })
+    }
+  }
+
+  return merged
+}
+
 export function PlaceSearchDialog({
   open,
   onOpenChange,
@@ -106,47 +149,12 @@ export function PlaceSearchDialog({
           }),
         ])
 
-        const merged: SearchResult[] = []
-        const seenIds = new Set<string>()
+        const geocodingFeatures = geocodingResult.status === 'fulfilled'
+          ? geocodingResult.value.features || [] : []
+        const searchBoxSuggestions = searchBoxResult.status === 'fulfilled'
+          ? (searchBoxResult.value.suggestions || []) : []
 
-        // GeocodingCore結果を先に追加（行政区分を優先表示）
-        if (geocodingResult.status === 'fulfilled') {
-          for (const feature of geocodingResult.value.features || []) {
-            const id = feature.properties.mapbox_id
-            if (!seenIds.has(id)) {
-              seenIds.add(id)
-              merged.push({
-                name: feature.properties.name,
-                description: feature.properties.place_formatted,
-                mapbox_id: id,
-                feature_type: feature.properties.feature_type,
-                source: 'geocoding',
-                coordinates: feature.geometry.coordinates as [number, number],
-              })
-            }
-          }
-        }
-
-        // SearchBoxCore結果を追加（POI・住所）
-        if (searchBoxResult.status === 'fulfilled') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          for (const suggestion of (searchBoxResult.value.suggestions || []) as any[]) {
-            const id = suggestion.mapbox_id
-            if (!seenIds.has(id)) {
-              seenIds.add(id)
-              merged.push({
-                name: suggestion.name,
-                description: suggestion.full_address,
-                mapbox_id: id,
-                feature_type: suggestion.feature_type,
-                source: 'searchbox',
-                originalSuggestion: suggestion,
-              })
-            }
-          }
-        }
-
-        setResults(merged)
+        setResults(mergeSearchResults(geocodingFeatures, searchBoxSuggestions))
       } catch {
         setResults([])
       }
