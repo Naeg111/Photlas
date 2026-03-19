@@ -8,9 +8,11 @@ import App from './App.tsx'
 
 initSentry()
 
-// Issue#70: PWA対応 - Service Worker登録
+// Issue#70: PWA対応 - Service Worker登録（ページ読み込み完了後に登録）
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js')
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+  })
 }
 
 createRoot(document.getElementById('root')!).render(
