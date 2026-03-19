@@ -207,14 +207,14 @@ export function PlaceSearchDialog({
       />
 
       {/* 検索コンテナ: 上部中央にフローティング配置 */}
-      <div className="absolute top-[91px] left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:max-w-md pointer-events-auto flex flex-col gap-1">
+      <div className="absolute top-[91px] left-[30px] right-[30px] md:left-1/2 md:-translate-x-1/2 md:max-w-md pointer-events-auto flex flex-col gap-1">
         {/* 検索ボックス */}
         <Input
           type="text"
           placeholder="場所を検索"
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="w-full shadow-lg"
+          className="w-full h-11 shadow-lg"
           style={INPUT_STYLE}
         />
 
