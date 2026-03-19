@@ -4,19 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <!-- Issue#70: iOS PWAスタンドアロンモード検出・全画面高さ設定（CSS適用前に実行） -->
-    <script>
-    (function() {
-      if (!navigator.standalone) return;
-      document.documentElement.classList.add('standalone');
-      function setAppHeight() {
-        var h = window.innerHeight >= window.innerWidth ? screen.height : screen.width;
-        document.documentElement.style.setProperty('--app-height', h + 'px');
-      }
-      setAppHeight();
-      window.addEventListener('resize', setAppHeight);
-    })();
-    </script>
+    <!-- Issue#70: iOS PWAスタンドアロンモード検出（CSS適用前に実行） -->
+    <script>if(navigator.standalone)document.documentElement.classList.add('standalone')</script>
     <meta name="theme-color" content="#000000" />
 
     <!-- PWA / Home Screen Web App -->
