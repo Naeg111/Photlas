@@ -19,26 +19,25 @@ interface PlaceSearchDialogProps {
 }
 
 const SEARCH_DEBOUNCE_MS = 300
+const GEOCODING_TYPES = 'region,postcode,district,place,locality,neighborhood,street,address'
+
+/** feature_typeに応じたズームレベルを返す */
+const ZOOM_BY_FEATURE_TYPE: Record<string, number> = {
+  country: 5,
+  region: 8,
+  postcode: 12,
+  district: 12,
+  place: 12,
+  locality: 14,
+  neighborhood: 14,
+  street: 14,
+}
+const DEFAULT_ZOOM = 16
 
 /** feature_typeに応じたズームレベルを返す */
 function getZoomForFeatureType(featureType?: string): number {
-  switch (featureType) {
-    case 'country':
-      return 5
-    case 'region':
-      return 8
-    case 'postcode':
-    case 'district':
-    case 'place':
-      return 12
-    case 'locality':
-    case 'neighborhood':
-    case 'street':
-      return 14
-    case 'address':
-    default:
-      return 16
-  }
+  if (!featureType) return DEFAULT_ZOOM
+  return ZOOM_BY_FEATURE_TYPE[featureType] ?? DEFAULT_ZOOM
 }
 
 export function PlaceSearchDialog({
@@ -74,7 +73,7 @@ export function PlaceSearchDialog({
         const result = await geocoding.forward(value, {
           country: 'jp',
           language: 'ja',
-          types: 'region,postcode,district,place,locality,neighborhood,street,address',
+          types: GEOCODING_TYPES,
         })
         setFeatures(result.features || [])
       } catch {
