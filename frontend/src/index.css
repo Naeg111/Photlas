@@ -94,8 +94,7 @@
     background-color: #000000;
     color: var(--foreground);
     font-feature-settings: "rlig" 1, "calt" 1;
-    /* セーフエリアを考慮した背景拡張 */
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    /* セーフエリアは個別コンポーネントで処理（Issue#70） */
     padding: 0;
   }
 
