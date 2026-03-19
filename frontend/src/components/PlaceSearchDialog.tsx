@@ -1,22 +1,16 @@
 import { useState, useCallback, useRef, useMemo } from 'react'
 import { Input } from './ui/input'
-import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
+import { GeocodingCore } from '@mapbox/search-js-core'
+import type { GeocodingFeature } from '@mapbox/search-js-core'
 import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
 import { X } from 'lucide-react'
 
 /**
  * Issue#69: 場所検索ダイアログ
  *
- * Radix Dialogを使わず、フローティングUIとして実装。
- * モバイルでの画面拡大問題を回避し、地図上に検索ボックスを浮かせて表示する。
+ * Geocoding API v6（GeocodingCore）を使用し、市区町村を含む行政区分を検索可能にする。
+ * フローティングUIとして実装し、モバイルでの画面拡大を回避する。
  */
-
-interface SearchSuggestion {
-  name: string
-  full_address?: string
-  mapbox_id: string
-  feature_type?: string
-}
 
 interface PlaceSearchDialogProps {
   open: boolean
@@ -42,7 +36,6 @@ function getZoomForFeatureType(featureType?: string): number {
     case 'street':
       return 14
     case 'address':
-    case 'poi':
     default:
       return 16
   }
@@ -54,13 +47,12 @@ export function PlaceSearchDialog({
   onPlaceSelect,
 }: PlaceSearchDialogProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
+  const [features, setFeatures] = useState<GeocodingFeature[]>([])
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const sessionTokenRef = useRef(new SessionToken())
 
-  const searchBox = useMemo(() => {
+  const geocoding = useMemo(() => {
     if (MAPBOX_ACCESS_TOKEN) {
-      return new SearchBoxCore({ accessToken: MAPBOX_ACCESS_TOKEN })
+      return new GeocodingCore({ accessToken: MAPBOX_ACCESS_TOKEN })
     }
     return null
   }, [])
@@ -72,54 +64,38 @@ export function PlaceSearchDialog({
       clearTimeout(debounceTimerRef.current)
     }
 
-    if (!value.trim() || !searchBox) {
-      setSuggestions([])
+    if (!value.trim() || !geocoding) {
+      setFeatures([])
       return
     }
 
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const result = await searchBox.suggest(value, {
-          sessionToken: sessionTokenRef.current,
+        const result = await geocoding.forward(value, {
           country: 'jp',
           language: 'ja',
-          types: 'region,postcode,district,place,locality,neighborhood,street,address,poi',
+          types: 'region,postcode,district,place,locality,neighborhood,street,address',
         })
-        setSuggestions((result.suggestions || []) as SearchSuggestion[])
+        setFeatures(result.features || [])
       } catch {
-        setSuggestions([])
+        setFeatures([])
       }
     }, SEARCH_DEBOUNCE_MS)
-  }, [searchBox])
+  }, [geocoding])
 
-  const handleSelectSuggestion = useCallback(async (suggestion: SearchSuggestion) => {
-    if (!searchBox) return
+  const handleSelectFeature = useCallback((feature: GeocodingFeature) => {
+    const [lng, lat] = feature.geometry.coordinates
+    const zoom = getZoomForFeatureType(feature.properties.feature_type)
+    onPlaceSelect(lng, lat, zoom)
 
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await searchBox.retrieve(suggestion as any, {
-        sessionToken: sessionTokenRef.current,
-      })
-      const feature = result.features?.[0]
-      if (feature?.geometry?.coordinates) {
-        const [lng, lat] = feature.geometry.coordinates
-        const featureType = feature.properties?.feature_type || suggestion.feature_type
-        const zoom = getZoomForFeatureType(featureType)
-        onPlaceSelect(lng, lat, zoom)
-      }
-    } catch {
-      // 取得失敗時はスキップ
-    }
-
-    sessionTokenRef.current = new SessionToken()
-    setSuggestions([])
+    setFeatures([])
     setSearchQuery('')
     onOpenChange(false)
-  }, [searchBox, onPlaceSelect, onOpenChange])
+  }, [onPlaceSelect, onOpenChange])
 
   const handleClose = useCallback(() => {
     setSearchQuery('')
-    setSuggestions([])
+    setFeatures([])
     onOpenChange(false)
   }, [onOpenChange])
 
@@ -127,9 +103,10 @@ export function PlaceSearchDialog({
 
   return (
     <div className="fixed inset-0 z-50 pointer-events-none">
-      {/* 透明な背景: クリックで閉じる */}
+      {/* 半透明オーバーレイ: クリックで閉じる */}
       <div
-        className="absolute inset-0 pointer-events-auto"
+        data-testid="search-overlay"
+        className="absolute inset-0 pointer-events-auto bg-black/50"
         onClick={handleClose}
       />
 
@@ -150,22 +127,21 @@ export function PlaceSearchDialog({
           placeholder="場所を検索"
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
-          autoFocus
           className="w-full shadow-lg bg-white"
         />
 
         {/* 検索候補リスト */}
-        {suggestions.length > 0 && (
+        {features.length > 0 && (
           <div className="w-full max-h-64 overflow-y-auto bg-white border rounded-md shadow-lg">
-            {suggestions.map((suggestion) => (
+            {features.map((feature) => (
               <button
-                key={suggestion.mapbox_id}
+                key={feature.properties.mapbox_id}
                 className="w-full text-left px-3 py-2 hover:bg-gray-100 border-b last:border-b-0"
-                onClick={() => handleSelectSuggestion(suggestion)}
+                onClick={() => handleSelectFeature(feature)}
               >
-                <div className="font-medium text-sm">{suggestion.name}</div>
-                {suggestion.full_address && (
-                  <div className="text-xs text-gray-500">{suggestion.full_address}</div>
+                <div className="font-medium text-sm">{feature.properties.name}</div>
+                {feature.properties.place_formatted && (
+                  <div className="text-xs text-gray-500">{feature.properties.place_formatted}</div>
                 )}
               </button>
             ))}
