@@ -63,14 +63,11 @@ vi.mock('react-map-gl', () => ({
   Marker: ({ children }: any) => <div>{children}</div>,
 }))
 
-// Mapbox Search/Geocoding API のモック
+// Mapbox Search Box API のモック
 vi.mock('@mapbox/search-js-core', () => ({
   SearchBoxCore: vi.fn(() => ({
     suggest: vi.fn(),
     retrieve: vi.fn(),
-  })),
-  GeocodingCore: vi.fn(() => ({
-    forward: vi.fn(),
   })),
   SessionToken: vi.fn(),
 }))

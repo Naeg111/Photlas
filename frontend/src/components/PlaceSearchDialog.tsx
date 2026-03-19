@@ -26,6 +26,9 @@ interface PlaceSearchDialogProps {
 const SEARCH_DEBOUNCE_MS = 300
 const SEARCH_TYPES = 'region,postcode,district,place,locality,neighborhood,street,address,poi'
 
+/** モバイルiOSのズーム防止と確実な白色背景のためのインラインスタイル */
+const INPUT_STYLE = { backgroundColor: '#ffffff', fontSize: '16px' } as const
+
 /** feature_typeに応じたズームレベルを返す */
 const ZOOM_BY_FEATURE_TYPE: Record<string, number> = {
   country: 5,
@@ -140,7 +143,7 @@ export function PlaceSearchDialog({
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="w-full shadow-lg"
-          style={{ backgroundColor: '#ffffff', fontSize: '16px' }}
+          style={INPUT_STYLE}
         />
 
         {/* 検索候補リスト */}
