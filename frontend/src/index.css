@@ -108,15 +108,11 @@
     overflow: hidden;
   }
 
-  /* Issue#70: iOS PWA (black-translucent) 時、position: fixedのビューポート計算が
-     ステータスバー分を含まないため、absoluteに切り替えてhtml/bodyから高さを継承する。 */
-  html.standalone,
-  html.standalone body {
-    height: -webkit-fill-available;
-  }
+  /* Issue#70: iOS PWA (black-translucent) 時、JSで--app-heightを設定して全画面を確保する。
+     JSが設定するまでは100vhをフォールバックとして使用。 */
   html.standalone #root {
-    position: absolute;
-    height: -webkit-fill-available;
+    bottom: auto;
+    height: var(--app-height, 100vh);
   }
 }
 
