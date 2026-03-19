@@ -1,16 +1,14 @@
 import { useState, useCallback, useRef, useMemo } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from './ui/dialog'
 import { Input } from './ui/input'
 import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
 import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
+import { X } from 'lucide-react'
 
 /**
  * Issue#69: 場所検索ダイアログ
+ *
+ * Radix Dialogを使わず、フローティングUIとして実装。
+ * モバイルでの画面拡大問題を回避し、地図上に検索ボックスを浮かせて表示する。
  */
 
 interface SearchSuggestion {
@@ -38,7 +36,6 @@ function getZoomForFeatureType(featureType?: string): number {
     case 'postcode':
     case 'district':
     case 'place':
-    case 'city':
       return 12
     case 'locality':
     case 'neighborhood':
@@ -86,7 +83,7 @@ export function PlaceSearchDialog({
           sessionToken: sessionTokenRef.current,
           country: 'jp',
           language: 'ja',
-          types: 'region,district,place,city,locality,neighborhood,street,address,poi',
+          types: 'region,postcode,district,place,locality,neighborhood,street,address,poi',
         })
         setSuggestions((result.suggestions || []) as SearchSuggestion[])
       } catch {
@@ -120,49 +117,61 @@ export function PlaceSearchDialog({
     onOpenChange(false)
   }, [searchBox, onPlaceSelect, onOpenChange])
 
-  const handleOpenChange = useCallback((isOpen: boolean) => {
-    if (!isOpen) {
-      setSearchQuery('')
-      setSuggestions([])
-    }
-    onOpenChange(isOpen)
+  const handleClose = useCallback(() => {
+    setSearchQuery('')
+    setSuggestions([])
+    onOpenChange(false)
   }, [onOpenChange])
 
   if (!open) return null
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogTitle className="sr-only">場所検索</DialogTitle>
-        <DialogDescription className="sr-only">場所を検索してマップを移動</DialogDescription>
+    <div className="fixed inset-0 z-50 pointer-events-none">
+      {/* 透明な背景: クリックで閉じる */}
+      <div
+        className="absolute inset-0 pointer-events-auto"
+        onClick={handleClose}
+      />
 
-        <div className="space-y-2">
-          <Input
-            type="text"
-            placeholder="場所を検索"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            autoFocus
-          />
+      {/* 検索コンテナ: 上部中央にフローティング配置 */}
+      <div className="absolute top-[4.5rem] left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:max-w-md pointer-events-auto flex flex-col items-end gap-1">
+        {/* 閉じるボタン */}
+        <button
+          className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100"
+          onClick={handleClose}
+          aria-label="閉じる"
+        >
+          <X className="w-4 h-4" />
+        </button>
 
-          {suggestions.length > 0 && (
-            <div className="max-h-64 overflow-y-auto border rounded-md">
-              {suggestions.map((suggestion) => (
-                <button
-                  key={suggestion.mapbox_id}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-100 border-b last:border-b-0"
-                  onClick={() => handleSelectSuggestion(suggestion)}
-                >
-                  <div className="font-medium text-sm">{suggestion.name}</div>
-                  {suggestion.full_address && (
-                    <div className="text-xs text-gray-500">{suggestion.full_address}</div>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        {/* 検索ボックス */}
+        <Input
+          type="text"
+          placeholder="場所を検索"
+          value={searchQuery}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          autoFocus
+          className="w-full shadow-lg bg-white"
+        />
+
+        {/* 検索候補リスト */}
+        {suggestions.length > 0 && (
+          <div className="w-full max-h-64 overflow-y-auto bg-white border rounded-md shadow-lg">
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion.mapbox_id}
+                className="w-full text-left px-3 py-2 hover:bg-gray-100 border-b last:border-b-0"
+                onClick={() => handleSelectSuggestion(suggestion)}
+              >
+                <div className="font-medium text-sm">{suggestion.name}</div>
+                {suggestion.full_address && (
+                  <div className="text-xs text-gray-500">{suggestion.full_address}</div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

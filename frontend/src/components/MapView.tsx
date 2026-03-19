@@ -506,7 +506,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     },
     flyToPlace: (lng: number, lat: number, zoom: number) => {
       if (map) {
-        map.flyTo({ center: [lng, lat], zoom })
+        const TOP_UI_HEIGHT = 56
+        map.flyTo({
+          center: [lng, lat],
+          zoom,
+          padding: { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 },
+        })
       }
     },
   }), [map, requestOrientationPermission, fetchSpots])
