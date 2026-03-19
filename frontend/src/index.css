@@ -108,10 +108,17 @@
     overflow: hidden;
   }
 
-  /* Issue#70: iOS PWA (black-translucent) 時、ビューポートがステータスバー分短いため
-     #rootを下方向に拡張して全画面を確保する。 */
+  /* Issue#70: 診断 - position:fixedがiOS PWAでクリップされるため、
+     position:relativeに変更しoverflow制限も解除して描画範囲を確認する。 */
+  html.standalone,
+  html.standalone body {
+    overflow: visible !important;
+    height: auto !important;
+  }
   html.standalone #root {
-    bottom: -200px;
+    position: relative;
+    width: 100%;
+    height: 200vh;
   }
 }
 
