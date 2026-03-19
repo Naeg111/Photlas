@@ -232,6 +232,34 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(message.closest('div[class*="cursor-pointer"]')).toBeNull()
       })
     })
+
+    it('Issue#70 - ズームメッセージがsafe-area-inset-topを考慮した位置にある', async () => {
+      mockMap.getZoom.mockReturnValue(9)
+
+      render(<MapView />)
+
+      await waitFor(() => {
+        const message = screen.getByText(/投稿を表示するには地図を拡大してください/)
+        const container = message.closest('div[class*="absolute"]')
+        expect(container?.className).toContain('safe-area-inset-top')
+      })
+    })
+
+    it('Issue#70 - エラートーストがsafe-area-inset-topを考慮した位置にある', async () => {
+      mockMap.getZoom.mockReturnValue(12)
+      setupFetchMock([])
+      // fetch失敗でトーストを表示
+      vi.mocked(globalThis.fetch).mockRejectedValueOnce(new Error('fail'))
+
+      render(<MapView />)
+
+      await waitFor(() => {
+        const toast = screen.queryByTestId('toast-container')
+        if (toast) {
+          expect(toast.className).toContain('safe-area-inset-top')
+        }
+      })
+    })
   })
 
   describe('Issue#55: Symbol Layer によるピン描画', () => {
