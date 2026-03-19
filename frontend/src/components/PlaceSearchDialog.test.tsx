@@ -10,10 +10,14 @@ import { PlaceSearchDialog } from './PlaceSearchDialog'
 // Mapbox Search JS Coreのモック
 const mockSuggest = vi.fn()
 const mockRetrieve = vi.fn()
+const mockForward = vi.fn()
 vi.mock('@mapbox/search-js-core', () => ({
   SearchBoxCore: vi.fn(() => ({
     suggest: mockSuggest,
     retrieve: mockRetrieve,
+  })),
+  GeocodingCore: vi.fn(() => ({
+    forward: mockForward,
   })),
   SessionToken: vi.fn(),
 }))
@@ -31,7 +35,7 @@ describe('PlaceSearchDialog', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   it('ダイアログが開いたとき検索ボックスが表示される', () => {
@@ -124,6 +128,94 @@ describe('PlaceSearchDialog', () => {
 
     await waitFor(() => {
       expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
+    })
+  })
+
+  it('ダイアログが開いたとき半透明オーバーレイが表示される', () => {
+    const { container } = render(<PlaceSearchDialog {...defaultProps} />)
+
+    const overlay = container.querySelector('[data-testid="search-overlay"]')
+    expect(overlay).toBeInTheDocument()
+    expect(overlay).toHaveClass('bg-black/50')
+  })
+
+  it('検索ボックスが自動フォーカスされない', () => {
+    render(<PlaceSearchDialog {...defaultProps} />)
+
+    const input = screen.getByPlaceholderText('場所を検索')
+    expect(input).not.toHaveFocus()
+  })
+
+  it('Geocoding APIで市区町村が検索結果に表示される', async () => {
+    mockForward.mockResolvedValue({
+      features: [
+        {
+          id: 'id-shibuya',
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [139.6989, 35.6580] },
+          properties: {
+            mapbox_id: 'id-shibuya',
+            feature_type: 'district',
+            name: '渋谷区',
+            name_preferred: '渋谷区',
+            place_formatted: '東京都, 日本',
+            full_address: '渋谷区, 東京都, 日本',
+            coordinates: { longitude: 139.6989, latitude: 35.6580 },
+            context: {},
+          },
+        },
+      ],
+    })
+
+    render(<PlaceSearchDialog {...defaultProps} />)
+
+    const input = screen.getByPlaceholderText('場所を検索')
+    await userEvent.setup().type(input, '渋谷')
+
+    await waitFor(() => {
+      expect(screen.getByText('渋谷区')).toBeInTheDocument()
+      expect(screen.getByText('東京都, 日本')).toBeInTheDocument()
+    })
+  })
+
+  it('市区町村の候補を選択するとonPlaceSelectが座標とズームレベルで呼ばれる', async () => {
+    mockForward.mockResolvedValue({
+      features: [
+        {
+          id: 'id-shibuya',
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [139.6989, 35.6580] },
+          properties: {
+            mapbox_id: 'id-shibuya',
+            feature_type: 'district',
+            name: '渋谷区',
+            name_preferred: '渋谷区',
+            place_formatted: '東京都, 日本',
+            full_address: '渋谷区, 東京都, 日本',
+            coordinates: { longitude: 139.6989, latitude: 35.6580 },
+            context: {},
+          },
+        },
+      ],
+    })
+
+    render(<PlaceSearchDialog {...defaultProps} />)
+
+    const user = userEvent.setup()
+    await user.type(screen.getByPlaceholderText('場所を検索'), '渋谷')
+
+    await waitFor(() => {
+      expect(screen.getByText('渋谷区')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('渋谷区'))
+
+    await waitFor(() => {
+      expect(defaultProps.onPlaceSelect).toHaveBeenCalledWith(
+        139.6989,
+        35.6580,
+        12
+      )
     })
   })
 })
