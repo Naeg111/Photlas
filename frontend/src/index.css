@@ -110,12 +110,16 @@
 
   /* Issue#70: iOS PWA (black-translucent) 時、ビューポートの高さにステータスバー分が
      含まれないため、safe-area-inset-top分を加算して全画面を確保する。
-     通常ブラウザではこのメディアクエリにマッチしないため影響なし。 */
+     CSSメディアクエリとJS検出（navigator.standalone）の両方で対応。 */
   @media all and (display-mode: standalone) {
     #root {
       bottom: auto;
       height: calc(100dvh + env(safe-area-inset-top, 0px));
     }
+  }
+  html.standalone #root {
+    bottom: auto;
+    height: calc(100dvh + env(safe-area-inset-top, 0px));
   }
 }
 
