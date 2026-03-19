@@ -99,16 +99,23 @@
   }
 
   /* モバイル対応: position fixedで画面全体を覆う（Safariのバーの裏まで表示） */
-  /* Issue#70: iOS PWA black-translucent時、ビューポート原点がステータスバー裏に移動するが
-     高さは変わらないため、bottom: 0だと下端に隙間が発生する。
-     heightで明示的に全画面を確保する。 */
   #root {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100dvh;
+    right: 0;
+    bottom: 0;
     overflow: hidden;
+  }
+
+  /* Issue#70: iOS PWA (black-translucent) 時、ビューポートの高さにステータスバー分が
+     含まれないため、safe-area-inset-top分を加算して全画面を確保する。
+     通常ブラウザではこのメディアクエリにマッチしないため影響なし。 */
+  @media all and (display-mode: standalone) {
+    #root {
+      bottom: auto;
+      height: calc(100dvh + env(safe-area-inset-top, 0px));
+    }
   }
 }
 
