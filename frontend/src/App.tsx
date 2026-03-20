@@ -665,8 +665,6 @@ function MainContent({ onMapReady }: MainContentProps) {
         imageUrl={selectedImageUrl}
       />
 
-      {/* Cookie同意バナー（absoluteでSafariツールバーの色検出を回避） */}
-      <CookieConsentBanner />
     </div>
   )
 }
@@ -729,6 +727,7 @@ function App() {
         <Route path="/manage/moderation" element={<AdminModerationPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      <CookieConsentBanner />
     </AuthProvider>
   )
 }
