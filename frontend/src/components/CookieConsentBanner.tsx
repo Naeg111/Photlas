@@ -9,8 +9,9 @@ const STORAGE_KEY = 'cookie_consent_acknowledged'
  * Issue#60: 外部送信規律対応（通知モデル）。
  * GA4の利用をユーザーに通知し、OKを押すとlocalStorageに保存して再表示しない。
  *
- * 外側のwrapperを黒背景にし、SafariツールバーがバナーのBG色（白）に
- * 引っ張られて白くなるのを防止する。
+ * Safariツールバーの色検出対策:
+ * 外側wrapperを透明にし、Safariがbodyの黒背景を検出してツールバーを黒に保つ。
+ * 白いバナーはmargin-bottomでsafe-area分上げ、画面最下端に直接接しない。
  */
 export function CookieConsentBanner() {
   const [isVisible, setIsVisible] = useState(() => {
@@ -25,10 +26,11 @@ export function CookieConsentBanner() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-black pb-[env(safe-area-inset-bottom,0px)]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
       <div
         data-testid="cookie-consent-banner"
-        className="bg-white border-t border-gray-200 shadow-lg p-4"
+        className="bg-white border-t border-gray-200 shadow-lg p-4 pointer-events-auto"
+        style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center gap-3 text-sm text-gray-700">
           <p className="flex-1 text-center sm:text-left">
