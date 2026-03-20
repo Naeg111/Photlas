@@ -24,7 +24,8 @@ export function CookieConsentBanner() {
   return (
     <div
       data-testid="cookie-consent-banner"
-      className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg p-4 safe-area-bottom"
+      className="fixed left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg p-4"
+      style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center gap-3 text-sm text-gray-700">
         <p className="flex-1 text-center sm:text-left">
