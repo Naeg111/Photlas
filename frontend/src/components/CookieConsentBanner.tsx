@@ -49,7 +49,7 @@ export function CookieConsentBanner() {
         </div>
       </div>
       {/* Safariツールバー色検出用: ビューポート最下端に透明領域を確保 */}
-      <div className="h-2 shrink-0" />
+      <div className="h-1.5 shrink-0" />
     </div>
   )
 }
