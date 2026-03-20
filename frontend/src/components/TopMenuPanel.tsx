@@ -39,7 +39,7 @@ export function TopMenuPanel({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="top" className="w-full h-full bg-transparent p-0 gap-0 border-none shadow-none">
-        <div className="bg-background w-full px-16 py-10 border-b shadow-lg">
+        <div className="bg-background w-full px-16 pb-10 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] border-b shadow-lg">
           <SheetHeader className="sr-only">
             <SheetTitle>メニュー</SheetTitle>
             <SheetDescription>
