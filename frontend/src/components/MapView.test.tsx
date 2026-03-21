@@ -61,6 +61,7 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() =
       getWest: () => 139.7,
     })),
     flyTo: vi.fn(),
+    jumpTo: vi.fn(),
     setLanguage: vi.fn(),
     on: vi.fn((event: string, layerOrHandler: string | Function, handler?: Function) => {
       if (typeof layerOrHandler === 'string' && handler) {
@@ -579,6 +580,44 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         pitch: 0,
         duration: 500,
       })
+    })
+  })
+
+  describe('Issue#69: flyToPlace 距離判定', () => {
+    it('近距離移動ではflyToが呼ばれjumpToは呼ばれない', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      ref.current.flyToPlace(139.8, 35.7, 14)
+
+      expect(mockMap.flyTo).toHaveBeenCalled()
+      expect(mockMap.jumpTo).not.toHaveBeenCalled()
+    })
+
+    it('長距離移動ではjumpToが呼ばれflyToは呼ばれない', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      ref.current.flyToPlace(-73.9, 40.7, 12)
+
+      await waitFor(() => {
+        expect(mockMap.jumpTo).toHaveBeenCalled()
+      })
+      expect(mockMap.flyTo).not.toHaveBeenCalled()
     })
   })
 })
