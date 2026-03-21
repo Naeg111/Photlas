@@ -167,12 +167,12 @@ test.describe('地図表示・ピン表示機能', () => {
       await page.waitForTimeout(2000)
 
       // ズームレベルが十分な場合、バナーは表示されない
-      const zoomBanner = page.getByText('ズームしてスポットを表示')
+      const zoomBanner = page.getByText('投稿を表示するには')
       const isZoomBannerVisible = await zoomBanner.isVisible().catch(() => false)
       expect(isZoomBannerVisible).toBe(false)
     })
 
-    test('ズームレベル11未満で「ズームしてスポットを表示」バナーが表示される', async ({ page }) => {
+    test('ズームレベル11未満で「投稿を表示するには」バナーが表示される', async ({ page }) => {
       // キーボードでズームアウト（mobile-chromeでも安定動作）
       await zoomOut(page, 10)
 
@@ -180,7 +180,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await page.waitForTimeout(3000)
 
       // バナーが表示される
-      const banner = page.getByText('ズームしてスポットを表示')
+      const banner = page.getByText('投稿を表示するには')
       await expect(banner).toBeVisible({ timeout: 15000 })
     })
 
@@ -190,7 +190,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await page.waitForTimeout(1000)
 
       // バナーをクリック
-      const banner = page.getByText('ズームしてスポットを表示')
+      const banner = page.getByText('投稿を表示するには')
       if (await banner.isVisible()) {
         await banner.click()
         await page.waitForTimeout(1000)
