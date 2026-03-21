@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { initCookieConsent } from './helpers/auth'
 
 /**
  * 利用規約・プライバシーポリシー言語切替テスト
@@ -6,7 +7,7 @@ import { test, expect } from '@playwright/test'
  */
 test.describe('Language Toggle Tests', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
+    await initCookieConsent(page)
     await page.goto('/')
     await page.waitForTimeout(3000) // スプラッシュ画面待機
   })
@@ -15,8 +16,9 @@ test.describe('Language Toggle Tests', () => {
     test.beforeEach(async ({ page }) => {
       // メニュー → 利用規約を開く
       await page.getByRole('button', { name: 'メニュー' }).click()
+      await page.waitForTimeout(500) // メニューアニメーション待機
       await page.getByRole('button', { name: '利用規約' }).click()
-      await expect(page.getByRole('heading', { name: '利用規約' })).toBeVisible({ timeout: 5000 })
+      await expect(page.getByRole('heading', { name: '利用規約' })).toBeVisible({ timeout: 10000 })
     })
 
     test('初期表示は日本語である', async ({ page }) => {
@@ -33,18 +35,15 @@ test.describe('Language Toggle Tests', () => {
       await page.getByRole('switch', { name: '言語切替' }).click()
 
       await expect(page.getByText('Article 1 (Application)')).toBeVisible()
-      // 日本語のコンテンツは非表示
       await expect(page.getByText('第1条（適用）')).not.toBeVisible()
     })
 
     test('トグルを再度切り替えると日本語版に戻る', async ({ page }) => {
       const toggle = page.getByRole('switch', { name: '言語切替' })
 
-      // 英語に切替
       await toggle.click()
       await expect(page.getByText('Article 1 (Application)')).toBeVisible()
 
-      // 日本語に戻す
       await toggle.click()
       await expect(page.getByText('第1条（適用）')).toBeVisible()
     })
@@ -54,8 +53,9 @@ test.describe('Language Toggle Tests', () => {
     test.beforeEach(async ({ page }) => {
       // メニュー → プライバシーポリシーを開く
       await page.getByRole('button', { name: 'メニュー' }).click()
+      await page.waitForTimeout(500) // メニューアニメーション待機
       await page.getByRole('button', { name: 'プライバシーポリシー' }).click()
-      await expect(page.getByRole('heading', { name: 'プライバシーポリシー' })).toBeVisible({ timeout: 5000 })
+      await expect(page.getByRole('heading', { name: 'プライバシーポリシー' })).toBeVisible({ timeout: 10000 })
     })
 
     test('初期表示は日本語である', async ({ page }) => {

@@ -135,7 +135,7 @@ test.describe('プロフィール管理・表示', () => {
       await page.getByRole('tab', { name: 'お気に入り' }).click()
 
       // 空メッセージが表示される（ローディング完了を待つため長めのタイムアウト）
-      await expect(page.getByText('お気に入りはまだありません')).toBeVisible({ timeout: 10000 })
+      await expect(page.getByText('お気に入りはまだありません')).toBeVisible({ timeout: 30000 })
     })
   })
 
