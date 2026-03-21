@@ -257,4 +257,25 @@ describe('PlaceSearchDialog', () => {
       expect(mockRetrieve).not.toHaveBeenCalled()
     })
   })
+
+  it('検索APIにcountryパラメータが含まれない（グローバル検索）', async () => {
+    mockSuggest.mockResolvedValue({ suggestions: [] })
+    mockForward.mockResolvedValue({ features: [] })
+
+    render(<PlaceSearchDialog {...defaultProps} />)
+
+    const input = screen.getByPlaceholderText('場所を検索')
+    await userEvent.setup().type(input, 'Paris')
+
+    await waitFor(() => {
+      expect(mockSuggest).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.not.objectContaining({ country: expect.anything() })
+      )
+      expect(mockForward).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.not.objectContaining({ country: expect.anything() })
+      )
+    })
+  })
 })
