@@ -62,6 +62,7 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() =
     })),
     flyTo: vi.fn(),
     jumpTo: vi.fn(),
+    once: vi.fn(),
     setLanguage: vi.fn(),
     on: vi.fn((event: string, layerOrHandler: string | Function, handler?: Function) => {
       if (typeof layerOrHandler === 'string' && handler) {
