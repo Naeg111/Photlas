@@ -2,6 +2,7 @@ import { test, expect, Page } from '@playwright/test'
 import {
   waitForSplash,
   clearStorage,
+  initCookieConsent,
   openLoginDialog,
 } from './helpers/auth'
 
@@ -29,6 +30,7 @@ async function openPasswordResetDialog(page: Page): Promise<void> {
 
 test.describe('パスワードリセット機能', () => {
   test.beforeEach(async ({ page }) => {
+    await initCookieConsent(page)
     await page.goto('/')
     await waitForSplash(page)
     await clearStorage(page)

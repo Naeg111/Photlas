@@ -3,6 +3,7 @@ import {
   waitForSplash,
   createAccountAndLogin,
   clearStorage,
+  initCookieConsent,
   TEST_PASSWORD,
   generateUniqueEmail,
   openLoginDialog,
@@ -25,6 +26,7 @@ import {
 
 test.describe('アカウント設定', () => {
   test.beforeEach(async ({ page }) => {
+    await initCookieConsent(page)
     await page.goto('/')
     await waitForSplash(page)
     await clearStorage(page)

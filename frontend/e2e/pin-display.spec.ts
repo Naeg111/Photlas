@@ -3,6 +3,7 @@ import {
   waitForSplash,
   createAccountAndLogin,
   clearStorage,
+  initCookieConsent,
 } from './helpers/auth'
 import { getTestImagePath } from './helpers/test-image'
 import {
@@ -149,6 +150,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
   test.setTimeout(120000)
 
   test.beforeEach(async ({ page }) => {
+    await initCookieConsent(page)
     await page.goto('/')
     await waitForSplash(page)
     await clearStorage(page)

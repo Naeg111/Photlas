@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { initCookieConsent } from './helpers/auth'
 
 /**
  * ナビゲーションテスト
@@ -6,11 +7,10 @@ import { test, expect } from '@playwright/test'
  */
 test.describe('Navigation Tests', () => {
   test.beforeEach(async ({ page }) => {
+    await initCookieConsent(page)
     await page.goto('/')
     // スプラッシュ画面が消えるまで待機
     await page.waitForTimeout(3000)
-    // Cookie同意バナーを非表示にする
-    await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
   })
 
   test('メニューボタンをクリックするとメニューパネルが開く', async ({ page }) => {

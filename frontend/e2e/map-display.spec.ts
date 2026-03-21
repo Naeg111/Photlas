@@ -3,6 +3,7 @@ import {
   waitForSplash,
   createAccountAndLogin,
   clearStorage,
+  initCookieConsent,
 } from './helpers/auth'
 import {
   findPinsAndClusters,
@@ -121,6 +122,7 @@ async function waitForMapLoad(page: Page): Promise<void> {
 
 test.describe('地図表示・ピン表示機能', () => {
   test.beforeEach(async ({ page }) => {
+    await initCookieConsent(page)
     await page.goto('/')
     await waitForSplash(page)
     await clearStorage(page)

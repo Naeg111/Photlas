@@ -3,6 +3,7 @@ import {
   waitForSplash,
   createAccountAndLogin,
   clearStorage,
+  initCookieConsent,
 } from './helpers/auth'
 import { getTestImagePath, ensureFixtures } from './helpers/test-image'
 import { findPinsAndClusters, clickFirstPin } from './helpers/map-pins'
@@ -118,6 +119,7 @@ test.describe('写真詳細・お気に入り機能', () => {
   })
 
   test.beforeEach(async ({ page }) => {
+    await initCookieConsent(page)
     await page.goto('/')
     await waitForSplash(page)
     await clearStorage(page)
