@@ -62,6 +62,11 @@ const CLUSTER_MAX_ZOOM = 17
 
 // UI設定
 const TOAST_DURATION_MS = 3000
+const TOP_UI_HEIGHT = 56
+/** 長距離移動の閾値（緯度経度の度数、約555km） */
+const LONG_DISTANCE_THRESHOLD = 5
+const TRANSITION_FADE_MS = 500
+const TRANSITION_TIMEOUT_MS = 5000
 const SHOOTING_PIN_SCALE = 1.4
 
 /**
@@ -508,22 +513,16 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     },
     flyToPlace: (lng: number, lat: number, zoom: number) => {
       if (!map) return
-      const TOP_UI_HEIGHT = 56
-      const LONG_DISTANCE_THRESHOLD = 5
       const currentCenter = map.getCenter()
       const distance = Math.sqrt(
         Math.pow(lng - currentCenter.lng, 2) + Math.pow(lat - currentCenter.lat, 2)
       )
+      const padding = { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 }
 
       if (distance > LONG_DISTANCE_THRESHOLD) {
-        // 長距離: フェードオーバーレイ → jumpTo → タイル読み込み完了後フェードアウト
         setMapTransitioning(true)
         requestAnimationFrame(() => {
-          map.jumpTo({
-            center: [lng, lat],
-            zoom,
-            padding: { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 },
-          })
+          map.jumpTo({ center: [lng, lat], zoom, padding })
           let completed = false
           const complete = () => {
             if (completed) return
@@ -532,19 +531,13 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
             setTimeout(() => {
               setMapTransitioning(false)
               setMapTransitionFading(false)
-            }, 500)
+            }, TRANSITION_FADE_MS)
           }
           map.once('idle', complete)
-          setTimeout(complete, 5000)
+          setTimeout(complete, TRANSITION_TIMEOUT_MS)
         })
       } else {
-        // 近距離: flyToアニメーション
-        map.flyTo({
-          center: [lng, lat],
-          zoom,
-          speed: 0.8,
-          padding: { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 },
-        })
+        map.flyTo({ center: [lng, lat], zoom, speed: 0.8, padding })
       }
     },
   }), [map, requestOrientationPermission, fetchSpots])
