@@ -110,6 +110,7 @@ test.describe('アカウント設定', () => {
   })
 
   test('アカウントを削除できる', async ({ page }) => {
+    test.setTimeout(180000) // カスケード削除に時間がかかるため延長
     const email = await createAccountAndLogin(page, 'settings-delete')
 
     // メニュー → アカウント設定

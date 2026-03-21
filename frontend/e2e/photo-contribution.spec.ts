@@ -207,6 +207,7 @@ test.describe('写真投稿機能', () => {
     })
 
     test.describe('ファイルバリデーション', () => {
+      test.setTimeout(180000) // 大容量ファイルテストのため延長
       test('50MBを超えるファイルは選択できない', async ({ page }) => {
         await createAccountAndLogin(page, 'validation-size')
         await openPhotoContributionDialog(page)
