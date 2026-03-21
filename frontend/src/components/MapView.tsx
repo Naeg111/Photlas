@@ -510,6 +510,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         map.flyTo({
           center: [lng, lat],
           zoom,
+          speed: 0.8,
           padding: { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 },
         })
       }
