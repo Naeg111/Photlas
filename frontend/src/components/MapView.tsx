@@ -63,8 +63,8 @@ const CLUSTER_MAX_ZOOM = 17
 // UI設定
 const TOAST_DURATION_MS = 3000
 const TOP_UI_HEIGHT = 56
-/** 長距離移動の閾値（緯度経度の度数、約555km） */
-const LONG_DISTANCE_THRESHOLD = 5
+/** 長距離移動の閾値（緯度経度の度数、約1110km） */
+const LONG_DISTANCE_THRESHOLD = 10
 const TRANSITION_FADE_MS = 500
 const TRANSITION_TIMEOUT_MS = 5000
 const SHOOTING_PIN_SCALE = 1.4
