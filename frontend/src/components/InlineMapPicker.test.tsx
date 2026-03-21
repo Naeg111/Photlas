@@ -133,8 +133,8 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
 
       expect(mockSuggest).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({
-          country: 'jp',
+        expect.not.objectContaining({
+          country: expect.anything(),
         })
       )
     })
