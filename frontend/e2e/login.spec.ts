@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test'
+import { initCookieConsent } from './helpers/auth'
 
 /**
  * ログイン機能E2Eテスト（実連携版）
@@ -42,9 +43,8 @@ function generateUniqueEmail(prefix: string): string {
  * ログインダイアログを開く共通処理
  */
 async function openLoginDialog(page: Page) {
+  await initCookieConsent(page)
   await page.goto('/')
-  // Cookie同意バナーが表示されないよう、同意済み状態を設定
-  await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
   // スプラッシュ画面が消えるまで待機
   await page.waitForTimeout(3000)
   // メニューを開いてログインダイアログを表示
@@ -58,9 +58,8 @@ async function openLoginDialog(page: Page) {
  * 新規登録ダイアログを開く共通処理
  */
 async function openSignUpDialog(page: Page) {
+  await initCookieConsent(page)
   await page.goto('/')
-  // Cookie同意バナーが表示されないよう、同意済み状態を設定
-  await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
   await page.waitForTimeout(3000)
   await page.getByRole('button', { name: 'メニュー' }).click()
   await page.getByRole('button', { name: '新規アカウント作成' }).click()

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { initCookieConsent } from './helpers/auth'
 
 /**
  * 認証テスト
@@ -6,9 +7,8 @@ import { test, expect } from '@playwright/test'
  */
 test.describe('Authentication Tests', () => {
   test.beforeEach(async ({ page }) => {
+    await initCookieConsent(page)
     await page.goto('/')
-    // Cookie同意バナーが表示されないよう、同意済み状態を設定
-    await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
     // スプラッシュ画面が消えるまで待機
     await page.waitForTimeout(3000)
   })

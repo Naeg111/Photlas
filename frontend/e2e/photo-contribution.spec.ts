@@ -3,6 +3,7 @@ import {
   waitForSplash,
   createAccountAndLogin,
   clearStorage,
+  initCookieConsent,
   TEST_PASSWORD,
 } from './helpers/auth'
 import { getTestImagePath, ensureFixtures, saveTestImage } from './helpers/test-image'
@@ -68,6 +69,7 @@ test.describe('写真投稿機能', () => {
   })
 
   test.beforeEach(async ({ page }) => {
+    await initCookieConsent(page)
     await page.goto('/')
     await waitForSplash(page)
     await clearStorage(page)

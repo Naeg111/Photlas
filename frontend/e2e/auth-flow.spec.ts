@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test'
+import { initCookieConsent } from './helpers/auth'
 
 /**
  * 認証フロー全体E2Eテスト（実連携版）
@@ -299,10 +300,9 @@ test.describe('認証フロー全体 E2Eテスト', () => {
     test('未ログイン状態で写真投稿ボタンをクリックするとLoginRequiredDialogが表示される', async ({
       page,
     }) => {
+      await initCookieConsent(page)
       await page.goto('/')
       await page.waitForTimeout(3000)
-      // Cookie同意バナーを非表示にする
-      await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
 
       // 写真投稿ボタンをクリック
       await page.getByRole('button', { name: '投稿' }).click()
@@ -312,10 +312,9 @@ test.describe('認証フロー全体 E2Eテスト', () => {
     })
 
     test('LoginRequiredDialogの「ログイン」ボタンでLoginDialogが開く', async ({ page }) => {
+      await initCookieConsent(page)
       await page.goto('/')
       await page.waitForTimeout(3000)
-      // Cookie同意バナーを非表示にする
-      await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
 
       // 写真投稿ボタンをクリック
       await page.getByRole('button', { name: '投稿' }).click()
@@ -330,10 +329,9 @@ test.describe('認証フロー全体 E2Eテスト', () => {
     test('LoginRequiredDialogの「新規アカウント作成」ボタンでSignUpDialogが開く', async ({
       page,
     }) => {
+      await initCookieConsent(page)
       await page.goto('/')
       await page.waitForTimeout(3000)
-      // Cookie同意バナーを非表示にする
-      await page.evaluate(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
 
       // 写真投稿ボタンをクリック
       await page.getByRole('button', { name: '投稿' }).click()

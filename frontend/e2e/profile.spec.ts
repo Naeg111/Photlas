@@ -3,6 +3,7 @@ import {
   waitForSplash,
   createAccountAndLogin,
   clearStorage,
+  initCookieConsent,
 } from './helpers/auth'
 
 /**
@@ -30,6 +31,7 @@ async function openProfileDialog(page: Page): Promise<void> {
 
 test.describe('プロフィール管理・表示', () => {
   test.beforeEach(async ({ page }) => {
+    await initCookieConsent(page)
     await page.goto('/')
     await waitForSplash(page)
     await clearStorage(page)
