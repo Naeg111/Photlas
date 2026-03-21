@@ -345,6 +345,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
   // ============================================================
 
   test.describe('投稿後のピン表示', () => {
+    test.setTimeout(180000) // 投稿フローはステージング環境で時間がかかるため
     test('新規投稿後にピンが地図上に表示される', async ({ page }) => {
       // ログイン
       await createAccountAndLogin(page, 'pin-post')
