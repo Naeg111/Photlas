@@ -167,16 +167,16 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       await page.waitForTimeout(2000)
 
       // ズームバナーが表示されていないことを確認
-      const zoomBanner = page.getByText('ズームしてスポットを表示')
+      const zoomBanner = page.getByText('投稿を表示するには')
       await expect(zoomBanner).not.toBeVisible()
     })
 
-    test('ズームレベル10以下で「ズームしてスポットを表示」バナーが表示される', async ({ page }) => {
+    test('ズームレベル10以下で「投稿を表示するには」バナーが表示される', async ({ page }) => {
       // 大幅にズームアウト
       await zoomOut(page, 8)
       await page.waitForTimeout(3000)
 
-      const banner = page.getByText('ズームしてスポットを表示')
+      const banner = page.getByText('投稿を表示するには')
       await expect(banner).toBeVisible({ timeout: 15000 })
     })
 
@@ -185,7 +185,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       await zoomOut(page, 5)
       await page.waitForTimeout(1000)
 
-      const banner = page.getByText('ズームしてスポットを表示')
+      const banner = page.getByText('投稿を表示するには')
       if (await banner.isVisible()) {
         await banner.click()
         await page.waitForTimeout(2000)
@@ -260,7 +260,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       const afterPins = await findPinsAndClusters(page)
 
       // バナーが出ない範囲ならピン/クラスタが表示されている
-      const banner = page.getByText('ズームしてスポットを表示')
+      const banner = page.getByText('投稿を表示するには')
       const isBannerVisible = await banner.isVisible().catch(() => false)
       if (!isBannerVisible) {
         const afterTotal = afterPins.pinCount + afterPins.clusterCount
