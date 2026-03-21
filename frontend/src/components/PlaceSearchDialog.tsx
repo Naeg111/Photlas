@@ -29,8 +29,8 @@ interface PlaceSearchDialogProps {
 }
 
 const SEARCH_DEBOUNCE_MS = 300
-const SEARCHBOX_TYPES = 'region,postcode,district,place,locality,neighborhood,street,address,poi'
-const GEOCODING_TYPES = 'region,postcode,district,place,locality,neighborhood'
+const SEARCHBOX_TYPES = 'country,region,postcode,district,place,locality,neighborhood,street,address,poi'
+const GEOCODING_TYPES = 'country,region,postcode,district,place,locality,neighborhood'
 
 /** モバイルiOSのズーム防止と確実な白色背景のためのインラインスタイル */
 const INPUT_STYLE = { backgroundColor: '#ffffff', fontSize: '16px' } as const
