@@ -121,7 +121,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       expect(mockSuggest).toHaveBeenCalled()
     })
 
-    it('検索が日本国内に制限されている', async () => {
+    it('検索がグローバル対応されている（country制限なし）', async () => {
       mockSuggest.mockResolvedValue({ suggestions: [] })
 
       render(<InlineMapPicker {...defaultProps} />)

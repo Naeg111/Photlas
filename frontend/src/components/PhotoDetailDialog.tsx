@@ -752,7 +752,6 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const options: any = {
           sessionToken: placeNameSessionTokenRef.current,
-          country: 'jp',
           language: 'ja',
           types: 'poi',
         }
