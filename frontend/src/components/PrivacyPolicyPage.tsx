@@ -67,7 +67,7 @@ export function PrivacyPolicyPage({
               <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（3）投稿データ</h3>
               <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
                 <li>写真ファイル</li>
-                <li>タイトル、タグ、カテゴリ</li>
+                <li>タイトル、施設名、タグ、カテゴリ、天気情報</li>
               </ul>
 
               <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（4）写真メタデータ（EXIF情報）</h3>
@@ -168,8 +168,13 @@ export function PrivacyPolicyPage({
                       <span className="font-semibold">Amazon Web Services（AWS S3、CloudFront、SES、Rekognition）</span>：画像ファイルの保存・配信、メール送信、およびコンテンツの自動審査に使用します。データはAWSの東京リージョン（ap-northeast-1）で処理されます。
                     </li>
                     <li>
-                      <span className="font-semibold">Mapbox</span>：地図の表示および撮影地点の位置情報の表示に使用します。Mapboxのプライバシーポリシーは
+                      <span className="font-semibold">Mapbox</span>：地図の表示、撮影地点の位置情報の表示、および場所検索に使用します。Mapboxのプライバシーポリシーは
                       <a href="https://www.mapbox.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>
+                      をご参照ください。
+                    </li>
+                    <li>
+                      <span className="font-semibold">Google Analytics 4</span>：サービス改善のためのアクセス解析に使用します。ページ閲覧数、利用状況等の匿名化されたデータを収集します。Googleのプライバシーポリシーは
+                      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>
                       をご参照ください。
                     </li>
                     <li>
@@ -195,7 +200,7 @@ export function PrivacyPolicyPage({
                   位置情報（GPS座標）は、撮影スポットとしてマップ上に表示されます。ユーザーは、写真投稿時に位置情報が本サービス上で公開されることを理解し、同意した上で投稿するものとします。
                 </li>
                 <li>
-                  本サービスでは、投稿された写真の直接ダウンロード機能は提供しておりません。ただし、ブラウザに表示される画像は技術的に保存される可能性があり、その場合、元の写真ファイルに含まれるEXIF情報が残存していることがあります。運営者は、EXIF情報の完全な保護を保証するものではありません。
+                  本サービスでは、投稿時に写真ファイルからEXIF情報を自動的に削除した上でサーバーに保存します。ただし、ブラウザに表示される画像は技術的に保存される可能性があります。運営者は、画像データの完全な保護を保証するものではありません。
                 </li>
               </ol>
             </section>
@@ -229,7 +234,10 @@ export function PrivacyPolicyPage({
                   </ul>
                 </li>
                 <li>
-                  外部サービス（Google Maps、Sentry等）が独自にCookieを使用する場合があります。これらのCookieの取り扱いについては、各サービスのプライバシーポリシーをご確認ください。
+                  本サービスでは、Google Analytics 4を利用しており、Googleがアクセス情報の収集のためにCookieを使用する場合があります。収集されるデータは匿名化されており、個人を特定するものではありません。
+                </li>
+                <li>
+                  その他の外部サービス（Mapbox、Sentry等）が独自にCookieを使用する場合があります。これらのCookieの取り扱いについては、各サービスのプライバシーポリシーをご確認ください。
                 </li>
               </ol>
             </section>
@@ -315,7 +323,7 @@ export function PrivacyPolicyPage({
             <section className="pt-6 border-t">
               <p className="text-sm text-gray-500">
                 制定日：2026年2月16日<br />
-                最終改定日：2026年3月11日
+                最終改定日：2026年3月21日
               </p>
             </section>
           </div>

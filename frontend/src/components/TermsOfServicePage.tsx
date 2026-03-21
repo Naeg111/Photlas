@@ -61,7 +61,7 @@ export function TermsOfServicePage({
                   <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
                     <li>写真ファイル</li>
                     <li>撮影メタデータ（位置情報、撮影日時、カメラ情報、レンズ情報、撮影設定値等）</li>
-                    <li>タイトル、タグ、カテゴリ選択</li>
+                    <li>タイトル、施設名、タグ、カテゴリ選択、天気情報</li>
                   </ul>
                 </li>
               </ol>
@@ -316,15 +316,20 @@ export function TermsOfServicePage({
             </section>
 
             <section>
-              <h2 className="mb-3">外部サービスの利用</h2>
-              <p className="text-sm text-gray-700">
-                本サービスでは、地図の表示に<a href="https://www.mapbox.com/legal/tos" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Mapbox</a>を利用しています。
-                地図データは<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">OpenStreetMap</a>の提供するデータに基づいています。
+              <h2 className="mb-3">第17条（外部サービスの利用）</h2>
+              <p className="text-sm text-gray-700 mb-2">
+                本サービスでは、以下の外部サービスを利用しています。
               </p>
+              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                <li>地図の表示および場所検索に<a href="https://www.mapbox.com/legal/tos" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Mapbox</a>を利用しています。地図データは<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">OpenStreetMap</a>の提供するデータに基づいています。</li>
+                <li>サービス改善のためのアクセス解析に<a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Analytics 4</a>を利用しています。</li>
+                <li>画像の保存・配信にAmazon Web Services（AWS）を利用しています。</li>
+                <li>エラー監視に<a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Sentry</a>を利用しています。</li>
+              </ul>
             </section>
 
             <section>
-              <h2 className="mb-3">第17条（お問い合わせ）</h2>
+              <h2 className="mb-3">第18条（お問い合わせ）</h2>
               <p className="text-sm text-gray-700">
                 本規約に関するお問い合わせは、以下の窓口までご連絡ください。
               </p>
@@ -337,7 +342,7 @@ export function TermsOfServicePage({
             <section className="pt-6 border-t">
               <p className="text-sm text-gray-500">
                 制定日：2026年2月16日<br />
-                最終改定日：2026年3月11日
+                最終改定日：2026年3月21日
               </p>
             </section>
           </div>

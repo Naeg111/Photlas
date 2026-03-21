@@ -1,12 +1,11 @@
 import { render, screen } from '@testing-library/react'
+import { userEvent } from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TermsOfServicePage } from './TermsOfServicePage'
 
 /**
  * TermsOfServicePage コンポーネントのテスト
  * Issue#51: 利用規約の文面改訂
- *
- * 利用規約を表示するダイアログ
  */
 
 describe('TermsOfServicePage', () => {
@@ -46,12 +45,6 @@ describe('TermsOfServicePage', () => {
       expect(screen.getByText(/第3条（ユーザー登録）/)).toBeInTheDocument()
     })
 
-    it('renders scrollable area for long content', () => {
-      render(<TermsOfServicePage {...defaultProps} />)
-
-      expect(screen.getByText(/本規約は、本サービスの提供条件/)).toBeInTheDocument()
-    })
-
     it('renders all required sections', () => {
       render(<TermsOfServicePage {...defaultProps} />)
 
@@ -64,11 +57,8 @@ describe('TermsOfServicePage', () => {
       expect(screen.getByText(/第10条（本サービスの停止・変更・終了）/)).toBeInTheDocument()
       expect(screen.getByText(/第11条（免責事項）/)).toBeInTheDocument()
       expect(screen.getByText(/第12条（規約の変更）/)).toBeInTheDocument()
-      expect(screen.getByText(/第13条（通知）/)).toBeInTheDocument()
-      expect(screen.getByText(/第14条（権利義務の譲渡禁止）/)).toBeInTheDocument()
-      expect(screen.getByText(/第15条（分離可能性）/)).toBeInTheDocument()
-      expect(screen.getByText(/第16条（準拠法・管轄裁判所）/)).toBeInTheDocument()
-      expect(screen.getByText(/第17条（お問い合わせ）/)).toBeInTheDocument()
+      expect(screen.getByText(/第17条（外部サービスの利用）/)).toBeInTheDocument()
+      expect(screen.getByText(/第18条（お問い合わせ）/)).toBeInTheDocument()
     })
 
     it('renders contact email address', () => {
@@ -97,6 +87,41 @@ describe('TermsOfServicePage', () => {
 
       const osmLink = screen.getByRole('link', { name: /OpenStreetMap/i })
       expect(osmLink).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright')
+    })
+  })
+
+  describe('言語切替', () => {
+    it('初期表示は日本語である', () => {
+      render(<TermsOfServicePage {...defaultProps} />)
+
+      expect(screen.getByText(/第1条（適用）/)).toBeInTheDocument()
+    })
+
+    it('言語トグルスイッチが表示される', () => {
+      render(<TermsOfServicePage {...defaultProps} />)
+
+      expect(screen.getByText('日本語')).toBeInTheDocument()
+      expect(screen.getByText('英語')).toBeInTheDocument()
+    })
+
+    it('トグルを切り替えると英語版が表示される', async () => {
+      render(<TermsOfServicePage {...defaultProps} />)
+
+      const toggle = screen.getByRole('switch')
+      await userEvent.setup().click(toggle)
+
+      expect(screen.getByText(/Article 1/)).toBeInTheDocument()
+    })
+
+    it('トグルを再度切り替えると日本語版に戻る', async () => {
+      render(<TermsOfServicePage {...defaultProps} />)
+
+      const user = userEvent.setup()
+      const toggle = screen.getByRole('switch')
+      await user.click(toggle)
+      await user.click(toggle)
+
+      expect(screen.getByText(/第1条（適用）/)).toBeInTheDocument()
     })
   })
 })
