@@ -200,6 +200,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const [map, setMap] = useState<MapboxMap | null>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const [showToast, setShowToast] = useState(false)
+  const [mapTransitioning, setMapTransitioning] = useState(false)
+  const [mapTransitionFading, setMapTransitionFading] = useState(false)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [userHeading, setUserHeading] = useState<number | null>(null)
   const [shootingLocationPin, setShootingLocationPin] = useState<{ lat: number; lng: number } | null>(null)
@@ -505,12 +507,42 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       setShootingLocationPin(null)
     },
     flyToPlace: (lng: number, lat: number, zoom: number) => {
-      if (map) {
-        const TOP_UI_HEIGHT = 56
+      if (!map) return
+      const TOP_UI_HEIGHT = 56
+      const LONG_DISTANCE_THRESHOLD = 5
+      const currentCenter = map.getCenter()
+      const distance = Math.sqrt(
+        Math.pow(lng - currentCenter.lng, 2) + Math.pow(lat - currentCenter.lat, 2)
+      )
+
+      if (distance > LONG_DISTANCE_THRESHOLD) {
+        // 長距離: フェードオーバーレイ → jumpTo → タイル読み込み完了後フェードアウト
+        setMapTransitioning(true)
+        requestAnimationFrame(() => {
+          map.jumpTo({
+            center: [lng, lat],
+            zoom,
+            padding: { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 },
+          })
+          let completed = false
+          const complete = () => {
+            if (completed) return
+            completed = true
+            setMapTransitionFading(true)
+            setTimeout(() => {
+              setMapTransitioning(false)
+              setMapTransitionFading(false)
+            }, 500)
+          }
+          map.once('idle', complete)
+          setTimeout(complete, 5000)
+        })
+      } else {
+        // 近距離: flyToアニメーション
         map.flyTo({
           center: [lng, lat],
           zoom,
-          speed: 0.5,
+          speed: 0.8,
           padding: { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 },
         })
       }
@@ -663,6 +695,16 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           </Marker>
         )}
       </Map>
+
+      {/* 長距離移動時のフェードオーバーレイ */}
+      {mapTransitioning && (
+        <div
+          data-testid="map-transition-overlay"
+          className={`absolute inset-0 z-30 bg-black transition-opacity duration-500 ${
+            mapTransitionFading ? 'opacity-0' : 'opacity-100'
+          }`}
+        />
+      )}
 
       {/* Issue#68: Zoom 10未満の場合、拡大を促す静的メッセージを表示 */}
       {zoom < MIN_ZOOM_FOR_PINS && (
