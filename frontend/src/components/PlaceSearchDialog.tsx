@@ -138,12 +138,10 @@ export function PlaceSearchDialog({
         const [searchBoxResult, geocodingResult] = await Promise.allSettled([
           searchBox.suggest(value, {
             sessionToken: sessionTokenRef.current,
-            country: 'jp',
             language: 'ja',
             types: SEARCHBOX_TYPES,
           }),
           geocoding.forward(value, {
-            country: 'jp',
             language: 'ja',
             types: GEOCODING_TYPES,
           }),
