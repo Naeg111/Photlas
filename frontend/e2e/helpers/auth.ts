@@ -29,6 +29,14 @@ export function generateUniqueEmail(prefix: string): string {
 }
 
 /**
+ * Cookie同意バナーが表示されないよう、ページ読み込み前に同意済み状態を設定
+ * page.goto() の前に呼ぶこと
+ */
+export async function initCookieConsent(page: Page): Promise<void> {
+  await page.addInitScript(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
+}
+
+/**
  * スプラッシュ画面の終了を待機
  */
 export async function waitForSplash(page: Page): Promise<void> {
