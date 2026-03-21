@@ -1,11 +1,15 @@
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { ScrollArea } from './ui/scroll-area'
+import { Switch } from './ui/switch'
+import { TermsContentJa } from './TermsContentJa'
+import { TermsContentEn } from './TermsContentEn'
 
 /**
  * TermsOfServicePage コンポーネント
  * Issue#51: 利用規約の文面改訂
  *
- * 利用規約を表示するダイアログ
+ * 利用規約を表示するダイアログ（日本語/英語切替対応）
  */
 
 interface TermsOfServicePageProps {
@@ -17,6 +21,8 @@ export function TermsOfServicePage({
   open,
   onOpenChange,
 }: TermsOfServicePageProps) {
+  const [isEnglish, setIsEnglish] = useState(false)
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
@@ -27,325 +33,18 @@ export function TermsOfServicePage({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex items-center justify-end gap-2 text-sm">
+          <span className={isEnglish ? 'text-gray-400' : 'text-gray-700 font-medium'}>日本語</span>
+          <Switch
+            checked={isEnglish}
+            onCheckedChange={setIsEnglish}
+            aria-label="言語切替"
+          />
+          <span className={isEnglish ? 'text-gray-700 font-medium' : 'text-gray-400'}>英語</span>
+        </div>
+
         <ScrollArea className="h-[70vh] pr-4">
-          <div className="space-y-6">
-            <section>
-              <p className="text-sm text-gray-700">
-                この利用規約（以下「本規約」）は、Photlas運営（以下「運営者」）が提供するサービス「Photlas」（以下「本サービス」）の提供条件および本サービスの利用に関する運営者とユーザーとの間の権利義務関係を定めることを目的とします。本サービスをご利用いただく前に、本規約をよくお読みください。
-              </p>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第1条（適用）</h2>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  本規約は、本サービスの提供条件および本サービスの利用に関する運営者とユーザーとの間の権利義務関係を定めることを目的とし、ユーザーと運営者との間の本サービスの利用に関わる一切の関係に適用されます。
-                </li>
-                <li>
-                  ユーザーは、本サービスを利用することにより、本規約のすべての条項に同意したものとみなされます。
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第2条（定義）</h2>
-              <p className="text-sm text-gray-700 mb-2">
-                本規約において使用する以下の用語は、各々以下に定める意味を有するものとします。
-              </p>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>「本サービス」とは、運営者が提供する「Photlas」（photlas.jp）という名称のWebサービスを意味します。</li>
-                <li>「ユーザー」とは、本規約に同意の上、本サービスを利用するすべての方を意味します。</li>
-                <li>「登録ユーザー」とは、本サービスにアカウント登録を完了したユーザーを意味します。</li>
-                <li>
-                  「投稿データ」とは、ユーザーが本サービスを利用して投稿その他送信したコンテンツを意味し、以下を含みますがこれらに限られません。
-                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
-                    <li>写真ファイル</li>
-                    <li>撮影メタデータ（位置情報、撮影日時、カメラ情報、レンズ情報、撮影設定値等）</li>
-                    <li>タイトル、施設名、タグ、カテゴリ選択、天気情報</li>
-                  </ul>
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第3条（ユーザー登録）</h2>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  本サービスの一部機能の利用を希望する方は、本規約を遵守することに同意し、運営者の定める方法によってユーザー登録を申請するものとします。登録にはメールアドレス、ユーザー名およびパスワードの入力が必要です。
-                </li>
-                <li>
-                  ユーザーは、登録情報について正確かつ最新の情報を維持するものとし、登録情報に変更が生じた場合は速やかに修正するものとします。
-                </li>
-                <li>
-                  運営者は、登録希望者が以下のいずれかの事由に該当する場合は、登録を拒否することがあり、その理由について一切の開示義務を負わないものとします。
-                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
-                    <li>登録内容に虚偽の事項を届け出た場合</li>
-                    <li>過去に本規約違反等により登録を抹消されたことがある場合</li>
-                    <li>その他、運営者が登録を相当でないと判断した場合</li>
-                  </ul>
-                </li>
-                <li>
-                  登録ユーザーは、自己のアカウントおよびパスワードを適切に管理する責任を負うものとし、これを第三者に利用させ、または貸与、譲渡、名義変更、売買等をしてはならないものとします。
-                </li>
-                <li>
-                  1人のユーザーが複数のアカウントを作成することは禁止します。
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第4条（投稿データの取扱い）</h2>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  投稿データの著作権は、当該投稿データを投稿したユーザーに帰属します。
-                </li>
-                <li>
-                  ユーザーは、投稿データについて、自らが投稿その他送信することについての適法な権利を有していること、および投稿データが第三者の知的財産権、肖像権、プライバシー権その他の権利を侵害していないことについて、運営者に対し表明し、保証するものとします。
-                </li>
-                <li>
-                  ユーザーは、投稿データについて、運営者に対し、以下の利用を許諾する非独占的、無償、地域制限のないライセンスを付与するものとします。
-                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
-                    <li>本サービスの提供・運営に必要な範囲での利用（表示、配信、保存、複製等）</li>
-                    <li>本サービスの広告・宣伝・プロモーション目的での利用（SNS投稿、広告素材等）</li>
-                    <li>本サービスの提供に必要な範囲での第三者へのサブライセンス（CDN配信業者等）</li>
-                  </ul>
-                </li>
-                <li>
-                  ユーザーは、運営者および運営者が許諾した第三者に対し、投稿データに関する著作者人格権を行使しないことに同意するものとします。
-                </li>
-                <li>
-                  ユーザーが退会した場合であっても、退会前にプロモーション目的で既に利用された投稿データについては、運営者は引き続き利用できるものとします。
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第5条（禁止事項）</h2>
-              <p className="text-sm text-gray-700 mb-2">
-                ユーザーは、本サービスの利用にあたり、以下の行為をしてはなりません。
-              </p>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
-                <li>法令または公序良俗に違反する行為</li>
-                <li>犯罪行為に関連する行為</li>
-                <li>運営者、他のユーザー、またはその他第三者の知的財産権、肖像権、プライバシー権その他の権利を侵害する行為</li>
-                <li>他者の著作物を権利者の許諾なく投稿する行為</li>
-                <li>人物が特定可能な写真を本人の同意なく投稿する行為</li>
-                <li>私有地への無断立ち入りを助長する行為、または危険な場所へのアクセスを推奨する行為</li>
-                <li>運営者のサーバーまたはネットワークの機能を破壊したり、妨害したりする行為</li>
-                <li>本サービスに対するリバースエンジニアリング、スクレイピング等の行為</li>
-                <li>本サービスによって得られた情報を運営者の許諾なく商業的に利用する行為</li>
-                <li>不正アクセスをし、またはこれを試みる行為</li>
-                <li>他のユーザーに関する個人情報等を収集または蓄積する行為</li>
-                <li>他のユーザーになりすます行為</li>
-                <li>1人が複数のアカウントを作成・運用する行為</li>
-                <li>反社会的勢力に対して直接または間接に利益を供与する行為</li>
-                <li>
-                  以下に該当するコンテンツを投稿する行為
-                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
-                    <li>わいせつ、露骨な性的表現を含むコンテンツ</li>
-                    <li>暴力的、残虐な表現を含むコンテンツ</li>
-                    <li>児童の性的搾取に関するコンテンツ（CSAM/IHC）</li>
-                    <li>差別的、ヘイトスピーチに該当するコンテンツ</li>
-                    <li>その他不快感を与えるコンテンツ</li>
-                  </ul>
-                </li>
-                <li>本サービスの運営を妨害するおそれのある行為</li>
-                <li>その他、運営者が不適切と判断する行為</li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第6条（利用料金）</h2>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  本サービスは、現時点では無料で提供します。
-                </li>
-                <li>
-                  運営者は、将来的に有料機能を導入する場合があります。その場合は、事前にユーザーに通知するものとします。
-                </li>
-                <li>
-                  有料機能の利用料金、支払方法その他の条件は、別途運営者が定めるところによるものとします。
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第7条（退会・アカウント削除）</h2>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  登録ユーザーは、運営者の定める手続きにより、いつでも退会してアカウントを削除することができます。
-                </li>
-                <li>
-                  退会後、ユーザーの個人情報および投稿データは、不正利用の調査・対応を目的として90日間保持した後、完全に削除されます。ただし、第4条第5項に定めるプロモーション目的で既に利用された投稿データについてはこの限りではありません。
-                </li>
-                <li>
-                  退会後のアカウントの復旧はできません。
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第8条（登録抹消）</h2>
-              <p className="text-sm text-gray-700 mb-2">
-                運営者は、ユーザーが以下のいずれかの事由に該当する場合は、事前に通知または催告することなく、投稿データの削除、本サービスの利用制限、またはユーザーとしての登録の抹消を行うことができるものとします。
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                <li>本規約のいずれかの条項に違反した場合</li>
-                <li>登録情報に虚偽の事実があることが判明した場合</li>
-                <li>一定期間以上本サービスへのログインがない場合</li>
-                <li>その他、運営者が本サービスの利用を適当でないと判断した場合</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第9条（コンテンツモデレーション）</h2>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  運営者は、投稿データが本規約および運営者が別途定めるコンテンツポリシーに適合するかを確認するため、自動的な審査（AI技術による画像分析を含みます）および人的な審査を実施する場合があります。
-                </li>
-                <li>
-                  審査の結果、投稿データがコンテンツポリシーに違反している、またはその可能性があると判断された場合、運営者は当該投稿データを非公開にする、または削除する措置を講じることができます。
-                </li>
-                <li>
-                  コンテンツポリシーに違反したユーザーに対して、運営者は以下の段階的な措置を講じることができます。
-                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
-                    <li>1回目の違反：警告</li>
-                    <li>2回目の違反：一定期間の投稿機能の停止</li>
-                    <li>3回目以降の違反：アカウントの永久停止</li>
-                  </ul>
-                </li>
-                <li>
-                  児童の性的搾取に関するコンテンツ（CSAM/IHC）が検出された場合、運営者は法令に基づき関係機関への通報を行うとともに、直ちにアカウントの永久停止その他必要な措置を講じます。
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第10条（本サービスの停止・変更・終了）</h2>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  運営者は、以下のいずれかの事由があると判断した場合、ユーザーに事前に通知することなく本サービスの全部または一部の提供を停止または中断することができるものとします。
-                  <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
-                    <li>本サービスにかかるコンピュータシステムの保守点検または更新を行う場合</li>
-                    <li>地震、落雷、火災、停電または天災などの不可抗力により、本サービスの提供が困難となった場合</li>
-                    <li>コンピュータまたは通信回線等が事故により停止した場合</li>
-                    <li>その他、運営者が本サービスの提供が困難と判断した場合</li>
-                  </ul>
-                </li>
-                <li>
-                  運営者は、本サービスの内容を変更し、または本サービスの提供を終了することができるものとします。本サービスの提供を終了する場合、運営者は事前にユーザーに通知するものとします。
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第11条（免責事項）</h2>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  運営者は、本サービスに事実上または法律上の瑕疵（安全性、信頼性、正確性、完全性、有効性、特定の目的への適合性、セキュリティなどに関する欠陥、エラーやバグ、権利侵害などを含みます）がないことを明示的にも黙示的にも保証しておりません。
-                </li>
-                <li>
-                  運営者は、本サービスに起因してユーザーに生じたあらゆる損害について、運営者の故意または重過失による場合を除き、一切の責任を負いません。
-                </li>
-                <li>
-                  運営者は、ユーザーと他のユーザーまたは第三者との間において生じた取引、連絡または紛争等について一切責任を負いません。
-                </li>
-                <li>
-                  投稿データ（撮影スポット情報を含みます）の正確性、信頼性、安全性について、運営者は一切保証しません。投稿された撮影スポット情報に基づく行動は、すべてユーザー自身の責任において行うものとします。
-                </li>
-                <li>
-                  本サービスの利用にあたり、ユーザーは自身の安全に十分注意し、各地域の法令や規則を遵守する責任を負うものとします。
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第12条（規約の変更）</h2>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  運営者は、必要と判断した場合には、ユーザーの同意を得ることなく、本規約を変更することができるものとします。
-                </li>
-                <li>
-                  運営者は、本規約の重要な変更を行う場合は、変更内容および変更の効力発生時期を、事前にユーザーに通知するものとします。
-                </li>
-                <li>
-                  変更後の本規約は、本サービス上に掲載した時点から効力を生じるものとします。
-                </li>
-                <li>
-                  ユーザーが本規約の変更後も本サービスの利用を継続した場合、当該ユーザーは変更後の規約に同意したものとみなします。
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第13条（通知）</h2>
-              <p className="text-sm text-gray-700">
-                運営者からユーザーへの通知は、登録されたメールアドレスへのメール送信または本サービス上の掲示その他運営者が適当と判断する方法により行うものとします。メールによる通知は、運営者がメールを送信した時点でユーザーに到達したものとみなします。
-              </p>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第14条（権利義務の譲渡禁止）</h2>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  ユーザーは、運営者の書面による事前の承諾なく、本規約上の地位または本規約に基づく権利もしくは義務を第三者に譲渡し、または担保に供することはできません。
-                </li>
-                <li>
-                  運営者は、本サービスにかかる事業を他者に譲渡した場合には、当該事業譲渡に伴い本規約上の地位、本規約に基づく権利および義務ならびにユーザーの登録情報その他の情報を当該事業譲渡の譲受人に譲渡することができるものとし、ユーザーはあらかじめこれに同意するものとします。
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第15条（分離可能性）</h2>
-              <p className="text-sm text-gray-700">
-                本規約のいずれかの条項またはその一部が、法令等により無効または執行不能と判断された場合であっても、本規約の残りの規定および一部が無効または執行不能と判断された規定の残りの部分は、継続して完全に効力を有するものとします。
-              </p>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第16条（準拠法・管轄裁判所）</h2>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>
-                  本規約の解釈にあたっては、日本法を準拠法とします。
-                </li>
-                <li>
-                  本サービスに関して紛争が生じた場合には、東京地方裁判所を第一審の専属的合意管轄裁判所とします。
-                </li>
-              </ol>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第17条（外部サービスの利用）</h2>
-              <p className="text-sm text-gray-700 mb-2">
-                本サービスでは、以下の外部サービスを利用しています。
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                <li>地図の表示および場所検索に<a href="https://www.mapbox.com/legal/tos" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Mapbox</a>を利用しています。地図データは<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">OpenStreetMap</a>の提供するデータに基づいています。</li>
-                <li>サービス改善のためのアクセス解析に<a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Analytics 4</a>を利用しています。</li>
-                <li>画像の保存・配信にAmazon Web Services（AWS）を利用しています。</li>
-                <li>エラー監視に<a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Sentry</a>を利用しています。</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="mb-3">第18条（お問い合わせ）</h2>
-              <p className="text-sm text-gray-700">
-                本規約に関するお問い合わせは、以下の窓口までご連絡ください。
-              </p>
-              <p className="text-sm text-gray-700 mt-2">
-                運営者名：Photlas運営<br />
-                メールアドレス：support@photlas.jp
-              </p>
-            </section>
-
-            <section className="pt-6 border-t">
-              <p className="text-sm text-gray-500">
-                制定日：2026年2月16日<br />
-                最終改定日：2026年3月21日
-              </p>
-            </section>
-          </div>
+          {isEnglish ? <TermsContentEn /> : <TermsContentJa />}
         </ScrollArea>
       </DialogContent>
     </Dialog>
