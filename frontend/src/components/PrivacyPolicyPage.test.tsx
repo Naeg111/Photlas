@@ -97,7 +97,7 @@ describe('PrivacyPolicyPage', () => {
       const toggle = screen.getByRole('switch')
       await userEvent.setup().click(toggle)
 
-      expect(screen.getByText(/Article 1/)).toBeInTheDocument()
+      expect(screen.getByText('Article 1 (Basic Policy)')).toBeInTheDocument()
     })
 
     it('トグルを再度切り替えると日本語版に戻る', async () => {
