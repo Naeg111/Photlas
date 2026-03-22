@@ -355,7 +355,49 @@ export function PrivacyContentEn() {
       </section>
 
       <section>
-        <h2 className="mb-3">Article 15 (Contact)</h2>
+        <h2 className="mb-3">Article 15 (Legal Basis for Processing Personal Data)</h2>
+        <p className="text-sm text-gray-700 mb-2">
+          The Operator processes personal data based on the following legal grounds:
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+          <li><span className="font-semibold">Consent</span> (GDPR Art. 6(1)(a)): Analytics via Google Analytics 4. Users may accept or decline via the cookie consent banner.</li>
+          <li><span className="font-semibold">Performance of a contract</span> (GDPR Art. 6(1)(b)): Account management, service delivery, and map functionality (Mapbox).</li>
+          <li><span className="font-semibold">Legitimate interests</span> (GDPR Art. 6(1)(f)): Error monitoring (Sentry), detection and prevention of misuse, and ensuring service security.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="mb-3">Article 16 (Rights Under the EU General Data Protection Regulation)</h2>
+        <p className="text-sm text-gray-700 mb-2">
+          Users residing in the European Economic Area (EEA) have the following rights under the GDPR. To exercise these rights, please contact us at support@photlas.jp.
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+          <li><span className="font-semibold">Right of access</span>: The right to request a copy of your personal data.</li>
+          <li><span className="font-semibold">Right to rectification</span>: The right to request correction of inaccurate personal data.</li>
+          <li><span className="font-semibold">Right to erasure (right to be forgotten)</span>: The right to request deletion of your personal data.</li>
+          <li><span className="font-semibold">Right to restriction of processing</span>: The right to request restriction of processing of your personal data.</li>
+          <li><span className="font-semibold">Right to data portability</span>: The right to receive your personal data in a structured, machine-readable format.</li>
+          <li><span className="font-semibold">Right to object</span>: The right to object to processing based on legitimate interests.</li>
+          <li><span className="font-semibold">Right to withdraw consent</span>: The right to withdraw consent at any time for consent-based processing (you can withdraw cookie consent by clearing your browser's localStorage).</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="mb-3">Article 17 (International Data Transfers)</h2>
+        <p className="text-sm text-gray-700 mb-2">
+          Your personal data may be transferred to the following regions as necessary for providing the Service:
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+          <li><span className="font-semibold">Japan (AWS Tokyo Region)</span>: Image file storage and delivery, database, content moderation.</li>
+          <li><span className="font-semibold">United States</span>: Analytics data via Google Analytics 4, error monitoring data via Sentry.</li>
+        </ul>
+        <p className="text-sm text-gray-700 mt-2">
+          These service providers implement appropriate data protection measures in accordance with their respective privacy policies and data processing agreements.
+        </p>
+      </section>
+
+      <section>
+        <h2 className="mb-3">Article 18 (Contact)</h2>
         <p className="text-sm text-gray-700">
           For inquiries regarding this Policy, please contact us at the following.
         </p>
@@ -368,7 +410,7 @@ export function PrivacyContentEn() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           Enacted: February 16, 2026<br />
-          Last revised: March 21, 2026
+          Last revised: March 22, 2026
         </p>
       </section>
     </div>

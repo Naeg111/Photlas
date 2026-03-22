@@ -33,7 +33,7 @@ export function generateUniqueEmail(prefix: string): string {
  * page.goto() の前に呼ぶこと
  */
 export async function initCookieConsent(page: Page): Promise<void> {
-  await page.addInitScript(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
+  await page.addInitScript(() => localStorage.setItem('cookie_consent', 'accepted'))
 }
 
 /**
@@ -149,7 +149,7 @@ export async function clearStorage(page: Page): Promise<void> {
     localStorage.clear()
     sessionStorage.clear()
     // Cookie同意バナーが表示されないよう、同意済み状態を設定
-    localStorage.setItem('cookie_consent_acknowledged', 'true')
+    localStorage.setItem('cookie_consent', 'accepted')
   })
 }
 
