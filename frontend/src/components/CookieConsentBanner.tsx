@@ -60,13 +60,13 @@ export function CookieConsentBanner() {
           <div className="flex gap-3">
             <button
               onClick={handleDecline}
-              className="px-6 py-2 border border-black bg-white text-black rounded-lg hover:bg-black hover:text-white transition-colors whitespace-nowrap"
+              className="px-6 py-2 border border-black bg-white text-black rounded-lg hover:bg-black hover:text-white active:bg-black active:text-white transition-colors whitespace-nowrap"
             >
               拒否する / Decline
             </button>
             <button
               onClick={handleAccept}
-              className="px-6 py-2 border border-black bg-white text-black rounded-lg hover:bg-black hover:text-white transition-colors whitespace-nowrap"
+              className="px-6 py-2 border border-black bg-white text-black rounded-lg hover:bg-black hover:text-white active:bg-black active:text-white transition-colors whitespace-nowrap"
             >
               同意する / Accept
             </button>
