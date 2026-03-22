@@ -3,7 +3,11 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { CookieConsentBanner } from './CookieConsentBanner'
 
-const STORAGE_KEY = 'cookie_consent_acknowledged'
+/**
+ * Issue#71: GDPR対応 Cookie同意バナーテスト
+ */
+
+const CONSENT_KEY = 'cookie_consent'
 
 const mockStorage: Record<string, string> = {}
 const mockLocalStorage = {
@@ -23,52 +27,130 @@ function renderBanner() {
   )
 }
 
-describe('CookieConsentBanner', () => {
+describe('CookieConsentBanner - Issue#71 GDPR対応', () => {
   beforeEach(() => {
     Object.keys(mockStorage).forEach(k => delete mockStorage[k])
     vi.stubGlobal('localStorage', mockLocalStorage)
+    // gtag モック
+    vi.stubGlobal('gtag', vi.fn())
   })
 
-  it('初回訪問時にバナーが表示される', () => {
-    renderBanner()
+  describe('バナー表示', () => {
+    it('初回訪問時にバナーが表示される', () => {
+      renderBanner()
 
-    expect(screen.getByTestId('cookie-consent-banner')).toBeInTheDocument()
-    expect(screen.getByText(/Google Analytics/)).toBeInTheDocument()
+      expect(screen.getByTestId('cookie-consent-banner')).toBeInTheDocument()
+    })
+
+    it('日本語の説明文が表示される', () => {
+      renderBanner()
+
+      expect(screen.getByText(/Google Analytics/)).toBeInTheDocument()
+      expect(screen.getByText(/サービス改善/)).toBeInTheDocument()
+    })
+
+    it('英語の説明文が表示される', () => {
+      renderBanner()
+
+      expect(screen.getByText(/service improvement/i)).toBeInTheDocument()
+    })
+
+    it('プライバシーポリシーへのリンクが存在する', () => {
+      renderBanner()
+
+      expect(screen.getByText('プライバシーポリシー')).toBeInTheDocument()
+    })
   })
 
-  it('プライバシーポリシーへのリンクが存在する', () => {
-    renderBanner()
+  describe('ボタン表示', () => {
+    it('「同意する / Accept」ボタンが表示される', () => {
+      renderBanner()
 
-    expect(screen.getByText('プライバシーポリシー')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /同意する/ })).toBeInTheDocument()
+    })
+
+    it('「拒否する / Decline」ボタンが表示される', () => {
+      renderBanner()
+
+      expect(screen.getByRole('button', { name: /拒否する/ })).toBeInTheDocument()
+    })
   })
 
-  it('OKボタンが存在する', () => {
-    renderBanner()
+  describe('同意操作', () => {
+    it('「同意する」を押すとバナーが消える', () => {
+      renderBanner()
 
-    expect(screen.getByRole('button', { name: 'OK' })).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: /同意する/ }))
+
+      expect(screen.queryByTestId('cookie-consent-banner')).not.toBeInTheDocument()
+    })
+
+    it('「同意する」を押すとlocalStorageにacceptedが保存される', () => {
+      renderBanner()
+
+      fireEvent.click(screen.getByRole('button', { name: /同意する/ }))
+
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(CONSENT_KEY, 'accepted')
+    })
+
+    it('「同意する」を押すとGA4のConsent Modeがgrantedに更新される', () => {
+      const mockGtag = vi.fn()
+      vi.stubGlobal('gtag', mockGtag)
+
+      renderBanner()
+
+      fireEvent.click(screen.getByRole('button', { name: /同意する/ }))
+
+      expect(mockGtag).toHaveBeenCalledWith('consent', 'update', {
+        analytics_storage: 'granted',
+      })
+    })
   })
 
-  it('OKボタンを押すとバナーが消える', () => {
-    renderBanner()
+  describe('拒否操作', () => {
+    it('「拒否する」を押すとバナーが消える', () => {
+      renderBanner()
 
-    fireEvent.click(screen.getByRole('button', { name: 'OK' }))
+      fireEvent.click(screen.getByRole('button', { name: /拒否する/ }))
 
-    expect(screen.queryByTestId('cookie-consent-banner')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('cookie-consent-banner')).not.toBeInTheDocument()
+    })
+
+    it('「拒否する」を押すとlocalStorageにdeclinedが保存される', () => {
+      renderBanner()
+
+      fireEvent.click(screen.getByRole('button', { name: /拒否する/ }))
+
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(CONSENT_KEY, 'declined')
+    })
+
+    it('「拒否する」を押してもGA4のConsent Modeは更新されない', () => {
+      const mockGtag = vi.fn()
+      vi.stubGlobal('gtag', mockGtag)
+
+      renderBanner()
+
+      fireEvent.click(screen.getByRole('button', { name: /拒否する/ }))
+
+      expect(mockGtag).not.toHaveBeenCalled()
+    })
   })
 
-  it('OKボタンを押すとlocalStorageに保存される', () => {
-    renderBanner()
+  describe('同意状態の復元', () => {
+    it('accepted保存済みの場合バナーは表示されない', () => {
+      mockStorage[CONSENT_KEY] = 'accepted'
 
-    fireEvent.click(screen.getByRole('button', { name: 'OK' }))
+      renderBanner()
 
-    expect(mockLocalStorage.setItem).toHaveBeenCalledWith(STORAGE_KEY, 'true')
-  })
+      expect(screen.queryByTestId('cookie-consent-banner')).not.toBeInTheDocument()
+    })
 
-  it('localStorageに同意済みが保存されている場合、バナーは表示されない', () => {
-    mockStorage[STORAGE_KEY] = 'true'
+    it('declined保存済みの場合バナーは表示されない', () => {
+      mockStorage[CONSENT_KEY] = 'declined'
 
-    renderBanner()
+      renderBanner()
 
-    expect(screen.queryByTestId('cookie-consent-banner')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('cookie-consent-banner')).not.toBeInTheDocument()
+    })
   })
 })
