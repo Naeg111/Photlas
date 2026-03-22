@@ -288,7 +288,49 @@ export function PrivacyContentJa() {
       </section>
 
       <section>
-        <h2 className="mb-3">第15条（お問い合わせ窓口）</h2>
+        <h2 className="mb-3">第15条（個人データの処理の法的根拠）</h2>
+        <p className="text-sm text-gray-700 mb-2">
+          運営者は、以下の法的根拠に基づき個人データを処理します。
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+          <li><span className="font-semibold">同意</span>（GDPR第6条1項(a)）：Google Analytics 4によるアクセス解析。ユーザーはCookie同意バナーにより同意または拒否を選択できます。</li>
+          <li><span className="font-semibold">契約の履行</span>（GDPR第6条1項(b)）：アカウント管理、サービス提供、地図機能（Mapbox）の提供。</li>
+          <li><span className="font-semibold">正当な利益</span>（GDPR第6条1項(f)）：エラー監視（Sentry）、不正利用の検知・防止、サービスの安全性確保。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="mb-3">第16条（EU一般データ保護規則（GDPR）に基づく権利）</h2>
+        <p className="text-sm text-gray-700 mb-2">
+          欧州経済領域（EEA）に居住するユーザーは、GDPRに基づき以下の権利を有します。これらの権利の行使を希望する場合は、support@photlas.jp までご連絡ください。
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+          <li><span className="font-semibold">アクセス権</span>：ご自身の個人データのコピーを請求する権利</li>
+          <li><span className="font-semibold">訂正権</span>：不正確な個人データの訂正を請求する権利</li>
+          <li><span className="font-semibold">削除権（忘れられる権利）</span>：個人データの削除を請求する権利</li>
+          <li><span className="font-semibold">処理の制限権</span>：個人データの処理の制限を請求する権利</li>
+          <li><span className="font-semibold">データポータビリティ権</span>：個人データを構造化された機械可読な形式で受け取る権利</li>
+          <li><span className="font-semibold">異議申立権</span>：正当な利益に基づく処理に対して異議を申し立てる権利</li>
+          <li><span className="font-semibold">同意の撤回権</span>：同意に基づく処理について、いつでも同意を撤回する権利（ブラウザのlocalStorageをクリアすることでCookie同意を撤回できます）</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="mb-3">第17条（国際データ移転）</h2>
+        <p className="text-sm text-gray-700 mb-2">
+          ユーザーの個人データは、サービスの提供に必要な範囲で以下の地域に移転される場合があります。
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+          <li><span className="font-semibold">日本（AWS東京リージョン）</span>：画像ファイルの保存・配信、データベース、コンテンツ審査</li>
+          <li><span className="font-semibold">米国</span>：Google Analytics 4によるアクセス解析データ、Sentryによるエラー監視データ</li>
+        </ul>
+        <p className="text-sm text-gray-700 mt-2">
+          これらのサービス提供者は、それぞれのプライバシーポリシーおよびデータ処理契約に基づき、適切なデータ保護措置を講じています。
+        </p>
+      </section>
+
+      <section>
+        <h2 className="mb-3">第18条（お問い合わせ窓口）</h2>
         <p className="text-sm text-gray-700">
           本ポリシーに関するお問い合わせは、以下の窓口までご連絡ください。
         </p>
@@ -301,7 +343,7 @@ export function PrivacyContentJa() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           制定日：2026年2月16日<br />
-          最終改定日：2026年3月21日
+          最終改定日：2026年3月22日
         </p>
       </section>
     </div>

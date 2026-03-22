@@ -45,8 +45,7 @@ describe('CookieConsentBanner - Issue#71 GDPR対応', () => {
     it('日本語の説明文が表示される', () => {
       renderBanner()
 
-      expect(screen.getByText(/Google Analytics/)).toBeInTheDocument()
-      expect(screen.getByText(/サービス改善/)).toBeInTheDocument()
+      expect(screen.getByText(/Cookieによるアクセス情報/)).toBeInTheDocument()
     })
 
     it('英語の説明文が表示される', () => {
