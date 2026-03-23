@@ -146,6 +146,40 @@ public class LocationSuggestionServiceTest {
         verify(mailSender, never()).send(any(SimpleMailMessage.class));
     }
 
+    @Test
+    @DisplayName("Issue#65 - 指摘作成: 公開中でない写真に対する指摘はエラー（REMOVED）")
+    void testCreateSuggestion_RemovedPhoto_ThrowsException() {
+        // Arrange
+        User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setModerationStatus(ModerationStatus.REMOVED);
+
+        when(userRepository.findByEmail(SUGGESTER_EMAIL)).thenReturn(Optional.of(suggester));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("公開中");
+    }
+
+    @Test
+    @DisplayName("Issue#65 - 指摘作成: 公開中でない写真に対する指摘はエラー（QUARANTINED）")
+    void testCreateSuggestion_QuarantinedPhoto_ThrowsException() {
+        // Arrange
+        User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setModerationStatus(ModerationStatus.QUARANTINED);
+
+        when(userRepository.findByEmail(SUGGESTER_EMAIL)).thenReturn(Optional.of(suggester));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("公開中");
+    }
+
     // ========================================
     // 指摘の受け入れ
     // ========================================
