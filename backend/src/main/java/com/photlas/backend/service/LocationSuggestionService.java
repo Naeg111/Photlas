@@ -65,6 +65,13 @@ public class LocationSuggestionService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
 
+        // 1日あたりの指摘件数制限
+        long dailyCount = locationSuggestionRepository.countBySuggesterIdAndCreatedAtAfter(
+                suggester.getId(), LocalDateTime.now().toLocalDate().atStartOfDay());
+        if (dailyCount >= 10) {
+            throw new IllegalStateException("1日あたりの指摘件数の上限に達しました");
+        }
+
         // 公開中の写真のみ指摘可能
         if (photo.getModerationStatus() != ModerationStatus.PUBLISHED) {
             throw new IllegalStateException("公開中の写真のみ撮影場所の指摘ができます");
