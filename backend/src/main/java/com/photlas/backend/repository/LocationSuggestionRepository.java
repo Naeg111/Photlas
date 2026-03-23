@@ -5,6 +5,7 @@ import com.photlas.backend.entity.LocationSuggestionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +25,6 @@ public interface LocationSuggestionRepository extends JpaRepository<LocationSugg
 
     List<LocationSuggestion> findByPhotoIdAndStatusAndEmailSentOrderByCreatedAtAsc(
             Long photoId, LocationSuggestionStatus status, boolean emailSent);
+
+    long countBySuggesterIdAndCreatedAtAfter(Long suggesterId, LocalDateTime after);
 }
