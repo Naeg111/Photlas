@@ -334,6 +334,7 @@ public class LocationSuggestionServiceTest {
         photo.setPhotoId(photoId);
         photo.setUserId(userId);
         photo.setSpotId(spotId);
+        photo.setModerationStatus(ModerationStatus.PUBLISHED);
         return photo;
     }
 

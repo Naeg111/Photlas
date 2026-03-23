@@ -65,6 +65,11 @@ public class LocationSuggestionService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
 
+        // 公開中の写真のみ指摘可能
+        if (photo.getModerationStatus() != ModerationStatus.PUBLISHED) {
+            throw new IllegalStateException("公開中の写真のみ撮影場所の指摘ができます");
+        }
+
         // 自分の写真には指摘できない
         if (photo.getUserId().equals(suggester.getId())) {
             throw new IllegalStateException("自分の投稿に対して撮影場所の指摘はできません");
