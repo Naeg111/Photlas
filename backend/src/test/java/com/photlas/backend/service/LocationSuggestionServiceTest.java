@@ -16,12 +16,14 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -144,6 +146,25 @@ public class LocationSuggestionServiceTest {
         assertThat(result.isEmailSent()).isFalse();
         assertThat(result.getReviewToken()).isNull();
         verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    @DisplayName("Issue#65 - 指摘作成: 1日の指摘件数が上限（10件）を超えるとエラー")
+    void testCreateSuggestion_DailyLimitExceeded_ThrowsException() {
+        // Arrange
+        User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+
+        when(userRepository.findByEmail(SUGGESTER_EMAIL)).thenReturn(Optional.of(suggester));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        // 今日既に10件の指摘を行っている
+        when(locationSuggestionRepository.countBySuggesterIdAndCreatedAtAfter(
+                eq(SUGGESTER_ID), any(LocalDateTime.class))).thenReturn(10L);
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("上限");
     }
 
     @Test
