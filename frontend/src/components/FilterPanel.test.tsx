@@ -332,6 +332,85 @@ describe('FilterPanel', () => {
       )
     })
 
+    it('機材種別を複数選択してonApplyに配列で渡される', async () => {
+      const mockOnApply = vi.fn()
+      const user = userEvent.setup()
+
+      render(
+        <FilterPanel
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onApply={mockOnApply}
+        />
+      )
+
+      // 上級者向けフィルターを開く
+      const allButtons = screen.getAllByRole('button')
+      const advancedButton = allButtons.find(btn => btn.textContent?.includes('上級者向けフィルター'))
+      await user.click(advancedButton!)
+
+      // 機材種別を2つ選択
+      await user.click(await screen.findByRole('button', { name: /ミラーレス/ }))
+      await user.click(screen.getByRole('button', { name: /一眼レフ/ }))
+      await user.click(screen.getByRole('button', { name: '適用' }))
+
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          deviceTypes: expect.arrayContaining(['MIRRORLESS', 'SLR']),
+        })
+      )
+    })
+
+    it('写真の向きを複数選択してonApplyに配列で渡される', async () => {
+      const mockOnApply = vi.fn()
+      const user = userEvent.setup()
+
+      render(
+        <FilterPanel
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onApply={mockOnApply}
+        />
+      )
+
+      await user.click(screen.getByRole('button', { name: /横向き/ }))
+      await user.click(screen.getByRole('button', { name: /正方形/ }))
+      await user.click(screen.getByRole('button', { name: '適用' }))
+
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          aspectRatios: expect.arrayContaining(['HORIZONTAL', 'SQUARE']),
+        })
+      )
+    })
+
+    it('焦点距離を複数選択してonApplyに配列で渡される', async () => {
+      const mockOnApply = vi.fn()
+      const user = userEvent.setup()
+
+      render(
+        <FilterPanel
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onApply={mockOnApply}
+        />
+      )
+
+      const allButtons = screen.getAllByRole('button')
+      const advancedButton = allButtons.find(btn => btn.textContent?.includes('上級者向けフィルター'))
+      await user.click(advancedButton!)
+
+      await user.click(await screen.findByRole('button', { name: /広角/ }))
+      await user.click(screen.getByRole('button', { name: /望遠（70/ }))
+      await user.click(screen.getByRole('button', { name: '適用' }))
+
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          focalLengthRanges: expect.arrayContaining(['WIDE', 'TELEPHOTO']),
+        })
+      )
+    })
+
     it('何も選択せずに適用すると空の配列が渡される', async () => {
       const mockOnApply = vi.fn()
       const user = userEvent.setup()
