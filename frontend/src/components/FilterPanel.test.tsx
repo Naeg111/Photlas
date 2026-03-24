@@ -363,5 +363,21 @@ describe('FilterPanel', () => {
 
       expect(screen.getByTestId('filter-scroll-container')).toBeInTheDocument()
     })
+
+    it('焦点距離・ISO感度のボタンがテキスト折り返し可能である', async () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      // 上級者向けフィルターを開く
+      const advancedButton = screen.getByRole('button', { name: /上級者向けフィルター/ })
+      await userEvent.click(advancedButton)
+
+      // 焦点距離ボタンがwhitespace-normalを持つ
+      const focalButton = screen.getByRole('button', { name: /超広角/ })
+      expect(focalButton.className).toContain('whitespace-normal')
+
+      // ISO感度ボタンがwhitespace-normalを持つ
+      const isoButton = screen.getByRole('button', { name: /ISO 400/ })
+      expect(isoButton.className).toContain('whitespace-normal')
+    })
   })
 })
