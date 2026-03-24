@@ -651,13 +651,22 @@ public class UserService {
      * @return 整合性がある場合true
      */
     private boolean isValidUrlForPlatform(String platform, String url) {
-        return switch (platform) {
-            case "twitter" -> url.contains("x.com") || url.contains("twitter.com");
-            case "instagram" -> url.contains("instagram.com");
-            case "youtube" -> url.contains("youtube.com");
-            case "tiktok" -> url.contains("tiktok.com");
-            default -> false;
-        };
+        try {
+            java.net.URI uri = new java.net.URI(url);
+            String host = uri.getHost();
+            if (host == null) return false;
+            host = host.toLowerCase();
+            return switch (platform) {
+                case "twitter" -> host.equals("x.com") || host.equals("twitter.com")
+                        || host.endsWith(".x.com") || host.endsWith(".twitter.com");
+                case "instagram" -> host.equals("instagram.com") || host.endsWith(".instagram.com");
+                case "youtube" -> host.equals("youtube.com") || host.endsWith(".youtube.com");
+                case "tiktok" -> host.equals("tiktok.com") || host.endsWith(".tiktok.com");
+                default -> false;
+            };
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
