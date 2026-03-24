@@ -138,6 +138,17 @@
   will-change: auto !important;
 }
 
+/* Mapbox帰属表示をsafe-area内に配置（角丸デバイスでの視認性確保） */
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-bottom-right {
+  margin-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+
+/* Mapbox「Improve this map」リンクを非表示（必須帰属表示ではない） */
+.mapboxgl-ctrl-attrib a[href*="improve"] {
+  display: none !important;
+}
+
 /* 現在地マーカーのパルスエフェクト */
 @keyframes location-pulse {
   0% {
