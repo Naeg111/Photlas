@@ -1001,4 +1001,50 @@ public class PhotoControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ===== バリデーションエラー: S3オブジェクトキーのパターンチェックテスト =====
+
+    @Test
+    @DisplayName("セキュリティ - S3オブジェクトキーがパストラバーサルの場合400エラー")
+    void testCreatePhoto_S3KeyPathTraversal_ReturnsBadRequest() throws Exception {
+        String requestJson = """
+                {
+                    "title": "テスト",
+                    "s3ObjectKey": "../../../etc/passwd",
+                    "takenAt": "2026-01-15T10:00:00Z",
+                    "latitude": 35.658581,
+                    "longitude": 139.745433,
+                    "categories": ["風景"]
+                }
+                """;
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("セキュリティ - S3オブジェクトキーが不正なフォルダの場合400エラー")
+    void testCreatePhoto_S3KeyInvalidFolder_ReturnsBadRequest() throws Exception {
+        String requestJson = """
+                {
+                    "title": "テスト",
+                    "s3ObjectKey": "malicious/1/photo.jpg",
+                    "takenAt": "2026-01-15T10:00:00Z",
+                    "latitude": 35.658581,
+                    "longitude": 139.745433,
+                    "categories": ["風景"]
+                }
+                """;
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+                .andExpect(status().isBadRequest());
+    }
+
 }
