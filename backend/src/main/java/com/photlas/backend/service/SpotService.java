@@ -56,8 +56,8 @@ public class SpotService {
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
                                        List<Integer> subjectCategories, List<Integer> months,
                                        List<String> timesOfDay, List<String> weathers,
-                                       Integer minResolution, String deviceType, Integer maxAgeDays,
-                                       String aspectRatio, String focalLengthRange, Integer maxIso) {
+                                       Integer minResolution, List<String> deviceTypes, Integer maxAgeDays,
+                                       List<String> aspectRatios, List<String> focalLengthRanges, Integer maxIso) {
         logger.info("Getting spots within bounds: north={}, south={}, east={}, west={}", north, south, east, west);
 
         // null/空リストをセンチネル値に変換（PostgreSQLのIN句で型推論問題を回避）
@@ -73,20 +73,23 @@ public class SpotService {
 
         // Issue#63: 詳細フィルターのセンチネル値変換（max_age_years → max_age_days）
         int safeMinResolution = (minResolution != null) ? minResolution : -1;
-        String safeDeviceType = (deviceType != null) ? deviceType : "__NONE__";
+        List<String> safeDeviceTypes = (deviceTypes == null || deviceTypes.isEmpty())
+            ? List.of("__NONE__") : deviceTypes;
         LocalDateTime safeMaxAgeDate = (maxAgeDays != null)
             ? LocalDateTime.now().minusDays(maxAgeDays)
             : LocalDateTime.of(1900, 1, 1, 0, 0);
         boolean hasMaxAge = (maxAgeDays != null);
-        String safeAspectRatio = (aspectRatio != null) ? aspectRatio : "__NONE__";
-        String safeFocalLengthRange = (focalLengthRange != null) ? focalLengthRange : "__NONE__";
+        List<String> safeAspectRatios = (aspectRatios == null || aspectRatios.isEmpty())
+            ? List.of("__NONE__") : aspectRatios;
+        List<String> safeFocalLengthRanges = (focalLengthRanges == null || focalLengthRanges.isEmpty())
+            ? List.of("__NONE__") : focalLengthRanges;
         int safeMaxIso = (maxIso != null) ? maxIso : -1;
 
         // リポジトリから集計結果を取得
         List<Object[]> results = spotRepository.findSpotsWithAdvancedFilters(
                 north, south, east, west, safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
-                safeMinResolution, safeDeviceType,
-                hasMaxAge, safeMaxAgeDate, safeAspectRatio, safeFocalLengthRange, safeMaxIso
+                safeMinResolution, safeDeviceTypes,
+                hasMaxAge, safeMaxAgeDate, safeAspectRatios, safeFocalLengthRanges, safeMaxIso
         );
 
         logger.info("Found {} spots", results.size());
