@@ -933,4 +933,72 @@ public class PhotoControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ===== バリデーションエラー: 緯度経度の範囲チェックテスト =====
+
+    @Test
+    @DisplayName("セキュリティ - 緯度が範囲外（91.0）の場合400エラー")
+    void testCreatePhoto_LatitudeTooHigh_ReturnsBadRequest() throws Exception {
+        String requestJson = """
+                {
+                    "title": "テスト",
+                    "s3ObjectKey": "photos/lattest001.jpg",
+                    "takenAt": "2026-01-15T10:00:00Z",
+                    "latitude": 91.0,
+                    "longitude": 139.745433,
+                    "categories": ["風景"]
+                }
+                """;
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("セキュリティ - 経度が範囲外（181.0）の場合400エラー")
+    void testCreatePhoto_LongitudeTooHigh_ReturnsBadRequest() throws Exception {
+        String requestJson = """
+                {
+                    "title": "テスト",
+                    "s3ObjectKey": "photos/lngtest001.jpg",
+                    "takenAt": "2026-01-15T10:00:00Z",
+                    "latitude": 35.658581,
+                    "longitude": 181.0,
+                    "categories": ["風景"]
+                }
+                """;
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("セキュリティ - 緯度が範囲外（-91.0）の場合400エラー")
+    void testCreatePhoto_LatitudeTooLow_ReturnsBadRequest() throws Exception {
+        String requestJson = """
+                {
+                    "title": "テスト",
+                    "s3ObjectKey": "photos/lattest002.jpg",
+                    "takenAt": "2026-01-15T10:00:00Z",
+                    "latitude": -91.0,
+                    "longitude": 139.745433,
+                    "categories": ["風景"]
+                }
+                """;
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+                .andExpect(status().isBadRequest());
+    }
+
 }
