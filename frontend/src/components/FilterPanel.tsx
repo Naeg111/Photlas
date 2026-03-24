@@ -334,7 +334,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                       <Button
                         key={option.label}
                         variant={selectedFocalLengthRange === option.value ? "default" : "outline"}
-                        className={`text-sm ${selectedFocalLengthRange === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                        className={`text-sm whitespace-normal h-auto py-2 ${selectedFocalLengthRange === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
                         style={{ border: '1px solid #d1d5db' }}
                         onClick={() => setSelectedFocalLengthRange(
                           selectedFocalLengthRange === option.value ? undefined : option.value
@@ -354,7 +354,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                       <Button
                         key={option.label}
                         variant={selectedMaxIso === option.value ? "default" : "outline"}
-                        className={`text-sm ${selectedMaxIso === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                        className={`text-sm whitespace-normal h-auto py-2 ${selectedMaxIso === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
                         style={{ border: '1px solid #d1d5db' }}
                         onClick={() => setSelectedMaxIso(
                           selectedMaxIso === option.value ? undefined : option.value
