@@ -141,7 +141,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="top" className="w-full h-full md:w-[60%] md:max-h-[90vh] md:left-[20%] md:rounded-b-lg px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] overflow-y-auto">
+      <SheetContent side="top" className="w-full h-full md:w-[60%] md:max-h-[90vh] md:left-[20%] md:rounded-b-lg md:overflow-hidden">
         <SheetHeader className="sr-only">
           <SheetTitle>フィルター</SheetTitle>
           <SheetDescription>
@@ -149,6 +149,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           </SheetDescription>
         </SheetHeader>
 
+        <div data-testid="filter-scroll-container" className="h-full overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))]">
         <div className="space-y-[30px] pb-6 mt-[40px]">
           {/* Issue#63: 写真のジャンル */}
           <div>
@@ -385,6 +386,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
               適用
             </Button>
           </div>
+        </div>
         </div>
       </SheetContent>
     </Sheet>

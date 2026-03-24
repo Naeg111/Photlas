@@ -359,10 +359,9 @@ describe('FilterPanel', () => {
 
   describe('PC表示のレイアウト', () => {
     it('スクロール可能な内部コンテナが存在する', () => {
-      const { container } = render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      const scrollContainer = container.querySelector('[data-testid="filter-scroll-container"]')
-      expect(scrollContainer).toBeInTheDocument()
+      expect(screen.getByTestId('filter-scroll-container')).toBeInTheDocument()
     })
   })
 })
