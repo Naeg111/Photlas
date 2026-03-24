@@ -141,7 +141,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="top" className="w-full h-full md:max-h-[90vh] px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] overflow-y-auto">
+      <SheetContent side="top" className="w-full h-full md:w-[60%] md:max-h-[90vh] md:left-[20%] md:rounded-b-lg px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] overflow-y-auto">
         <SheetHeader className="sr-only">
           <SheetTitle>フィルター</SheetTitle>
           <SheetDescription>

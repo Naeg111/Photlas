@@ -660,26 +660,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 style={{ transform: 'translate(-50%, -50%)', animationDelay: '0.5s' }}
               />
 
-              {userHeading !== null && (
-                <div
-                  className="absolute top-1/2 left-1/2"
-                  style={{
-                    width: '60px',
-                    height: '60px',
-                    transform: `translate(-50%, -50%) rotate(${userHeading - 90}deg)`,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      background: 'conic-gradient(from -22.5deg, rgba(59, 130, 246, 0.4) 0deg, rgba(59, 130, 246, 0.4) 45deg, transparent 45deg)',
-                      borderRadius: '50%',
-                    }}
-                  />
-                </div>
-              )}
-
               <div
                 className="absolute top-1/2 left-1/2 w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg"
                 style={{ transform: 'translate(-50%, -50%)' }}
