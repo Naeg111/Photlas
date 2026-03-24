@@ -106,8 +106,8 @@ public class PhotoControllerTest {
     private static final String JSON_PATH_OBJECT_KEY = "$.objectKey";
 
     // テストデータ定数 - S3関連
-    private static final String S3_OBJECT_KEY_TEST = "test/photo.jpg";
-    private static final String S3_OBJECT_KEY_PREFIX = "photos/user123/image";
+    private static final String S3_OBJECT_KEY_TEST = "uploads/1/00000000-0000-0000-0000-000000000000.jpg";
+    private static final String S3_OBJECT_KEY_PREFIX = "uploads/1/00000000-0000-0000-0000-00000000";
     private static final String S3_FOLDER_UPLOADS = "uploads";
     private static final String S3_EXTENSION_JPG = "jpg";
     private static final String S3_CONTENT_TYPE_JPEG = "image/jpeg";
@@ -623,7 +623,7 @@ public class PhotoControllerTest {
     void testCreatePhoto_EmptyCategories_ReturnsCreated() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 PHOTO_TITLE_TEST,
-                "photos/nocat-api001.jpg",
+                "uploads/1/b0000000-0000-0000-0000-000000000001.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
                 LONGITUDE_TOKYO_TOWER,
@@ -645,7 +645,7 @@ public class PhotoControllerTest {
     void testCreatePhoto_NullCategories_ReturnsCreated() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 PHOTO_TITLE_TEST,
-                "photos/nullcat-api001.jpg",
+                "uploads/1/b0000000-0000-0000-0000-000000000002.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
                 LONGITUDE_TOKYO_TOWER,
@@ -669,7 +669,7 @@ public class PhotoControllerTest {
         String requestJson = """
                 {
                     "title": "EXIF付き投稿",
-                    "s3ObjectKey": "photos/exif-api001.jpg",
+                    "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000001.jpg",
                     "takenAt": "2026-01-15T17:30:00Z",
                     "latitude": 35.658581,
                     "longitude": 139.745433,
@@ -708,7 +708,7 @@ public class PhotoControllerTest {
     void testCreatePhoto_WithoutExif_ExifIsNull() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 "EXIF無し投稿",
-                "photos/noexif-api001.jpg",
+                "uploads/1/b0000000-0000-0000-0000-000000000003.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
                 LONGITUDE_TOKYO_TOWER,
@@ -765,7 +765,7 @@ public class PhotoControllerTest {
         String requestJson = """
                 {
                     "title": "クロップ付き投稿",
-                    "s3ObjectKey": "photos/crop-api001.jpg",
+                    "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000002.jpg",
                     "takenAt": "2026-02-08T10:00:00Z",
                     "latitude": 35.658581,
                     "longitude": 139.745433,
@@ -791,7 +791,7 @@ public class PhotoControllerTest {
     void testCreatePhoto_WithoutCropData_CropNotInResponse() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 PHOTO_TITLE_TEST,
-                "photos/nocrop-api001.jpg",
+                "uploads/1/b0000000-0000-0000-0000-000000000004.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
                 LONGITUDE_TOKYO_TOWER,
@@ -917,7 +917,7 @@ public class PhotoControllerTest {
                 {
                     "title": "テスト",
                     "placeName": "%s",
-                    "s3ObjectKey": "photos/placename001.jpg",
+                    "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000003.jpg",
                     "takenAt": "2026-01-15T10:00:00Z",
                     "latitude": 35.658581,
                     "longitude": 139.745433,
@@ -941,7 +941,7 @@ public class PhotoControllerTest {
         String requestJson = """
                 {
                     "title": "テスト",
-                    "s3ObjectKey": "photos/lattest001.jpg",
+                    "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000004.jpg",
                     "takenAt": "2026-01-15T10:00:00Z",
                     "latitude": 91.0,
                     "longitude": 139.745433,
@@ -963,7 +963,7 @@ public class PhotoControllerTest {
         String requestJson = """
                 {
                     "title": "テスト",
-                    "s3ObjectKey": "photos/lngtest001.jpg",
+                    "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000005.jpg",
                     "takenAt": "2026-01-15T10:00:00Z",
                     "latitude": 35.658581,
                     "longitude": 181.0,
@@ -985,7 +985,7 @@ public class PhotoControllerTest {
         String requestJson = """
                 {
                     "title": "テスト",
-                    "s3ObjectKey": "photos/lattest002.jpg",
+                    "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000006.jpg",
                     "takenAt": "2026-01-15T10:00:00Z",
                     "latitude": -91.0,
                     "longitude": 139.745433,

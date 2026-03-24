@@ -19,6 +19,8 @@ public class CreatePhotoRequest {
     private String placeName;
 
     @NotBlank(message = "S3オブジェクトキーは必須です")
+    @Pattern(regexp = "^(uploads|profile-images)/\\d+/[a-f0-9\\-]+\\.(jpg|jpeg|png|webp|heic)$",
+            message = "S3オブジェクトキーの形式が不正です")
     private String s3ObjectKey;
 
     @NotBlank(message = "撮影日時は必須です")
