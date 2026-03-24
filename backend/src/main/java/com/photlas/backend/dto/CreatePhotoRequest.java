@@ -25,9 +25,13 @@ public class CreatePhotoRequest {
     private String takenAt;
 
     @NotNull(message = "緯度は必須です")
+    @DecimalMin(value = "-90.0", message = "緯度は-90以上である必要があります")
+    @DecimalMax(value = "90.0", message = "緯度は90以下である必要があります")
     private BigDecimal latitude;
 
     @NotNull(message = "経度は必須です")
+    @DecimalMin(value = "-180.0", message = "経度は-180以上である必要があります")
+    @DecimalMax(value = "180.0", message = "経度は180以下である必要があります")
     private BigDecimal longitude;
 
     private List<String> categories;
