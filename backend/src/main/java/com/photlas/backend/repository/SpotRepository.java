@@ -145,18 +145,18 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                         AND pc2.category_id IN (:subjectCategories)
                   ))
                   AND (:minResolution = -1 OR (p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND GREATEST(p2.image_width, p2.image_height) >= :minResolution))
-                  AND ('__NONE__' = :deviceType OR p2.device_type = :deviceType)
+                  AND ('__NONE__' IN (:deviceTypes) OR p2.device_type IN (:deviceTypes))
                   AND (:hasMaxAge = false OR p2.shot_at >= :maxAgeDate)
-                  AND ('__NONE__' = :aspectRatio
-                       OR (:aspectRatio = 'HORIZONTAL' AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width > p2.image_height)
-                       OR (:aspectRatio = 'VERTICAL' AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width < p2.image_height)
-                       OR (:aspectRatio = 'SQUARE' AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND ABS(p2.image_width - p2.image_height) <= GREATEST(p2.image_width, p2.image_height) * 0.05)
+                  AND ('__NONE__' IN (:aspectRatios)
+                       OR ('HORIZONTAL' IN (:aspectRatios) AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width > p2.image_height)
+                       OR ('VERTICAL' IN (:aspectRatios) AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width < p2.image_height)
+                       OR ('SQUARE' IN (:aspectRatios) AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND ABS(p2.image_width - p2.image_height) <= GREATEST(p2.image_width, p2.image_height) * 0.05)
                   )
-                  AND ('__NONE__' = :focalLengthRange
-                       OR (:focalLengthRange = 'WIDE' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm < 24)
-                       OR (:focalLengthRange = 'STANDARD' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm >= 24 AND p2.focal_length_35mm <= 70)
-                       OR (:focalLengthRange = 'TELEPHOTO' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 70 AND p2.focal_length_35mm <= 300)
-                       OR (:focalLengthRange = 'SUPER_TELEPHOTO' AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 300)
+                  AND ('__NONE__' IN (:focalLengthRanges)
+                       OR ('WIDE' IN (:focalLengthRanges) AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm < 24)
+                       OR ('STANDARD' IN (:focalLengthRanges) AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm >= 24 AND p2.focal_length_35mm <= 70)
+                       OR ('TELEPHOTO' IN (:focalLengthRanges) AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 70 AND p2.focal_length_35mm <= 300)
+                       OR ('SUPER_TELEPHOTO' IN (:focalLengthRanges) AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 300)
                   )
                   AND (:maxIso = -1 OR (p2.iso IS NOT NULL AND p2.iso <= :maxIso))
                 ORDER BY p2.shot_at DESC
@@ -176,18 +176,18 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                 AND pc.category_id IN (:subjectCategories)
           ))
           AND (:minResolution = -1 OR (p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND GREATEST(p.image_width, p.image_height) >= :minResolution))
-          AND ('__NONE__' = :deviceType OR p.device_type = :deviceType)
+          AND ('__NONE__' IN (:deviceTypes) OR p.device_type IN (:deviceTypes))
           AND (:hasMaxAge = false OR p.shot_at >= :maxAgeDate)
-          AND ('__NONE__' = :aspectRatio
-               OR (:aspectRatio = 'HORIZONTAL' AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width > p.image_height)
-               OR (:aspectRatio = 'VERTICAL' AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width < p.image_height)
-               OR (:aspectRatio = 'SQUARE' AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND ABS(p.image_width - p.image_height) <= GREATEST(p.image_width, p.image_height) * 0.05)
+          AND ('__NONE__' IN (:aspectRatios)
+               OR ('HORIZONTAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width > p.image_height)
+               OR ('VERTICAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width < p.image_height)
+               OR ('SQUARE' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND ABS(p.image_width - p.image_height) <= GREATEST(p.image_width, p.image_height) * 0.05)
           )
-          AND ('__NONE__' = :focalLengthRange
-               OR (:focalLengthRange = 'WIDE' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm < 24)
-               OR (:focalLengthRange = 'STANDARD' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm >= 24 AND p.focal_length_35mm <= 70)
-               OR (:focalLengthRange = 'TELEPHOTO' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 70 AND p.focal_length_35mm <= 300)
-               OR (:focalLengthRange = 'SUPER_TELEPHOTO' AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 300)
+          AND ('__NONE__' IN (:focalLengthRanges)
+               OR ('WIDE' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm < 24)
+               OR ('STANDARD' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm >= 24 AND p.focal_length_35mm <= 70)
+               OR ('TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 70 AND p.focal_length_35mm <= 300)
+               OR ('SUPER_TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 300)
           )
           AND (:maxIso = -1 OR (p.iso IS NOT NULL AND p.iso <= :maxIso))
         GROUP BY s.spot_id, s.latitude, s.longitude
@@ -204,11 +204,11 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("timesOfDay") List<String> timesOfDay,
         @Param("weathers") List<String> weathers,
         @Param("minResolution") int minResolution,
-        @Param("deviceType") String deviceType,
+        @Param("deviceTypes") List<String> deviceTypes,
         @Param("hasMaxAge") boolean hasMaxAge,
         @Param("maxAgeDate") LocalDateTime maxAgeDate,
-        @Param("aspectRatio") String aspectRatio,
-        @Param("focalLengthRange") String focalLengthRange,
+        @Param("aspectRatios") List<String> aspectRatios,
+        @Param("focalLengthRanges") List<String> focalLengthRanges,
         @Param("maxIso") int maxIso
     );
 }

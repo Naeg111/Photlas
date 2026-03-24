@@ -574,10 +574,10 @@ public class SpotControllerTest {
 
     // Test Data Constants - Issue#46 Advanced Filters
     private static final String PARAM_MIN_RESOLUTION = "min_resolution";
-    private static final String PARAM_DEVICE_TYPE = "device_type";
+    private static final String PARAM_DEVICE_TYPES = "device_types";
     private static final String PARAM_MAX_AGE_DAYS = "max_age_days";
-    private static final String PARAM_ASPECT_RATIO = "aspect_ratio";
-    private static final String PARAM_FOCAL_LENGTH_RANGE = "focal_length_range";
+    private static final String PARAM_ASPECT_RATIOS = "aspect_ratios";
+    private static final String PARAM_FOCAL_LENGTH_RANGES = "focal_length_ranges";
     private static final String PARAM_MAX_ISO = "max_iso";
 
     private static final String DEVICE_TYPE_SLR = "SLR";
@@ -663,7 +663,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_DEVICE_TYPE, DEVICE_TYPE_SLR))
+                        .param(PARAM_DEVICE_TYPES, DEVICE_TYPE_SLR))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -685,7 +685,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_DEVICE_TYPE, DEVICE_TYPE_MIRRORLESS))
+                        .param(PARAM_DEVICE_TYPES, DEVICE_TYPE_MIRRORLESS))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -707,7 +707,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_DEVICE_TYPE, DEVICE_TYPE_SMARTPHONE))
+                        .param(PARAM_DEVICE_TYPES, DEVICE_TYPE_SMARTPHONE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot2.getSpotId().intValue())));
@@ -729,7 +729,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_DEVICE_TYPE, DEVICE_TYPE_COMPACT))
+                        .param(PARAM_DEVICE_TYPES, DEVICE_TYPE_COMPACT))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -779,7 +779,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_ASPECT_RATIO, ASPECT_HORIZONTAL))
+                        .param(PARAM_ASPECT_RATIOS, ASPECT_HORIZONTAL))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -807,7 +807,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_ASPECT_RATIO, ASPECT_SQUARE))
+                        .param(PARAM_ASPECT_RATIOS, ASPECT_SQUARE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -833,7 +833,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_FOCAL_LENGTH_RANGE, FOCAL_WIDE))
+                        .param(PARAM_FOCAL_LENGTH_RANGES, FOCAL_WIDE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -859,7 +859,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_FOCAL_LENGTH_RANGE, FOCAL_TELEPHOTO))
+                        .param(PARAM_FOCAL_LENGTH_RANGES, FOCAL_TELEPHOTO))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -885,7 +885,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_FOCAL_LENGTH_RANGE, FOCAL_TELEPHOTO))
+                        .param(PARAM_FOCAL_LENGTH_RANGES, FOCAL_TELEPHOTO))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -911,7 +911,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_FOCAL_LENGTH_RANGE, FOCAL_SUPER_TELEPHOTO))
+                        .param(PARAM_FOCAL_LENGTH_RANGES, FOCAL_SUPER_TELEPHOTO))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -971,7 +971,7 @@ public class SpotControllerTest {
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
                         .param(PARAM_WEATHERS, WEATHER_SUNNY)
-                        .param(PARAM_FOCAL_LENGTH_RANGE, FOCAL_WIDE))
+                        .param(PARAM_FOCAL_LENGTH_RANGES, FOCAL_WIDE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));

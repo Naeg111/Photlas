@@ -215,10 +215,10 @@ function MainContent({ onMapReady }: MainContentProps) {
       months: conditions.months.length > 0 ? transformMonths(conditions.months) : undefined,
       times_of_day: conditions.timesOfDay.length > 0 ? transformTimesOfDay(conditions.timesOfDay) : undefined,
       weathers: conditions.weathers.length > 0 ? transformWeathers(conditions.weathers) : undefined,
-      device_type: conditions.deviceType,
+      device_types: conditions.deviceTypes && conditions.deviceTypes.length > 0 ? conditions.deviceTypes : undefined,
       max_age_days: conditions.maxAgeDays,
-      aspect_ratio: conditions.aspectRatio,
-      focal_length_range: conditions.focalLengthRange,
+      aspect_ratios: conditions.aspectRatios && conditions.aspectRatios.length > 0 ? conditions.aspectRatios : undefined,
+      focal_length_ranges: conditions.focalLengthRanges && conditions.focalLengthRanges.length > 0 ? conditions.focalLengthRanges : undefined,
       max_iso: conditions.maxIso,
     }
 

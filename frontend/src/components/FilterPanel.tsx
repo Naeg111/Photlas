@@ -12,10 +12,10 @@ export interface FilterConditions {
   months: string[];
   timesOfDay: string[];
   weathers: string[];
-  deviceType?: string;
+  deviceTypes?: string[];
   maxAgeDays?: number;
-  aspectRatio?: string;
-  focalLengthRange?: string;
+  aspectRatios?: string[];
+  focalLengthRanges?: string[];
   maxIso?: number;
 }
 
@@ -90,12 +90,12 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
 
   // Issue#63: 通常フィルターに移動した項目
   const [selectedMaxAgeDays, setSelectedMaxAgeDays] = useState<number | undefined>(undefined);
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string | undefined>(undefined);
+  const [selectedAspectRatios, setSelectedAspectRatios] = useState<string[]>([]);
 
   // 上級者向けフィルターの状態
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [selectedDeviceType, setSelectedDeviceType] = useState<string | undefined>(undefined);
-  const [selectedFocalLengthRange, setSelectedFocalLengthRange] = useState<string | undefined>(undefined);
+  const [selectedDeviceTypes, setSelectedDeviceTypes] = useState<string[]>([]);
+  const [selectedFocalLengthRanges, setSelectedFocalLengthRanges] = useState<string[]>([]);
   const [selectedMaxIso, setSelectedMaxIso] = useState<number | undefined>(undefined);
 
   const toggleSelection = (
@@ -116,9 +116,9 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
     setSelectedTimes([]);
     setSelectedWeather([]);
     setSelectedMaxAgeDays(undefined);
-    setSelectedAspectRatio(undefined);
-    setSelectedDeviceType(undefined);
-    setSelectedFocalLengthRange(undefined);
+    setSelectedAspectRatios([]);
+    setSelectedDeviceTypes([]);
+    setSelectedFocalLengthRanges([]);
     setSelectedMaxIso(undefined);
   };
 
@@ -130,9 +130,9 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
         timesOfDay: selectedTimes,
         weathers: selectedWeather,
         maxAgeDays: selectedMaxAgeDays,
-        aspectRatio: selectedAspectRatio,
-        deviceType: selectedDeviceType,
-        focalLengthRange: selectedFocalLengthRange,
+        aspectRatios: selectedAspectRatios,
+        deviceTypes: selectedDeviceTypes,
+        focalLengthRanges: selectedFocalLengthRanges,
         maxIso: selectedMaxIso,
       });
     }
@@ -277,19 +277,20 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           <div>
             <p className="text-sm font-medium mb-2 text-muted-foreground">写真の向き</p>
             <div className="grid grid-cols-3 gap-2">
-              {ASPECT_RATIO_OPTIONS.map((option) => (
+              {ASPECT_RATIO_OPTIONS.map((option) => {
+                const isSelected = selectedAspectRatios.includes(option.value);
+                return (
                 <Button
                   key={option.label}
-                  variant={selectedAspectRatio === option.value ? "default" : "outline"}
-                  className={`text-sm ${selectedAspectRatio === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                  variant={isSelected ? "default" : "outline"}
+                  className={`text-sm ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
                   style={{ border: '1px solid #d1d5db' }}
-                  onClick={() => setSelectedAspectRatio(
-                    selectedAspectRatio === option.value ? undefined : option.value
-                  )}
+                  onClick={() => toggleSelection(option.value, selectedAspectRatios, setSelectedAspectRatios)}
                 >
                   {option.label}
                 </Button>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -310,19 +311,20 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                 <div>
                   <p className="text-sm font-medium mb-2 text-muted-foreground">機材種別</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {DEVICE_TYPE_OPTIONS.map((option) => (
+                    {DEVICE_TYPE_OPTIONS.map((option) => {
+                      const isSelected = selectedDeviceTypes.includes(option.value);
+                      return (
                       <Button
                         key={option.label}
-                        variant={selectedDeviceType === option.value ? "default" : "outline"}
-                        className={`text-sm ${selectedDeviceType === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                        variant={isSelected ? "default" : "outline"}
+                        className={`text-sm ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
                         style={{ border: '1px solid #d1d5db' }}
-                        onClick={() => setSelectedDeviceType(
-                          selectedDeviceType === option.value ? undefined : option.value
-                        )}
+                        onClick={() => toggleSelection(option.value, selectedDeviceTypes, setSelectedDeviceTypes)}
                       >
                         {option.label}
                       </Button>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -330,19 +332,20 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                 <div>
                   <p className="text-sm font-medium mb-2 text-muted-foreground">焦点距離（フルサイズ換算）</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {FOCAL_LENGTH_OPTIONS.map((option) => (
+                    {FOCAL_LENGTH_OPTIONS.map((option) => {
+                      const isSelected = selectedFocalLengthRanges.includes(option.value);
+                      return (
                       <Button
                         key={option.label}
-                        variant={selectedFocalLengthRange === option.value ? "default" : "outline"}
-                        className={`text-sm whitespace-normal h-auto py-2 ${selectedFocalLengthRange === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
+                        variant={isSelected ? "default" : "outline"}
+                        className={`text-sm whitespace-normal h-auto py-2 ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
                         style={{ border: '1px solid #d1d5db' }}
-                        onClick={() => setSelectedFocalLengthRange(
-                          selectedFocalLengthRange === option.value ? undefined : option.value
-                        )}
+                        onClick={() => toggleSelection(option.value, selectedFocalLengthRanges, setSelectedFocalLengthRanges)}
                       >
                         {option.label}
                       </Button>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 

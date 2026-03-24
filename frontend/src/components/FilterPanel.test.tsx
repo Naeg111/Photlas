@@ -247,10 +247,10 @@ describe('FilterPanel', () => {
           months: [],
           timesOfDay: [],
           weathers: [],
-          deviceType: undefined,
+          deviceTypes: [],
           maxAgeDays: undefined,
-          aspectRatio: undefined,
-          focalLengthRange: undefined,
+          aspectRatios: [],
+          focalLengthRanges: [],
           maxIso: undefined,
         })
       )
