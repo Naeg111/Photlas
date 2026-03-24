@@ -145,7 +145,8 @@
 }
 
 /* Mapbox「Improve this map」リンクを非表示（必須帰属表示ではない） */
-.mapboxgl-ctrl-attrib a[href*="improve"] {
+.mapboxgl-ctrl-attrib a[href*="improve"],
+.mapboxgl-ctrl-attrib a[href*="feedback"] {
   display: none !important;
 }
 
