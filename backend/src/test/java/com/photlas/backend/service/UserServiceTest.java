@@ -155,6 +155,51 @@ public class UserServiceTest {
         ));
     }
 
+    @Test
+    @DisplayName("セキュリティ - SNSリンク: ドメイン偽装URL（x.com.evil.com）はエラー")
+    void testUpdateSnsLinks_DomainSpoofing_ThrowsException() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+
+        List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks = List.of(
+                new UpdateSnsLinksRequest.SnsLinkRequest("twitter", "https://x.com.evil.com/phishing")
+        );
+
+        assertThatThrownBy(() -> userService.updateSnsLinks(TEST_EMAIL, snsLinks))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("URLがプラットフォームと一致しません");
+    }
+
+    @Test
+    @DisplayName("セキュリティ - SNSリンク: クエリパラメータにドメインを含むURL（evil.com?r=instagram.com）はエラー")
+    void testUpdateSnsLinks_QueryParamSpoofing_ThrowsException() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+
+        List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks = List.of(
+                new UpdateSnsLinksRequest.SnsLinkRequest("instagram", "https://evil.com/fake?redirect=instagram.com")
+        );
+
+        assertThatThrownBy(() -> userService.updateSnsLinks(TEST_EMAIL, snsLinks))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("URLがプラットフォームと一致しません");
+    }
+
+    @Test
+    @DisplayName("セキュリティ - SNSリンク: ドメイン名に含むURL（notinstagram.com）はエラー")
+    void testUpdateSnsLinks_PartialDomainMatch_ThrowsException() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+
+        List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks = List.of(
+                new UpdateSnsLinksRequest.SnsLinkRequest("instagram", "https://notinstagram.com/user")
+        );
+
+        assertThatThrownBy(() -> userService.updateSnsLinks(TEST_EMAIL, snsLinks))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("URLがプラットフォームと一致しません");
+    }
+
     // ===== メールアドレス変更 (updateEmail) =====
 
     @Test
