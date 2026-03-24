@@ -208,7 +208,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const [mapTransitioning, setMapTransitioning] = useState(false)
   const [mapTransitionFading, setMapTransitionFading] = useState(false)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [userHeading, setUserHeading] = useState<number | null>(null)
   const [shootingLocationPin, setShootingLocationPin] = useState<{ lat: number; lng: number } | null>(null)
   const savedMapStateRef = useRef<{ center: [number, number]; zoom: number } | null>(null)
   const onMapClickRef = useRef(onMapClick)
@@ -230,22 +229,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       }
     }
   }, [])
-
-  // デバイスの向きを取得
-  useEffect(() => {
-    if (!userLocation) return
-
-    const handleOrientation = (event: DeviceOrientationEvent) => {
-      const heading = (event as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading
-        ?? (event.alpha !== null ? (360 - event.alpha) % 360 : null)
-      if (heading !== null) {
-        setUserHeading(heading)
-      }
-    }
-
-    window.addEventListener('deviceorientation', handleOrientation)
-    return () => window.removeEventListener('deviceorientation', handleOrientation)
-  }, [userLocation])
 
   // デバイスの向き取得の許可をリクエスト（iOS 13+用）
   const requestOrientationPermission = useCallback(async () => {
