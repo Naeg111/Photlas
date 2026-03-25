@@ -1,8 +1,12 @@
 package com.photlas.backend.service;
 
 import com.photlas.backend.dto.LoginRequest;
+import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.UpdateSnsLinksRequest;
+import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.exception.AccountSuspendedException;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.UnauthorizedException;
@@ -56,6 +60,12 @@ public class UserServiceTest {
 
     @Mock
     private S3Service s3Service;
+
+    @Mock
+    private SpotRepository spotRepository;
+
+    @Mock
+    private PhotoRepository photoRepository;
 
     @InjectMocks
     private UserService userService;
@@ -412,6 +422,45 @@ public class UserServiceTest {
 
         assertThatThrownBy(() -> userService.loginUser(request))
                 .isInstanceOf(UnauthorizedException.class);
+    }
+
+    @Test
+    @DisplayName("Issue#72 - 登録: 退会済みメールアドレスで登録すると専用エラーメッセージ")
+    void testRegisterUser_DeletedEmail_ThrowsSpecificError() {
+        User deletedUser = createMockUser(1L, TEST_EMAIL, "deleted_abc123");
+        deletedUser.setDeletedAt(java.time.LocalDateTime.now().minusDays(10));
+        when(userRepository.existsByEmail(TEST_EMAIL)).thenReturn(true);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(deletedUser));
+
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail(TEST_EMAIL);
+        request.setPassword(CURRENT_PASSWORD);
+        request.setUsername("newuser");
+
+        assertThatThrownBy(() -> userService.registerUser(request))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("退会処理中");
+    }
+
+    @Test
+    @DisplayName("Issue#72 - 退会時にスポットのcreated_by_user_idが他ユーザーに切り替わる")
+    void testDeleteAccount_TransfersSpotOwnership() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        User otherUser = createMockUser(2L, OTHER_EMAIL, "otheruser");
+
+        Spot spot = new Spot();
+        spot.setSpotId(100L);
+        spot.setCreatedByUserId(1L);
+
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(spotRepository.findByCreatedByUserId(1L)).thenReturn(java.util.List.of(spot));
+        when(photoRepository.findOldestActiveUserBySpotExcluding(100L, 1L)).thenReturn(Optional.of(otherUser));
+
+        userService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+
+        assertThat(spot.getCreatedByUserId()).isEqualTo(2L);
     }
 
     // ===== ヘルパーメソッド =====
