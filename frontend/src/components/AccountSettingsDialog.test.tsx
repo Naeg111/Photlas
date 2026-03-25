@@ -589,7 +589,7 @@ describe('AccountSettingsDialog', () => {
       expect(screen.getByLabelText(LABEL_PASSWORD_CONFIRM)).toBeInTheDocument()
     })
 
-    it('successfully deletes account and redirects to home', async () => {
+    it('successfully deletes account and shows completion message', async () => {
       mockFetch.mockResolvedValueOnce(
         createMockFetchResponse(true, 204)
       )
@@ -616,10 +616,10 @@ describe('AccountSettingsDialog', () => {
         })
       })
 
-      // Check that logout is called and navigation occurs
+      // Issue#72: 退会完了メッセージが表示される
       await waitFor(() => {
-        expect(mockLogout).toHaveBeenCalled()
-        expect(mockNavigate).toHaveBeenCalledWith('/')
+        expect(screen.getByText(/アカウントの削除を受け付けました/)).toBeInTheDocument()
+        expect(screen.getByText(/90日後にすべてのデータが完全に削除されます/)).toBeInTheDocument()
       })
     })
 
