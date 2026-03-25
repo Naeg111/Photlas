@@ -360,10 +360,8 @@ test.describe('地図表示・ピン表示機能', () => {
       // 詳細フィルターを開く
       await page.getByRole('button', { name: '上級者向けフィルター' }).click()
 
-      // 詳細フィルターの項目が表示される
+      // Issue#63: 上級者向けフィルターには機材種別・焦点距離・ISO感度のみ
       await expect(page.getByText('機材種別')).toBeVisible()
-      await expect(page.getByText('撮影日からの経過期間')).toBeVisible()
-      await expect(page.getByText('アスペクト比')).toBeVisible()
       await expect(page.getByText('焦点距離（フルサイズ換算）')).toBeVisible()
       await expect(page.getByText('ISO感度')).toBeVisible()
     })
@@ -385,7 +383,7 @@ test.describe('地図表示・ピン表示機能', () => {
 
     test('撮影日からの経過期間フィルターで絞り込みができる', async ({ page }) => {
       await openFilterPanel(page)
-      await page.getByRole('button', { name: '上級者向けフィルター' }).click()
+      // Issue#63: 撮影日からの経過期間は通常フィルターに移動（上級者向けフィルターを開く必要なし）
 
       // 1年以内を選択
       await page.getByText('1年以内', { exact: true }).click()
@@ -397,12 +395,12 @@ test.describe('地図表示・ピン表示機能', () => {
       await expect(page.locator('.mapboxgl-map').first()).toBeVisible()
     })
 
-    test('アスペクト比フィルターで絞り込みができる', async ({ page }) => {
+    test('写真の向きフィルターで絞り込みができる', async ({ page }) => {
       await openFilterPanel(page)
-      await page.getByRole('button', { name: '上級者向けフィルター' }).click()
+      // Issue#63: 写真の向きは通常フィルターに移動（上級者向けフィルターを開く必要なし）
 
-      // 横位置を選択
-      await page.getByText('横位置', { exact: true }).click()
+      // 横向きを選択
+      await page.getByText('横向き', { exact: true }).click()
       await page.waitForTimeout(500)
 
       await page.getByRole('button', { name: '適用' }).click()
@@ -442,16 +440,16 @@ test.describe('地図表示・ピン表示機能', () => {
     test('基本フィルターと詳細フィルターを組み合わせて絞り込みができる', async ({ page }) => {
       await openFilterPanel(page)
 
-      // 基本フィルター
+      // 基本フィルター（Issue#63: 写真の向きは通常フィルターに移動）
       await page.getByText('自然風景', { exact: true }).click()
       await page.getByText('晴れ', { exact: true }).click()
+      await page.getByText('横向き', { exact: true }).click()
 
-      // 詳細フィルターを開く
+      // 上級者向けフィルターを開く
       await page.getByRole('button', { name: '上級者向けフィルター' }).click()
 
-      // 詳細フィルター
+      // 上級者向けフィルター
       await page.getByText('一眼レフ', { exact: true }).click()
-      await page.getByText('横位置', { exact: true }).click()
 
       await page.getByRole('button', { name: '適用' }).click()
       await page.waitForTimeout(2000)
