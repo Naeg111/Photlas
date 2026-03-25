@@ -3,7 +3,15 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import AdminDeletedUserDetailPage from './AdminDeletedUserDetailPage'
 
 const mockFetch = vi.fn()
-global.fetch = mockFetch
+const originalFetch = global.fetch
+
+beforeAll(() => {
+  global.fetch = mockFetch
+})
+
+afterAll(() => {
+  global.fetch = originalFetch
+})
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
@@ -62,14 +70,14 @@ describe('AdminDeletedUserDetailPage', () => {
   })
 
   it('should display violation history', async () => {
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValue({
       ok: true,
       json: async () => MOCK_DETAIL,
     })
 
     renderWithRoute()
 
-    expect(await screen.findByText(/WARNING/)).toBeInTheDocument()
+    expect(await screen.findByText(/CONTENT_VIOLATION/)).toBeInTheDocument()
   })
 
   it('should show email confirmation dialog for immediate delete', async () => {
