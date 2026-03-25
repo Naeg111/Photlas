@@ -6,7 +6,7 @@ import {
   initCookieConsent,
 } from './helpers/auth'
 import { getTestImagePath, ensureFixtures } from './helpers/test-image'
-import { findPinsAndClusters, clickFirstPin } from './helpers/map-pins'
+import { findPinsAndClusters, clickFirstPin, waitForPinsOrClusters } from './helpers/map-pins'
 
 /**
  * 写真詳細・お気に入り機能 E2Eテスト
@@ -66,6 +66,13 @@ async function zoomInToShowPins(page: Page): Promise<void> {
  * Issue#55: queryRenderedFeatures + map.project でピンクリック
  */
 async function openPhotoDetailFromPin(page: Page): Promise<boolean> {
+  // ピンがレンダリングされるまで待機
+  try {
+    await waitForPinsOrClusters(page, 10000)
+  } catch {
+    return false
+  }
+
   const clicked = await clickFirstPin(page)
   if (!clicked) return false
 
@@ -121,27 +128,30 @@ async function createTestPost(page: Page, title: string): Promise<void> {
  * ログインユーザーの最新投稿をAPI経由で取得してディープリンクで開く
  */
 async function openOwnLatestPhoto(page: Page): Promise<boolean> {
-  // ユーザーの最新投稿をAPI経由で取得
-  const photoId = await page.evaluate(async () => {
-    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
-    if (!token) return null
-    // ユーザー情報を取得
-    const meRes = await fetch('/api/v1/users/me', {
-      headers: { Authorization: `Bearer ${token}` }
+  // ユーザーの最新投稿をAPI経由で取得（モデレーション完了待ちリトライ付き）
+  let photoId: number | null = null
+  for (let attempt = 0; attempt < 6; attempt++) {
+    photoId = await page.evaluate(async () => {
+      const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+      if (!token) return null
+      const meRes = await fetch('/api/v1/users/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!meRes.ok) return null
+      const me = await meRes.json()
+      const photosRes = await fetch(`/api/v1/users/${me.userId}/photos?page=0&size=1`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!photosRes.ok) return null
+      const data = await photosRes.json()
+      if (data.content && data.content.length > 0) {
+        return data.content[0].photo.photo_id
+      }
+      return null
     })
-    if (!meRes.ok) return null
-    const me = await meRes.json()
-    // ユーザーの投稿一覧から最新を取得
-    const photosRes = await fetch(`/api/v1/users/${me.userId}/photos?page=0&size=1`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    if (!photosRes.ok) return null
-    const data = await photosRes.json()
-    if (data.content && data.content.length > 0) {
-      return data.content[0].photo.photo_id
-    }
-    return null
-  })
+    if (photoId) break
+    await page.waitForTimeout(5000)
+  }
 
   if (!photoId) return false
 
@@ -743,34 +753,19 @@ test.describe('写真詳細・お気に入り機能', () => {
       await createTestPost(page, `削除テスト-${Date.now()}`)
 
       // 削除ボタンはプロフィール投稿一覧から開いた場合のみ表示（isDeletable制御）
-      // モデレーション完了後にマイページ→投稿タブ→最新投稿クリックで開く
-      let photoFound = false
-      for (let attempt = 0; attempt < 6; attempt++) {
-        await page.waitForTimeout(5000)
-        await page.getByRole('button', { name: 'メニュー' }).click()
-        await page.getByText('マイページ').click()
-        await expect(page.getByRole('heading', { name: 'プロフィール' })).toBeVisible({ timeout: 10000 })
+      // ディープリンクでは表示されないため、プロフィール経由で開く
+      // 投稿直後は自分の写真としてPENDING_REVIEWでも表示される
+      await page.waitForTimeout(3000)
 
-        const photoGrid = page.locator('[data-testid="posts-grid"]')
-        const firstPhoto = photoGrid.locator('img').first()
-        if (await firstPhoto.isVisible({ timeout: 5000 }).catch(() => false)) {
-          photoFound = true
-          break
-        }
-        // プロフィールダイアログを閉じてリトライ
-        await page.keyboard.press('Escape')
-        await page.waitForTimeout(1000)
-      }
+      await page.getByRole('button', { name: 'メニュー' }).click()
+      await page.getByText('マイページ').click()
+      await expect(page.getByRole('heading', { name: 'プロフィール' })).toBeVisible({ timeout: 10000 })
 
-      if (!photoFound) {
-        test.skip()
-        return
-      }
-
-      // 投稿一覧から最新投稿をクリック
-      const photoGrid = page.locator('[data-testid="posts-grid"]')
-      const firstPhoto = photoGrid.locator('img').first()
-      if (await firstPhoto.isVisible({ timeout: 10000 }).catch(() => false)) {
+      // 投稿一覧の写真をクリック
+      const photoGrid = page.locator('[data-testid="photo-grid"]')
+      // img要素のロード待ち（サムネイル生成に時間がかかる場合がある）
+      const firstPhoto = photoGrid.locator('[data-testid^="post-photo-item-"]').first()
+      if (await firstPhoto.isVisible({ timeout: 15000 }).catch(() => false)) {
         await firstPhoto.click()
         await expect(page.locator('[role="dialog"]').nth(1)).toBeVisible({ timeout: 10000 })
 
