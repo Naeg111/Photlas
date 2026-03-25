@@ -55,7 +55,7 @@ test.describe('Language Toggle Tests', () => {
       await page.getByRole('button', { name: 'メニュー' }).click()
       await page.waitForTimeout(500) // メニューアニメーション待機
       await page.getByRole('button', { name: 'プライバシーポリシー' }).click()
-      await expect(page.getByRole('heading', { name: 'プライバシーポリシー' })).toBeVisible({ timeout: 10000 })
+      await expect(page.getByRole('heading', { name: 'プライバシーポリシー', exact: true })).toBeVisible({ timeout: 10000 })
     })
 
     test('初期表示は日本語である', async ({ page }) => {
