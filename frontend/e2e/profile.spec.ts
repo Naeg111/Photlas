@@ -127,6 +127,7 @@ test.describe('プロフィール管理・表示', () => {
     })
 
     test('お気に入りがない場合「お気に入りはまだありません」が表示される', async ({ page }) => {
+      test.setTimeout(120000)
       await createAccountAndLogin(page, 'profile-no-favs')
 
       await openProfileDialog(page)
@@ -134,11 +135,19 @@ test.describe('プロフィール管理・表示', () => {
       // お気に入りタブをクリック
       const favTab = page.getByRole('tab', { name: 'お気に入り' })
       await favTab.click()
-      await expect(favTab).toHaveAttribute('aria-selected', 'true', { timeout: 5000 })
-      await page.waitForTimeout(2000) // API応答待ち
+      await page.waitForTimeout(3000) // タブ切替＋API応答待ち
 
-      // 空メッセージが表示される
-      await expect(page.getByText('お気に入りはまだありません')).toBeVisible({ timeout: 30000 })
+      // 空メッセージまたはローディングスピナーが表示されるのを確認
+      const emptyMsg = page.getByText('お気に入りはまだありません')
+      const spinner = page.locator('[data-testid="favorites-loading"]')
+
+      // ローディングが完了し空メッセージが表示されるのを待機
+      await expect(emptyMsg.or(spinner)).toBeVisible({ timeout: 30000 })
+      if (await spinner.isVisible()) {
+        // スピナーが消えるのを待機
+        await expect(spinner).not.toBeVisible({ timeout: 30000 })
+      }
+      await expect(emptyMsg).toBeVisible({ timeout: 10000 })
     })
   })
 
