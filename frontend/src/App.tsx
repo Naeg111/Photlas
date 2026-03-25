@@ -6,6 +6,7 @@ import NotFoundPage from './pages/NotFoundPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
 import AdminModerationPage from './pages/AdminModerationPage'
 import AdminDeletedUsersPage from './pages/AdminDeletedUsersPage'
+import AdminDeletedUserDetailPage from './pages/AdminDeletedUserDetailPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import ReviewLocationPage from './pages/ReviewLocationPage'
 import { CookieConsentBanner } from './components/CookieConsentBanner'
@@ -728,6 +729,7 @@ function App() {
         <Route path="/photo-viewer/:photoId" element={<MainApp />} />
         <Route path="/manage/moderation" element={<AdminModerationPage />} />
         <Route path="/manage/deleted-users" element={<AdminDeletedUsersPage />} />
+        <Route path="/manage/deleted-users/:userId" element={<AdminDeletedUserDetailPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <CookieConsentBanner />

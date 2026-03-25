@@ -4,7 +4,15 @@ import AdminDeletedUsersPage from './AdminDeletedUsersPage'
 
 // Mock fetch
 const mockFetch = vi.fn()
-global.fetch = mockFetch
+const originalFetch = global.fetch
+
+beforeAll(() => {
+  global.fetch = mockFetch
+})
+
+afterAll(() => {
+  global.fetch = originalFetch
+})
 
 // Mock useAuth
 vi.mock('../contexts/AuthContext', () => ({
