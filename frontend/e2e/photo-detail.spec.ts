@@ -742,9 +742,21 @@ test.describe('写真詳細・お気に入り機能', () => {
       await createAccountAndLogin(page, 'delete-own')
       await createTestPost(page, `削除テスト-${Date.now()}`)
 
+      // 削除ボタンはプロフィール投稿一覧から開いた場合のみ表示（isDeletable制御）
+      // マイページ→投稿タブ→最新投稿クリックで開く
       await page.waitForTimeout(5000)
 
-      if (await openOwnLatestPhoto(page)) {
+      await page.getByRole('button', { name: 'メニュー' }).click()
+      await page.getByText('マイページ').click()
+      await expect(page.getByRole('heading', { name: 'プロフィール' })).toBeVisible({ timeout: 10000 })
+
+      // 投稿一覧から最新投稿をクリック
+      const photoGrid = page.locator('[data-testid="posts-grid"]')
+      const firstPhoto = photoGrid.locator('img').first()
+      if (await firstPhoto.isVisible({ timeout: 10000 }).catch(() => false)) {
+        await firstPhoto.click()
+        await expect(page.locator('[role="dialog"]').nth(1)).toBeVisible({ timeout: 10000 })
+
         const deleteButton = page.getByRole('button', { name: 'この写真を削除' })
         await expect(deleteButton).toBeVisible({ timeout: 10000 })
       } else {
