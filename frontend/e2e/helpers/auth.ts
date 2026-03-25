@@ -165,8 +165,8 @@ export async function createAccountAndLogin(
   await openSignUpDialog(page)
   await performSignUp(page, email, TEST_PASSWORD)
 
-  // トースト表示を待機（ステージング環境ではAPI応答が遅い場合がある）
-  await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({ timeout: 30000 })
+  // トースト表示を待機（ステージング環境ではAPI応答が60秒以上かかる場合がある）
+  await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({ timeout: 60000 })
 
   // メール認証をバイパス
   await verifyEmailByApi(page, email)
