@@ -39,7 +39,7 @@ export function TermsContentJa() {
             <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
               <li>写真ファイル</li>
               <li>撮影メタデータ（位置情報、撮影日時、カメラ情報、レンズ情報、撮影設定値等）</li>
-              <li>タイトル、施設名、タグ、カテゴリ選択、天気情報</li>
+              <li>タイトル、施設名、カテゴリ選択、天気情報</li>
             </ul>
           </li>
         </ol>
