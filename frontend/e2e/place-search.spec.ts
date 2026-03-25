@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { initCookieConsent } from './helpers/auth'
 
 /**
  * 場所検索テスト（Issue#69）
@@ -6,7 +7,7 @@ import { test, expect } from '@playwright/test'
  */
 test.describe('Place Search Tests', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
+    await initCookieConsent(page)
     await page.goto('/')
     await page.waitForTimeout(3000) // スプラッシュ画面待機
     // 地図が読み込まれるまで待機

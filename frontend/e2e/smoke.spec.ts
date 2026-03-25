@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { initCookieConsent } from './helpers/auth'
 
 /**
  * スモークテスト
@@ -6,8 +7,7 @@ import { test, expect } from '@playwright/test'
  */
 test.describe('Smoke Tests', () => {
   test.beforeEach(async ({ page }) => {
-    // Cookie同意バナーが表示されないよう、同意済み状態を設定
-    await page.addInitScript(() => localStorage.setItem('cookie_consent_acknowledged', 'true'))
+    await initCookieConsent(page)
   })
 
   test('アプリケーションが正常に読み込まれる', async ({ page }) => {
