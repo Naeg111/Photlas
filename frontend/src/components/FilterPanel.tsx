@@ -1,47 +1,16 @@
-import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
-import { Button } from "./ui/button";
-import { CategoryIcon } from "./CategoryIcon";
-import { MonthIcons, TimeIcons, WeatherIcons } from "./FilterIcons";
-import { PHOTO_CATEGORIES } from "../utils/constants";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet"
+import { Button } from "./ui/button"
+import { CategoryIcon } from "./CategoryIcon"
+import { FilterIcons, MonthIcons, TimeIcons, WeatherIcons } from "./FilterIcons"
+import { ChevronDown, ChevronUp } from "lucide-react"
+import { PHOTO_CATEGORIES } from "../utils/constants"
 
-// Issue#63: maxAgeYears → maxAgeDays に変更
-export interface FilterConditions {
-  categories: string[];
-  months: string[];
-  timesOfDay: string[];
-  weathers: string[];
-  deviceTypes?: string[];
-  maxAgeDays?: number;
-  aspectRatios?: string[];
-  focalLengthRanges?: string[];
-  maxIso?: number;
-}
-
-interface FilterPanelProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onApply?: (conditions: FilterConditions) => void;
-}
-
-const MONTHS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
-
-const TIME_OF_DAY = ["朝", "昼", "夕方", "夜"];
-
-const WEATHER = ["晴れ", "曇り", "雨", "雪"];
-
-// カテゴリアイコンは全て fill="currentColor" のため invert 不要
 const CATEGORIES_NEED_INVERT: string[] = [];
-
-// アイコンが fill="#000000" でハードコードされているため、選択時に invert が必要な月（3月以外）
 const MONTHS_NEED_INVERT = ["1月", "2月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
-
-// アイコンが fill="#000000" でハードコードされているため、選択時に invert が必要な時間帯
 const TIMES_NEED_INVERT = ["夕方"];
 
 // Issue#63: 上級者向けフィルターの選択肢（機材種別・焦点距離・ISO感度のみ）
-// Issue#67: 投稿数の多い機材順に並び替え
 const DEVICE_TYPE_OPTIONS = [
   { label: "スマートフォン", value: "SMARTPHONE" },
   { label: "ミラーレス", value: "MIRRORLESS" },
@@ -49,7 +18,7 @@ const DEVICE_TYPE_OPTIONS = [
   { label: "コンパクトデジカメ", value: "COMPACT" },
   { label: "フィルム", value: "FILM" },
   { label: "その他", value: "OTHER" },
-] as const;
+]
 
 // Issue#63: 撮影日からの経過期間（通常フィルターに移動、3ヶ月以内追加）
 const FRESHNESS_OPTIONS = [
@@ -58,45 +27,95 @@ const FRESHNESS_OPTIONS = [
   { label: "3ヶ月以内", value: 90 },
   { label: "1年以内", value: 365 },
   { label: "3年以内", value: 1095 },
-] as const;
+]
 
 // Issue#63: 写真の向き（通常フィルターに移動、名称変更）
 const ASPECT_RATIO_OPTIONS = [
   { label: "横向き", value: "HORIZONTAL" },
   { label: "縦向き", value: "VERTICAL" },
   { label: "正方形", value: "SQUARE" },
-] as const;
+]
 
 const FOCAL_LENGTH_OPTIONS = [
   { label: "広角（24mm未満）", value: "WIDE" },
   { label: "標準（24-70mm）", value: "STANDARD" },
   { label: "望遠（70-300mm）", value: "TELEPHOTO" },
-  { label: "超望遠（301mm以上）", value: "SUPER_TELEPHOTO" },
-] as const;
+  { label: "超望遠（300mm超）", value: "SUPER_TELEPHOTO" },
+]
 
-// Issue#63: ISO感度を4段階に拡張
+// Issue#63: ISO感度の選択肢を4段階に拡張
 const ISO_OPTIONS = [
   { label: "ISO 400以下", value: 400 },
   { label: "ISO 1600以下", value: 1600 },
   { label: "ISO 6400以下", value: 6400 },
   { label: "ISO 12800以下", value: 12800 },
-] as const;
+]
+
+const MONTHS = [
+  "1月", "2月", "3月", "4月", "5月", "6月",
+  "7月", "8月", "9月", "10月", "11月", "12月",
+]
+
+const TIME_OF_DAY = ["朝", "昼", "夕方", "夜"]
+const WEATHER = ["晴れ", "曇り", "雨", "雪"]
+
+export interface FilterConditions {
+  categories?: string[]
+  months?: string[]
+  timesOfDay?: string[]
+  weathers?: string[]
+  maxAgeDays?: number
+  aspectRatios?: string[]
+  deviceTypes?: string[]
+  focalLengthRanges?: string[]
+  maxIso?: number
+}
+
+interface FilterPanelProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onApply?: (conditions: FilterConditions) => void
+}
+
+// フィルターボタン共通スタイル（モバイルタッチ対応: onPointerDownで即座に反応）
+const FILTER_BTN_BASE = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors"
+const FILTER_BTN_BORDER = { border: '1px solid #d1d5db' } as const
+
+function FilterButton({ selected, onClick, className, children }: {
+  selected: boolean
+  onClick: () => void
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      className={`${FILTER_BTN_BASE} h-9 gap-2 ${selected ? "bg-primary text-primary-foreground" : "bg-background text-foreground"} ${className || ""}`}
+      style={FILTER_BTN_BORDER}
+      onPointerDown={(e) => {
+        e.preventDefault()
+        onClick()
+      }}
+    >
+      {children}
+    </button>
+  )
+}
 
 export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
-  const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
-  const [selectedWeather, setSelectedWeather] = useState<string[]>([]);
-
-  // Issue#63: 通常フィルターに移動した項目
-  const [selectedMaxAgeDays, setSelectedMaxAgeDays] = useState<number | undefined>(undefined);
-  const [selectedAspectRatios, setSelectedAspectRatios] = useState<string[]>([]);
+  // 基本フィルターの状態
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([])
+  const [selectedTimes, setSelectedTimes] = useState<string[]>([])
+  const [selectedWeather, setSelectedWeather] = useState<string[]>([])
+  const [selectedMaxAgeDays, setSelectedMaxAgeDays] = useState<number | undefined>(undefined)
+  const [selectedAspectRatios, setSelectedAspectRatios] = useState<string[]>([])
 
   // 上級者向けフィルターの状態
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [selectedDeviceTypes, setSelectedDeviceTypes] = useState<string[]>([]);
-  const [selectedFocalLengthRanges, setSelectedFocalLengthRanges] = useState<string[]>([]);
-  const [selectedMaxIso, setSelectedMaxIso] = useState<number | undefined>(undefined);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
+  const [selectedDeviceTypes, setSelectedDeviceTypes] = useState<string[]>([])
+  const [selectedFocalLengthRanges, setSelectedFocalLengthRanges] = useState<string[]>([])
+  const [selectedMaxIso, setSelectedMaxIso] = useState<number | undefined>(undefined)
 
   const toggleSelection = (
     value: string,
@@ -111,16 +130,16 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
   };
 
   const handleClear = () => {
-    setSelectedCategories([]);
-    setSelectedMonths([]);
-    setSelectedTimes([]);
-    setSelectedWeather([]);
-    setSelectedMaxAgeDays(undefined);
-    setSelectedAspectRatios([]);
-    setSelectedDeviceTypes([]);
-    setSelectedFocalLengthRanges([]);
-    setSelectedMaxIso(undefined);
-  };
+    setSelectedCategories([])
+    setSelectedMonths([])
+    setSelectedTimes([])
+    setSelectedWeather([])
+    setSelectedMaxAgeDays(undefined)
+    setSelectedAspectRatios([])
+    setSelectedDeviceTypes([])
+    setSelectedFocalLengthRanges([])
+    setSelectedMaxIso(undefined)
+  }
 
   const handleApply = () => {
     if (onApply) {
@@ -159,18 +178,15 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                 const isSelected = selectedCategories.includes(category);
                 const needsInvert = CATEGORIES_NEED_INVERT.includes(category);
                 return (
-                  <Button
+                  <FilterButton
                     key={category}
-                    variant={isSelected ? "default" : "outline"}
-                    className={`flex items-center gap-2 justify-center ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"} ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
-                    style={{ border: '1px solid #d1d5db' }}
-                    onClick={() =>
-                      toggleSelection(category, selectedCategories, setSelectedCategories)
-                    }
+                    selected={isSelected}
+                    onClick={() => toggleSelection(category, selectedCategories, setSelectedCategories)}
+                    className={isSelected && needsInvert ? "[&_svg]:invert" : ""}
                   >
                     <CategoryIcon category={category} className="w-5 h-5 shrink-0" />
                     <span className="truncate">{category}</span>
-                  </Button>
+                  </FilterButton>
                 );
               })}
             </div>
@@ -181,17 +197,15 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
             <p className="text-sm font-medium mb-2 text-muted-foreground">撮影日からの経過期間</p>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               {FRESHNESS_OPTIONS.map((option) => (
-                <Button
+                <FilterButton
                   key={option.label}
-                  variant={selectedMaxAgeDays === option.value ? "default" : "outline"}
-                  className={`text-sm ${selectedMaxAgeDays === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
-                  style={{ border: '1px solid #d1d5db' }}
+                  selected={selectedMaxAgeDays === option.value}
                   onClick={() => setSelectedMaxAgeDays(
                     selectedMaxAgeDays === option.value ? undefined : option.value
                   )}
                 >
                   {option.label}
-                </Button>
+                </FilterButton>
               ))}
             </div>
           </div>
@@ -205,19 +219,15 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                 const isSelected = selectedMonths.includes(month);
                 const needsInvert = MONTHS_NEED_INVERT.includes(month);
                 return (
-                  <button
+                  <FilterButton
                     key={month}
-                    type="button"
-                    className={`inline-flex items-center gap-1.5 justify-center px-2 h-9 rounded-md text-sm font-medium transition-colors ${isSelected ? "bg-primary text-primary-foreground" : "bg-background text-foreground"} ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
-                    style={{ border: '1px solid #d1d5db' }}
-                    onPointerDown={(e) => {
-                      e.preventDefault()
-                      toggleSelection(month, selectedMonths, setSelectedMonths)
-                    }}
+                    selected={isSelected}
+                    onClick={() => toggleSelection(month, selectedMonths, setSelectedMonths)}
+                    className={`gap-1.5 px-2 ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
                   >
                     {Icon && <Icon className="w-5 h-5 shrink-0" />}
                     <span className="text-sm">{month}</span>
-                  </button>
+                  </FilterButton>
                 );
               })}
             </div>
@@ -232,18 +242,15 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                 const isSelected = selectedTimes.includes(time);
                 const needsInvert = TIMES_NEED_INVERT.includes(time);
                 return (
-                  <Button
+                  <FilterButton
                     key={time}
-                    variant={isSelected ? "default" : "outline"}
-                    className={`flex items-center gap-2 justify-center ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"} ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
-                    style={{ border: '1px solid #d1d5db' }}
-                    onClick={() =>
-                      toggleSelection(time, selectedTimes, setSelectedTimes)
-                    }
+                    selected={isSelected}
+                    onClick={() => toggleSelection(time, selectedTimes, setSelectedTimes)}
+                    className={isSelected && needsInvert ? "[&_svg]:invert" : ""}
                   >
                     {Icon && <Icon className="w-6 h-6 shrink-0" />}
                     <span>{time}</span>
-                  </Button>
+                  </FilterButton>
                 );
               })}
             </div>
@@ -257,18 +264,14 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                 const Icon = WeatherIcons[weather];
                 const isSelected = selectedWeather.includes(weather);
                 return (
-                  <Button
+                  <FilterButton
                     key={weather}
-                    variant={isSelected ? "default" : "outline"}
-                    className={`flex items-center gap-2 justify-center ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
-                    style={{ border: '1px solid #d1d5db' }}
-                    onClick={() =>
-                      toggleSelection(weather, selectedWeather, setSelectedWeather)
-                    }
+                    selected={isSelected}
+                    onClick={() => toggleSelection(weather, selectedWeather, setSelectedWeather)}
                   >
                     {Icon && <Icon className="w-6 h-6 shrink-0" />}
                     <span>{weather}</span>
-                  </Button>
+                  </FilterButton>
                 );
               })}
             </div>
@@ -281,15 +284,13 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
               {ASPECT_RATIO_OPTIONS.map((option) => {
                 const isSelected = selectedAspectRatios.includes(option.value);
                 return (
-                <Button
+                <FilterButton
                   key={option.label}
-                  variant={isSelected ? "default" : "outline"}
-                  className={`text-sm ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
-                  style={{ border: '1px solid #d1d5db' }}
+                  selected={isSelected}
                   onClick={() => toggleSelection(option.value, selectedAspectRatios, setSelectedAspectRatios)}
                 >
                   {option.label}
-                </Button>
+                </FilterButton>
                 );
               })}
             </div>
@@ -315,15 +316,13 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                     {DEVICE_TYPE_OPTIONS.map((option) => {
                       const isSelected = selectedDeviceTypes.includes(option.value);
                       return (
-                      <Button
+                      <FilterButton
                         key={option.label}
-                        variant={isSelected ? "default" : "outline"}
-                        className={`text-sm ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
-                        style={{ border: '1px solid #d1d5db' }}
+                        selected={isSelected}
                         onClick={() => toggleSelection(option.value, selectedDeviceTypes, setSelectedDeviceTypes)}
                       >
                         {option.label}
-                      </Button>
+                      </FilterButton>
                       );
                     })}
                   </div>
@@ -336,15 +335,14 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                     {FOCAL_LENGTH_OPTIONS.map((option) => {
                       const isSelected = selectedFocalLengthRanges.includes(option.value);
                       return (
-                      <Button
+                      <FilterButton
                         key={option.label}
-                        variant={isSelected ? "default" : "outline"}
-                        className={`text-sm whitespace-normal h-auto py-2 ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
-                        style={{ border: '1px solid #d1d5db' }}
+                        selected={isSelected}
                         onClick={() => toggleSelection(option.value, selectedFocalLengthRanges, setSelectedFocalLengthRanges)}
+                        className="whitespace-normal h-auto py-2"
                       >
                         {option.label}
-                      </Button>
+                      </FilterButton>
                       );
                     })}
                   </div>
@@ -355,17 +353,16 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                   <p className="text-sm font-medium mb-2 text-muted-foreground">ISO感度</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {ISO_OPTIONS.map((option) => (
-                      <Button
+                      <FilterButton
                         key={option.label}
-                        variant={selectedMaxIso === option.value ? "default" : "outline"}
-                        className={`text-sm whitespace-normal h-auto py-2 ${selectedMaxIso === option.value ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"}`}
-                        style={{ border: '1px solid #d1d5db' }}
+                        selected={selectedMaxIso === option.value}
                         onClick={() => setSelectedMaxIso(
                           selectedMaxIso === option.value ? undefined : option.value
                         )}
+                        className="whitespace-normal h-auto py-2"
                       >
                         {option.label}
-                      </Button>
+                      </FilterButton>
                     ))}
                   </div>
                 </div>
@@ -373,20 +370,12 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
             )}
           </div>
 
-          {/* アクションボタン */}
-          <div className="flex gap-2 pt-4 mt-2.5">
-            <Button
-              variant="outline"
-              className="flex-1 hover:bg-background hover:text-foreground"
-              style={{ border: '1px solid #d1d5db' }}
-              onClick={handleClear}
-            >
+          {/* 適用・クリアボタン */}
+          <div className="flex gap-2 sticky bottom-0 bg-background py-4">
+            <Button variant="outline" className="flex-1" onClick={handleClear}>
               クリア
             </Button>
-            <Button
-              className="flex-1"
-              onClick={handleApply}
-            >
+            <Button className="flex-1" onClick={handleApply}>
               適用
             </Button>
           </div>
@@ -394,5 +383,5 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
         </div>
       </SheetContent>
     </Sheet>
-  );
+  )
 }
