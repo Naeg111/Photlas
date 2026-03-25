@@ -184,27 +184,21 @@ test.describe('地図表示・ピン表示機能', () => {
       await expect(banner).toBeVisible({ timeout: 15000 })
     })
 
-    test('バナーをクリックするとズームレベルが11になる', async ({ page }) => {
-      // ズームアウト
+    test('ズームインするとバナーが消える', async ({ page }) => {
+      // ズームアウトしてバナーを表示
       await zoomOut(page, 5)
       await page.waitForTimeout(1000)
 
-      // バナーをクリック（Mapbox canvasがpointer eventsを遮るためforce: true）
+      // Issue#68: バナーは静的メッセージ（pointer-events-none）のためクリック不可
       const banner = page.getByText('投稿を表示するには')
-      if (await banner.isVisible()) {
-        await banner.click({ force: true })
-        await page.waitForTimeout(2000)
+      await expect(banner).toBeVisible({ timeout: 10000 })
 
-        // バナーが消える
-        await expect(banner).not.toBeVisible({ timeout: 5000 })
+      // ズームインして復帰
+      await zoomIn(page, 5)
+      await page.waitForTimeout(3000)
 
-        // ズームレベルが11になったことを確認
-        const zoom = await page.evaluate(() => {
-          const map = (window as unknown as Record<string, any>).__photlas_map
-          return map?.getZoom?.() ?? 0
-        })
-        expect(zoom).toBeGreaterThanOrEqual(11)
-      }
+      // バナーが消える
+      await expect(banner).not.toBeVisible({ timeout: 10000 })
     })
   })
 
