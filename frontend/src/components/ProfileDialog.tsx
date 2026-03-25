@@ -246,8 +246,12 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   }, [])
 
   // Issue#30: お気に入りタブがクリックされた時
-  const handleFavoritesTabClick = useCallback(() => {
-    if (!favoritesFetched) {
+  // Issue#72: タブをcontrolled化（E2Eテストの安定性向上）
+  const [activeTab, setActiveTab] = useState(initialTab)
+
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value as 'posts' | 'favorites')
+    if (value === 'favorites' && !favoritesFetched) {
       fetchFavorites()
     }
   }, [favoritesFetched, fetchFavorites])
@@ -562,13 +566,13 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         </div>
 
         {/* タブUI */}
-        <Tabs defaultValue={initialTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full">
             <TabsTrigger value="posts" className="flex-1">
               投稿
             </TabsTrigger>
             {isOwnProfile && (
-              <TabsTrigger value="favorites" className="flex-1" onClick={handleFavoritesTabClick}>
+              <TabsTrigger value="favorites" className="flex-1">
                 お気に入り
               </TabsTrigger>
             )}
