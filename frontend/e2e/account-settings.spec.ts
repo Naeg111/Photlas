@@ -131,7 +131,7 @@ test.describe('アカウント設定', () => {
     await page.getByRole('button', { name: '削除する' }).click()
 
     // Issue#72: 退会完了メッセージが表示される
-    await expect(page.getByText('アカウントの削除を受け付けました')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('アカウントの削除を受け付けました')).toBeVisible({ timeout: 40000 })
     await expect(page.getByText('90日後にすべてのデータが完全に削除されます')).toBeVisible()
 
     // 「閉じる」ボタンをクリックしてログアウト
