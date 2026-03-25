@@ -133,17 +133,13 @@ test.describe('プロフィール管理・表示', () => {
       await openProfileDialog(page)
 
       // お気に入りタブをクリック
-      // Radix UIのTabsTriggerはPlaywrightのclick/dispatchEventで安定しないため
-      // pointerdown→pointerup→click のシーケンスをJavaScriptで発火
-      await page.evaluate(() => {
-        const tabs = document.querySelectorAll('[role="tab"]')
-        const favTab = Array.from(tabs).find(t => t.textContent?.includes('お気に入り'))
-        if (favTab) {
-          favTab.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse' }))
-          favTab.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse' }))
-          favTab.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
-        }
-      })
+      // Radix UIのTabsTriggerがPlaywrightのイベントで安定しないため、
+      // Playwrightのpage.clickをviewportの座標指定で直接実行
+      const favTab = page.getByRole('tab', { name: 'お気に入り' })
+      const box = await favTab.boundingBox()
+      if (box) {
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+      }
       await page.waitForTimeout(2000)
 
       // お気に入りコンテンツが読み込まれるのを待機
