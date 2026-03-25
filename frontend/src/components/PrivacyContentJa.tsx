@@ -69,6 +69,7 @@ export function PrivacyContentJa() {
           <li>お気に入り登録情報</li>
           <li>通報情報（通報理由、通報対象）</li>
           <li>コンテンツモデレーション情報（審査結果、違反履歴、制裁情報）</li>
+          <li>位置情報の指摘データ（指摘地点の座標、指摘ステータス）</li>
         </ul>
 
         <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（7）技術情報</h3>
@@ -343,7 +344,7 @@ export function PrivacyContentJa() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           制定日：2026年2月16日<br />
-          最終改定日：2026年3月22日
+          最終改定日：2026年3月25日
         </p>
       </section>
     </div>
