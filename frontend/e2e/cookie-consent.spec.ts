@@ -7,14 +7,14 @@ import { test, expect } from '@playwright/test'
 test.describe('Cookie Consent Banner Tests', () => {
   test('初回アクセス時にCookie同意バナーが表示される', async ({ page }) => {
     await page.goto('/')
-    await page.waitForTimeout(3000) // スプラッシュ画面待機
+    await page.waitForTimeout(5000) // スプラッシュ画面待機（ステージング環境では長めに）
 
     const banner = page.getByTestId('cookie-consent-banner')
-    await expect(banner).toBeVisible({ timeout: 5000 })
+    await expect(banner).toBeVisible({ timeout: 10000 })
 
     // 日英両方の説明文が表示される
-    await expect(page.getByText(/Google Analytics/)).toBeVisible()
-    await expect(page.getByText(/service improvement/i)).toBeVisible()
+    await expect(banner.getByText(/サービス改善のためにGoogle/)).toBeVisible()
+    await expect(banner.getByText(/service improvement/i)).toBeVisible()
   })
 
   test('「同意する / Accept」と「拒否する / Decline」ボタンが表示される', async ({ page }) => {
