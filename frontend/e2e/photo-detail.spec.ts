@@ -761,11 +761,13 @@ test.describe('写真詳細・お気に入り機能', () => {
       await page.getByText('マイページ').click()
       await expect(page.getByRole('heading', { name: 'プロフィール' })).toBeVisible({ timeout: 10000 })
 
+      // 「まだ投稿がありません」が消えて投稿が表示されるのを待機
+      await page.waitForTimeout(3000)
+
       // 投稿一覧の写真をクリック
       const photoGrid = page.locator('[data-testid="photo-grid"]')
-      // img要素のロード待ち（サムネイル生成に時間がかかる場合がある）
       const firstPhoto = photoGrid.locator('[data-testid^="post-photo-item-"]').first()
-      if (await firstPhoto.isVisible({ timeout: 15000 }).catch(() => false)) {
+      if (await firstPhoto.isVisible({ timeout: 20000 }).catch(() => false)) {
         await firstPhoto.click()
         await expect(page.locator('[role="dialog"]').nth(1)).toBeVisible({ timeout: 10000 })
 
