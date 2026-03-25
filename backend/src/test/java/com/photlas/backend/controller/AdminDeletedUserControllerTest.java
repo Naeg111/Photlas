@@ -163,7 +163,9 @@ public class AdminDeletedUserControllerTest {
     }
 
     private User createDeletedUser(String email, String originalUsername, int daysAgo) {
-        User user = new User("deleted_" + System.nanoTime(), email,
+        // ユーザー名は@Size(max=12)制約があるため12文字以内にする
+        String shortId = String.valueOf(System.nanoTime() % 100000);
+        User user = new User("del_" + shortId, email,
                 new BCryptPasswordEncoder().encode("Pass1234"), USER_ROLE);
         user.setDeletedAt(LocalDateTime.now().minusDays(daysAgo));
         user.setOriginalUsername(originalUsername);

@@ -14,4 +14,9 @@ public interface ViolationRepository extends JpaRepository<Violation, Long> {
      * ユーザーIDで違反件数をカウント
      */
     long countByUserId(Long userId);
+
+    /**
+     * Issue#73: ユーザーIDで違反履歴を検索（新しい順）
+     */
+    java.util.List<Violation> findByUserIdOrderByCreatedAtDesc(Long userId);
 }
