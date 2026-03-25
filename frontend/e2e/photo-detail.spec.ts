@@ -81,8 +81,8 @@ async function createTestPost(page: Page, title: string): Promise<void> {
   await page.getByRole('button', { name: '投稿' }).click()
   await expect(page.getByRole('heading', { name: '写真を投稿' })).toBeVisible({ timeout: 5000 })
 
-  // 写真を選択
-  const testImagePath = getTestImagePath('small')
+  // EXIF付きJPEG画像を選択（カメラ情報テスト用）
+  const testImagePath = getTestImagePath('exif')
   await page.locator('input[type="file"]').setInputFiles(testImagePath)
   await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
 
@@ -90,12 +90,15 @@ async function createTestPost(page: Page, title: string): Promise<void> {
   const truncatedTitle = title.slice(0, 18)
   await page.getByPlaceholder('例：夕暮れの東京タワー').fill(truncatedTitle)
 
-  // カテゴリを選択（チェックボックスをクリック）
-  await page.getByRole('checkbox', { name: '風景' }).click()
-  await expect(page.getByRole('checkbox', { name: '風景' })).toBeChecked()
+  // カテゴリを選択（Issue#63: 風景→自然風景に変更）
+  await page.getByRole('checkbox', { name: '自然風景' }).click()
+  await expect(page.getByRole('checkbox', { name: '自然風景' })).toBeChecked()
 
   // 機材種別を選択
   await page.getByText('一眼レフ', { exact: true }).click()
+
+  // 天気を選択（天気情報テスト用）
+  await page.getByText('晴れ', { exact: true }).click()
 
   // 投稿ボタンが有効になることを確認
   const submitButton = page.getByRole('button', { name: '投稿する' })
@@ -678,36 +681,36 @@ test.describe('写真詳細・お気に入り機能', () => {
   // ============================================================
 
   test.describe('写真編集・削除', () => {
+    test.setTimeout(180000)
+
+    async function waitForOwnPin(page: Page): Promise<boolean> {
+      // 投稿後にモデレーション完了＋ピン表示を待機
+      for (let attempt = 0; attempt < 6; attempt++) {
+        await page.waitForTimeout(5000)
+        await page.reload()
+        await page.waitForTimeout(3000)
+        await flyToLocation(page, 139.6503, 35.6762, 14)
+
+        const { pinCount } = await findPinsAndClusters(page)
+        if (pinCount > 0) {
+          const clicked = await clickFirstPin(page)
+          if (clicked) {
+            await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 })
+            return true
+          }
+        }
+      }
+      return false
+    }
+
     test('自分の写真の場合、編集ボタンが表示される', async ({ page }) => {
       await createAccountAndLogin(page, 'edit-own')
+      await createTestPost(page, `編集テスト-${Date.now()}`)
 
-      // テスト投稿を作成
-      const testTitle = `編集テスト-${Date.now()}`
-      await createTestPost(page, testTitle)
-
-      // 地図をリロード
-      await page.reload()
-      await waitForSplash(page)
-      await waitForMapLoad(page)
-
-      // テスト投稿のデフォルト位置にズーム
-      await flyToLocation(page, 139.6503, 35.6762, 14)
-
-      // ピンをクリックして写真詳細を開く
-      const { pinCount } = await findPinsAndClusters(page)
-      if (pinCount > 0) {
-        const clicked = await clickFirstPin(page)
-        if (clicked) {
-          await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 })
-
-          // 編集ボタンが表示されることを確認
-          const editButton = page.locator('[data-testid="edit-button"]')
-          // 自分の写真でない場合もあるため、条件付きで確認
-          const isVisible = await editButton.isVisible().catch(() => false)
-          if (!isVisible) {
-            test.skip()
-          }
-        } else {
+      if (await waitForOwnPin(page)) {
+        const editButton = page.locator('[data-testid="edit-button"]')
+        const isVisible = await editButton.isVisible().catch(() => false)
+        if (!isVisible) {
           test.skip()
         }
       } else {
@@ -717,29 +720,12 @@ test.describe('写真詳細・お気に入り機能', () => {
 
     test('自分の写真の場合、削除ボタンが表示される', async ({ page }) => {
       await createAccountAndLogin(page, 'delete-own')
-
-      // テスト投稿を作成
       await createTestPost(page, `削除テスト-${Date.now()}`)
 
-      // 地図をリロード
-      await page.reload()
-      await waitForSplash(page)
-      await waitForMapLoad(page)
-
-      await flyToLocation(page, 139.6503, 35.6762, 14)
-
-      const { pinCount } = await findPinsAndClusters(page)
-      if (pinCount > 0) {
-        const clicked = await clickFirstPin(page)
-        if (clicked) {
-          await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 })
-
-          const deleteButton = page.locator('[data-testid="delete-button"]')
-          const isVisible = await deleteButton.isVisible().catch(() => false)
-          if (!isVisible) {
-            test.skip()
-          }
-        } else {
+      if (await waitForOwnPin(page)) {
+        const deleteButton = page.locator('[data-testid="delete-button"]')
+        const isVisible = await deleteButton.isVisible().catch(() => false)
+        if (!isVisible) {
           test.skip()
         }
       } else {
