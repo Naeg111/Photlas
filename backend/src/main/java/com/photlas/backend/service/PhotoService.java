@@ -179,6 +179,11 @@ public class PhotoService {
         User user = userRepository.findById(photo.getUserId())
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
+        // Issue#72: 退会済みユーザーの写真は非公開
+        if (user.getDeletedAt() != null) {
+            throw new PhotoNotFoundException("写真が見つかりません");
+        }
+
         // お気に入り状態をチェック
         boolean isFavorited = false;
         if (currentUser != null) {
