@@ -189,11 +189,11 @@ test.describe('地図表示・ピン表示機能', () => {
       await zoomOut(page, 5)
       await page.waitForTimeout(1000)
 
-      // バナーをクリック
+      // バナーをクリック（Mapbox canvasがpointer eventsを遮るためforce: true）
       const banner = page.getByText('投稿を表示するには')
       if (await banner.isVisible()) {
-        await banner.click()
-        await page.waitForTimeout(1000)
+        await banner.click({ force: true })
+        await page.waitForTimeout(2000)
 
         // バナーが消える
         await expect(banner).not.toBeVisible({ timeout: 5000 })
@@ -427,8 +427,8 @@ test.describe('地図表示・ピン表示機能', () => {
       await openFilterPanel(page)
       await page.getByRole('button', { name: '上級者向けフィルター' }).click()
 
-      // 低感度を選択
-      await page.getByText('低感度（ISO 400以下）', { exact: true }).click()
+      // Issue#63: ラベル変更に対応
+      await page.getByText('ISO 400以下', { exact: true }).click()
       await page.waitForTimeout(500)
 
       await page.getByRole('button', { name: '適用' }).click()

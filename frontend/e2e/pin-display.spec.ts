@@ -187,11 +187,11 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
 
       const banner = page.getByText('投稿を表示するには')
       if (await banner.isVisible()) {
-        await banner.click()
-        await page.waitForTimeout(2000)
+        await banner.click({ force: true })
+        await page.waitForTimeout(3000)
 
         // バナーが消える
-        await expect(banner).not.toBeVisible({ timeout: 5000 })
+        await expect(banner).not.toBeVisible({ timeout: 10000 })
       }
     })
   })

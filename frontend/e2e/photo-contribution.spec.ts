@@ -207,7 +207,7 @@ test.describe('写真投稿機能', () => {
     })
 
     test.describe('ファイルバリデーション', () => {
-      test.setTimeout(180000) // 大容量ファイルテストのため延長
+      test.setTimeout(300000) // 大容量ファイル転送のため延長（ステージング環境では5分）
       test('50MBを超えるファイルは選択できない', async ({ page }) => {
         await createAccountAndLogin(page, 'validation-size')
         await openPhotoContributionDialog(page)
@@ -215,8 +215,8 @@ test.describe('写真投稿機能', () => {
         // 大きいファイルを選択
         const largeImagePath = getTestImagePath('large')
 
-        // アラートハンドラーを設定（Promiseで確実にダイアログを待機）
-        const dialogPromise = page.waitForEvent('dialog')
+        // アラートハンドラーを設定（ファイル転送に時間がかかるため長めに待機）
+        const dialogPromise = page.waitForEvent('dialog', { timeout: 120000 })
 
         const fileInput = page.locator('input[type="file"]')
         await fileInput.setInputFiles(largeImagePath)
@@ -236,8 +236,8 @@ test.describe('写真投稿機能', () => {
         // 無効な形式のファイルを選択
         const invalidImagePath = getTestImagePath('invalid')
 
-        // アラートハンドラーを設定（Promiseで確実にダイアログを待機）
-        const dialogPromise = page.waitForEvent('dialog')
+        // アラートハンドラーを設定
+        const dialogPromise = page.waitForEvent('dialog', { timeout: 120000 })
 
         const fileInput = page.locator('input[type="file"]')
         await fileInput.setInputFiles(invalidImagePath)
