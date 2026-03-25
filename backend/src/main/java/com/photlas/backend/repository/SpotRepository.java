@@ -72,8 +72,10 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
             (
                 SELECT p2.s3_object_key
                 FROM photos p2
+                INNER JOIN users u2 ON p2.user_id = u2.id
                 WHERE p2.spot_id = s.spot_id
                   AND p2.moderation_status = 'PUBLISHED'
+                  AND u2.deleted_at IS NULL
                   AND (-1 IN (:months) OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
                   AND ('__NONE__' IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
                   AND ('__NONE__' IN (:weathers) OR p2.weather IN (:weathers))
@@ -136,8 +138,10 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
             (
                 SELECT p2.s3_object_key
                 FROM photos p2
+                INNER JOIN users u2 ON p2.user_id = u2.id
                 WHERE p2.spot_id = s.spot_id
                   AND p2.moderation_status = 'PUBLISHED'
+                  AND u2.deleted_at IS NULL
                   AND (-1 IN (:months) OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
                   AND ('__NONE__' IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
                   AND ('__NONE__' IN (:weathers) OR p2.weather IN (:weathers))
