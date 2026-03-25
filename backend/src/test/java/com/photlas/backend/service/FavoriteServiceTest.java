@@ -271,4 +271,46 @@ public class FavoriteServiceTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("公開中の写真のみ");
     }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    @DisplayName("Issue#72 - getFavorites: 退会済みユーザーの写真がお気に入り一覧から除外される")
+    void getFavorites_ExcludesDeletedUserPhotos() {
+        // Given
+        User user = createTestUser();
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+
+        // 退会済みユーザーの写真をお気に入りに登録している状態
+        User deletedUser = new User("退会済み", "deleted@example.com", "hash", "USER");
+        deletedUser.setId(99L);
+        deletedUser.setDeletedAt(LocalDateTime.now().minusDays(10));
+
+        Photo deletedUserPhoto = new Photo();
+        deletedUserPhoto.setPhotoId(20L);
+        deletedUserPhoto.setUserId(99L);
+        deletedUserPhoto.setSpotId(100L);
+        deletedUserPhoto.setS3ObjectKey("photos/deleted.jpg");
+        deletedUserPhoto.setTitle("退会済みユーザーの写真");
+        deletedUserPhoto.setModerationStatus(ModerationStatus.PUBLISHED);
+
+        Favorite favorite = new Favorite();
+        favorite.setUserId(TEST_USER_ID);
+        favorite.setPhotoId(20L);
+
+        Page<Favorite> favoritePage = new PageImpl<>(
+                List.of(favorite),
+                PageRequest.of(0, 10),
+                1
+        );
+        when(favoriteRepository.findByUserId(eq(TEST_USER_ID), any())).thenReturn(favoritePage);
+        when(photoRepository.findById(20L)).thenReturn(Optional.of(deletedUserPhoto));
+        when(userRepository.findById(99L)).thenReturn(Optional.of(deletedUser));
+
+        // When
+        Map<String, Object> result = favoriteService.getFavorites(TEST_EMAIL, 0, 10);
+
+        // Then: 退会済みユーザーの写真は結果に含まれない
+        List<?> content = (List<?>) result.get("content");
+        assertThat(content).isEmpty();
+    }
 }

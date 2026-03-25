@@ -1047,4 +1047,35 @@ public class PhotoControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ============================================================
+    // Issue#72: 退会済みユーザーの写真非公開テスト
+    // ============================================================
+
+    @Test
+    @DisplayName("Issue#72 - 退会済みユーザーの写真詳細は404を返す")
+    void testGetPhotoDetail_DeletedUser_Returns404() throws Exception {
+        // 退会済みユーザーを作成
+        User deletedUser = new User();
+        deletedUser.setUsername("deletedphoto");
+        deletedUser.setEmail("deletedphoto@example.com");
+        deletedUser.setPasswordHash(TEST_PASSWORD_HASH);
+        deletedUser.setRole(USER_ROLE);
+        deletedUser.setDeletedAt(LocalDateTime.now().minusDays(1));
+        deletedUser = userRepository.save(deletedUser);
+
+        Spot spot = createSpot(new BigDecimal("35.658581"), new BigDecimal("139.745433"));
+
+        Photo photo = new Photo();
+        photo.setTitle("deleted user photo");
+        photo.setS3ObjectKey("photos/deleted-user-" + System.nanoTime() + ".jpg");
+        photo.setShotAt(LocalDateTime.now());
+        photo.setUserId(deletedUser.getId());
+        photo.setSpotId(spot.getSpotId());
+        photo.setModerationStatus(com.photlas.backend.entity.ModerationStatus.PUBLISHED);
+        photo = photoRepository.save(photo);
+
+        mockMvc.perform(get(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
+                .andExpect(status().isNotFound());
+    }
 }
