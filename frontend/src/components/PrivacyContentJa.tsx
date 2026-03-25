@@ -45,14 +45,13 @@ export function PrivacyContentJa() {
         <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（3）投稿データ</h3>
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
           <li>写真ファイル</li>
-          <li>タイトル、施設名、タグ、カテゴリ、天気情報</li>
+          <li>タイトル、施設名、カテゴリ、天気情報</li>
         </ul>
 
         <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（4）写真メタデータ（EXIF情報）</h3>
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
           <li>撮影日時</li>
           <li>GPS座標（緯度・経度）</li>
-          <li>撮影方向</li>
           <li>カメラ本体名</li>
           <li>レンズ名</li>
           <li>焦点距離、F値、シャッタースピード、ISO感度</li>
@@ -213,7 +212,7 @@ export function PrivacyContentJa() {
             </ul>
           </li>
           <li>
-            本サービスでは、Google Analytics 4を利用しており、Googleがアクセス情報の収集のためにCookieを使用する場合があります。収集されるデータは匿名化されており、個人を特定するものではありません。
+            本サービスでは、Google Analytics 4を利用しており、Googleがアクセス情報の収集のためにCookieを使用する場合があります。収集されるデータは匿名化されており、個人を特定するものではありません。初回訪問時にCookie同意バナーが表示され、ユーザーは同意または拒否を選択できます。同意した場合はCookieを使用したフル計測が行われ、拒否した場合はCookieを使用しない匿名の基本計測のみが行われます。
           </li>
           <li>
             その他の外部サービス（Mapbox、Sentry等）が独自にCookieを使用する場合があります。これらのCookieの取り扱いについては、各サービスのプライバシーポリシーをご確認ください。
@@ -249,7 +248,7 @@ export function PrivacyContentJa() {
             <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
               <li>アカウント情報（メールアドレス、ユーザー名等）</li>
               <li>プロフィール情報（プロフィール画像、SNSアカウントリンク）</li>
-              <li>投稿データ（写真ファイル、メタデータ、タグ等）</li>
+              <li>投稿データ（写真ファイル、メタデータ等）</li>
               <li>お気に入り・通報情報</li>
             </ul>
           </li>
@@ -312,7 +311,7 @@ export function PrivacyContentJa() {
           <li><span className="font-semibold">処理の制限権</span>：個人データの処理の制限を請求する権利</li>
           <li><span className="font-semibold">データポータビリティ権</span>：個人データを構造化された機械可読な形式で受け取る権利</li>
           <li><span className="font-semibold">異議申立権</span>：正当な利益に基づく処理に対して異議を申し立てる権利</li>
-          <li><span className="font-semibold">同意の撤回権</span>：同意に基づく処理について、いつでも同意を撤回する権利（ブラウザのlocalStorageをクリアすることでCookie同意を撤回できます）</li>
+          <li><span className="font-semibold">同意の撤回権</span>：同意に基づく処理について、いつでも同意を撤回する権利（ブラウザの設定から本サイトのサイトデータを削除すると、Cookie同意バナーが再表示され、同意を撤回できます）</li>
         </ul>
       </section>
 
