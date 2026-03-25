@@ -731,7 +731,7 @@ test.describe('写真詳細・お気に入り機能', () => {
       await page.waitForTimeout(5000)
 
       if (await openOwnLatestPhoto(page)) {
-        const editButton = page.locator('[data-testid="edit-button"]')
+        const editButton = page.getByRole('button', { name: '写真情報を編集' })
         await expect(editButton).toBeVisible({ timeout: 10000 })
       } else {
         test.skip()
@@ -745,7 +745,7 @@ test.describe('写真詳細・お気に入り機能', () => {
       await page.waitForTimeout(5000)
 
       if (await openOwnLatestPhoto(page)) {
-        const deleteButton = page.locator('[data-testid="delete-button"]')
+        const deleteButton = page.getByRole('button', { name: 'この写真を削除' })
         await expect(deleteButton).toBeVisible({ timeout: 10000 })
       } else {
         test.skip()
