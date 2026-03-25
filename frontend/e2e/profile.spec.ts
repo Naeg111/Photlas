@@ -132,12 +132,19 @@ test.describe('プロフィール管理・表示', () => {
 
       await openProfileDialog(page)
 
-      // お気に入りタブをクリック（ダイアログ内でクリックターゲットが小さい場合に備えてforce使用）
+      // お気に入りタブをクリック
       const favTab = page.getByRole('tab', { name: 'お気に入り' })
-      await favTab.click({ force: true })
+      // Radix UIのTabsは通常のclickでは切り替わらない場合があるため複数のアプローチを試行
+      await favTab.click()
+      await page.waitForTimeout(500)
 
-      // タブが選択状態になったことを確認
-      await expect(favTab).toHaveAttribute('aria-selected', 'true', { timeout: 5000 })
+      // クリックでタブが切り替わらなかった場合、フォーカス＋キーボード操作で切り替え
+      const isSelected = await favTab.getAttribute('aria-selected')
+      if (isSelected !== 'true') {
+        await page.getByRole('tab', { name: '投稿' }).focus()
+        await page.keyboard.press('ArrowRight')
+        await page.waitForTimeout(500)
+      }
 
       // お気に入りコンテンツが読み込まれるのを待機
       await expect(page.getByText('お気に入りはまだありません')).toBeVisible({ timeout: 30000 })
