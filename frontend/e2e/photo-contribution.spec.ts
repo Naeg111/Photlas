@@ -211,13 +211,16 @@ test.describe('写真投稿機能', () => {
         await createAccountAndLogin(page, 'validation-size')
         await openPhotoContributionDialog(page)
 
-        // ブラウザ内で小さなBlobからsizeプロパティを偽装したFileオブジェクトを生成
-        const dialogPromise = page.waitForEvent('dialog', { timeout: 10000 })
+        // ダイアログハンドラーを先に設定（evaluate内のalertでデッドロックを防止）
+        let dialogMessage = ''
+        page.on('dialog', async (dialog) => {
+          dialogMessage = dialog.message()
+          await dialog.accept()
+        })
 
         await page.evaluate(() => {
           const smallBlob = new Blob(['x'], { type: 'image/jpeg' })
           const largeFile = new File([smallBlob], 'large.jpg', { type: 'image/jpeg' })
-          // sizeプロパティを偽装（51MB）
           Object.defineProperty(largeFile, 'size', { value: 51 * 1024 * 1024 })
           const dataTransfer = new DataTransfer()
           dataTransfer.items.add(largeFile)
@@ -226,9 +229,8 @@ test.describe('写真投稿機能', () => {
           fileInput.dispatchEvent(new Event('change', { bubbles: true }))
         })
 
-        const dialog = await dialogPromise
-        expect(dialog.message()).toContain('50MB')
-        await dialog.accept()
+        await page.waitForTimeout(1000)
+        expect(dialogMessage).toContain('50MB')
 
         // プレビューが表示されないことを確認
         await expect(page.locator('[data-testid="photo-crop-area"]')).not.toBeVisible()
@@ -238,12 +240,15 @@ test.describe('写真投稿機能', () => {
         await createAccountAndLogin(page, 'validation-format')
         await openPhotoContributionDialog(page)
 
-        // ブラウザ内でGIFのFileオブジェクトを直接生成
-        const dialogPromise = page.waitForEvent('dialog', { timeout: 10000 })
+        let dialogMessage = ''
+        page.on('dialog', async (dialog) => {
+          dialogMessage = dialog.message()
+          await dialog.accept()
+        })
 
         await page.evaluate(() => {
           const gifFile = new File(
-            [new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61])], // GIF89a header
+            [new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61])],
             'test.gif',
             { type: 'image/gif' }
           )
@@ -254,9 +259,8 @@ test.describe('写真投稿機能', () => {
           fileInput.dispatchEvent(new Event('change', { bubbles: true }))
         })
 
-        const dialog = await dialogPromise
-        expect(dialog.message()).toContain('JPEG、PNG、HEIC')
-        await dialog.accept()
+        await page.waitForTimeout(1000)
+        expect(dialogMessage).toContain('JPEG、PNG、HEIC')
 
         // プレビューが表示されないことを確認
         await expect(page.locator('[data-testid="photo-crop-area"]')).not.toBeVisible()
