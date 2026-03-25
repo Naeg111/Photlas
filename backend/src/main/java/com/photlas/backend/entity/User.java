@@ -57,6 +57,9 @@ public class User {
     @Column(name = "original_username", length = 12)
     private String originalUsername;
 
+    @Column(name = "deletion_hold_until")
+    private LocalDateTime deletionHoldUntil;
+
     public User() {}
 
     public User(String username, String email, String passwordHash, String role) {
@@ -153,6 +156,14 @@ public class User {
 
     public void setOriginalUsername(String originalUsername) {
         this.originalUsername = originalUsername;
+    }
+
+    public LocalDateTime getDeletionHoldUntil() {
+        return deletionHoldUntil;
+    }
+
+    public void setDeletionHoldUntil(LocalDateTime deletionHoldUntil) {
+        this.deletionHoldUntil = deletionHoldUntil;
     }
 
     @Override

@@ -405,7 +405,7 @@ public class UserServiceTest {
         verify(userRepository).save(argThat(u ->
                 TEST_USERNAME.equals(u.getOriginalUsername()) &&
                 !TEST_USERNAME.equals(u.getUsername()) &&
-                u.getUsername().startsWith("deleted_")
+                u.getUsername().startsWith("d_")
         ));
     }
 

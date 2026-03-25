@@ -570,7 +570,7 @@ public class UserService {
 
         // ユーザー名を保存してからランダム文字列に書き換え（UNIQUE制約を解放）
         user.setOriginalUsername(user.getUsername());
-        user.setUsername("deleted_" + UUID.randomUUID().toString().substring(0, 8));
+        user.setUsername("d_" + UUID.randomUUID().toString().substring(0, 10));
 
         // ソフトデリート
         user.setDeletedAt(java.time.LocalDateTime.now());
