@@ -57,7 +57,8 @@ async function flyToLocation(page: Page, lng: number, lat: number, zoom: number)
  * 東京駅付近（中央区テストデータ密集エリア）にズームしてピンを表示
  */
 async function zoomInToShowPins(page: Page): Promise<void> {
-  await flyToLocation(page, 139.7671, 35.6812, 15)
+  // InlineMapPickerのDEFAULT_CENTER（新宿）に移動 - E2Eテストの投稿はここに作成される
+  await flyToLocation(page, 139.6503, 35.6762, 14)
 }
 
 /**
