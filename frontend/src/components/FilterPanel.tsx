@@ -149,7 +149,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <div data-testid="filter-scroll-container" className="h-full overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))]">
+        <div data-testid="filter-scroll-container" className="h-full overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))]" style={{ touchAction: 'manipulation' }}>
         <div className="space-y-[30px] pb-6 mt-[40px]">
           {/* Issue#63: 写真のジャンル */}
           <div>
@@ -205,18 +205,19 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
                 const isSelected = selectedMonths.includes(month);
                 const needsInvert = MONTHS_NEED_INVERT.includes(month);
                 return (
-                  <Button
+                  <button
                     key={month}
-                    variant={isSelected ? "default" : "outline"}
-                    className={`flex items-center gap-1.5 justify-center px-2 ${isSelected ? "hover:bg-primary" : "hover:bg-background hover:text-foreground"} ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
+                    type="button"
+                    className={`inline-flex items-center gap-1.5 justify-center px-2 h-9 rounded-md text-sm font-medium transition-colors ${isSelected ? "bg-primary text-primary-foreground" : "bg-background text-foreground"} ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
                     style={{ border: '1px solid #d1d5db' }}
-                    onClick={() =>
+                    onPointerDown={(e) => {
+                      e.preventDefault()
                       toggleSelection(month, selectedMonths, setSelectedMonths)
-                    }
+                    }}
                   >
                     {Icon && <Icon className="w-5 h-5 shrink-0" />}
                     <span className="text-sm">{month}</span>
-                  </Button>
+                  </button>
                 );
               })}
             </div>
