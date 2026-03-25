@@ -362,6 +362,58 @@ public class UserServiceTest {
         verify(userRepository).save(argThat(u -> NEW_USERNAME.equals(u.getUsername())));
     }
 
+    // ===== Issue#72: ソフトデリート（論理削除） =====
+
+    @Test
+    @DisplayName("Issue#72 - アカウント削除: deleted_atが設定され、物理削除されない")
+    void testDeleteAccount_SetsDeletedAt_DoesNotPhysicallyDelete() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        userService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+
+        // 物理削除が呼ばれていないことを確認
+        verify(userRepository, never()).delete(any(User.class));
+        // saveが呼ばれ、deleted_atが設定されていることを確認
+        verify(userRepository).save(argThat(u ->
+                u.getDeletedAt() != null
+        ));
+    }
+
+    @Test
+    @DisplayName("Issue#72 - アカウント削除: ユーザー名がランダム文字列に書き換わり、original_usernameに元の値が保存される")
+    void testDeleteAccount_RandomizesUsername_PreservesOriginal() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        userService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+
+        verify(userRepository).save(argThat(u ->
+                TEST_USERNAME.equals(u.getOriginalUsername()) &&
+                !TEST_USERNAME.equals(u.getUsername()) &&
+                u.getUsername().startsWith("deleted_")
+        ));
+    }
+
+    @Test
+    @DisplayName("Issue#72 - ログイン: 退会済みユーザーはログインできない")
+    void testLoginUser_DeletedUser_ThrowsUnauthorized() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        user.setEmailVerified(true);
+        user.setDeletedAt(java.time.LocalDateTime.now());
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+
+        LoginRequest request = new LoginRequest(TEST_EMAIL, CURRENT_PASSWORD);
+
+        assertThatThrownBy(() -> userService.loginUser(request))
+                .isInstanceOf(UnauthorizedException.class);
+    }
+
     // ===== ヘルパーメソッド =====
 
     private User createMockUser(Long id, String email, String username) {

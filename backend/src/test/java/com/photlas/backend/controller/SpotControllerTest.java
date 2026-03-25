@@ -1156,4 +1156,47 @@ public class SpotControllerTest {
         photo.setCategories(categories);
         return photoRepository.save(photo);
     }
+
+    // ============================================================
+    // Issue#72: ソフトデリート - 退会済みユーザーの写真除外テスト
+    // ============================================================
+
+    @Test
+    @DisplayName("Issue#72 - 退会済みユーザーの写真はスポット検索結果に含まれない")
+    void testGetSpots_DeletedUserPhotos_ExcludedFromResults() throws Exception {
+        // 退会済みユーザーを作成
+        User deletedUser = new User();
+        deletedUser.setUsername("deleteduser");
+        deletedUser.setEmail("deleted@example.com");
+        deletedUser.setPasswordHash(TEST_PASSWORD_HASH);
+        deletedUser.setRole(USER_ROLE);
+        deletedUser.setDeletedAt(LocalDateTime.now().minusDays(1));
+        deletedUser = userRepository.save(deletedUser);
+
+        // 退会済みユーザーの写真のみのスポット
+        Spot spot = new Spot();
+        spot.setLatitude(TEST_LATITUDE);
+        spot.setLongitude(TEST_LONGITUDE);
+        spot.setCreatedByUserId(deletedUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setTitle(TEST_PHOTO_TITLE);
+        photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-deleted-" + System.nanoTime());
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(deletedUser.getId());
+        photo.setShotAt(TEST_SHOT_AT);
+        photo.setWeather(WEATHER_SUNNY);
+        photo.setModerationStatus(ModerationStatus.PUBLISHED);
+        photoRepository.save(photo);
+
+        // 検索結果に含まれないことを確認
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
 }
