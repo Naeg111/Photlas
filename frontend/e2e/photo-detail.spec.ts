@@ -532,9 +532,6 @@ test.describe('写真詳細・お気に入り機能', () => {
         await expect(weatherLabel).toBeVisible({ timeout: 10000 })
       } else {
         test.skip()
-        }
-      } else {
-        test.skip()
       }
     })
   })
