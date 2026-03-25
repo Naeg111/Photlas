@@ -49,6 +49,24 @@ const PIN_COLOR_THRESHOLDS = {
 }
 
 /**
+ * 地図を指定座標・ズームに移動
+ */
+async function flyToLocation(page: Page, lng: number, lat: number, zoom: number): Promise<void> {
+  await page.evaluate(({ lng, lat, zoom }) => {
+    return new Promise<void>((resolve) => {
+      const map = (window as unknown as Record<string, any>).__photlas_map
+      if (map?.flyTo) {
+        map.once('moveend', () => resolve())
+        map.flyTo({ center: [lng, lat], zoom, duration: 300 })
+      } else {
+        resolve()
+      }
+    })
+  }, { lng, lat, zoom })
+  await page.waitForTimeout(2000)
+}
+
+/**
  * 投稿ダイアログを開く
  */
 async function openPhotoContributionDialog(page: Page): Promise<void> {
@@ -249,8 +267,8 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
 
   test.describe('クラスタリング表示', () => {
     test('ズームアウト時にピンがクラスタとして統合される', async ({ page }) => {
-      // まずズームインしてピンが表示されるのを確認
-      await zoomIn(page, 3)
+      // 投稿データがある新宿付近に移動してからズームイン
+      await flyToLocation(page, 139.6503, 35.6762, 14)
       await page.waitForTimeout(3000)
 
       const beforePins = await findPinsAndClusters(page)
@@ -353,14 +371,14 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       // 投稿実行
       await submitPhoto(page, { title: 'ピン表示テスト', category: '自然風景' })
 
-      // モデレーション完了を待機（最大60秒、10秒間隔でリロード＆確認）
+      // 投稿のデフォルト位置（新宿: InlineMapPickerのDEFAULT_CENTER）に移動
+      // 地図の初期位置（東京駅付近）とは約10km離れているため移動が必要
+      await flyToLocation(page, 139.6503, 35.6762, 14)
+
+      // モデレーション完了を待機（最大30秒、5秒間隔でリトライ）
       let found = false
       for (let attempt = 0; attempt < 6; attempt++) {
-        await page.waitForTimeout(10000)
-        await page.reload()
-        await page.waitForTimeout(3000)
-        await zoomIn(page, 2)
-        await page.waitForTimeout(3000)
+        await page.waitForTimeout(5000)
 
         try {
           const result = await findPinsAndClusters(page)
@@ -371,10 +389,16 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
         } catch {
           // 続行
         }
+
+        // ピンが見つからない場合、リロードして再取得
+        if (!found && attempt < 5) {
+          await page.reload()
+          await page.waitForTimeout(3000)
+          await flyToLocation(page, 139.6503, 35.6762, 14)
+        }
       }
 
       if (!found) {
-        // モデレーション未完了の場合はスキップ
         test.skip()
       }
     })
@@ -386,9 +410,8 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       // タイトルなしで投稿
       await submitPhoto(page, { category: '自然風景' })
 
-      // 地図でピンを確認
-      await page.waitForTimeout(2000)
-      await zoomIn(page, 2)
+      // 投稿のデフォルト位置（新宿）に移動
+      await flyToLocation(page, 139.6503, 35.6762, 14)
       await page.waitForTimeout(3000)
 
       // エラーなく地図が表示されている
