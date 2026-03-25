@@ -180,19 +180,21 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       await expect(banner).toBeVisible({ timeout: 15000 })
     })
 
-    test('バナークリックでズームレベル11に復帰しピンが再表示される', async ({ page }) => {
-      // ズームアウト
+    test('ズームインするとバナーが消えピンが再表示される', async ({ page }) => {
+      // ズームアウトしてバナーを表示
       await zoomOut(page, 5)
       await page.waitForTimeout(1000)
 
       const banner = page.getByText('投稿を表示するには')
-      if (await banner.isVisible()) {
-        await banner.click({ force: true })
-        await page.waitForTimeout(3000)
+      await expect(banner).toBeVisible({ timeout: 10000 })
 
-        // バナーが消える
-        await expect(banner).not.toBeVisible({ timeout: 10000 })
-      }
+      // Issue#68: バナーは静的メッセージ（pointer-events-none）のためクリック不可
+      // ズームインして復帰
+      await zoomIn(page, 5)
+      await page.waitForTimeout(3000)
+
+      // バナーが消える
+      await expect(banner).not.toBeVisible({ timeout: 10000 })
     })
   })
 
