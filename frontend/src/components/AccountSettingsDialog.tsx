@@ -44,6 +44,7 @@ export function AccountSettingsDialog({
   const [deletePassword, setDeletePassword] = useState("");
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isDeletionComplete, setIsDeletionComplete] = useState(false);
 
   // メールアドレス変更処理
   const handleEmailChange = async () => {
@@ -190,12 +191,8 @@ export function AccountSettingsDialog({
       );
 
       if (response.status === 204) {
-        toast.success("アカウントを削除しました");
-        // AuthContextで認証状態をクリア（auth_token, auth_user）
-        logout();
-        // トップページにリダイレクト
-        navigate("/");
-        onOpenChange(false);
+        // Issue#72: 退会完了メッセージを表示
+        setIsDeletionComplete(true);
       } else if (response.status === 401) {
         toast.error("パスワードが正しくありません");
         setIsAlertOpen(false);
@@ -212,8 +209,37 @@ export function AccountSettingsDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={isDeletionComplete ? undefined : onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        {isDeletionComplete ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>退会手続き完了</DialogTitle>
+              <DialogDescription className="sr-only">
+                退会手続きが完了しました
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 mt-3 text-center">
+              <p className="text-sm text-gray-700">
+                アカウントの削除を受け付けました。
+              </p>
+              <p className="text-sm text-gray-700">
+                90日後にすべてのデータが完全に削除されます。
+              </p>
+              <Button
+                className="w-full mt-4"
+                onClick={() => {
+                  logout();
+                  navigate("/");
+                  onOpenChange(false);
+                }}
+              >
+                閉じる
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
         <DialogHeader>
           <DialogTitle>アカウント設定</DialogTitle>
           <DialogDescription className="sr-only">
@@ -376,6 +402,8 @@ export function AccountSettingsDialog({
             </AlertDialog>
           </div>
         </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
