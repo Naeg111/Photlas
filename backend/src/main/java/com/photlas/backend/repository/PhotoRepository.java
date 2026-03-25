@@ -77,4 +77,22 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
      * Issue#54: 指定ステータスで指定日時より前に更新された写真を取得（物理削除用）
      */
     List<Photo> findByModerationStatusAndUpdatedAtBefore(ModerationStatus status, LocalDateTime updatedAt);
+
+    /**
+     * Issue#72: 指定ユーザーの全写真を取得
+     */
+    List<Photo> findByUserId(Long userId);
+
+    /**
+     * Issue#72: 指定スポットに写真を投稿しているアクティブユーザーのうち最も古い投稿者を取得
+     */
+    @org.springframework.data.jpa.repository.Query(
+        value = "SELECT u.* FROM users u " +
+                "INNER JOIN photos p ON u.id = p.user_id " +
+                "WHERE p.spot_id = :spotId AND u.id != :excludeUserId AND u.deleted_at IS NULL " +
+                "ORDER BY p.created_at ASC LIMIT 1",
+        nativeQuery = true)
+    java.util.Optional<com.photlas.backend.entity.User> findOldestActiveUserBySpotExcluding(
+        @org.springframework.data.repository.query.Param("spotId") Long spotId,
+        @org.springframework.data.repository.query.Param("excludeUserId") Long excludeUserId);
 }

@@ -80,15 +80,26 @@ public class AccountCleanupServiceTest {
     @Test
     @DisplayName("Issue#72 - 物理削除後に孤立スポットが削除される")
     void testCleanup_DeletesOrphanedSpots() {
+        // アクティブユーザー（スポットの所有者になる）
+        User activeUser = new User();
+        activeUser.setUsername("active");
+        activeUser.setEmail("active@example.com");
+        activeUser.setPasswordHash("hashedpassword");
+        activeUser.setRole("USER");
+        activeUser = userRepository.save(activeUser);
+
+        // 退会済みユーザー
         User deletedUser = createDeletedUser("orphan@example.com", "orphan",
                 LocalDateTime.now().minusDays(91));
 
+        // スポットはアクティブユーザーが所有者（CASCADEで消えないようにする）
         Spot spot = new Spot();
         spot.setLatitude(new BigDecimal("35.658581"));
         spot.setLongitude(new BigDecimal("139.745433"));
-        spot.setCreatedByUserId(deletedUser.getId());
+        spot.setCreatedByUserId(activeUser.getId());
         spot = spotRepository.save(spot);
 
+        // 退会済みユーザーの写真のみがこのスポットに紐づく
         Photo photo = new Photo();
         photo.setTitle("orphan photo");
         photo.setS3ObjectKey("photos/orphan-" + System.nanoTime() + ".jpg");
@@ -100,9 +111,16 @@ public class AccountCleanupServiceTest {
         entityManager.flush();
         entityManager.clear();
 
+        Long spotId = spot.getSpotId();
+
         cleanupService.cleanupDeletedAccounts();
 
-        assertThat(spotRepository.findById(spot.getSpotId())).isEmpty();
+        entityManager.flush();
+        entityManager.clear();
+
+        // 退会済みユーザーの物理削除後、写真もCASCADEで削除され、
+        // スポットに写真が0件になるため孤立スポットとして削除される
+        assertThat(spotRepository.findById(spotId)).isEmpty();
     }
 
     private User createDeletedUser(String email, String username, LocalDateTime deletedAt) {

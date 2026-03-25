@@ -4,6 +4,8 @@ import com.photlas.backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -44,4 +46,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return ユーザー（存在しない場合はOptional.empty()）
      */
     Optional<User> findByProfileImageS3Key(String profileImageS3Key);
+
+    /**
+     * Issue#72: 退会済みで指定日時より前にdeleted_atが設定されたユーザーを取得
+     */
+    List<User> findByDeletedAtIsNotNullAndDeletedAtBefore(LocalDateTime cutoff);
 }

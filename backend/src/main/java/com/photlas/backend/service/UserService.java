@@ -14,8 +14,11 @@ import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.entity.EmailVerificationToken;
+import com.photlas.backend.entity.Spot;
 import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
+import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.repository.UserSnsLinkRepository;
 import org.slf4j.Logger;
@@ -65,6 +68,8 @@ public class UserService {
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final UserSnsLinkRepository userSnsLinkRepository;
     private final S3Service s3Service;
+    private final SpotRepository spotRepository;
+    private final PhotoRepository photoRepository;
 
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
@@ -77,7 +82,9 @@ public class UserService {
             PasswordResetTokenRepository passwordResetTokenRepository,
             EmailVerificationTokenRepository emailVerificationTokenRepository,
             UserSnsLinkRepository userSnsLinkRepository,
-            S3Service s3Service) {
+            S3Service s3Service,
+            SpotRepository spotRepository,
+            PhotoRepository photoRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -86,6 +93,8 @@ public class UserService {
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.userSnsLinkRepository = userSnsLinkRepository;
         this.s3Service = s3Service;
+        this.spotRepository = spotRepository;
+        this.photoRepository = photoRepository;
     }
 
     /**
@@ -98,6 +107,11 @@ public class UserService {
      */
     public RegisterResponse registerUser(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
+            // Issue#72: 退会済みメールアドレスの場合は専用メッセージ
+            Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+            if (existingUser.isPresent() && existingUser.get().getDeletedAt() != null) {
+                throw new ConflictException("このメールアドレスは退会処理中のため、現在ご利用いただけません");
+            }
             throw new ConflictException("このメールアドレスは既に登録されています");
         }
 
@@ -551,6 +565,9 @@ public class UserService {
             throw new UnauthorizedException("パスワードが正しくありません");
         }
 
+        // Issue#72: スポット所有権の移転
+        transferSpotOwnership(user);
+
         // ユーザー名を保存してからランダム文字列に書き換え（UNIQUE制約を解放）
         user.setOriginalUsername(user.getUsername());
         user.setUsername("deleted_" + UUID.randomUUID().toString().substring(0, 8));
@@ -558,6 +575,19 @@ public class UserService {
         // ソフトデリート
         user.setDeletedAt(java.time.LocalDateTime.now());
         userRepository.save(user);
+    }
+
+    /**
+     * Issue#72: スポット所有権の移転
+     * 退会ユーザーが作成者であるスポットについて、他のアクティブユーザーに所有権を移転する。
+     */
+    private void transferSpotOwnership(User deletingUser) {
+        List<Spot> ownedSpots = spotRepository.findByCreatedByUserId(deletingUser.getId());
+        for (Spot spot : ownedSpots) {
+            Optional<User> nextOwner = photoRepository
+                    .findOldestActiveUserBySpotExcluding(spot.getSpotId(), deletingUser.getId());
+            nextOwner.ifPresent(owner -> spot.setCreatedByUserId(owner.getId()));
+        }
     }
 
     // ============================================================
