@@ -81,6 +81,7 @@ export function PrivacyContentEn() {
           <li>Favorites information</li>
           <li>Report information (reason for report, reported content)</li>
           <li>Content moderation information (review results, violation history, sanction information)</li>
+          <li>Location suggestion data (suggested coordinates, suggestion status)</li>
         </ul>
 
         <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">(7) Technical Information</h3>
@@ -410,7 +411,7 @@ export function PrivacyContentEn() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           Enacted: February 16, 2026<br />
-          Last revised: March 22, 2026
+          Last revised: March 25, 2026
         </p>
       </section>
     </div>
