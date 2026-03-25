@@ -84,6 +84,9 @@ async function submitPhoto(
   await page.getByRole('checkbox', { name: category }).click()
   await expect(page.getByRole('checkbox', { name: category })).toBeChecked()
 
+  // 機材種別選択（必須項目）
+  await page.getByText('スマートフォン', { exact: true }).click()
+
   // 投稿ボタンが有効になるのを待機
   const submitButton = page.getByRole('button', { name: '投稿する' })
   await expect(submitButton).toBeEnabled({ timeout: 5000 })
@@ -248,17 +251,16 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
     test('ズームアウト時にピンがクラスタとして統合される', async ({ page }) => {
       // まずズームインしてピンを確認
       await zoomIn(page, 3)
-      await page.waitForTimeout(2000)
+      await page.waitForTimeout(3000)
 
       const beforePins = await findPinsAndClusters(page)
       const beforeTotal = beforePins.pinCount + beforePins.clusterCount
 
-      // ズームアウトしてクラスタリングを促す
-      await zoomOut(page, 2)
-      await page.waitForTimeout(2000)
+      // ズームアウトしてクラスタリングを促す（ズームアウトしすぎるとバナーが出るため1段階のみ）
+      await zoomOut(page, 1)
+      await page.waitForTimeout(4000) // モバイルではレンダリングに時間がかかる
 
       // ズームアウト後にピン/クラスタが存在すること
-      // クラスタリングが機能していれば、個別ピンの数が減るかクラスタが表示される
       const afterPins = await findPinsAndClusters(page)
 
       // バナーが出ない範囲ならピン/クラスタが表示されている
@@ -266,7 +268,6 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       const isBannerVisible = await banner.isVisible().catch(() => false)
       if (!isBannerVisible) {
         const afterTotal = afterPins.pinCount + afterPins.clusterCount
-        // データが存在する場合、何らかのマーカーが表示されている
         expect(afterTotal).toBeGreaterThan(0)
       }
     })

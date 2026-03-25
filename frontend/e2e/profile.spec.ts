@@ -132,9 +132,12 @@ test.describe('プロフィール管理・表示', () => {
       await openProfileDialog(page)
 
       // お気に入りタブをクリック
-      await page.getByRole('tab', { name: 'お気に入り' }).click()
+      const favTab = page.getByRole('tab', { name: 'お気に入り' })
+      await favTab.click()
+      await expect(favTab).toHaveAttribute('aria-selected', 'true', { timeout: 5000 })
+      await page.waitForTimeout(2000) // API応答待ち
 
-      // 空メッセージが表示される（ローディング完了を待つため長めのタイムアウト）
+      // 空メッセージが表示される
       await expect(page.getByText('お気に入りはまだありません')).toBeVisible({ timeout: 30000 })
     })
   })
