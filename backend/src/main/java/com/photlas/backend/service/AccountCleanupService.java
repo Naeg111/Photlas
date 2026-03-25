@@ -45,7 +45,7 @@ public class AccountCleanupService {
     @Transactional
     public void cleanupDeletedAccounts() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(RETENTION_DAYS);
-        List<User> expiredUsers = userRepository.findByDeletedAtIsNotNullAndDeletedAtBefore(cutoff);
+        List<User> expiredUsers = userRepository.findExpiredDeletedUsers(cutoff);
 
         if (expiredUsers.isEmpty()) {
             logger.info("削除対象の退会済みユーザーはいません");
@@ -55,35 +55,7 @@ public class AccountCleanupService {
         int deletedCount = 0;
         for (User user : expiredUsers) {
             try {
-                // S3の写真ファイルを削除（元画像 + サムネイル）
-                List<Photo> photos = photoRepository.findByUserId(user.getId());
-                for (Photo photo : photos) {
-                    try {
-                        s3Service.deleteS3Object(photo.getS3ObjectKey());
-                        s3Service.deleteS3Object(generateThumbnailKey(photo.getS3ObjectKey()));
-                    } catch (Exception e) {
-                        logger.error("S3写真削除に失敗: photoId={}, s3Key={}",
-                                photo.getPhotoId(), photo.getS3ObjectKey(), e);
-                    }
-                }
-
-                // S3のプロフィール画像を削除
-                if (user.getProfileImageS3Key() != null) {
-                    try {
-                        s3Service.deleteS3Object(user.getProfileImageS3Key());
-                    } catch (Exception e) {
-                        logger.error("S3プロフィール画像削除に失敗: userId={}, s3Key={}",
-                                user.getId(), user.getProfileImageS3Key(), e);
-                    }
-                }
-
-                // 写真をDB上から削除（PhotoエンティティにFKリレーションがないためCASCADE不可）
-                if (!photos.isEmpty()) {
-                    photoRepository.deleteAll(photos);
-                }
-
-                // ユーザーを物理削除
-                userRepository.delete(user);
+                deleteUserPermanently(user);
                 deletedCount++;
             } catch (Exception e) {
                 logger.error("ユーザー物理削除に失敗（翌日リトライ）: userId={}", user.getId(), e);
@@ -94,6 +66,47 @@ public class AccountCleanupService {
         spotRepository.deleteOrphanedSpots();
 
         logger.info("退会済みアカウントの物理削除完了: {}件", deletedCount);
+    }
+
+    /**
+     * Issue#73: 単一ユーザーの物理削除（即時削除用に公開）
+     */
+    @Transactional
+    public void deleteUserPermanently(User user) {
+        // S3の写真ファイルを削除（元画像 + サムネイル）
+        List<Photo> photos = photoRepository.findByUserId(user.getId());
+        for (Photo photo : photos) {
+            try {
+                s3Service.deleteS3Object(photo.getS3ObjectKey());
+                s3Service.deleteS3Object(generateThumbnailKey(photo.getS3ObjectKey()));
+            } catch (Exception e) {
+                logger.error("S3写真削除に失敗: photoId={}, s3Key={}",
+                        photo.getPhotoId(), photo.getS3ObjectKey(), e);
+            }
+        }
+
+        // S3のプロフィール画像を削除
+        if (user.getProfileImageS3Key() != null) {
+            try {
+                s3Service.deleteS3Object(user.getProfileImageS3Key());
+            } catch (Exception e) {
+                logger.error("S3プロフィール画像削除に失敗: userId={}, s3Key={}",
+                        user.getId(), user.getProfileImageS3Key(), e);
+            }
+        }
+
+        // 写真をDB上から削除
+        if (!photos.isEmpty()) {
+            photoRepository.deleteAll(photos);
+        }
+
+        // ユーザーを物理削除
+        userRepository.delete(user);
+
+        // 孤立スポットのクリーンアップ
+        spotRepository.deleteOrphanedSpots();
+
+        logger.info("ユーザー物理削除完了: userId={}", user.getId());
     }
 
     private String generateThumbnailKey(String s3ObjectKey) {
