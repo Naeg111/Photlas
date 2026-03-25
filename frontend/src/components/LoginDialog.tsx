@@ -79,6 +79,14 @@ export function LoginDialog({
         } else {
           setError('ログインに失敗しました')
         }
+      } else if (response.status === 401) {
+        // Issue#72: 退会済みアカウントの場合はバックエンドのメッセージを表示
+        try {
+          const data = await response.json()
+          setError(data.message || 'メールアドレスまたはパスワードが正しくありません')
+        } catch {
+          setError('メールアドレスまたはパスワードが正しくありません')
+        }
       } else {
         setError('メールアドレスまたはパスワードが正しくありません')
       }
