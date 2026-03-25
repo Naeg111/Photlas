@@ -57,14 +57,13 @@ export function PrivacyContentEn() {
         <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">(3) Posted Data</h3>
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
           <li>Photo files</li>
-          <li>Title, facility name, tags, categories, weather information</li>
+          <li>Title, facility name, categories, weather information</li>
         </ul>
 
         <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">(4) Photo Metadata (EXIF Information)</h3>
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
           <li>Date and time of capture</li>
           <li>GPS coordinates (latitude and longitude)</li>
-          <li>Shooting direction</li>
           <li>Camera body name</li>
           <li>Lens name</li>
           <li>Focal length, aperture (f-number), shutter speed, ISO sensitivity</li>
@@ -263,7 +262,10 @@ export function PrivacyContentEn() {
           <li>
             The Service uses Google Analytics 4, and Google may use cookies to
             collect access information. The data collected is anonymized and does not
-            identify individuals.
+            identify individuals. A cookie consent banner is displayed on your first
+            visit, allowing you to accept or decline. If you accept, full analytics
+            with cookies will be performed; if you decline, only anonymous basic
+            analytics without cookies will be performed.
           </li>
           <li>
             Other external services (Mapbox, Sentry, etc.) may independently use
@@ -308,7 +310,7 @@ export function PrivacyContentEn() {
             <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
               <li>Account information (email address, username, etc.)</li>
               <li>Profile information (profile image, SNS account links)</li>
-              <li>Posted data (photo files, metadata, tags, etc.)</li>
+              <li>Posted data (photo files, metadata, etc.)</li>
               <li>Favorites and report information</li>
             </ul>
           </li>
@@ -379,7 +381,7 @@ export function PrivacyContentEn() {
           <li><span className="font-semibold">Right to restriction of processing</span>: The right to request restriction of processing of your personal data.</li>
           <li><span className="font-semibold">Right to data portability</span>: The right to receive your personal data in a structured, machine-readable format.</li>
           <li><span className="font-semibold">Right to object</span>: The right to object to processing based on legitimate interests.</li>
-          <li><span className="font-semibold">Right to withdraw consent</span>: The right to withdraw consent at any time for consent-based processing (you can withdraw cookie consent by clearing your browser's localStorage).</li>
+          <li><span className="font-semibold">Right to withdraw consent</span>: The right to withdraw consent at any time for consent-based processing (you can withdraw cookie consent by clearing this site&apos;s data from your browser settings, which will cause the cookie consent banner to reappear).</li>
         </ul>
       </section>
 

@@ -66,7 +66,7 @@ export function TermsContentEn() {
                 settings, etc.)
               </li>
               <li>
-                Title, facility name, tags, category selections, and weather
+                Title, facility name, category selections, and weather
                 information
               </li>
             </ul>
