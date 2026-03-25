@@ -5,6 +5,7 @@ import { SplashScreen } from './components/SplashScreen'
 import NotFoundPage from './pages/NotFoundPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
 import AdminModerationPage from './pages/AdminModerationPage'
+import AdminDeletedUsersPage from './pages/AdminDeletedUsersPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import ReviewLocationPage from './pages/ReviewLocationPage'
 import { CookieConsentBanner } from './components/CookieConsentBanner'
@@ -548,6 +549,7 @@ function MainContent({ onMapReady }: MainContentProps) {
         onFavoritesClick={handleShowWantToGoList}
         onAccountSettingsClick={() => dialog.open('accountSettings')}
         onModerationClick={() => navigate('/manage/moderation')}
+        onDeletedUsersClick={() => navigate('/manage/deleted-users')}
         onAboutClick={() => dialog.open('about')}
         onTermsClick={() => dialog.open('terms')}
         onPrivacyClick={() => dialog.open('privacy')}
@@ -725,6 +727,7 @@ function App() {
         <Route path="/review-location" element={<ReviewLocationPage />} />
         <Route path="/photo-viewer/:photoId" element={<MainApp />} />
         <Route path="/manage/moderation" element={<AdminModerationPage />} />
+        <Route path="/manage/deleted-users" element={<AdminDeletedUsersPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <CookieConsentBanner />
