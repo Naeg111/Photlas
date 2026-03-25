@@ -251,10 +251,11 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
     test('ズームアウト時にピンがクラスタとして統合される', async ({ page }) => {
       // まずズームインしてピンが表示されるのを確認
       await zoomIn(page, 3)
-      try {
-        await waitForPinsOrClusters(page, 15000)
-      } catch {
-        // ステージング環境でピンデータがない場合はスキップ
+      await page.waitForTimeout(3000)
+
+      const beforePins = await findPinsAndClusters(page)
+      if (beforePins.pinCount + beforePins.clusterCount === 0) {
+        // ピンデータなし時はスキップ
         test.skip()
         return
       }
@@ -345,21 +346,35 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
   test.describe('投稿後のピン表示', () => {
     test.setTimeout(180000) // 投稿フローはステージング環境で時間がかかるため
     test('新規投稿後にピンが地図上に表示される', async ({ page }) => {
+      test.setTimeout(180000)
       // ログイン
       await createAccountAndLogin(page, 'pin-post')
 
       // 投稿実行
       await submitPhoto(page, { title: 'ピン表示テスト', category: '自然風景' })
 
-      // モデレーション（AI審査 PENDING_REVIEW→PUBLISHED）を待機
-      await page.waitForTimeout(5000)
-      await zoomIn(page, 2)
+      // モデレーション完了を待機（最大60秒、10秒間隔でリロード＆確認）
+      let found = false
+      for (let attempt = 0; attempt < 6; attempt++) {
+        await page.waitForTimeout(10000)
+        await page.reload()
+        await page.waitForTimeout(3000)
+        await zoomIn(page, 2)
+        await page.waitForTimeout(3000)
 
-      // ピンの表示を待機（モデレーション遅延があるためリトライ）
-      try {
-        await waitForPinsOrClusters(page, 15000)
-      } catch {
-        // モデレーション未完了の場合はスキップ（機能自体は正常、タイミング依存）
+        try {
+          const result = await findPinsAndClusters(page)
+          if (result.pinCount + result.clusterCount > 0) {
+            found = true
+            break
+          }
+        } catch {
+          // 続行
+        }
+      }
+
+      if (!found) {
+        // モデレーション未完了の場合はスキップ
         test.skip()
       }
     })
