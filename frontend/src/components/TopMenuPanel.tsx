@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
-import { User, Settings, FileText, Shield, LogOut, Heart, LogIn, UserPlus, CircleHelp } from "lucide-react";
+import { User, Settings, FileText, Shield, LogOut, Heart, LogIn, UserPlus, CircleHelp, UserX } from "lucide-react";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 
@@ -12,6 +12,7 @@ interface TopMenuPanelProps {
   onFavoritesClick: () => void;
   onAccountSettingsClick: () => void;
   onModerationClick?: () => void;
+  onDeletedUsersClick?: () => void;
   onTermsClick: () => void;
   onPrivacyClick: () => void;
   onAboutClick: () => void;
@@ -29,6 +30,7 @@ export function TopMenuPanel({
   onFavoritesClick,
   onAccountSettingsClick,
   onModerationClick,
+  onDeletedUsersClick,
   onAboutClick,
   onTermsClick,
   onPrivacyClick,
@@ -111,6 +113,20 @@ export function TopMenuPanel({
                       <Shield className="w-5 h-5" />
                       モデレーション管理
                     </Button>
+                    {onDeletedUsersClick && (
+                      <Button
+                        variant="ghost"
+                        className="justify-start gap-3"
+                        onClick={() => {
+                          onDeletedUsersClick();
+                          onOpenChange(false);
+                        }}
+                        data-testid="deleted-users-menu-button"
+                      >
+                        <UserX className="w-5 h-5" />
+                        退会済みユーザー管理
+                      </Button>
+                    )}
                     <Separator />
                   </>
                 )}
