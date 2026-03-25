@@ -143,6 +143,11 @@ public class UserService {
             throw new IllegalArgumentException("メールアドレスまたはパスワードが正しくありません");
         }
 
+        // Issue#72: 退会済みユーザーのログインを拒否
+        if (user.getDeletedAt() != null) {
+            throw new UnauthorizedException("このアカウントは退会済みです");
+        }
+
         if (!user.isEmailVerified()) {
             throw new IllegalArgumentException("メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。");
         }
@@ -529,7 +534,9 @@ public class UserService {
     }
 
     /**
-     * アカウント削除（Issue#20）
+     * アカウント削除 - ソフトデリート（Issue#72）
+     * 即時物理削除は行わず、deleted_atを設定して論理削除する。
+     * 90日後にバッチ処理で物理削除される。
      *
      * @param email ログイン中ユーザーのメールアドレス
      * @param password パスワード
@@ -544,8 +551,13 @@ public class UserService {
             throw new UnauthorizedException("パスワードが正しくありません");
         }
 
-        // ユーザーを削除（CASCADE設定により関連データも削除される）
-        userRepository.delete(user);
+        // ユーザー名を保存してからランダム文字列に書き換え（UNIQUE制約を解放）
+        user.setOriginalUsername(user.getUsername());
+        user.setUsername("deleted_" + UUID.randomUUID().toString().substring(0, 8));
+
+        // ソフトデリート
+        user.setDeletedAt(java.time.LocalDateTime.now());
+        userRepository.save(user);
     }
 
     // ============================================================

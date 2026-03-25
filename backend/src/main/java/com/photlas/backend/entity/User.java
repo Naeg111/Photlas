@@ -51,6 +51,12 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "original_username", length = 12)
+    private String originalUsername;
+
     public User() {}
 
     public User(String username, String email, String passwordHash, String role) {
@@ -131,6 +137,22 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public String getOriginalUsername() {
+        return originalUsername;
+    }
+
+    public void setOriginalUsername(String originalUsername) {
+        this.originalUsername = originalUsername;
     }
 
     @Override

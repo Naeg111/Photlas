@@ -87,9 +87,11 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
             ) as thumbnail_url
         FROM spots s
         INNER JOIN photos p ON s.spot_id = p.spot_id
+        INNER JOIN users u ON p.user_id = u.id
         WHERE s.latitude BETWEEN :south AND :north
           AND s.longitude BETWEEN :west AND :east
           AND p.moderation_status = 'PUBLISHED'
+          AND u.deleted_at IS NULL
           AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
           AND ('__NONE__' IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
           AND ('__NONE__' IN (:weathers) OR p.weather IN (:weathers))
@@ -164,9 +166,11 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
             ) as thumbnail_url
         FROM spots s
         INNER JOIN photos p ON s.spot_id = p.spot_id
+        INNER JOIN users u ON p.user_id = u.id
         WHERE s.latitude BETWEEN :south AND :north
           AND s.longitude BETWEEN :west AND :east
           AND p.moderation_status = 'PUBLISHED'
+          AND u.deleted_at IS NULL
           AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
           AND ('__NONE__' IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
           AND ('__NONE__' IN (:weathers) OR p.weather IN (:weathers))
