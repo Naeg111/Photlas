@@ -52,6 +52,18 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
     );
 
     /**
+     * Issue#72: 指定ユーザーが作成者であるスポットを検索
+     */
+    List<Spot> findByCreatedByUserId(Long createdByUserId);
+
+    /**
+     * Issue#72: 写真が0件の孤立スポットを削除
+     */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM Spot s WHERE s.spotId NOT IN (SELECT DISTINCT p.spotId FROM Photo p)")
+    void deleteOrphanedSpots();
+
+    /**
      * 指定された範囲内のスポットを検索し、フィルター条件に合致する写真を集計して返す
      *
      * 戻り値: Object[] の配列で、各要素は以下の順序
