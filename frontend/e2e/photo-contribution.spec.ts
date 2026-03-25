@@ -211,16 +211,14 @@ test.describe('写真投稿機能', () => {
         await createAccountAndLogin(page, 'validation-size')
         await openPhotoContributionDialog(page)
 
-        // ブラウザ内でFileオブジェクトを直接生成してバリデーションを検証
+        // ブラウザ内で小さなBlobからsizeプロパティを偽装したFileオブジェクトを生成
         const dialogPromise = page.waitForEvent('dialog', { timeout: 10000 })
 
         await page.evaluate(() => {
-          // 50MB超のダミーFileオブジェクトを作成
-          const largeFile = new File(
-            [new ArrayBuffer(51 * 1024 * 1024)],
-            'large.jpg',
-            { type: 'image/jpeg' }
-          )
+          const smallBlob = new Blob(['x'], { type: 'image/jpeg' })
+          const largeFile = new File([smallBlob], 'large.jpg', { type: 'image/jpeg' })
+          // sizeプロパティを偽装（51MB）
+          Object.defineProperty(largeFile, 'size', { value: 51 * 1024 * 1024 })
           const dataTransfer = new DataTransfer()
           dataTransfer.items.add(largeFile)
           const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
