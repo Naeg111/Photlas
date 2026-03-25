@@ -117,6 +117,48 @@ async function createTestPost(page: Page, title: string): Promise<void> {
   await page.waitForTimeout(2000)
 }
 
+/**
+ * ログインユーザーの最新投稿をAPI経由で取得してディープリンクで開く
+ */
+async function openOwnLatestPhoto(page: Page): Promise<boolean> {
+  // ユーザーの最新投稿をAPI経由で取得
+  const photoId = await page.evaluate(async () => {
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+    if (!token) return null
+    // ユーザー情報を取得
+    const meRes = await fetch('/api/v1/users/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!meRes.ok) return null
+    const me = await meRes.json()
+    // ユーザーの投稿一覧から最新を取得
+    const photosRes = await fetch(`/api/v1/users/${me.userId}/photos?page=0&size=1`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!photosRes.ok) return null
+    const data = await photosRes.json()
+    if (data.content && data.content.length > 0) {
+      return data.content[0].photo.photo_id
+    }
+    return null
+  })
+
+  if (!photoId) return false
+
+  // ディープリンクで写真詳細を開く
+  await page.goto(`/photo-viewer/${photoId}`)
+  await waitForSplash(page)
+  await page.waitForTimeout(2000)
+
+  // ダイアログが表示されるのを待機
+  try {
+    await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 10000 })
+    return true
+  } catch {
+    return false
+  }
+}
+
 test.describe('写真詳細・お気に入り機能', () => {
   test.beforeAll(() => {
     ensureFixtures()
@@ -342,41 +384,42 @@ test.describe('写真詳細・お気に入り機能', () => {
   // ============================================================
 
   test.describe('カメラ情報表示', () => {
+    test.setTimeout(180000)
+
     test('EXIF情報がある場合、カメラ情報ラベルが表示される', async ({ page }) => {
-      await zoomInToShowPins(page)
+      // EXIF付き画像で投稿し、ディープリンクで自分の投稿を開く
+      await createAccountAndLogin(page, 'exif-label')
+      await createTestPost(page, 'EXIF確認')
 
-      if (await openPhotoDetailFromPin(page)) {
-        await page.waitForTimeout(2000)
+      // モデレーション完了を待機
+      await page.waitForTimeout(5000)
 
+      if (await openOwnLatestPhoto(page)) {
         const dialog = page.locator('[role="dialog"]')
         const cameraLabel = dialog.getByText('カメラ', { exact: false })
-        const hasExif = await cameraLabel.isVisible()
-
-        if (hasExif) {
-          await expect(cameraLabel).toBeVisible()
-        } else {
-          test.skip()
-        }
+        await expect(cameraLabel).toBeVisible({ timeout: 10000 })
       } else {
         test.skip()
       }
     })
 
     test('EXIF情報の各項目ラベルが表示される', async ({ page }) => {
-      await zoomInToShowPins(page)
+      await createAccountAndLogin(page, 'exif-items')
+      await createTestPost(page, 'EXIF項目確認')
 
-      if (await openPhotoDetailFromPin(page)) {
-        await page.waitForTimeout(2000)
+      await page.waitForTimeout(5000)
 
+      if (await openOwnLatestPhoto(page)) {
         const dialog = page.locator('[role="dialog"]')
-        const labels = ['カメラ', 'レンズ', 'F値', 'シャッタースピード', 'ISO']
 
-        const firstLabel = dialog.getByText('カメラ', { exact: false })
-        if (!(await firstLabel.isVisible())) {
+        // 最低限カメラ名が表示されることを確認
+        const cameraLabel = dialog.getByText('カメラ', { exact: false })
+        if (!(await cameraLabel.isVisible())) {
           test.skip()
           return
         }
 
+        const labels = ['カメラ', 'レンズ', 'F値', 'シャッタースピード', 'ISO']
         for (const label of labels) {
           const element = dialog.getByText(label, { exact: false })
           const isVisible = await element.isVisible()
@@ -476,19 +519,19 @@ test.describe('写真詳細・お気に入り機能', () => {
     })
 
     test('天気情報がある場合に「天気:」ラベルで表示される', async ({ page }) => {
-      await zoomInToShowPins(page)
+      test.setTimeout(180000)
+      // 天気付きの投稿を作成してディープリンクで開く
+      await createAccountAndLogin(page, 'weather-label')
+      await createTestPost(page, '天気確認')
 
-      if (await openPhotoDetailFromPin(page)) {
-        await page.waitForTimeout(2000)
+      await page.waitForTimeout(5000)
 
+      if (await openOwnLatestPhoto(page)) {
         const dialog = page.locator('[role="dialog"]')
         const weatherLabel = dialog.getByText('天気:', { exact: false })
-        const hasWeather = await weatherLabel.isVisible()
-
-        if (hasWeather) {
-          await expect(weatherLabel).toBeVisible()
-        } else {
-          test.skip()
+        await expect(weatherLabel).toBeVisible({ timeout: 10000 })
+      } else {
+        test.skip()
         }
       } else {
         test.skip()
@@ -683,36 +726,16 @@ test.describe('写真詳細・お気に入り機能', () => {
   test.describe('写真編集・削除', () => {
     test.setTimeout(180000)
 
-    async function waitForOwnPin(page: Page): Promise<boolean> {
-      // 投稿後にモデレーション完了＋ピン表示を待機
-      for (let attempt = 0; attempt < 6; attempt++) {
-        await page.waitForTimeout(5000)
-        await page.reload()
-        await page.waitForTimeout(3000)
-        await flyToLocation(page, 139.6503, 35.6762, 14)
-
-        const { pinCount } = await findPinsAndClusters(page)
-        if (pinCount > 0) {
-          const clicked = await clickFirstPin(page)
-          if (clicked) {
-            await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 })
-            return true
-          }
-        }
-      }
-      return false
-    }
-
     test('自分の写真の場合、編集ボタンが表示される', async ({ page }) => {
       await createAccountAndLogin(page, 'edit-own')
       await createTestPost(page, `編集テスト-${Date.now()}`)
 
-      if (await waitForOwnPin(page)) {
+      // モデレーション完了を待機
+      await page.waitForTimeout(5000)
+
+      if (await openOwnLatestPhoto(page)) {
         const editButton = page.locator('[data-testid="edit-button"]')
-        const isVisible = await editButton.isVisible().catch(() => false)
-        if (!isVisible) {
-          test.skip()
-        }
+        await expect(editButton).toBeVisible({ timeout: 10000 })
       } else {
         test.skip()
       }
@@ -722,12 +745,11 @@ test.describe('写真詳細・お気に入り機能', () => {
       await createAccountAndLogin(page, 'delete-own')
       await createTestPost(page, `削除テスト-${Date.now()}`)
 
-      if (await waitForOwnPin(page)) {
+      await page.waitForTimeout(5000)
+
+      if (await openOwnLatestPhoto(page)) {
         const deleteButton = page.locator('[data-testid="delete-button"]')
-        const isVisible = await deleteButton.isVisible().catch(() => false)
-        if (!isVisible) {
-          test.skip()
-        }
+        await expect(deleteButton).toBeVisible({ timeout: 10000 })
       } else {
         test.skip()
       }
