@@ -18,7 +18,7 @@ const FIXTURES_DIR = path.join(__dirname, '..', 'fixtures')
  * テスト用画像のパスを取得
  */
 export function getTestImagePath(
-  type: 'small' | 'large' | 'invalid' = 'small'
+  type: 'small' | 'large' | 'invalid' | 'exif' = 'small'
 ): string {
   switch (type) {
     case 'small':
@@ -27,6 +27,8 @@ export function getTestImagePath(
       return path.join(FIXTURES_DIR, 'test-image-large.png')
     case 'invalid':
       return path.join(FIXTURES_DIR, 'test-image-invalid.gif')
+    case 'exif':
+      return path.join(FIXTURES_DIR, 'test-image-exif.jpg')
     default:
       return path.join(FIXTURES_DIR, 'test-image-small.png')
   }
