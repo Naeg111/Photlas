@@ -162,6 +162,14 @@ export function TermsContentEn() {
             continue to use Posted Data that has already been used for
             promotional purposes prior to the withdrawal.
           </li>
+          <li>
+            Other users may suggest corrections if they determine that the
+            shooting location information contained in Posted Data is
+            inaccurate. The poster shall review such suggestions and decide
+            whether to accept or reject them. If the poster accepts a
+            suggestion, the shooting location information will be updated
+            accordingly.
+          </li>
         </ol>
       </section>
 
@@ -565,7 +573,7 @@ export function TermsContentEn() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           Enacted: February 16, 2026<br />
-          Last revised: March 21, 2026
+          Last revised: March 25, 2026
         </p>
       </section>
     </div>
