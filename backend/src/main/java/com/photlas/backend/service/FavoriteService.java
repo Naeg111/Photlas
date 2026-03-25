@@ -26,7 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * お気に入りサービス
@@ -140,31 +142,33 @@ public class FavoriteService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Favorite> favoritePage = favoriteRepository.findByUserId(user.getId(), pageable);
 
-        // 写真詳細情報を取得
-        Page<PhotoResponse> photoResponses = favoritePage.map(favorite -> {
-            Photo photo = photoRepository.findById(favorite.getPhotoId())
-                    .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
-            Spot spot = spotRepository.findById(photo.getSpotId())
-                    .orElseThrow(() -> new SpotNotFoundException(ERROR_SPOT_NOT_FOUND));
-            User photoUser = userRepository.findById(photo.getUserId())
-                    .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
-            long favoriteCount = favoriteRepository.countByPhotoId(photo.getPhotoId());
-
-            return buildPhotoResponse(photo, spot, photoUser, true, favoriteCount);
-        });
+        // 写真詳細情報を取得（Issue#72: 退会済みユーザーの写真を除外）
+        List<PhotoResponse> photoResponseList = favoritePage.getContent().stream()
+            .map(favorite -> {
+                Photo photo = photoRepository.findById(favorite.getPhotoId()).orElse(null);
+                if (photo == null) return null;
+                User photoUser = userRepository.findById(photo.getUserId()).orElse(null);
+                if (photoUser == null || photoUser.getDeletedAt() != null) return null;
+                Spot spot = spotRepository.findById(photo.getSpotId()).orElse(null);
+                if (spot == null) return null;
+                long favoriteCount = favoriteRepository.countByPhotoId(photo.getPhotoId());
+                return buildPhotoResponse(photo, spot, photoUser, true, favoriteCount);
+            })
+            .filter(r -> r != null)
+            .collect(Collectors.toList());
 
         // ページネーション情報を含むレスポンスを構築
         Map<String, Object> response = new HashMap<>();
-        response.put("content", photoResponses.getContent());
+        response.put("content", photoResponseList);
 
         Map<String, Object> pageableInfo = new HashMap<>();
-        pageableInfo.put("page_number", photoResponses.getNumber());
-        pageableInfo.put("page_size", photoResponses.getSize());
+        pageableInfo.put("page_number", favoritePage.getNumber());
+        pageableInfo.put("page_size", favoritePage.getSize());
         response.put("pageable", pageableInfo);
 
-        response.put("total_pages", photoResponses.getTotalPages());
-        response.put("total_elements", photoResponses.getTotalElements());
-        response.put("last", photoResponses.isLast());
+        response.put("total_pages", favoritePage.getTotalPages());
+        response.put("total_elements", (long) photoResponseList.size());
+        response.put("last", favoritePage.isLast());
 
         return response;
     }
