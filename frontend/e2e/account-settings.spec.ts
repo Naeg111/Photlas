@@ -109,8 +109,8 @@ test.describe('アカウント設定', () => {
     await expect(page.getByText('新しいパスワードが一致しません')).toBeVisible({ timeout: 5000 })
   })
 
-  test('アカウントを削除できる', async ({ page }) => {
-    test.setTimeout(180000) // カスケード削除に時間がかかるため延長
+  test('アカウントを削除できる（ソフトデリート）', async ({ page }) => {
+    test.setTimeout(180000)
     const email = await createAccountAndLogin(page, 'settings-delete')
 
     // メニュー → アカウント設定
@@ -130,8 +130,12 @@ test.describe('アカウント設定', () => {
     // 確認ボタンをクリック
     await page.getByRole('button', { name: '削除する' }).click()
 
-    // 成功トーストを確認（カスケード削除に時間がかかる場合があるためタイムアウトを長めに設定）
-    await expect(page.getByText('アカウントを削除しました')).toBeVisible({ timeout: 20000 })
+    // Issue#72: 退会完了メッセージが表示される
+    await expect(page.getByText('アカウントの削除を受け付けました')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('90日後にすべてのデータが完全に削除されます')).toBeVisible()
+
+    // 「閉じる」ボタンをクリックしてログアウト
+    await page.getByRole('button', { name: '閉じる' }).click()
 
     // 認証状態更新とナビゲーションの完了を待機
     await page.waitForTimeout(2000)
@@ -145,7 +149,7 @@ test.describe('アカウント設定', () => {
     await openLoginDialog(page)
     await performLogin(page, email, TEST_PASSWORD)
 
-    // ログインが失敗することを確認
-    await expect(page.getByText('メールアドレスまたはパスワードが正しくありません')).toBeVisible({ timeout: 10000 })
+    // Issue#72: ソフトデリートのためログイン拒否メッセージが表示される
+    await expect(page.getByText('このアカウントは退会済みです')).toBeVisible({ timeout: 10000 })
   })
 })
