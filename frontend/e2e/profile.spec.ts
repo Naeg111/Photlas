@@ -132,9 +132,10 @@ test.describe('プロフィール管理・表示', () => {
 
       await openProfileDialog(page)
 
-      // お気に入りタブをクリック（dispatchEventで確実にReactイベントを発火）
+      // お気に入りタブをクリック
+      // Radix UIのTabsTriggerはpointerdownイベントでタブ切り替えを行う
       const favTab = page.getByRole('tab', { name: 'お気に入り' })
-      await favTab.dispatchEvent('click')
+      await favTab.dispatchEvent('pointerdown')
       await page.waitForTimeout(2000)
 
       // お気に入りコンテンツが読み込まれるのを待機
