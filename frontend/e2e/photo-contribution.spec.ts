@@ -207,19 +207,26 @@ test.describe('写真投稿機能', () => {
     })
 
     test.describe('ファイルバリデーション', () => {
-      test.setTimeout(300000) // 大容量ファイル転送のため延長（ステージング環境では5分）
       test('50MBを超えるファイルは選択できない', async ({ page }) => {
         await createAccountAndLogin(page, 'validation-size')
         await openPhotoContributionDialog(page)
 
-        // 大きいファイルを選択
-        const largeImagePath = getTestImagePath('large')
+        // ブラウザ内でFileオブジェクトを直接生成してバリデーションを検証
+        const dialogPromise = page.waitForEvent('dialog', { timeout: 10000 })
 
-        // アラートハンドラーを設定（ファイル転送に時間がかかるため長めに待機）
-        const dialogPromise = page.waitForEvent('dialog', { timeout: 120000 })
-
-        const fileInput = page.locator('input[type="file"]')
-        await fileInput.setInputFiles(largeImagePath)
+        await page.evaluate(() => {
+          // 50MB超のダミーFileオブジェクトを作成
+          const largeFile = new File(
+            [new ArrayBuffer(51 * 1024 * 1024)],
+            'large.jpg',
+            { type: 'image/jpeg' }
+          )
+          const dataTransfer = new DataTransfer()
+          dataTransfer.items.add(largeFile)
+          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+          fileInput.files = dataTransfer.files
+          fileInput.dispatchEvent(new Event('change', { bubbles: true }))
+        })
 
         const dialog = await dialogPromise
         expect(dialog.message()).toContain('50MB')
@@ -233,14 +240,21 @@ test.describe('写真投稿機能', () => {
         await createAccountAndLogin(page, 'validation-format')
         await openPhotoContributionDialog(page)
 
-        // 無効な形式のファイルを選択
-        const invalidImagePath = getTestImagePath('invalid')
+        // ブラウザ内でGIFのFileオブジェクトを直接生成
+        const dialogPromise = page.waitForEvent('dialog', { timeout: 10000 })
 
-        // アラートハンドラーを設定
-        const dialogPromise = page.waitForEvent('dialog', { timeout: 120000 })
-
-        const fileInput = page.locator('input[type="file"]')
-        await fileInput.setInputFiles(invalidImagePath)
+        await page.evaluate(() => {
+          const gifFile = new File(
+            [new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61])], // GIF89a header
+            'test.gif',
+            { type: 'image/gif' }
+          )
+          const dataTransfer = new DataTransfer()
+          dataTransfer.items.add(gifFile)
+          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+          fileInput.files = dataTransfer.files
+          fileInput.dispatchEvent(new Event('change', { bubbles: true }))
+        })
 
         const dialog = await dialogPromise
         expect(dialog.message()).toContain('JPEG、PNG、HEIC')
