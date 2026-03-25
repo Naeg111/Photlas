@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet"
 import { Button } from "./ui/button"
 import { CategoryIcon } from "./CategoryIcon"
-import { FilterIcons, MonthIcons, TimeIcons, WeatherIcons } from "./FilterIcons"
+import { MonthIcons, TimeIcons, WeatherIcons } from "./FilterIcons"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { PHOTO_CATEGORIES } from "../utils/constants"
 
@@ -60,10 +60,10 @@ const TIME_OF_DAY = ["朝", "昼", "夕方", "夜"]
 const WEATHER = ["晴れ", "曇り", "雨", "雪"]
 
 export interface FilterConditions {
-  categories?: string[]
-  months?: string[]
-  timesOfDay?: string[]
-  weathers?: string[]
+  categories: string[]
+  months: string[]
+  timesOfDay: string[]
+  weathers: string[]
   maxAgeDays?: number
   aspectRatios?: string[]
   deviceTypes?: string[]
