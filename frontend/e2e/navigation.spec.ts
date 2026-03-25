@@ -74,7 +74,7 @@ test.describe('Navigation Tests', () => {
 
     await page.getByRole('button', { name: 'プライバシーポリシー' }).click()
 
-    await expect(page.getByRole('heading', { name: 'プライバシーポリシー' })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('heading', { name: 'プライバシーポリシー', exact: true })).toBeVisible({ timeout: 10000 })
   })
 
   test('メニューからPhotlasとは？を開くとダイアログが表示される', async ({ page }) => {
