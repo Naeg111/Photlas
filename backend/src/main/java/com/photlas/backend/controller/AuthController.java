@@ -110,6 +110,10 @@ public class AuthController {
         try {
             RegisterResponse response = userService.loginUser(request);
             return ResponseEntity.ok(response);
+        } catch (com.photlas.backend.exception.UnauthorizedException e) {
+            // Issue#72: 退会済みアカウントのログイン拒否
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         } catch (AccountSuspendedException e) {
             // Issue#54: 永久停止アカウントのログイン拒否
             ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
