@@ -78,7 +78,7 @@ interface FilterPanelProps {
 }
 
 // フィルターボタン共通スタイル（モバイルタッチ対応: onPointerDownで即座に反応）
-const FILTER_BTN_BASE = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors overflow-hidden [&_svg]:shrink-0"
+const FILTER_BTN_BASE = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors [&_svg]:shrink-0 [&_svg]:w-5 [&_svg]:h-5"
 const FILTER_BTN_BORDER = { border: '1px solid #d1d5db' } as const
 
 function FilterButton({ selected, onClick, className, children }: {
