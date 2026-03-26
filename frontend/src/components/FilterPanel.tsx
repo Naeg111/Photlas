@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet"
 import { Button } from "./ui/button"
 import { CategoryIcon } from "./CategoryIcon"
@@ -117,33 +117,6 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
   const [selectedFocalLengthRanges, setSelectedFocalLengthRanges] = useState<string[]>([])
   const [selectedMaxIso, setSelectedMaxIso] = useState<number | undefined>(undefined)
 
-  // PC表示時のダイアログ高さ自動調整
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [dialogMaxHeight, setDialogMaxHeight] = useState<string>('90vh')
-
-  const adjustDialogHeight = useCallback(() => {
-    if (typeof window === 'undefined' || window.innerWidth < 768) return
-    requestAnimationFrame(() => {
-      const scrollEl = scrollRef.current
-      if (!scrollEl) return
-      // スクロール領域のコンテンツ高さ + ボタン領域(約72px) + 上部パディング
-      const contentHeight = scrollEl.scrollHeight
-      const buttonAreaHeight = 72
-      const maxGap = 100
-      const idealHeight = contentHeight + buttonAreaHeight + maxGap
-      const maxVh = window.innerHeight * 0.9
-      setDialogMaxHeight(`${Math.min(idealHeight, maxVh)}px`)
-    })
-  }, [])
-
-  useEffect(() => {
-    if (open) {
-      // ダイアログが開いた直後にコンテンツ高さを計測
-      const timer = setTimeout(adjustDialogHeight, 50)
-      return () => clearTimeout(timer)
-    }
-  }, [open, isAdvancedOpen, adjustDialogHeight])
-
   const toggleSelection = (
     value: string,
     selected: string[],
@@ -187,7 +160,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="top" className={`w-full h-full md:w-[70%] md:left-[15%] md:rounded-b-lg md:overflow-hidden flex flex-col ${dialogMaxHeight !== '90vh' ? '' : 'md:max-h-[90vh]'}`} style={dialogMaxHeight !== '90vh' ? { maxHeight: dialogMaxHeight } : undefined}>
+      <SheetContent side="top" className="w-full h-full md:w-[70%] md:h-auto md:max-h-[90vh] md:left-[15%] md:rounded-b-lg md:overflow-hidden flex flex-col">
         <SheetHeader className="sr-only">
           <SheetTitle>フィルター</SheetTitle>
           <SheetDescription>
@@ -195,7 +168,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <div ref={scrollRef} data-testid="filter-scroll-container" className="flex-1 overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))]" style={{ touchAction: 'manipulation' }}>
+        <div data-testid="filter-scroll-container" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))]" style={{ touchAction: 'manipulation' }}>
         <div className="space-y-[30px] pb-6 mt-[40px]">
           {/* Issue#63: 写真のジャンル */}
           <div>
