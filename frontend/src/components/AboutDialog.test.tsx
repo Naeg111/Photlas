@@ -32,7 +32,7 @@ describe('AboutDialog', () => {
 
     expect(screen.getByText('サービス概要')).toBeInTheDocument()
     expect(
-      screen.getByText(/写真を通じて撮影スポットを共有・発見できるサービス/)
+      screen.getByText(/地図から写真に出会えるサービス/)
     ).toBeInTheDocument()
   })
 
