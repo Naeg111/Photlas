@@ -210,7 +210,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       skipSplashScreen()
       const filterButton = screen.getByRole('button', { name: /フィルター/i })
       const container = filterButton.parentElement
-      expect(container?.className).toContain('safe-area-inset-top')
+      expect(container?.className).toContain('--safe-area-top')
     })
   })
 
