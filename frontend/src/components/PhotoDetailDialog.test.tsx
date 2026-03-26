@@ -292,7 +292,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   describe('カルーセル制御', () => {
-    it('複数の写真がある場合、ドットインジケーターが表示される', async () => {
+    it('複数の写真がある場合、枚数インジケーターが表示される', async () => {
       const photoIds = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2, TEST_PHOTO_ID_3]
       const photoDetail = createMockPhotoDetail({
         title: TEST_PHOTO_TITLE_2,
@@ -315,8 +315,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
-        const indicators = screen.queryAllByTestId(/^dot-indicator-/)
-        expect(indicators).toHaveLength(3)
+        expect(screen.getByText('1 / 3')).toBeInTheDocument()
       })
     })
 
