@@ -1252,8 +1252,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     }) : undefined}
                   />
 
-                  {/* ドットインジケーター */}
-                  {photoIds.length > 1 && (
+                  {/* ドットインジケーター / テキストインジケーター */}
+                  {photoIds.length > 1 && photoIds.length <= 20 && (
                     <div className="flex justify-center gap-2">
                       {photoIds.map((_, index) => (
                         <div
@@ -1265,6 +1265,11 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         />
                       ))}
                     </div>
+                  )}
+                  {photoIds.length > 20 && (
+                    <p className="text-center text-sm text-gray-500">
+                      {currentIndex + 1} / {photoIds.length}
+                    </p>
                   )}
 
                   {/* Issue#30: お気に入りボタン / Issue#54: 通報ボタン */}

@@ -423,7 +423,7 @@ function MainContent({ onMapReady }: MainContentProps) {
       </div>
 
       {/* フローティングUI - 左上: フィルターボタン、右上: メニューボタン（プレビュー中は非表示） */}
-      {!shootingLocationPreview && <div className="absolute top-[calc(1rem+env(safe-area-inset-top,0px))] left-6 right-6 z-10 flex items-start justify-between gap-3">
+      {!shootingLocationPreview && <div className="absolute top-[calc(1rem+var(--safe-area-top))] left-6 right-6 z-10 flex items-start justify-between gap-3">
         <Button
           variant="secondary"
           size="icon"

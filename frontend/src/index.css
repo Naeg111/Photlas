@@ -138,6 +138,21 @@
   will-change: auto !important;
 }
 
+/*
+ * 横画面時のsafe-area-inset-top抑制
+ * 横画面ではノッチが画面上部に来ないため、safe-area-inset-topは
+ * ステータスバー分のみとなる。この余白はダイアログ等では不要なため、
+ * CSS変数で0pxに抑制する。
+ */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+}
+@media (orientation: landscape) {
+  :root {
+    --safe-area-top: 0px;
+  }
+}
+
 /* Mapbox帰属表示をsafe-area内に配置（角丸デバイスでの視認性確保） */
 .mapboxgl-ctrl-bottom-left,
 .mapboxgl-ctrl-bottom-right {
