@@ -41,7 +41,7 @@ export function TopMenuPanel({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="top" className="w-full h-full md:w-[60%] md:left-[20%] md:overflow-hidden bg-transparent p-0 gap-0 border-none shadow-none">
-        <div className="bg-background w-full px-16 pb-10 pt-[calc(2.5rem+env(safe-area-inset-top,0px))] border-b shadow-lg md:rounded-b-lg md:overflow-y-auto md:max-h-[90vh]">
+        <div className="bg-background w-full px-16 pb-10 pt-[calc(2.5rem+var(--safe-area-top))] border-b shadow-lg md:rounded-b-lg md:overflow-y-auto md:max-h-[90vh]">
           <SheetHeader className="sr-only">
             <SheetTitle>メニュー</SheetTitle>
             <SheetDescription>

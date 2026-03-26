@@ -154,7 +154,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-[calc(1rem+env(safe-area-inset-top,0px))] right-4 text-white hover:bg-white/20 z-10"
+            className="absolute top-[calc(1rem+var(--safe-area-top))] right-4 text-white hover:bg-white/20 z-10"
             onClick={(e) => {
               e.stopPropagation()
               onOpenChange(false)
