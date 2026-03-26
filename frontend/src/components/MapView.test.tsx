@@ -243,7 +243,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       await waitFor(() => {
         const message = screen.getByText(/投稿を表示するには地図を拡大してください/)
         const container = message.closest('div[class*="absolute"]')
-        expect(container?.className).toContain('safe-area-inset-top')
+        expect(container?.className).toContain('--safe-area-top')
       })
     })
 
@@ -258,7 +258,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       await waitFor(() => {
         const toast = screen.queryByTestId('toast-container')
         if (toast) {
-          expect(toast.className).toContain('safe-area-inset-top')
+          expect(toast.className).toContain('--safe-area-top')
         }
       })
     })
