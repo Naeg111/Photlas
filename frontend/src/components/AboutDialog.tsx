@@ -26,12 +26,13 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
           <section>
             <h3 className="font-bold text-base mb-2">サービス概要</h3>
             <p>
-              Photlasは、写真を通じて撮影スポットを共有・発見できるサービスです。
-              どこでどんな写真が撮れるのかをひと目で確認できます。
+              Photlasは、地図から写真に出会えるサービスです。
             </p>
             <p className="mt-2">
-              地図と写真を眺めているだけで、まだ見ぬ風景との出会いが生まれます。
-              写真をきっかけに新しい行き先を見つける。それがPhotlasの一番の魅力です。
+              地図をスクロールするだけで、まだ知らない風景が次々と現れます。気になる場所を見つけたら、撮影地点をピンポイントで確認できるので、そのまま次の旅先にできます。
+            </p>
+            <p className="mt-2">
+              地図を眺めているだけで、新しい行き先が見つかる。それがPhotlasです。
             </p>
           </section>
 
