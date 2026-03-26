@@ -43,7 +43,9 @@ describe('AboutDialog', () => {
     expect(screen.getByText('スポットを探す')).toBeInTheDocument()
     expect(screen.getByText('フィルターで絞り込む')).toBeInTheDocument()
     expect(screen.getByText('写真を投稿する')).toBeInTheDocument()
-    expect(screen.getByText('SNSアカウントを登録する')).toBeInTheDocument()
+    expect(screen.getByText('お気に入りに保存する')).toBeInTheDocument()
+    expect(screen.getByText('プロフィールを充実させる')).toBeInTheDocument()
+    expect(screen.getByText('ホーム画面に追加する')).toBeInTheDocument()
   })
 
   it('「お問い合わせ」セクションが表示される', () => {
