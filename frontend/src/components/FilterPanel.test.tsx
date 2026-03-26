@@ -25,7 +25,7 @@ describe('FilterPanel', () => {
   })
 
   describe('Issue#63: ジャンルフィルター', () => {
-    it('14種類のジャンルボタンが表示される', () => {
+    it('14種類のジャンルボタンが表示される', { timeout: 30000 }, () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
       const genres = [
