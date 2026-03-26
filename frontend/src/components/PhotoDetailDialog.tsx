@@ -1252,21 +1252,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     }) : undefined}
                   />
 
-                  {/* ドットインジケーター / テキストインジケーター */}
-                  {photoIds.length > 1 && photoIds.length <= 20 && (
-                    <div className="flex justify-center gap-2">
-                      {photoIds.map((_, index) => (
-                        <div
-                          key={index}
-                          data-testid={`${TEST_ID_DOT_PREFIX}${index}`}
-                          className={`w-2 h-2 rounded-full ${
-                            index === currentIndex ? 'bg-gray-900' : 'bg-gray-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {photoIds.length > 20 && (
+                  {/* 写真枚数インジケーター */}
+                  {photoIds.length > 1 && (
                     <p className="text-center text-sm text-gray-500">
                       {currentIndex + 1} / {photoIds.length}
                     </p>
