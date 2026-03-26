@@ -36,7 +36,7 @@ const API_PHOTOS = `${API_V1_URL}/photos`
 // Test IDs
 const TEST_ID_DIALOG = 'photo-detail-dialog'
 const TEST_ID_LOADING = 'loading-spinner'
-const TEST_ID_DOT_PREFIX = 'dot-indicator-'
+
 const TEST_ID_FAVORITE_BUTTON = 'favorite-button'
 const TEST_ID_FAVORITE_COUNT = 'favorite-count'
 
