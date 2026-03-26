@@ -664,7 +664,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
       {/* Issue#68: Zoom 10未満の場合、拡大を促す静的メッセージを表示 */}
       {zoom < MIN_ZOOM_FOR_PINS && (
-        <div className="absolute top-[calc(5rem+var(--safe-area-top))] left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg pointer-events-none select-none">
+        <div className="absolute top-[calc(5rem+env(safe-area-inset-top,0px))] left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg pointer-events-none select-none">
           <p className="text-center text-gray-700 font-semibold whitespace-nowrap md:whitespace-normal">
             投稿を表示するには<br className="md:hidden" />地図を拡大してください
           </p>
@@ -675,7 +675,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       {showToast && (
         <div
           data-testid="toast-container"
-          className="top-center absolute top-[calc(1rem+var(--safe-area-top))] left-1/2 transform -translate-x-1/2 z-50"
+          className="top-center absolute top-[calc(1rem+env(safe-area-inset-top,0px))] left-1/2 transform -translate-x-1/2 z-50"
         >
           <div
             role="alert"
