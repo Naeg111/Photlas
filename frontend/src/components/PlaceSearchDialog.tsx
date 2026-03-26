@@ -205,7 +205,7 @@ export function PlaceSearchDialog({
       />
 
       {/* 検索コンテナ: 上部中央にフローティング配置 */}
-      <div className="absolute top-[calc(91px+env(safe-area-inset-top,0px))] left-[30px] right-[30px] md:left-1/2 md:-translate-x-1/2 md:max-w-md pointer-events-auto flex flex-col gap-1">
+      <div className="absolute top-[calc(91px+var(--safe-area-top))] left-[30px] right-[30px] md:left-1/2 md:-translate-x-1/2 md:max-w-md pointer-events-auto flex flex-col gap-1">
         {/* 検索ボックス */}
         <Input
           type="text"

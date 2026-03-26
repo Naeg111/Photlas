@@ -168,7 +168,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <div data-testid="filter-scroll-container" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))]" style={{ touchAction: 'manipulation' }}>
+        <div data-testid="filter-scroll-container" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+var(--safe-area-top))]" style={{ touchAction: 'manipulation' }}>
         <div className="space-y-[30px] pb-6 mt-[40px]">
           {/* Issue#63: 写真のジャンル */}
           <div>
