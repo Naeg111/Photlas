@@ -48,6 +48,15 @@ describe('AboutDialog', () => {
     expect(screen.getByText('ホーム画面に追加する')).toBeInTheDocument()
   })
 
+  it('「地図の操作について」セクションが表示される', () => {
+    render(<AboutDialog open={true} onOpenChange={mockOnOpenChange} />)
+
+    expect(screen.getByText('地図の操作について')).toBeInTheDocument()
+    expect(screen.getByText('方位リセットボタン')).toBeInTheDocument()
+    expect(screen.getByText('場所検索ボタン')).toBeInTheDocument()
+    expect(screen.getByText('現在位置ボタン')).toBeInTheDocument()
+  })
+
   it('「お問い合わせ」セクションが表示される', () => {
     render(<AboutDialog open={true} onOpenChange={mockOnOpenChange} />)
 

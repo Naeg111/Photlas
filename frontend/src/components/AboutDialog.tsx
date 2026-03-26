@@ -5,6 +5,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "./ui/dialog";
+import { Search, LocateFixed } from "lucide-react";
+import { CompassIcon } from "./CompassIcon";
 
 interface AboutDialogProps {
   open: boolean;
@@ -76,6 +78,35 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
                 </p>
               </li>
             </ol>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-base mb-2">地図の操作について</h3>
+            <ul className="space-y-3">
+              <li>
+                <p>
+                  地図は2本指で操作することで、向きや角度を変更できます。
+                </p>
+              </li>
+              <li className="flex items-start gap-2">
+                <CompassIcon className="w-5 h-5 shrink-0 mt-0.5" />
+                <p>
+                  <span className="font-semibold">方位リセットボタン</span> — 地図の向きや角度を変更した場合に、北が上の状態にリセットします。
+                </p>
+              </li>
+              <li className="flex items-start gap-2">
+                <Search className="w-5 h-5 shrink-0 mt-0.5" />
+                <p>
+                  <span className="font-semibold">場所検索ボタン</span> — 地名や施設名を入力して、地図をその場所に移動できます。
+                </p>
+              </li>
+              <li className="flex items-start gap-2">
+                <LocateFixed className="w-5 h-5 shrink-0 mt-0.5" />
+                <p>
+                  <span className="font-semibold">現在位置ボタン</span> — 現在地を地図上に表示します。
+                </p>
+              </li>
+            </ul>
           </section>
 
           <section>
