@@ -160,7 +160,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="top" className="w-full h-full md:w-[70%] md:max-h-[90vh] md:left-[15%] md:rounded-b-lg md:overflow-hidden">
+      <SheetContent side="top" className="w-full h-full md:w-[70%] md:h-[80vh] md:left-[15%] md:rounded-b-lg md:overflow-hidden flex flex-col">
         <SheetHeader className="sr-only">
           <SheetTitle>フィルター</SheetTitle>
           <SheetDescription>
@@ -168,7 +168,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <div data-testid="filter-scroll-container" className="h-full overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))]" style={{ touchAction: 'manipulation' }}>
+        <div data-testid="filter-scroll-container" className="flex-1 overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))]" style={{ touchAction: 'manipulation' }}>
         <div className="space-y-[30px] pb-6 mt-[40px]">
           {/* Issue#63: 写真のジャンル */}
           <div>
@@ -370,16 +370,17 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
             )}
           </div>
 
-          {/* 適用・クリアボタン */}
-          <div className="flex gap-2 sticky bottom-0 bg-background py-4">
-            <Button variant="outline" className="flex-1" onClick={handleClear}>
-              クリア
-            </Button>
-            <Button className="flex-1" onClick={handleApply}>
-              適用
-            </Button>
-          </div>
         </div>
+        </div>
+
+        {/* 適用・クリアボタン（スクロール外に固定） */}
+        <div className="flex gap-2 px-6 py-4 border-t bg-background shrink-0">
+          <Button variant="outline" className="flex-1" onClick={handleClear}>
+            クリア
+          </Button>
+          <Button className="flex-1" onClick={handleApply}>
+            適用
+          </Button>
         </div>
       </SheetContent>
     </Sheet>
