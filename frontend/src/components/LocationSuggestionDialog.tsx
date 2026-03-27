@@ -29,7 +29,7 @@ export function LocationSuggestionDialog({
   currentLatitude,
   currentLongitude,
   onSubmit,
-}: LocationSuggestionDialogProps) {
+}: Readonly<LocationSuggestionDialogProps>) {
   const [suggestedLat, setSuggestedLat] = useState<number | null>(null)
   const [suggestedLng, setSuggestedLng] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)

@@ -10,11 +10,11 @@
  */
 export function transformMonths(months: string[]): number[] {
   return months.map(month => {
-    const match = month.match(/^(\d+)月$/);
+    const match = /^(\d+)月$/.exec(month);
     if (!match) {
       return 0;
     }
-    return parseInt(match[1], 10);
+    return Number.parseInt(match[1], 10);
   }).filter(m => m > 0 && m <= 12);
 }
 

@@ -299,7 +299,9 @@ describe('useProfileEdit', () => {
       })
 
       expect(result.current.isEditingSnsLinks).toBe(true)
-      expect(result.current.editingSnsLinks).toEqual(existingLinks)
+      expect(result.current.editingSnsLinks).toEqual([
+        expect.objectContaining({ platform: 'twitter', url: 'https://twitter.com/test' }),
+      ])
     })
 
     it('handleStartEditSnsLinksで空の場合にデフォルトエントリが追加される', () => {
@@ -312,7 +314,7 @@ describe('useProfileEdit', () => {
       })
 
       expect(result.current.editingSnsLinks).toEqual([
-        { platform: 'twitter', url: '' },
+        expect.objectContaining({ platform: 'twitter', url: '' }),
       ])
     })
 

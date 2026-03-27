@@ -32,7 +32,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   handleReload = (): void => {
-    window.location.reload()
+    globalThis.location.reload()
   }
 
   render(): ReactNode {

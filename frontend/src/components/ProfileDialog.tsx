@@ -51,6 +51,7 @@ const PHOTOS_PER_PAGE = 20
 const MAX_SNS_LINKS = 3
 
 interface SnsLink {
+  id?: string
   url: string
   platform?: string
 }
@@ -279,11 +280,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         body: JSON.stringify({ reason: data.reason, details: data.details }),
       })
 
-      if (response.ok) {
-        setIsReportOpen(false)
-      } else if (response.status === 409) {
-        setIsReportOpen(false)
-      } else if (response.status === 400) {
+      if (response.ok || response.status === 409 || response.status === 400) {
         setIsReportOpen(false)
       }
     } catch {
@@ -467,15 +464,14 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           {/* SNSリンク */}
           {!isEditingSnsLinks && displaySnsLinks.length > 0 && (
             <div className="flex gap-4">
-              {displaySnsLinks.map((link, index) => (
+              {displaySnsLinks.map((link) => (
                 <a
-                  key={index}
+                  key={link.url}
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={getSnsLabel(link.url)}
                   className="text-gray-600 hover:text-gray-900 transition-colors"
-                  role="link"
                 >
                   {getSnsIcon(link.url)}
                 </a>
@@ -501,7 +497,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           {isOwnProfile && isEditingSnsLinks && (
             <div className="w-full max-w-md mt-4 space-y-4">
               {editingSnsLinks.map((link, index) => (
-                <div key={index} className="flex gap-2 items-center">
+                <div key={link.id} className="flex gap-2 items-center">
                   <select
                     data-testid={`sns-platform-select-${index}`}
                     className="w-32 border rounded-md px-3 py-2"

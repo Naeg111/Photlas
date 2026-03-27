@@ -7,8 +7,8 @@ import { ChevronDown, ChevronUp } from "lucide-react"
 import { PHOTO_CATEGORIES } from "../utils/constants"
 
 
-const MONTHS_NEED_INVERT = ["1月", "2月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
-const TIMES_NEED_INVERT = ["夕方"];
+const MONTHS_NEED_INVERT = new Set(["1月", "2月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]);
+const TIMES_NEED_INVERT = new Set(["夕方"]);
 
 // Issue#63: 上級者向けフィルターの選択肢（機材種別・焦点距離・ISO感度のみ）
 const DEVICE_TYPE_OPTIONS = [
@@ -81,12 +81,12 @@ interface FilterPanelProps {
 const FILTER_BTN_BASE = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors [&_svg]:shrink-0 [&_svg]:w-5 [&_svg]:h-5"
 const FILTER_BTN_BORDER = { border: '1px solid #d1d5db' } as const
 
-function FilterButton({ selected, onClick, className, children }: {
+function FilterButton({ selected, onClick, className, children }: Readonly<{
   selected: boolean
   onClick: () => void
   className?: string
   children: React.ReactNode
-}) {
+}>) {
   return (
     <button
       type="button"
@@ -102,7 +102,7 @@ function FilterButton({ selected, onClick, className, children }: {
   )
 }
 
-export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
+export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPanelProps>) {
   // 基本フィルターの状態
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedMonths, setSelectedMonths] = useState<string[]>([])
@@ -215,7 +215,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
               {MONTHS.map((month) => {
                 const Icon = MonthIcons[month];
                 const isSelected = selectedMonths.includes(month);
-                const needsInvert = MONTHS_NEED_INVERT.includes(month);
+                const needsInvert = MONTHS_NEED_INVERT.has(month);
                 return (
                   <FilterButton
                     key={month}
@@ -238,7 +238,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
               {TIME_OF_DAY.map((time) => {
                 const Icon = TimeIcons[time];
                 const isSelected = selectedTimes.includes(time);
-                const needsInvert = TIMES_NEED_INVERT.includes(time);
+                const needsInvert = TIMES_NEED_INVERT.has(time);
                 return (
                   <FilterButton
                     key={time}

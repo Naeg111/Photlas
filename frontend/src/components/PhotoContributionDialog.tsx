@@ -85,11 +85,18 @@ interface PhotoContributionDialogProps {
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error' | 'auth_error'
 
+/** アップロードステータスに対応する背景色クラスを返す */
+function getUploadStatusBgColor(status: UploadStatus): string {
+  if (status === 'error' || status === 'auth_error') return 'bg-red-500'
+  if (status === 'success') return 'bg-green-500'
+  return 'bg-white'
+}
+
 export function PhotoContributionDialog({
   open,
   onOpenChange,
   onSubmit,
-}: PhotoContributionDialogProps) {
+}: Readonly<PhotoContributionDialogProps>) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string>('')
   const [title, setTitle] = useState('')
@@ -226,7 +233,7 @@ export function PhotoContributionDialog({
           options.proximity = [pinPosition.lng, pinPosition.lat]
         }
 
-        const result = await placeNameSearchBox!.suggest(value, options)
+        const result = await placeNameSearchBox.suggest(value, options)
         const items = (result.suggestions || []) as PlaceNameSuggestion[]
         setPlaceNameSuggestions(items)
         setIsPlaceNameDropdownOpen(items.length > 0)
@@ -719,13 +726,7 @@ export function PhotoContributionDialog({
               className="fixed inset-x-0 bottom-0 z-50 p-6"
             >
               <div
-                className={`max-w-md mx-auto rounded-lg shadow-2xl p-6 ${
-                  uploadStatus === 'error' || uploadStatus === 'auth_error'
-                    ? 'bg-red-500'
-                    : uploadStatus === 'success'
-                    ? 'bg-green-500'
-                    : 'bg-white'
-                }`}
+                className={`max-w-md mx-auto rounded-lg shadow-2xl p-6 ${getUploadStatusBgColor(uploadStatus)}`}
               >
                 <div className="space-y-3">
                   <p

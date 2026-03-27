@@ -13,7 +13,7 @@ interface ProfileImageUploaderProps {
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
-function ProfileImageUploader({ onImageSelect }: ProfileImageUploaderProps) {
+function ProfileImageUploader({ onImageSelect }: Readonly<ProfileImageUploaderProps>) {
   const [preview, setPreview] = useState<string | null>(null)
   const [error, setError] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)

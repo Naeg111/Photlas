@@ -37,7 +37,7 @@ export function ReportDialog({
   onOpenChange,
   onSubmit,
   isLoading,
-}: ReportDialogProps) {
+}: Readonly<ReportDialogProps>) {
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [details, setDetails] = useState<string>("");
 

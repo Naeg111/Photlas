@@ -268,11 +268,11 @@ function DetailMiniMap({
   latitude,
   longitude,
   onClick,
-}: {
+}: Readonly<{
   latitude: number
   longitude: number
   onClick?: () => void
-}) {
+}>) {
   // ダイアログの開閉アニメーション完了を待ってからMapGLを描画する。
   // singlePhotoIdモード（ディープリンク）ではデータ取得が速く、
   // アニメーション中にMapGLが初期化されるとMarkerの位置計算が失敗する。
@@ -334,7 +334,7 @@ function DetailMiniMap({
   )
 }
 
-export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted, singlePhotoId }: PhotoDetailDialogProps) {
+export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted, singlePhotoId }: Readonly<PhotoDetailDialogProps>) {
   const { isAuthenticated, user } = useAuth()
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -691,7 +691,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const handleShare = useCallback(async () => {
     if (!currentPhotoId) return
 
-    const shareUrl = `${window.location.origin}/photo-viewer/${currentPhotoId}`
+    const shareUrl = `${globalThis.location.origin}/photo-viewer/${currentPhotoId}`
 
     try {
       if (navigator.share) {
