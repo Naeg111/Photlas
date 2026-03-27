@@ -45,27 +45,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 String email = jwtService.extractUsername(token);
 
-                if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    if (jwtService.isTokenValid(token, email)) {
-                        // Issue#54: JWTからロール情報を抽出してAuthorityに設定
-                        String role = jwtService.extractRole(token);
-                        List<SimpleGrantedAuthority> authorities = List.of(
-                                new SimpleGrantedAuthority("ROLE_" + role)
-                        );
+                if (email != null
+                        && SecurityContextHolder.getContext().getAuthentication() == null
+                        && jwtService.isTokenValid(token, email)) {
+                    // Issue#54: JWTからロール情報を抽出してAuthorityに設定
+                    String role = jwtService.extractRole(token);
+                    List<SimpleGrantedAuthority> authorities = List.of(
+                            new SimpleGrantedAuthority("ROLE_" + role)
+                    );
 
-                        // 認証情報をSecurityContextに設定
-                        UsernamePasswordAuthenticationToken authentication =
-                                new UsernamePasswordAuthenticationToken(
-                                        email,
-                                        null,
-                                        authorities
-                                );
-                        authentication.setDetails(
-                                new WebAuthenticationDetailsSource().buildDetails(request)
-                        );
+                    // 認証情報をSecurityContextに設定
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    email,
+                                    null,
+                                    authorities
+                            );
+                    authentication.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
 
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                    }
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             } catch (Exception e) {
                 // トークンが無効な場合は認証情報を設定しない

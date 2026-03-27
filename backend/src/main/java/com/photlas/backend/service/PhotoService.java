@@ -54,6 +54,7 @@ public class PhotoService {
     private static final String ROLE_SUSPENDED = "SUSPENDED";
     private static final String ERROR_PHOTO_NOT_FOUND = "写真が見つかりません";
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
+    private static final String ERROR_SPOT_NOT_FOUND = "スポットが見つかりません";
 
     private final PhotoRepository photoRepository;
     private final SpotRepository spotRepository;
@@ -176,7 +177,7 @@ public class PhotoService {
         validatePhotoVisibility(photo, currentUser);
 
         Spot spot = spotRepository.findById(photo.getSpotId())
-                .orElseThrow(() -> new SpotNotFoundException("スポットが見つかりません"));
+                .orElseThrow(() -> new SpotNotFoundException(ERROR_SPOT_NOT_FOUND));
 
         User user = userRepository.findById(photo.getUserId())
                 .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
@@ -224,7 +225,7 @@ public class PhotoService {
 
         Page<PhotoResponse> photoResponses = photoPage.map(photo -> {
             Spot spot = spotRepository.findById(photo.getSpotId())
-                    .orElseThrow(() -> new SpotNotFoundException("スポットが見つかりません"));
+                    .orElseThrow(() -> new SpotNotFoundException(ERROR_SPOT_NOT_FOUND));
             User photoUser = userRepository.findById(photo.getUserId())
                     .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
@@ -363,7 +364,7 @@ public class PhotoService {
         Photo savedPhoto = photoRepository.save(photo);
 
         Spot spot = spotRepository.findById(photo.getSpotId())
-                .orElseThrow(() -> new SpotNotFoundException("スポットが見つかりません"));
+                .orElseThrow(() -> new SpotNotFoundException(ERROR_SPOT_NOT_FOUND));
 
         logger.info("写真を更新しました: photoId={}, userId={}, titleChanged={}",
                 photoId, user.getId(), isTitleChanged);
