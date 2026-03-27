@@ -51,8 +51,6 @@ public class PhotoResponse {
         @JsonProperty("photo_id")
         private Long photoId;
 
-        private String title;
-
         @JsonProperty("place_name")
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private String placeName;
@@ -105,9 +103,8 @@ public class PhotoResponse {
         public PhotoDTO() {
         }
 
-        public PhotoDTO(Long photoId, String title, String imageUrl, String shotAt, String weather) {
+        public PhotoDTO(Long photoId, String imageUrl, String shotAt, String weather) {
             this.photoId = photoId;
-            this.title = title;
             this.imageUrl = imageUrl;
             this.shotAt = shotAt;
             this.weather = weather;
@@ -115,9 +112,8 @@ public class PhotoResponse {
             this.favoriteCount = 0L;
         }
 
-        public PhotoDTO(Long photoId, String title, String imageUrl, String shotAt, String weather, Boolean isFavorited) {
+        public PhotoDTO(Long photoId, String imageUrl, String shotAt, String weather, Boolean isFavorited) {
             this.photoId = photoId;
-            this.title = title;
             this.imageUrl = imageUrl;
             this.shotAt = shotAt;
             this.weather = weather;
@@ -125,9 +121,8 @@ public class PhotoResponse {
             this.favoriteCount = 0L;
         }
 
-        public PhotoDTO(Long photoId, String title, String imageUrl, String shotAt, String weather, Boolean isFavorited, Long favoriteCount) {
+        public PhotoDTO(Long photoId, String imageUrl, String shotAt, String weather, Boolean isFavorited, Long favoriteCount) {
             this.photoId = photoId;
-            this.title = title;
             this.imageUrl = imageUrl;
             this.shotAt = shotAt;
             this.weather = weather;
@@ -141,14 +136,6 @@ public class PhotoResponse {
 
         public void setPhotoId(Long photoId) {
             this.photoId = photoId;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
         }
 
         public String getPlaceName() {

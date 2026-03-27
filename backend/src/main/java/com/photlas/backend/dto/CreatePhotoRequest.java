@@ -12,9 +12,6 @@ import java.util.List;
  */
 public class CreatePhotoRequest {
 
-    @Size(max = 20, message = "タイトルは20文字以内で入力してください")
-    private String title;
-
     @Size(max = 100, message = "施設名・店名は100文字以内で入力してください")
     private String placeName;
 
@@ -67,14 +64,6 @@ public class CreatePhotoRequest {
     private Double cropZoom;
 
     // Getters and Setters
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
     public String getPlaceName() {
         return placeName;
     }

@@ -127,7 +127,6 @@ public class PhotoService {
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(user.getId());
         photo.setS3ObjectKey(request.getS3ObjectKey());
-        photo.setTitle(request.getTitle());
         photo.setPlaceName(request.getPlaceName());
         photo.setShotAt(takenAt);
         photo.setWeather(weather);
@@ -334,14 +333,7 @@ public class PhotoService {
             throw new org.springframework.security.access.AccessDeniedException("この写真を編集する権限がありません");
         }
 
-        // タイトル変更の判定
-        boolean isTitleChanged = request.getTitle() != null
-                && !request.getTitle().equals(photo.getTitle());
-
         // フィールド更新
-        if (request.getTitle() != null) {
-            photo.setTitle(request.getTitle());
-        }
         if (request.getWeather() != null) {
             photo.setWeather(request.getWeather());
         }
@@ -353,18 +345,12 @@ public class PhotoService {
             photo.setCategories(categories);
         }
 
-        // タイトル変更時は再モデレーション
-        if (isTitleChanged) {
-            photo.setModerationStatus(ModerationStatus.PENDING_REVIEW);
-        }
-
         Photo savedPhoto = photoRepository.save(photo);
 
         Spot spot = spotRepository.findById(photo.getSpotId())
                 .orElseThrow(() -> new SpotNotFoundException(ERROR_SPOT_NOT_FOUND));
 
-        logger.info("写真を更新しました: photoId={}, userId={}, titleChanged={}",
-                photoId, user.getId(), isTitleChanged);
+        logger.info("写真を更新しました: photoId={}, userId={}", photoId, user.getId());
 
         return buildPhotoResponse(savedPhoto, spot, user, false, 0L);
     }
@@ -428,7 +414,6 @@ public class PhotoService {
 
         PhotoResponse.PhotoDTO photoDTO = new PhotoResponse.PhotoDTO(
                 photo.getPhotoId(),
-                photo.getTitle(),
                 imageUrl,
                 photo.getShotAt().format(DateTimeFormatter.ISO_DATE_TIME),
                 photo.getWeather(),

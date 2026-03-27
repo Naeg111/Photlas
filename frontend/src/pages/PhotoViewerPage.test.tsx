@@ -28,15 +28,15 @@ vi.mock('react-router-dom', async () => {
 
 // テスト定数
 const TEST_PHOTO_ID = 123
-const TEST_PHOTO_TITLE = '東京タワーの夜景'
+const TEST_PLACE_NAME = '東京タワー'
 const API_PHOTOS = '/api/v1/photos'
 
 // モックAPIレスポンス
-function createMockPhotoResponse(overrides?: { photoId?: number; title?: string }) {
+function createMockPhotoResponse(overrides?: { photoId?: number; placeName?: string }) {
   return {
     photo: {
       photo_id: overrides?.photoId ?? TEST_PHOTO_ID,
-      title: overrides?.title ?? TEST_PHOTO_TITLE,
+      place_name: overrides?.placeName ?? TEST_PLACE_NAME,
       image_url: 'https://example.com/photo.jpg',
       shot_at: '2024-01-15T14:30:00',
       weather: '晴れ',
@@ -105,7 +105,7 @@ describe('PhotoViewerPage', () => {
     renderWithRoute(TEST_PHOTO_ID)
 
     await waitFor(() => {
-      expect(screen.getByText(TEST_PHOTO_TITLE)).toBeInTheDocument()
+      expect(screen.getByText('testuser')).toBeInTheDocument()
     })
   })
 
@@ -133,7 +133,7 @@ describe('PhotoViewerPage', () => {
     })
   })
 
-  it('document.titleが写真タイトルに設定される', async () => {
+  it('document.titleが場所名に設定される', async () => {
     const response = createMockPhotoResponse()
     mockFetch.mockResolvedValue({
       ok: true,
@@ -143,7 +143,7 @@ describe('PhotoViewerPage', () => {
     renderWithRoute(TEST_PHOTO_ID)
 
     await waitFor(() => {
-      expect(document.title).toContain(TEST_PHOTO_TITLE)
+      expect(document.title).toContain(TEST_PLACE_NAME)
     })
   })
 })

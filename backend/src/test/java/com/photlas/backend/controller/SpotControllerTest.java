@@ -106,7 +106,6 @@ public class SpotControllerTest {
     private static final String TIME_OF_DAY_EVENING = "EVENING";
 
     // Test Data Constants - Photo
-    private static final String TEST_PHOTO_TITLE = "Test Photo";
     private static final String TEST_S3_OBJECT_KEY = "test-key";
     private static final String OLD_PHOTO_KEY = "old-photo-key";
     private static final String NEW_PHOTO_KEY = "new-photo-key";
@@ -195,7 +194,6 @@ public class SpotControllerTest {
         spot = spotRepository.save(spot);
 
         Photo photo = new Photo();
-        photo.setTitle(TEST_PHOTO_TITLE);
         photo.setS3ObjectKey(TEST_S3_OBJECT_KEY);
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
@@ -1112,7 +1110,6 @@ public class SpotControllerTest {
 
     private Photo createPhoto(Spot spot, LocalDateTime shotAt, String weather) {
         Photo photo = new Photo();
-        photo.setTitle(TEST_PHOTO_TITLE);
         photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-" + System.nanoTime());
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
@@ -1127,7 +1124,6 @@ public class SpotControllerTest {
 
     private Photo createPhotoWithDeviceType(Spot spot, LocalDateTime shotAt, String weather, String deviceType) {
         Photo photo = new Photo();
-        photo.setTitle(TEST_PHOTO_TITLE);
         photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-" + System.nanoTime());
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
@@ -1143,7 +1139,6 @@ public class SpotControllerTest {
 
     private Photo createPhotoWithTimeOfDay(Spot spot, LocalDateTime shotAt, String weather, String timeOfDay) {
         Photo photo = new Photo();
-        photo.setTitle(TEST_PHOTO_TITLE);
         photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-" + System.nanoTime());
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
@@ -1181,7 +1176,6 @@ public class SpotControllerTest {
         spot = spotRepository.save(spot);
 
         Photo photo = new Photo();
-        photo.setTitle(TEST_PHOTO_TITLE);
         photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-deleted-" + System.nanoTime());
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(deletedUser.getId());

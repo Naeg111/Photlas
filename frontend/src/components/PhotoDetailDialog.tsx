@@ -97,7 +97,6 @@ interface PhotoDetailDialogProps {
 interface PhotoApiResponse {
   photo: {
     photo_id: number
-    title: string
     place_name?: string | null
     image_url: string
     shot_at: string
@@ -146,7 +145,6 @@ interface ExifInfo {
 
 interface PhotoDetail {
   photoId: number
-  title: string
   placeName?: string | null
   imageUrl: string
   shotAt: string
@@ -203,7 +201,6 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
 
   return {
     photoId: response.photo.photo_id,
-    title: response.photo.title,
     placeName: response.photo.place_name,
     imageUrl: response.photo.image_url,
     shotAt: response.photo.shot_at,
@@ -379,12 +376,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
   // Issue#61: 写真メタデータ編集状態管理
   const [isEditing, setIsEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState('')
   const [editWeather, setEditWeather] = useState('')
   const [editPlaceName, setEditPlaceName] = useState('')
   const [editCategories, setEditCategories] = useState<string[]>([])
   const [isSaving, setIsSaving] = useState(false)
-  const [isTitleChangeWarningOpen, setIsTitleChangeWarningOpen] = useState(false)
 
   // Issue#61: Mapbox Search Box（場所名検索）
   const [placeNameSuggestions, setPlaceNameSuggestions] = useState<{ name: string; full_address?: string; mapbox_id: string }[]>([])
@@ -695,7 +690,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: currentPhoto?.title || 'Photlas', url: shareUrl })
+        await navigator.share({ title: currentPhoto?.placeName || 'Photlas', url: shareUrl })
       } else {
         await navigator.clipboard.writeText(shareUrl)
         toast.success('URLをコピーしました')
@@ -705,12 +700,11 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       if (error instanceof Error && error.name === 'AbortError') return
       toast.error('共有に失敗しました')
     }
-  }, [currentPhotoId, currentPhoto?.title])
+  }, [currentPhotoId, currentPhoto?.placeName])
 
   // Issue#61: 編集モード開始
   const handleStartEdit = useCallback(() => {
     if (!currentPhoto) return
-    setEditTitle(currentPhoto.title || '')
     setEditWeather(currentPhoto.weather || '')
     setEditPlaceName(currentPhoto.placeName || '')
     setEditCategories([]) // カテゴリは現在APIレスポンスに含まれないため空で初期化
@@ -776,22 +770,16 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     placeNameSessionTokenRef.current = new SessionToken()
   }, [])
 
-  // Issue#61: 保存前チェック（タイトル変更時は警告表示）
+  // Issue#61: 保存前チェック
   const handleSaveClick = useCallback(() => {
     if (!currentPhoto) return
-    const isTitleChanged = editTitle !== (currentPhoto.title || '')
-    if (isTitleChanged && currentPhoto.moderationStatus === 'PUBLISHED') {
-      setIsTitleChangeWarningOpen(true)
-    } else {
-      handleSaveEdit()
-    }
-  }, [currentPhoto, editTitle])
+    handleSaveEdit()
+  }, [currentPhoto])
 
   // Issue#61: 編集保存
   const handleSaveEdit = useCallback(async () => {
     if (!currentPhotoId) return
 
-    setIsTitleChangeWarningOpen(false)
     setIsSaving(true)
     try {
       const response = await fetch(`${API_PHOTOS}/${currentPhotoId}`, {
@@ -801,7 +789,6 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: editTitle,
           weather: editWeather || null,
           placeName: editPlaceName || null,
           categories: editCategories.length > 0 ? editCategories : null,
@@ -816,7 +803,6 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           if (existing) {
             next.set(currentPhotoId, {
               ...existing,
-              title: data.photo.title,
               weather: data.photo.weather,
               placeName: data.photo.place_name,
               moderationStatus: data.photo.moderation_status,
@@ -826,7 +812,6 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         })
         setDisplayedPhoto(prev => prev ? {
           ...prev,
-          title: data.photo.title,
           weather: data.photo.weather,
           placeName: data.photo.place_name,
           moderationStatus: data.photo.moderation_status,
@@ -841,7 +826,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     } finally {
       setIsSaving(false)
     }
-  }, [currentPhotoId, editTitle, editWeather, editPlaceName, editCategories])
+  }, [currentPhotoId, editWeather, editPlaceName, editCategories])
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal={false}>
@@ -919,7 +904,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                             >
                               <ProtectedImage
                                 src={photo.imageUrl}
-                                alt={photo.title}
+                                alt="画像"
                                 className="w-full h-full"
                                 style={{
                                   objectFit: 'cover',
@@ -972,21 +957,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
               {/* 写真情報（displayedPhotoで表示し、スライド切替時の点滅を防止） */}
               {displayedPhoto && (
                 <div className="min-h-0 p-6 pb-8 space-y-4 overflow-y-auto">
-                  {/* Issue#61: タイトル（表示/編集モード切替） */}
-                  <div className="flex items-center gap-2">
-                    {isEditing ? (
-                      <input
-                        data-testid="edit-title-input"
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        className="text-2xl font-bold min-h-[2rem] flex-1 border-b-2 border-primary outline-none bg-transparent"
-                        maxLength={20}
-                      />
-                    ) : (
-                      <h2 className="text-2xl font-bold min-h-[2rem] flex-1">{displayedPhoto.title}</h2>
-                    )}
-                    {isAuthenticated && currentPhoto?.user?.userId === user?.userId && !isEditing && (
+                  {/* Issue#61: 編集ボタン */}
+                  {isAuthenticated && currentPhoto?.user?.userId === user?.userId && !isEditing && (
+                    <div className="flex justify-end">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -996,8 +969,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       >
                         <Pencil className="w-4 h-4" />
                       </Button>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Issue#61: 編集モード */}
                   {isEditing && (
@@ -1102,24 +1075,6 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       </div>
                     </div>
                   )}
-
-                  {/* Issue#61: タイトル変更時の再モデレーション警告ダイアログ */}
-                  <AlertDialog open={isTitleChangeWarningOpen} onOpenChange={setIsTitleChangeWarningOpen}>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>タイトルの変更</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          タイトルを変更すると再審査が行われ、審査完了まで写真が非公開になります。保存しますか？
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>キャンセル</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleSaveEdit}>
-                          保存する
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
 
                   {/* Issue#54: モデレーションステータスバナー */}
                   {displayedPhoto.moderationStatus === 'QUARANTINED' && (

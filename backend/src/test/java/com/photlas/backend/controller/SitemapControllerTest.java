@@ -128,7 +128,6 @@ public class SitemapControllerTest {
 
     private Photo createPhoto(String s3ObjectKey, ModerationStatus status) {
         Photo photo = new Photo();
-        photo.setTitle("テスト写真");
         photo.setS3ObjectKey(s3ObjectKey);
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(testUser.getId());

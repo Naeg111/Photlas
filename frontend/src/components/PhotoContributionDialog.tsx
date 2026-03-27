@@ -60,7 +60,6 @@ interface PhotoContributionDialogProps {
   onOpenChange: (open: boolean) => void
   onSubmit?: (data: {
     file: File
-    title: string
     placeName?: string
     categories: string[]
     position: { lat: number; lng: number }
@@ -99,7 +98,6 @@ export function PhotoContributionDialog({
 }: Readonly<PhotoContributionDialogProps>) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string>('')
-  const [title, setTitle] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [pinPosition, setPinPosition] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedWeather, setSelectedWeather] = useState<WeatherOption | ''>('')
@@ -290,7 +288,6 @@ export function PhotoContributionDialog({
       if (onSubmit) {
         await onSubmit({
           file: selectedFile,
-          title,
           placeName: placeName || undefined,
           categories: selectedCategories,
           position: pinPosition,
@@ -347,7 +344,6 @@ export function PhotoContributionDialog({
   const resetForm = () => {
     setSelectedFile(null)
     setPreviewUrl('')
-    setTitle('')
     setPlaceName('')
     setPlaceNameSuggestions([])
     setIsPlaceNameDropdownOpen(false)
@@ -547,20 +543,6 @@ export function PhotoContributionDialog({
                 </div>
               </div>
             )}
-
-            {/* タイトル */}
-            <div className="space-y-3">
-              <Label htmlFor="title" className="text-base">タイトル</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="例：夕暮れの東京タワー"
-                maxLength={PHOTO_UPLOAD.TITLE_MAX_LENGTH}
-                className="mt-2"
-              />
-              <p className="text-sm text-gray-500">{title.length}/{PHOTO_UPLOAD.TITLE_MAX_LENGTH}文字</p>
-            </div>
 
             {/* 位置情報 */}
             <div className="space-y-3">

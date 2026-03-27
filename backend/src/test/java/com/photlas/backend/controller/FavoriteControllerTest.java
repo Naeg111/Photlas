@@ -61,7 +61,6 @@ public class FavoriteControllerTest {
     private static final String USER_ROLE = "USER";
 
     // Test Data Constants - Photo
-    private static final String TEST_PHOTO_TITLE = "Test Photo";
     private static final String TEST_S3_OBJECT_KEY = "test/photo.jpg";
 
     // Test Data Constants - Coordinates
@@ -88,7 +87,6 @@ public class FavoriteControllerTest {
     private static final String JSON_PATH_CONTENT = "$.content";
     private static final String JSON_PATH_CONTENT_SIZE = "$.content";
     private static final String JSON_PATH_PHOTO_ID = "$.content[0].photo.photo_id";
-    private static final String JSON_PATH_PHOTO_TITLE = "$.content[0].photo.title";
     private static final String JSON_PATH_PAGE_NUMBER = "$.pageable.page_number";
     private static final String JSON_PATH_PAGE_SIZE = "$.pageable.page_size";
     private static final String JSON_PATH_TOTAL_PAGES = "$.total_pages";
@@ -137,7 +135,6 @@ public class FavoriteControllerTest {
 
     private Photo createTestPhoto(User user, Spot spot) {
         Photo photo = new Photo();
-        photo.setTitle(TEST_PHOTO_TITLE);
         photo.setS3ObjectKey(TEST_S3_OBJECT_KEY);
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(user.getId());
@@ -287,7 +284,6 @@ public class FavoriteControllerTest {
                 .andExpect(jsonPath(JSON_PATH_CONTENT).isArray())
                 .andExpect(jsonPath(JSON_PATH_CONTENT_SIZE, hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_ID).value(testPhoto.getPhotoId()))
-                .andExpect(jsonPath(JSON_PATH_PHOTO_TITLE).value(TEST_PHOTO_TITLE))
                 .andExpect(jsonPath(JSON_PATH_PAGE_NUMBER).value(DEFAULT_PAGE_NUMBER))
                 .andExpect(jsonPath(JSON_PATH_PAGE_SIZE).value(DEFAULT_PAGE_SIZE))
                 .andExpect(jsonPath(JSON_PATH_TOTAL_PAGES).value(ONE_TOTAL_PAGES))

@@ -168,7 +168,6 @@ public class ReportModerationTest {
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(photoOwner.getId());
         photo.setS3ObjectKey("photos/report-test.jpg");
-        photo.setTitle("通報テスト写真");
         photo.setShotAt(LocalDateTime.of(2026, 3, 1, 12, 0));
         photo.setModerationStatus(ModerationStatus.PUBLISHED);
         return photoRepository.save(photo);

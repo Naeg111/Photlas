@@ -82,7 +82,6 @@ public class FavoriteServiceTest {
         photo.setUserId(TEST_USER_ID);
         photo.setSpotId(100L);
         photo.setS3ObjectKey("photos/test.jpg");
-        photo.setTitle("テスト写真");
         photo.setShotAt(LocalDateTime.of(2026, 1, 1, 12, 0));
         photo.setWeather("晴れ");
         photo.setModerationStatus(ModerationStatus.PUBLISHED);
@@ -290,7 +289,6 @@ public class FavoriteServiceTest {
         deletedUserPhoto.setUserId(99L);
         deletedUserPhoto.setSpotId(100L);
         deletedUserPhoto.setS3ObjectKey("photos/deleted.jpg");
-        deletedUserPhoto.setTitle("退会済みユーザーの写真");
         deletedUserPhoto.setModerationStatus(ModerationStatus.PUBLISHED);
 
         Favorite favorite = new Favorite();

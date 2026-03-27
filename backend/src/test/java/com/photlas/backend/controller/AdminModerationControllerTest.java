@@ -79,8 +79,6 @@ public class AdminModerationControllerTest {
 
     // テスト用定数 - 写真
     private static final String TEST_S3_KEY = "uploads/test-moderation.jpg";
-    private static final String TEST_PHOTO_TITLE = "モデレーションテスト写真";
-
     // エンドポイント定数
     private static final String QUEUE_ENDPOINT = "/api/v1/admin/moderation/queue";
     private static final String APPROVE_ENDPOINT_PREFIX = "/api/v1/admin/moderation/photos/";
@@ -143,7 +141,6 @@ public class AdminModerationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(JSON_PATH_CONTENT, hasSize(1)))
                 .andExpect(jsonPath("$.content[0].photo_id").isNumber())
-                .andExpect(jsonPath("$.content[0].title").value(TEST_PHOTO_TITLE))
                 .andExpect(jsonPath("$.content[0].image_url").isString())
                 .andExpect(jsonPath("$.content[0].user_id").value(photoOwner.getId()))
                 .andExpect(jsonPath("$.content[0].username").value(OWNER_USERNAME))
@@ -349,7 +346,6 @@ public class AdminModerationControllerTest {
         photo.setSpotId(testSpot.getSpotId());
         photo.setUserId(photoOwner.getId());
         photo.setS3ObjectKey(s3Key);
-        photo.setTitle(TEST_PHOTO_TITLE);
         photo.setShotAt(LocalDateTime.of(2026, 3, 1, 12, 0));
         photo.setModerationStatus(status);
         return photoRepository.save(photo);

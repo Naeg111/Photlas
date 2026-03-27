@@ -157,7 +157,6 @@ export interface UploadUrlResponse {
  * 写真メタデータ作成リクエストの型定義
  */
 export interface CreatePhotoRequest {
-  title?: string
   placeName?: string
   s3ObjectKey: string
   takenAt: string

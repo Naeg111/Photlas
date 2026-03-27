@@ -9,23 +9,12 @@ import java.util.List;
  */
 public class UpdatePhotoRequest {
 
-    @Size(max = 20, message = "タイトルは20文字以内で入力してください")
-    private String title;
-
     private List<String> categories;
 
     private String weather;
 
     @Size(max = 100, message = "施設名・店名は100文字以内で入力してください")
     private String placeName;
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
 
     public List<String> getCategories() {
         return categories;
