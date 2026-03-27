@@ -1737,6 +1737,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         'delete-photo-button',
         'edit-photo-button',
         'share-button',
+        'location-suggestion-button',
+        'report-button',
       ])
     })
   })
