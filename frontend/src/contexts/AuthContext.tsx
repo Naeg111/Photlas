@@ -3,7 +3,7 @@
  * Issue#5: ログイン・ログアウト機能
  * Issue#36: ユーザー情報更新機能追加
  */
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
 
 interface User {
   userId: number
@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [])
 
-  const login = (userData: User, token: string, remember: boolean) => {
+  const login = useCallback((userData: User, token: string, remember: boolean) => {
     const storage = remember ? localStorage : sessionStorage
 
     storage.setItem('auth_token', token)
@@ -60,9 +60,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     setUser(userData)
     setIsAuthenticated(true)
-  }
+  }, [])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     // 両方のストレージから削除
     localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_user')
@@ -71,35 +71,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     setUser(null)
     setIsAuthenticated(false)
-  }
+  }, [])
 
-  const getAuthToken = (): string | null => {
+  const getAuthToken = useCallback((): string | null => {
     return localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
-  }
+  }, [])
 
   /**
    * Issue#36: ユーザー情報を部分更新
    * ログイン中のユーザー情報を更新し、ストレージにも保存する
    */
-  const updateUser = (updatedUser: Partial<User>) => {
-    if (!user) return
+  const updateUser = useCallback((updatedUser: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return prev
+      const newUser = { ...prev, ...updatedUser }
+      const storage = localStorage.getItem('auth_token') ? localStorage : sessionStorage
+      storage.setItem('auth_user', JSON.stringify(newUser))
+      return newUser
+    })
+  }, [])
 
-    const newUser = { ...user, ...updatedUser }
-    setUser(newUser)
-
-    // ストレージも更新（localStorageかsessionStorageのどちらを使っているか確認）
-    const storage = localStorage.getItem('auth_token') ? localStorage : sessionStorage
-    storage.setItem('auth_user', JSON.stringify(newUser))
-  }
-
-  const value: AuthContextType = {
+  const value = useMemo<AuthContextType>(() => ({
     user,
     isAuthenticated,
     login,
     logout,
     getAuthToken,
     updateUser
-  }
+  }), [user, isAuthenticated, login, logout, getAuthToken, updateUser])
 
   return (
     <AuthContext.Provider value={value}>

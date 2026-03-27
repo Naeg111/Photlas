@@ -217,6 +217,19 @@ function registerPinImages(mapInstance: MapboxMap, spots: SpotResponse[]): void 
   }
 }
 
+function handleClusterClick(mapInstance: MapboxMap, e: any, callbackRef: React.RefObject<((ids: number[]) => void) | undefined>) {
+  if (!e.features || e.features.length === 0) return
+  const clusterId = e.features[0].properties.cluster_id
+  const source = mapInstance.getSource(SOURCE_ID) as any
+  if (!source?.getClusterLeaves) return
+  source.getClusterLeaves(clusterId, Infinity, 0, (err: any, leaves: any[]) => {
+    if (!err && leaves) {
+      const spotIds = leaves.map((leaf: any) => leaf.properties.spotId)
+      callbackRef.current?.(spotIds)
+    }
+  })
+}
+
 const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady }, ref) {
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<MapboxMap | null>(null)
@@ -350,18 +363,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     })
 
     // クラスタのクリックイベント
-    mapInstance.on('click', CLUSTER_LAYER_ID, (e: any) => {
-      if (!e.features || e.features.length === 0) return
-      const clusterId = e.features[0].properties.cluster_id
-      const source = mapInstance.getSource(SOURCE_ID) as any
-      if (!source?.getClusterLeaves) return
-      source.getClusterLeaves(clusterId, Infinity, 0, (err: any, leaves: any[]) => {
-        if (!err && leaves) {
-          const spotIds = leaves.map((leaf: any) => leaf.properties.spotId)
-          onClusterClickRef.current?.(spotIds)
-        }
-      })
-    })
+    mapInstance.on('click', CLUSTER_LAYER_ID, (e: any) => handleClusterClick(mapInstance, e, onClusterClickRef))
 
     layersInitializedRef.current = true
   }, [])
