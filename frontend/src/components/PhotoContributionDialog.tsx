@@ -708,7 +708,7 @@ export function PhotoContributionDialog({
               className="fixed inset-x-0 bottom-0 z-50 p-6"
             >
               <div
-                className={`max-w-md mx-auto rounded-lg shadow-2xl p-6 ${getUploadStatusBgColor(uploadStatus)}`}
+                className={`max-w-md mx-auto rounded-lg shadow-2xl px-6 py-4 ${getUploadStatusBgColor(uploadStatus)}`}
               >
                 <div className="space-y-3">
                   <p
