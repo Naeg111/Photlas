@@ -105,7 +105,7 @@ public class ModerationStatusTest {
     @Test
     @DisplayName("Issue#54 - 新規投稿のモデレーションステータスがPENDING_REVIEWになる")
     void testCreatePhoto_DefaultModerationStatus_IsPendingReview() {
-        CreatePhotoRequest request = createPhotoRequest("photos/mod001.jpg", "ステータステスト");
+        CreatePhotoRequest request = createPhotoRequest("photos/mod001.jpg");
 
         PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
 
@@ -122,10 +122,10 @@ public class ModerationStatusTest {
     void testGetUserPhotos_OtherUser_OnlyPublishedVisible() {
         // Given: testUserの投稿を各ステータスで作成
         Spot spot = createSpot();
-        Photo published = createPhotoWithStatus(spot, "photos/pub001.jpg", "公開写真", ModerationStatus.PUBLISHED);
-        Photo pending = createPhotoWithStatus(spot, "photos/pend001.jpg", "審査中写真", ModerationStatus.PENDING_REVIEW);
-        Photo quarantined = createPhotoWithStatus(spot, "photos/quar001.jpg", "隔離写真", ModerationStatus.QUARANTINED);
-        Photo removed = createPhotoWithStatus(spot, "photos/rem001.jpg", "削除写真", ModerationStatus.REMOVED);
+        Photo published = createPhotoWithStatus(spot, "photos/pub001.jpg", ModerationStatus.PUBLISHED);
+        Photo pending = createPhotoWithStatus(spot, "photos/pend001.jpg", ModerationStatus.PENDING_REVIEW);
+        Photo quarantined = createPhotoWithStatus(spot, "photos/quar001.jpg", ModerationStatus.QUARANTINED);
+        Photo removed = createPhotoWithStatus(spot, "photos/rem001.jpg", ModerationStatus.REMOVED);
 
         Pageable pageable = PageRequest.of(0, 20);
 
@@ -145,10 +145,10 @@ public class ModerationStatusTest {
     void testGetUserPhotos_OwnUser_PendingPublishedQuarantinedVisible() {
         // Given: testUserの投稿を各ステータスで作成
         Spot spot = createSpot();
-        createPhotoWithStatus(spot, "photos/pub002.jpg", "公開写真", ModerationStatus.PUBLISHED);
-        createPhotoWithStatus(spot, "photos/pend002.jpg", "審査中写真", ModerationStatus.PENDING_REVIEW);
-        createPhotoWithStatus(spot, "photos/quar002.jpg", "隔離写真", ModerationStatus.QUARANTINED);
-        createPhotoWithStatus(spot, "photos/rem002.jpg", "削除写真", ModerationStatus.REMOVED);
+        createPhotoWithStatus(spot, "photos/pub002.jpg", ModerationStatus.PUBLISHED);
+        createPhotoWithStatus(spot, "photos/pend002.jpg", ModerationStatus.PENDING_REVIEW);
+        createPhotoWithStatus(spot, "photos/quar002.jpg", ModerationStatus.QUARANTINED);
+        createPhotoWithStatus(spot, "photos/rem002.jpg", ModerationStatus.REMOVED);
 
         Pageable pageable = PageRequest.of(0, 20);
 
@@ -167,8 +167,8 @@ public class ModerationStatusTest {
     void testGetUserPhotos_UnauthenticatedUser_OnlyPublishedVisible() {
         // Given
         Spot spot = createSpot();
-        createPhotoWithStatus(spot, "photos/pub003.jpg", "公開写真", ModerationStatus.PUBLISHED);
-        createPhotoWithStatus(spot, "photos/pend003.jpg", "審査中写真", ModerationStatus.PENDING_REVIEW);
+        createPhotoWithStatus(spot, "photos/pub003.jpg", ModerationStatus.PUBLISHED);
+        createPhotoWithStatus(spot, "photos/pend003.jpg", ModerationStatus.PENDING_REVIEW);
 
         Pageable pageable = PageRequest.of(0, 20);
 
@@ -187,7 +187,7 @@ public class ModerationStatusTest {
     @DisplayName("Issue#54 - REMOVED状態の写真は詳細取得できない")
     void testGetPhotoDetail_RemovedPhoto_ThrowsException() {
         Spot spot = createSpot();
-        Photo removed = createPhotoWithStatus(spot, "photos/rem010.jpg", "削除写真", ModerationStatus.REMOVED);
+        Photo removed = createPhotoWithStatus(spot, "photos/rem010.jpg", ModerationStatus.REMOVED);
 
         org.junit.jupiter.api.Assertions.assertThrows(
                 com.photlas.backend.exception.PhotoNotFoundException.class,
@@ -199,7 +199,7 @@ public class ModerationStatusTest {
     @DisplayName("Issue#54 - PENDING_REVIEW状態の写真は投稿者本人のみ詳細取得できる")
     void testGetPhotoDetail_PendingPhoto_OnlyOwnerCanView() {
         Spot spot = createSpot();
-        Photo pending = createPhotoWithStatus(spot, "photos/pend010.jpg", "審査中写真", ModerationStatus.PENDING_REVIEW);
+        Photo pending = createPhotoWithStatus(spot, "photos/pend010.jpg", ModerationStatus.PENDING_REVIEW);
 
         // 投稿者本人は取得可能
         PhotoResponse response = photoService.getPhotoDetail(pending.getPhotoId(), testUser.getEmail());
@@ -216,7 +216,7 @@ public class ModerationStatusTest {
     @DisplayName("Issue#54 - QUARANTINED状態の写真は投稿者本人のみ詳細取得できる")
     void testGetPhotoDetail_QuarantinedPhoto_OnlyOwnerCanView() {
         Spot spot = createSpot();
-        Photo quarantined = createPhotoWithStatus(spot, "photos/quar010.jpg", "隔離写真", ModerationStatus.QUARANTINED);
+        Photo quarantined = createPhotoWithStatus(spot, "photos/quar010.jpg", ModerationStatus.QUARANTINED);
 
         // 投稿者本人は取得可能
         PhotoResponse response = photoService.getPhotoDetail(quarantined.getPhotoId(), testUser.getEmail());
@@ -233,7 +233,7 @@ public class ModerationStatusTest {
     @DisplayName("Issue#54 - PUBLISHED状態の写真は誰でも詳細取得できる")
     void testGetPhotoDetail_PublishedPhoto_AnyoneCanView() {
         Spot spot = createSpot();
-        Photo published = createPhotoWithStatus(spot, "photos/pub010.jpg", "公開写真", ModerationStatus.PUBLISHED);
+        Photo published = createPhotoWithStatus(spot, "photos/pub010.jpg", ModerationStatus.PUBLISHED);
 
         // 他ユーザーが取得可能
         PhotoResponse response = photoService.getPhotoDetail(published.getPhotoId(), otherUser.getEmail());
@@ -250,7 +250,7 @@ public class ModerationStatusTest {
     @DisplayName("Issue#54 - 写真詳細レスポンスにmoderation_statusが含まれる")
     void testGetPhotoDetail_ResponseContainsModerationStatus() {
         Spot spot = createSpot();
-        Photo quarantined = createPhotoWithStatus(spot, "photos/quar020.jpg", "隔離写真", ModerationStatus.QUARANTINED);
+        Photo quarantined = createPhotoWithStatus(spot, "photos/quar020.jpg", ModerationStatus.QUARANTINED);
 
         PhotoResponse response = photoService.getPhotoDetail(quarantined.getPhotoId(), testUser.getEmail());
 
@@ -261,7 +261,7 @@ public class ModerationStatusTest {
     @DisplayName("Issue#54 - PENDING_REVIEW写真のレスポンスにmoderation_statusが含まれる")
     void testGetPhotoDetail_PendingReviewResponseContainsModerationStatus() {
         Spot spot = createSpot();
-        Photo pending = createPhotoWithStatus(spot, "photos/pend020.jpg", "審査中写真", ModerationStatus.PENDING_REVIEW);
+        Photo pending = createPhotoWithStatus(spot, "photos/pend020.jpg", ModerationStatus.PENDING_REVIEW);
 
         PhotoResponse response = photoService.getPhotoDetail(pending.getPhotoId(), testUser.getEmail());
 
@@ -272,7 +272,7 @@ public class ModerationStatusTest {
     @DisplayName("Issue#54 - PUBLISHED写真のレスポンスにmoderation_statusがPUBLISHEDで含まれる")
     void testGetPhotoDetail_PublishedResponseContainsModerationStatus() {
         Spot spot = createSpot();
-        Photo published = createPhotoWithStatus(spot, "photos/pub020.jpg", "公開写真", ModerationStatus.PUBLISHED);
+        Photo published = createPhotoWithStatus(spot, "photos/pub020.jpg", ModerationStatus.PUBLISHED);
 
         PhotoResponse response = photoService.getPhotoDetail(published.getPhotoId(), testUser.getEmail());
 
@@ -285,7 +285,7 @@ public class ModerationStatusTest {
     @DisplayName("Issue#54 - REMOVED状態の写真は投稿者本人でも詳細取得できない")
     void testGetPhotoDetail_RemovedPhoto_OwnerCannotView() {
         Spot spot = createSpot();
-        Photo removed = createPhotoWithStatus(spot, "photos/rem011.jpg", "削除写真", ModerationStatus.REMOVED);
+        Photo removed = createPhotoWithStatus(spot, "photos/rem011.jpg", ModerationStatus.REMOVED);
 
         assertThatThrownBy(() ->
                 photoService.getPhotoDetail(removed.getPhotoId(), testUser.getEmail())
@@ -298,7 +298,7 @@ public class ModerationStatusTest {
     @DisplayName("Issue#54 - getPhotoForOwnerで投稿者本人は写真を取得できる")
     void testGetPhotoForOwner_Owner_ReturnsPhoto() {
         Spot spot = createSpot();
-        Photo photo = createPhotoWithStatus(spot, "photos/owner001.jpg", "オーナーテスト", ModerationStatus.PENDING_REVIEW);
+        Photo photo = createPhotoWithStatus(spot, "photos/owner001.jpg", ModerationStatus.PENDING_REVIEW);
 
         Photo result = photoService.getPhotoForOwner(photo.getPhotoId(), testUser.getId());
 
@@ -310,7 +310,7 @@ public class ModerationStatusTest {
     @DisplayName("Issue#54 - getPhotoForOwnerで他ユーザーは写真を取得できない")
     void testGetPhotoForOwner_OtherUser_ThrowsException() {
         Spot spot = createSpot();
-        Photo photo = createPhotoWithStatus(spot, "photos/owner002.jpg", "オーナーテスト", ModerationStatus.PENDING_REVIEW);
+        Photo photo = createPhotoWithStatus(spot, "photos/owner002.jpg", ModerationStatus.PENDING_REVIEW);
 
         assertThatThrownBy(() ->
                 photoService.getPhotoForOwner(photo.getPhotoId(), otherUser.getId())
@@ -333,7 +333,7 @@ public class ModerationStatusTest {
         testUser.setRole("SUSPENDED");
         userRepository.save(testUser);
 
-        CreatePhotoRequest request = createPhotoRequest("photos/suspended001.jpg", "停止テスト");
+        CreatePhotoRequest request = createPhotoRequest("photos/suspended001.jpg");
 
         assertThatThrownBy(() ->
                 photoService.createPhoto(request, testUser.getEmail())
@@ -350,7 +350,7 @@ public class ModerationStatusTest {
         sanction.setReason("違反行為");
         accountSanctionRepository.save(sanction);
 
-        CreatePhotoRequest request = createPhotoRequest("photos/tempsuspended001.jpg", "一時停止テスト");
+        CreatePhotoRequest request = createPhotoRequest("photos/tempsuspended001.jpg");
 
         assertThatThrownBy(() ->
                 photoService.createPhoto(request, testUser.getEmail())
@@ -367,7 +367,7 @@ public class ModerationStatusTest {
         sanction.setReason("違反行為");
         accountSanctionRepository.save(sanction);
 
-        CreatePhotoRequest request = createPhotoRequest("photos/expired001.jpg", "停止解除テスト");
+        CreatePhotoRequest request = createPhotoRequest("photos/expired001.jpg");
 
         PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
 
@@ -376,9 +376,8 @@ public class ModerationStatusTest {
 
     // ===== テストヘルパーメソッド =====
 
-    private CreatePhotoRequest createPhotoRequest(String s3Key, String title) {
+    private CreatePhotoRequest createPhotoRequest(String s3Key) {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle(title);
         request.setS3ObjectKey(s3Key);
         request.setTakenAt("2026-03-01T12:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -395,12 +394,11 @@ public class ModerationStatusTest {
         return spotRepository.save(spot);
     }
 
-    private Photo createPhotoWithStatus(Spot spot, String s3Key, String title, ModerationStatus status) {
+    private Photo createPhotoWithStatus(Spot spot, String s3Key, ModerationStatus status) {
         Photo photo = new Photo();
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey(s3Key);
-        photo.setTitle(title);
         photo.setShotAt(LocalDateTime.of(2026, 3, 1, 12, 0));
         photo.setWeather("sunny");
         photo.setModerationStatus(status);

@@ -191,7 +191,6 @@ public class FavoriteService {
 
         PhotoResponse.PhotoDTO photoDTO = new PhotoResponse.PhotoDTO(
                 photo.getPhotoId(),
-                photo.getTitle(),
                 imageUrl,
                 photo.getShotAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                 photo.getWeather(),

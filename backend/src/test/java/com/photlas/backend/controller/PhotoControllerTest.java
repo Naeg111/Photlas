@@ -89,7 +89,6 @@ public class PhotoControllerTest {
     private static final String ENDPOINT_FAVORITE = "/favorite";
 
     // テストデータ定数 - JSONPath
-    private static final String JSON_PATH_PHOTO_TITLE = "$.photo.title";
     private static final String JSON_PATH_PHOTO_ID = "$.photo.photo_id";
     private static final String JSON_PATH_PHOTO_IMAGE_URL = "$.photo.image_url";
     private static final String JSON_PATH_PHOTO_SHOT_AT = "$.photo.shot_at";
@@ -114,14 +113,6 @@ public class PhotoControllerTest {
     private static final String S3_PRESIGNED_URL_BASE = "https://test-bucket.s3.us-east-1.amazonaws.com/";
     private static final String S3_PRESIGNED_URL_SUFFIX = "?signature=test";
 
-    // テストデータ定数 - 写真情報
-    private static final String PHOTO_TITLE_TOKYO_TOWER = "東京タワーの夜景";
-    private static final String PHOTO_TITLE_SAME_LOCATION = "同じ場所からの写真";
-    private static final String PHOTO_TITLE_TEST = "テスト写真";
-    private static final String PHOTO_TITLE_TEST_EN = "Test Photo";
-    private static final String PHOTO_TITLE_SHORT = "a";
-    private static final String PHOTO_TITLE_TOO_LONG = "あいうえおかきくけこさしすせそたちつてとな"; // 21文字
-
     // テストデータ定数 - 日時
     private static final String ISO_DATETIME_1 = "2025-08-15T18:30:00Z";
     private static final String ISO_DATETIME_2 = "2025-08-16T19:00:00Z";
@@ -134,7 +125,6 @@ public class PhotoControllerTest {
     private static final BigDecimal LONGITUDE_NEARBY = new BigDecimal("139.745400");
 
     // テストデータ定数 - フィールド名
-    private static final String FIELD_TITLE = "title";
     private static final String FIELD_S3_OBJECT_KEY = "s3ObjectKey";
     private static final String FIELD_TAKEN_AT = "takenAt";
     private static final String FIELD_LATITUDE = "latitude";
@@ -208,9 +198,8 @@ public class PhotoControllerTest {
     /**
      * テスト用のPhotoを作成するヘルパーメソッド
      */
-    private Photo createPhoto(String title, String s3ObjectKey, Long spotId) {
+    private Photo createPhoto(String s3ObjectKey, Long spotId) {
         Photo photo = new Photo();
-        photo.setTitle(title);
         photo.setS3ObjectKey(s3ObjectKey);
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(testUser.getId());
@@ -222,11 +211,10 @@ public class PhotoControllerTest {
     /**
      * CreatePhotoRequestを作成するヘルパーメソッド
      */
-    private CreatePhotoRequest createPhotoRequest(String title, String s3ObjectKey, String takenAt,
+    private CreatePhotoRequest createPhotoRequest(String s3ObjectKey, String takenAt,
                                                    BigDecimal latitude, BigDecimal longitude,
                                                    List<String> categories) {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle(title);
         request.setS3ObjectKey(s3ObjectKey);
         request.setTakenAt(takenAt);
         request.setLatitude(latitude);
@@ -261,7 +249,6 @@ public class PhotoControllerTest {
     @DisplayName("正常ケース - 新規スポット作成を伴う写真投稿")
     void testCreatePhoto_NewSpot_ReturnsCreatedWithPhotoData() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TOKYO_TOWER,
                 S3_OBJECT_KEY_PREFIX + "001.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
@@ -275,7 +262,6 @@ public class PhotoControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath(JSON_PATH_PHOTO_TITLE, is(PHOTO_TITLE_TOKYO_TOWER)))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists())
                 .andExpect(jsonPath(JSON_PATH_PHOTO_IMAGE_URL, containsString(S3_OBJECT_KEY_PREFIX + "001.jpg")))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_SHOT_AT, is(FORMATTED_DATETIME_1)))
@@ -293,7 +279,6 @@ public class PhotoControllerTest {
         Spot existingSpot = createSpot(LATITUDE_NEARBY, LONGITUDE_NEARBY);
 
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_SAME_LOCATION,
                 S3_OBJECT_KEY_PREFIX + "002.jpg",
                 ISO_DATETIME_2,
                 LATITUDE_TOKYO_TOWER,
@@ -307,17 +292,15 @@ public class PhotoControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath(JSON_PATH_PHOTO_TITLE, is(PHOTO_TITLE_SAME_LOCATION)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(existingSpot.getSpotId().intValue())))
                 .andExpect(jsonPath(JSON_PATH_SPOT_LATITUDE, is(35.658500)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_LONGITUDE, is(139.745400)));
     }
 
     @Test
-    @DisplayName("正常ケース - タイトルなし(任意項目)で写真投稿")
+    @DisplayName("正常ケース - 最小限のフィールドで写真投稿")
     void testCreatePhoto_NullTitle_ReturnsCreated() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                null,
                 S3_OBJECT_KEY_PREFIX + "003.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
@@ -336,31 +319,9 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("バリデーションエラー - title文字数制限(20文字超過)")
-    void testCreatePhoto_TitleTooLong_ReturnsBadRequest() throws Exception {
-        CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TOO_LONG,
-                S3_OBJECT_KEY_PREFIX + "005.jpg",
-                ISO_DATETIME_1,
-                LATITUDE_TOKYO_TOWER,
-                LONGITUDE_TOKYO_TOWER,
-                List.of(CATEGORY_LANDSCAPE)
-        );
-
-        mockMvc.perform(post(ENDPOINT_PHOTOS)
-                .with(csrf())
-                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[?(@.field == '" + FIELD_TITLE + "')].message").exists());
-    }
-
-    @Test
     @DisplayName("バリデーションエラー - s3ObjectKey必須")
     void testCreatePhoto_MissingS3ObjectKey_ReturnsBadRequest() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
                 null,
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
@@ -381,7 +342,6 @@ public class PhotoControllerTest {
     @DisplayName("バリデーションエラー - takenAt必須")
     void testCreatePhoto_MissingTakenAt_ReturnsBadRequest() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
                 S3_OBJECT_KEY_PREFIX + "006.jpg",
                 null,
                 LATITUDE_TOKYO_TOWER,
@@ -402,7 +362,6 @@ public class PhotoControllerTest {
     @DisplayName("バリデーションエラー - latitude必須")
     void testCreatePhoto_MissingLatitude_ReturnsBadRequest() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
                 S3_OBJECT_KEY_PREFIX + "007.jpg",
                 ISO_DATETIME_1,
                 null,
@@ -423,7 +382,6 @@ public class PhotoControllerTest {
     @DisplayName("バリデーションエラー - longitude必須")
     void testCreatePhoto_MissingLongitude_ReturnsBadRequest() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
                 S3_OBJECT_KEY_PREFIX + "008.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
@@ -447,7 +405,6 @@ public class PhotoControllerTest {
     @DisplayName("業務エラー - 存在しないカテゴリ名が送信された場合")
     void testCreatePhoto_InvalidCategoryName_ReturnsBadRequest() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
                 S3_OBJECT_KEY_PREFIX + "011.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
@@ -468,7 +425,6 @@ public class PhotoControllerTest {
     @DisplayName("認証エラー - 未認証ユーザーのアクセス")
     void testCreatePhoto_Unauthorized_ReturnsUnauthorized() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
                 S3_OBJECT_KEY_PREFIX + "012.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
@@ -487,7 +443,6 @@ public class PhotoControllerTest {
     @DisplayName("認証エラー - 無効なトークン")
     void testCreatePhoto_InvalidToken_ReturnsUnauthorized() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
                 S3_OBJECT_KEY_PREFIX + "013.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
@@ -508,14 +463,13 @@ public class PhotoControllerTest {
     void testGetPhotoDetail_NotFavorited_ReturnsFalse() throws Exception {
         // テスト用の写真を作成
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
-        Photo photo = createPhoto(PHOTO_TITLE_TEST_EN, S3_OBJECT_KEY_TEST, spot.getSpotId());
+        Photo photo = createPhoto(S3_OBJECT_KEY_TEST, spot.getSpotId());
 
         // 写真詳細取得（認証あり、お気に入り未登録）
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId())
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(JSON_PATH_PHOTO_ID).value(photo.getPhotoId()))
-                .andExpect(jsonPath(JSON_PATH_PHOTO_TITLE).value(PHOTO_TITLE_TEST_EN))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_IS_FAVORITED).value(false));
     }
 
@@ -524,7 +478,7 @@ public class PhotoControllerTest {
     void testGetPhotoDetail_Favorited_ReturnsTrue() throws Exception {
         // テスト用の写真を作成
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
-        Photo photo = createPhoto(PHOTO_TITLE_TEST_EN, S3_OBJECT_KEY_TEST, spot.getSpotId());
+        Photo photo = createPhoto(S3_OBJECT_KEY_TEST, spot.getSpotId());
 
         // お気に入り登録（Issue#30: 201 Created を返す）
         mockMvc.perform(post(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId() + ENDPOINT_FAVORITE)
@@ -537,7 +491,6 @@ public class PhotoControllerTest {
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(JSON_PATH_PHOTO_ID).value(photo.getPhotoId()))
-                .andExpect(jsonPath(JSON_PATH_PHOTO_TITLE).value(PHOTO_TITLE_TEST_EN))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_IS_FAVORITED).value(true));
     }
 
@@ -546,13 +499,12 @@ public class PhotoControllerTest {
     void testGetPhotoDetail_Unauthenticated_ReturnsFalse() throws Exception {
         // テスト用の写真を作成
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
-        Photo photo = createPhoto(PHOTO_TITLE_TEST_EN, S3_OBJECT_KEY_TEST, spot.getSpotId());
+        Photo photo = createPhoto(S3_OBJECT_KEY_TEST, spot.getSpotId());
 
         // 写真詳細取得（認証なし）
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(JSON_PATH_PHOTO_ID).value(photo.getPhotoId()))
-                .andExpect(jsonPath(JSON_PATH_PHOTO_TITLE).value(PHOTO_TITLE_TEST_EN))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_IS_FAVORITED).value(false));
     }
 
@@ -622,7 +574,6 @@ public class PhotoControllerTest {
     @DisplayName("Issue#48 - カテゴリ空リストでの投稿が201を返す")
     void testCreatePhoto_EmptyCategories_ReturnsCreated() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
                 "uploads/1/b0000000-0000-0000-0000-000000000001.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
@@ -637,14 +588,13 @@ public class PhotoControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists())
-                .andExpect(jsonPath(JSON_PATH_PHOTO_TITLE, is(PHOTO_TITLE_TEST)));
+                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists());
     }
 
     @Test
     @DisplayName("Issue#48 - カテゴリnullでの投稿が201を返す")
     void testCreatePhoto_NullCategories_ReturnsCreated() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
                 "uploads/1/b0000000-0000-0000-0000-000000000002.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
@@ -668,7 +618,6 @@ public class PhotoControllerTest {
     void testCreatePhoto_WithExif_ReturnsExifInResponse() throws Exception {
         String requestJson = """
                 {
-                    "title": "EXIF付き投稿",
                     "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000001.jpg",
                     "takenAt": "2026-01-15T17:30:00Z",
                     "latitude": 35.658581,
@@ -692,7 +641,6 @@ public class PhotoControllerTest {
                 .content(requestJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.photo.photo_id").exists())
-                .andExpect(jsonPath("$.photo.title", is("EXIF付き投稿")))
                 .andExpect(jsonPath("$.photo.exif.camera_body", is("Canon EOS R5")))
                 .andExpect(jsonPath("$.photo.exif.camera_lens", is("RF 24-70mm f/2.8L")))
                 .andExpect(jsonPath("$.photo.exif.focal_length_35mm", is(35)))
@@ -707,7 +655,6 @@ public class PhotoControllerTest {
     @DisplayName("Issue#40 - EXIF情報なしの投稿でexifフィールドがnull")
     void testCreatePhoto_WithoutExif_ExifIsNull() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                "EXIF無し投稿",
                 "uploads/1/b0000000-0000-0000-0000-000000000003.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
@@ -730,7 +677,6 @@ public class PhotoControllerTest {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
 
         Photo photo = new Photo();
-        photo.setTitle("EXIF詳細テスト");
         photo.setS3ObjectKey("photos/exif-detail-api001.jpg");
         photo.setShotAt(LocalDateTime.of(2026, 1, 15, 17, 30));
         photo.setWeather("sunny");
@@ -764,7 +710,6 @@ public class PhotoControllerTest {
     void testCreatePhoto_WithCropData_ReturnsCropInResponse() throws Exception {
         String requestJson = """
                 {
-                    "title": "クロップ付き投稿",
                     "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000002.jpg",
                     "takenAt": "2026-02-08T10:00:00Z",
                     "latitude": 35.658581,
@@ -790,7 +735,6 @@ public class PhotoControllerTest {
     @DisplayName("Issue#49 - クロップデータなし投稿でcropフィールドがレスポンスに含まれない")
     void testCreatePhoto_WithoutCropData_CropNotInResponse() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
-                PHOTO_TITLE_TEST,
                 "uploads/1/b0000000-0000-0000-0000-000000000004.jpg",
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
@@ -815,7 +759,6 @@ public class PhotoControllerTest {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
 
         Photo photo = new Photo();
-        photo.setTitle("クロップ詳細APIテスト");
         photo.setS3ObjectKey("photos/crop-detail-api001.jpg");
         photo.setShotAt(LocalDateTime.of(2026, 2, 8, 10, 0));
         photo.setWeather("sunny");
@@ -870,7 +813,7 @@ public class PhotoControllerTest {
     @DisplayName("Issue#54 - 正常ケース: オーナーが写真のモデレーションステータスを取得")
     void testGetPhotoStatus_Owner_ReturnsStatus() throws Exception {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
-        Photo photo = createPhoto(PHOTO_TITLE_TEST_EN, "photos/status-api001.jpg", spot.getSpotId());
+        Photo photo = createPhoto("photos/status-api001.jpg", spot.getSpotId());
 
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId() + "/status")
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
@@ -883,7 +826,7 @@ public class PhotoControllerTest {
     @DisplayName("Issue#54 - エラー: 未認証でステータス取得すると401を返す")
     void testGetPhotoStatus_Unauthenticated_ReturnsUnauthorized() throws Exception {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
-        Photo photo = createPhoto(PHOTO_TITLE_TEST_EN, "photos/status-unauth001.jpg", spot.getSpotId());
+        Photo photo = createPhoto("photos/status-unauth001.jpg", spot.getSpotId());
 
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId() + "/status"))
                 .andExpect(status().isUnauthorized());
@@ -915,7 +858,6 @@ public class PhotoControllerTest {
         String longPlaceName = "あ".repeat(101);
         String requestJson = String.format("""
                 {
-                    "title": "テスト",
                     "placeName": "%s",
                     "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000003.jpg",
                     "takenAt": "2026-01-15T10:00:00Z",
@@ -940,7 +882,6 @@ public class PhotoControllerTest {
     void testCreatePhoto_LatitudeTooHigh_ReturnsBadRequest() throws Exception {
         String requestJson = """
                 {
-                    "title": "テスト",
                     "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000004.jpg",
                     "takenAt": "2026-01-15T10:00:00Z",
                     "latitude": 91.0,
@@ -962,7 +903,6 @@ public class PhotoControllerTest {
     void testCreatePhoto_LongitudeTooHigh_ReturnsBadRequest() throws Exception {
         String requestJson = """
                 {
-                    "title": "テスト",
                     "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000005.jpg",
                     "takenAt": "2026-01-15T10:00:00Z",
                     "latitude": 35.658581,
@@ -984,7 +924,6 @@ public class PhotoControllerTest {
     void testCreatePhoto_LatitudeTooLow_ReturnsBadRequest() throws Exception {
         String requestJson = """
                 {
-                    "title": "テスト",
                     "s3ObjectKey": "uploads/1/a0000000-0000-0000-0000-000000000006.jpg",
                     "takenAt": "2026-01-15T10:00:00Z",
                     "latitude": -91.0,
@@ -1008,7 +947,6 @@ public class PhotoControllerTest {
     void testCreatePhoto_S3KeyPathTraversal_ReturnsBadRequest() throws Exception {
         String requestJson = """
                 {
-                    "title": "テスト",
                     "s3ObjectKey": "../../../etc/passwd",
                     "takenAt": "2026-01-15T10:00:00Z",
                     "latitude": 35.658581,
@@ -1030,7 +968,6 @@ public class PhotoControllerTest {
     void testCreatePhoto_S3KeyInvalidFolder_ReturnsBadRequest() throws Exception {
         String requestJson = """
                 {
-                    "title": "テスト",
                     "s3ObjectKey": "malicious/1/photo.jpg",
                     "takenAt": "2026-01-15T10:00:00Z",
                     "latitude": 35.658581,
@@ -1066,7 +1003,6 @@ public class PhotoControllerTest {
         Spot spot = createSpot(new BigDecimal("35.658581"), new BigDecimal("139.745433"));
 
         Photo photo = new Photo();
-        photo.setTitle("deleted user photo");
         photo.setS3ObjectKey("photos/deleted-user-" + System.nanoTime() + ".jpg");
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(deletedUser.getId());

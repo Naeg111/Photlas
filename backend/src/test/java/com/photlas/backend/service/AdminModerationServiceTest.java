@@ -255,7 +255,6 @@ public class AdminModerationServiceTest {
         photo.setSpotId(testSpot.getSpotId());
         photo.setUserId(photoOwner.getId());
         photo.setS3ObjectKey(s3Key);
-        photo.setTitle("管理者テスト写真");
         photo.setShotAt(LocalDateTime.of(2026, 3, 1, 12, 0));
         photo.setModerationStatus(status);
         return photoRepository.save(photo);

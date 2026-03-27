@@ -130,7 +130,6 @@ public class PhotoDeleteTest {
 
     private Photo createPhoto(String s3Key, ModerationStatus status) {
         Photo photo = new Photo();
-        photo.setTitle("テスト写真");
         photo.setS3ObjectKey(s3Key);
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(ownerUser.getId());

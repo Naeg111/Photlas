@@ -68,7 +68,6 @@ interface UserProfile {
 interface UserPhotoItem {
   photo: {
     photo_id: number
-    title: string
     image_url: string
     thumbnail_url?: string | null
     crop_center_x?: number | null
@@ -95,7 +94,6 @@ interface UserPhotosResponse {
 interface FavoritePhoto {
   photo: {
     photo_id: number
-    title: string
     image_url: string
     thumbnail_url?: string | null
     crop_center_x?: number
@@ -613,7 +611,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                       >
                         <ProtectedImage
                           src={item.photo.thumbnail_url || item.photo.image_url}
-                          alt={item.photo.title}
+                          alt="画像"
                           className="absolute inset-0 w-full h-full"
                           style={{
                             objectFit: 'cover',
@@ -706,7 +704,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                         >
                           <ProtectedImage
                             src={favorite.photo.thumbnail_url || favorite.photo.image_url}
-                            alt={favorite.photo.title}
+                            alt="画像"
                             className="absolute inset-0 w-full h-full"
                             style={{
                               objectFit: 'cover',

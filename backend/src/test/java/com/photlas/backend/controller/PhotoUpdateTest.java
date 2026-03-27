@@ -131,9 +131,8 @@ public class PhotoUpdateTest {
         return category;
     }
 
-    private Photo createPhoto(String title, String s3Key, ModerationStatus status) {
+    private Photo createPhoto(String s3Key, ModerationStatus status) {
         Photo photo = new Photo();
-        photo.setTitle(title);
         photo.setS3ObjectKey(s3Key);
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(ownerUser.getId());
@@ -145,12 +144,11 @@ public class PhotoUpdateTest {
     }
 
     @Test
-    @DisplayName("Issue#61 - タイトル・天気・場所名を更新すると200が返る")
+    @DisplayName("Issue#61 - 天気・場所名を更新すると200が返る")
     void updatePhoto_success_returns200() throws Exception {
-        Photo photo = createPhoto("元のタイトル", "uploads/1/test.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhoto("uploads/1/test.jpg", ModerationStatus.PUBLISHED);
 
         Map<String, Object> request = Map.of(
-                "title", "更新後のタイトル",
                 "weather", "曇り",
                 "placeName", "スカイツリー"
         );
@@ -160,37 +158,15 @@ public class PhotoUpdateTest {
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + ownerToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.photo.title", is("更新後のタイトル")));
-    }
-
-    @Test
-    @DisplayName("Issue#61 - タイトル変更時はmoderation_statusがPENDING_REVIEWになる")
-    void updatePhoto_titleChanged_statusBecomesPendingReview() throws Exception {
-        Photo photo = createPhoto("元のタイトル", "uploads/1/test2.jpg", ModerationStatus.PUBLISHED);
-
-        Map<String, Object> request = Map.of(
-                "title", "新しいタイトル"
-        );
-
-        mockMvc.perform(put(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
-                .with(csrf())
-                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + ownerToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
-
-        Photo updated = photoRepository.findById(photo.getPhotoId()).orElseThrow();
-        assertEquals(ModerationStatus.PENDING_REVIEW, updated.getModerationStatus());
     }
 
     @Test
-    @DisplayName("Issue#61 - タイトル以外のみ変更時はmoderation_statusが変わらない")
-    void updatePhoto_titleUnchanged_statusUnchanged() throws Exception {
-        Photo photo = createPhoto("元のタイトル", "uploads/1/test3.jpg", ModerationStatus.PUBLISHED);
+    @DisplayName("Issue#61 - 天気のみ変更時はmoderation_statusが変わらない")
+    void updatePhoto_weatherChanged_statusUnchanged() throws Exception {
+        Photo photo = createPhoto("uploads/1/test3.jpg", ModerationStatus.PUBLISHED);
 
         Map<String, Object> request = Map.of(
-                "title", "元のタイトル",
                 "weather", "雨"
         );
 
@@ -208,9 +184,9 @@ public class PhotoUpdateTest {
     @Test
     @DisplayName("Issue#61 - 非オーナーが編集しようとすると403が返る")
     void updatePhoto_nonOwner_returns403() throws Exception {
-        Photo photo = createPhoto("元のタイトル", "uploads/1/test4.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhoto("uploads/1/test4.jpg", ModerationStatus.PUBLISHED);
 
-        Map<String, Object> request = Map.of("title", "不正な変更");
+        Map<String, Object> request = Map.of("weather", "雨");
 
         mockMvc.perform(put(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf())
@@ -223,7 +199,7 @@ public class PhotoUpdateTest {
     @Test
     @DisplayName("Issue#61 - 存在しない写真を編集しようとすると404が返る")
     void updatePhoto_notFound_returns404() throws Exception {
-        Map<String, Object> request = Map.of("title", "更新");
+        Map<String, Object> request = Map.of("weather", "晴れ");
 
         mockMvc.perform(put(ENDPOINT_PHOTOS + "/99999")
                 .with(csrf())
@@ -236,9 +212,9 @@ public class PhotoUpdateTest {
     @Test
     @DisplayName("Issue#61 - REMOVEDの写真を編集しようとすると404が返る")
     void updatePhoto_removed_returns404() throws Exception {
-        Photo photo = createPhoto("元のタイトル", "uploads/1/test5.jpg", ModerationStatus.REMOVED);
+        Photo photo = createPhoto("uploads/1/test5.jpg", ModerationStatus.REMOVED);
 
-        Map<String, Object> request = Map.of("title", "更新");
+        Map<String, Object> request = Map.of("weather", "晴れ");
 
         mockMvc.perform(put(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf())
@@ -251,9 +227,9 @@ public class PhotoUpdateTest {
     @Test
     @DisplayName("Issue#61 - 未認証ユーザーが編集しようとすると401が返る")
     void updatePhoto_unauthenticated_returns401() throws Exception {
-        Photo photo = createPhoto("元のタイトル", "uploads/1/test6.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhoto("uploads/1/test6.jpg", ModerationStatus.PUBLISHED);
 
-        Map<String, Object> request = Map.of("title", "更新");
+        Map<String, Object> request = Map.of("weather", "晴れ");
 
         mockMvc.perform(put(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf())

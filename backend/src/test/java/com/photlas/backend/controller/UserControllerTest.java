@@ -425,14 +425,13 @@ public class UserControllerTest {
     void testGetUserPhotos_ReturnsPhotoList() throws Exception {
         // Given: 写真データを作成
         Spot spot = createTestSpot(testUser.getId());
-        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/test001.jpg", "テスト写真");
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/test001.jpg");
 
         // When & Then
         mockMvc.perform(get(getUserPhotosEndpoint(testUser.getId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(JSON_PATH_CONTENT).isArray())
                 .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].photo.title", is("テスト写真")))
                 .andExpect(jsonPath("$.content[0].photo.image_url").exists())
                 .andExpect(jsonPath("$.content[0].spot.spot_id", is(spot.getSpotId().intValue())));
     }
@@ -442,8 +441,8 @@ public class UserControllerTest {
     void testGetUserPhotos_WithPagination_ReturnsPagedResult() throws Exception {
         // Given: 写真データを作成
         Spot spot = createTestSpot(testUser.getId());
-        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/test001.jpg", "写真1");
-        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/test002.jpg", "写真2");
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/test001.jpg");
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/test002.jpg");
 
         // When & Then
         mockMvc.perform(get(getUserPhotosEndpoint(testUser.getId()))
@@ -475,7 +474,7 @@ public class UserControllerTest {
     void testGetMyPhotos_Authenticated_ReturnsPhotoList() throws Exception {
         // Given: 写真データを作成
         Spot spot = createTestSpot(testUser.getId());
-        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/my001.jpg", "自分の写真");
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/my001.jpg");
 
         // When & Then
         mockMvc.perform(get(USER_ME_PHOTOS_ENDPOINT)
@@ -483,7 +482,6 @@ public class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(JSON_PATH_CONTENT).isArray())
                 .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].photo.title", is("自分の写真")))
                 .andExpect(jsonPath("$.content[0].photo.image_url").exists())
                 .andExpect(jsonPath("$.content[0].spot.spot_id").exists());
     }
@@ -500,9 +498,9 @@ public class UserControllerTest {
     void testGetMyPhotos_WithPagination_ReturnsPagedResult() throws Exception {
         // Given: 3枚の写真を作成（ページサイズ2で2ページになる）
         Spot spot = createTestSpot(testUser.getId());
-        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/page001.jpg", "写真A");
-        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/page002.jpg", "写真B");
-        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/page003.jpg", "写真C");
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/page001.jpg");
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/page002.jpg");
+        createTestPhoto(spot.getSpotId(), testUser.getId(), "photos/page003.jpg");
 
         // When & Then: 1ページ目（2件）
         mockMvc.perform(get(USER_ME_PHOTOS_ENDPOINT)
@@ -997,12 +995,11 @@ public class UserControllerTest {
         return spotRepository.save(spot);
     }
 
-    private Photo createTestPhoto(Long spotId, Long userId, String s3Key, String title) {
+    private Photo createTestPhoto(Long spotId, Long userId, String s3Key) {
         Photo photo = new Photo();
         photo.setSpotId(spotId);
         photo.setUserId(userId);
         photo.setS3ObjectKey(s3Key);
-        photo.setTitle(title);
         photo.setShotAt(LocalDateTime.of(2026, 1, 15, 10, 0));
         photo.setWeather("sunny");
         photo.setModerationStatus(com.photlas.backend.entity.ModerationStatus.PUBLISHED);

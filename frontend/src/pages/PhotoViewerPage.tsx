@@ -22,10 +22,10 @@ export default function PhotoViewerPage() {
   const navigate = useNavigate()
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
-  const [photoTitle, setPhotoTitle] = useState('')
+  const [placeName, setPlaceName] = useState('')
 
   useDocumentTitle(
-    photoTitle ? `${photoTitle} - Photlas` : 'Photlas'
+    placeName ? `${placeName} - Photlas` : 'Photlas'
   )
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function PhotoViewerPage() {
 
         if (response.ok) {
           const data = await response.json()
-          setPhotoTitle(data.photo.title || '')
+          setPlaceName(data.photo.place_name || '')
           setStatus('ready')
         } else {
           setStatus('error')

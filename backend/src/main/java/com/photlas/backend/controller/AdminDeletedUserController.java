@@ -176,7 +176,6 @@ public class AdminDeletedUserController {
         List<Map<String, Object>> photoData = photos.stream().map(p -> {
             Map<String, Object> m = new HashMap<>();
             m.put("photo_id", p.getPhotoId());
-            m.put("title", p.getTitle());
             m.put("moderation_status", p.getModerationStatus().name());
             m.put("shot_at", formatDateTime(p.getShotAt()));
             m.put("latitude", p.getLatitude());

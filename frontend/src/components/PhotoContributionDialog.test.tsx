@@ -174,11 +174,6 @@ describe('PhotoContributionDialog', () => {
       expect(screen.getByRole('button', { name: '投稿する' })).toBeInTheDocument()
     })
 
-    it('renders title character count', () => {
-      render(<PhotoContributionDialog {...defaultProps} />)
-
-      expect(screen.getByText(/\/20文字/)).toBeInTheDocument()
-    })
   })
 
   describe('Photo Selection - 写真選択', () => {
@@ -252,36 +247,6 @@ describe('PhotoContributionDialog', () => {
     })
   })
 
-  describe('Title Input - タイトル入力', () => {
-    it('updates title when user types', async () => {
-      const user = userEvent.setup()
-      render(<PhotoContributionDialog {...defaultProps} />)
-
-      const titleInput = screen.getByPlaceholderText(/夕暮れの東京タワー/)
-      await user.type(titleInput, 'テスト写真')
-
-      expect(titleInput).toHaveValue('テスト写真')
-    })
-
-    it('updates character count when title is entered', async () => {
-      const user = userEvent.setup()
-      render(<PhotoContributionDialog {...defaultProps} />)
-
-      const titleInput = screen.getByPlaceholderText(/夕暮れの東京タワー/)
-      await user.type(titleInput, 'テスト')
-
-      expect(screen.getByText('3/20文字')).toBeInTheDocument()
-    })
-
-    it('limits title to 20 characters', async () => {
-      const user = userEvent.setup()
-      render(<PhotoContributionDialog {...defaultProps} />)
-
-      const titleInput = screen.getByPlaceholderText(/夕暮れの東京タワー/) as HTMLInputElement
-      expect(titleInput).toHaveAttribute('maxLength', '20')
-    })
-  })
-
   describe('Submit Button State - 投稿ボタンの状態', () => {
     it('submit button is disabled when no photo is selected', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
@@ -298,10 +263,6 @@ describe('PhotoContributionDialog', () => {
       const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
       const input = document.querySelector('input[type="file"]') as HTMLInputElement
       await user.upload(input, file)
-
-      // タイトルを入力
-      const titleInput = screen.getByPlaceholderText(/夕暮れの東京タワー/)
-      await user.type(titleInput, 'テスト写真')
 
       // カテゴリ未選択の状態
       const submitButton = screen.getByRole('button', { name: '投稿する' })
@@ -331,9 +292,6 @@ describe('PhotoContributionDialog', () => {
       const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
       const input = document.querySelector('input[type="file"]') as HTMLInputElement
       await user.upload(input, file)
-
-      const titleInput = screen.getByPlaceholderText(/夕暮れの東京タワー/)
-      await user.type(titleInput, 'テスト写真')
 
       // カテゴリを選択（親divをクリック）
       const categoryDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')

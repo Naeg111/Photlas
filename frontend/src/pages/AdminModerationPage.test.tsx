@@ -33,7 +33,6 @@ const mockFetch = vi.fn()
 const MOCK_QUEUE_ITEMS = [
   {
     photo_id: 1,
-    title: 'テスト写真1',
     image_url: 'https://example.com/photo1.jpg',
     user_id: 10,
     username: 'testuser1',
@@ -43,7 +42,6 @@ const MOCK_QUEUE_ITEMS = [
   },
   {
     photo_id: 2,
-    title: 'テスト写真2',
     image_url: 'https://example.com/photo2.jpg',
     user_id: 20,
     username: 'testuser2',
@@ -111,10 +109,10 @@ describe('AdminModerationPage', () => {
     renderPage()
 
     await waitFor(() => {
-      expect(screen.getByText('テスト写真1')).toBeInTheDocument()
+      expect(screen.getByTestId('moderation-item-1')).toBeInTheDocument()
     })
 
-    expect(screen.getByText('テスト写真2')).toBeInTheDocument()
+    expect(screen.getByTestId('moderation-item-2')).toBeInTheDocument()
     expect(screen.getByText('2件の審査待ち')).toBeInTheDocument()
   })
 
@@ -188,7 +186,7 @@ describe('AdminModerationPage', () => {
     renderPage()
 
     await waitFor(() => {
-      expect(screen.getByText('テスト写真1')).toBeInTheDocument()
+      expect(screen.getByTestId('moderation-item-1')).toBeInTheDocument()
     })
 
     // 通報件数が表示される
@@ -229,10 +227,10 @@ describe('AdminModerationPage', () => {
     await user.click(screen.getByTestId('approve-btn-1'))
 
     await waitFor(() => {
-      expect(screen.queryByText('テスト写真1')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('moderation-item-1')).not.toBeInTheDocument()
     })
 
-    expect(screen.getByText('テスト写真2')).toBeInTheDocument()
+    expect(screen.getByTestId('moderation-item-2')).toBeInTheDocument()
   })
 
   it('拒否ボタンをクリックすると写真が拒否される', async () => {
@@ -265,9 +263,9 @@ describe('AdminModerationPage', () => {
     await user.click(screen.getByTestId('reject-btn-2'))
 
     await waitFor(() => {
-      expect(screen.queryByText('テスト写真2')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('moderation-item-2')).not.toBeInTheDocument()
     })
 
-    expect(screen.getByText('テスト写真1')).toBeInTheDocument()
+    expect(screen.getByTestId('moderation-item-1')).toBeInTheDocument()
   })
 })

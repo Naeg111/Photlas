@@ -85,7 +85,6 @@ public class ReportControllerTest {
 
     // Test Data Constants - Photo
     private static final String TEST_S3_OBJECT_KEY = "uploads/test.jpg";
-    private static final String TEST_PHOTO_TITLE = "テスト写真";
     private static final String TEST_TIME_OF_DAY = "朝";
     private static final String TEST_WEATHER = "晴れ";
 
@@ -182,7 +181,6 @@ public class ReportControllerTest {
         photo.setSpotId(spot.getSpotId());
         photo.setCategories(java.util.List.of(category));
         photo.setS3ObjectKey(TEST_S3_OBJECT_KEY);
-        photo.setTitle(TEST_PHOTO_TITLE);
         photo.setTimeOfDay(TEST_TIME_OF_DAY);
         photo.setWeather(TEST_WEATHER);
         photo.setShotAt(LocalDateTime.now());

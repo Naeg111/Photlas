@@ -102,7 +102,7 @@ public class ModerationCallbackController {
         if (newStatus == ModerationStatus.QUARANTINED) {
             userRepository.findById(photo.getUserId()).ifPresent(user ->
                     notificationService.sendQuarantineNotification(
-                            user.getEmail(), user.getUsername(), photo.getTitle()));
+                            user.getEmail(), user.getUsername(), photo.getCreatedAt()));
         }
 
         logger.info("モデレーションコールバック処理完了: s3Key={}, status={}, confidence={}",

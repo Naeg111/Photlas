@@ -97,7 +97,6 @@ public class PhotoServiceTest {
     @DisplayName("スポット集約ロジック - 新規スポット作成")
     void testCreatePhoto_NoExistingSpot_CreatesNewSpot() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("新規スポットの写真");
         request.setS3ObjectKey("photos/test001.jpg");
         request.setTakenAt("2025-08-15T18:30:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -107,7 +106,6 @@ public class PhotoServiceTest {
         PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
 
         assertThat(response).isNotNull();
-        assertThat(response.getPhoto().getTitle()).isEqualTo("新規スポットの写真");
         assertThat(response.getSpot()).isNotNull();
         assertThat(response.getSpot().getLatitude()).isEqualByComparingTo(new BigDecimal("35.658581"));
         assertThat(response.getSpot().getLongitude()).isEqualByComparingTo(new BigDecimal("139.745433"));
@@ -129,7 +127,6 @@ public class PhotoServiceTest {
         existingSpot = spotRepository.save(existingSpot);
 
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("近くの写真");
         request.setS3ObjectKey("photos/test002.jpg");
         request.setTakenAt("2025-08-16T19:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));  // 既存スポットから約9m
@@ -159,7 +156,6 @@ public class PhotoServiceTest {
         existingSpot = spotRepository.save(existingSpot);
 
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("遠い場所の写真");
         request.setS3ObjectKey("photos/test003.jpg");
         request.setTakenAt("2025-08-17T20:00:00Z");
         request.setLatitude(new BigDecimal("35.660581"));  // 約222m離れた位置
@@ -194,7 +190,6 @@ public class PhotoServiceTest {
         spot2 = spotRepository.save(spot2);
 
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("中間の写真");
         request.setS3ObjectKey("photos/test004.jpg");
         request.setTakenAt("2025-08-18T21:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -212,7 +207,6 @@ public class PhotoServiceTest {
     @DisplayName("カテゴリ保存ロジック - 単一カテゴリの保存")
     void testCreatePhoto_SingleCategory_SavesCorrectly() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("カテゴリテスト");
         request.setS3ObjectKey("photos/test005.jpg");
         request.setTakenAt("2025-08-19T22:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -233,7 +227,6 @@ public class PhotoServiceTest {
     @DisplayName("カテゴリ保存ロジック - 複数カテゴリの保存")
     void testCreatePhoto_MultipleCategories_SavesCorrectly() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("複数カテゴリテスト");
         request.setS3ObjectKey("photos/test006.jpg");
         request.setTakenAt("2025-08-20T23:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -256,7 +249,6 @@ public class PhotoServiceTest {
     @DisplayName("カテゴリ保存ロジック - 存在しないカテゴリ名で例外")
     void testCreatePhoto_NonExistentCategory_ThrowsException() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("無効カテゴリテスト");
         request.setS3ObjectKey("photos/test007.jpg");
         request.setTakenAt("2025-08-21T10:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -272,7 +264,6 @@ public class PhotoServiceTest {
     @DisplayName("天気情報 - ユーザーが天気を指定した場合はその値が保存される")
     void testCreatePhoto_WithWeather_SavesProvidedWeather() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("天気テスト");
         request.setS3ObjectKey("photos/test008.jpg");
         request.setTakenAt("2025-08-22T12:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -290,7 +281,6 @@ public class PhotoServiceTest {
     @DisplayName("天気情報 - ユーザーが天気を未指定の場合はnullで保存される")
     void testCreatePhoto_WithoutWeather_SavesNull() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("天気未指定テスト");
         request.setS3ObjectKey("photos/test009.jpg");
         request.setTakenAt("2020-01-01T00:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -307,7 +297,6 @@ public class PhotoServiceTest {
     @DisplayName("トランザクション - 全ての処理が1つのトランザクションで実行される")
     void testCreatePhoto_AllOperations_ExecutedInSingleTransaction() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("トランザクションテスト");
         request.setS3ObjectKey("photos/test010.jpg");
         request.setTakenAt("2025-08-23T14:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -332,7 +321,6 @@ public class PhotoServiceTest {
     @DisplayName("トランザクション - カテゴリエラー時は例外をスロー")
     void testCreatePhoto_CategoryError_ThrowsException() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("ロールバックテスト");
         request.setS3ObjectKey("photos/test011.jpg");
         request.setTakenAt("2025-08-24T15:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -351,7 +339,6 @@ public class PhotoServiceTest {
     @DisplayName("Issue#48 - カテゴリなし（空リスト）での投稿が成功する")
     void testCreatePhoto_EmptyCategories_SucceedsWithoutCategory() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("カテゴリ無し写真");
         request.setS3ObjectKey("photos/nocat001.jpg");
         request.setTakenAt("2026-01-20T10:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -361,8 +348,6 @@ public class PhotoServiceTest {
         PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
 
         assertThat(response).isNotNull();
-        assertThat(response.getPhoto().getTitle()).isEqualTo("カテゴリ無し写真");
-
         Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
         assertThat(savedPhoto.getCategories()).isEmpty();
     }
@@ -371,7 +356,6 @@ public class PhotoServiceTest {
     @DisplayName("Issue#48 - カテゴリnullでの投稿が成功する")
     void testCreatePhoto_NullCategories_SucceedsWithoutCategory() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("カテゴリnull写真");
         request.setS3ObjectKey("photos/nullcat001.jpg");
         request.setTakenAt("2026-01-21T10:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -381,8 +365,6 @@ public class PhotoServiceTest {
         PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
 
         assertThat(response).isNotNull();
-        assertThat(response.getPhoto().getTitle()).isEqualTo("カテゴリnull写真");
-
         Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
         assertThat(savedPhoto.getCategories()).isEmpty();
     }
@@ -393,7 +375,6 @@ public class PhotoServiceTest {
     @DisplayName("時間帯自動判定 - 朝（5:00〜9:59）の撮影日時からMORNINGが設定される")
     void testCreatePhoto_MorningShot_SetsTimeOfDayToMorning() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("朝の写真");
         request.setS3ObjectKey("photos/morning001.jpg");
         request.setTakenAt("2026-02-17T07:30:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -411,7 +392,6 @@ public class PhotoServiceTest {
     @DisplayName("時間帯自動判定 - 昼（10:00〜15:59）の撮影日時からDAYが設定される")
     void testCreatePhoto_DaytimeShot_SetsTimeOfDayToDay() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("昼の写真");
         request.setS3ObjectKey("photos/day001.jpg");
         request.setTakenAt("2026-02-17T12:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -429,7 +409,6 @@ public class PhotoServiceTest {
     @DisplayName("時間帯自動判定 - 夕方（16:00〜17:59）の撮影日時からEVENINGが設定される")
     void testCreatePhoto_EveningShot_SetsTimeOfDayToEvening() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("夕方の写真");
         request.setS3ObjectKey("photos/evening001.jpg");
         request.setTakenAt("2026-02-17T17:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -447,7 +426,6 @@ public class PhotoServiceTest {
     @DisplayName("時間帯自動判定 - 夜（18:00〜4:59）の撮影日時からNIGHTが設定される")
     void testCreatePhoto_NightShot_SetsTimeOfDayToNight() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("夜の写真");
         request.setS3ObjectKey("photos/night001.jpg");
         request.setTakenAt("2026-02-17T22:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -465,7 +443,6 @@ public class PhotoServiceTest {
     @DisplayName("時間帯自動判定 - 深夜（3:00）の撮影日時からNIGHTが設定される")
     void testCreatePhoto_EarlyMorningShot_SetsTimeOfDayToNight() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("深夜の写真");
         request.setS3ObjectKey("photos/latenight001.jpg");
         request.setTakenAt("2026-02-17T03:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -483,7 +460,6 @@ public class PhotoServiceTest {
     @DisplayName("時間帯自動判定 - 境界値: 5:00はMORNINGになる")
     void testCreatePhoto_BoundaryMorningStart_SetsTimeOfDayToMorning() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("朝5時の写真");
         request.setS3ObjectKey("photos/morning5am.jpg");
         request.setTakenAt("2026-02-17T05:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -500,7 +476,6 @@ public class PhotoServiceTest {
     @DisplayName("時間帯自動判定 - 境界値: 4:59はNIGHTになる")
     void testCreatePhoto_BoundaryNightEnd_SetsTimeOfDayToNight() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("夜4時59分の写真");
         request.setS3ObjectKey("photos/night459.jpg");
         request.setTakenAt("2026-02-17T04:59:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -519,7 +494,6 @@ public class PhotoServiceTest {
     @DisplayName("Issue#40 - EXIF情報付き写真の投稿が正常に保存される")
     void testCreatePhoto_WithExifData_SavesAllExifFields() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("EXIF付き写真");
         request.setS3ObjectKey("photos/exif001.jpg");
         request.setTakenAt("2026-01-15T17:30:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -562,7 +536,6 @@ public class PhotoServiceTest {
     @DisplayName("Issue#40 - EXIF情報なしの写真も正常に投稿できる")
     void testCreatePhoto_WithoutExifData_SavesSuccessfully() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("EXIF無し写真");
         request.setS3ObjectKey("photos/noexif001.jpg");
         request.setTakenAt("2026-01-16T10:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -595,7 +568,6 @@ public class PhotoServiceTest {
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/exifdetail001.jpg");
-        photo.setTitle("EXIF詳細テスト");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 15, 17, 30));
         photo.setWeather("sunny");
         photo.setCameraBody("Sony α7 IV");
@@ -637,7 +609,6 @@ public class PhotoServiceTest {
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/partialexif001.jpg");
-        photo.setTitle("部分EXIF");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 16, 10, 0));
         photo.setWeather("cloudy");
         // カメラ名とISOのみ設定
@@ -670,7 +641,6 @@ public class PhotoServiceTest {
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/coord001.jpg");
-        photo.setTitle("座標テスト");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 17, 12, 0));
         photo.setWeather("sunny");
         photo.setLatitude(new BigDecimal("35.658600"));
@@ -694,7 +664,6 @@ public class PhotoServiceTest {
     @DisplayName("Issue#49 - クロップデータ付き写真の投稿が正常に保存される")
     void testCreatePhoto_WithCropData_SavesCropFields() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("クロップ付き写真");
         request.setS3ObjectKey("photos/crop001.jpg");
         request.setTakenAt("2026-02-08T10:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -718,7 +687,6 @@ public class PhotoServiceTest {
     @DisplayName("Issue#49 - クロップデータなしの投稿が成功する（後方互換）")
     void testCreatePhoto_WithoutCropData_SavesNullCropFields() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("クロップ無し写真");
         request.setS3ObjectKey("photos/nocrop001.jpg");
         request.setTakenAt("2026-02-08T11:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -746,7 +714,6 @@ public class PhotoServiceTest {
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/cropdetail001.jpg");
-        photo.setTitle("クロップ詳細テスト");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 2, 8, 10, 0));
         photo.setWeather("sunny");
         photo.setCropCenterX(0.25);
@@ -776,7 +743,6 @@ public class PhotoServiceTest {
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/nocropdetail001.jpg");
-        photo.setTitle("クロップ無し詳細");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 2, 8, 11, 0));
         photo.setWeather("cloudy");
         photo.setCategories(List.of(landscapeCategory));
@@ -799,9 +765,9 @@ public class PhotoServiceTest {
         // Given
         Spot spot = createSpot("35.658581", "139.745433");
 
-        createPhotoForUser(spot, "photos/user001.jpg", "写真1",
+        createPhotoForUser(spot, "photos/user001.jpg",
                 java.time.LocalDateTime.of(2026, 1, 15, 10, 0), "sunny");
-        createPhotoForUser(spot, "photos/user002.jpg", "写真2",
+        createPhotoForUser(spot, "photos/user002.jpg",
                 java.time.LocalDateTime.of(2026, 1, 16, 10, 0), "cloudy");
 
         Pageable pageable = PageRequest.of(0, 20);
@@ -846,7 +812,6 @@ public class PhotoServiceTest {
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/detail001.jpg");
-        photo.setTitle("詳細確認用");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 15, 10, 0));
         photo.setWeather("sunny");
         photo.setCropCenterX(0.5);
@@ -867,7 +832,6 @@ public class PhotoServiceTest {
 
         PhotoResponse response = content.get(0);
         assertThat(response.getPhoto().getImageUrl()).isNotNull();
-        assertThat(response.getPhoto().getTitle()).isEqualTo("詳細確認用");
         assertThat(response.getSpot().getSpotId()).isEqualTo(spot.getSpotId());
         assertThat(response.getPhoto().getCropCenterX()).isEqualTo(0.5);
         assertThat(response.getPhoto().getCropCenterY()).isEqualTo(0.5);
@@ -884,13 +848,12 @@ public class PhotoServiceTest {
         return spotRepository.save(spot);
     }
 
-    private Photo createPhotoForUser(Spot spot, String s3Key, String title,
+    private Photo createPhotoForUser(Spot spot, String s3Key,
                                      java.time.LocalDateTime shotAt, String weather) {
         Photo photo = new Photo();
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey(s3Key);
-        photo.setTitle(title);
         photo.setShotAt(shotAt);
         photo.setWeather(weather);
         photo.setCategories(List.of(landscapeCategory));
@@ -902,7 +865,6 @@ public class PhotoServiceTest {
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey(s3Key);
-        photo.setTitle("テスト写真");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 15, 10, 0));
         photo.setModerationStatus(status);
         photo.setCategories(List.of(landscapeCategory));
@@ -918,7 +880,6 @@ public class PhotoServiceTest {
         userRepository.save(testUser);
 
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("テスト");
         request.setS3ObjectKey("photos/suspended001.jpg");
         request.setTakenAt("2026-01-15T10:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -940,7 +901,6 @@ public class PhotoServiceTest {
         accountSanctionRepository.save(sanction);
 
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("テスト");
         request.setS3ObjectKey("photos/tempsuspend001.jpg");
         request.setTakenAt("2026-01-15T10:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
@@ -962,7 +922,6 @@ public class PhotoServiceTest {
         accountSanctionRepository.save(sanction);
 
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setTitle("復帰後の投稿");
         request.setS3ObjectKey("photos/expired001.jpg");
         request.setTakenAt("2026-01-15T10:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));

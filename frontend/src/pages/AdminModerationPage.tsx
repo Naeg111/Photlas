@@ -25,7 +25,6 @@ const REPORT_REASON_LABELS: Record<string, string> = {
 
 interface ModerationQueueItem {
   photo_id: number
-  title: string
   image_url: string
   user_id: number
   username: string
@@ -213,7 +212,7 @@ export default function AdminModerationPage() {
                 >
                   <img
                     src={item.image_url}
-                    alt={item.title}
+                    alt="画像"
                     className={`w-full h-full object-cover transition-all duration-300 ${
                       revealedIds.has(item.photo_id) ? '' : 'blur-lg'
                     }`}
@@ -230,15 +229,10 @@ export default function AdminModerationPage() {
 
                 {/* 情報 */}
                 <div className="p-4 space-y-2">
-                  <h3 className="font-medium truncate">{item.title}</h3>
+                  <h3 className="font-medium truncate text-sm text-gray-600">{item.created_at ? new Date(item.created_at).toLocaleString('ja-JP') : ''}</h3>
                   <p className="text-sm text-gray-500">
                     投稿者: {item.username} (ID: {item.user_id})
                   </p>
-                  {item.created_at && (
-                    <p className="text-xs text-gray-400">
-                      {new Date(item.created_at).toLocaleString('ja-JP')}
-                    </p>
-                  )}
 
                   {/* Issue#54: 通報情報 */}
                   {item.report_count > 0 && (

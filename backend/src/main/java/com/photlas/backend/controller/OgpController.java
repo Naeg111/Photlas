@@ -66,7 +66,7 @@ public class OgpController {
         }
 
         String imageUrl = s3Service.generateCdnUrl(photo.getS3ObjectKey());
-        String title = photo.getTitle() != null ? photo.getTitle() : SITE_NAME;
+        String title = photo.getPlaceName() != null ? photo.getPlaceName() : SITE_NAME;
         String pageUrl = frontendUrl + "/photo-viewer/" + photoId;
 
         // ユーザー名を取得

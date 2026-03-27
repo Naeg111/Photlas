@@ -179,7 +179,7 @@ public class LocationSuggestionService {
             response.setCurrentLongitude(spot.getLongitude());
         }
         if (photo != null) {
-            response.setPhotoTitle(photo.getTitle());
+            response.setPhotoTitle(photo.getPlaceName());
         }
         return response;
     }
