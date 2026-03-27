@@ -87,4 +87,61 @@ describe('ImageWithFallback', () => {
     expect(img).toHaveAttribute('data-testid', 'custom-image')
     expect(img).toHaveAttribute('loading', 'lazy')
   })
+
+  // ============================================================
+  // Issue#75: サムネイルフォールバック
+  // ============================================================
+
+  it('Issue#75 - サムネイルURL読み込み失敗時にfallbackSrcにフォールバックする', () => {
+    render(
+      <ImageWithFallback
+        src="https://cdn.example.com/thumbnails/uploads/1/test.webp"
+        fallbackSrc="https://cdn.example.com/uploads/1/test.jpg"
+        alt="テスト画像"
+      />,
+    )
+
+    const img = screen.getByAltText('テスト画像')
+    expect(img).toHaveAttribute('src', 'https://cdn.example.com/thumbnails/uploads/1/test.webp')
+
+    // サムネイル読み込みエラー
+    fireEvent.error(img)
+
+    // fallbackSrcに切り替わる（エラープレースホルダーではない）
+    const fallbackImg = screen.getByAltText('テスト画像')
+    expect(fallbackImg).toHaveAttribute('src', 'https://cdn.example.com/uploads/1/test.jpg')
+  })
+
+  it('Issue#75 - fallbackSrcも失敗した場合はエラープレースホルダーが表示される', () => {
+    const { container } = render(
+      <ImageWithFallback
+        src="https://cdn.example.com/thumbnails/uploads/1/test.webp"
+        fallbackSrc="https://cdn.example.com/uploads/1/test.jpg"
+        alt="テスト画像"
+      />,
+    )
+
+    // 1回目のエラー: fallbackSrcに切り替わる
+    const img = screen.getByAltText('テスト画像')
+    fireEvent.error(img)
+
+    // 2回目のエラー: エラープレースホルダーが表示される
+    const fallbackImg = screen.getByAltText('テスト画像')
+    fireEvent.error(fallbackImg)
+
+    const fallbackDiv = container.querySelector('.bg-gray-100')
+    expect(fallbackDiv).toBeInTheDocument()
+  })
+
+  it('Issue#75 - fallbackSrcが未指定の場合は従来通りエラープレースホルダーが表示される', () => {
+    const { container } = render(
+      <ImageWithFallback {...defaultProps} />,
+    )
+
+    const img = screen.getByAltText('テスト画像')
+    fireEvent.error(img)
+
+    const fallbackDiv = container.querySelector('.bg-gray-100')
+    expect(fallbackDiv).toBeInTheDocument()
+  })
 })
