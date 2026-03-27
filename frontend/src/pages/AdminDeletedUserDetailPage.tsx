@@ -64,7 +64,7 @@ export default function AdminDeletedUserDetailPage() {
   }, [fetchDetail])
 
   const handleImmediateDelete = async () => {
-    if (!detail || confirmEmail !== detail.email) {
+    if (confirmEmail !== detail?.email) {
       toast.error('メールアドレスが一致しません')
       return
     }

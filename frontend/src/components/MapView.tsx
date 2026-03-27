@@ -351,18 +351,16 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
     // クラスタのクリックイベント
     mapInstance.on('click', CLUSTER_LAYER_ID, (e: any) => {
-      if (e.features && e.features.length > 0) {
-        const clusterId = e.features[0].properties.cluster_id
-        const source = mapInstance.getSource(SOURCE_ID) as any
-        if (source && source.getClusterLeaves) {
-          source.getClusterLeaves(clusterId, Infinity, 0, (err: any, leaves: any[]) => {
-            if (!err && leaves) {
-              const spotIds = leaves.map((leaf: any) => leaf.properties.spotId)
-              onClusterClickRef.current?.(spotIds)
-            }
-          })
+      if (!e.features || e.features.length === 0) return
+      const clusterId = e.features[0].properties.cluster_id
+      const source = mapInstance.getSource(SOURCE_ID) as any
+      if (!source?.getClusterLeaves) return
+      source.getClusterLeaves(clusterId, Infinity, 0, (err: any, leaves: any[]) => {
+        if (!err && leaves) {
+          const spotIds = leaves.map((leaf: any) => leaf.properties.spotId)
+          onClusterClickRef.current?.(spotIds)
         }
-      }
+      })
     })
 
     layersInitializedRef.current = true
