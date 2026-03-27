@@ -244,7 +244,7 @@ public class UserService {
         // ユーザーを取得
         Optional<User> userOptional = userRepository.findById(resetToken.getUserId());
         if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException("ユーザーが見つかりません");
+            throw new IllegalArgumentException(ERROR_USER_NOT_FOUND);
         }
 
         User user = userOptional.get();
@@ -354,7 +354,7 @@ public class UserService {
 
         Optional<User> userOptional = userRepository.findById(verificationToken.getUserId());
         if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException("ユーザーが見つかりません");
+            throw new IllegalArgumentException(ERROR_USER_NOT_FOUND);
         }
 
         User user = userOptional.get();
@@ -456,7 +456,7 @@ public class UserService {
         // ユーザー名重複チェック（自分以外）
         Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
         if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("このユーザー名はすでに使用されています");
+            throw new IllegalArgumentException(ERROR_USERNAME_ALREADY_EXISTS);
         }
 
         // ユーザー名を更新

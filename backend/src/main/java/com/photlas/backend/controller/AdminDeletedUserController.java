@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.photlas.backend.entity.*;
 import com.photlas.backend.repository.*;
 import com.photlas.backend.service.AccountCleanupService;
-import com.photlas.backend.service.S3Service;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -36,6 +36,7 @@ public class AdminDeletedUserController {
     private static final String KEY_DELETED_AT = "deleted_at";
     private static final String KEY_ORIGINAL_USERNAME = "original_username";
     private static final String KEY_CREATED_AT = "created_at";
+    private static final String KEY_EMAIL = "email";
 
     private final UserRepository userRepository;
     private final PhotoRepository photoRepository;
@@ -43,7 +44,6 @@ public class AdminDeletedUserController {
     private final AccountSanctionRepository accountSanctionRepository;
     private final ReportRepository reportRepository;
     private final AccountCleanupService accountCleanupService;
-    private final S3Service s3Service;
 
     public AdminDeletedUserController(
             UserRepository userRepository,
@@ -51,15 +51,13 @@ public class AdminDeletedUserController {
             ViolationRepository violationRepository,
             AccountSanctionRepository accountSanctionRepository,
             ReportRepository reportRepository,
-            AccountCleanupService accountCleanupService,
-            S3Service s3Service) {
+            AccountCleanupService accountCleanupService) {
         this.userRepository = userRepository;
         this.photoRepository = photoRepository;
         this.violationRepository = violationRepository;
         this.accountSanctionRepository = accountSanctionRepository;
         this.reportRepository = reportRepository;
         this.accountCleanupService = accountCleanupService;
-        this.s3Service = s3Service;
     }
 
     /**
@@ -99,7 +97,7 @@ public class AdminDeletedUserController {
         List<AccountSanction> sanctions = accountSanctionRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
 
         Map<String, Object> response = new HashMap<>();
-        response.put("email", user.getEmail());
+        response.put(KEY_EMAIL, user.getEmail());
         response.put(KEY_ORIGINAL_USERNAME, user.getOriginalUsername());
         response.put(KEY_DELETED_AT, formatDateTime(user.getDeletedAt()));
         response.put("deletion_hold_until", formatDateTime(user.getDeletionHoldUntil()));
@@ -173,7 +171,7 @@ public class AdminDeletedUserController {
         List<AccountSanction> sanctions = accountSanctionRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
 
         Map<String, Object> userData = new HashMap<>();
-        userData.put("email", user.getEmail());
+        userData.put(KEY_EMAIL, user.getEmail());
         userData.put(KEY_ORIGINAL_USERNAME, user.getOriginalUsername());
         userData.put(KEY_CREATED_AT, formatDateTime(user.getCreatedAt()));
         userData.put(KEY_DELETED_AT, formatDateTime(user.getDeletedAt()));
@@ -212,7 +210,7 @@ public class AdminDeletedUserController {
     private Map<String, Object> toListItem(User user) {
         Map<String, Object> item = new HashMap<>();
         item.put("user_id", user.getId());
-        item.put("email", user.getEmail());
+        item.put(KEY_EMAIL, user.getEmail());
         item.put(KEY_ORIGINAL_USERNAME, user.getOriginalUsername());
         item.put(KEY_DELETED_AT, formatDateTime(user.getDeletedAt()));
         item.put("remaining_days", calculateRemainingDays(user));

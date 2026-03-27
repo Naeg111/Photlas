@@ -9,7 +9,7 @@ import com.photlas.backend.entity.Violation;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.repository.AccountSanctionRepository;
 import com.photlas.backend.repository.PhotoRepository;
-import com.photlas.backend.repository.ReportRepository;
+
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.repository.ViolationRepository;
 import org.slf4j.Logger;
@@ -39,7 +39,6 @@ public class AdminModerationService {
 
     private final PhotoRepository photoRepository;
     private final ViolationRepository violationRepository;
-    private final ReportRepository reportRepository;
     private final AccountSanctionRepository accountSanctionRepository;
     private final UserRepository userRepository;
     private final ModerationNotificationService notificationService;
@@ -47,14 +46,12 @@ public class AdminModerationService {
     public AdminModerationService(
             PhotoRepository photoRepository,
             ViolationRepository violationRepository,
-            ReportRepository reportRepository,
             AccountSanctionRepository accountSanctionRepository,
             UserRepository userRepository,
             ModerationNotificationService notificationService
     ) {
         this.photoRepository = photoRepository;
         this.violationRepository = violationRepository;
-        this.reportRepository = reportRepository;
         this.accountSanctionRepository = accountSanctionRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;

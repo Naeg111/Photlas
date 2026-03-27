@@ -141,7 +141,7 @@ public class SpotService {
         logger.info("Getting photo IDs for spot: spotId={}", spotId);
 
         // スポットの存在確認
-        Spot spot = spotRepository.findById(spotId)
+        spotRepository.findById(spotId)
                 .orElseThrow(() -> new SpotNotFoundException("Spot not found"));
 
         List<Photo> photos = photoRepository.findBySpotIdAndModerationStatusOrderByShotAtAsc(

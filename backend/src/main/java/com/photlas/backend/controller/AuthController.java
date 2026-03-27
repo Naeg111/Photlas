@@ -35,6 +35,7 @@ public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     private static final String ERROR_INTERNAL_SERVER = "サーバー内部エラーが発生しました";
     private static final String KEY_MESSAGE = "message";
+    private static final String FIELD_EMAIL = "email";
 
     private final UserService userService;
 
@@ -79,13 +80,13 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (ConflictException e) {
             List<ErrorResponse.FieldError> fieldErrors = List.of(
-                new ErrorResponse.FieldError("email", request.getEmail(), e.getMessage())
+                new ErrorResponse.FieldError(FIELD_EMAIL, request.getEmail(), e.getMessage())
             );
             ErrorResponse errorResponse = new ErrorResponse("競合エラー", fieldErrors);
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         } catch (IllegalArgumentException e) {
             List<ErrorResponse.FieldError> fieldErrors = List.of(
-                new ErrorResponse.FieldError("email", request.getEmail(), e.getMessage())
+                new ErrorResponse.FieldError(FIELD_EMAIL, request.getEmail(), e.getMessage())
             );
             ErrorResponse errorResponse = new ErrorResponse("バリデーションエラー", fieldErrors);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
@@ -166,7 +167,7 @@ public class AuthController {
     @PostMapping("/resend-verification")
     public ResponseEntity<?> resendVerification(@RequestBody Map<String, String> request) {
         try {
-            String email = request.get("email");
+            String email = request.get(FIELD_EMAIL);
             if (email == null || email.isBlank()) {
                 ErrorResponse errorResponse = new ErrorResponse("メールアドレスは必須です");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
