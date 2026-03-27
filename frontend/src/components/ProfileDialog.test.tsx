@@ -1183,4 +1183,50 @@ describe('ProfileDialog', () => {
       expect(screen.queryByLabelText('このプロフィールを通報')).not.toBeInTheDocument()
     })
   })
+
+  // ============================================================
+  // Issue#79: プロフィール画像のAPI取得
+  // ============================================================
+
+  describe('Issue#79: プロフィール画像のAPI取得', () => {
+    it('profileImageUrlがnullの場合、APIからプロフィール情報を取得して画像を表示する', async () => {
+      const profileWithoutImage = {
+        ...mockUserProfile,
+        profileImageUrl: null,
+      }
+
+      // 1回目: プロフィールAPI → 画像URLを含むレスポンス
+      // 2回目: 写真一覧API → 空レスポンス
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({
+            userId: 123,
+            username: 'testuser',
+            profileImageUrl: 'https://cdn.example.com/profile/123.jpg',
+            snsLinks: [],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={profileWithoutImage}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // APIから取得した画像が表示される
+      await waitFor(() => {
+        const img = document.querySelector('img[src="https://cdn.example.com/profile/123.jpg"]')
+        expect(img).toBeInTheDocument()
+      })
+    })
+  })
 })
