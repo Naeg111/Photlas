@@ -24,9 +24,19 @@ import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
  * iOS Safariでのコンポジティングレイヤーの上に確実に配置する
  */
 
+interface MarkerConfig {
+  lat: number
+  lng: number
+  color: string
+}
+
 interface InlineMapPickerProps {
   position: { lat: number; lng: number } | null
   onPositionChange: (position: { lat: number; lng: number }) => void
+  /** 固定中央ピンの色（デフォルト: '#ef4444' 赤） */
+  pinColor?: string
+  /** 地図上に表示する追加マーカー */
+  markers?: MarkerConfig[]
 }
 
 // Mapbox Search Box APIの検索結果型
@@ -308,7 +318,7 @@ export function InlineMapPicker({ position, onPositionChange }: Readonly<InlineM
         </div>
 
         {/* 中央固定ピン */}
-        <div style={overlayStyles.pin}>
+        <div style={overlayStyles.pin} data-testid="center-pin">
           <MapPin style={{ width: 40, height: 40, color: '#ef4444', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
         </div>
 
