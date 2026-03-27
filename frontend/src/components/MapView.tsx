@@ -66,6 +66,23 @@ const TOP_UI_HEIGHT = 56
 /** 長距離移動の閾値（緯度経度の度数、約1110km） */
 const LONG_DISTANCE_THRESHOLD = 10
 const TRANSITION_FADE_MS = 500
+
+/** 地図遷移完了時のフェードアウト処理を生成（ネスト深度削減用） */
+function createTransitionCompleter(
+  setMapTransitioning: (v: boolean) => void,
+  setMapTransitionFading: (v: boolean) => void
+) {
+  let completed = false
+  return () => {
+    if (completed) return
+    completed = true
+    setMapTransitionFading(true)
+    setTimeout(() => {
+      setMapTransitioning(false)
+      setMapTransitionFading(false)
+    }, TRANSITION_FADE_MS)
+  }
+}
 const TRANSITION_TIMEOUT_MS = 5000
 const SHOOTING_PIN_SCALE = 1.4
 
@@ -504,20 +521,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
       if (distance > LONG_DISTANCE_THRESHOLD) {
         setMapTransitioning(true)
+        const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading)
         requestAnimationFrame(() => {
           map.jumpTo({ center: [lng, lat], zoom, padding })
-          let completed = false
-          const complete = () => {
-            if (completed) return
-            completed = true
-            setMapTransitionFading(true)
-            setTimeout(() => {
-              setMapTransitioning(false)
-              setMapTransitionFading(false)
-            }, TRANSITION_FADE_MS)
-          }
-          map.once('idle', complete)
-          setTimeout(complete, TRANSITION_TIMEOUT_MS)
+          map.once('idle', completeTransition)
+          setTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
         })
       } else {
         map.flyTo({ center: [lng, lat], zoom, speed: 0.8, padding })
