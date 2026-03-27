@@ -95,7 +95,7 @@ const mockPhotosResponse = {
 
 describe('ProfileDialog', () => {
   const mockOnClose = vi.fn()
-  const mockOnSpotClick = vi.fn()
+  const mockOnPhotoClick = vi.fn()
 
   const mockUserProfile = {
     userId: 123,
@@ -132,7 +132,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -146,7 +146,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -162,7 +162,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockOtherUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -177,7 +177,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -196,7 +196,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -211,7 +211,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockOtherUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -228,7 +228,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -254,7 +254,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -278,7 +278,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -328,7 +328,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -344,7 +344,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -363,7 +363,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockOtherUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -384,7 +384,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -402,7 +402,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -416,7 +416,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -430,7 +430,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockOtherUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -445,7 +445,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -466,7 +466,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -492,7 +492,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -513,7 +513,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -575,7 +575,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -618,7 +618,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -642,7 +642,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -658,7 +658,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -679,7 +679,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -722,7 +722,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -761,7 +761,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={{ ...mockUserProfile, snsLinks: [] }}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -798,7 +798,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={{ ...mockUserProfile, snsLinks: [] }}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -824,7 +824,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={{ ...mockUserProfile, snsLinks: [{ url: 'https://x.com/test', platform: 'twitter' }] }}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -861,7 +861,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -892,7 +892,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -919,7 +919,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -958,7 +958,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -1017,7 +1017,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -1057,7 +1057,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -1104,7 +1104,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -1138,7 +1138,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -1162,7 +1162,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockOtherUserProfile}
           isOwnProfile={false}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -1176,7 +1176,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={true}
-          onPhotoClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
