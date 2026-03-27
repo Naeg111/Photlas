@@ -49,7 +49,7 @@ describe('TopMenuPanel', () => {
 
       expect(screen.getByText(/Photlasとは？/)).toBeInTheDocument()
       expect(screen.getByText(/マイページ/)).toBeInTheDocument()
-      expect(screen.getByText(/行きたい場所リスト/)).toBeInTheDocument()
+      // 行きたい場所リストは一時非表示
       expect(screen.getByText(/アカウント設定/)).toBeInTheDocument()
       expect(screen.getByText(/利用規約/)).toBeInTheDocument()
       expect(screen.getByText(/プライバシーポリシー/)).toBeInTheDocument()

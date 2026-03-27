@@ -87,7 +87,7 @@ type UploadStatus = 'idle' | 'uploading' | 'success' | 'error' | 'auth_error'
 /** アップロードステータスに対応する背景色クラスを返す */
 function getUploadStatusBgColor(status: UploadStatus): string {
   if (status === 'error' || status === 'auth_error') return 'bg-red-500'
-  if (status === 'success') return 'bg-green-500'
+  if (status === 'success') return 'bg-gray-900'
   return 'bg-white'
 }
 

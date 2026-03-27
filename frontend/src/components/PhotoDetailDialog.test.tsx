@@ -1725,15 +1725,15 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByTestId(TEST_ID_FAVORITE_BUTTON)).toBeInTheDocument()
+        expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
       })
 
-      const actionBar = screen.getByTestId(TEST_ID_FAVORITE_BUTTON).parentElement!
+      const actionBar = screen.getByTestId('favorite-button').parentElement!
       const buttons = actionBar.querySelectorAll('button')
       const testIds = Array.from(buttons).map(b => b.getAttribute('data-testid')).filter(Boolean)
 
       expect(testIds).toEqual([
-        TEST_ID_FAVORITE_BUTTON,
+        'favorite-button',
         'delete-photo-button',
         'edit-photo-button',
         'share-button',
