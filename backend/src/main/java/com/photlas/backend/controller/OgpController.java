@@ -28,6 +28,7 @@ public class OgpController {
 
     private static final String SITE_NAME = "Photlas";
     private static final String DEFAULT_DESCRIPTION = "写真を通じて撮影スポットを共有・発見できるWebアプリ";
+    private static final String JSON_PROP_SEPARATOR = "\",\n";
 
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
@@ -90,9 +91,9 @@ public class OgpController {
         sb.append("{\n");
         sb.append("  \"@context\": \"https://schema.org\",\n");
         sb.append("  \"@type\": \"Photograph\",\n");
-        sb.append("  \"name\": \"").append(escapeJson(title)).append("\",\n");
-        sb.append("  \"image\": \"").append(escapeJson(imageUrl)).append("\",\n");
-        sb.append("  \"url\": \"").append(escapeJson(pageUrl)).append("\",\n");
+        sb.append("  \"name\": \"").append(escapeJson(title)).append(JSON_PROP_SEPARATOR);
+        sb.append("  \"image\": \"").append(escapeJson(imageUrl)).append(JSON_PROP_SEPARATOR);
+        sb.append("  \"url\": \"").append(escapeJson(pageUrl)).append(JSON_PROP_SEPARATOR);
         sb.append("  \"author\": {\n");
         sb.append("    \"@type\": \"Person\",\n");
         sb.append("    \"name\": \"").append(escapeJson(username)).append("\"\n");

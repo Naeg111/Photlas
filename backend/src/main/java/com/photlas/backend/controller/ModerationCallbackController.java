@@ -35,6 +35,7 @@ public class ModerationCallbackController {
     @Value("${moderation.api-key:test-moderation-api-key}")
     private String validApiKey;
 
+    private static final String KEY_MESSAGE = "message";
     private static final String PROFILE_IMAGE_PREFIX = "profile-images/";
 
     private final PhotoRepository photoRepository;
@@ -107,7 +108,7 @@ public class ModerationCallbackController {
         logger.info("モデレーションコールバック処理完了: s3Key={}, status={}, confidence={}",
                 s3ObjectKey, newStatus, confidenceScore);
 
-        return ResponseEntity.ok(Map.of("message", "ステータスを更新しました"));
+        return ResponseEntity.ok(Map.of(KEY_MESSAGE, "ステータスを更新しました"));
     }
 
     /**
@@ -121,7 +122,7 @@ public class ModerationCallbackController {
 
         if (user == null) {
             logger.warn("プロフィール画像の所有者が見つかりません: s3Key={}", s3ObjectKey);
-            return ResponseEntity.ok(Map.of("message", "対象ユーザーが見つかりませんでした"));
+            return ResponseEntity.ok(Map.of(KEY_MESSAGE, "対象ユーザーが見つかりませんでした"));
         }
 
         if (status == ModerationStatus.QUARANTINED) {
@@ -137,7 +138,7 @@ public class ModerationCallbackController {
         logger.info("プロフィール画像モデレーション完了: userId={}, status={}, confidence={}",
                 user.getId(), status, confidenceScore);
 
-        return ResponseEntity.ok(Map.of("message", "プロフィール画像のステータスを更新しました"));
+        return ResponseEntity.ok(Map.of(KEY_MESSAGE, "プロフィール画像のステータスを更新しました"));
     }
 
     /**
