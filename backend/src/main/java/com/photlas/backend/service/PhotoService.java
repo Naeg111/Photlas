@@ -53,6 +53,7 @@ public class PhotoService {
 
     private static final String ROLE_SUSPENDED = "SUSPENDED";
     private static final String ERROR_PHOTO_NOT_FOUND = "写真が見つかりません";
+    private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
 
     private final PhotoRepository photoRepository;
     private final SpotRepository spotRepository;
@@ -103,7 +104,7 @@ public class PhotoService {
     public PhotoResponse createPhoto(CreatePhotoRequest request, String email) {
         // ユーザー情報を取得
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         // Issue#54: アカウント停止チェック
         validateAccountNotSuspended(user);
@@ -178,7 +179,7 @@ public class PhotoService {
                 .orElseThrow(() -> new SpotNotFoundException("スポットが見つかりません"));
 
         User user = userRepository.findById(photo.getUserId())
-                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         // Issue#72: 退会済みユーザーの写真は非公開
         if (user.getDeletedAt() != null) {
@@ -225,7 +226,7 @@ public class PhotoService {
             Spot spot = spotRepository.findById(photo.getSpotId())
                     .orElseThrow(() -> new SpotNotFoundException("スポットが見つかりません"));
             User photoUser = userRepository.findById(photo.getUserId())
-                    .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+                    .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
             boolean isFavorited = false;
             if (finalCurrentUser != null) {
@@ -284,7 +285,7 @@ public class PhotoService {
     @Transactional
     public void deletePhoto(Long photoId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
@@ -322,7 +323,7 @@ public class PhotoService {
     @Transactional
     public PhotoResponse updatePhoto(Long photoId, UpdatePhotoRequest request, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));

@@ -31,6 +31,7 @@ public class LocationSuggestionService {
 
     private static final Logger logger = LoggerFactory.getLogger(LocationSuggestionService.class);
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
+    private static final String ERROR_PHOTO_NOT_FOUND = "写真が見つかりません";
 
     private final LocationSuggestionRepository locationSuggestionRepository;
     private final PhotoRepository photoRepository;
@@ -64,7 +65,7 @@ public class LocationSuggestionService {
                 .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         Photo photo = photoRepository.findById(photoId)
-                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+                .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
         // 1日あたりの指摘件数制限
         long dailyCount = locationSuggestionRepository.countBySuggesterIdAndCreatedAtAfter(
@@ -124,7 +125,7 @@ public class LocationSuggestionService {
 
         // Spotの更新: 指摘された地点に最寄りのSpotを検索、なければ新規作成
         Photo photo = photoRepository.findById(suggestion.getPhotoId())
-                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+                .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
         Spot newSpot = findOrCreateSpot(suggestion.getSuggestedLatitude(), suggestion.getSuggestedLongitude());
         photo.setSpotId(newSpot.getSpotId());
@@ -211,7 +212,7 @@ public class LocationSuggestionService {
                 .orElseThrow(() -> new IllegalArgumentException("無効なトークンです"));
 
         Photo photo = photoRepository.findById(suggestion.getPhotoId())
-                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+                .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
         if (!photo.getUserId().equals(owner.getId())) {
             throw new AccessDeniedException("この指摘をレビューする権限がありません");

@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    private static final String ERROR_INTERNAL_SERVER = "サーバー内部エラーが発生しました";
+    private static final String KEY_MESSAGE = "message";
 
     private final UserService userService;
 
@@ -88,7 +90,7 @@ public class AuthController {
             ErrorResponse errorResponse = new ErrorResponse("バリデーションエラー", fieldErrors);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
+            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -127,7 +129,7 @@ public class AuthController {
             ErrorResponse errorResponse = new ErrorResponse("メールアドレスまたはパスワードが正しくありません");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
+            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -144,13 +146,13 @@ public class AuthController {
             userService.verifyEmail(token);
 
             Map<String, String> response = new HashMap<>();
-            response.put("message", "メールアドレスの認証が完了しました。ログインしてください。");
+            response.put(KEY_MESSAGE, "メールアドレスの認証が完了しました。ログインしてください。");
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
+            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -172,13 +174,13 @@ public class AuthController {
             userService.resendVerificationEmail(email);
 
             Map<String, String> response = new HashMap<>();
-            response.put("message", "認証メールを再送信しました。メールをご確認ください。");
+            response.put(KEY_MESSAGE, "認証メールを再送信しました。メールをご確認ください。");
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
+            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -202,10 +204,10 @@ public class AuthController {
 
             // セキュリティ上、メールアドレスが存在するかどうかに関わらず同じレスポンスを返す
             Map<String, String> response = new HashMap<>();
-            response.put("message", "パスワードリセット用のメールを送信しました。メールをご確認ください。");
+            response.put(KEY_MESSAGE, "パスワードリセット用のメールを送信しました。メールをご確認ください。");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
+            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -228,13 +230,13 @@ public class AuthController {
             userService.resetPassword(request.getToken(), request.getNewPassword(), request.getConfirmPassword());
 
             Map<String, String> response = new HashMap<>();
-            response.put("message", "パスワードが正常に再設定されました");
+            response.put(KEY_MESSAGE, "パスワードが正常に再設定されました");
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse("サーバー内部エラーが発生しました");
+            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
