@@ -600,6 +600,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           >
             <div
               data-testid="shooting-location-pin"
+              role="presentation"
               className="cursor-pointer"
               style={{
                 width: `${roundToEven(BASE_PIN_SIZE * SHOOTING_PIN_SCALE)}px`,

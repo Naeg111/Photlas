@@ -410,7 +410,7 @@ export function PhotoContributionDialog({
                 className={`border-2 border-dashed rounded-lg p-6 ${
                   !previewUrl ? 'cursor-pointer hover:border-gray-400 transition-colors' : ''
                 }`}
-                onClick={() => {
+                role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") fileInputRef.current?.click() }} onClick={() => {
                   if (!previewUrl) {
                     fileInputRef.current?.click()
                   }
@@ -589,7 +589,7 @@ export function PhotoContributionDialog({
                       <li
                         key={suggestion.mapbox_id}
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => handleSelectPlaceNameSuggestion(suggestion)}
+                        role="option" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleSelectPlaceNameSuggestion(suggestion) }} onClick={() => handleSelectPlaceNameSuggestion(suggestion)}
                         className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                       >
                         <div className="font-medium">{suggestion.name}</div>
@@ -616,7 +616,7 @@ export function PhotoContributionDialog({
                         ? 'border-primary bg-primary/5'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
-                    onClick={() => handleCategoryToggle(category)}
+                    role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleCategoryToggle(category) }} onClick={() => handleCategoryToggle(category)}
                   >
                     <Checkbox
                       id={`category-${category}`}
@@ -652,7 +652,7 @@ export function PhotoContributionDialog({
                         ? 'border-primary bg-primary/5'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
-                    onClick={() => setSelectedDeviceType(option.value)}
+                    role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") setSelectedDeviceType(option.value) }} onClick={() => setSelectedDeviceType(option.value)}
                   >
                     <Label className="cursor-pointer">
                       {option.label}
@@ -676,7 +676,7 @@ export function PhotoContributionDialog({
                           ? 'border-primary bg-primary/5'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      onClick={() => setSelectedWeather(prev => prev === weather ? '' : weather)}
+                      role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setSelectedWeather(prev => prev === weather ? '' : weather) }} onClick={() => setSelectedWeather(prev => prev === weather ? '' : weather)}
                     >
                       {Icon && <Icon className="w-5 h-5 shrink-0" />}
                       <Label className="cursor-pointer">

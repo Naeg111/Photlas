@@ -286,7 +286,7 @@ function DetailMiniMap({
     <div
       data-testid="detail-minimap"
       className={`relative w-full h-[200px] rounded-lg overflow-hidden ${onClick ? 'cursor-pointer' : ''}`}
-      onClick={onClick}
+      role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") onClick?.() }} onClick={onClick}
     >
       {isMapReady ? (
         <>
@@ -1014,7 +1014,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                                   ? 'border-primary bg-primary/5'
                                   : 'border-gray-200 hover:border-gray-300'
                               }`}
-                              onClick={() => handleEditCategoryToggle(category)}
+                              role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleEditCategoryToggle(category) }} onClick={() => handleEditCategoryToggle(category)}
                             >
                               <Checkbox
                                 checked={editCategories.includes(category)}
@@ -1065,7 +1065,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                                 <li
                                   key={suggestion.mapbox_id}
                                   onMouseDown={(e) => e.preventDefault()}
-                                  onClick={() => handleSelectPlaceNameSuggestion(suggestion)}
+                                  role="option" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleSelectPlaceNameSuggestion(suggestion) }} onClick={() => handleSelectPlaceNameSuggestion(suggestion)}
                                   className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                                 >
                                   <div className="font-medium">{suggestion.name}</div>
