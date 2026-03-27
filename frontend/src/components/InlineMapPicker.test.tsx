@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
-import { InlineMapPicker } from './InlineMapPicker'
+import { InlineMapPicker, DEFAULT_CENTER } from './InlineMapPicker'
 
 /**
  * Issue#53: Google Maps API から Mapbox API への移行
@@ -95,6 +95,11 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       )
 
       expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
+    })
+
+    it('position未指定時のデフォルト位置が東京駅である', () => {
+      expect(DEFAULT_CENTER.lat).toBeCloseTo(35.6812, 3)
+      expect(DEFAULT_CENTER.lng).toBeCloseTo(139.7671, 3)
     })
   })
 
