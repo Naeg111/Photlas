@@ -51,9 +51,6 @@ public class S3Service {
         // オブジェクトキーを生成: folder/userId/uuid.extension
         String objectKey = String.format("%s/%d/%s.%s", folder, userId, UUID.randomUUID(), extension);
 
-        // フォルダに応じたファイルサイズ上限を決定
-        long maxSize = "uploads".equals(folder) ? MAX_PHOTO_UPLOAD_SIZE : MAX_AVATAR_UPLOAD_SIZE;
-
         try (S3Presigner presigner = S3Presigner.builder()
                 .region(Region.of(region))
                 .credentialsProvider(DefaultCredentialsProvider.create())
