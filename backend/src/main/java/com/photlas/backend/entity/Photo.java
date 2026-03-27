@@ -33,9 +33,6 @@ public class Photo {
     @Column(name = "s3_object_key", nullable = false, unique = true, length = 255)
     private String s3ObjectKey;
 
-    @Column(name = "title", nullable = true, length = 20)
-    private String title;
-
     @Column(name = "place_name", length = 100)
     private String placeName;
 
@@ -150,14 +147,6 @@ public class Photo {
 
     public void setS3ObjectKey(String s3ObjectKey) {
         this.s3ObjectKey = s3ObjectKey;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public String getPlaceName() {

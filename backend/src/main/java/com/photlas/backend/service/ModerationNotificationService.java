@@ -8,6 +8,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Issue#54: モデレーション関連のメール通知サービス
@@ -30,13 +32,13 @@ public class ModerationNotificationService {
      *
      * @param email ユーザーのメールアドレス
      * @param username ユーザー名
-     * @param photoTitle 写真のタイトル
+     * @param createdAt 写真の投稿日時
      */
     @Async
-    public void sendQuarantineNotification(String email, String username, String photoTitle) {
+    public void sendQuarantineNotification(String email, String username, LocalDateTime createdAt) {
         String subject = "【Photlas】投稿の審査について";
         String body = username + " さん\n\n"
-                + "投稿された写真「" + photoTitle + "」について、コンテンツポリシーに基づく審査が必要と判断されました。\n\n"
+                + "投稿された写真（" + createdAt.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm")) + " 投稿）について、コンテンツポリシーに基づく審査が必要と判断されました。\n\n"
                 + "現在、運営チームによる確認を行っております。審査の結果、問題がないと判断された場合は自動的に公開されます。\n\n"
                 + "審査には通常1〜2営業日程度かかります。\n"
                 + "ご不明な点がございましたら、お問い合わせください。"

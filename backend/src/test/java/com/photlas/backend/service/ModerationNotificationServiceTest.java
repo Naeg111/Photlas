@@ -11,6 +11,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -30,8 +31,9 @@ public class ModerationNotificationServiceTest {
     @Test
     @DisplayName("Issue#54 - 隔離通知メールが正しい件名・本文で送信される")
     void testSendQuarantineNotification() {
+        LocalDateTime createdAt = LocalDateTime.of(2026, 3, 15, 14, 30);
         notificationService.sendQuarantineNotification(
-                "user@example.com", "テストユーザー", "夕焼け写真");
+                "user@example.com", "テストユーザー", createdAt);
 
         ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
         verify(mailSender, times(1)).send(captor.capture());
@@ -40,7 +42,7 @@ public class ModerationNotificationServiceTest {
         assertThat(message.getTo()).containsExactly("user@example.com");
         assertThat(message.getSubject()).contains("審査");
         assertThat(message.getText()).contains("テストユーザー");
-        assertThat(message.getText()).contains("夕焼け写真");
+        assertThat(message.getText()).contains("2026年03月15日 14:30");
     }
 
     @Test
@@ -101,6 +103,6 @@ public class ModerationNotificationServiceTest {
 
         // 例外がスローされないことを確認
         notificationService.sendQuarantineNotification(
-                "user@example.com", "テストユーザー", "テスト写真");
+                "user@example.com", "テストユーザー", LocalDateTime.of(2026, 3, 15, 14, 30));
     }
 }

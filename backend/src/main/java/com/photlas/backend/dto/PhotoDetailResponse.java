@@ -14,9 +14,6 @@ public class PhotoDetailResponse {
     @JsonProperty("photoId")
     private Long photoId;
 
-    @JsonProperty("title")
-    private String title;
-
     @JsonProperty("imageUrls")
     private ImageUrls imageUrls;
 
@@ -180,8 +177,6 @@ public class PhotoDetailResponse {
     // Getters and Setters
     public Long getPhotoId() { return photoId; }
     public void setPhotoId(Long photoId) { this.photoId = photoId; }
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
     public ImageUrls getImageUrls() { return imageUrls; }
     public void setImageUrls(ImageUrls imageUrls) { this.imageUrls = imageUrls; }
     public LocalDateTime getShotAt() { return shotAt; }

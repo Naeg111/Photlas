@@ -280,7 +280,6 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
 
       // 2. メタデータ保存（EXIF情報を含む）
       const photoResponse = await createPhoto({
-        title: data.title,
         placeName: data.placeName,
         s3ObjectKey: objectKey,
         takenAt: data.takenAt || new Date().toISOString(),

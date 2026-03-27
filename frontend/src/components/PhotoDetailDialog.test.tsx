@@ -80,12 +80,6 @@ const TEST_ORIGINAL_URL = 'https://example.com/original.jpg'
 const TEST_PROFILE_IMAGE_URL = 'https://example.com/profile.jpg'
 
 // Text content
-const TEST_PHOTO_TITLE_1 = 'Test Photo'
-const TEST_PHOTO_TITLE_BEAUTIFUL = 'Beautiful Landscape'
-const TEST_PHOTO_TITLE_2 = 'Photo 1'
-const TEST_PHOTO_TITLE_3 = 'Photo 2'
-const TEST_PHOTO_TITLE_TEST = 'Test'
-
 // User data
 const TEST_USERNAME = 'testuser'
 const TEST_USER_ID = 1
@@ -109,7 +103,6 @@ const ERROR_TEXT_LOAD_FAILED = '読み込みに失敗しました'
 // Helper Functions - Create mock API response in the new format
 function createMockApiResponse(overrides?: {
   photoId?: number
-  title?: string
   imageUrl?: string
   shotAt?: string
   weather?: string
@@ -134,12 +127,13 @@ function createMockApiResponse(overrides?: {
   cropCenterY?: number | null
   cropZoom?: number | null
   moderationStatus?: string | null
+  placeName?: string
 }) {
   return {
     photo: {
       photo_id: overrides?.photoId ?? TEST_PHOTO_ID_1,
-      title: overrides?.title ?? TEST_PHOTO_TITLE_1,
       image_url: overrides?.imageUrl ?? TEST_STANDARD_URL,
+      place_name: overrides?.placeName ?? null,
       shot_at: overrides?.shotAt ?? TEST_SHOT_AT,
       weather: overrides?.weather ?? TEST_WEATHER,
       is_favorited: overrides?.isFavorited ?? false,
@@ -168,7 +162,6 @@ function createMockApiResponse(overrides?: {
 function createMockPhotoDetail(overrides?: any) {
   return createMockApiResponse({
     photoId: overrides?.photoId,
-    title: overrides?.title,
     imageUrl: overrides?.imageUrls?.standard ?? TEST_STANDARD_URL,
     weather: overrides?.weather,
     isFavorited: overrides?.isFavorited,
@@ -266,7 +259,6 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
     it('写真詳細情報が正しく表示される', async () => {
       const photoDetail = createMockApiResponse({
-        title: TEST_PHOTO_TITLE_BEAUTIFUL,
         username: TEST_USERNAME,
       })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
@@ -281,13 +273,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
-      // 写真タイトルが表示される
-      await waitFor(() => {
-        expect(screen.getByText(TEST_PHOTO_TITLE_BEAUTIFUL)).toBeInTheDocument()
-      })
-
       // ユーザー名が表示される
-      expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
+      })
     })
   })
 
@@ -295,7 +284,6 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     it('複数の写真がある場合、枚数インジケーターが表示される', async () => {
       const photoIds = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2, TEST_PHOTO_ID_3]
       const photoDetail = createMockPhotoDetail({
-        title: TEST_PHOTO_TITLE_2,
         imageUrls: {
           standard: TEST_STANDARD_URL,
         },
@@ -323,14 +311,12 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const photoIds = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
       const photoDetail1 = createMockPhotoDetail({
         photoId: TEST_PHOTO_ID_1,
-        title: TEST_PHOTO_TITLE_2,
         imageUrls: { standard: TEST_STANDARD_URL },
         user: { userId: TEST_USER_ID, username: TEST_USERNAME },
         spot: { spotId: TEST_SPOT_ID },
       })
       const photoDetail2 = createMockPhotoDetail({
         photoId: TEST_PHOTO_ID_2,
-        title: TEST_PHOTO_TITLE_3,
         imageUrls: { standard: TEST_STANDARD_URL },
         user: { userId: TEST_USER_ID, username: TEST_USERNAME },
         spot: { spotId: TEST_SPOT_ID },
@@ -349,7 +335,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
-        expect(screen.getByText(TEST_PHOTO_TITLE_2)).toBeInTheDocument()
+        expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
       })
 
       // 次へボタンをクリック
@@ -407,7 +393,6 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
     it('閉じるボタンをクリックするとonCloseが呼ばれる', async () => {
       const photoDetail = createMockPhotoDetail({
-        title: TEST_PHOTO_TITLE_TEST,
         imageUrls: { standard: TEST_STANDARD_URL },
         user: { userId: TEST_USER_ID, username: TEST_USERNAME },
         spot: { spotId: TEST_SPOT_ID },
@@ -427,7 +412,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={onClose} />)
 
       await waitFor(() => {
-        expect(screen.getByText(TEST_PHOTO_TITLE_TEST)).toBeInTheDocument()
+        expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
       })
 
       const closeButton = screen.getByLabelText('閉じる')
@@ -794,7 +779,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
-        expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
+        expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
       })
 
       expect(screen.queryByText('撮影情報')).not.toBeInTheDocument()
@@ -1019,7 +1004,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
-        const img = screen.getByAltText(TEST_PHOTO_TITLE_1)
+        const img = screen.getByAltText('画像')
         expect(img).toHaveStyle({ objectFit: 'cover' })
         expect(img).toHaveStyle({ objectPosition: '30% 70%' })
         expect(img).toHaveStyle({ transform: 'scale(1.5)' })
@@ -1043,7 +1028,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
-        const img = screen.getByAltText(TEST_PHOTO_TITLE_1)
+        const img = screen.getByAltText('画像')
         expect(img).toHaveStyle({ objectFit: 'cover' })
         expect(img).toHaveStyle({ objectPosition: '50% 50%' })
         expect(img).toHaveStyle({ transform: 'scale(1)' })
@@ -1072,11 +1057,11 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} onImageClick={mockImageClick} />)
 
       await waitFor(() => {
-        expect(screen.getByAltText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
+        expect(screen.getByAltText('画像')).toBeInTheDocument()
       })
 
       const user = userEvent.setup()
-      await user.click(screen.getByAltText(TEST_PHOTO_TITLE_1))
+      await user.click(screen.getByAltText('画像'))
 
       expect(mockImageClick).toHaveBeenCalledWith(photoDetail.photo.image_url)
     })
@@ -1159,7 +1144,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
-        expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
+        expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
       })
 
       expect(screen.queryByTestId('quarantined-banner')).not.toBeInTheDocument()
@@ -1210,7 +1195,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
-        expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
+        expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
       })
 
       expect(screen.queryByTestId('delete-photo-button')).not.toBeInTheDocument()
@@ -1484,7 +1469,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
       await waitFor(() => {
-        expect(screen.getByText(TEST_PHOTO_TITLE_1)).toBeInTheDocument()
+        expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
       })
 
       expect(screen.queryByTestId('edit-photo-button')).not.toBeInTheDocument()

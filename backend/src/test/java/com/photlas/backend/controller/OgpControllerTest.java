@@ -76,7 +76,6 @@ public class OgpControllerTest {
         testSpot = spotRepository.save(testSpot);
 
         testPhoto = new Photo();
-        testPhoto.setTitle("東京タワーの夜景");
         testPhoto.setS3ObjectKey("photos/test.jpg");
         testPhoto.setShotAt(LocalDateTime.of(2025, 8, 15, 18, 30));
         testPhoto.setUserId(testUser.getId());
@@ -94,7 +93,6 @@ public class OgpControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/html"))
                 .andExpect(content().string(containsString("og:title")))
-                .andExpect(content().string(containsString("東京タワーの夜景")))
                 .andExpect(content().string(containsString(TEST_CDN_URL)))
                 .andExpect(content().string(containsString("og:image")))
                 .andExpect(content().string(containsString("twitter:card")))
@@ -151,12 +149,11 @@ public class OgpControllerTest {
         testPhoto.setPlaceName(null);
         photoRepository.save(testPhoto);
 
-        // When & Then: OGPタイトルに「Photlas」が使用される（タイトルではない）
+        // When & Then: OGPタイトルに「Photlas」が使用される
         mockMvc.perform(get(ENDPOINT_OGP_PHOTO + testPhoto.getPhotoId()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("og:title")))
-                .andExpect(content().string(org.hamcrest.Matchers.not(
-                        containsString("東京タワーの夜景"))));
+                .andExpect(content().string(containsString("Photlas")));
     }
 
     @Test

@@ -92,7 +92,6 @@ public class SecurityHardeningTest {
     void testJwtAuth_PostWithValidToken_Succeeds() throws Exception {
         String requestBody = """
                 {
-                    "title": "Test Photo",
                     "s3ObjectKey": "test-key-12345",
                     "takenAt": "2024-01-01T12:00:00",
                     "latitude": 35.6812,
@@ -115,7 +114,6 @@ public class SecurityHardeningTest {
     void testJwtAuth_PostWithoutToken_Returns401() throws Exception {
         String requestBody = """
                 {
-                    "title": "Test Photo",
                     "s3ObjectKey": "test-key-12345",
                     "takenAt": "2024-01-01T12:00:00",
                     "latitude": 35.6812,

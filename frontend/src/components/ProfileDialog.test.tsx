@@ -67,7 +67,6 @@ const mockPhotosResponse = {
     {
       photo: {
         photo_id: 1,
-        title: 'Test Photo 1',
         image_url: 'https://cdn.example.com/photos/1.jpg',
         crop_center_x: 0.3,
         crop_center_y: 0.7,
@@ -79,7 +78,6 @@ const mockPhotosResponse = {
     {
       photo: {
         photo_id: 2,
-        title: 'Test Photo 2',
         image_url: 'https://cdn.example.com/photos/2.jpg',
         crop_center_x: null,
         crop_center_y: null,
@@ -285,10 +283,10 @@ describe('ProfileDialog', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByAltText('Test Photo 1')).toBeInTheDocument()
+        expect(screen.getByTestId('post-photo-item-1')).toBeInTheDocument()
       })
 
-      const img = screen.getByAltText('Test Photo 1')
+      const img = screen.getByTestId('post-photo-item-1').querySelector('img')
       expect(img).toHaveAttribute('src', 'https://cdn.example.com/photos/1.jpg')
     })
 
@@ -991,7 +989,6 @@ describe('ProfileDialog', () => {
           {
             photo: {
               photo_id: 1,
-              title: 'Favorite Photo 1',
               image_url: 'https://example.com/photo1.jpg',
             },
             spot: { spot_id: 1 },
@@ -1078,7 +1075,6 @@ describe('ProfileDialog', () => {
         content: Array.from({ length: 20 }, (_, i) => ({
           photo: {
             photo_id: i + 1,
-            title: `Favorite Photo ${i + 1}`,
             image_url: `https://example.com/photo${i + 1}.jpg`,
           },
           spot: { spot_id: i + 1 },

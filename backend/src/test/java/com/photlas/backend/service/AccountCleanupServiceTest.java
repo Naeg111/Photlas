@@ -101,7 +101,6 @@ public class AccountCleanupServiceTest {
 
         // 退会済みユーザーの写真のみがこのスポットに紐づく
         Photo photo = new Photo();
-        photo.setTitle("orphan photo");
         photo.setS3ObjectKey("photos/orphan-" + System.nanoTime() + ".jpg");
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(deletedUser.getId());

@@ -91,7 +91,6 @@ public class ModerationCallbackTest {
         testPhoto.setSpotId(spot.getSpotId());
         testPhoto.setUserId(user.getId());
         testPhoto.setS3ObjectKey("uploads/" + user.getId() + "/test.jpg");
-        testPhoto.setTitle("テスト写真");
         testPhoto.setShotAt(LocalDateTime.now());
         testPhoto.setModerationStatus(ModerationStatus.PENDING_REVIEW);
         testPhoto = photoRepository.save(testPhoto);

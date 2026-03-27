@@ -95,7 +95,7 @@ public class AdminModerationController {
                 .collect(Collectors.toList());
 
         return new ModerationQueueItem(
-                photo.getPhotoId(), photo.getTitle(), imageUrl,
+                photo.getPhotoId(), imageUrl,
                 photo.getUserId(), username, createdAt,
                 reportCount, reportReasons
         );
@@ -106,7 +106,6 @@ public class AdminModerationController {
      */
     record ModerationQueueItem(
             @JsonProperty("photo_id") Long photoId,
-            String title,
             @JsonProperty("image_url") String imageUrl,
             @JsonProperty("user_id") Long userId,
             String username,
