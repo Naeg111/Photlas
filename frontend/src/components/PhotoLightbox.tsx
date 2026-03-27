@@ -123,7 +123,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
           onClick={() => onOpenChange(false)}
         >
           <div
-            className="absolute inset-0 flex items-center justify-center overflow-hidden"
+            role="presentation" className="absolute inset-0 flex items-center justify-center overflow-hidden"
             onClick={(e) => e.stopPropagation()}
             onWheel={handleWheel}
             onMouseDown={handleMouseDown}

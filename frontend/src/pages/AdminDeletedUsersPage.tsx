@@ -87,7 +87,7 @@ export default function AdminDeletedUsersPage() {
               <div
                 key={user.user_id}
                 className="bg-white border rounded-lg p-4 cursor-pointer hover:bg-gray-50"
-                onClick={() => navigate(`/manage/deleted-users/${user.user_id}`)}
+                role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") navigate(`/manage/deleted-users/${user.user_id}`) }} onClick={() => navigate(`/manage/deleted-users/${user.user_id}`)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
