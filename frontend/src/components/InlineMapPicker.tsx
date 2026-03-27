@@ -49,7 +49,7 @@ interface SearchSuggestion {
 }
 
 // 地図の初期設定
-export const DEFAULT_CENTER = { lat: 35.6762, lng: 139.6503 } // 新宿
+export const DEFAULT_CENTER = { lat: 35.6812, lng: 139.7671 } // 東京駅
 const DEFAULT_ZOOM = 15
 const SEARCH_DEBOUNCE_MS = 300
 

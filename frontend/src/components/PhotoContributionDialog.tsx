@@ -190,7 +190,7 @@ export function PhotoContributionDialog({
       if (exif?.latitude != null && exif?.longitude != null) {
         setPinPosition({ lat: exif.latitude, lng: exif.longitude })
       } else if (!pinPosition) {
-        setPinPosition({ lat: 35.6762, lng: 139.6503 })
+        setPinPosition({ lat: 35.6812, lng: 139.7671 })
       }
 
     }
