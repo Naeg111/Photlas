@@ -1740,4 +1740,79 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       ])
     })
   })
+
+  // ============================================================
+  // Issue#78: 投稿者本人による指摘・通報ボタンの非活性化
+  // ============================================================
+
+  describe('Issue#78: 指摘・通報ボタンの非活性化', () => {
+    it('投稿者本人の場合、通報ボタンが非活性で表示される', async () => {
+      mockUseAuth.mockReturnValue({ user: { userId: TEST_USER_ID, username: TEST_USERNAME }, isAuthenticated: true })
+
+      const mockDetail = createMockApiResponse({ userId: TEST_USER_ID, username: TEST_USERNAME })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [mockDetail])
+      global.fetch = mockFetch
+
+      render(
+        <PhotoDetailDialog
+          open={true}
+          spotIds={[TEST_SPOT_ID]}
+          onClose={vi.fn()}
+          isDeletable={true}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('report-button')).toBeInTheDocument()
+      })
+
+      expect(screen.getByTestId('report-button')).toBeDisabled()
+    })
+
+    it('投稿者本人の場合、撮影場所の指摘ボタンが非活性で表示される', async () => {
+      mockUseAuth.mockReturnValue({ user: { userId: TEST_USER_ID, username: TEST_USERNAME }, isAuthenticated: true })
+
+      const mockDetail = createMockApiResponse({ userId: TEST_USER_ID, username: TEST_USERNAME })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [mockDetail])
+      global.fetch = mockFetch
+
+      render(
+        <PhotoDetailDialog
+          open={true}
+          spotIds={[TEST_SPOT_ID]}
+          onClose={vi.fn()}
+          isDeletable={true}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('location-suggestion-button')).toBeInTheDocument()
+      })
+
+      expect(screen.getByTestId('location-suggestion-button')).toBeDisabled()
+    })
+
+    it('他人の投稿の場合、通報ボタンが活性で表示される', async () => {
+      mockUseAuth.mockReturnValue({ user: { userId: TEST_USER_ID, username: TEST_USERNAME }, isAuthenticated: true })
+
+      const otherUserId = 999
+      const mockDetail = createMockApiResponse({ userId: otherUserId, username: 'otheruser' })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [mockDetail])
+      global.fetch = mockFetch
+
+      render(
+        <PhotoDetailDialog
+          open={true}
+          spotIds={[TEST_SPOT_ID]}
+          onClose={vi.fn()}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('report-button')).toBeInTheDocument()
+      })
+
+      expect(screen.getByTestId('report-button')).not.toBeDisabled()
+    })
+  })
 })
