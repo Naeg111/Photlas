@@ -293,7 +293,9 @@ public class PhotoResponse {
         @JsonProperty("image_height")
         private Integer imageHeight;
 
+        /** Jackson デシリアライゼーション用のデフォルトコンストラクタ */
         public ExifDTO() {
+            // Jacksonが使用するデフォルトコンストラクタ
         }
 
         public String getCameraBody() {

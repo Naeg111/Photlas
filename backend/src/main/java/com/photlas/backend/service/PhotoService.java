@@ -52,6 +52,7 @@ public class PhotoService {
     private static final Logger logger = LoggerFactory.getLogger(PhotoService.class);
 
     private static final String ROLE_SUSPENDED = "SUSPENDED";
+    private static final String ERROR_PHOTO_NOT_FOUND = "写真が見つかりません";
 
     private final PhotoRepository photoRepository;
     private final SpotRepository spotRepository;
@@ -167,7 +168,7 @@ public class PhotoService {
     @Transactional(readOnly = true)
     public PhotoResponse getPhotoDetail(Long photoId, String email) {
         Photo photo = photoRepository.findById(photoId)
-                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+                .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
         // Issue#54: モデレーションステータスによるアクセス制御
         User currentUser = (email != null) ? userRepository.findByEmail(email).orElse(null) : null;
@@ -181,7 +182,7 @@ public class PhotoService {
 
         // Issue#72: 退会済みユーザーの写真は非公開
         if (user.getDeletedAt() != null) {
-            throw new PhotoNotFoundException("写真が見つかりません");
+            throw new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND);
         }
 
         // お気に入り状態をチェック
@@ -263,10 +264,10 @@ public class PhotoService {
     @Transactional(readOnly = true)
     public Photo getPhotoForOwner(Long photoId, Long userId) {
         Photo photo = photoRepository.findById(photoId)
-                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+                .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
         if (!photo.getUserId().equals(userId)) {
-            throw new PhotoNotFoundException("写真が見つかりません");
+            throw new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND);
         }
 
         return photo;
@@ -286,10 +287,10 @@ public class PhotoService {
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
         Photo photo = photoRepository.findById(photoId)
-                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+                .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
         if (photo.getModerationStatus() == ModerationStatus.REMOVED) {
-            throw new PhotoNotFoundException("写真が見つかりません");
+            throw new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND);
         }
 
         if (!photo.getUserId().equals(user.getId())) {
@@ -324,10 +325,10 @@ public class PhotoService {
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
         Photo photo = photoRepository.findById(photoId)
-                .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+                .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
         if (photo.getModerationStatus() == ModerationStatus.REMOVED) {
-            throw new PhotoNotFoundException("写真が見つかりません");
+            throw new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND);
         }
 
         if (!photo.getUserId().equals(user.getId())) {
@@ -488,13 +489,13 @@ public class PhotoService {
         ModerationStatus status = photo.getModerationStatus();
 
         if (status == ModerationStatus.REMOVED) {
-            throw new PhotoNotFoundException("写真が見つかりません");
+            throw new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND);
         }
 
         if (status == ModerationStatus.PENDING_REVIEW || status == ModerationStatus.QUARANTINED) {
             boolean isOwner = currentUser != null && currentUser.getId().equals(photo.getUserId());
             if (!isOwner) {
-                throw new PhotoNotFoundException("写真が見つかりません");
+                throw new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND);
             }
         }
     }

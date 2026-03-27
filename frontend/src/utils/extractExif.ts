@@ -97,7 +97,6 @@ export async function extractExif(file: File): Promise<ExifData | null> {
     if (!raw) return null
 
     const result: ExifData = {}
-    let hasAnyField = false
 
     // 撮影日時
     if (raw.DateTimeOriginal) {
@@ -105,70 +104,35 @@ export async function extractExif(file: File): Promise<ExifData | null> {
         ? raw.DateTimeOriginal
         : new Date(raw.DateTimeOriginal)
       result.takenAt = date.toISOString()
-      hasAnyField = true
     }
 
     // GPS座標
-    if (raw.latitude != null) {
-      result.latitude = raw.latitude
-      hasAnyField = true
-    }
-    if (raw.longitude != null) {
-      result.longitude = raw.longitude
-      hasAnyField = true
-    }
+    if (raw.latitude != null) result.latitude = raw.latitude
+    if (raw.longitude != null) result.longitude = raw.longitude
 
     // カメラ機種名
     const cameraBody = buildCameraBody(raw.Make, raw.Model)
     if (cameraBody) {
       result.cameraBody = cameraBody
       result.isSmartphone = isSmartphoneCamera(cameraBody)
-      hasAnyField = true
     }
 
     // レンズ名
-    if (raw.LensModel) {
-      result.cameraLens = raw.LensModel
-      hasAnyField = true
-    }
+    if (raw.LensModel) result.cameraLens = raw.LensModel
 
-    // 焦点距離
-    if (raw.FocalLengthIn35mmFilm != null) {
-      result.focalLength35mm = raw.FocalLengthIn35mmFilm
-      hasAnyField = true
-    }
-
-    // F値
+    // 焦点距離・F値・ISO・シャッタースピード
+    if (raw.FocalLengthIn35mmFilm != null) result.focalLength35mm = raw.FocalLengthIn35mmFilm
     const fValue = formatFValue(raw.FNumber)
-    if (fValue) {
-      result.fValue = fValue
-      hasAnyField = true
-    }
-
-    // ISO
-    if (raw.ISO != null) {
-      result.iso = raw.ISO
-      hasAnyField = true
-    }
-
-    // シャッタースピード
+    if (fValue) result.fValue = fValue
+    if (raw.ISO != null) result.iso = raw.ISO
     const shutterSpeed = formatShutterSpeed(raw.ExposureTime)
-    if (shutterSpeed) {
-      result.shutterSpeed = shutterSpeed
-      hasAnyField = true
-    }
+    if (shutterSpeed) result.shutterSpeed = shutterSpeed
 
     // 画像サイズ
-    if (raw.ImageWidth != null) {
-      result.imageWidth = raw.ImageWidth
-      hasAnyField = true
-    }
-    if (raw.ImageHeight != null) {
-      result.imageHeight = raw.ImageHeight
-      hasAnyField = true
-    }
+    if (raw.ImageWidth != null) result.imageWidth = raw.ImageWidth
+    if (raw.ImageHeight != null) result.imageHeight = raw.ImageHeight
 
-    return hasAnyField ? result : null
+    return Object.keys(result).length > 0 ? result : null
   } catch {
     return null
   }

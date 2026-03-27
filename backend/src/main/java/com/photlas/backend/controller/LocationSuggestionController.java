@@ -19,6 +19,7 @@ import java.util.Map;
 @RequestMapping("/api/v1")
 public class LocationSuggestionController {
 
+    private static final String KEY_MESSAGE = "message";
     private final LocationSuggestionService locationSuggestionService;
 
     public LocationSuggestionController(LocationSuggestionService locationSuggestionService) {
@@ -41,7 +42,7 @@ public class LocationSuggestionController {
                     .body(Map.of("id", suggestion.getId()));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", e.getMessage()));
+                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
         }
     }
 
@@ -71,7 +72,7 @@ public class LocationSuggestionController {
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", e.getMessage()));
+                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
         }
     }
 
@@ -85,10 +86,10 @@ public class LocationSuggestionController {
         try {
             String email = authentication.getName();
             locationSuggestionService.acceptSuggestion(token, email);
-            return ResponseEntity.ok(Map.of("message", "撮影場所の指摘を受け入れました"));
+            return ResponseEntity.ok(Map.of(KEY_MESSAGE, "撮影場所の指摘を受け入れました"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", e.getMessage()));
+                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
         }
     }
 
@@ -102,10 +103,10 @@ public class LocationSuggestionController {
         try {
             String email = authentication.getName();
             locationSuggestionService.rejectSuggestion(token, email);
-            return ResponseEntity.ok(Map.of("message", "撮影場所の指摘を拒否しました"));
+            return ResponseEntity.ok(Map.of(KEY_MESSAGE, "撮影場所の指摘を拒否しました"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", e.getMessage()));
+                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
         }
     }
 }

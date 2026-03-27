@@ -33,6 +33,9 @@ public class AdminDeletedUserController {
 
     private static final Logger logger = LoggerFactory.getLogger(AdminDeletedUserController.class);
     private static final int RETENTION_DAYS = 90;
+    private static final String KEY_DELETED_AT = "deleted_at";
+    private static final String KEY_ORIGINAL_USERNAME = "original_username";
+    private static final String KEY_CREATED_AT = "created_at";
 
     private final UserRepository userRepository;
     private final PhotoRepository photoRepository;
@@ -97,8 +100,8 @@ public class AdminDeletedUserController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("email", user.getEmail());
-        response.put("original_username", user.getOriginalUsername());
-        response.put("deleted_at", formatDateTime(user.getDeletedAt()));
+        response.put(KEY_ORIGINAL_USERNAME, user.getOriginalUsername());
+        response.put(KEY_DELETED_AT, formatDateTime(user.getDeletedAt()));
         response.put("deletion_hold_until", formatDateTime(user.getDeletionHoldUntil()));
         response.put("remaining_days", calculateRemainingDays(user));
         response.put("photo_count", photos.size());
@@ -171,9 +174,9 @@ public class AdminDeletedUserController {
 
         Map<String, Object> userData = new HashMap<>();
         userData.put("email", user.getEmail());
-        userData.put("original_username", user.getOriginalUsername());
-        userData.put("created_at", formatDateTime(user.getCreatedAt()));
-        userData.put("deleted_at", formatDateTime(user.getDeletedAt()));
+        userData.put(KEY_ORIGINAL_USERNAME, user.getOriginalUsername());
+        userData.put(KEY_CREATED_AT, formatDateTime(user.getCreatedAt()));
+        userData.put(KEY_DELETED_AT, formatDateTime(user.getDeletedAt()));
 
         List<Map<String, Object>> photoData = photos.stream().map(p -> {
             Map<String, Object> m = new HashMap<>();
@@ -210,8 +213,8 @@ public class AdminDeletedUserController {
         Map<String, Object> item = new HashMap<>();
         item.put("user_id", user.getId());
         item.put("email", user.getEmail());
-        item.put("original_username", user.getOriginalUsername());
-        item.put("deleted_at", formatDateTime(user.getDeletedAt()));
+        item.put(KEY_ORIGINAL_USERNAME, user.getOriginalUsername());
+        item.put(KEY_DELETED_AT, formatDateTime(user.getDeletedAt()));
         item.put("remaining_days", calculateRemainingDays(user));
         item.put("hold_active", user.getDeletionHoldUntil() != null &&
                 user.getDeletionHoldUntil().isAfter(LocalDateTime.now()));
@@ -231,7 +234,7 @@ public class AdminDeletedUserController {
         Map<String, Object> m = new HashMap<>();
         m.put("violation_type", v.getViolationType());
         m.put("action_taken", v.getActionTaken());
-        m.put("created_at", formatDateTime(v.getCreatedAt()));
+        m.put(KEY_CREATED_AT, formatDateTime(v.getCreatedAt()));
         return m;
     }
 
@@ -239,7 +242,7 @@ public class AdminDeletedUserController {
         Map<String, Object> m = new HashMap<>();
         m.put("sanction_type", s.getSanctionType());
         m.put("reason", s.getReason());
-        m.put("created_at", formatDateTime(s.getCreatedAt()));
+        m.put(KEY_CREATED_AT, formatDateTime(s.getCreatedAt()));
         return m;
     }
 

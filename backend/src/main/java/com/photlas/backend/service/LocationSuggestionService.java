@@ -30,6 +30,7 @@ import java.util.UUID;
 public class LocationSuggestionService {
 
     private static final Logger logger = LoggerFactory.getLogger(LocationSuggestionService.class);
+    private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
 
     private final LocationSuggestionRepository locationSuggestionRepository;
     private final PhotoRepository photoRepository;
@@ -60,7 +61,7 @@ public class LocationSuggestionService {
     public LocationSuggestion createSuggestion(Long photoId, String suggesterEmail,
                                                 BigDecimal latitude, BigDecimal longitude) {
         User suggester = userRepository.findByEmail(suggesterEmail)
-                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
@@ -187,7 +188,7 @@ public class LocationSuggestionService {
      */
     public boolean hasSuggested(Long photoId, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
         return locationSuggestionRepository.existsByPhotoIdAndSuggesterId(photoId, user.getId());
     }
 
@@ -204,7 +205,7 @@ public class LocationSuggestionService {
 
     private LocationSuggestion findAndValidateSuggestion(String reviewToken, String ownerEmail) {
         User owner = userRepository.findByEmail(ownerEmail)
-                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         LocationSuggestion suggestion = locationSuggestionRepository.findByReviewToken(reviewToken)
                 .orElseThrow(() -> new IllegalArgumentException("無効なトークンです"));
