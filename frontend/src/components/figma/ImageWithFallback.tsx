@@ -10,13 +10,17 @@ interface ImageWithFallbackProps extends React.ImgHTMLAttributes<HTMLImageElemen
 }
 
 export function ImageWithFallback(props: ImageWithFallbackProps) {
+  const { src, fallbackSrc, alt, style, className, ...rest } = props
+  const [currentSrc, setCurrentSrc] = useState(src)
   const [didError, setDidError] = useState(false)
 
   const handleError = () => {
-    setDidError(true)
+    if (!didError && fallbackSrc && currentSrc === src) {
+      setCurrentSrc(fallbackSrc)
+    } else {
+      setDidError(true)
+    }
   }
-
-  const { src, alt, style, className, ...rest } = props
 
   return didError ? (
     <div
@@ -28,6 +32,6 @@ export function ImageWithFallback(props: ImageWithFallbackProps) {
       </div>
     </div>
   ) : (
-    <ProtectedImage src={src} alt={alt} className={className} style={style} {...rest} onError={handleError} />
+    <ProtectedImage src={currentSrc} alt={alt} className={className} style={style} {...rest} onError={handleError} />
   )
 }

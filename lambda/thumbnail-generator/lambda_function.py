@@ -75,8 +75,17 @@ def lambda_handler(event, context):
             if image.mode in ("RGBA", "P"):
                 image = image.convert("RGB")
 
-            # アスペクト比維持でリサイズ（長辺を400pxに）
-            image.thumbnail((THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE), Image.LANCZOS)
+            # 短辺に合わせて中央正方形クロップ
+            width, height = image.size
+            min_dim = min(width, height)
+            left = (width - min_dim) // 2
+            top = (height - min_dim) // 2
+            image = image.crop((left, top, left + min_dim, top + min_dim))
+
+            # 400x400にリサイズ
+            image = image.resize(
+                (THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE), Image.LANCZOS
+            )
 
             # WebP形式で保存
             output = io.BytesIO()
