@@ -11,19 +11,6 @@ import { LocationSuggestionDialog } from './LocationSuggestionDialog'
  * - 送信ボタンで指摘を送信できる
  */
 
-// react-map-glのモック
-vi.mock('react-map-gl', () => ({
-  default: ({ children }: { children?: React.ReactNode }) => (
-    <div data-testid="mapbox-map">{children}</div>
-  ),
-  Map: ({ children }: { children?: React.ReactNode }) => (
-    <div data-testid="mapbox-map">{children}</div>
-  ),
-  Marker: ({ children }: { children?: React.ReactNode }) => (
-    <div data-testid="map-marker">{children}</div>
-  ),
-}))
-
 // InlineMapPickerのモック
 vi.mock('./InlineMapPicker', () => ({
   InlineMapPicker: ({ markers, pinColor, onPositionChange }: {
