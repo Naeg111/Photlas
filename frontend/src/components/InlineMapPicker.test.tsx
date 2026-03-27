@@ -304,5 +304,18 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       expect(screen.getByText(/35\.6585/)).toBeInTheDocument()
       expect(screen.getByText(/139\.7454/)).toBeInTheDocument()
     })
+
+    it('showCoordinates=falseの場合は座標が表示されない', () => {
+      render(
+        <InlineMapPicker
+          {...defaultProps}
+          position={{ lat: 35.6585, lng: 139.7454 }}
+          showCoordinates={false}
+        />
+      )
+
+      expect(screen.queryByText(/35\.6585/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/139\.7454/)).not.toBeInTheDocument()
+    })
   })
 })
