@@ -196,14 +196,14 @@ export default function AdminDeletedUserDetailPage() {
             <p className="text-sm text-gray-500">履歴はありません</p>
           ) : (
             <div className="space-y-2">
-              {detail.violations.map((v, i) => (
-                <div key={`v-${i}`} className="text-sm border-l-2 border-red-300 pl-3">
+              {detail.violations.map((v) => (
+                <div key={`v-${v.created_at}`} className="text-sm border-l-2 border-red-300 pl-3">
                   <p className="font-medium">{v.action_taken}</p>
                   <p className="text-gray-500">{v.violation_type} - {new Date(v.created_at).toLocaleDateString('ja-JP')}</p>
                 </div>
               ))}
-              {detail.sanctions.map((s, i) => (
-                <div key={`s-${i}`} className="text-sm border-l-2 border-orange-300 pl-3">
+              {detail.sanctions.map((s) => (
+                <div key={`s-${s.created_at}`} className="text-sm border-l-2 border-orange-300 pl-3">
                   <p className="font-medium">{s.sanction_type}</p>
                   <p className="text-gray-500">{s.reason} - {new Date(s.created_at).toLocaleDateString('ja-JP')}</p>
                 </div>
