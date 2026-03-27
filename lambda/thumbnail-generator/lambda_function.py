@@ -1,8 +1,8 @@
 """
-Issue#59: サムネイル生成Lambda関数
+Issue#75: サムネイル生成Lambda関数
 
-S3にアップロードされた写真からサムネイル（400x400 WebP）を生成し、
-thumbnails/ プレフィックス配下に保存する。
+S3にアップロードされた写真から中央クロップで正方形サムネイル（400x400 WebP）を
+生成し、thumbnails/ プレフィックス配下に保存する。
 """
 
 import io
@@ -48,6 +48,29 @@ def should_process(s3_key: str) -> bool:
     return s3_key.startswith(UPLOADS_PREFIX)
 
 
+def center_crop_and_resize(image: Image.Image) -> Image.Image:
+    """画像を中央正方形クロップし、400x400にリサイズする。
+
+    Args:
+        image: 元画像（PIL Image）
+
+    Returns:
+        400x400にリサイズされた正方形画像
+    """
+    if image.mode in ("RGBA", "P"):
+        image = image.convert("RGB")
+
+    width, height = image.size
+    min_dim = min(width, height)
+    left = (width - min_dim) // 2
+    top = (height - min_dim) // 2
+    image = image.crop((left, top, left + min_dim, top + min_dim))
+
+    return image.resize(
+        (THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE), Image.LANCZOS
+    )
+
+
 def lambda_handler(event, context):
     """Lambda関数ハンドラー。
 
@@ -64,35 +87,16 @@ def lambda_handler(event, context):
         try:
             logger.info("Generating thumbnail for: %s/%s", bucket, key)
 
-            # 元画像をS3からダウンロード
             response = s3_client.get_object(Bucket=bucket, Key=key)
             image_data = response["Body"].read()
 
-            # Pillowで画像を開いてリサイズ
             image = Image.open(io.BytesIO(image_data))
+            image = center_crop_and_resize(image)
 
-            # RGBA（透過）の場合はRGBに変換（WebP保存時に必要）
-            if image.mode in ("RGBA", "P"):
-                image = image.convert("RGB")
-
-            # 短辺に合わせて中央正方形クロップ
-            width, height = image.size
-            min_dim = min(width, height)
-            left = (width - min_dim) // 2
-            top = (height - min_dim) // 2
-            image = image.crop((left, top, left + min_dim, top + min_dim))
-
-            # 400x400にリサイズ
-            image = image.resize(
-                (THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE), Image.LANCZOS
-            )
-
-            # WebP形式で保存
             output = io.BytesIO()
             image.save(output, format="WEBP", quality=THUMBNAIL_QUALITY)
             output.seek(0)
 
-            # サムネイルをS3にアップロード
             thumbnail_key = generate_thumbnail_key(key)
             s3_client.put_object(
                 Bucket=bucket,
