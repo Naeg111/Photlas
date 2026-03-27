@@ -360,10 +360,10 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     dialog.open('photoDetail')
   }
 
-  // Issue#57: プロフィール投稿一覧からの写真クリックハンドラー
-  const handleProfilePhotoClick = (spotId: number) => {
+  // Issue#77: プロフィール投稿一覧からの写真クリックハンドラー（photoId方式）
+  const handleProfilePhotoClick = (photoId: number) => {
     setIsPhotoFromProfile(true)
-    setSelectedSpotIds([spotId])
+    setDeepLinkPhotoId(photoId)
     dialog.open('photoDetail')
   }
 
@@ -621,7 +621,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
             snsLinks: [],
           }}
           isOwnProfile={!viewingUser}
-          onSpotClick={!viewingUser ? handleProfilePhotoClick : handleSpotClick}
+          onPhotoClick={handleProfilePhotoClick}
           initialTab={profileInitialTab}
         />
       )}
