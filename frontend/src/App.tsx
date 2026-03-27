@@ -24,7 +24,7 @@ import { PhotoContributionDialog } from './components/PhotoContributionDialog'
 import { AccountSettingsDialog } from './components/AccountSettingsDialog'
 import ProfileDialog from './components/ProfileDialog'
 import PhotoDetailDialog from './components/PhotoDetailDialog'
-import { WantToGoListDialog } from './components/WantToGoListDialog'
+// import { WantToGoListDialog } from './components/WantToGoListDialog' // 行きたい場所リスト（一時非表示）
 import { AboutDialog } from './components/AboutDialog'
 import { PhotoLightbox } from './components/PhotoLightbox'
 import MapView from './components/MapView'
@@ -338,10 +338,10 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     dialog.open('profile')
   }
 
-  // 行きたい場所リストハンドラー
-  const handleShowWantToGoList = () => {
-    dialog.open('wantToGoList')
-  }
+  // 行きたい場所リストハンドラー（一時非表示）
+  // const handleShowWantToGoList = () => {
+  //   dialog.open('wantToGoList')
+  // }
 
   // 写真詳細のユーザークリックハンドラー
   const handleUserClick = (clickedUser: { userId: number; username: string }) => {
@@ -546,7 +546,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         isLoggedIn={!!user}
         isAdmin={user?.role === 'ADMIN'}
         onMyPageClick={handleShowProfile}
-        onFavoritesClick={handleShowWantToGoList}
+        // onFavoritesClick={handleShowWantToGoList} // 行きたい場所リスト（一時非表示）
         onAccountSettingsClick={() => dialog.open('accountSettings')}
         onModerationClick={() => navigate('/manage/moderation')}
         onDeletedUsersClick={() => navigate('/manage/deleted-users')}

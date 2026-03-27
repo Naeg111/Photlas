@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
-import { User, Settings, FileText, Shield, LogOut, Heart, LogIn, UserPlus, CircleHelp, UserX } from "lucide-react";
+import { User, Settings, FileText, Shield, LogOut, /* Heart, */ LogIn, UserPlus, CircleHelp, UserX } from "lucide-react";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 
@@ -9,7 +9,7 @@ interface TopMenuPanelProps {
   isLoggedIn: boolean;
   isAdmin?: boolean;
   onMyPageClick: () => void;
-  onFavoritesClick: () => void;
+  // onFavoritesClick: () => void; // 行きたい場所リスト（一時非表示）
   onAccountSettingsClick: () => void;
   onModerationClick?: () => void;
   onDeletedUsersClick?: () => void;
@@ -27,7 +27,7 @@ export function TopMenuPanel({
   isLoggedIn,
   isAdmin,
   onMyPageClick,
-  onFavoritesClick,
+  // onFavoritesClick, // 行きたい場所リスト（一時非表示）
   onAccountSettingsClick,
   onModerationClick,
   onDeletedUsersClick,
