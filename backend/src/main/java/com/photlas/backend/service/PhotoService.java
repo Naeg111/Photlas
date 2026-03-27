@@ -60,7 +60,6 @@ public class PhotoService {
     private final SpotRepository spotRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
-    private final WeatherService weatherService;
     private final FavoriteRepository favoriteRepository;
     private final S3Service s3Service;
     private final AccountSanctionRepository accountSanctionRepository;
@@ -73,7 +72,6 @@ public class PhotoService {
             SpotRepository spotRepository,
             CategoryRepository categoryRepository,
             UserRepository userRepository,
-            WeatherService weatherService,
             FavoriteRepository favoriteRepository,
             S3Service s3Service,
             AccountSanctionRepository accountSanctionRepository,
@@ -85,7 +83,6 @@ public class PhotoService {
         this.spotRepository = spotRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
-        this.weatherService = weatherService;
         this.favoriteRepository = favoriteRepository;
         this.s3Service = s3Service;
         this.accountSanctionRepository = accountSanctionRepository;
