@@ -956,7 +956,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
               {/* 写真情報（displayedPhotoで表示し、スライド切替時の点滅を防止） */}
               {displayedPhoto && (
-                <div className="min-h-0 px-6 pt-7 pb-8 space-y-4 overflow-y-auto">
+                <div className="min-h-0 px-6 pt-[26px] pb-8 space-y-4 overflow-y-auto">
                   {/* 編集ボタンはアクションバーに移動 */}
 
                   {/* Issue#61: 編集モード */}
