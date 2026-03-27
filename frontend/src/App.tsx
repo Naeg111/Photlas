@@ -246,7 +246,6 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
    */
   const handlePhotoSubmit = async (data: {
     file: File
-    title: string
     placeName?: string
     categories: string[]
     position: { lat: number; lng: number }
