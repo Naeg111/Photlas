@@ -92,7 +92,7 @@ export default function AdminModerationPage() {
         `${API_V1_URL}/admin/moderation/photos/${photoId}/approve`,
         { method: 'POST', headers: getAuthHeaders() }
       )
-      if (!response.ok) throw new Error()
+      if (!response.ok) throw new Error('Request failed')
       toast.success('写真を承認しました')
       setItems(prev => prev.filter(item => item.photo_id !== photoId))
       setTotalElements(prev => prev - 1)
@@ -118,7 +118,7 @@ export default function AdminModerationPage() {
           body: JSON.stringify({ reason: '利用規約違反' }),
         }
       )
-      if (!response.ok) throw new Error()
+      if (!response.ok) throw new Error('Request failed')
       toast.success('写真を拒否しました')
       setItems(prev => prev.filter(item => item.photo_id !== photoId))
       setTotalElements(prev => prev - 1)

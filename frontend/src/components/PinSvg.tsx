@@ -31,7 +31,7 @@ export function PinSvg({
   strokeLinejoin,
   shapeRendering = 'geometricPrecision',
   children,
-}: PinSvgProps) {
+}: Readonly<PinSvgProps>) {
   return (
     <svg viewBox="-2 -2 36 42" width="100%" height="100%" shapeRendering={shapeRendering}>
       <path

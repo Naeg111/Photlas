@@ -15,6 +15,7 @@ import {
   getPasswordStrength,
   validatePassword,
   validateEmail,
+  type PasswordStrength,
 } from '../utils/validation'
 
 /**
@@ -33,8 +34,29 @@ const SNS_PLATFORMS = [
 ] as const
 
 interface SnsLinkInput {
+  id: string
   platform: string
   url: string
+}
+
+let snsLinkIdCounter = 0
+function generateSnsLinkId(): string {
+  snsLinkIdCounter += 1
+  return `sns-${snsLinkIdCounter}`
+}
+
+/** パスワード強度に対応するスタイルクラスを返す */
+function getPasswordStrengthStyle(strength: PasswordStrength): string {
+  if (strength === 'strong') return 'bg-green-100 text-green-700'
+  if (strength === 'medium') return 'bg-yellow-100 text-yellow-700'
+  return 'bg-red-100 text-red-700'
+}
+
+/** パスワード強度に対応するラベルを返す */
+function getPasswordStrengthLabel(strength: PasswordStrength): string {
+  if (strength === 'strong') return '強'
+  if (strength === 'medium') return '中'
+  return '弱'
 }
 
 interface SignUpDialogProps {
@@ -49,14 +71,14 @@ export function SignUpDialog({
   onOpenChange,
   onShowTerms,
   onShowLogin,
-}: SignUpDialogProps) {
+}: Readonly<SignUpDialogProps>) {
   const [profileImage, setProfileImage] = useState<string>('')
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [snsLinks, setSnsLinks] = useState<SnsLinkInput[]>([{ platform: 'twitter', url: '' }])
+  const [snsLinks, setSnsLinks] = useState<SnsLinkInput[]>([{ id: generateSnsLinkId(), platform: 'twitter', url: '' }])
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -211,7 +233,7 @@ export function SignUpDialog({
 
   const handleAddSnsLink = () => {
     if (snsLinks.length < MAX_SNS_LINKS) {
-      setSnsLinks([...snsLinks, { platform: 'twitter', url: '' }])
+      setSnsLinks([...snsLinks, { id: generateSnsLinkId(), platform: 'twitter', url: '' }])
     }
   }
 
@@ -237,7 +259,7 @@ export function SignUpDialog({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ snsLinks: links }),
+        body: JSON.stringify({ snsLinks: links.map(({ platform, url }) => ({ platform, url })) }),
       })
     } catch {
       // SNSリンク送信の失敗は登録処理に影響しない
@@ -345,19 +367,9 @@ export function SignUpDialog({
               <div className="flex items-center gap-2">
                 <span className="text-sm">強度:</span>
                 <div
-                  className={`text-sm px-2 py-1 rounded ${
-                    passwordStrength === 'strong'
-                      ? 'bg-green-100 text-green-700'
-                      : passwordStrength === 'medium'
-                      ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}
+                  className={`text-sm px-2 py-1 rounded ${getPasswordStrengthStyle(passwordStrength)}`}
                 >
-                  {passwordStrength === 'strong'
-                    ? '強'
-                    : passwordStrength === 'medium'
-                    ? '中'
-                    : '弱'}
+                  {getPasswordStrengthLabel(passwordStrength)}
                 </div>
               </div>
             )}
@@ -394,7 +406,7 @@ export function SignUpDialog({
           <div className="space-y-3">
             <Label>SNSリンク（任意）</Label>
             {snsLinks.map((link, index) => (
-              <div key={index} className="flex gap-2 items-center">
+              <div key={link.id} className="flex gap-2 items-center">
                 <select
                   data-testid={`sns-platform-select-${index}`}
                   className="w-32 border rounded-md px-3 py-2"

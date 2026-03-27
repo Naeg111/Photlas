@@ -14,7 +14,7 @@ interface SNSLinksInputProps {
 
 const MAX_LINKS = 3
 
-function SNSLinksInput({ links, onLinksChange }: SNSLinksInputProps) {
+function SNSLinksInput({ links, onLinksChange }: Readonly<SNSLinksInputProps>) {
   const [errors, setErrors] = useState<{ [key: number]: string }>({})
   const displayLinks = links.length === 0 ? [''] : links
 

@@ -10,7 +10,7 @@ interface PasswordResetRequestModalProps {
  * パスワードリセットリクエストモーダルコンポーネント
  * Issue#6: パスワードリセット機能
  */
-export default function PasswordResetRequestModal({ open, onClose }: PasswordResetRequestModalProps) {
+export default function PasswordResetRequestModal({ open, onClose }: Readonly<PasswordResetRequestModalProps>) {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)

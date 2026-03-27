@@ -18,14 +18,14 @@ interface MapPickerProps {
   onCancel: () => void
 }
 
-const DEFAULT_CENTER = { lat: 36.5, lng: 138.0 } // 日本全体のデフォルト座標
+const DEFAULT_CENTER = { lat: 36.5, lng: 138 } // 日本全体のデフォルト座標
 
 export default function MapPicker({
   open,
   initialCenter,
   onConfirm,
   onCancel
-}: MapPickerProps) {
+}: Readonly<MapPickerProps>) {
   // 現在の地図の中心座標を管理
   const [center, setCenter] = useState(initialCenter || DEFAULT_CENTER)
   // 検索バーの入力値を管理

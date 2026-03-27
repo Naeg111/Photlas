@@ -8,7 +8,7 @@ interface FilterButtonProps {
   onClick?: () => void;
 }
 
-function FilterButton({ onClick }: FilterButtonProps) {
+function FilterButton({ onClick }: Readonly<FilterButtonProps>) {
   return (
     <button
       className="bg-white shadow-lg rounded-lg border px-4 py-2 text-sm font-medium"

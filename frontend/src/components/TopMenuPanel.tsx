@@ -37,7 +37,7 @@ export function TopMenuPanel({
   onLoginClick,
   onSignUpClick,
   onLogout,
-}: TopMenuPanelProps) {
+}: Readonly<TopMenuPanelProps>) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="top" className="w-full h-full md:w-[60%] md:left-[20%] md:overflow-hidden bg-transparent p-0 gap-0 border-none shadow-none">

@@ -169,22 +169,22 @@ export function PrivacyContentEn() {
               <li>
                 <span className="font-semibold">Mapbox</span>: Used for displaying maps,
                 showing shooting location information, and place search. Please refer
-                to
-                <a href="https://www.mapbox.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">Mapbox&apos;s Privacy Policy</a>
+                to{' '}
+                <a href="https://www.mapbox.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">Mapbox&apos;s Privacy Policy</a>{' '}
                 .
               </li>
               <li>
                 <span className="font-semibold">Google Analytics 4</span>: Used for access
                 analysis to improve the Service. Anonymized data such as page views
-                and usage patterns are collected. Please refer to
-                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">Google&apos;s Privacy Policy</a>
+                and usage patterns are collected. Please refer to{' '}
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">Google&apos;s Privacy Policy</a>{' '}
                 .
               </li>
               <li>
                 <span className="font-semibold">Sentry</span>: Used for application error
                 monitoring. Technical error information is transmitted when errors
                 occur (only a portion of all errors). Please refer to{' '}
-                <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Sentry&apos;s Privacy Policy</a>.
+                <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Sentry&apos;s Privacy Policy</a>{' '}.
               </li>
             </ul>
           </li>

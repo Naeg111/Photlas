@@ -295,10 +295,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
     // styleimagemissing イベント: 動的にピン画像を生成
     mapInstance.on('styleimagemissing', (e: { id: string }) => {
-      const match = e.id.match(/^pin-(#[0-9a-f]+)-(\d+)$/i)
+      const match = /^pin-(#[0-9a-f]+)-(\d+)$/i.exec(e.id)
       if (match) {
         const color = match[1]
-        const count = parseInt(match[2], 10)
+        const count = Number.parseInt(match[2], 10)
         const imageData = generatePinImage(color, count, PIN_IMAGE_SCALE)
         if (!mapInstance.hasImage(e.id)) {
           mapInstance.addImage(e.id, imageData, { pixelRatio: PIN_PIXEL_RATIO })
@@ -545,7 +545,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     fetchSpots(mapInstance)
 
     // E2Eテスト用: マップインスタンスをwindowに公開
-    ;(window as unknown as Record<string, unknown>).__photlas_map = mapInstance
+    ;(globalThis as unknown as Record<string, unknown>).__photlas_map = mapInstance
 
     onMapReady?.()
   }, [fetchSpots, onMapReady, initializeSymbolLayers])

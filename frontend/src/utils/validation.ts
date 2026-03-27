@@ -34,7 +34,7 @@ export type PasswordStrength = 'weak' | 'medium' | 'strong'
 export function getPasswordStrength(password: string): PasswordStrength {
   if (password.length < PASSWORD_MIN_LENGTH) return 'weak'
 
-  const hasNumber = /[0-9]/.test(password)
+  const hasNumber = /\d/.test(password)
   const hasLower = /[a-z]/.test(password)
   const hasUpper = /[A-Z]/.test(password)
 
@@ -68,7 +68,7 @@ export function validatePassword(password: string): PasswordValidationResult {
     }
   }
 
-  if (!/[0-9]/.test(password)) {
+  if (!/\d/.test(password)) {
     return { isValid: false, errorMessage: 'パスワードには数字を1文字以上含めてください' }
   }
 

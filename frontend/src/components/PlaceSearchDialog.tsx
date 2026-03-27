@@ -101,7 +101,7 @@ export function PlaceSearchDialog({
   open,
   onOpenChange,
   onPlaceSelect,
-}: PlaceSearchDialogProps) {
+}: Readonly<PlaceSearchDialogProps>) {
   const [searchQuery, setSearchQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)

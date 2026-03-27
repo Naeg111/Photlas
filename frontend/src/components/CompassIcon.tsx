@@ -2,7 +2,7 @@
  * Issue#64: ノースヘディングボタン用の方位磁針アイコン
  * N極（赤）が上、S極（青）が下のカーナビ風デザイン
  */
-export function CompassIcon({ className }: { className?: string }) {
+export function CompassIcon({ className }: Readonly<{ className?: string }>) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* N極（赤） */}

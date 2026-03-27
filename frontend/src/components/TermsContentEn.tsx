@@ -287,6 +287,11 @@ export function TermsContentEn() {
           <li>
             Account recovery after withdrawal is not possible.
           </li>
+          <li>
+            For 90 days after withdrawal, re-registration using the email
+            address that was registered at the time of withdrawal is not
+            permitted.
+          </li>
         </ol>
       </section>
 
@@ -527,7 +532,7 @@ export function TermsContentEn() {
               className="text-blue-600 underline"
             >
               OpenStreetMap
-            </a>
+            </a>{' '}
             .
           </li>
           <li>
