@@ -93,4 +93,12 @@ describe('TopMenuPanel', () => {
       expect(screen.getByText(/マイページ/)).toBeInTheDocument()
     })
   })
+
+  describe('行きたい場所リストの一時非表示', () => {
+    it('ログイン時に「行きたい場所リスト」ボタンが表示されない', () => {
+      render(<TopMenuPanel {...defaultProps} />)
+
+      expect(screen.queryByText(/行きたい場所リスト/)).not.toBeInTheDocument()
+    })
+  })
 })
