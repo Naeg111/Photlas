@@ -31,7 +31,7 @@ export function LoginDialog({
   onOpenChange,
   onShowSignUp,
   onShowPasswordReset,
-}: LoginDialogProps) {
+}: Readonly<LoginDialogProps>) {
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

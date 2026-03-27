@@ -146,18 +146,18 @@ export function PrivacyContentJa() {
                 <span className="font-semibold">Amazon Web Services（AWS S3、CloudFront、SES、Rekognition）</span>：画像ファイルの保存・配信、メール送信、およびコンテンツの自動審査に使用します。データはAWSの東京リージョン（ap-northeast-1）で処理されます。
               </li>
               <li>
-                <span className="font-semibold">Mapbox</span>：地図の表示、撮影地点の位置情報の表示、および場所検索に使用します。Mapboxのプライバシーポリシーは
-                <a href="https://www.mapbox.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>
+                <span className="font-semibold">Mapbox</span>：地図の表示、撮影地点の位置情報の表示、および場所検索に使用します。Mapboxのプライバシーポリシーは{' '}
+                <a href="https://www.mapbox.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>{' '}
                 をご参照ください。
               </li>
               <li>
-                <span className="font-semibold">Google Analytics 4</span>：サービス改善のためのアクセス解析に使用します。ページ閲覧数、利用状況等の匿名化されたデータを収集します。Googleのプライバシーポリシーは
-                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>
+                <span className="font-semibold">Google Analytics 4</span>：サービス改善のためのアクセス解析に使用します。ページ閲覧数、利用状況等の匿名化されたデータを収集します。Googleのプライバシーポリシーは{' '}
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>{' '}
                 をご参照ください。
               </li>
               <li>
-                <span className="font-semibold">Sentry</span>：アプリケーションのエラー監視に使用します。エラー発生時に技術的なエラー情報が送信されます（全エラーの一部のみ）。Sentryのプライバシーポリシーは
-                <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>
+                <span className="font-semibold">Sentry</span>：アプリケーションのエラー監視に使用します。エラー発生時に技術的なエラー情報が送信されます（全エラーの一部のみ）。Sentryのプライバシーポリシーは{' '}
+                <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>{' '}
                 をご参照ください。
               </li>
             </ul>

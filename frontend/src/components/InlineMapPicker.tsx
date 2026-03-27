@@ -93,7 +93,7 @@ const overlayStyles = {
   } as React.CSSProperties,
 }
 
-export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerProps) {
+export function InlineMapPicker({ position, onPositionChange }: Readonly<InlineMapPickerProps>) {
   const mapRef = useRef<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
@@ -131,7 +131,7 @@ export function InlineMapPicker({ position, onPositionChange }: InlineMapPickerP
 
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const result = await searchBox!.suggest(value, {
+        const result = await searchBox.suggest(value, {
           sessionToken: sessionTokenRef.current,
           language: 'ja',
         })

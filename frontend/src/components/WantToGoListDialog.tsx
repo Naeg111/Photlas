@@ -13,7 +13,7 @@ interface WantToGoListDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function WantToGoListDialog({ open, onOpenChange }: WantToGoListDialogProps) {
+export function WantToGoListDialog({ open, onOpenChange }: Readonly<WantToGoListDialogProps>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">

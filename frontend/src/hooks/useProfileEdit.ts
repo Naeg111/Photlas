@@ -29,8 +29,25 @@ const HTTP_STATUS = {
 } as const
 
 interface SnsLink {
+  id?: string
   url: string
   platform?: string
+}
+
+let snsLinkIdCounter = 0
+function generateSnsLinkId(): string {
+  snsLinkIdCounter += 1
+  return `sns-${snsLinkIdCounter}`
+}
+
+/** SnsLinkにidが未設定の場合、idを付与して返す */
+function ensureSnsLinkIds(links: SnsLink[]): SnsLink[] {
+  return links.map(link => link.id ? link : { ...link, id: generateSnsLinkId() })
+}
+
+/** SnsLinkからidを除去して返す */
+function stripSnsLinkIds(links: SnsLink[]): SnsLink[] {
+  return links.map(({ url, platform }) => ({ url, platform }))
 }
 
 interface UseProfileEditProps {
@@ -279,8 +296,8 @@ export const useProfileEdit = ({
     // 既存のsnsLinksをコピーして編集用ステートにセット
     // 空の場合は1つの空エントリを追加
     const initialLinks = snsLinks.length > 0
-      ? [...snsLinks]
-      : [{ platform: 'twitter', url: '' }]
+      ? ensureSnsLinkIds(snsLinks)
+      : [{ id: generateSnsLinkId(), platform: 'twitter', url: '' }]
     setEditingSnsLinks(initialLinks)
     setIsEditingSnsLinks(true)
   }, [snsLinks])
@@ -298,7 +315,7 @@ export const useProfileEdit = ({
    */
   const handleAddSnsLink = useCallback(() => {
     if (editingSnsLinks.length < VALIDATION.MAX_SNS_LINKS) {
-      setEditingSnsLinks([...editingSnsLinks, { platform: 'twitter', url: '' }])
+      setEditingSnsLinks([...editingSnsLinks, { id: generateSnsLinkId(), platform: 'twitter', url: '' }])
     }
   }, [editingSnsLinks])
 
@@ -334,12 +351,12 @@ export const useProfileEdit = ({
     const response = await fetch(API_ENDPOINTS.SNS_LINKS, {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ snsLinks: linksToSave }),
+      body: JSON.stringify({ snsLinks: linksToSave.map(({ platform, url }) => ({ platform, url })) }),
     })
 
     if (response.ok) {
       // 保存成功時にコールバックを呼び出し、表示を更新
-      onSnsLinksUpdated?.(linksToSave)
+      onSnsLinksUpdated?.(stripSnsLinkIds(linksToSave))
     }
 
     setIsEditingSnsLinks(false)
@@ -400,11 +417,11 @@ export const useProfileEdit = ({
         const snsResponse = await fetch(API_ENDPOINTS.SNS_LINKS, {
           method: 'PUT',
           headers,
-          body: JSON.stringify({ snsLinks: linksToSave }),
+          body: JSON.stringify({ snsLinks: linksToSave.map(({ platform, url }) => ({ platform, url })) }),
         })
 
         if (snsResponse.ok) {
-          onSnsLinksUpdated?.(linksToSave)
+          onSnsLinksUpdated?.(stripSnsLinkIds(linksToSave))
         }
 
         setIsEditingSnsLinks(false)

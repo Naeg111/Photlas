@@ -25,7 +25,7 @@ export function AccountSettingsDialog({
   open,
   onOpenChange,
   currentEmail,
-}: AccountSettingsDialogProps) {
+}: Readonly<AccountSettingsDialogProps>) {
   const navigate = useNavigate();
   const { getAuthToken, logout } = useAuth();
 

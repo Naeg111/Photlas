@@ -20,7 +20,7 @@ interface TermsOfServicePageProps {
 export function TermsOfServicePage({
   open,
   onOpenChange,
-}: TermsOfServicePageProps) {
+}: Readonly<TermsOfServicePageProps>) {
   const [isEnglish, setIsEnglish] = useState(false)
 
   return (

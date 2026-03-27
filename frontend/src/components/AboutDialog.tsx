@@ -13,7 +13,7 @@ interface AboutDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
+export function AboutDialog({ open, onOpenChange }: Readonly<AboutDialogProps>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto py-10">

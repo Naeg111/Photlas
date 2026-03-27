@@ -162,6 +162,9 @@ export function TermsContentJa() {
           <li>
             退会後のアカウントの復旧はできません。
           </li>
+          <li>
+            退会後90日間は、退会時に登録していたメールアドレスでの再登録はできません。
+          </li>
         </ol>
       </section>
 

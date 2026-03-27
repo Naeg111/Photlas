@@ -67,7 +67,7 @@ interface MainContentProps {
  * MainContent コンポーネント
  * useAuthを使用するためAuthProvider内で使用
  */
-function MainContent({ onMapReady }: MainContentProps) {
+function MainContent({ onMapReady }: Readonly<MainContentProps>) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -178,7 +178,7 @@ function MainContent({ onMapReady }: MainContentProps) {
   useEffect(() => {
     if (location.state?.openLogin) {
       dialog.open('login')
-      window.history.replaceState({}, '')
+      globalThis.history.replaceState({}, '')
     }
   }, [location.state])
 

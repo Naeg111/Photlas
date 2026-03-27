@@ -20,7 +20,7 @@ interface PrivacyPolicyPageProps {
 export function PrivacyPolicyPage({
   open,
   onOpenChange,
-}: PrivacyPolicyPageProps) {
+}: Readonly<PrivacyPolicyPageProps>) {
   const [isEnglish, setIsEnglish] = useState(false)
 
   return (

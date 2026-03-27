@@ -21,7 +21,7 @@ export function LoginRequiredDialog({
   onOpenChange,
   onShowLogin,
   onShowSignUp,
-}: LoginRequiredDialogProps) {
+}: Readonly<LoginRequiredDialogProps>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
