@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
-import Map from 'react-map-gl'
+import Map, { Marker } from 'react-map-gl'
 import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
 import type { Map as MapboxMap } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -103,7 +103,9 @@ const overlayStyles = {
   } as React.CSSProperties,
 }
 
-export function InlineMapPicker({ position, onPositionChange }: Readonly<InlineMapPickerProps>) {
+const DEFAULT_PIN_COLOR = '#ef4444'
+
+export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT_PIN_COLOR, markers }: Readonly<InlineMapPickerProps>) {
   const mapRef = useRef<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
@@ -245,7 +247,15 @@ export function InlineMapPicker({ position, onPositionChange }: Readonly<InlineM
         language="ja"
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}
-      />
+      >
+        {markers?.map((marker, index) => (
+          <Marker key={index} latitude={marker.lat} longitude={marker.lng}>
+            <div data-testid={`additional-marker-${index}`}>
+              <MapPin style={{ width: 32, height: 32, color: marker.color, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+            </div>
+          </Marker>
+        ))}
+      </Map>
 
       {/* オーバーレイ: translateZ(0)でGPUレイヤーを生成し地図の上に表示 */}
       <div style={overlayStyles.container}>
@@ -319,7 +329,7 @@ export function InlineMapPicker({ position, onPositionChange }: Readonly<InlineM
 
         {/* 中央固定ピン */}
         <div style={overlayStyles.pin} data-testid="center-pin">
-          <MapPin style={{ width: 40, height: 40, color: '#ef4444', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+          <MapPin style={{ width: 40, height: 40, color: pinColor, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
         </div>
 
         {/* 現在地ボタン */}

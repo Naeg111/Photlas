@@ -68,10 +68,10 @@ describe('LocationSuggestionDialog', () => {
     expect(screen.getByText('撮影場所の指摘')).toBeInTheDocument()
   })
 
-  it('should display a map', () => {
+  it('should display a map picker', () => {
     render(<LocationSuggestionDialog {...defaultProps} />)
 
-    expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
+    expect(screen.getByTestId('inline-map-picker')).toBeInTheDocument()
   })
 
   it('should have a submit button', () => {
