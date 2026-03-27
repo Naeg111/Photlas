@@ -183,9 +183,8 @@ export function PrivacyContentEn() {
               <li>
                 <span className="font-semibold">Sentry</span>: Used for application error
                 monitoring. Technical error information is transmitted when errors
-                occur (only a portion of all errors). Please refer to
-                <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">Sentry&apos;s Privacy Policy</a>
-                .
+                occur (only a portion of all errors). Please refer to{' '}
+                <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Sentry&apos;s Privacy Policy</a>.
               </li>
             </ul>
           </li>
