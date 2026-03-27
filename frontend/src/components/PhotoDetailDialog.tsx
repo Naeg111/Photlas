@@ -1004,8 +1004,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     <div className="space-y-3">
                       {/* カテゴリ選択 */}
                       <div>
-                        <label className="text-sm text-gray-500">カテゴリ</label>
-                        <div className="grid grid-cols-2 gap-2 mt-1">
+                        <label htmlFor="edit-categories" className="text-sm text-gray-500">カテゴリ</label>
+                        <div id="edit-categories" className="grid grid-cols-2 gap-2 mt-1">
                           {PHOTO_CATEGORIES.map((category) => (
                             <div
                               key={category}
@@ -1031,8 +1031,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
                       {/* 天気選択 */}
                       <div>
-                        <label className="text-sm text-gray-500">天気</label>
+                        <label htmlFor="edit-weather" className="text-sm text-gray-500">天気</label>
                         <select
+                          id="edit-weather"
                           data-testid="edit-weather-select"
                           value={editWeather}
                           onChange={(e) => setEditWeather(e.target.value)}
@@ -1048,9 +1049,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
                       {/* 場所名（Mapbox Search Box） */}
                       <div>
-                        <label className="text-sm text-gray-500">場所名</label>
+                        <label htmlFor="edit-place-name" className="text-sm text-gray-500">場所名</label>
                         <div className="relative">
                           <input
+                            id="edit-place-name"
                             data-testid="edit-place-name-input"
                             type="text"
                             value={editPlaceName}

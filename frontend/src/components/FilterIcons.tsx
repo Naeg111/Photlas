@@ -204,7 +204,7 @@ export const MonthIcons: Record<
           fill="none"
           stroke="#000000"
           strokeWidth="36"
-          stroke-linecap="round"
+          strokeLinecap="round"
         />
       </g>
     </svg>
