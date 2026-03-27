@@ -13,6 +13,11 @@ import { LIGHTBOX } from '../utils/constants'
  * 写真を全画面で拡大表示するライトボックス
  */
 
+function getCursorStyle(scale: number, isDragging: boolean): string {
+  if (scale <= 1) return 'default'
+  return isDragging ? 'grabbing' : 'grab'
+}
+
 interface PhotoLightboxProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -133,7 +138,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            style={{ cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default', touchAction: 'none' }}
+            style={{ cursor: getCursorStyle(scale, isDragging), touchAction: 'none' }}
           >
             <motion.div
               style={{

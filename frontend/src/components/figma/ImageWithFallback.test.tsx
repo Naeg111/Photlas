@@ -29,13 +29,13 @@ describe('ImageWithFallback', () => {
   })
 
   it('画像エラー時にフォールバック表示に切り替わる', () => {
-    render(<ImageWithFallback {...defaultProps} />)
+    const { container } = render(<ImageWithFallback {...defaultProps} />)
 
     const img = screen.getByAltText('テスト画像')
     fireEvent.error(img)
 
     // フォールバック画像が表示される
-    const fallbackImg = screen.getByAltText('Error loading image')
+    const fallbackImg = container.querySelector('img[data-original-url]')
     expect(fallbackImg).toBeInTheDocument()
   })
 
@@ -50,12 +50,12 @@ describe('ImageWithFallback', () => {
   })
 
   it('フォールバック表示でもalt属性が保持される（data-original-urlとして）', () => {
-    render(<ImageWithFallback {...defaultProps} />)
+    const { container } = render(<ImageWithFallback {...defaultProps} />)
 
     const img = screen.getByAltText('テスト画像')
     fireEvent.error(img)
 
-    const fallbackImg = screen.getByAltText('Error loading image')
+    const fallbackImg = container.querySelector('img[data-original-url]')
     expect(fallbackImg).toHaveAttribute('data-original-url', 'https://example.com/photo.jpg')
   })
 

@@ -77,11 +77,13 @@ export default function AdminDeletedUsersPage() {
           </Button>
         </div>
 
-        {isLoading ? (
+        {isLoading && (
           <div className="text-center py-8 text-gray-500">読み込み中...</div>
-        ) : users.length === 0 ? (
+        )}
+        {!isLoading && users.length === 0 && (
           <div className="text-center py-8 text-gray-500">退会済みユーザーはいません</div>
-        ) : (
+        )}
+        {!isLoading && users.length > 0 && (
           <div className="space-y-2">
             {users.map((user) => (
               <div
