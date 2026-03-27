@@ -89,7 +89,7 @@ const overlayStyles = {
   } as React.CSSProperties,
   locationButton: {
     position: 'absolute',
-    bottom: 8,
+    bottom: 40,
     right: 8,
     pointerEvents: 'auto',
   } as React.CSSProperties,
@@ -107,7 +107,7 @@ const overlayStyles = {
 
 const DEFAULT_PIN_COLOR = '#ef4444'
 
-export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT_PIN_COLOR, markers }: Readonly<InlineMapPickerProps>) {
+export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT_PIN_COLOR, markers, showCoordinates = true }: Readonly<InlineMapPickerProps>) {
   const mapRef = useRef<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
@@ -349,7 +349,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         </div>
 
         {/* 座標表示 */}
-        {position && (
+        {showCoordinates && position && (
           <div style={overlayStyles.coordinates}>
             緯度: {position.lat.toFixed(4)}, 経度: {position.lng.toFixed(4)}
           </div>

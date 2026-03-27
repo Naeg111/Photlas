@@ -956,21 +956,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
               {/* 写真情報（displayedPhotoで表示し、スライド切替時の点滅を防止） */}
               {displayedPhoto && (
-                <div className="min-h-0 p-6 pb-8 space-y-4 overflow-y-auto">
-                  {/* Issue#61: 編集ボタン */}
-                  {isAuthenticated && currentPhoto?.user?.userId === user?.userId && !isEditing && (
-                    <div className="flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        data-testid="edit-photo-button"
-                        onClick={handleStartEdit}
-                        aria-label="写真情報を編集"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
+                <div className="min-h-0 px-6 pt-7 pb-8 space-y-4 overflow-y-auto">
+                  {/* 編集ボタンはアクションバーに移動 */}
 
                   {/* Issue#61: 編集モード */}
                   {isEditing && (
@@ -1241,6 +1228,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         ({favoriteCount})
                       </span>
                     </Button>
+                    {/* 削除ボタン（投稿者本人のみ） */}
                     {isAuthenticated && isDeletable && currentPhoto?.user?.userId === user?.userId && (
                       <Button
                         variant="outline"
@@ -1252,17 +1240,27 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         <Trash2 className="w-5 h-5" />
                       </Button>
                     )}
-                    {isAuthenticated && !isDeletable && (
+                    {/* 編集ボタン（投稿者本人のみ、編集中は非表示） */}
+                    {isAuthenticated && currentPhoto?.user?.userId === user?.userId && !isEditing && (
                       <Button
                         variant="outline"
-                        data-testid="report-button"
-                        onClick={() => setIsReportOpen(true)}
-                        aria-label="この写真を通報"
+                        data-testid="edit-photo-button"
+                        onClick={handleStartEdit}
+                        aria-label="写真情報を編集"
                       >
-                        <Flag className="w-5 h-5" />
+                        <Pencil className="w-5 h-5" />
                       </Button>
                     )}
-                    {/* Issue#65: 撮影場所の指摘ボタン（ログイン済み・他人の写真・未指摘のみ） */}
+                    {/* 共有ボタン（認証状態に関係なく常に表示） */}
+                    <Button
+                      variant="outline"
+                      data-testid="share-button"
+                      onClick={handleShare}
+                      aria-label="この写真を共有"
+                    >
+                      <Share2 className="w-5 h-5" />
+                    </Button>
+                    {/* 撮影場所の指摘ボタン（ログイン済み・他人の写真・未指摘のみ） */}
                     {isAuthenticated && !isDeletable && !hasAlreadySuggested && (
                       <Button
                         variant="outline"
@@ -1273,15 +1271,17 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         <MapPin className="w-5 h-5" />
                       </Button>
                     )}
-                    {/* Issue#58: 共有ボタン（認証状態に関係なく常に表示） */}
-                    <Button
-                      variant="outline"
-                      data-testid="share-button"
-                      onClick={handleShare}
-                      aria-label="この写真を共有"
-                    >
-                      <Share2 className="w-5 h-5" />
-                    </Button>
+                    {/* 通報ボタン（他人の写真のみ） */}
+                    {isAuthenticated && !isDeletable && (
+                      <Button
+                        variant="outline"
+                        data-testid="report-button"
+                        onClick={() => setIsReportOpen(true)}
+                        aria-label="この写真を通報"
+                      >
+                        <Flag className="w-5 h-5" />
+                      </Button>
+                    )}
                   </div>
 
                   {/* Issue#54: 通報ダイアログ */}

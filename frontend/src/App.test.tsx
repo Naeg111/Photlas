@@ -520,7 +520,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       await waitFor(() => {
         expect(screen.getByText(/マイページ/)).toBeInTheDocument()
       })
-      expect(screen.getByText(/行きたい場所リスト/)).toBeInTheDocument()
+      // 行きたい場所リストは一時非表示
       expect(screen.getByText(/アカウント設定/)).toBeInTheDocument()
       expect(screen.getByText(/ログアウト/)).toBeInTheDocument()
 

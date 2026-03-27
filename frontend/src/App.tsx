@@ -328,6 +328,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
   const handleLogout = () => {
     logout()
     dialog.close('topMenu')
+    toast('ログアウトしました')
   }
 
   // マイページハンドラー
@@ -591,7 +592,9 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         onSubmit={handlePhotoSubmit}
       />
 
+      {/* 行きたい場所リスト（一時非表示）
       <WantToGoListDialog {...dialog.getProps('wantToGoList')} />
+      */}
 
       {user && (
         <AccountSettingsDialog

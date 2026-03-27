@@ -75,6 +75,7 @@ export function TopMenuPanel({
                   マイページ
                 </Button>
                 <Separator />
+                {/* 行きたい場所リスト（一時非表示）
                 <Button
                   variant="ghost"
                   className="justify-start gap-3"
@@ -87,6 +88,7 @@ export function TopMenuPanel({
                   行きたい場所リスト
                 </Button>
                 <Separator />
+                */}
                 <Button
                   variant="ghost"
                   className="justify-start gap-3"
