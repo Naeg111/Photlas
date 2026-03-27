@@ -126,6 +126,8 @@ interface ProfileDialogProps {
   userProfile: UserProfile
   isOwnProfile: boolean
   onSpotClick?: (spotId: number) => void
+  /** Issue#77: 写真クリック時にphotoIdを渡すコールバック */
+  onPhotoClick?: (photoId: number) => void
   initialTab?: 'posts' | 'favorites'
 }
 

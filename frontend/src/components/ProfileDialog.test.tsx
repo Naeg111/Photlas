@@ -290,7 +290,8 @@ describe('ProfileDialog', () => {
       expect(img).toHaveAttribute('src', 'https://cdn.example.com/photos/1.jpg')
     })
 
-    it('写真をクリックするとonSpotClickが呼ばれる', async () => {
+    it('Issue#77 - 写真をクリックするとonPhotoClickがphotoIdで呼ばれる', async () => {
+      const mockOnPhotoClick = vi.fn()
       global.fetch = vi.fn().mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockPhotosResponse),
@@ -302,7 +303,7 @@ describe('ProfileDialog', () => {
           onClose={mockOnClose}
           userProfile={mockUserProfile}
           isOwnProfile={false}
-          onSpotClick={mockOnSpotClick}
+          onPhotoClick={mockOnPhotoClick}
         />
       )
 
@@ -310,8 +311,9 @@ describe('ProfileDialog', () => {
         expect(screen.getByTestId('post-photo-item-1')).toBeInTheDocument()
       })
 
+      // photo_id=1の写真をクリック → onPhotoClickがphotoIdで呼ばれる
       fireEvent.click(screen.getByTestId('post-photo-item-1'))
-      expect(mockOnSpotClick).toHaveBeenCalledWith(10)
+      expect(mockOnPhotoClick).toHaveBeenCalledWith(1)
     })
 
     it('投稿がない場合はメッセージが表示される', async () => {
