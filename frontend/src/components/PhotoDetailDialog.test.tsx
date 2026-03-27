@@ -1702,4 +1702,42 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(screen.queryByTestId('location-suggestion-button')).not.toBeInTheDocument()
     })
   })
+
+  // ============================================================
+  // UI改善: アクションボタンの並び順
+  // ============================================================
+
+  describe('アクションボタンの並び順', () => {
+    it('投稿者本人の場合、ボタンが お気に入り→削除→編集→共有 の順で並ぶ', async () => {
+      mockUseAuth.mockReturnValue({ user: { userId: TEST_USER_ID, username: TEST_USERNAME }, isAuthenticated: true })
+
+      const mockDetail = createMockApiResponse({ userId: TEST_USER_ID, username: TEST_USERNAME })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [mockDetail])
+      global.fetch = mockFetch
+
+      render(
+        <PhotoDetailDialog
+          open={true}
+          spotIds={[TEST_SPOT_ID]}
+          onClose={vi.fn()}
+          isDeletable={true}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId(TEST_ID_FAVORITE_BUTTON)).toBeInTheDocument()
+      })
+
+      const actionBar = screen.getByTestId(TEST_ID_FAVORITE_BUTTON).parentElement!
+      const buttons = actionBar.querySelectorAll('button')
+      const testIds = Array.from(buttons).map(b => b.getAttribute('data-testid')).filter(Boolean)
+
+      expect(testIds).toEqual([
+        TEST_ID_FAVORITE_BUTTON,
+        'delete-photo-button',
+        'edit-photo-button',
+        'share-button',
+      ])
+    })
+  })
 })

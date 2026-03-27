@@ -37,6 +37,8 @@ interface InlineMapPickerProps {
   pinColor?: string
   /** 地図上に表示する追加マーカー */
   markers?: MarkerConfig[]
+  /** 座標表示の有無（デフォルト: true） */
+  showCoordinates?: boolean
 }
 
 // Mapbox Search Box APIの検索結果型
