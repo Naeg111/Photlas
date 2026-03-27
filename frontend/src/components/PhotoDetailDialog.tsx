@@ -1260,23 +1260,25 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     >
                       <Share2 className="w-5 h-5" />
                     </Button>
-                    {/* 撮影場所の指摘ボタン（ログイン済み・他人の写真・未指摘のみ） */}
-                    {isAuthenticated && !isDeletable && !hasAlreadySuggested && (
+                    {/* Issue#78: 撮影場所の指摘ボタン（投稿者本人は非活性） */}
+                    {isAuthenticated && !hasAlreadySuggested && (
                       <Button
                         variant="outline"
                         data-testid="location-suggestion-button"
                         onClick={() => setIsLocationSuggestionOpen(true)}
+                        disabled={currentPhoto?.user?.userId === user?.userId}
                         aria-label="撮影場所の指摘"
                       >
                         <MapPin className="w-5 h-5" />
                       </Button>
                     )}
-                    {/* 通報ボタン（他人の写真のみ） */}
-                    {isAuthenticated && !isDeletable && (
+                    {/* Issue#78: 通報ボタン（投稿者本人は非活性） */}
+                    {isAuthenticated && (
                       <Button
                         variant="outline"
                         data-testid="report-button"
                         onClick={() => setIsReportOpen(true)}
+                        disabled={currentPhoto?.user?.userId === user?.userId}
                         aria-label="この写真を通報"
                       >
                         <Flag className="w-5 h-5" />
