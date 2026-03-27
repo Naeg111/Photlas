@@ -125,7 +125,6 @@ interface ProfileDialogProps {
   onClose: () => void
   userProfile: UserProfile
   isOwnProfile: boolean
-  onSpotClick?: (spotId: number) => void
   /** Issue#77: 写真クリック時にphotoIdを渡すコールバック */
   onPhotoClick?: (photoId: number) => void
   initialTab?: 'posts' | 'favorites'
@@ -170,7 +169,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   onClose,
   userProfile,
   isOwnProfile,
-  onSpotClick,
+  onPhotoClick,
   initialTab = 'posts',
 }) => {
   // プロフィール画像とSNSリンクのローカルステート（即時反映用）
@@ -291,9 +290,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   }, [userProfile.userId])
 
   // 写真クリックハンドラー（spotIdを渡してPhotoDetailDialogを開く）
-  const handlePhotoClick = useCallback((spotId: number) => {
-    onSpotClick?.(spotId)
-  }, [onSpotClick])
+  const handlePhotoClick = useCallback((photoId: number) => {
+    onPhotoClick?.(photoId)
+  }, [onPhotoClick])
 
   // カスタムフックを使用してプロフィール編集機能を取得
   // Issue#36: AuthContextからupdateUserを取得
@@ -608,7 +607,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                       <div
                         key={item.photo.photo_id}
                         data-testid={`${TEST_ID_POSTS_PHOTO_PREFIX}${item.photo.photo_id}`}
-                        role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handlePhotoClick(item.spot.spot_id) }} onClick={() => handlePhotoClick(item.spot.spot_id)}
+                        role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handlePhotoClick(item.photo.photo_id) }} onClick={() => handlePhotoClick(item.photo.photo_id)}
                         className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                       >
                         <ProtectedImage
@@ -701,7 +700,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                         <div
                           key={favorite.photo.photo_id}
                           data-testid={`${TEST_ID_FAVORITE_PHOTO_PREFIX}${favorite.photo.photo_id}`}
-                          onClick={() => handlePhotoClick(favorite.spot.spot_id)}
+                          onClick={() => handlePhotoClick(favorite.photo.photo_id)}
                           className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                         >
                           <ProtectedImage
