@@ -42,14 +42,14 @@ export const MonthIcons: Record<
         <path
           d="M190,160 L60,40 L110,180 Z"
           stroke="#000000"
-          stroke-width="30"
-          stroke-linejoin="round"
+          strokeWidth="30"
+          strokeLinejoin="round"
         />
         <path
           d="M320,160 L452,40 L400,180 Z"
           stroke="#000000"
-          stroke-width="30"
-          stroke-linejoin="round"
+          strokeWidth="30"
+          strokeLinejoin="round"
         />
 
         <path
@@ -203,7 +203,7 @@ export const MonthIcons: Record<
           d="M256,320 L256,416 Q256,464 180,448"
           fill="none"
           stroke="#000000"
-          stroke-width="36"
+          strokeWidth="36"
           stroke-linecap="round"
         />
       </g>
@@ -685,8 +685,8 @@ export const MonthIcons: Record<
              Q360,375 375,400 L375,425 Q210,455 45,425 Z"
           fill="#FFFFFF"
           stroke="#000000"
-          stroke-width="24"
-          stroke-linejoin="round"
+          strokeWidth="24"
+          strokeLinejoin="round"
         />
 
         <g transform="translate(360, 100)">
@@ -697,8 +697,8 @@ export const MonthIcons: Record<
                Q-35,-15 -25,-25 Q-15,-35 0,-30 Z"
             fill="#FFFFFF"
             stroke="#000000"
-            stroke-width="24"
-            stroke-linejoin="round"
+            strokeWidth="24"
+            strokeLinejoin="round"
           />
         </g>
       </g>

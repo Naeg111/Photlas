@@ -82,6 +82,50 @@ function formatFValue(fNumber?: number): string | undefined {
  * @param file 画像ファイル
  * @returns EXIF情報（取得できない場合はnull）
  */
+/**
+ * exifrの生データからExifDataに変換する
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapRawToExif(raw: any): ExifData {
+  const result: ExifData = {}
+
+  // 撮影日時
+  if (raw.DateTimeOriginal) {
+    const date = raw.DateTimeOriginal instanceof Date
+      ? raw.DateTimeOriginal
+      : new Date(raw.DateTimeOriginal)
+    result.takenAt = date.toISOString()
+  }
+
+  // GPS座標
+  if (raw.latitude != null) result.latitude = raw.latitude
+  if (raw.longitude != null) result.longitude = raw.longitude
+
+  // カメラ機種名
+  const cameraBody = buildCameraBody(raw.Make, raw.Model)
+  if (cameraBody) {
+    result.cameraBody = cameraBody
+    result.isSmartphone = isSmartphoneCamera(cameraBody)
+  }
+
+  // レンズ名
+  if (raw.LensModel) result.cameraLens = raw.LensModel
+
+  // 焦点距離・F値・ISO・シャッタースピード
+  if (raw.FocalLengthIn35mmFilm != null) result.focalLength35mm = raw.FocalLengthIn35mmFilm
+  const fValue = formatFValue(raw.FNumber)
+  if (fValue) result.fValue = fValue
+  if (raw.ISO != null) result.iso = raw.ISO
+  const shutterSpeed = formatShutterSpeed(raw.ExposureTime)
+  if (shutterSpeed) result.shutterSpeed = shutterSpeed
+
+  // 画像サイズ
+  if (raw.ImageWidth != null) result.imageWidth = raw.ImageWidth
+  if (raw.ImageHeight != null) result.imageHeight = raw.ImageHeight
+
+  return result
+}
+
 export async function extractExif(file: File): Promise<ExifData | null> {
   try {
     const raw = await exifr.parse(file, {
@@ -96,42 +140,7 @@ export async function extractExif(file: File): Promise<ExifData | null> {
 
     if (!raw) return null
 
-    const result: ExifData = {}
-
-    // 撮影日時
-    if (raw.DateTimeOriginal) {
-      const date = raw.DateTimeOriginal instanceof Date
-        ? raw.DateTimeOriginal
-        : new Date(raw.DateTimeOriginal)
-      result.takenAt = date.toISOString()
-    }
-
-    // GPS座標
-    if (raw.latitude != null) result.latitude = raw.latitude
-    if (raw.longitude != null) result.longitude = raw.longitude
-
-    // カメラ機種名
-    const cameraBody = buildCameraBody(raw.Make, raw.Model)
-    if (cameraBody) {
-      result.cameraBody = cameraBody
-      result.isSmartphone = isSmartphoneCamera(cameraBody)
-    }
-
-    // レンズ名
-    if (raw.LensModel) result.cameraLens = raw.LensModel
-
-    // 焦点距離・F値・ISO・シャッタースピード
-    if (raw.FocalLengthIn35mmFilm != null) result.focalLength35mm = raw.FocalLengthIn35mmFilm
-    const fValue = formatFValue(raw.FNumber)
-    if (fValue) result.fValue = fValue
-    if (raw.ISO != null) result.iso = raw.ISO
-    const shutterSpeed = formatShutterSpeed(raw.ExposureTime)
-    if (shutterSpeed) result.shutterSpeed = shutterSpeed
-
-    // 画像サイズ
-    if (raw.ImageWidth != null) result.imageWidth = raw.ImageWidth
-    if (raw.ImageHeight != null) result.imageHeight = raw.ImageHeight
-
+    const result = mapRawToExif(raw)
     return Object.keys(result).length > 0 ? result : null
   } catch {
     return null
