@@ -60,29 +60,19 @@ public class SpotService {
                                        List<String> aspectRatios, List<String> focalLengthRanges, Integer maxIso) {
         logger.info("Getting spots within bounds: north={}, south={}, east={}, west={}", north, south, east, west);
 
-        // null/空リストをセンチネル値に変換（PostgreSQLのIN句で型推論問題を回避）
-        // センチネル値: -1 (Integer) / "__NONE__" (String) - これらが含まれる場合はフィルタをスキップ
-        List<Integer> safeSubjectCategories = (subjectCategories == null || subjectCategories.isEmpty())
-            ? List.of(-1) : subjectCategories;
-        List<Integer> safeMonths = (months == null || months.isEmpty())
-            ? List.of(-1) : months;
-        List<String> safeTimesOfDay = (timesOfDay == null || timesOfDay.isEmpty())
-            ? List.of("__NONE__") : timesOfDay;
-        List<String> safeWeathers = (weathers == null || weathers.isEmpty())
-            ? List.of("__NONE__") : weathers;
-
-        // Issue#63: 詳細フィルターのセンチネル値変換（max_age_years → max_age_days）
+        // null/空リストをセンチネル値に変換
+        List<Integer> safeSubjectCategories = safeIntList(subjectCategories);
+        List<Integer> safeMonths = safeIntList(months);
+        List<String> safeTimesOfDay = safeStringList(timesOfDay);
+        List<String> safeWeathers = safeStringList(weathers);
         int safeMinResolution = (minResolution != null) ? minResolution : -1;
-        List<String> safeDeviceTypes = (deviceTypes == null || deviceTypes.isEmpty())
-            ? List.of("__NONE__") : deviceTypes;
+        List<String> safeDeviceTypes = safeStringList(deviceTypes);
         LocalDateTime safeMaxAgeDate = (maxAgeDays != null)
             ? LocalDateTime.now().minusDays(maxAgeDays)
             : LocalDateTime.of(1900, 1, 1, 0, 0);
         boolean hasMaxAge = (maxAgeDays != null);
-        List<String> safeAspectRatios = (aspectRatios == null || aspectRatios.isEmpty())
-            ? List.of("__NONE__") : aspectRatios;
-        List<String> safeFocalLengthRanges = (focalLengthRanges == null || focalLengthRanges.isEmpty())
-            ? List.of("__NONE__") : focalLengthRanges;
+        List<String> safeAspectRatios = safeStringList(aspectRatios);
+        List<String> safeFocalLengthRanges = safeStringList(focalLengthRanges);
         int safeMaxIso = (maxIso != null) ? maxIso : -1;
 
         // リポジトリから集計結果を取得
@@ -164,5 +154,15 @@ public class SpotService {
         logger.info("Found {} photos for spot {}", photoIds.size(), spotId);
 
         return photoIds;
+    }
+
+    /** null/空リストをセンチネル値（-1）に変換 */
+    private List<Integer> safeIntList(List<Integer> list) {
+        return (list == null || list.isEmpty()) ? List.of(-1) : list;
+    }
+
+    /** null/空リストをセンチネル値（"__NONE__"）に変換 */
+    private List<String> safeStringList(List<String> list) {
+        return (list == null || list.isEmpty()) ? List.of("__NONE__") : list;
     }
 }
