@@ -248,6 +248,49 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
     })
   })
 
+  // ============================================================
+  // Issue#76: ピン色のカスタマイズ
+  // ============================================================
+
+  describe('Issue#76: ピン色のカスタマイズ', () => {
+    it('pinColor未指定時はデフォルトの赤色ピンが表示される', () => {
+      render(<InlineMapPicker {...defaultProps} />)
+
+      const pin = screen.getByTestId('center-pin')
+      const svg = pin.querySelector('svg')
+      expect(svg).toHaveStyle({ color: '#ef4444' })
+    })
+
+    it('pinColorを指定するとピンの色が変わる', () => {
+      render(<InlineMapPicker {...defaultProps} pinColor="#3B82F6" />)
+
+      const pin = screen.getByTestId('center-pin')
+      const svg = pin.querySelector('svg')
+      expect(svg).toHaveStyle({ color: '#3B82F6' })
+    })
+  })
+
+  // ============================================================
+  // Issue#76: 追加マーカー
+  // ============================================================
+
+  describe('Issue#76: 追加マーカー', () => {
+    it('markers propで追加マーカーが表示される', () => {
+      const markers = [
+        { lat: 35.6585, lng: 139.7454, color: '#EF4444' },
+      ]
+      render(<InlineMapPicker {...defaultProps} markers={markers} />)
+
+      expect(screen.getByTestId('additional-marker-0')).toBeInTheDocument()
+    })
+
+    it('markers未指定時は追加マーカーが表示されない', () => {
+      render(<InlineMapPicker {...defaultProps} />)
+
+      expect(screen.queryByTestId('additional-marker-0')).not.toBeInTheDocument()
+    })
+  })
+
   describe('座標表示', () => {
     it('地図の中心座標が表示される', () => {
       render(
