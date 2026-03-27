@@ -19,6 +19,7 @@ import { getAuthHeaders } from '../utils/apiClient'
 import ProfileImageCropper from './ProfileImageCropper'
 import { ReportDialog } from './ReportDialog'
 import { ProtectedImage } from './figma/ProtectedImage'
+import { ImageWithFallback } from './figma/ImageWithFallback'
 
 // API Endpoints
 const API_MY_PROFILE = '/api/v1/users/me'
@@ -238,6 +239,13 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
       setPhotosLoading(false)
     }
   }, [isOwnProfile, userProfile.userId])
+
+  // Issue#80: ダイアログが閉じたら取得済みフラグをリセット（再度開いた時に再取得させる）
+  useEffect(() => {
+    if (!open) {
+      setPhotosFetched(false)
+    }
+  }, [open])
 
   // ダイアログが開いたときに投稿一覧を取得
   useEffect(() => {
@@ -639,8 +647,10 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                         role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handlePhotoClick(item.photo.photo_id) }} onClick={() => handlePhotoClick(item.photo.photo_id)}
                         className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                       >
-                        <ProtectedImage
+                        <ImageWithFallback
                           src={item.photo.thumbnail_url || item.photo.image_url}
+                          fallbackSrc={item.photo.image_url}
+                          data-fallback-src={item.photo.image_url}
                           alt="画像"
                           className="absolute inset-0 w-full h-full"
                           style={{
@@ -732,8 +742,10 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                           onClick={() => handlePhotoClick(favorite.photo.photo_id)}
                           className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                         >
-                          <ProtectedImage
+                          <ImageWithFallback
                             src={favorite.photo.thumbnail_url || favorite.photo.image_url}
+                            fallbackSrc={favorite.photo.image_url}
+                            data-fallback-src={favorite.photo.image_url}
                             alt="画像"
                             className="absolute inset-0 w-full h-full"
                             style={{
