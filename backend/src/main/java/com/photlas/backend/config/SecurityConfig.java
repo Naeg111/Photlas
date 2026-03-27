@@ -120,12 +120,12 @@ public class SecurityConfig {
             )
             // 認証エラーハンドリング
             .exceptionHandling(exception -> exception
-                .authenticationEntryPoint((request, response, authException) -> {
+                .authenticationEntryPoint((request, response, authException) ->
                     response.sendError(
                         HttpStatus.UNAUTHORIZED.value(),
                         HttpStatus.UNAUTHORIZED.getReasonPhrase()
-                    );
-                })
+                    )
+                )
             )
             // セキュリティヘッダー
             .headers(headers -> headers

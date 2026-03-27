@@ -9,7 +9,7 @@ import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.FavoriteNotFoundException;
 import com.photlas.backend.exception.PhotoNotFoundException;
-import com.photlas.backend.exception.SpotNotFoundException;
+
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
@@ -62,7 +62,6 @@ public class FavoriteService {
     // エラーメッセージ定数
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
     private static final String ERROR_PHOTO_NOT_FOUND = "写真が見つかりません";
-    private static final String ERROR_SPOT_NOT_FOUND = "スポットが見つかりません";
     private static final String ERROR_ALREADY_FAVORITED = "既にお気に入り登録されています";
     private static final String ERROR_NOT_FAVORITED = "お気に入り登録されていません";
 

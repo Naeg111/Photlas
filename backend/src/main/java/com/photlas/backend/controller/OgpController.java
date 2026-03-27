@@ -27,7 +27,6 @@ import java.util.Optional;
 public class OgpController {
 
     private static final String SITE_NAME = "Photlas";
-    private static final String DEFAULT_DESCRIPTION = "写真を通じて撮影スポットを共有・発見できるWebアプリ";
     private static final String JSON_PROP_SEPARATOR = "\",\n";
 
     @Value("${app.frontend-url:https://photlas.jp}")

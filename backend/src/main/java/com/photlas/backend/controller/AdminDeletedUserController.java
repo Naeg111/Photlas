@@ -42,7 +42,6 @@ public class AdminDeletedUserController {
     private final PhotoRepository photoRepository;
     private final ViolationRepository violationRepository;
     private final AccountSanctionRepository accountSanctionRepository;
-    private final ReportRepository reportRepository;
     private final AccountCleanupService accountCleanupService;
 
     public AdminDeletedUserController(
@@ -50,13 +49,11 @@ public class AdminDeletedUserController {
             PhotoRepository photoRepository,
             ViolationRepository violationRepository,
             AccountSanctionRepository accountSanctionRepository,
-            ReportRepository reportRepository,
             AccountCleanupService accountCleanupService) {
         this.userRepository = userRepository;
         this.photoRepository = photoRepository;
         this.violationRepository = violationRepository;
         this.accountSanctionRepository = accountSanctionRepository;
-        this.reportRepository = reportRepository;
         this.accountCleanupService = accountCleanupService;
     }
 
