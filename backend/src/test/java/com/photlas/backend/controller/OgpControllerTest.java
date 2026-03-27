@@ -132,6 +132,34 @@ public class OgpControllerTest {
     }
 
     @Test
+    @DisplayName("Issue#74 - OGPタイトルにplace_nameが使用される")
+    void testGetPhotoOgp_UsesPlaceName() throws Exception {
+        // Given: place_nameが設定された写真
+        testPhoto.setPlaceName("渋谷スクランブルスクエア");
+        photoRepository.save(testPhoto);
+
+        // When & Then: OGPタイトルにplace_nameが使用される
+        mockMvc.perform(get(ENDPOINT_OGP_PHOTO + testPhoto.getPhotoId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("渋谷スクランブルスクエア")));
+    }
+
+    @Test
+    @DisplayName("Issue#74 - place_name未設定時はOGPタイトルに「Photlas」が使用される")
+    void testGetPhotoOgp_NoPlaceName_UsesPhotlas() throws Exception {
+        // Given: place_nameが未設定の写真
+        testPhoto.setPlaceName(null);
+        photoRepository.save(testPhoto);
+
+        // When & Then: OGPタイトルに「Photlas」が使用される（タイトルではない）
+        mockMvc.perform(get(ENDPOINT_OGP_PHOTO + testPhoto.getPhotoId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("og:title")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        containsString("東京タワーの夜景"))));
+    }
+
+    @Test
     @DisplayName("Issue#54 - REMOVED写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_RemovedPhoto_Returns404() throws Exception {
         // Given: REMOVED写真

@@ -131,11 +131,11 @@ describe('PhotoContributionDialog', () => {
       expect(screen.getByText(/50MB/)).toBeInTheDocument()
     })
 
-    it('renders title input field', () => {
+    it('Issue#74 - タイトル入力フィールドが表示されない', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      expect(screen.getByText('タイトル')).toBeInTheDocument()
-      expect(screen.getByPlaceholderText(/夕暮れの東京タワー/)).toBeInTheDocument()
+      expect(screen.queryByText('タイトル')).not.toBeInTheDocument()
+      expect(screen.queryByPlaceholderText(/夕暮れの東京タワー/)).not.toBeInTheDocument()
     })
 
     it('renders location selection area', () => {
