@@ -21,6 +21,8 @@ import { ReportDialog } from './ReportDialog'
 import { ProtectedImage } from './figma/ProtectedImage'
 
 // API Endpoints
+const API_MY_PROFILE = '/api/v1/users/me'
+const API_USER_PROFILE_PREFIX = '/api/v1/users/'
 const API_FAVORITES = '/api/v1/users/me/favorites'
 const API_MY_PHOTOS = '/api/v1/users/me/photos'
 const API_USER_PHOTOS_PREFIX = '/api/v1/users/'
@@ -176,9 +178,36 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   const [localProfileImageUrl, setLocalProfileImageUrl] = useState<string | null>(null)
   const [localSnsLinks, setLocalSnsLinks] = useState<SnsLink[] | null>(null)
 
-  // 実際に表示する値（ローカルステートがあればそれを優先）
-  const displayProfileImageUrl = localProfileImageUrl ?? userProfile.profileImageUrl
+  // APIから取得したプロフィール画像URL
+  const [fetchedProfileImageUrl, setFetchedProfileImageUrl] = useState<string | null>(null)
+
+  // 実際に表示する値（ローカル編集 > API取得 > props の優先順位）
+  const displayProfileImageUrl = localProfileImageUrl ?? fetchedProfileImageUrl ?? userProfile.profileImageUrl
   const displaySnsLinks = localSnsLinks ?? userProfile.snsLinks
+
+  // Issue#79: ダイアログopen時にプロフィール画像URLをAPIから取得
+  useEffect(() => {
+    if (!open || displayProfileImageUrl) return
+
+    const fetchProfile = async () => {
+      try {
+        const url = isOwnProfile
+          ? API_MY_PROFILE
+          : `${API_USER_PROFILE_PREFIX}${userProfile.userId}`
+        const headers: HeadersInit = isOwnProfile ? getAuthHeaders() : {}
+        const response = await fetch(url, { headers })
+        if (response.ok) {
+          const data = await response.json()
+          if (data.profileImageUrl) {
+            setFetchedProfileImageUrl(data.profileImageUrl)
+          }
+        }
+      } catch {
+        // プロフィール画像取得失敗時はフォールバック表示のまま
+      }
+    }
+    fetchProfile()
+  }, [open, isOwnProfile, userProfile.userId, displayProfileImageUrl])
 
   // ユーザー投稿一覧の状態
   const [userPhotos, setUserPhotos] = useState<UserPhotoItem[]>([])
