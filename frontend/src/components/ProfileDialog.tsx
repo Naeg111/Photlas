@@ -418,10 +418,11 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
           {/* ユーザー名 */}
           <div className="flex flex-col gap-2 mb-2">
-            <label className="text-sm font-medium text-gray-700">アカウント名</label>
+            <label htmlFor="profile-username" className="text-sm font-medium text-gray-700">アカウント名</label>
             <div className="flex items-center justify-between gap-2">
               {isEditingUsername ? (
                 <Input
+                  id="profile-username"
                   data-testid="username-input"
                   value={editingUsername}
                   onChange={(e) => handleUsernameChange(e.target.value)}
