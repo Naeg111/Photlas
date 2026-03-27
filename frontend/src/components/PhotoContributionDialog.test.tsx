@@ -480,11 +480,11 @@ describe('PhotoContributionDialog', () => {
       })
       await user.click(screen.getByRole('button', { name: '投稿する' }))
 
-      // デフォルト位置（新宿）が使用されることを確認
+      // デフォルト位置（東京駅）が使用されることを確認
       await waitFor(() => {
         expect(mockSubmit).toHaveBeenCalledWith(
           expect.objectContaining({
-            position: { lat: 35.6762, lng: 139.6503 },
+            position: { lat: 35.6812, lng: 139.7671 },
           })
         )
       })
