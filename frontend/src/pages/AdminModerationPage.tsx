@@ -198,7 +198,8 @@ export default function AdminModerationPage() {
               >
                 {/* 画像（クリックでぼかし切替） */}
                 <div
-                  className="aspect-square relative overflow-hidden cursor-pointer"
+                  role="button" tabIndex={0} className="aspect-square relative overflow-hidden cursor-pointer"
+                  onKeyDown={(e) => { if (e.key === "Enter") setRevealedIds(prev => { const next = new Set(prev); if (next.has(item.photo_id)) next.delete(item.photo_id); else next.add(item.photo_id); return next }) }}
                   onClick={() => setRevealedIds(prev => {
                     const next = new Set(prev)
                     if (next.has(item.photo_id)) {

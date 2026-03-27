@@ -611,7 +611,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                       <div
                         key={item.photo.photo_id}
                         data-testid={`${TEST_ID_POSTS_PHOTO_PREFIX}${item.photo.photo_id}`}
-                        onClick={() => handlePhotoClick(item.spot.spot_id)}
+                        role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handlePhotoClick(item.spot.spot_id) }} onClick={() => handlePhotoClick(item.spot.spot_id)}
                         className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                       >
                         <ProtectedImage

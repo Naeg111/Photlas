@@ -6,7 +6,7 @@ import { MonthIcons, TimeIcons, WeatherIcons } from "./FilterIcons"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { PHOTO_CATEGORIES } from "../utils/constants"
 
-const CATEGORIES_NEED_INVERT: string[] = [];
+
 const MONTHS_NEED_INVERT = ["1月", "2月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
 const TIMES_NEED_INVERT = ["夕方"];
 
@@ -176,13 +176,11 @@ export function FilterPanel({ open, onOpenChange, onApply }: FilterPanelProps) {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {PHOTO_CATEGORIES.map((category) => {
                 const isSelected = selectedCategories.includes(category);
-                const needsInvert = CATEGORIES_NEED_INVERT.includes(category);
                 return (
                   <FilterButton
                     key={category}
                     selected={isSelected}
                     onClick={() => toggleSelection(category, selectedCategories, setSelectedCategories)}
-                    className={isSelected && needsInvert ? "[&_svg]:invert" : ""}
                   >
                     <CategoryIcon category={category} className="w-5 h-5 shrink-0" />
                     <span className="truncate">{category}</span>

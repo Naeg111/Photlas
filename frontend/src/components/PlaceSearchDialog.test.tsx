@@ -281,13 +281,12 @@ describe('PlaceSearchDialog', () => {
 
   describe('アクセシビリティ', () => {
     it('オーバーレイがEnterキーで閉じられる', async () => {
-      const mockOnClose = vi.fn()
+      const mockOnOpenChange = vi.fn()
       render(
         <PlaceSearchDialog
           open={true}
-          onClose={mockOnClose}
+          onOpenChange={mockOnOpenChange}
           onPlaceSelect={() => {}}
-          mapboxToken="test-token"
         />
       )
 
@@ -295,7 +294,7 @@ describe('PlaceSearchDialog', () => {
       overlay.focus()
       await userEvent.keyboard('{Enter}')
 
-      expect(mockOnClose).toHaveBeenCalled()
+      expect(mockOnOpenChange).toHaveBeenCalledWith(false)
     })
   })
 })

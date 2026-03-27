@@ -200,8 +200,11 @@ export function PlaceSearchDialog({
       {/* 半透明オーバーレイ: クリックで閉じる */}
       <div
         data-testid="search-overlay"
+        role="button"
+        tabIndex={0}
         className="absolute inset-0 pointer-events-auto bg-black/50"
         onClick={handleClose}
+        onKeyDown={(e) => { if (e.key === 'Enter') handleClose() }}
       />
 
       {/* 検索コンテナ: 上部中央にフローティング配置 */}
