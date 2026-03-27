@@ -41,6 +41,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/users")
 public class UserController {
 
+    private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
+
     private final UserService userService;
     private final S3Service s3Service;
     private final UserRepository userRepository;
@@ -99,7 +101,7 @@ public class UserController {
     ) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new com.photlas.backend.exception.UnauthorizedException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new com.photlas.backend.exception.UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(
                 "avatars",
@@ -128,7 +130,7 @@ public class UserController {
     ) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new com.photlas.backend.exception.UnauthorizedException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new com.photlas.backend.exception.UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         Pageable pageable = PageRequest.of(page, size);
         Map<String, Object> response = photoService.getUserPhotos(user.getId(), pageable, email);
@@ -215,7 +217,7 @@ public class UserController {
     ) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new com.photlas.backend.exception.UnauthorizedException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new com.photlas.backend.exception.UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         // 拡張子のバリデーション
         if (!ALLOWED_IMAGE_EXTENSIONS.contains(request.getExtension().toLowerCase())) {
@@ -305,7 +307,7 @@ public class UserController {
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
-        if (e.getMessage() != null && e.getMessage().contains("ユーザーが見つかりません")) {
+        if (e.getMessage() != null && e.getMessage().contains(ERROR_USER_NOT_FOUND)) {
             ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         }

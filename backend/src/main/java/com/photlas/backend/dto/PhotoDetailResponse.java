@@ -172,8 +172,10 @@ public class PhotoDetailResponse {
         public void setSpotId(Long spotId) { this.spotId = spotId; }
     }
 
-    // Main class constructors
-    public PhotoDetailResponse() {}
+    /** Jackson デシリアライゼーション用のデフォルトコンストラクタ */
+    public PhotoDetailResponse() {
+        // Jacksonが使用するデフォルトコンストラクタ
+    }
 
     // Getters and Setters
     public Long getPhotoId() { return photoId; }
