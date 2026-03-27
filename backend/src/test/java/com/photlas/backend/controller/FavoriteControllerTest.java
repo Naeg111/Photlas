@@ -315,6 +315,24 @@ public class FavoriteControllerTest {
     }
 
     // ============================================================
+    // Issue#75: お気に入り一覧のthumbnail_urlテスト
+    // ============================================================
+
+    @Test
+    @DisplayName("Issue#75 - お気に入り一覧でthumbnail_urlが返される")
+    void testGetFavorites_ReturnsThumbnailUrl() throws Exception {
+        // Given: お気に入り登録
+        performAddFavorite(testPhoto.getPhotoId());
+
+        // When & Then: お気に入り一覧取得でthumbnail_urlが含まれる
+        mockMvc.perform(get(USER_FAVORITES_ENDPOINT)
+                .header(HEADER_AUTHORIZATION, getBearerToken(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].photo.thumbnail_url").exists())
+                .andExpect(jsonPath("$.content[0].photo.thumbnail_url").isNotEmpty());
+    }
+
+    // ============================================================
     // Issue#30: 写真詳細API拡張テスト（favoriteCount）
     // ============================================================
 

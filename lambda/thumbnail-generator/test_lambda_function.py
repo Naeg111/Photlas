@@ -69,7 +69,6 @@ class TestLambdaHandler:
     @patch("lambda_function.s3_client")
     def test_successful_thumbnail_generation(self, mock_s3):
         """正常にサムネイルが生成される。"""
-        # 1x1ピクセルのJPEG画像（最小）
         import io
         from PIL import Image
         img = Image.new("RGB", (800, 600), color="red")
@@ -98,6 +97,127 @@ class TestLambdaHandler:
         call_args = mock_s3.put_object.call_args
         assert call_args[1]["Key"] == "thumbnails/uploads/1/test.webp"
         assert call_args[1]["ContentType"] == "image/webp"
+
+    @patch("lambda_function.s3_client")
+    def test_thumbnail_is_400x400_square(self, mock_s3):
+        """Issue#75 - 非正方形画像から400x400の正方形サムネイルが中央クロップで生成される。"""
+        import io
+        from PIL import Image
+
+        # 800x600の横長画像を作成
+        img = Image.new("RGB", (800, 600), color="blue")
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG")
+        jpeg_bytes = buf.getvalue()
+
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes))
+        }
+
+        captured_body = {}
+
+        def capture_put(**kwargs):
+            captured_body["data"] = kwargs["Body"]
+            return {}
+
+        mock_s3.put_object.side_effect = capture_put
+
+        event = {
+            "Records": [{
+                "s3": {
+                    "bucket": {"name": "photlas-uploads-test"},
+                    "object": {"key": "uploads/1/test.jpg"}
+                }
+            }]
+        }
+
+        lambda_handler(event, None)
+
+        # サムネイルが400x400の正方形であることを検証
+        result_img = Image.open(io.BytesIO(captured_body["data"]))
+        assert result_img.size == (400, 400), (
+            f"サムネイルは400x400の正方形であるべきですが、{result_img.size}でした"
+        )
+
+    @patch("lambda_function.s3_client")
+    def test_thumbnail_is_400x400_from_portrait(self, mock_s3):
+        """Issue#75 - 縦長画像から400x400の正方形サムネイルが中央クロップで生成される。"""
+        import io
+        from PIL import Image
+
+        # 600x800の縦長画像を作成
+        img = Image.new("RGB", (600, 800), color="green")
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG")
+        jpeg_bytes = buf.getvalue()
+
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes))
+        }
+
+        captured_body = {}
+
+        def capture_put(**kwargs):
+            captured_body["data"] = kwargs["Body"]
+            return {}
+
+        mock_s3.put_object.side_effect = capture_put
+
+        event = {
+            "Records": [{
+                "s3": {
+                    "bucket": {"name": "photlas-uploads-test"},
+                    "object": {"key": "uploads/1/portrait.jpg"}
+                }
+            }]
+        }
+
+        lambda_handler(event, None)
+
+        # サムネイルが400x400の正方形であることを検証
+        result_img = Image.open(io.BytesIO(captured_body["data"]))
+        assert result_img.size == (400, 400), (
+            f"サムネイルは400x400の正方形であるべきですが、{result_img.size}でした"
+        )
+
+    @patch("lambda_function.s3_client")
+    def test_thumbnail_format_is_webp(self, mock_s3):
+        """Issue#75 - 生成されたサムネイルがWebPフォーマットである。"""
+        import io
+        from PIL import Image
+
+        img = Image.new("RGB", (800, 600), color="red")
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG")
+        jpeg_bytes = buf.getvalue()
+
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes))
+        }
+
+        captured_body = {}
+
+        def capture_put(**kwargs):
+            captured_body["data"] = kwargs["Body"]
+            return {}
+
+        mock_s3.put_object.side_effect = capture_put
+
+        event = {
+            "Records": [{
+                "s3": {
+                    "bucket": {"name": "photlas-uploads-test"},
+                    "object": {"key": "uploads/1/test.jpg"}
+                }
+            }]
+        }
+
+        lambda_handler(event, None)
+
+        result_img = Image.open(io.BytesIO(captured_body["data"]))
+        assert result_img.format == "WEBP", (
+            f"サムネイルはWebPフォーマットであるべきですが、{result_img.format}でした"
+        )
 
     @patch("lambda_function.s3_client")
     def test_skip_thumbnails_prefix(self, mock_s3):
