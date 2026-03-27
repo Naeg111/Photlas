@@ -1229,4 +1229,94 @@ describe('ProfileDialog', () => {
       })
     })
   })
+
+  // ============================================================
+  // Issue#80: 投稿一覧の即時反映とサムネイル表示
+  // ============================================================
+
+  describe('Issue#80: 投稿一覧の即時反映', () => {
+    it('ダイアログを再度開いた際に投稿一覧が再取得される', async () => {
+      // 1回目open: 空レスポンス
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockEmptyPhotosResponse),
+      })
+
+      const { rerender } = render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled()
+      })
+
+      const firstCallCount = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.length
+
+      // ダイアログを閉じる
+      rerender(
+        <ProfileDialog
+          open={false}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 2回目open: 写真ありレスポンス
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockPhotosResponse),
+      })
+
+      rerender(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 再取得されて写真が表示される
+      await waitFor(() => {
+        expect(screen.getByTestId('post-photo-item-1')).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('Issue#80: サムネイルフォールバック', () => {
+    it('投稿写真グリッドでImageWithFallbackが使用されている', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockPhotosResponse),
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('post-photo-item-1')).toBeInTheDocument()
+      })
+
+      // ImageWithFallbackが使われていることを確認（fallbackSrcがdata属性に存在）
+      const img = screen.getByTestId('post-photo-item-1').querySelector('img')
+      expect(img).toBeInTheDocument()
+      expect(img).toHaveAttribute('data-fallback-src')
+    })
+  })
 })
