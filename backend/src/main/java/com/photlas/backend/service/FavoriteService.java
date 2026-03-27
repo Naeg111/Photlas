@@ -199,6 +199,7 @@ public class FavoriteService {
                 favoriteCount
         );
 
+        photoDTO.setThumbnailUrl(s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey()));
         photoDTO.setCropCenterX(photo.getCropCenterX());
         photoDTO.setCropCenterY(photo.getCropCenterY());
         photoDTO.setCropZoom(photo.getCropZoom());
