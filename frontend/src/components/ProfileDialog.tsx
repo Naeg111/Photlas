@@ -18,6 +18,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getAuthHeaders } from '../utils/apiClient'
 import ProfileImageCropper from './ProfileImageCropper'
 import { ReportDialog } from './ReportDialog'
+import { SnsLinkEditDialog } from './SnsLinkEditDialog'
 import { ProtectedImage } from './figma/ProtectedImage'
 import { ImageWithFallback } from './figma/ImageWithFallback'
 
@@ -39,19 +40,8 @@ const TEST_ID_POSTS_PHOTO_PREFIX = 'post-photo-item-'
 const MSG_NO_FAVORITES = 'お気に入りはまだありません'
 const MSG_NO_POSTS = 'まだ投稿がありません'
 
-// SNSプラットフォーム定義
-const SNS_PLATFORMS = [
-  { value: 'twitter', label: 'X (Twitter)' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'youtube', label: 'YouTube' },
-  { value: 'tiktok', label: 'TikTok' },
-] as const
-
 // ページネーション定数
 const PHOTOS_PER_PAGE = 20
-
-// Issue#37: SNSリンク編集機能の定数
-const MAX_SNS_LINKS = 3
 
 interface SnsLink {
   id?: string
@@ -300,6 +290,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     }
   }, [open, initialTab, favoritesFetched, fetchFavorites])
 
+  // SNSリンク編集ダイアログ状態管理
+  const [isSnsEditDialogOpen, setIsSnsEditDialogOpen] = useState(false)
+
   // Issue#54: プロフィール通報状態管理
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isReportLoading, setIsReportLoading] = useState(false)
@@ -331,6 +324,26 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     onPhotoClick?.(photoId)
   }, [onPhotoClick])
 
+  // SNSリンク保存ハンドラー（ダイアログから呼び出される）
+  const handleSaveSnsLinksFromDialog = useCallback(async (newLinks: Array<{ platform: string; url: string }>) => {
+    try {
+      const response = await fetch('/api/v1/users/me/sns-links', {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ snsLinks: newLinks }),
+      })
+
+      if (response.ok) {
+        setLocalSnsLinks(newLinks.map(l => ({ url: l.url, platform: l.platform })))
+      }
+    } catch {
+      // エラー時は何もしない
+    }
+  }, [])
+
   // カスタムフックを使用してプロフィール編集機能を取得
   // Issue#36: AuthContextからupdateUserを取得
   const { updateUser } = useAuth()
@@ -351,13 +364,6 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     cropperImageSrc,
     handleCropComplete,
     handleCropCancel,
-    // Issue#37: SNSリンク編集関連
-    isEditingSnsLinks,
-    editingSnsLinks,
-    handleStartEditSnsLinks,
-    handleAddSnsLink,
-    handleRemoveSnsLink,
-    handleUpdateSnsLink,
     // 統一保存機能
     hasUnsavedChanges,
     isSaving,
@@ -389,29 +395,31 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         </DialogHeader>
 
         {/* プロフィールセクション */}
-        <div className="flex flex-col mb-6 mt-4">
+        <div className="flex flex-col mb-6">
           {/* プロフィール画像エリア */}
-          <div className="flex items-start gap-6 mb-6">
-            {/* 左側：プロフィール画像 */}
-            <div className="shrink-0">
-              {displayProfileImageUrl ? (
-                <ProtectedImage
-                  src={displayProfileImageUrl}
-                  alt={userProfile.username}
-                  className="w-28 h-28 rounded-full object-cover"
-                />
-              ) : (
-                <Avatar className="w-28 h-28">
-                  <AvatarFallback>
-                    <User data-testid="default-avatar-icon" className="w-14 h-14" />
-                  </AvatarFallback>
-                </Avatar>
-              )}
+          <div className="flex mb-6">
+            {/* 左半分：プロフィール画像（中央配置） */}
+            <div className="flex-1 flex justify-center">
+              <div className="shrink-0">
+                {displayProfileImageUrl ? (
+                  <ProtectedImage
+                    src={displayProfileImageUrl}
+                    alt={userProfile.username}
+                    className="w-28 h-28 rounded-full object-cover"
+                  />
+                ) : (
+                  <Avatar className="w-28 h-28">
+                    <AvatarFallback>
+                      <User data-testid="default-avatar-icon" className="w-14 h-14" />
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+              </div>
             </div>
 
-            {/* 右側：画像選択・削除ボタン（自分のプロフィールのみ） */}
+            {/* 右半分：画像選択・削除ボタン（中央配置・上下中央） */}
             {isOwnProfile && (
-              <div className="flex flex-col gap-2 justify-center">
+              <div className="flex-1 flex flex-col items-center justify-center gap-2">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -453,7 +461,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           </div>
 
           {/* ユーザー名 */}
-          <div className="flex flex-col gap-2 mb-5">
+          <div className="flex flex-col gap-2 mb-[14px]">
             <label htmlFor="profile-username" className="text-sm font-medium text-gray-700">アカウント名</label>
             <div className="flex items-center justify-between gap-2">
               {isEditingUsername ? (
@@ -499,7 +507,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           />
 
           {/* SNSリンク */}
-          {!isEditingSnsLinks && displaySnsLinks.length > 0 && (
+          {displaySnsLinks.length > 0 && (
             <div className="flex gap-4">
               {displaySnsLinks.map((link) => (
                 <a
@@ -517,63 +525,16 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           )}
 
           {/* SNSリンク編集ボタン（自分のプロフィールのみ） */}
-          {isOwnProfile && !isEditingSnsLinks && (
+          {isOwnProfile && (
             <div className="flex justify-center mt-2">
               <Button
                 variant="ghost"
                 size="sm"
                 data-testid="edit-sns-links-button"
-                onClick={handleStartEditSnsLinks}
+                onClick={() => setIsSnsEditDialogOpen(true)}
               >
                 SNSリンクを編集
               </Button>
-            </div>
-          )}
-
-          {/* Issue#37: SNSリンク編集モード */}
-          {isOwnProfile && isEditingSnsLinks && (
-            <div className="w-full max-w-md mt-4 space-y-4">
-              {editingSnsLinks.map((link, index) => (
-                <div key={link.id} className="flex gap-2 items-center">
-                  <select
-                    data-testid={`sns-platform-select-${index}`}
-                    className="w-32 border rounded-md px-3 py-2"
-                    value={link.platform || 'twitter'}
-                    onChange={(e) => handleUpdateSnsLink(index, 'platform', e.target.value)}
-                  >
-                    {SNS_PLATFORMS.map((platform) => (
-                      <option key={platform.value} value={platform.value}>
-                        {platform.label}
-                      </option>
-                    ))}
-                  </select>
-                  <Input
-                    data-testid={`sns-url-input-${index}`}
-                    placeholder="https://..."
-                    className="flex-1"
-                    value={link.url}
-                    onChange={(e) => handleUpdateSnsLink(index, 'url', e.target.value)}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    data-testid={`delete-sns-link-${index}`}
-                    onClick={() => handleRemoveSnsLink(index)}
-                  >
-                    削除
-                  </Button>
-                </div>
-              ))}
-              {editingSnsLinks.length < MAX_SNS_LINKS && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  data-testid="add-sns-link-button"
-                  onClick={handleAddSnsLink}
-                >
-                  リンクを追加
-                </Button>
-              )}
             </div>
           )}
 
@@ -812,6 +773,16 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             onCancel={handleCropCancel}
           />
         )}
+
+        {/* SNSリンク編集ダイアログ */}
+        <SnsLinkEditDialog
+          open={isSnsEditDialogOpen}
+          onOpenChange={setIsSnsEditDialogOpen}
+          initialLinks={displaySnsLinks}
+          onSave={async (newLinks) => {
+            await handleSaveSnsLinksFromDialog(newLinks)
+          }}
+        />
       </DialogContent>
     </Dialog>
   )

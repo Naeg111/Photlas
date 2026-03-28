@@ -7,11 +7,11 @@ import { Checkbox } from './ui/checkbox'
 import { Separator } from './ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import ProfileImageCropper from './ProfileImageCropper'
-import { Upload, Eye, EyeOff, X as XIcon } from 'lucide-react'
+import { Upload, Eye, EyeOff } from 'lucide-react'
+import { SnsLinkEditDialog } from './SnsLinkEditDialog'
 import { API_V1_URL } from '../config/api'
 import { toast } from 'sonner'
 import {
-  MAX_SNS_LINKS,
   getPasswordStrength,
   validatePassword,
   validateEmail,
@@ -24,26 +24,6 @@ import {
  *
  * マップ画面を離れることなく新規登録を行えるダイアログ
  */
-
-// SNSプラットフォーム定義
-const SNS_PLATFORMS = [
-  { value: 'twitter', label: 'X (Twitter)' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'youtube', label: 'YouTube' },
-  { value: 'tiktok', label: 'TikTok' },
-] as const
-
-interface SnsLinkInput {
-  id: string
-  platform: string
-  url: string
-}
-
-let snsLinkIdCounter = 0
-function generateSnsLinkId(): string {
-  snsLinkIdCounter += 1
-  return `sns-${snsLinkIdCounter}`
-}
 
 /** パスワード強度に対応するスタイルクラスを返す */
 function getPasswordStrengthStyle(strength: PasswordStrength): string {
@@ -78,7 +58,8 @@ export function SignUpDialog({
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [snsLinks, setSnsLinks] = useState<SnsLinkInput[]>([{ id: generateSnsLinkId(), platform: 'twitter', url: '' }])
+  const [snsLinks, setSnsLinks] = useState<Array<{ platform: string; url: string }>>([])
+  const [isSnsEditDialogOpen, setIsSnsEditDialogOpen] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -249,27 +230,11 @@ export function SignUpDialog({
     onOpenChange(false)
   }
 
-  const handleAddSnsLink = () => {
-    if (snsLinks.length < MAX_SNS_LINKS) {
-      setSnsLinks([...snsLinks, { id: generateSnsLinkId(), platform: 'twitter', url: '' }])
-    }
-  }
-
-  const handleRemoveSnsLink = (index: number) => {
-    setSnsLinks(snsLinks.filter((_, i) => i !== index))
-  }
-
-  const handleUpdateSnsLink = (index: number, field: 'platform' | 'url', value: string) => {
-    const updated = [...snsLinks]
-    updated[index] = { ...updated[index], [field]: value }
-    setSnsLinks(updated)
-  }
-
   /**
    * 登録後にSNSリンクをサーバーに送信する
    * SNSリンク送信の失敗は登録処理には影響しない
    */
-  const uploadSnsLinks = async (token: string, links: SnsLinkInput[]) => {
+  const uploadSnsLinks = async (token: string, links: Array<{ platform: string; url: string }>) => {
     try {
       await fetch(`${API_V1_URL}/users/me/sns-links`, {
         method: 'PUT',
@@ -423,46 +388,19 @@ export function SignUpDialog({
           {/* SNSリンク */}
           <div className="space-y-3">
             <Label>SNSリンク（任意）</Label>
-            {snsLinks.map((link, index) => (
-              <div key={link.id} className="flex gap-2 items-center">
-                <select
-                  data-testid={`sns-platform-select-${index}`}
-                  className="w-32 border rounded-md px-3 py-2"
-                  value={link.platform}
-                  onChange={(e) => handleUpdateSnsLink(index, 'platform', e.target.value)}
-                >
-                  {SNS_PLATFORMS.map((platform) => (
-                    <option key={platform.value} value={platform.value}>
-                      {platform.label}
-                    </option>
-                  ))}
-                </select>
-                <Input
-                  placeholder="https://..."
-                  className="flex-1"
-                  value={link.url}
-                  onChange={(e) => handleUpdateSnsLink(index, 'url', e.target.value)}
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  data-testid={`remove-sns-link-${index}`}
-                  onClick={() => handleRemoveSnsLink(index)}
-                  type="button"
-                >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-            {snsLinks.length < MAX_SNS_LINKS && (
-              <Button
-                variant="outline"
-                onClick={handleAddSnsLink}
-                className="w-full"
-              >
-                SNSリンクを追加
-              </Button>
+            {snsLinks.length > 0 && (
+              <p className="text-sm text-gray-600">
+                {snsLinks.map(l => l.url).join(', ')}
+              </p>
             )}
+            <Button
+              variant="outline"
+              onClick={() => setIsSnsEditDialogOpen(true)}
+              className="w-full"
+              type="button"
+            >
+              {snsLinks.length > 0 ? 'SNSリンクを編集' : 'SNSリンクを追加'}
+            </Button>
           </div>
 
           <Separator />
@@ -534,6 +472,16 @@ export function SignUpDialog({
             onCancel={handleCropCancel}
           />
         )}
+
+        {/* SNSリンク編集ダイアログ */}
+        <SnsLinkEditDialog
+          open={isSnsEditDialogOpen}
+          onOpenChange={setIsSnsEditDialogOpen}
+          initialLinks={snsLinks}
+          onSave={(newLinks) => {
+            setSnsLinks(newLinks)
+          }}
+        />
       </DialogContent>
     </Dialog>
   )

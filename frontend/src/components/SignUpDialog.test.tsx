@@ -568,43 +568,62 @@ describe('SignUpDialog', () => {
   })
 
   describe('SNS Links - SNSリンク', () => {
-    it('renders platform selector and URL input for SNS links', () => {
+    it('renders SNS link add button', () => {
       render(<SignUpDialog {...defaultProps} />)
 
-      // プラットフォーム選択とURL入力がある
-      expect(screen.getByTestId('sns-platform-select-0')).toBeInTheDocument()
-      expect(screen.getByPlaceholderText('https://...')).toBeInTheDocument()
+      // SNSリンク追加ボタンがある
+      expect(screen.getByRole('button', { name: 'SNSリンクを追加' })).toBeInTheDocument()
     })
 
-    it('allows adding up to 3 SNS links', async () => {
+    it('opens SNS link edit dialog when add button is clicked', async () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
-      // 最初は1つのSNSリンク入力欄がある
-      expect(screen.getByTestId('sns-platform-select-0')).toBeInTheDocument()
-
-      // SNSリンクを追加ボタンをクリック
+      // SNSリンク追加ボタンをクリック
       await user.click(screen.getByRole('button', { name: 'SNSリンクを追加' }))
+
+      // SNSリンク編集ダイアログが開く
+      await waitFor(() => {
+        expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
+      })
+
+      // ダイアログ内にプラットフォーム選択とURL入力がある
+      expect(screen.getByTestId('sns-platform-select-0')).toBeInTheDocument()
+    })
+
+    it('allows adding multiple SNS links in dialog', async () => {
+      const user = userEvent.setup()
+      render(<SignUpDialog {...defaultProps} />)
+
+      // SNSリンク追加ボタンをクリックしてダイアログを開く
+      await user.click(screen.getByRole('button', { name: 'SNSリンクを追加' }))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
+      })
+
+      // リンクを追加ボタンでリンクを追加
+      await user.click(screen.getByTestId('add-sns-link-button'))
       expect(screen.getByTestId('sns-platform-select-1')).toBeInTheDocument()
-
-      await user.click(screen.getByRole('button', { name: 'SNSリンクを追加' }))
-      expect(screen.getByTestId('sns-platform-select-2')).toBeInTheDocument()
-
-      // 3つに達したら追加ボタンが非表示
-      expect(screen.queryByRole('button', { name: 'SNSリンクを追加' })).not.toBeInTheDocument()
     })
 
-    it('allows removing SNS link entries', async () => {
+    it('allows removing SNS link entries in dialog', async () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
-      // 2つ目を追加
+      // SNSリンク追加ボタンをクリックしてダイアログを開く
       await user.click(screen.getByRole('button', { name: 'SNSリンクを追加' }))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
+      })
+
+      // リンクを追加してから削除
+      await user.click(screen.getByTestId('add-sns-link-button'))
       expect(screen.getByTestId('sns-platform-select-1')).toBeInTheDocument()
 
       // 削除ボタンで削除
-      const removeButtons = screen.getAllByTestId(/^remove-sns-link-/)
-      await user.click(removeButtons[0])
+      await user.click(screen.getByTestId('delete-sns-link-0'))
 
       // 1つに戻る
       expect(screen.queryByTestId('sns-platform-select-1')).not.toBeInTheDocument()
@@ -628,9 +647,24 @@ describe('SignUpDialog', () => {
 
       render(<SignUpDialog {...defaultProps} />)
 
-      // SNSリンクを入力
-      const urlInput = screen.getByPlaceholderText('https://...')
+      // SNSリンク編集ダイアログを開いてリンクを入力
+      await user.click(screen.getByRole('button', { name: 'SNSリンクを追加' }))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
+      })
+
+      // URLを入力
+      const urlInput = screen.getByTestId('sns-url-input-0')
       await user.type(urlInput, 'https://x.com/testuser')
+
+      // ダイアログ内の保存ボタンをクリック
+      await user.click(screen.getByRole('button', { name: '保存' }))
+
+      // ダイアログが閉じるのを待つ
+      await waitFor(() => {
+        expect(screen.queryByTestId('sns-link-edit-dialog')).not.toBeInTheDocument()
+      })
 
       // フォームを入力して送信
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
