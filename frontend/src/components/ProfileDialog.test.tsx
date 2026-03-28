@@ -726,10 +726,17 @@ describe('ProfileDialog', () => {
         />
       )
 
+      // SNSリンク編集ダイアログを開く
       const editButton = screen.getByTestId('edit-sns-links-button')
       await user.click(editButton)
 
-      const saveButton = screen.getByTestId('save-all-changes-button')
+      // ダイアログが開くのを待つ
+      await waitFor(() => {
+        expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
+      })
+
+      // ダイアログ内の保存ボタンをクリック
+      const saveButton = screen.getByRole('button', { name: '保存' })
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -765,16 +772,21 @@ describe('ProfileDialog', () => {
         />
       )
 
-      // 編集モードを開く
+      // SNSリンク編集ダイアログを開く
       const editButton = screen.getByTestId('edit-sns-links-button')
       await user.click(editButton)
+
+      // ダイアログが開くのを待つ
+      await waitFor(() => {
+        expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
+      })
 
       // URLを入力
       const urlInput = screen.getByTestId('sns-url-input-0')
       await user.type(urlInput, newUrl)
 
-      // 保存
-      const saveButton = screen.getByTestId('save-all-changes-button')
+      // ダイアログ内の保存ボタンをクリック
+      const saveButton = screen.getByRole('button', { name: '保存' })
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -1342,6 +1354,8 @@ describe('ProfileDialog', () => {
     })
 
     it('「SNSリンクを編集」ボタンを押すとSNSリンク編集ダイアログが開く', async () => {
+      const user = userEvent.setup()
+
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockEmptyPhotosResponse),
@@ -1358,11 +1372,10 @@ describe('ProfileDialog', () => {
       )
 
       const editButton = screen.getByTestId('edit-sns-links-button')
-      fireEvent.click(editButton)
+      await user.click(editButton)
 
       // SNSリンク編集ダイアログが開く
       await waitFor(() => {
-        expect(screen.getByText('SNSリンクを編集')).toBeInTheDocument()
         expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
       })
     })
