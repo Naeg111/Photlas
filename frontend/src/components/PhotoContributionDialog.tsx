@@ -396,7 +396,6 @@ export function PhotoContributionDialog({
               写真とコンテクスト情報を投稿する
             </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-gray-500 mt-2">* は入力必須項目です</p>
         </div>
 
         {/* スクロール可能なフォーム部分 */}
@@ -408,7 +407,7 @@ export function PhotoContributionDialog({
           <div className="space-y-6 mt-4">
             {/* 写真選択 */}
             <div className="space-y-3">
-              <Label className="text-base">写真 *</Label>
+              <Label className="text-base">写真（必須）</Label>
               <div
                 className={`border-2 border-dashed rounded-lg p-6 ${
                   !previewUrl ? 'cursor-pointer hover:border-gray-400 transition-colors' : ''
@@ -546,7 +545,7 @@ export function PhotoContributionDialog({
 
             {/* 位置情報 */}
             <div className="space-y-3">
-              <Label className="text-base">撮影場所 *</Label>
+              <Label className="text-base">撮影場所（必須）</Label>
               <p className="text-sm text-gray-500">
                 地図をドラッグして撮影場所にピンを合わせてください
               </p>
@@ -595,7 +594,7 @@ export function PhotoContributionDialog({
 
             {/* カテゴリ選択 */}
             <div className="space-y-3">
-              <Label className="text-base">カテゴリ *（1つ以上選択）</Label>
+              <Label className="text-base">カテゴリ（必須・1つ以上選択）</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {PHOTO_CATEGORIES.map((category) => (
                   <div
@@ -630,7 +629,7 @@ export function PhotoContributionDialog({
             <div className="space-y-3">
               <Label className="text-base flex items-center gap-2">
                 <CameraIcon className="w-4 h-4" />
-                機材種別 *
+                機材種別（必須）
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {DEVICE_TYPE_OPTIONS.map((option) => (

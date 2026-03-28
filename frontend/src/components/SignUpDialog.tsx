@@ -294,7 +294,7 @@ export function SignUpDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 mt-4">
+        <div className="space-y-10 mt-4">
           {errors.general && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">
               <p className="text-sm text-red-600">{errors.general}</p>
@@ -468,11 +468,11 @@ export function SignUpDialog({
           <Separator />
 
           {/* 利用規約 */}
-          <div className="space-y-3">
+          <div className="space-y-3 my-[50px]">
             {errors.terms && (
               <p className="text-sm text-red-600">{errors.terms}</p>
             )}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center space-x-2">
               <Checkbox
                 id="terms"
                 checked={agreedToTerms}

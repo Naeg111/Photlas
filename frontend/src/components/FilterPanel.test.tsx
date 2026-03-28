@@ -14,7 +14,7 @@ import { FilterPanel } from './FilterPanel'
  * - 撮影日からの経過期間: 5種類（3ヶ月以内追加）
  * - ISO感度: 4種類に拡張
  * - maxAgeYears → maxAgeDays に変更
- * - 横位置→横向き、縦位置→縦向き
+ * - 横向き→横位置、縦向き→縦位置（正方形は削除）
  */
 
 describe('FilterPanel', () => {
@@ -73,7 +73,7 @@ describe('FilterPanel', () => {
       expect(screen.getByText('撮影時期')).toBeInTheDocument()
       expect(screen.getByText('撮影された時間帯')).toBeInTheDocument()
       expect(screen.getByText('撮影時の天候')).toBeInTheDocument()
-      expect(screen.getByText('写真の向き')).toBeInTheDocument()
+      expect(screen.getByText('撮影の向き')).toBeInTheDocument()
     })
   })
 
@@ -89,20 +89,20 @@ describe('FilterPanel', () => {
     })
   })
 
-  describe('Issue#63: 写真の向き（通常フィルターに移動）', () => {
-    it('上級者向けフィルターを開かずに写真の向きの選択肢が表示される', () => {
+  describe('Issue#63: 撮影の向き（通常フィルターに移動）', () => {
+    it('上級者向けフィルターを開かずに撮影の向きの選択肢が表示される', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      expect(screen.getByText('横向き')).toBeInTheDocument()
-      expect(screen.getByText('縦向き')).toBeInTheDocument()
-      expect(screen.getByText('正方形')).toBeInTheDocument()
+      expect(screen.getByText('縦位置')).toBeInTheDocument()
+      expect(screen.getByText('横位置')).toBeInTheDocument()
     })
 
-    it('横位置・縦位置の旧名称は表示されない', () => {
+    it('横向き・縦向き・正方形の旧名称は表示されない', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      expect(screen.queryByText('横位置')).not.toBeInTheDocument()
-      expect(screen.queryByText('縦位置')).not.toBeInTheDocument()
+      expect(screen.queryByText('横向き')).not.toBeInTheDocument()
+      expect(screen.queryByText('縦向き')).not.toBeInTheDocument()
+      expect(screen.queryByText('正方形')).not.toBeInTheDocument()
     })
   })
 
@@ -111,7 +111,7 @@ describe('FilterPanel', () => {
       const user = userEvent.setup()
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+      await user.click(screen.getByRole('button', { name: /上級者向け/ }))
 
       // 機材種別
       expect(screen.getByText('機材種別')).toBeInTheDocument()
@@ -134,7 +134,7 @@ describe('FilterPanel', () => {
       const user = userEvent.setup()
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+      await user.click(screen.getByRole('button', { name: /上級者向け/ }))
 
       // 機材種別セクション内のボタンをdata-testid無しで取得するため、
       // 「機材種別」見出しの後に並ぶボタン群を特定
@@ -164,21 +164,21 @@ describe('FilterPanel', () => {
       expect(screen.getByText('1週間以内')).toBeInTheDocument()
 
       // 上級者向けフィルターを開いても、撮影日からの経過期間のラベルは上級者セクションにない
-      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+      await user.click(screen.getByRole('button', { name: /上級者向け/ }))
 
       // 撮影日からの経過期間のラベルは通常フィルターにのみ存在する（1つだけ）
       const periodLabels = screen.getAllByText('撮影日からの経過期間')
       expect(periodLabels).toHaveLength(1)
     })
 
-    it('上級者向けフィルターにアスペクト比/写真の向きが含まれない', async () => {
+    it('上級者向けフィルターにアスペクト比/撮影の向きが含まれない', async () => {
       const user = userEvent.setup()
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+      await user.click(screen.getByRole('button', { name: /上級者向け/ }))
 
-      // 写真の向きのラベルは通常フィルターにのみ存在する（1つだけ）
-      const orientationLabels = screen.getAllByText('写真の向き')
+      // 撮影の向きのラベルは通常フィルターにのみ存在する（1つだけ）
+      const orientationLabels = screen.getAllByText('撮影の向き')
       expect(orientationLabels).toHaveLength(1)
     })
   })
@@ -229,10 +229,10 @@ describe('FilterPanel', () => {
       // 通常フィルターで選択
       await user.click(screen.getByRole('button', { name: /自然風景/ }))
       await user.click(screen.getByText('3ヶ月以内'))
-      await user.click(screen.getByText('横向き'))
+      await user.click(screen.getByText('横位置'))
 
       // 上級者フィルターを開いて選択
-      await user.click(screen.getByRole('button', { name: /上級者向けフィルター/ }))
+      await user.click(screen.getByRole('button', { name: /上級者向け/ }))
       await user.click(screen.getByText('ミラーレス'))
 
       // クリア
@@ -346,7 +346,7 @@ describe('FilterPanel', () => {
 
       // 上級者向けフィルターを開く
       const allButtons = screen.getAllByRole('button')
-      const advancedButton = allButtons.find(btn => btn.textContent?.includes('上級者向けフィルター'))
+      const advancedButton = allButtons.find(btn => btn.textContent?.includes('上級者向け'))
       await user.click(advancedButton!)
 
       // 機材種別を2つ選択
@@ -361,7 +361,7 @@ describe('FilterPanel', () => {
       )
     })
 
-    it('写真の向きを複数選択してonApplyに配列で渡される', async () => {
+    it('撮影の向きを複数選択してonApplyに配列で渡される', async () => {
       const mockOnApply = vi.fn()
       const user = userEvent.setup()
 
@@ -373,13 +373,13 @@ describe('FilterPanel', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: /横向き/ }))
-      await user.click(screen.getByRole('button', { name: /正方形/ }))
+      await user.click(screen.getByRole('button', { name: /縦位置/ }))
+      await user.click(screen.getByRole('button', { name: /横位置/ }))
       await user.click(screen.getByRole('button', { name: '適用' }))
 
       expect(mockOnApply).toHaveBeenCalledWith(
         expect.objectContaining({
-          aspectRatios: expect.arrayContaining(['HORIZONTAL', 'SQUARE']),
+          aspectRatios: expect.arrayContaining(['VERTICAL', 'HORIZONTAL']),
         })
       )
     })
@@ -397,7 +397,7 @@ describe('FilterPanel', () => {
       )
 
       const allButtons = screen.getAllByRole('button')
-      const advancedButton = allButtons.find(btn => btn.textContent?.includes('上級者向けフィルター'))
+      const advancedButton = allButtons.find(btn => btn.textContent?.includes('上級者向け'))
       await user.click(advancedButton!)
 
       await user.click(await screen.findByRole('button', { name: /広角/ }))
@@ -448,7 +448,7 @@ describe('FilterPanel', () => {
 
       // 上級者向けフィルターを開く
       const allButtons = screen.getAllByRole('button')
-      const advancedButton = allButtons.find(btn => btn.textContent?.includes('上級者向けフィルター'))
+      const advancedButton = allButtons.find(btn => btn.textContent?.includes('上級者向け'))
       expect(advancedButton).toBeTruthy()
       await userEvent.click(advancedButton!)
 
