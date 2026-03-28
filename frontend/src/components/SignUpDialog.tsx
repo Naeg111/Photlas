@@ -251,14 +251,19 @@ export function SignUpDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>アカウント作成</DialogTitle>
-          <DialogDescription className="sr-only">
-            新しいアカウントを作成する
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}>
+        {/* Fixed header */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogHeader>
+            <DialogTitle>アカウント作成</DialogTitle>
+            <DialogDescription className="sr-only">
+              新しいアカウントを作成する
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
         <div className="space-y-10 mt-4">
           {errors.general && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">
@@ -482,6 +487,7 @@ export function SignUpDialog({
             setSnsLinks(newLinks)
           }}
         />
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -388,14 +388,19 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[80vh] min-h-[80vh] overflow-y-auto flex flex-col items-stretch" style={{ display: 'flex' }}>
-        <DialogHeader>
-          <DialogTitle>プロフィール</DialogTitle>
-          <DialogDescription className="sr-only">ユーザープロフィール情報</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-h-[80vh] min-h-[80vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '80dvh', minHeight: '80dvh' }}>
+        {/* Fixed header */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogHeader>
+            <DialogTitle>プロフィール</DialogTitle>
+            <DialogDescription className="sr-only">ユーザープロフィール情報</DialogDescription>
+          </DialogHeader>
+        </div>
 
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
         {/* プロフィールセクション */}
-        <div className="flex flex-col mb-[36px] mt-5">
+        <div className="flex flex-col mb-[36px] mt-4">
           {/* プロフィール画像エリア */}
           <div className="flex mb-[36px]">
             {/* 左半分：プロフィール画像（中央配置） */}
@@ -783,6 +788,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             await handleSaveSnsLinksFromDialog(newLinks)
           }}
         />
+        </div>
       </DialogContent>
     </Dialog>
   )

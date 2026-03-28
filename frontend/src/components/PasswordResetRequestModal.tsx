@@ -68,18 +68,23 @@ export default function PasswordResetRequestModal({ open, onClose }: Readonly<Pa
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>パスワードリセット</DialogTitle>
-          <DialogDescription className="sr-only">パスワードリセットリクエスト</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}>
+        {/* Fixed header */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogHeader>
+            <DialogTitle>パスワードリセット</DialogTitle>
+            <DialogDescription className="sr-only">パスワードリセットリクエスト</DialogDescription>
+          </DialogHeader>
+        </div>
 
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
         {isSuccess ? (
-          <div className="text-green-600">
+          <div className="text-green-600 mt-4">
             パスワード再設定用のメールを送信しました。受信トレイをご確認ください。
           </div>
         ) : (
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={handleSubmit} noValidate className="mt-4">
             <p className="mb-4 text-gray-700">登録メールアドレスを入力してください。</p>
 
             {error && (
@@ -110,6 +115,7 @@ export default function PasswordResetRequestModal({ open, onClose }: Readonly<Pa
             </Button>
           </form>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   )
