@@ -377,4 +377,15 @@ describe('LoginDialog', () => {
       })
     })
   })
+
+  describe('ヘッダー固定構造', () => {
+    it('DialogContentがflex column構造で、ヘッダーとスクロール領域が分離されている', () => {
+      render(<LoginDialog {...defaultProps} />)
+
+      const dialogContent = document.querySelector('[data-slot="dialog-content"]')
+      expect(dialogContent).toBeInTheDocument()
+      // padding:0でflex column構造
+      expect(dialogContent).toHaveStyle({ display: 'flex', flexDirection: 'column', padding: '0px' })
+    })
+  })
 })
