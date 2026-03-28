@@ -16,15 +16,20 @@ interface AboutDialogProps {
 export function AboutDialog({ open, onOpenChange }: Readonly<AboutDialogProps>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto py-10">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">Photlasとは？</DialogTitle>
-          <DialogDescription className="sr-only">
-            Photlasのサービス説明
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-h-[80vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '80dvh' }}>
+        {/* Fixed header */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Photlasとは？</DialogTitle>
+            <DialogDescription className="sr-only">
+              Photlasのサービス説明
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-6 text-sm leading-relaxed text-foreground">
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
+        <div className="space-y-6 text-sm leading-relaxed text-foreground mt-4">
           <section>
             <h3 className="font-bold text-base mb-2">サービス概要</h3>
             <p>
@@ -123,6 +128,7 @@ export function AboutDialog({ open, onOpenChange }: Readonly<AboutDialogProps>) 
               </a>
             </p>
           </section>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

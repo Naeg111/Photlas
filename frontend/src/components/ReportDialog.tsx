@@ -65,13 +65,18 @@ export function ReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogTitle>この投稿を通報</DialogTitle>
-        <DialogDescription className="sr-only">
-          不適切なコンテンツや問題のある投稿を通報
-        </DialogDescription>
+      <DialogContent className="max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}>
+        {/* Fixed header */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogTitle>この投稿を通報</DialogTitle>
+          <DialogDescription className="sr-only">
+            不適切なコンテンツや問題のある投稿を通報
+          </DialogDescription>
+        </div>
 
-        <div className="space-y-4">
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
+        <div className="space-y-4 mt-4">
           {/* 通報理由選択 */}
           <div className="space-y-3">
             <Label>通報理由</Label>
@@ -130,6 +135,7 @@ export function ReportDialog({
               通報する
             </Button>
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

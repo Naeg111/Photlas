@@ -25,27 +25,36 @@ export function PrivacyPolicyPage({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>プライバシーポリシー</DialogTitle>
-          <DialogDescription className="sr-only">
-            Photlasのプライバシーポリシー
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex items-center justify-end gap-2 text-sm">
-          <span className={isEnglish ? 'text-gray-400' : 'text-gray-700 font-medium'}>日本語</span>
-          <Switch
-            checked={isEnglish}
-            onCheckedChange={setIsEnglish}
-            aria-label="言語切替"
-          />
-          <span className={isEnglish ? 'text-gray-700 font-medium' : 'text-gray-400'}>英語</span>
+      <DialogContent className="max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}>
+        {/* Fixed header */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogHeader>
+            <DialogTitle>プライバシーポリシー</DialogTitle>
+            <DialogDescription className="sr-only">
+              Photlasのプライバシーポリシー
+            </DialogDescription>
+          </DialogHeader>
         </div>
 
-        <ScrollArea className="h-[70vh] pr-4 select-text">
-          {isEnglish ? <PrivacyContentEn /> : <PrivacyContentJa />}
-        </ScrollArea>
+        {/* Fixed language toggle */}
+        <div className="px-6 pb-2 shrink-0">
+          <div className="flex items-center justify-end gap-2 text-sm">
+            <span className={isEnglish ? 'text-gray-400' : 'text-gray-700 font-medium'}>日本語</span>
+            <Switch
+              checked={isEnglish}
+              onCheckedChange={setIsEnglish}
+              aria-label="言語切替"
+            />
+            <span className={isEnglish ? 'text-gray-700 font-medium' : 'text-gray-400'}>英語</span>
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
+          <ScrollArea className="h-full pr-4 select-text">
+            {isEnglish ? <PrivacyContentEn /> : <PrivacyContentJa />}
+          </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   )
