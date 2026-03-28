@@ -53,7 +53,7 @@ export function LocationSuggestionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent>
         <DialogTitle>撮影場所の指摘</DialogTitle>
         <DialogDescription>
           マップを動かして、正しいと思われる撮影場所を青いピンに合わせてください。
