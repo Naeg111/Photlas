@@ -53,13 +53,18 @@ export function LocationSuggestionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogTitle>撮影場所の指摘</DialogTitle>
-        <DialogDescription>
-          マップを動かして、正しいと思われる撮影場所を青いピンに合わせてください。
-        </DialogDescription>
+      <DialogContent className="max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}>
+        {/* Fixed header */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogTitle>撮影場所の指摘</DialogTitle>
+          <DialogDescription>
+            マップを動かして、正しいと思われる撮影場所を青いピンに合わせてください。
+          </DialogDescription>
+        </div>
 
-        <div className="w-full h-64 rounded-lg overflow-hidden">
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
+        <div className="w-full h-64 rounded-lg overflow-hidden mt-4">
           <InlineMapPicker
             position={{ lat: currentLatitude, lng: currentLongitude }}
             onPositionChange={handlePositionChange}
@@ -81,6 +86,7 @@ export function LocationSuggestionDialog({
           >
             送信
           </Button>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

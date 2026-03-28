@@ -210,16 +210,21 @@ export function AccountSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={isDeletionComplete ? undefined : onOpenChange}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '80dvh' }}>
         {isDeletionComplete ? (
           <>
-            <DialogHeader>
-              <DialogTitle>退会手続き完了</DialogTitle>
-              <DialogDescription className="sr-only">
-                退会手続きが完了しました
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 mt-3 text-center">
+            {/* Fixed header */}
+            <div className="px-6 pt-6 pb-2 shrink-0">
+              <DialogHeader>
+                <DialogTitle>退会手続き完了</DialogTitle>
+                <DialogDescription className="sr-only">
+                  退会手続きが完了しました
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            {/* Scrollable content */}
+            <div className="overflow-y-auto flex-1 px-6 pb-6">
+            <div className="space-y-4 mt-4 text-center">
               <p className="text-sm text-gray-700">
                 アカウントの削除を受け付けました。
               </p>
@@ -237,17 +242,23 @@ export function AccountSettingsDialog({
                 閉じる
               </Button>
             </div>
+            </div>
           </>
         ) : (
           <>
-        <DialogHeader>
-          <DialogTitle>アカウント設定</DialogTitle>
-          <DialogDescription className="sr-only">
-            アカウント情報とセキュリティ設定
-          </DialogDescription>
-        </DialogHeader>
+        {/* Fixed header */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogHeader>
+            <DialogTitle>アカウント設定</DialogTitle>
+            <DialogDescription className="sr-only">
+              アカウント情報とセキュリティ設定
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-6 mt-3">
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
+        <div className="space-y-6 mt-4">
           {/* メールアドレス変更 */}
           <div className="space-y-4">
             <h3 className="font-medium">メールアドレスの変更</h3>
@@ -401,6 +412,7 @@ export function AccountSettingsDialog({
               </AlertDialogContent>
             </AlertDialog>
           </div>
+        </div>
         </div>
           </>
         )}

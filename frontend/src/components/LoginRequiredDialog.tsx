@@ -24,14 +24,19 @@ export function LoginRequiredDialog({
 }: Readonly<LoginRequiredDialogProps>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[398px]">
-        <DialogHeader>
-          <DialogTitle>ログインが必要です</DialogTitle>
-          <DialogDescription>
-            この機能を利用するには、ログインまたはアカウント作成が必要です。
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-[398px] max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}>
+        {/* Fixed header */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogHeader>
+            <DialogTitle>ログインが必要です</DialogTitle>
+            <DialogDescription>
+              この機能を利用するには、ログインまたはアカウント作成が必要です。
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
         <div className="space-y-3 mt-4 pt-2.5">
           <Button
             className="w-full gap-2"
@@ -54,6 +59,7 @@ export function LoginRequiredDialog({
             <UserPlus className="w-4 h-4" />
             新規アカウント作成
           </Button>
+        </div>
         </div>
       </DialogContent>
     </Dialog>
