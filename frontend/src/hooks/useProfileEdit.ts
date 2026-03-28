@@ -243,9 +243,14 @@ export const useProfileEdit = ({
           authHeaders['Authorization'] = `Bearer ${token}`
         }
 
+        // Blobからファイル拡張子とContentTypeを取得
+        const blobType = croppedBlob.type || 'image/jpeg'
+        const extension = blobType === 'image/png' ? 'png' : blobType === 'image/webp' ? 'webp' : 'jpg'
+
         const presignedResponse = await fetch(API_ENDPOINTS.PROFILE_IMAGE_PRESIGNED_URL, {
           method: 'POST',
           headers: authHeaders,
+          body: JSON.stringify({ extension, contentType: blobType }),
         })
 
         if (!presignedResponse.ok) {

@@ -81,26 +81,35 @@ interface FilterPanelProps {
 const FILTER_BTN_BASE = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors [&_svg]:shrink-0 [&_svg]:w-5 [&_svg]:h-5"
 const FILTER_BTN_BORDER = { border: '1px solid #d1d5db' } as const
 
+const TOUCH_TAP_THRESHOLD = 10
+
 function FilterButton({ selected, onClick, className, children }: Readonly<{
   selected: boolean
   onClick: () => void
   className?: string
   children: React.ReactNode
 }>) {
-  const touchMovedRef = useRef(false)
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
 
   return (
     <button
       type="button"
       className={`${FILTER_BTN_BASE} h-9 gap-2 ${selected ? "bg-primary text-primary-foreground" : "bg-background text-foreground"} ${className || ""}`}
       style={FILTER_BTN_BORDER}
-      onTouchStart={() => { touchMovedRef.current = false }}
-      onTouchMove={() => { touchMovedRef.current = true }}
+      onTouchStart={(e) => {
+        const touch = e.touches[0]
+        touchStartRef.current = { x: touch.clientX, y: touch.clientY }
+      }}
       onTouchEnd={(e) => {
-        if (!touchMovedRef.current) {
+        if (!touchStartRef.current) return
+        const touch = e.changedTouches[0]
+        const dx = Math.abs(touch.clientX - touchStartRef.current.x)
+        const dy = Math.abs(touch.clientY - touchStartRef.current.y)
+        if (dx < TOUCH_TAP_THRESHOLD && dy < TOUCH_TAP_THRESHOLD) {
           e.preventDefault()
           onClick()
         }
+        touchStartRef.current = null
       }}
       onClick={onClick}
     >

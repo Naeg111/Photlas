@@ -384,7 +384,7 @@ export function PhotoContributionDialog({
   return (
     <Dialog open={open} onOpenChange={uploadStatus === 'uploading' ? undefined : onOpenChange}>
       <DialogContent
-        className="max-w-4xl max-h-[90vh]"
+        className="max-w-[640px] max-h-[90vh]"
         style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
