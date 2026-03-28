@@ -127,6 +127,11 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
     }
   }, [])
 
+  // pointerup で取り消しをクリア（タップ完了 = 確定）
+  const handlePointerUp = useCallback(() => {
+    lastToggleRef.current = null
+  }, [])
+
   const toggleSelection = (
     value: string,
     selected: string[],
@@ -137,18 +142,26 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
     } else {
       setSelected([...selected, value]);
     }
-    // 取り消し用に逆操作を記録
+    // 取り消し用に逆操作を記録（スクロール発生時にリバート）
     lastToggleRef.current = () => {
       if (selected.includes(value)) {
-        // 元々含まれていた → 削除した → 戻す（追加）
         setSelected([...selected])
       } else {
-        // 元々含まれてなかった → 追加した → 戻す（削除）
         setSelected(selected.filter((v) => v !== value))
       }
     }
-    // 一定時間後に取り消し不可にする
-    setTimeout(() => { lastToggleRef.current = null }, 200)
+  };
+
+  // 単一選択のトグル（経過期間、ISO感度など）
+  const toggleSingleSelection = <T,>(
+    value: T,
+    current: T | undefined,
+    setSetter: (v: T | undefined) => void
+  ) => {
+    const prev = current
+    setSetter(current === value ? undefined : value)
+    // 取り消し用
+    lastToggleRef.current = () => setSetter(prev)
   };
 
   const handleClear = () => {
@@ -190,7 +203,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
           </SheetDescription>
         </SheetHeader>
 
-        <div data-testid="filter-scroll-container" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+var(--safe-area-top))]" style={{ touchAction: 'manipulation' }} onScroll={handleScrollDuringToggle}>
+        <div data-testid="filter-scroll-container" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+var(--safe-area-top))]" style={{ touchAction: 'manipulation' }} onScroll={handleScrollDuringToggle} onPointerUp={handlePointerUp}>
         <div className="space-y-[30px] pb-6 mt-[40px]">
           {/* Issue#63: 写真のジャンル */}
           <div>
@@ -220,9 +233,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                 <FilterButton
                   key={option.label}
                   selected={selectedMaxAgeDays === option.value}
-                  onPointerDown={() => setSelectedMaxAgeDays(
-                    selectedMaxAgeDays === option.value ? undefined : option.value
-                  )}
+                  onPointerDown={() => toggleSingleSelection(option.value, selectedMaxAgeDays, setSelectedMaxAgeDays)}
                 >
                   {option.label}
                 </FilterButton>
@@ -380,9 +391,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                       <FilterButton
                         key={option.label}
                         selected={selectedMaxIso === option.value}
-                        onPointerDown={() => setSelectedMaxIso(
-                          selectedMaxIso === option.value ? undefined : option.value
-                        )}
+                        onPointerDown={() => toggleSingleSelection(option.value, selectedMaxIso, setSelectedMaxIso)}
                         className="whitespace-normal h-auto py-2"
                       >
                         {option.label}
