@@ -388,7 +388,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[80vh] min-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] min-h-[80vh] overflow-y-auto flex flex-col items-stretch" style={{ display: 'flex' }}>
         <DialogHeader>
           <DialogTitle>プロフィール</DialogTitle>
           <DialogDescription className="sr-only">ユーザープロフィール情報</DialogDescription>
