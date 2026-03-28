@@ -461,4 +461,32 @@ describe('FilterPanel', () => {
       expect(isoButton.className).toContain('whitespace-normal')
     })
   })
+
+  // ============================================================
+  // UI改善
+  // ============================================================
+
+  describe('UI改善', () => {
+    it('上級者向けボタンのラベルが「上級者向け」である', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      expect(screen.getByRole('button', { name: /上級者向け/ })).toBeInTheDocument()
+      expect(screen.queryByText(/上級者向けフィルター/)).not.toBeInTheDocument()
+    })
+
+    it('撮影の向きセクションが表示される（写真の向きではない）', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      expect(screen.getByText('撮影の向き')).toBeInTheDocument()
+      expect(screen.queryByText('写真の向き')).not.toBeInTheDocument()
+    })
+
+    it('「縦位置」「横位置」ボタンが表示され、「正方形」は表示されない', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      expect(screen.getByRole('button', { name: /縦位置/ })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /横位置/ })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /正方形/ })).not.toBeInTheDocument()
+    })
+  })
 })

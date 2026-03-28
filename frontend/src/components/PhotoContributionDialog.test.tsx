@@ -647,4 +647,23 @@ describe('PhotoContributionDialog', () => {
       })
     })
   })
+
+  // ============================================================
+  // 必須ラベル変更
+  // ============================================================
+
+  describe('必須ラベル表示', () => {
+    it('「* は入力必須項目です」が表示されない', () => {
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      expect(screen.queryByText('* は入力必須項目です')).not.toBeInTheDocument()
+    })
+
+    it('必須項目に「（必須）」ラベルが表示される', () => {
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      expect(screen.getByText('写真（必須）')).toBeInTheDocument()
+      expect(screen.getByText('撮影場所（必須）')).toBeInTheDocument()
+    })
+  })
 })
