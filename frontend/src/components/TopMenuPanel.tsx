@@ -72,7 +72,7 @@ export function TopMenuPanel({
                   }}
                 >
                   <User className="w-5 h-5" />
-                  マイページ
+                  プロフィール
                 </Button>
                 <Separator />
                 {/* 行きたい場所リスト（一時非表示）

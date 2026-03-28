@@ -6,7 +6,7 @@ import { Label } from './ui/label'
 import { Checkbox } from './ui/checkbox'
 import { Separator } from './ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-import { ScrollArea } from './ui/scroll-area'
+import ProfileImageCropper from './ProfileImageCropper'
 import { Upload, Eye, EyeOff, X as XIcon } from 'lucide-react'
 import { API_V1_URL } from '../config/api'
 import { toast } from 'sonner'
@@ -85,6 +85,8 @@ export function SignUpDialog({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isCropperOpen, setIsCropperOpen] = useState(false)
+  const [cropperImageSrc, setCropperImageSrc] = useState('')
 
   const passwordStrength = password ? getPasswordStrength(password) : null
 
@@ -216,10 +218,26 @@ export function SignUpDialog({
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const url = URL.createObjectURL(file)
-      setProfileImage(url)
-      setProfileImageFile(file)
+      const reader = new FileReader()
+      reader.onload = () => {
+        setCropperImageSrc(reader.result as string)
+        setIsCropperOpen(true)
+      }
+      reader.readAsDataURL(file)
     }
+  }
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    const url = URL.createObjectURL(croppedBlob)
+    setProfileImage(url)
+    const croppedFile = new File([croppedBlob], 'profile.jpg', { type: 'image/jpeg' })
+    setProfileImageFile(croppedFile)
+    setIsCropperOpen(false)
+  }
+
+  const handleCropCancel = () => {
+    setIsCropperOpen(false)
+    setCropperImageSrc('')
   }
 
   const handleLoginClick = () => {
@@ -451,29 +469,6 @@ export function SignUpDialog({
 
           {/* 利用規約 */}
           <div className="space-y-3">
-            <Label>利用規約</Label>
-            <ScrollArea className="h-48 border rounded-md p-4 text-sm">
-              <p className="text-gray-700">
-                この利用規約（以下「本規約」）は、Photlas（以下「本サービス」）の利用条件を定めるものです。
-                ユーザーの皆様には、本規約に従って本サービスをご利用いただきます。
-              </p>
-              <p className="mt-3 text-gray-700">
-                1. ユーザーは、本サービスに登録する際、真実かつ正確な情報を提供するものとします。
-              </p>
-              <p className="mt-2 text-gray-700">
-                2. ユーザーは、本サービスを通じて投稿したコンテンツについて、一切の責任を負うものとします。
-              </p>
-              <p className="mt-2 text-gray-700">
-                3. 本サービスは、予告なく内容の変更や中断、終了をする場合があります。
-              </p>
-              <Button
-                variant="link"
-                className="p-0 h-auto mt-3"
-                onClick={onShowTerms}
-              >
-                利用規約の全文を表示
-              </Button>
-            </ScrollArea>
             {errors.terms && (
               <p className="text-sm text-red-600">{errors.terms}</p>
             )}
@@ -481,11 +476,22 @@ export function SignUpDialog({
               <Checkbox
                 id="terms"
                 checked={agreedToTerms}
-                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
               />
-              <Label htmlFor="terms" className="cursor-pointer">
-                利用規約に同意します
-              </Label>
+              <label htmlFor="terms" className="text-sm">
+                <a
+                  href="#"
+                  role="link"
+                  className="text-blue-600 underline hover:text-blue-800"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    onShowTerms()
+                  }}
+                >
+                  利用規約
+                </a>
+                に同意する
+              </label>
             </div>
           </div>
 
@@ -519,6 +525,15 @@ export function SignUpDialog({
             </Button>
           </div>
         </div>
+
+        {/* プロフィール画像トリミングモーダル */}
+        {isCropperOpen && (
+          <ProfileImageCropper
+            imageSrc={cropperImageSrc}
+            onCropComplete={handleCropComplete}
+            onCancel={handleCropCancel}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )
