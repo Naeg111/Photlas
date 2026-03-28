@@ -237,9 +237,15 @@ export const useProfileEdit = ({
       onImageUpdated?.(previewUrl)
 
       try {
+        const token = getAuthToken()
+        const authHeaders: HeadersInit = { 'Content-Type': 'application/json' }
+        if (token) {
+          authHeaders['Authorization'] = `Bearer ${token}`
+        }
+
         const presignedResponse = await fetch(API_ENDPOINTS.PROFILE_IMAGE_PRESIGNED_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders,
         })
 
         if (!presignedResponse.ok) {
@@ -255,7 +261,7 @@ export const useProfileEdit = ({
 
         await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders,
           body: JSON.stringify({ objectKey }),
         })
 
@@ -266,7 +272,7 @@ export const useProfileEdit = ({
         setIsUploading(false)
       }
     },
-    [onImageUpdated]
+    [getAuthToken, onImageUpdated]
   )
 
   /**

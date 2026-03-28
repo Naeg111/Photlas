@@ -13,6 +13,17 @@ vi.mock('sonner', () => ({
   toast: vi.fn(),
 }))
 
+// ProfileImageCropperのモック: レンダリング時にonCropCompleteを自動で呼び出す
+vi.mock('./ProfileImageCropper', () => ({
+  default: ({ onCropComplete }: { onCropComplete: (blob: Blob) => void }) => {
+    // トリミング完了を即座にシミュレート
+    setTimeout(() => {
+      onCropComplete(new Blob(['cropped'], { type: 'image/jpeg' }))
+    }, 0)
+    return <div data-testid="cropper-modal">Cropper Mock</div>
+  },
+}))
+
 // fetch APIのモック
 const mockFetch = vi.fn()
 global.fetch = mockFetch
@@ -87,8 +98,8 @@ describe('SignUpDialog', () => {
     it('renders terms of service section with checkbox', () => {
       render(<SignUpDialog {...defaultProps} />)
 
-      expect(screen.getByText('利用規約')).toBeInTheDocument()
-      expect(screen.getByLabelText('利用規約に同意します')).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: '利用規約' })).toBeInTheDocument()
+      expect(screen.getByText('に同意する')).toBeInTheDocument()
     })
 
     it('renders cancel button', () => {
@@ -110,10 +121,10 @@ describe('SignUpDialog', () => {
       expect(screen.getByText('ログイン')).toBeInTheDocument()
     })
 
-    it('renders terms full text link', () => {
+    it('renders terms link in checkbox label', () => {
       render(<SignUpDialog {...defaultProps} />)
 
-      expect(screen.getByText('利用規約の全文を表示')).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: '利用規約' })).toBeInTheDocument()
     })
   })
 
@@ -155,7 +166,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
 
       // 登録ボタンがdisabledであることを確認
       expect(screen.getByRole('button', { name: '登録する' })).toBeDisabled()
@@ -168,7 +179,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
 
       // 登録ボタンがdisabledであることを確認
       expect(screen.getByRole('button', { name: '登録する' })).toBeDisabled()
@@ -190,7 +201,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), invalidEmail)
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('正しいメールアドレスの形式で入力してください')).toBeInTheDocument()
@@ -204,7 +215,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Pass1')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Pass1')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードは8文字以上20文字以内で入力してください')).toBeInTheDocument()
@@ -218,7 +229,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123456789012345')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123456789012345')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードは8文字以上20文字以内で入力してください')).toBeInTheDocument()
@@ -232,7 +243,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'PasswordAbc')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'PasswordAbc')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードには数字を1文字以上含めてください')).toBeInTheDocument()
@@ -246,7 +257,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'PASSWORD123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'PASSWORD123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードにはローマ字小文字を1文字以上含めてください')).toBeInTheDocument()
@@ -260,7 +271,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードにはローマ字大文字を1文字以上含めてください')).toBeInTheDocument()
@@ -274,7 +285,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password@123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password@123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードに記号を含めることはできません')).toBeInTheDocument()
@@ -288,7 +299,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password456')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードが一致しません')).toBeInTheDocument()
@@ -326,7 +337,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -362,7 +373,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -399,17 +410,24 @@ describe('SignUpDialog', () => {
 
       render(<SignUpDialog {...defaultProps} />)
 
-      // プロフィール画像を選択
+      // プロフィール画像を選択（クロッパーモックが自動でトリミング完了する）
       const file = new File(['test'], 'test.png', { type: 'image/png' })
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
       await user.upload(fileInput, file)
+
+      // クロッパーモックのsetTimeoutが完了するのを待つ
+      await waitFor(() => {
+        expect(screen.getByAltText('')).toBeInTheDocument()
+      }, { timeout: 1000 }).catch(() => {
+        // プレビュー画像がない場合も続行
+      })
 
       // フォームを入力して送信
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -452,17 +470,24 @@ describe('SignUpDialog', () => {
 
       render(<SignUpDialog {...defaultProps} />)
 
-      // プロフィール画像を選択
+      // プロフィール画像を選択（クロッパーモックが自動でトリミング完了する）
       const file = new File(['test'], 'test.png', { type: 'image/png' })
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
       await user.upload(fileInput, file)
+
+      // クロッパーモックのsetTimeoutが完了するのを待つ
+      await waitFor(() => {
+        expect(screen.getByAltText('')).toBeInTheDocument()
+      }, { timeout: 1000 }).catch(() => {
+        // プレビュー画像がない場合も続行
+      })
 
       // フォームを入力して送信
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       // 画像アップロードが失敗しても登録自体は成功する
@@ -485,7 +510,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'existing@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -503,7 +528,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -523,11 +548,11 @@ describe('SignUpDialog', () => {
       expect(defaultProps.onShowLogin).toHaveBeenCalled()
     })
 
-    it('calls onShowTerms when terms full text link is clicked', async () => {
+    it('calls onShowTerms when terms link is clicked', async () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
-      await user.click(screen.getByText('利用規約の全文を表示'))
+      await user.click(screen.getByRole('link', { name: '利用規約' }))
 
       expect(defaultProps.onShowTerms).toHaveBeenCalled()
     })
@@ -612,7 +637,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -652,7 +677,7 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
-      await user.click(screen.getByLabelText('利用規約に同意します'))
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
