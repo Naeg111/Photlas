@@ -1340,5 +1340,31 @@ describe('ProfileDialog', () => {
       expect(dialogContent).toBeInTheDocument()
       expect(dialogContent?.className).toContain('min-h-[80vh]')
     })
+
+    it('「SNSリンクを編集」ボタンを押すとSNSリンク編集ダイアログが開く', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockEmptyPhotosResponse),
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      fireEvent.click(editButton)
+
+      // SNSリンク編集ダイアログが開く
+      await waitFor(() => {
+        expect(screen.getByText('SNSリンクを編集')).toBeInTheDocument()
+        expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
+      })
+    })
   })
 })
