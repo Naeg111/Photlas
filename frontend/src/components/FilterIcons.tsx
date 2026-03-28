@@ -1,3 +1,4 @@
+import type React from "react";
 import type { JSX } from "react";
 
 interface IconProps {
@@ -771,6 +772,20 @@ export const TimeIcons: Record<
     </svg>
   ),
 };
+
+// 撮影の向きアイコン
+export const OrientationIcons: Record<string, React.FC<React.SVGAttributes<SVGElement>>> = {
+  "縦位置": (props) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <rect x="7" y="3" width="10" height="18" rx="1" />
+    </svg>
+  ),
+  "横位置": (props) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <rect x="3" y="7" width="18" height="10" rx="1" />
+    </svg>
+  ),
+}
 
 // 天候のアイコン
 export const WeatherIcons: Record<
