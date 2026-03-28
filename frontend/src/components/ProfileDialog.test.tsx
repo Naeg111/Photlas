@@ -1319,4 +1319,26 @@ describe('ProfileDialog', () => {
       expect(img).toHaveAttribute('data-fallback-src')
     })
   })
+
+  // ============================================================
+  // プロフィールダイアログUI改善
+  // ============================================================
+
+  describe('プロフィールダイアログUI改善', () => {
+    it('ダイアログの高さが固定されている（min-hが設定されている）', () => {
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      const dialogContent = document.querySelector('[data-slot="dialog-content"]')
+      expect(dialogContent).toBeInTheDocument()
+      expect(dialogContent?.className).toContain('min-h-[80vh]')
+    })
+  })
 })
