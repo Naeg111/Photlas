@@ -1,14 +1,15 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet"
 import { Button } from "./ui/button"
 import { CategoryIcon } from "./CategoryIcon"
-import { MonthIcons, TimeIcons, WeatherIcons } from "./FilterIcons"
+import { MonthIcons, TimeIcons, WeatherIcons, OrientationIcons } from "./FilterIcons"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { PHOTO_CATEGORIES } from "../utils/constants"
 
 
 const MONTHS_NEED_INVERT = new Set(["1月", "2月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]);
 const TIMES_NEED_INVERT = new Set(["夕方"]);
+const ORIENTATIONS_NEED_INVERT = new Set(["縦位置", "横位置"]);
 
 // Issue#63: 上級者向けフィルターの選択肢（機材種別・焦点距離・ISO感度のみ）
 const DEVICE_TYPE_OPTIONS = [
@@ -29,11 +30,10 @@ const FRESHNESS_OPTIONS = [
   { label: "3年以内", value: 1095 },
 ]
 
-// Issue#63: 写真の向き（通常フィルターに移動、名称変更）
+// Issue#63: 撮影の向き（通常フィルターに移動、名称変更）
 const ASPECT_RATIO_OPTIONS = [
-  { label: "横向き", value: "HORIZONTAL" },
-  { label: "縦向き", value: "VERTICAL" },
-  { label: "正方形", value: "SQUARE" },
+  { label: "縦位置", value: "VERTICAL" },
+  { label: "横位置", value: "HORIZONTAL" },
 ]
 
 const FOCAL_LENGTH_OPTIONS = [
@@ -87,15 +87,22 @@ function FilterButton({ selected, onClick, className, children }: Readonly<{
   className?: string
   children: React.ReactNode
 }>) {
+  const touchMovedRef = useRef(false)
+
   return (
     <button
       type="button"
       className={`${FILTER_BTN_BASE} h-9 gap-2 ${selected ? "bg-primary text-primary-foreground" : "bg-background text-foreground"} ${className || ""}`}
       style={FILTER_BTN_BORDER}
-      onPointerDown={(e) => {
-        e.preventDefault()
-        onClick()
+      onTouchStart={() => { touchMovedRef.current = false }}
+      onTouchMove={() => { touchMovedRef.current = true }}
+      onTouchEnd={(e) => {
+        if (!touchMovedRef.current) {
+          e.preventDefault()
+          onClick()
+        }
       }}
+      onClick={onClick}
     >
       {children}
     </button>
@@ -275,19 +282,23 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
             </div>
           </div>
 
-          {/* Issue#63: 写真の向き（通常フィルターに移動） */}
+          {/* Issue#63: 撮影の向き（通常フィルターに移動） */}
           <div>
-            <p className="text-sm font-medium mb-2 text-muted-foreground">写真の向き</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="text-sm font-medium mb-2 text-muted-foreground">撮影の向き</p>
+            <div className="grid grid-cols-2 gap-2">
               {ASPECT_RATIO_OPTIONS.map((option) => {
+                const Icon = OrientationIcons[option.label];
                 const isSelected = selectedAspectRatios.includes(option.value);
+                const needsInvert = ORIENTATIONS_NEED_INVERT.has(option.label);
                 return (
                 <FilterButton
                   key={option.label}
                   selected={isSelected}
                   onClick={() => toggleSelection(option.value, selectedAspectRatios, setSelectedAspectRatios)}
+                  className={`gap-1.5 px-2 ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
                 >
-                  {option.label}
+                  {Icon && <Icon className="w-5 h-5 shrink-0" />}
+                  <span>{option.label}</span>
                 </FilterButton>
                 );
               })}
@@ -301,7 +312,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
               className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground"
               onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
             >
-              上級者向けフィルター
+              上級者向け
               {isAdvancedOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </Button>
 

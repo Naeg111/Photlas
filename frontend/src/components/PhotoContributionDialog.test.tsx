@@ -120,7 +120,7 @@ describe('PhotoContributionDialog', () => {
     it('renders photo selection area', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      expect(screen.getByText('写真 *')).toBeInTheDocument()
+      expect(screen.getByText('写真（必須）')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: '写真を選択' })).toBeInTheDocument()
     })
 
@@ -141,13 +141,13 @@ describe('PhotoContributionDialog', () => {
     it('renders location selection area', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      expect(screen.getByText('撮影場所 *')).toBeInTheDocument()
+      expect(screen.getByText('撮影場所（必須）')).toBeInTheDocument()
     })
 
     it('renders category selection area', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      expect(screen.getByText(/カテゴリ \*/)).toBeInTheDocument()
+      expect(screen.getByText(/カテゴリ（必須/)).toBeInTheDocument()
     })
 
     it('renders all 14 genre options', () => {
