@@ -465,7 +465,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
 
       // 利用規約リンクをクリック
-      const termsLink = screen.getByText(/利用規約の全文を表示/i)
+      const termsLink = screen.getByRole('link', { name: '利用規約' })
       await user.click(termsLink)
 
       // TermsOfServicePageが表示される
@@ -518,7 +518,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
       // 認証済みメニュー項目が表示される
       await waitFor(() => {
-        expect(screen.getByText(/マイページ/)).toBeInTheDocument()
+        expect(screen.getByText(/プロフィール/)).toBeInTheDocument()
       })
       // 行きたい場所リストは一時非表示
       expect(screen.getByText(/アカウント設定/)).toBeInTheDocument()
