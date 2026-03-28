@@ -101,4 +101,13 @@ describe('TopMenuPanel', () => {
       expect(screen.queryByText(/行きたい場所リスト/)).not.toBeInTheDocument()
     })
   })
+
+  describe('ラベル変更', () => {
+    it('「マイページ」ではなく「プロフィール」と表示される', () => {
+      render(<TopMenuPanel {...defaultProps} />)
+
+      expect(screen.getByText(/プロフィール/)).toBeInTheDocument()
+      expect(screen.queryByText(/マイページ/)).not.toBeInTheDocument()
+    })
+  })
 })
