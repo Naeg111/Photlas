@@ -395,9 +395,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         </DialogHeader>
 
         {/* プロフィールセクション */}
-        <div className="flex flex-col mb-6">
+        <div className="flex flex-col mb-[36px] mt-5">
           {/* プロフィール画像エリア */}
-          <div className="flex mb-6">
+          <div className="flex mb-[36px]">
             {/* 左半分：プロフィール画像（中央配置） */}
             <div className="flex-1 flex justify-center">
               <div className="shrink-0">
