@@ -411,7 +411,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
             {/* 右側：画像選択・削除ボタン（自分のプロフィールのみ） */}
             {isOwnProfile && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 justify-center">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -453,7 +453,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           </div>
 
           {/* ユーザー名 */}
-          <div className="flex flex-col gap-2 mb-2">
+          <div className="flex flex-col gap-2 mb-[14px]">
             <label htmlFor="profile-username" className="text-sm font-medium text-gray-700">アカウント名</label>
             <div className="flex items-center justify-between gap-2">
               {isEditingUsername ? (
@@ -601,11 +601,11 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         {/* タブUI */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full">
-            <TabsTrigger value="posts" className="flex-1">
+            <TabsTrigger value="posts" className="flex-1 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:rounded-lg">
               投稿
             </TabsTrigger>
             {isOwnProfile && (
-              <TabsTrigger value="favorites" className="flex-1">
+              <TabsTrigger value="favorites" className="flex-1 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:rounded-lg">
                 お気に入り
               </TabsTrigger>
             )}

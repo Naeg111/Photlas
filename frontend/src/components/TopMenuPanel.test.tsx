@@ -48,7 +48,7 @@ describe('TopMenuPanel', () => {
       render(<TopMenuPanel {...defaultProps} />)
 
       expect(screen.getByText(/Photlasとは？/)).toBeInTheDocument()
-      expect(screen.getByText(/マイページ/)).toBeInTheDocument()
+      expect(screen.getByText(/プロフィール/)).toBeInTheDocument()
       // 行きたい場所リストは一時非表示
       expect(screen.getByText(/アカウント設定/)).toBeInTheDocument()
       expect(screen.getByText(/利用規約/)).toBeInTheDocument()
@@ -90,7 +90,7 @@ describe('TopMenuPanel', () => {
       render(<TopMenuPanel {...defaultProps} />)
 
       // メニュー項目が表示されることでSheetコンポーネントが機能していることを確認
-      expect(screen.getByText(/マイページ/)).toBeInTheDocument()
+      expect(screen.getByText(/プロフィール/)).toBeInTheDocument()
     })
   })
 
