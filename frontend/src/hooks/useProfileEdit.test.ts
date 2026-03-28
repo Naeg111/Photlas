@@ -236,14 +236,16 @@ describe('useProfileEdit', () => {
       // プレビューURLが即座にコールバックに渡される
       expect(onImageUpdated).toHaveBeenCalledWith('blob:mock-preview-url')
 
-      // プレサインURL取得（Authorizationヘッダー付き）
+      // プレサインURL取得（Authorizationヘッダー + extension/contentType body付き）
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/v1/users/me/profile-image/presigned-url',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
+            'Content-Type': 'application/json',
             'Authorization': 'Bearer test-token',
           }),
+          body: expect.stringContaining('"extension"'),
         })
       )
 
