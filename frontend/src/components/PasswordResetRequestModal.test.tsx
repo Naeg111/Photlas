@@ -241,4 +241,19 @@ describe('PasswordResetRequestModal', () => {
       expect(screen.getByLabelText('メールアドレス')).toHaveValue('')
     })
   })
+
+  describe('Dialog化', () => {
+    it('Dialogコンポーネントを使用している（data-slot="dialog-content"が存在する）', () => {
+      render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
+
+      expect(document.querySelector('[data-slot="dialog-content"]')).toBeInTheDocument()
+    })
+
+    it('送信ボタンの背景色が黒である', () => {
+      render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
+
+      const submitButton = screen.getByRole('button', { name: '送信' })
+      expect(submitButton.className).toContain('bg-primary')
+    })
+  })
 })
