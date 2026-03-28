@@ -382,16 +382,16 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] min-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>プロフィール</DialogTitle>
           <DialogDescription className="sr-only">ユーザープロフィール情報</DialogDescription>
         </DialogHeader>
 
         {/* プロフィールセクション */}
-        <div className="flex flex-col mb-6">
+        <div className="flex flex-col mb-6 mt-4">
           {/* プロフィール画像エリア */}
-          <div className="flex items-start gap-16 mb-4 justify-center">
+          <div className="flex items-start gap-6 mb-6">
             {/* 左側：プロフィール画像 */}
             <div className="shrink-0">
               {displayProfileImageUrl ? (
@@ -453,7 +453,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           </div>
 
           {/* ユーザー名 */}
-          <div className="flex flex-col gap-2 mb-[14px]">
+          <div className="flex flex-col gap-2 mb-5">
             <label htmlFor="profile-username" className="text-sm font-medium text-gray-700">アカウント名</label>
             <div className="flex items-center justify-between gap-2">
               {isEditingUsername ? (

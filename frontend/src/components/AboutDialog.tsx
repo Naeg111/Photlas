@@ -16,7 +16,7 @@ interface AboutDialogProps {
 export function AboutDialog({ open, onOpenChange }: Readonly<AboutDialogProps>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto py-10">
+      <DialogContent className="max-h-[80vh] overflow-y-auto py-10">
         <DialogHeader>
           <DialogTitle className="text-2xl">Photlasとは？</DialogTitle>
           <DialogDescription className="sr-only">

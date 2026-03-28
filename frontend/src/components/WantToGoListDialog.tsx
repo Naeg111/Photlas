@@ -16,7 +16,7 @@ interface WantToGoListDialogProps {
 export function WantToGoListDialog({ open, onOpenChange }: Readonly<WantToGoListDialogProps>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>行きたい場所リスト</DialogTitle>
           <DialogDescription className="sr-only">

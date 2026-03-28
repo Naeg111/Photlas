@@ -832,7 +832,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     <Dialog open={open} onOpenChange={onClose} modal={false}>
       <DialogContent
         data-testid={TEST_ID_DIALOG}
-        className="max-w-4xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden border-0"
+        className="max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden border-0"
         style={{
           maxHeight: '90dvh',
           ...(isSlideDown ? {
