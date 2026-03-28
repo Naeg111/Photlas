@@ -489,4 +489,33 @@ describe('FilterPanel', () => {
       expect(screen.queryByRole('button', { name: /正方形/ })).not.toBeInTheDocument()
     })
   })
+
+  describe('タッチ操作: スクロール時の選択取り消し', () => {
+    it('ボタンをpointerDownで即座に選択できる', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      const button = screen.getByRole('button', { name: /自然風景/ })
+      fireEvent.pointerDown(button)
+
+      // 即座に選択状態になる
+      expect(button.className).toContain('bg-primary')
+    })
+
+    it('ボタン選択後にスクロールが発生すると選択が取り消される', () => {
+      render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
+
+      const button = screen.getByRole('button', { name: /自然風景/ })
+      fireEvent.pointerDown(button)
+
+      // 選択された
+      expect(button.className).toContain('bg-primary')
+
+      // スクロールが発生
+      const scrollContainer = screen.getByTestId('filter-scroll-container')
+      fireEvent.scroll(scrollContainer)
+
+      // 選択が取り消される
+      expect(button.className).not.toContain('bg-primary')
+    })
+  })
 })
