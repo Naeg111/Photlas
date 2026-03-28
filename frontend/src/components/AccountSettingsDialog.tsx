@@ -210,7 +210,7 @@ export function AccountSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={isDeletionComplete ? undefined : onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] overflow-y-auto">
         {isDeletionComplete ? (
           <>
             <DialogHeader>

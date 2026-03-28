@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+/* テキスト選択を全体的に無効化 */
+* {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 入力フィールドとテキストエリアではテキスト選択を許可 */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* select-textクラスでテキスト選択を明示的に許可 */
+.select-text, .select-text * {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /**
  * Issue#27: design-assets準拠のCSS変数定義
  * Tailwind v4では@themeでカスタム色を登録する必要がある

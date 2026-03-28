@@ -25,7 +25,7 @@ export function TermsOfServicePage({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>利用規約</DialogTitle>
           <DialogDescription className="sr-only">
@@ -43,7 +43,7 @@ export function TermsOfServicePage({
           <span className={isEnglish ? 'text-gray-700 font-medium' : 'text-gray-400'}>英語</span>
         </div>
 
-        <ScrollArea className="h-[70vh] pr-4">
+        <ScrollArea className="h-[70vh] pr-4 select-text">
           {isEnglish ? <TermsContentEn /> : <TermsContentJa />}
         </ScrollArea>
       </DialogContent>

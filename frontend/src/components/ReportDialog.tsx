@@ -65,7 +65,7 @@ export function ReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent>
         <DialogTitle>この投稿を通報</DialogTitle>
         <DialogDescription className="sr-only">
           不適切なコンテンツや問題のある投稿を通報
