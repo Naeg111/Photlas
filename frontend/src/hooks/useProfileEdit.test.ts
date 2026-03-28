@@ -236,10 +236,15 @@ describe('useProfileEdit', () => {
       // プレビューURLが即座にコールバックに渡される
       expect(onImageUpdated).toHaveBeenCalledWith('blob:mock-preview-url')
 
-      // プレサインURL取得
+      // プレサインURL取得（Authorizationヘッダー付き）
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/v1/users/me/profile-image/presigned-url',
-        expect.objectContaining({ method: 'POST' })
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            'Authorization': 'Bearer test-token',
+          }),
+        })
       )
 
       // S3へのアップロード
@@ -248,10 +253,13 @@ describe('useProfileEdit', () => {
         body: croppedBlob,
       })
 
-      // プロフィール画像URLの更新
+      // プロフィール画像URLの更新（Authorizationヘッダー付き）
       expect(mockFetch).toHaveBeenCalledWith('/api/v1/users/me/profile-image', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-token',
+        },
         body: JSON.stringify({ objectKey: 'profiles/test-key.jpg' }),
       })
     })
