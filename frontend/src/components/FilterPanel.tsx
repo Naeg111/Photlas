@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef, useCallback } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet"
 import { Button } from "./ui/button"
 import { CategoryIcon } from "./CategoryIcon"
@@ -81,9 +81,9 @@ interface FilterPanelProps {
 const FILTER_BTN_BASE = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors [&_svg]:shrink-0 [&_svg]:w-5 [&_svg]:h-5"
 const FILTER_BTN_BORDER = { border: '1px solid #d1d5db' } as const
 
-function FilterButton({ selected, onClick, className, children }: Readonly<{
+function FilterButton({ selected, onPointerDown, className, children }: Readonly<{
   selected: boolean
-  onClick: () => void
+  onPointerDown: () => void
   className?: string
   children: React.ReactNode
 }>) {
@@ -92,7 +92,10 @@ function FilterButton({ selected, onClick, className, children }: Readonly<{
       type="button"
       className={`${FILTER_BTN_BASE} h-9 gap-2 ${selected ? "bg-primary text-primary-foreground" : "bg-background text-foreground"} ${className || ""}`}
       style={FILTER_BTN_BORDER}
-      onClick={onClick}
+      onPointerDown={(e) => {
+        e.preventDefault()
+        onPointerDown()
+      }}
     >
       {children}
     </button>
@@ -114,6 +117,16 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
   const [selectedFocalLengthRanges, setSelectedFocalLengthRanges] = useState<string[]>([])
   const [selectedMaxIso, setSelectedMaxIso] = useState<number | undefined>(undefined)
 
+  // スクロール時の選択取り消し機構
+  const lastToggleRef = useRef<(() => void) | null>(null)
+
+  const handleScrollDuringToggle = useCallback(() => {
+    if (lastToggleRef.current) {
+      lastToggleRef.current() // 直前のトグルを取り消す（再トグル）
+      lastToggleRef.current = null
+    }
+  }, [])
+
   const toggleSelection = (
     value: string,
     selected: string[],
@@ -124,6 +137,18 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
     } else {
       setSelected([...selected, value]);
     }
+    // 取り消し用に逆操作を記録
+    lastToggleRef.current = () => {
+      if (selected.includes(value)) {
+        // 元々含まれていた → 削除した → 戻す（追加）
+        setSelected([...selected])
+      } else {
+        // 元々含まれてなかった → 追加した → 戻す（削除）
+        setSelected(selected.filter((v) => v !== value))
+      }
+    }
+    // 一定時間後に取り消し不可にする
+    setTimeout(() => { lastToggleRef.current = null }, 200)
   };
 
   const handleClear = () => {
@@ -165,7 +190,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
           </SheetDescription>
         </SheetHeader>
 
-        <div data-testid="filter-scroll-container" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+var(--safe-area-top))]" style={{ touchAction: 'manipulation' }}>
+        <div data-testid="filter-scroll-container" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+var(--safe-area-top))]" style={{ touchAction: 'manipulation' }} onScroll={handleScrollDuringToggle}>
         <div className="space-y-[30px] pb-6 mt-[40px]">
           {/* Issue#63: 写真のジャンル */}
           <div>
@@ -177,7 +202,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                   <FilterButton
                     key={category}
                     selected={isSelected}
-                    onClick={() => toggleSelection(category, selectedCategories, setSelectedCategories)}
+                    onPointerDown={() => toggleSelection(category, selectedCategories, setSelectedCategories)}
                   >
                     <CategoryIcon category={category} className="w-5 h-5 shrink-0" />
                     <span className="truncate">{category}</span>
@@ -195,7 +220,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                 <FilterButton
                   key={option.label}
                   selected={selectedMaxAgeDays === option.value}
-                  onClick={() => setSelectedMaxAgeDays(
+                  onPointerDown={() => setSelectedMaxAgeDays(
                     selectedMaxAgeDays === option.value ? undefined : option.value
                   )}
                 >
@@ -217,7 +242,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                   <FilterButton
                     key={month}
                     selected={isSelected}
-                    onClick={() => toggleSelection(month, selectedMonths, setSelectedMonths)}
+                    onPointerDown={() => toggleSelection(month, selectedMonths, setSelectedMonths)}
                     className={`gap-1.5 px-2 ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
                   >
                     {Icon && <Icon className="w-5 h-5 shrink-0" />}
@@ -240,7 +265,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                   <FilterButton
                     key={time}
                     selected={isSelected}
-                    onClick={() => toggleSelection(time, selectedTimes, setSelectedTimes)}
+                    onPointerDown={() => toggleSelection(time, selectedTimes, setSelectedTimes)}
                     className={isSelected && needsInvert ? "[&_svg]:invert" : ""}
                   >
                     {Icon && <Icon className="w-6 h-6 shrink-0" />}
@@ -262,7 +287,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                   <FilterButton
                     key={weather}
                     selected={isSelected}
-                    onClick={() => toggleSelection(weather, selectedWeather, setSelectedWeather)}
+                    onPointerDown={() => toggleSelection(weather, selectedWeather, setSelectedWeather)}
                   >
                     {Icon && <Icon className="w-6 h-6 shrink-0" />}
                     <span>{weather}</span>
@@ -284,7 +309,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                 <FilterButton
                   key={option.label}
                   selected={isSelected}
-                  onClick={() => toggleSelection(option.value, selectedAspectRatios, setSelectedAspectRatios)}
+                  onPointerDown={() => toggleSelection(option.value, selectedAspectRatios, setSelectedAspectRatios)}
                   className={`gap-1.5 px-2 ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
                 >
                   {Icon && <Icon className="w-5 h-5 shrink-0" />}
@@ -318,7 +343,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                       <FilterButton
                         key={option.label}
                         selected={isSelected}
-                        onClick={() => toggleSelection(option.value, selectedDeviceTypes, setSelectedDeviceTypes)}
+                        onPointerDown={() => toggleSelection(option.value, selectedDeviceTypes, setSelectedDeviceTypes)}
                       >
                         {option.label}
                       </FilterButton>
@@ -337,7 +362,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                       <FilterButton
                         key={option.label}
                         selected={isSelected}
-                        onClick={() => toggleSelection(option.value, selectedFocalLengthRanges, setSelectedFocalLengthRanges)}
+                        onPointerDown={() => toggleSelection(option.value, selectedFocalLengthRanges, setSelectedFocalLengthRanges)}
                         className="whitespace-normal h-auto py-2"
                       >
                         {option.label}
@@ -355,7 +380,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                       <FilterButton
                         key={option.label}
                         selected={selectedMaxIso === option.value}
-                        onClick={() => setSelectedMaxIso(
+                        onPointerDown={() => setSelectedMaxIso(
                           selectedMaxIso === option.value ? undefined : option.value
                         )}
                         className="whitespace-normal h-auto py-2"
