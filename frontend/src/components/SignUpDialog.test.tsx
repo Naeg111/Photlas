@@ -666,4 +666,24 @@ describe('SignUpDialog', () => {
       expect(snsCalls).toHaveLength(0)
     })
   })
+
+  // ============================================================
+  // 利用規約表示の改善
+  // ============================================================
+
+  describe('利用規約表示', () => {
+    it('利用規約の冒頭テキストがダイアログ内に表示されない', () => {
+      render(<SignUpDialog {...defaultProps} />)
+
+      // 利用規約の全文表示リンクがない（冒頭表示がない）
+      expect(screen.queryByText('利用規約の全文を表示')).not.toBeInTheDocument()
+    })
+
+    it('利用規約のチェックボックスラベルにリンクが含まれる', () => {
+      render(<SignUpDialog {...defaultProps} />)
+
+      // 「利用規約」がリンクとして存在する
+      expect(screen.getByRole('link', { name: '利用規約' })).toBeInTheDocument()
+    })
+  })
 })
