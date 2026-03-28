@@ -220,8 +220,8 @@ describe('PasswordResetRequestModal', () => {
     it('calls onClose when modal is dismissed', () => {
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 
-      // Find the close button by aria-label
-      const closeButton = screen.getByLabelText('閉じる')
+      // DialogContentの組み込み閉じるボタン（sr-only "Close"テキスト）をクリック
+      const closeButton = screen.getByRole('button', { name: 'Close' })
       fireEvent.click(closeButton)
 
       expect(mockOnClose).toHaveBeenCalled()
