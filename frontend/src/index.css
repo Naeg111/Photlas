@@ -237,7 +237,7 @@ input, textarea, [contenteditable="true"] {
 }
 
 .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-attrib {
-  margin: 0 !important;
+  margin: 0 0 0 10px !important;
 }
 
 .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl {
