@@ -143,6 +143,7 @@ vi.mock('react-map-gl', () => ({
   default: MapMock,
   Map: MapMock,
   Marker: ({ children }: any) => <div>{children}</div>,
+  AttributionControl: () => null,
 }))
 
 // fetch APIのモック
