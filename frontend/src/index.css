@@ -171,24 +171,10 @@ input, textarea, [contenteditable="true"] {
   }
 }
 
-/* PC: ロゴと©を画面下端から4px */
-@media (min-width: 640px) {
-  .mapboxgl-ctrl-bottom-left {
-    bottom: 4px !important;
-  }
-}
-
-/* モバイル: ロゴは下端(セーフエリア除く)から5px、iマークは2px */
-@media (max-width: 639px) {
-  .mapboxgl-ctrl-bottom-left {
-    bottom: calc(env(safe-area-inset-bottom, 0px)) !important;
-  }
-  .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-logo {
-    margin-bottom: 5px !important;
-  }
-  .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-attrib {
-    margin-bottom: 2px !important;
-  }
+/* Mapbox controls: 下端余白 */
+.mapboxgl-ctrl-bottom-left {
+  bottom: 4px !important;
+  margin-bottom: env(safe-area-inset-bottom, 0px) !important;
 }
 
 /* Mapbox「Improve this map」リンクを非表示（必須帰属表示ではない） */
@@ -238,29 +224,28 @@ input, textarea, [contenteditable="true"] {
   animation: pin-drop 0.8s ease-out forwards;
 }
 
-/* Mapbox attribution control: ロゴの右横に配置 */
+/* Mapbox attribution control: iマーク/©を下、ロゴをその上に縦配置 */
 .mapboxgl-ctrl-bottom-left {
   display: flex !important;
-  flex-direction: row !important;
-  align-items: flex-end !important;
+  flex-direction: column-reverse !important;
+  align-items: flex-start !important;
 }
 
-/* ロゴを左端、attributionをロゴの右に配置 */
+/* ロゴが上（column-reverseなのでorder不要、DOMの後のものが上に来る） */
 .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-logo {
-  order: 0 !important;
+  margin-bottom: 2px !important;
 }
 
 .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-attrib {
-  order: 1 !important;
-  margin-left: 8px !important;
+  margin-bottom: 0 !important;
 }
 
 /* Toast positioning */
 [data-sonner-toaster] {
-  /* Mobile: left-aligned at 24px from left edge, above Mapbox logo + safe area */
+  /* Mobile: left-aligned at 24px from left edge, above Mapbox logo + iマーク + safe area */
   left: 24px !important;
   right: auto !important;
-  bottom: calc(40px + env(safe-area-inset-bottom, 0px)) !important;
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast] {
