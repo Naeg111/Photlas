@@ -296,6 +296,91 @@ describe('useProfileEdit', () => {
         },
       })
     })
+
+    // ============================================================
+    // Issue#82: 画像の遅延アップロードフロー
+    // ============================================================
+
+    it('Issue#82 - handleCropCompleteでS3アップロードが実行されない（保存待ち）', async () => {
+      const onImageUpdated = vi.fn()
+      const { result } = renderHook(() =>
+        useProfileEdit({ ...defaultProps, onImageUpdated })
+      )
+
+      const croppedBlob = new Blob(['cropped-data'], { type: 'image/jpeg' })
+
+      await act(async () => {
+        await result.current.handleCropComplete(croppedBlob)
+      })
+
+      // プレビューは表示される
+      expect(onImageUpdated).toHaveBeenCalledWith('blob:mock-preview-url')
+
+      // S3アップロードは実行されない
+      expect(mockFetch).not.toHaveBeenCalled()
+
+      // hasUnsavedChangesがtrueになる
+      expect(result.current.hasUnsavedChanges).toBe(true)
+    })
+
+    it('Issue#82 - handleSaveAllChangesで画像がアップロードされる', async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ uploadUrl: 'https://s3.example.com/upload', objectKey: 'profiles/test-key.jpg' }),
+        })
+        .mockResolvedValueOnce({ ok: true })
+        .mockResolvedValueOnce({ ok: true })
+
+      const onImageUpdated = vi.fn()
+      const { result } = renderHook(() =>
+        useProfileEdit({ ...defaultProps, onImageUpdated })
+      )
+
+      const croppedBlob = new Blob(['cropped-data'], { type: 'image/jpeg' })
+
+      await act(async () => {
+        await result.current.handleCropComplete(croppedBlob)
+      })
+
+      // この時点ではアップロードされていない
+      expect(mockFetch).not.toHaveBeenCalled()
+
+      // 保存を実行
+      await act(async () => {
+        await result.current.handleSaveAllChanges()
+      })
+
+      // 保存後にアップロードが実行される
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/v1/users/me/profile-image/presigned-url',
+        expect.objectContaining({ method: 'POST' })
+      )
+    })
+
+    it('Issue#82 - handleCancelAllChangesで画像変更がリバートされる', async () => {
+      const onImageUpdated = vi.fn()
+      const { result } = renderHook(() =>
+        useProfileEdit({ ...defaultProps, onImageUpdated })
+      )
+
+      const croppedBlob = new Blob(['cropped-data'], { type: 'image/jpeg' })
+
+      await act(async () => {
+        await result.current.handleCropComplete(croppedBlob)
+      })
+
+      expect(onImageUpdated).toHaveBeenCalledWith('blob:mock-preview-url')
+
+      // キャンセル
+      act(() => {
+        result.current.handleCancelAllChanges()
+      })
+
+      // プレビューがリセットされる
+      expect(onImageUpdated).toHaveBeenCalledWith(null)
+      expect(result.current.hasUnsavedChanges).toBe(false)
+    })
   })
 
   describe('SNSリンク', () => {
