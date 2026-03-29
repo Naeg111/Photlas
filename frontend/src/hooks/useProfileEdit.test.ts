@@ -206,22 +206,7 @@ describe('useProfileEdit', () => {
       expect(result.current.cropperImageSrc).toBe('data:image/jpeg;base64,test')
     })
 
-    it('handleCropCompleteでプレサインURLの取得とアップロードが行われる', async () => {
-      // プレサインURL取得のレスポンス
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              uploadUrl: 'https://s3.example.com/upload',
-              objectKey: 'profiles/test-key.jpg',
-            }),
-        })
-        // S3へのアップロードレスポンス
-        .mockResolvedValueOnce({ ok: true })
-        // プロフィール画像URLの更新レスポンス
-        .mockResolvedValueOnce({ ok: true })
-
+    it('Issue#82 - handleCropCompleteでプレビューが表示されアップロードは実行されない', async () => {
       const onImageUpdated = vi.fn()
       const { result } = renderHook(() =>
         useProfileEdit({ ...defaultProps, onImageUpdated })
@@ -236,34 +221,8 @@ describe('useProfileEdit', () => {
       // プレビューURLが即座にコールバックに渡される
       expect(onImageUpdated).toHaveBeenCalledWith('blob:mock-preview-url')
 
-      // プレサインURL取得（Authorizationヘッダー + extension/contentType body付き）
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/users/me/profile-image/presigned-url',
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer test-token',
-          }),
-          body: expect.stringContaining('"extension"'),
-        })
-      )
-
-      // S3へのアップロード
-      expect(mockFetch).toHaveBeenCalledWith('https://s3.example.com/upload', {
-        method: 'PUT',
-        body: croppedBlob,
-      })
-
-      // プロフィール画像URLの更新（Authorizationヘッダー付き）
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/users/me/profile-image', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer test-token',
-        },
-        body: JSON.stringify({ objectKey: 'profiles/test-key.jpg' }),
-      })
+      // アップロードは実行されない（保存ボタンで実行）
+      expect(mockFetch).not.toHaveBeenCalled()
     })
 
     it('handleCropCancelでトリミングモーダルが閉じる', () => {
@@ -277,8 +236,7 @@ describe('useProfileEdit', () => {
       expect(result.current.cropperImageSrc).toBe('')
     })
 
-    it('handleDeleteProfileImageでDELETE APIが呼ばれる', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: true })
+    it('Issue#82 - handleDeleteProfileImageでプレビューがリセットされAPIは呼ばれない', async () => {
       const onImageUpdated = vi.fn()
       const { result } = renderHook(() =>
         useProfileEdit({ ...defaultProps, onImageUpdated })
@@ -288,13 +246,14 @@ describe('useProfileEdit', () => {
         await result.current.handleDeleteProfileImage()
       })
 
+      // プレビューがnull（デフォルトアバター）にリセットされる
       expect(onImageUpdated).toHaveBeenCalledWith(null)
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/users/me/profile-image', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': 'Bearer test-token',
-        },
-      })
+
+      // APIは呼ばれない（保存ボタンで実行）
+      expect(mockFetch).not.toHaveBeenCalled()
+
+      // hasUnsavedChangesがtrue
+      expect(result.current.hasUnsavedChanges).toBe(true)
     })
 
     // ============================================================

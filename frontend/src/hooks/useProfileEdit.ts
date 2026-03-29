@@ -68,8 +68,6 @@ interface UseProfileEditReturn {
   handleSaveUsername: () => Promise<void>
 
   // プロフィール画像
-  isUploading: boolean
-  uploadSuccess: boolean
   fileInputRef: React.RefObject<HTMLInputElement | null>
   handleProfileImageSelect: (event: React.ChangeEvent<HTMLInputElement>) => void
   handleDeleteProfileImage: () => Promise<void>
@@ -116,13 +114,15 @@ export const useProfileEdit = ({
   const [usernameError, setUsernameError] = useState('')
 
   // プロフィール画像の状態
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadSuccess, setUploadSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Issue#35: トリミング機能の状態
   const [isCropperOpen, setIsCropperOpen] = useState(false)
   const [cropperImageSrc, setCropperImageSrc] = useState('')
+
+  // Issue#82: 画像の遅延アップロード
+  const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null)
+  const [pendingImageDelete, setPendingImageDelete] = useState(false)
 
   // SNSリンク編集の状態
   // Issue#37: 編集中のSNSリンクをステートで管理
@@ -224,60 +224,21 @@ export const useProfileEdit = ({
   )
 
   /**
-   * Issue#35: トリミング完了後のアップロード処理
+   * Issue#82: トリミング完了後 → Blobを保持してプレビューのみ（アップロードしない）
    */
   const handleCropComplete = useCallback(
     async (croppedBlob: Blob) => {
-      setIsUploading(true)
-      setUploadSuccess(false)
       setIsCropperOpen(false)
 
       // プレビュー用のBlobURLを即座に生成して表示
       const previewUrl = URL.createObjectURL(croppedBlob)
       onImageUpdated?.(previewUrl)
 
-      try {
-        const token = getAuthToken()
-        const authHeaders: HeadersInit = { 'Content-Type': 'application/json' }
-        if (token) {
-          authHeaders['Authorization'] = `Bearer ${token}`
-        }
-
-        // Blobからファイル拡張子とContentTypeを取得
-        const blobType = croppedBlob.type || 'image/jpeg'
-        const extension = blobType === 'image/png' ? 'png' : blobType === 'image/webp' ? 'webp' : 'jpg'
-
-        const presignedResponse = await fetch(API_ENDPOINTS.PROFILE_IMAGE_PRESIGNED_URL, {
-          method: 'POST',
-          headers: authHeaders,
-          body: JSON.stringify({ extension, contentType: blobType }),
-        })
-
-        if (!presignedResponse.ok) {
-          throw new Error(ERROR_MESSAGES.FAILED_TO_GET_PRESIGNED_URL)
-        }
-
-        const { uploadUrl, objectKey } = await presignedResponse.json()
-
-        await fetch(uploadUrl, {
-          method: 'PUT',
-          body: croppedBlob,
-        })
-
-        await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
-          method: 'PUT',
-          headers: authHeaders,
-          body: JSON.stringify({ objectKey }),
-        })
-
-        setUploadSuccess(true)
-      } catch {
-        // エラー時の処理
-      } finally {
-        setIsUploading(false)
-      }
+      // Blobを保持（保存ボタン押下時にアップロード）
+      setPendingImageBlob(croppedBlob)
+      setPendingImageDelete(false)
     },
-    [getAuthToken, onImageUpdated]
+    [onImageUpdated]
   )
 
   /**
@@ -289,23 +250,14 @@ export const useProfileEdit = ({
   }, [])
 
   /**
-   * プロフィール画像を削除
+   * Issue#82: プロフィール画像を削除（遅延 - 保存ボタンで確定）
    */
   const handleDeleteProfileImage = useCallback(async () => {
-    // ローカルステートをクリアして即座にUIを更新
+    // プレビューをデフォルトアバターに戻す（APIは呼ばない）
     onImageUpdated?.(null)
-
-    const token = getAuthToken()
-    const headers: HeadersInit = {}
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-
-    await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
-      method: 'DELETE',
-      headers,
-    })
-  }, [onImageUpdated, getAuthToken])
+    setPendingImageBlob(null)
+    setPendingImageDelete(true)
+  }, [onImageUpdated])
 
   /**
    * Issue#37: SNSリンク編集を開始
@@ -382,9 +334,9 @@ export const useProfileEdit = ({
 
   /**
    * 未保存の変更があるかどうか
-   * ユーザー名編集中またはSNSリンク編集中の場合にtrue
+   * Issue#82: 画像変更・画像削除も含める
    */
-  const hasUnsavedChanges = isEditingUsername || isEditingSnsLinks
+  const hasUnsavedChanges = isEditingUsername || isEditingSnsLinks || pendingImageBlob !== null || pendingImageDelete
 
   /**
    * 統一保存機能：アカウント名とSNSリンクを一括保存
@@ -428,6 +380,44 @@ export const useProfileEdit = ({
         onUsernameUpdated?.(editingUsername)
       }
 
+      // Issue#82: 画像アップロード（保存待ちの場合のみ）
+      if (pendingImageBlob) {
+        const blobType = pendingImageBlob.type || 'image/jpeg'
+        const extension = blobType === 'image/png' ? 'png' : blobType === 'image/webp' ? 'webp' : 'jpg'
+
+        const presignedResponse = await fetch(API_ENDPOINTS.PROFILE_IMAGE_PRESIGNED_URL, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ extension, contentType: blobType }),
+        })
+
+        if (presignedResponse.ok) {
+          const { uploadUrl, objectKey } = await presignedResponse.json()
+
+          await fetch(uploadUrl, {
+            method: 'PUT',
+            body: pendingImageBlob,
+          })
+
+          await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({ objectKey }),
+          })
+        }
+
+        setPendingImageBlob(null)
+      }
+
+      // Issue#82: 画像削除（削除フラグがある場合のみ）
+      if (pendingImageDelete) {
+        await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
+          method: 'DELETE',
+          headers,
+        })
+        setPendingImageDelete(false)
+      }
+
       // SNSリンクを保存（編集中の場合のみ）
       if (isEditingSnsLinks) {
         const linksToSave = editingSnsLinks.filter(link => link.url.trim() !== '')
@@ -457,6 +447,8 @@ export const useProfileEdit = ({
     isEditingSnsLinks,
     editingSnsLinks,
     onSnsLinksUpdated,
+    pendingImageBlob,
+    pendingImageDelete,
   ])
 
   /**
@@ -472,7 +464,13 @@ export const useProfileEdit = ({
       setIsEditingSnsLinks(false)
       setEditingSnsLinks([])
     }
-  }, [isEditingUsername, isEditingSnsLinks, initialUsername])
+    // Issue#82: 画像変更をリバート
+    if (pendingImageBlob || pendingImageDelete) {
+      setPendingImageBlob(null)
+      setPendingImageDelete(false)
+      onImageUpdated?.(null)
+    }
+  }, [isEditingUsername, isEditingSnsLinks, initialUsername, pendingImageBlob, pendingImageDelete, onImageUpdated])
 
   return {
     // ユーザー名編集
@@ -484,8 +482,6 @@ export const useProfileEdit = ({
     handleSaveUsername,
 
     // プロフィール画像
-    isUploading,
-    uploadSuccess,
     fileInputRef,
     handleProfileImageSelect,
     handleDeleteProfileImage,
