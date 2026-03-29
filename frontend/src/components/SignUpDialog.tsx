@@ -299,7 +299,7 @@ export function SignUpDialog({
 
           {/* 表示名 */}
           <div className="space-y-2">
-            <Label htmlFor="displayName">表示名 *</Label>
+            <Label htmlFor="displayName">表示名（必須）</Label>
             {errors.displayName && (
               <p className="text-sm text-red-600">{errors.displayName}</p>
             )}
@@ -313,7 +313,7 @@ export function SignUpDialog({
 
           {/* メールアドレス */}
           <div className="space-y-2">
-            <Label htmlFor="signup-email">メールアドレス *</Label>
+            <Label htmlFor="signup-email">メールアドレス（必須）</Label>
             {errors.email && (
               <p className="text-sm text-red-600">{errors.email}</p>
             )}
@@ -328,7 +328,7 @@ export function SignUpDialog({
 
           {/* パスワード */}
           <div className="space-y-2">
-            <Label htmlFor="signup-password">パスワード *</Label>
+            <Label htmlFor="signup-password">パスワード（必須）</Label>
             {errors.password && (
               <p className="text-sm text-red-600">{errors.password}</p>
             )}
@@ -365,7 +365,7 @@ export function SignUpDialog({
 
           {/* パスワード（確認用） */}
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">パスワード（確認用） *</Label>
+            <Label htmlFor="confirmPassword">パスワード（確認用・必須）</Label>
             {errors.confirmPassword && (
               <p className="text-sm text-red-600">{errors.confirmPassword}</p>
             )}

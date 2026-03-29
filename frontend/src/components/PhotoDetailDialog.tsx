@@ -52,8 +52,8 @@ const SR_TITLE = '写真詳細'
 const SR_DESCRIPTION = '写真の詳細情報と撮影コンテクスト'
 
 // Issue#65: 撮影場所の指摘メッセージ
-const MSG_LOCATION_SUGGESTION_SUCCESS = '撮影場所の指摘を送信しました'
-const MSG_LOCATION_SUGGESTION_ERROR = '撮影場所の指摘に失敗しました'
+const MSG_LOCATION_SUGGESTION_SUCCESS = '指摘を送信しました'
+const MSG_LOCATION_SUGGESTION_ERROR = '指摘の送信に失敗しました'
 
 // Weather labels（DB値は日本語・英語どちらもありうるため両方対応）
 const WEATHER_LABELS: Record<string, string> = {
@@ -612,10 +612,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         toast.success('通報を受け付けました')
         setIsReportOpen(false)
       } else if (response.status === 409) {
-        toast.error('この写真は既に通報済みです')
         setIsReportOpen(false)
       } else if (response.status === 400) {
-        toast.error('自分の写真は通報できません')
         setIsReportOpen(false)
       } else {
         toast.error('通報に失敗しました')
@@ -693,7 +691,6 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         await navigator.share({ title: currentPhoto?.placeName || 'Photlas', url: shareUrl })
       } else {
         await navigator.clipboard.writeText(shareUrl)
-        toast.success('URLをコピーしました')
       }
     } catch (error) {
       // ユーザーが共有シートをキャンセルした場合（AbortError）は無視
@@ -816,7 +813,6 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           placeName: data.photo.place_name,
           moderationStatus: data.photo.moderation_status,
         } : prev)
-        toast.success('写真情報を更新しました')
         setIsEditing(false)
       } else {
         toast.error('更新に失敗しました')

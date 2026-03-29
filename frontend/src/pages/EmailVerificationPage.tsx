@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { API_V1_URL } from '../config/api'
-import { toast } from 'sonner'
 
 /**
  * EmailVerificationPage コンポーネント
@@ -32,7 +31,6 @@ export default function EmailVerificationPage() {
 
         if (response.ok) {
           setStatus('success')
-          toast('メールアドレスの認証が完了しました。ログインしてください。')
           setTimeout(() => navigate('/'), 3000)
         } else {
           const data = await response.json()

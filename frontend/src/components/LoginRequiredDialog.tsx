@@ -35,7 +35,7 @@ export function LoginRequiredDialog({
 
         {/* Content */}
         <div className="px-6 pb-6">
-        <p className="text-sm text-muted-foreground w-fit mx-auto">
+        <p className="text-sm text-muted-foreground w-fit mx-auto mt-1.5">
           この機能を利用するには、ログインまたはアカウント作成が必要です。
         </p>
         <div className="space-y-3 mt-4">

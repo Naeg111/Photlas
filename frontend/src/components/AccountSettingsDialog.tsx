@@ -49,7 +49,7 @@ export function AccountSettingsDialog({
   // メールアドレス変更処理
   const handleEmailChange = async () => {
     if (!newEmail || !emailPassword) {
-      toast.error("すべてのフィールドを入力してください");
+      toast.error("全てのフィールドを入力してください");
       return;
     }
 
@@ -100,7 +100,7 @@ export function AccountSettingsDialog({
   // パスワード変更処理
   const handlePasswordChange = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error("すべてのフィールドを入力してください");
+      toast.error("全てのフィールドを入力してください");
       return;
     }
 

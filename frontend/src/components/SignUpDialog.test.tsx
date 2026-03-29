@@ -80,13 +80,13 @@ describe('SignUpDialog', () => {
     it('renders password input field with toggle', () => {
       render(<SignUpDialog {...defaultProps} />)
 
-      expect(screen.getByLabelText(/^パスワード \*/)).toBeInTheDocument()
+      expect(screen.getByLabelText(/^パスワード（必須）/)).toBeInTheDocument()
     })
 
     it('renders password confirmation input field with toggle', () => {
       render(<SignUpDialog {...defaultProps} />)
 
-      expect(screen.getByLabelText(/パスワード（確認用）/)).toBeInTheDocument()
+      expect(screen.getByLabelText(/パスワード（確認用・必須）/)).toBeInTheDocument()
     })
 
     it('renders SNS links section', () => {
@@ -133,7 +133,7 @@ describe('SignUpDialog', () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Abc1234')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Abc1234')
 
       expect(screen.getByText('弱')).toBeInTheDocument()
     })
@@ -142,7 +142,7 @@ describe('SignUpDialog', () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Abcd1234')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Abcd1234')
 
       expect(screen.getByText('中')).toBeInTheDocument()
     })
@@ -151,7 +151,7 @@ describe('SignUpDialog', () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Abcdefgh1234')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Abcdefgh1234')
 
       expect(screen.getByText('強')).toBeInTheDocument()
     })
@@ -164,8 +164,8 @@ describe('SignUpDialog', () => {
 
       // 表示名以外のフィールドを埋める
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
 
       // 登録ボタンがdisabledであることを確認
@@ -177,8 +177,8 @@ describe('SignUpDialog', () => {
       render(<SignUpDialog {...defaultProps} />)
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
 
       // 登録ボタンがdisabledであることを確認
@@ -199,8 +199,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), invalidEmail)
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -213,8 +213,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Pass1')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Pass1')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Pass1')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Pass1')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -227,8 +227,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123456789012345')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123456789012345')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123456789012345')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123456789012345')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -241,8 +241,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'PasswordAbc')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'PasswordAbc')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'PasswordAbc')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'PasswordAbc')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -255,8 +255,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'PASSWORD123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'PASSWORD123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'PASSWORD123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'PASSWORD123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -269,8 +269,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -283,8 +283,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password@123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password@123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password@123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password@123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -297,8 +297,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password456')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password456')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -311,8 +311,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       // 利用規約に同意しない
 
       // 登録ボタンがdisabledであることを確認
@@ -335,8 +335,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -371,8 +371,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -425,8 +425,8 @@ describe('SignUpDialog', () => {
       // フォームを入力して送信
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -485,8 +485,8 @@ describe('SignUpDialog', () => {
       // フォームを入力して送信
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -508,8 +508,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'existing@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -526,8 +526,8 @@ describe('SignUpDialog', () => {
 
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -669,8 +669,8 @@ describe('SignUpDialog', () => {
       // フォームを入力して送信
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
@@ -709,8 +709,8 @@ describe('SignUpDialog', () => {
       // フォームを入力して送信
       await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード \*/), 'Password123')
-      await user.type(screen.getByLabelText(/パスワード（確認用）/), 'Password123')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 

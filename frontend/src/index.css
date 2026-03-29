@@ -223,3 +223,34 @@ input, textarea, [contenteditable="true"] {
 .pin-drop {
   animation: pin-drop 0.8s ease-out forwards;
 }
+
+/* Toast positioning */
+[data-sonner-toaster] {
+  /* Mobile: left-aligned at 24px from left edge */
+  left: 24px !important;
+  right: auto !important;
+  bottom: 40px !important; /* approximate position above Mapbox logo */
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+  /* Variable width based on text content */
+  width: fit-content !important;
+  max-width: 280px !important;
+  /* Center text with 28px padding */
+  padding-left: 28px !important;
+  padding-right: 28px !important;
+  text-align: center !important;
+}
+
+/* PC display: right-aligned */
+@media (min-width: 640px) {
+  [data-sonner-toaster] {
+    left: auto !important;
+    right: 120px !important; /* approximate: to the left of the post button area */
+    bottom: 24px !important;
+  }
+
+  [data-sonner-toaster] [data-sonner-toast] {
+    max-width: 420px !important;
+  }
+}
