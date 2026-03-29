@@ -1615,7 +1615,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await user.click(screen.getByTestId('mock-suggestion-submit'))
 
       await waitFor(() => {
-        expect(mockToast.success).toHaveBeenCalledWith('撮影場所の指摘を送信しました')
+        expect(mockToast.success).toHaveBeenCalledWith('指摘を送信しました')
       })
     })
 
@@ -1667,7 +1667,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await user.click(screen.getByTestId('mock-suggestion-submit'))
 
       await waitFor(() => {
-        expect(mockToast.error).toHaveBeenCalledWith('撮影場所の指摘に失敗しました')
+        expect(mockToast.error).toHaveBeenCalledWith('指摘の送信に失敗しました')
       })
     })
 
