@@ -378,8 +378,6 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     usernameError,
     handleUsernameEditClick,
     handleUsernameChange,
-    isUploading,
-    uploadSuccess,
     fileInputRef,
     handleProfileImageSelect,
     handleDeleteProfileImage,
@@ -475,14 +473,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                     画像を削除
                   </Button>
                 )}
-                {isUploading && (
+                {isSaving && (
                   <div data-testid="upload-progress" className="text-sm text-gray-500">
-                    アップロード中...
-                  </div>
-                )}
-                {uploadSuccess && (
-                  <div data-testid="upload-success" className="text-sm text-green-500">
-                    アップロード完了
+                    保存中...
                   </div>
                 )}
               </div>
