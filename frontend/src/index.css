@@ -226,10 +226,10 @@ input, textarea, [contenteditable="true"] {
 
 /* Toast positioning */
 [data-sonner-toaster] {
-  /* Mobile: left-aligned at 24px from left edge */
+  /* Mobile: left-aligned at 24px from left edge, above Mapbox logo + safe area */
   left: 24px !important;
   right: auto !important;
-  bottom: 40px !important; /* approximate position above Mapbox logo */
+  bottom: calc(40px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast] {
@@ -242,12 +242,17 @@ input, textarea, [contenteditable="true"] {
   text-align: center !important;
 }
 
-/* PC display: right-aligned */
+/* PC display: right-aligned (right edge of toast at 120px from right) */
 @media (min-width: 640px) {
   [data-sonner-toaster] {
     left: auto !important;
-    right: 120px !important; /* approximate: to the left of the post button area */
+    right: 0 !important;
     bottom: 24px !important;
+    /* Position the container so toasts align their right edge */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    padding-right: 120px !important;
   }
 
   [data-sonner-toaster] [data-sonner-toast] {
