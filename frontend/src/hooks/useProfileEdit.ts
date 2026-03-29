@@ -295,10 +295,17 @@ export const useProfileEdit = ({
     // ローカルステートをクリアして即座にUIを更新
     onImageUpdated?.(null)
 
+    const token = getAuthToken()
+    const headers: HeadersInit = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
       method: 'DELETE',
+      headers,
     })
-  }, [onImageUpdated])
+  }, [onImageUpdated, getAuthToken])
 
   /**
    * Issue#37: SNSリンク編集を開始

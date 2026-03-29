@@ -39,6 +39,8 @@ interface InlineMapPickerProps {
   markers?: MarkerConfig[]
   /** 座標表示の有無（デフォルト: true） */
   showCoordinates?: boolean
+  /** 現在地ボタン表示の有無（デフォルト: true） */
+  showLocationButton?: boolean
 }
 
 // Mapbox Search Box APIの検索結果型
@@ -107,7 +109,7 @@ const overlayStyles = {
 
 const DEFAULT_PIN_COLOR = '#ef4444'
 
-export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT_PIN_COLOR, markers, showCoordinates = true }: Readonly<InlineMapPickerProps>) {
+export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT_PIN_COLOR, markers, showCoordinates = true, showLocationButton = true }: Readonly<InlineMapPickerProps>) {
   const mapRef = useRef<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
@@ -335,18 +337,20 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         </div>
 
         {/* 現在地ボタン */}
-        <div style={overlayStyles.locationButton}>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="bg-white shadow-lg"
-            onClick={handleCurrentLocation}
-            aria-label="現在地へ移動"
-          >
-            <LocateFixed className="w-5 h-5" />
-          </Button>
-        </div>
+        {showLocationButton && (
+          <div style={overlayStyles.locationButton}>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="bg-white shadow-lg"
+              onClick={handleCurrentLocation}
+              aria-label="現在地へ移動"
+            >
+              <LocateFixed className="w-5 h-5" />
+            </Button>
+          </div>
+        )}
 
         {/* 座標表示 */}
         {showCoordinates && position && (
