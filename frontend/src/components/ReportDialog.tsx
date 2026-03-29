@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
 import { Button } from "./ui/button";
@@ -68,10 +69,12 @@ export function ReportDialog({
       <DialogContent className="max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}>
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
-          <DialogTitle>この投稿を通報</DialogTitle>
-          <DialogDescription className="sr-only">
-            不適切なコンテンツや問題のある投稿を通報
-          </DialogDescription>
+          <DialogHeader>
+            <DialogTitle>この投稿を通報</DialogTitle>
+            <DialogDescription className="sr-only">
+              不適切なコンテンツや問題のある投稿を通報
+            </DialogDescription>
+          </DialogHeader>
         </div>
 
         {/* Scrollable content */}
