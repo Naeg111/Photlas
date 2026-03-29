@@ -231,7 +231,13 @@ input, textarea, [contenteditable="true"] {
   align-items: flex-end !important;
 }
 
+/* ロゴを左端、attributionをロゴの右に配置 */
+.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-logo {
+  order: 0 !important;
+}
+
 .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-attrib {
+  order: 1 !important;
   margin-left: 8px !important;
 }
 

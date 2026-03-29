@@ -176,6 +176,17 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
     setSelectedMaxIso(undefined)
   }
 
+  const hasAnyFilter =
+    selectedCategories.length > 0 ||
+    selectedMonths.length > 0 ||
+    selectedTimes.length > 0 ||
+    selectedWeather.length > 0 ||
+    selectedMaxAgeDays !== undefined ||
+    selectedAspectRatios.length > 0 ||
+    selectedDeviceTypes.length > 0 ||
+    selectedFocalLengthRanges.length > 0 ||
+    selectedMaxIso !== undefined
+
   const handleApply = () => {
     if (onApply) {
       onApply({
@@ -411,7 +422,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
           <Button variant="outline" className="flex-1" onClick={handleClear}>
             クリア
           </Button>
-          <Button className="flex-1" onClick={handleApply}>
+          <Button className="flex-1" onClick={handleApply} disabled={!hasAnyFilter}>
             適用
           </Button>
         </div>
