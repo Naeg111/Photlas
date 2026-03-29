@@ -231,17 +231,19 @@ input, textarea, [contenteditable="true"] {
   align-items: flex-start !important;
 }
 
-/* ロゴとattributionのデフォルトmarginをリセット */
-.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-logo {
-  margin: 0 !important;
-}
-
-.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-attrib {
-  margin: 0 0 0 10px !important;
-}
-
+/* ラッパーのデフォルトmarginをリセット（先に記述） */
 .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl {
   margin: 0 !important;
+}
+
+/* ロゴ: margin-left 10px, margin-bottom 3px（後に記述して上書き） */
+.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-logo {
+  margin: 0 0 3px 10px !important;
+}
+
+/* attribution(iボタン/©): margin-left 10px */
+.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-attrib {
+  margin: 0 0 0 10px !important;
 }
 
 /* Toast positioning */
