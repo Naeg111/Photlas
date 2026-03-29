@@ -8,13 +8,14 @@ import { API_V1_URL } from '../config/api'
 interface PasswordResetRequestModalProps {
   open: boolean
   onClose: () => void
+  onShowLogin?: () => void
 }
 
 /**
  * パスワードリセットリクエストモーダルコンポーネント
  * Issue#6: パスワードリセット機能
  */
-export default function PasswordResetRequestModal({ open, onClose }: Readonly<PasswordResetRequestModalProps>) {
+export default function PasswordResetRequestModal({ open, onClose, onShowLogin }: Readonly<PasswordResetRequestModalProps>) {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -113,6 +114,20 @@ export default function PasswordResetRequestModal({ open, onClose }: Readonly<Pa
             >
               {isSubmitting ? '送信中...' : '送信'}
             </Button>
+
+            {onShowLogin && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full mt-2"
+                onClick={() => {
+                  onClose()
+                  onShowLogin()
+                }}
+              >
+                ログインに戻る
+              </Button>
+            )}
           </form>
         )}
         </div>

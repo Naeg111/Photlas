@@ -585,6 +585,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
       <PasswordResetRequestModal
         open={dialog.isOpen('passwordReset')}
         onClose={() => dialog.close('passwordReset')}
+        onShowLogin={() => dialog.open('login')}
       />
 
       <PhotoContributionDialog

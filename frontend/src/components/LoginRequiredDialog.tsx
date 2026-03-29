@@ -29,15 +29,16 @@ export function LoginRequiredDialog({
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
             <DialogTitle>ログインが必要です</DialogTitle>
-            <DialogDescription>
-              この機能を利用するには、ログインまたはアカウント作成が必要です。
-            </DialogDescription>
+            <DialogDescription className="sr-only">ログインまたはアカウント作成が必要です</DialogDescription>
           </DialogHeader>
         </div>
 
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-6 pb-6">
-        <div className="space-y-3 mt-4 pt-2.5">
+        <p className="text-sm text-muted-foreground mt-4">
+          この機能を利用するには、ログインまたはアカウント作成が必要です。
+        </p>
+        <div className="space-y-3 mt-4">
           <Button
             className="w-full gap-2"
             onClick={() => {
