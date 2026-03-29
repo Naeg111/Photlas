@@ -240,6 +240,10 @@ input, textarea, [contenteditable="true"] {
   margin: 0 !important;
 }
 
+.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl {
+  margin: 0 !important;
+}
+
 /* Toast positioning */
 [data-sonner-toaster] {
   /* Mobile: left-aligned at 24px from left edge, above Mapbox logo + iマーク + safe area */
