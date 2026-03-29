@@ -231,13 +231,13 @@ input, textarea, [contenteditable="true"] {
   align-items: flex-start !important;
 }
 
-/* ロゴが上（column-reverseなのでorder不要、DOMの後のものが上に来る） */
+/* ロゴとattributionのデフォルトmarginをリセット */
 .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-logo {
-  margin-bottom: 2px !important;
+  margin: 0 !important;
 }
 
 .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-attrib {
-  margin-bottom: 0 !important;
+  margin: 0 !important;
 }
 
 /* Toast positioning */
