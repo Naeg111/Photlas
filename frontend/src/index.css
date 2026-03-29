@@ -171,17 +171,23 @@ input, textarea, [contenteditable="true"] {
   }
 }
 
-/* Mapbox帰属表示をsafe-area内に配置（角丸デバイスでの視認性確保） */
-.mapboxgl-ctrl-bottom-left,
-.mapboxgl-ctrl-bottom-right {
-  margin-bottom: env(safe-area-inset-bottom, 0px) !important;
+/* PC: ロゴと©を画面下端から4px */
+@media (min-width: 640px) {
+  .mapboxgl-ctrl-bottom-left {
+    bottom: 4px !important;
+  }
 }
 
-/* Fix Mapbox controls bottom alignment on mobile */
+/* モバイル: ロゴは下端(セーフエリア除く)から5px、iマークは2px */
 @media (max-width: 639px) {
-  .mapboxgl-ctrl-bottom-left,
-  .mapboxgl-ctrl-bottom-right {
-    bottom: 0 !important;
+  .mapboxgl-ctrl-bottom-left {
+    bottom: calc(env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-logo {
+    margin-bottom: 5px !important;
+  }
+  .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-attrib {
+    margin-bottom: 2px !important;
   }
 }
 
@@ -247,12 +253,6 @@ input, textarea, [contenteditable="true"] {
 .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-attrib {
   order: 1 !important;
   margin-left: 8px !important;
-  margin-bottom: 0 !important;
-  align-self: flex-end !important;
-}
-
-.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl {
-  margin-bottom: 0 !important;
 }
 
 /* Toast positioning */
