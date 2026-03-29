@@ -298,7 +298,7 @@ export function AccountSettingsDialog({
               <Button
                 className="w-full mt-2"
                 onClick={handleEmailChange}
-                disabled={isEmailLoading}
+                disabled={isEmailLoading || !newEmail || !emailPassword}
               >
                 {isEmailLoading ? "変更中..." : "メールアドレスを変更"}
               </Button>
@@ -344,7 +344,7 @@ export function AccountSettingsDialog({
               <Button
                 className="w-full mt-2"
                 onClick={handlePasswordChange}
-                disabled={isPasswordLoading}
+                disabled={isPasswordLoading || !currentPassword || !newPassword || !confirmPassword}
               >
                 {isPasswordLoading ? "変更中..." : "パスワードを変更"}
               </Button>

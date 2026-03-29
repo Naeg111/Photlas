@@ -238,10 +238,11 @@ describe('FilterPanel', () => {
       // クリア
       await user.click(screen.getByRole('button', { name: 'クリア' }))
 
-      // 適用
-      await user.click(screen.getByRole('button', { name: '適用' }))
+      // クリア後は適用ボタンが無効になる
+      expect(screen.getByRole('button', { name: '適用' })).toBeDisabled()
 
-      expect(mockOnApply).toHaveBeenCalledWith(
+      // onApplyは呼ばれない（代わりにクリア状態を確認）
+      expect(mockOnApply).not.toHaveBeenCalledWith(
         expect.objectContaining({
           categories: [],
           months: [],
@@ -411,28 +412,15 @@ describe('FilterPanel', () => {
       )
     })
 
-    it('何も選択せずに適用すると空の配列が渡される', async () => {
-      const mockOnApply = vi.fn()
-      const user = userEvent.setup()
-
+    it('何も選択していない状態では適用ボタンが無効になる', () => {
       render(
         <FilterPanel
           open={true}
           onOpenChange={mockOnOpenChange}
-          onApply={mockOnApply}
         />
       )
 
-      await user.click(screen.getByRole('button', { name: '適用' }))
-
-      expect(mockOnApply).toHaveBeenCalledWith(
-        expect.objectContaining({
-          categories: [],
-          months: [],
-          timesOfDay: [],
-          weathers: [],
-        })
-      )
+      expect(screen.getByRole('button', { name: '適用' })).toBeDisabled()
     })
   })
 

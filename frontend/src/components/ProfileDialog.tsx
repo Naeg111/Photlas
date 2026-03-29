@@ -13,6 +13,7 @@ import {
   PaginationPrevious,
 } from './ui/pagination'
 import { User, Flag } from 'lucide-react'
+import { toast } from 'sonner'
 import { useProfileEdit } from '../hooks/useProfileEdit'
 import { useAuth } from '../contexts/AuthContext'
 import { getAuthHeaders } from '../utils/apiClient'
@@ -196,8 +197,11 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   // APIから取得したプロフィール画像URL
   const [fetchedProfileImageUrl, setFetchedProfileImageUrl] = useState<string | null>(null)
 
-  // 実際に表示する値（ローカル編集 > API取得 > props の優先順位）
-  const displayProfileImageUrl = localProfileImageUrl ?? fetchedProfileImageUrl ?? userProfile.profileImageUrl
+  // 画像削除保留フラグ（削除ボタン押下後、デフォルトアバターを表示するため）
+  const [isImagePendingDelete, setIsImagePendingDelete] = useState(false)
+
+  // 実際に表示する値（削除保留時はnull、それ以外はローカル編集 > API取得 > props の優先順位）
+  const displayProfileImageUrl = isImagePendingDelete ? null : (localProfileImageUrl ?? fetchedProfileImageUrl ?? userProfile.profileImageUrl)
   const displaySnsLinks = localSnsLinks ?? userProfile.snsLinks
 
   // Issue#79: ダイアログopen時にプロフィール画像URLをAPIから取得
@@ -258,6 +262,8 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   useEffect(() => {
     if (!open) {
       setPhotosFetched(false)
+      setIsImagePendingDelete(false)
+      setLocalProfileImageUrl(null)
     }
   }, [open])
 
@@ -400,13 +406,25 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     },
     // プロフィール画像更新時にローカルステートを更新
     onImageUpdated: (previewUrl) => {
-      setLocalProfileImageUrl(previewUrl)
+      if (previewUrl === null) {
+        setLocalProfileImageUrl(null)
+        setIsImagePendingDelete(true)
+      } else {
+        setLocalProfileImageUrl(previewUrl)
+        setIsImagePendingDelete(false)
+      }
     },
     // SNSリンク保存成功時にローカルステートを更新
     onSnsLinksUpdated: (newLinks) => {
       setLocalSnsLinks(newLinks)
     },
   })
+
+  // 保存ボタンクリック時のラッパー（トースト通知付き）
+  const handleSave = useCallback(async () => {
+    toast('保存中...')
+    await handleSaveAllChanges()
+  }, [handleSaveAllChanges])
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -472,11 +490,6 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                   >
                     画像を削除
                   </Button>
-                )}
-                {isSaving && (
-                  <div data-testid="upload-progress" className="text-sm text-gray-500">
-                    保存中...
-                  </div>
                 )}
               </div>
             )}
@@ -572,7 +585,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
               </Button>
               <Button
                 data-testid="save-all-changes-button"
-                onClick={handleSaveAllChanges}
+                onClick={handleSave}
                 disabled={isSaving}
               >
                 {isSaving ? '保存中...' : '保存'}
