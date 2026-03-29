@@ -291,6 +291,9 @@ describe('useProfileEdit', () => {
       expect(onImageUpdated).toHaveBeenCalledWith(null)
       expect(mockFetch).toHaveBeenCalledWith('/api/v1/users/me/profile-image', {
         method: 'DELETE',
+        headers: {
+          'Authorization': 'Bearer test-token',
+        },
       })
     })
   })

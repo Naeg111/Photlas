@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
 const CONSENT_KEY = 'cookie_consent'
@@ -21,7 +21,15 @@ export function CookieConsentBanner() {
     return consent === null
   })
 
-  if (!isVisible) return null
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (!isVisible) return
+    const timer = setTimeout(() => setReady(true), 500)
+    return () => clearTimeout(timer)
+  }, [isVisible])
+
+  if (!isVisible || !ready) return null
 
   const handleAccept = () => {
     localStorage.setItem(CONSENT_KEY, 'accepted')
