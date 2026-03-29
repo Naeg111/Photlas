@@ -420,6 +420,13 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     },
   })
 
+  // ダイアログが閉じたら未保存の編集状態をリセット
+  useEffect(() => {
+    if (!open) {
+      handleCancelAllChanges()
+    }
+  }, [open, handleCancelAllChanges])
+
   // 保存ボタンクリック時のラッパー（トースト通知付き）
   const handleSave = useCallback(async () => {
     toast('保存中...')
@@ -597,11 +604,11 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         {/* タブUI */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full">
-            <TabsTrigger value="posts" className="flex-1 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:rounded-lg">
+            <TabsTrigger value="posts" className="flex-1 data-[state=active]:!bg-black data-[state=active]:!text-white data-[state=active]:rounded-lg">
               投稿
             </TabsTrigger>
             {isOwnProfile && (
-              <TabsTrigger value="favorites" className="flex-1 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:rounded-lg">
+              <TabsTrigger value="favorites" className="flex-1 data-[state=active]:!bg-black data-[state=active]:!text-white data-[state=active]:rounded-lg">
                 お気に入り
               </TabsTrigger>
             )}

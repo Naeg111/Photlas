@@ -177,6 +177,14 @@ input, textarea, [contenteditable="true"] {
   margin-bottom: env(safe-area-inset-bottom, 0px) !important;
 }
 
+/* Fix Mapbox controls bottom alignment on mobile */
+@media (max-width: 639px) {
+  .mapboxgl-ctrl-bottom-left,
+  .mapboxgl-ctrl-bottom-right {
+    bottom: 0 !important;
+  }
+}
+
 /* Mapbox「Improve this map」リンクを非表示（必須帰属表示ではない） */
 .mapboxgl-ctrl-attrib a[href*="improve"],
 .mapboxgl-ctrl-attrib a[href*="feedback"] {
@@ -239,6 +247,12 @@ input, textarea, [contenteditable="true"] {
 .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-attrib {
   order: 1 !important;
   margin-left: 8px !important;
+  margin-bottom: 0 !important;
+  align-self: flex-end !important;
+}
+
+.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl {
+  margin-bottom: 0 !important;
 }
 
 /* Toast positioning */
