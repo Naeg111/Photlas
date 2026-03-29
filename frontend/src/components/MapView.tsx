@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react'
-import Map, { Marker } from 'react-map-gl'
+import Map, { Marker, AttributionControl } from 'react-map-gl'
 import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
 import type { Map as MapboxMap, ExpressionSpecification } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -592,10 +592,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         language="ja"
         fadeDuration={CLUSTER_FADE_DURATION_MS}
         renderWorldCopies={false}
+        attributionControl={false}
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}
         onClick={() => onMapClickRef.current?.()}
       >
+        <AttributionControl position="bottom-left" />
         {/* Issue#55: スポットピンはSymbol Layerで描画（DOMなし） */}
         {/* クラスタリングはMapbox GL JSネイティブのGeoJSON Source cluster機能で処理 */}
 
