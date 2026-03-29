@@ -224,6 +224,17 @@ input, textarea, [contenteditable="true"] {
   animation: pin-drop 0.8s ease-out forwards;
 }
 
+/* Mapbox attribution control: ロゴの右横に配置 */
+.mapboxgl-ctrl-bottom-left {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-end !important;
+}
+
+.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl-attrib {
+  margin-left: 8px !important;
+}
+
 /* Toast positioning */
 [data-sonner-toaster] {
   /* Mobile: left-aligned at 24px from left edge, above Mapbox logo + safe area */
@@ -242,20 +253,17 @@ input, textarea, [contenteditable="true"] {
   text-align: center !important;
 }
 
-/* PC display: right-aligned (right edge of toast at 120px from right) */
+/* PC display: right-aligned (toast right edge = 投稿ボタン左端から20px左) */
 @media (min-width: 640px) {
   [data-sonner-toaster] {
     left: auto !important;
-    right: 0 !important;
+    right: 100px !important; /* 投稿ボタン右端(24px) + ボタン幅(56px) + 20px間隔 */
     bottom: 24px !important;
-    /* Position the container so toasts align their right edge */
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-end !important;
-    padding-right: 100px !important; /* 投稿ボタン左端(80px) + 20px間隔 */
   }
 
   [data-sonner-toaster] [data-sonner-toast] {
     max-width: 420px !important;
+    /* トーストを右端基準で配置 */
+    margin-left: auto !important;
   }
 }
