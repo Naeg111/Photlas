@@ -21,7 +21,7 @@ const DEVICE_TYPE_OPTIONS = [
   { label: "その他", value: "OTHER" },
 ]
 
-// Issue#63: 撮影日からの経過期間（通常フィルターに移動、3ヶ月以内追加）
+// Issue#63: 投稿の新しさ（通常フィルターに移動、3ヶ月以内追加）
 const FRESHNESS_OPTIONS = [
   { label: "1週間以内", value: 7 },
   { label: "1ヶ月以内", value: 30 },
@@ -225,9 +225,9 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
             </div>
           </div>
 
-          {/* Issue#63: 撮影日からの経過期間（通常フィルターに移動） */}
+          {/* Issue#63: 投稿の新しさ（通常フィルターに移動） */}
           <div>
-            <p className="text-sm font-medium mb-2 text-muted-foreground">撮影日からの経過期間</p>
+            <p className="text-sm font-medium mb-2 text-muted-foreground">投稿の新しさ</p>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               {FRESHNESS_OPTIONS.map((option) => (
                 <FilterButton

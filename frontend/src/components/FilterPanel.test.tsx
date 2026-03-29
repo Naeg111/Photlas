@@ -10,8 +10,8 @@ import { FilterPanel } from './FilterPanel'
  * 変更点:
  * - ジャンル: 14種類（ポートレート削除、建造物・夜景・野鳥追加、風景→自然風景、食べ物→グルメ）
  * - 通常フィルターにセクションラベルを追加
- * - 撮影日からの経過期間・写真の向きを通常フィルターに移動
- * - 撮影日からの経過期間: 5種類（3ヶ月以内追加）
+ * - 投稿の新しさ・写真の向きを通常フィルターに移動
+ * - 投稿の新しさ: 5種類（3ヶ月以内追加）
  * - ISO感度: 4種類に拡張
  * - maxAgeYears → maxAgeDays に変更
  * - 横向き→横位置、縦向き→縦位置（正方形は削除）
@@ -69,7 +69,7 @@ describe('FilterPanel', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
       expect(screen.getByText('写真のジャンル')).toBeInTheDocument()
-      expect(screen.getByText('撮影日からの経過期間')).toBeInTheDocument()
+      expect(screen.getByText('投稿の新しさ')).toBeInTheDocument()
       expect(screen.getByText('撮影時期')).toBeInTheDocument()
       expect(screen.getByText('撮影された時間帯')).toBeInTheDocument()
       expect(screen.getByText('撮影時の天候')).toBeInTheDocument()
@@ -77,7 +77,7 @@ describe('FilterPanel', () => {
     })
   })
 
-  describe('Issue#63: 撮影日からの経過期間（通常フィルターに移動）', () => {
+  describe('Issue#63: 投稿の新しさ（通常フィルターに移動）', () => {
     it('上級者向けフィルターを開かずに経過期間の選択肢が表示される', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
@@ -156,18 +156,18 @@ describe('FilterPanel', () => {
       expect(lastSixDeviceButtons[5]).toHaveTextContent('その他')
     })
 
-    it('上級者向けフィルターに撮影日からの経過期間が含まれない', async () => {
+    it('上級者向けフィルターに投稿の新しさが含まれない', async () => {
       const user = userEvent.setup()
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
       // 上級者向けフィルターを開く前に経過期間が表示されていることを確認（通常フィルターにある）
       expect(screen.getByText('1週間以内')).toBeInTheDocument()
 
-      // 上級者向けフィルターを開いても、撮影日からの経過期間のラベルは上級者セクションにない
+      // 上級者向けフィルターを開いても、投稿の新しさのラベルは上級者セクションにない
       await user.click(screen.getByRole('button', { name: /上級者向け/ }))
 
-      // 撮影日からの経過期間のラベルは通常フィルターにのみ存在する（1つだけ）
-      const periodLabels = screen.getAllByText('撮影日からの経過期間')
+      // 投稿の新しさのラベルは通常フィルターにのみ存在する（1つだけ）
+      const periodLabels = screen.getAllByText('投稿の新しさ')
       expect(periodLabels).toHaveLength(1)
     })
 
