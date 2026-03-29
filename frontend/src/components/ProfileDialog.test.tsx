@@ -597,8 +597,9 @@ describe('ProfileDialog', () => {
       const confirmButton = screen.getByRole('button', { name: /確定/i })
       await user.click(confirmButton)
 
+      // Issue#82: アップロードは実行されず、保存待ち状態になる
       await waitFor(() => {
-        expect(screen.getByTestId('upload-success')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument()
       })
     })
 
@@ -610,7 +611,6 @@ describe('ProfileDialog', () => {
           ok: true,
           json: () => Promise.resolve(mockEmptyPhotosResponse),
         })
-        .mockResolvedValueOnce({ ok: true }) // DELETE /profile-image
 
       render(
         <ProfileDialog
@@ -625,11 +625,9 @@ describe('ProfileDialog', () => {
       const deleteButton = screen.getByTestId('delete-profile-image-button')
       await user.click(deleteButton)
 
+      // Issue#82: 削除は即座にAPIを呼ばず、保存待ち状態になる
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/v1/users/me/profile-image'),
-          expect.objectContaining({ method: 'DELETE' })
-        )
+        expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument()
       })
     })
   })
