@@ -252,7 +252,7 @@ input, textarea, [contenteditable="true"] {
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-end !important;
-    padding-right: 104px !important; /* ボタンエリア左端(80px) + 24px間隔 */
+    padding-right: 100px !important; /* 投稿ボタン左端(80px) + 20px間隔 */
   }
 
   [data-sonner-toaster] [data-sonner-toast] {
