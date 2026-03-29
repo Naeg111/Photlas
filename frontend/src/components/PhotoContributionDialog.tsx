@@ -601,7 +601,7 @@ export function PhotoContributionDialog({
                     key={category}
                     className={`flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${
                       selectedCategories.includes(category)
-                        ? 'border-primary bg-primary/5'
+                        ? 'bg-primary text-primary-foreground border-primary'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleCategoryToggle(category) }} onClick={() => handleCategoryToggle(category)}
@@ -637,7 +637,7 @@ export function PhotoContributionDialog({
                     key={option.value}
                     className={`flex items-center justify-center border rounded-lg p-3 cursor-pointer transition-colors ${
                       selectedDeviceType === option.value
-                        ? 'border-primary bg-primary/5'
+                        ? 'bg-primary text-primary-foreground border-primary'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") setSelectedDeviceType(option.value) }} onClick={() => setSelectedDeviceType(option.value)}
@@ -661,7 +661,7 @@ export function PhotoContributionDialog({
                       key={weather}
                       className={`flex items-center justify-center gap-2 border rounded-lg p-3 cursor-pointer transition-colors ${
                         selectedWeather === weather
-                          ? 'border-primary bg-primary/5'
+                          ? 'bg-primary text-primary-foreground border-primary'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                       role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setSelectedWeather(prev => prev === weather ? '' : weather) }} onClick={() => setSelectedWeather(prev => prev === weather ? '' : weather)}

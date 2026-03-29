@@ -64,7 +64,7 @@ export function LocationSuggestionDialog({
 
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-6 pb-6">
-        <div className="w-full h-64 rounded-lg overflow-hidden mt-4">
+        <div className="w-full h-[333px] rounded-lg overflow-hidden mt-4">
           <InlineMapPicker
             position={{ lat: currentLatitude, lng: currentLongitude }}
             onPositionChange={handlePositionChange}
@@ -73,6 +73,7 @@ export function LocationSuggestionDialog({
               { lat: currentLatitude, lng: currentLongitude, color: '#EF4444' },
             ]}
             showCoordinates={false}
+            showLocationButton={false}
           />
         </div>
 

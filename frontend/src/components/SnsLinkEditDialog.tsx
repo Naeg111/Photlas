@@ -5,10 +5,10 @@ import { Input } from './ui/input'
 import { XIcon } from 'lucide-react'
 
 const SNS_PLATFORMS = [
-  { label: 'X (Twitter)', value: 'twitter' },
   { label: 'Instagram', value: 'instagram' },
-  { label: 'YouTube', value: 'youtube' },
+  { label: 'X', value: 'twitter' },
   { label: 'TikTok', value: 'tiktok' },
+  { label: 'YouTube', value: 'youtube' },
 ]
 
 const MAX_SNS_LINKS = 4
@@ -63,7 +63,7 @@ export function SnsLinkEditDialog({ open, onOpenChange, initialLinks, onSave }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-testid="sns-link-edit-dialog" className="max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}>
+      <DialogContent data-testid="sns-link-edit-dialog" className="max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }} onOpenAutoFocus={(e) => e.preventDefault()}>
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>

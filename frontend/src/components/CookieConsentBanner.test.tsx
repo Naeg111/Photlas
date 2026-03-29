@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { CookieConsentBanner } from './CookieConsentBanner'
 
@@ -20,19 +20,27 @@ const mockLocalStorage = {
 }
 
 function renderBanner() {
-  return render(
+  const result = render(
     <MemoryRouter>
       <CookieConsentBanner />
     </MemoryRouter>
   )
+  // 500ms遅延表示のタイマーを進める
+  act(() => { vi.advanceTimersByTime(500) })
+  return result
 }
 
 describe('CookieConsentBanner - Issue#71 GDPR対応', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     Object.keys(mockStorage).forEach(k => delete mockStorage[k])
     vi.stubGlobal('localStorage', mockLocalStorage)
     // gtag モック
     vi.stubGlobal('gtag', vi.fn())
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   describe('バナー表示', () => {
