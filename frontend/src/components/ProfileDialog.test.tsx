@@ -181,7 +181,7 @@ describe('ProfileDialog', () => {
         />
       )
 
-      const xLink = screen.getByRole('link', { name: /x.com/i })
+      const xLink = screen.getByRole('link', { name: /^X$/i })
       const instaLink = screen.getByRole('link', { name: /instagram/i })
       expect(xLink).toBeInTheDocument()
       expect(instaLink).toBeInTheDocument()
@@ -695,7 +695,7 @@ describe('ProfileDialog', () => {
       const platformSelect = screen.getByTestId('sns-platform-select-0')
       const options = platformSelect.querySelectorAll('option')
       const optionTexts = Array.from(options).map((opt) => opt.textContent)
-      expect(optionTexts).toContain('X (Twitter)')
+      expect(optionTexts).toContain('X')
       expect(optionTexts).toContain('Instagram')
       expect(optionTexts).toContain('YouTube')
       expect(optionTexts).toContain('TikTok')
