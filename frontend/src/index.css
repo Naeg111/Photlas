@@ -276,14 +276,15 @@ input, textarea, [contenteditable="true"] {
 /* PC display: right-aligned (toast right edge = 投稿ボタン左端から20px左) */
 @media (min-width: 640px) {
   [data-sonner-toaster] {
-    left: auto !important;
-    right: 100px !important; /* 投稿ボタン右端(24px) + ボタン幅(56px) + 20px間隔 */
+    /* sonnerがleftをインラインで設定するため、leftをcalcで右端基準に変換 */
+    left: calc(100vw - 100px) !important;
+    right: auto !important;
     bottom: 24px !important;
+    /* 右端基準: トーストをコンテナの右端に揃える */
+    transform: translateX(-100%) !important;
   }
 
   [data-sonner-toaster] [data-sonner-toast] {
     max-width: 420px !important;
-    /* トーストを右端基準で配置 */
-    margin-left: auto !important;
   }
 }
