@@ -184,14 +184,14 @@ describe('LoginDialog', () => {
         expect(mockLogin).toHaveBeenCalledWith(
           { userId: 1, email: 'test@example.com', username: 'testuser', role: 'user' },
           'test-token',
-          false // rememberMe is false by default
+          true // rememberMe is true by default
         )
         expect(toast).toHaveBeenCalledWith('ログインしました')
         expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
       })
     })
 
-    it('passes rememberMe=true when checkbox is checked', async () => {
+    it('passes rememberMe=false when checkbox is unchecked', async () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -202,6 +202,7 @@ describe('LoginDialog', () => {
 
       await user.type(screen.getByLabelText('メールアドレス'), 'test@example.com')
       await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      // デフォルトONなのでクリックでOFFにする
       await user.click(screen.getByLabelText('ログイン状態を保持する'))
       await user.click(screen.getByRole('button', { name: 'ログイン' }))
 
@@ -209,7 +210,7 @@ describe('LoginDialog', () => {
         expect(mockLogin).toHaveBeenCalledWith(
           expect.anything(),
           expect.anything(),
-          true // rememberMe is true
+          false // rememberMe is false (unchecked)
         )
       })
     })
