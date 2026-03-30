@@ -267,8 +267,10 @@ input, textarea, [contenteditable="true"] {
 /* PC display: トーストの左端を画面右端から400pxの位置に、幅300px固定 */
 @media (min-width: 640px) {
   [data-sonner-toaster] {
-    left: auto !important;
-    right: 400px !important;
+    /* sonnerがleftをインラインで設定するため、calcで左端位置を直接指定 */
+    /* トーストの左端を画面右端から400pxの位置に */
+    left: calc(100vw - 400px) !important;
+    right: auto !important;
     bottom: 24px !important;
   }
 
