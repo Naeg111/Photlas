@@ -399,6 +399,10 @@ public class PhotoResponse {
 
         private String username;
 
+        @JsonProperty("profile_image_url")
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        private String profileImageUrl;
+
         public UserDTO() {
         }
 
@@ -421,6 +425,14 @@ public class PhotoResponse {
 
         public void setUsername(String username) {
             this.username = username;
+        }
+
+        public String getProfileImageUrl() {
+            return profileImageUrl;
+        }
+
+        public void setProfileImageUrl(String profileImageUrl) {
+            this.profileImageUrl = profileImageUrl;
         }
     }
 }
