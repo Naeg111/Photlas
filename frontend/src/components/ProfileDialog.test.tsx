@@ -751,10 +751,17 @@ describe('ProfileDialog', () => {
       const newUrl = 'https://x.com/newusername'
 
       global.fetch = vi.fn()
+        // プロフィールAPI（snsLinksが空なのでフェッチされる）
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ profileImageUrl: null, snsLinks: [] }),
+        })
+        // 写真一覧API
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(mockEmptyPhotosResponse),
         })
+        // SNSリンク保存API
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve({ snsLinks: [] })
