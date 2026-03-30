@@ -1817,4 +1817,33 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(screen.getByTestId('report-button')).not.toBeDisabled()
     })
   })
+
+  // ============================================================
+  // プロフィール画像表示
+  // ============================================================
+
+  describe('プロフィール画像表示', () => {
+    it('ユーザーのプロフィール画像がAPIレスポンスに含まれる場合、画像が表示される', async () => {
+      mockUseAuth.mockReturnValue({ user: null, isAuthenticated: false })
+
+      const mockDetail = createMockApiResponse()
+      // APIレスポンスにprofile_image_urlを追加
+      mockDetail.user = { ...mockDetail.user, profile_image_url: 'https://cdn.example.com/profile/1.jpg' } as typeof mockDetail.user & { profile_image_url: string }
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [mockDetail])
+      global.fetch = mockFetch
+
+      render(
+        <PhotoDetailDialog
+          open={true}
+          spotIds={[TEST_SPOT_ID]}
+          onClose={vi.fn()}
+        />
+      )
+
+      await waitFor(() => {
+        const profileImg = document.querySelector('img[src="https://cdn.example.com/profile/1.jpg"]')
+        expect(profileImg).toBeInTheDocument()
+      })
+    })
+  })
 })
