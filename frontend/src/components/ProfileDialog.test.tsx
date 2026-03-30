@@ -1378,4 +1378,75 @@ describe('ProfileDialog', () => {
       })
     })
   })
+
+  // ============================================================
+  // プロフィール画像の他ユーザー表示バグ修正
+  // ============================================================
+
+  describe('プロフィール画像のユーザー間リセット', () => {
+    it('ダイアログを閉じて別ユーザーで開くと、前のユーザーの画像が表示されない', async () => {
+      // 1回目: 自分のプロフィール（画像あり）
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({
+            userId: 123,
+            username: 'testuser',
+            profileImageUrl: 'https://cdn.example.com/profile/123.jpg',
+            snsLinks: [],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+
+      const { rerender } = render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={{ ...mockUserProfile, profileImageUrl: null }}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // APIから画像が取得される
+      await waitFor(() => {
+        expect(document.querySelector('img[src="https://cdn.example.com/profile/123.jpg"]')).toBeInTheDocument()
+      })
+
+      // ダイアログを閉じる
+      rerender(
+        <ProfileDialog
+          open={false}
+          onClose={mockOnClose}
+          userProfile={{ ...mockUserProfile, profileImageUrl: null }}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 2回目: 別ユーザーのプロフィール（画像なし）
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockEmptyPhotosResponse),
+      })
+
+      rerender(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={{ userId: 456, username: 'otheruser', profileImageUrl: null, snsLinks: [] }}
+          isOwnProfile={false}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 前のユーザーの画像が表示されていないこと
+      await waitFor(() => {
+        expect(document.querySelector('img[src="https://cdn.example.com/profile/123.jpg"]')).not.toBeInTheDocument()
+      })
+    })
+  })
 })
