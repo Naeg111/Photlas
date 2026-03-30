@@ -1449,4 +1449,51 @@ describe('ProfileDialog', () => {
       })
     })
   })
+
+  // ============================================================
+  // SNSリンクのAPI取得・表示順序
+  // ============================================================
+
+  describe('SNSリンクのAPI取得と表示', () => {
+    it('snsLinksが空でもAPIから取得してSNSアイコンが表示される', async () => {
+      const profileWithoutSns = {
+        ...mockUserProfile,
+        profileImageUrl: 'https://example.com/avatar.jpg',
+        snsLinks: [],
+      }
+
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({
+            userId: 123,
+            username: 'testuser',
+            profileImageUrl: 'https://example.com/avatar.jpg',
+            snsLinks: [
+              { platform: 'twitter', url: 'https://x.com/test' },
+              { platform: 'instagram', url: 'https://instagram.com/test' },
+            ],
+          }),
+        })
+        .mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={profileWithoutSns}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByRole('link', { name: /^X$/i })).toBeInTheDocument()
+        expect(screen.getByRole('link', { name: /instagram/i })).toBeInTheDocument()
+      })
+    })
+  })
 })
