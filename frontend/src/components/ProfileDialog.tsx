@@ -202,11 +202,17 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
   // 実際に表示する値（削除保留時はnull、それ以外はローカル編集 > API取得 > props の優先順位）
   const displayProfileImageUrl = isImagePendingDelete ? null : (localProfileImageUrl ?? fetchedProfileImageUrl ?? userProfile.profileImageUrl)
-  const displaySnsLinks = localSnsLinks ?? userProfile.snsLinks
+  const displaySnsLinks = localSnsLinks ?? userProfile.snsLinks ?? []
 
-  // Issue#79: ダイアログopen時にプロフィール画像URLをAPIから取得
+  // プロフィール情報取得済みフラグ
+  const [profileFetched, setProfileFetched] = useState(false)
+
+  // ダイアログopen時にプロフィール情報（画像URL + SNSリンク）をAPIから取得
+  // propsのprofileImageUrlとsnsLinksが両方揃っている場合はスキップ
+  const needsProfileFetch = !userProfile.profileImageUrl || !userProfile.snsLinks?.length
+
   useEffect(() => {
-    if (!open || displayProfileImageUrl) return
+    if (!open || profileFetched || !needsProfileFetch) return
 
     const fetchProfile = async () => {
       try {
@@ -220,13 +226,17 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           if (data.profileImageUrl) {
             setFetchedProfileImageUrl(data.profileImageUrl)
           }
+          if (data.snsLinks && data.snsLinks.length > 0) {
+            setLocalSnsLinks(data.snsLinks)
+          }
+          setProfileFetched(true)
         }
       } catch {
-        // プロフィール画像取得失敗時はフォールバック表示のまま
+        // プロフィール取得失敗時はフォールバック表示のまま
       }
     }
     fetchProfile()
-  }, [open, isOwnProfile, userProfile.userId, displayProfileImageUrl])
+  }, [open, isOwnProfile, userProfile.userId, profileFetched, needsProfileFetch])
 
   // ユーザー投稿一覧の状態
   const [userPhotos, setUserPhotos] = useState<UserPhotoItem[]>([])
@@ -262,9 +272,11 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   useEffect(() => {
     if (!open) {
       setPhotosFetched(false)
+      setProfileFetched(false)
       setIsImagePendingDelete(false)
       setLocalProfileImageUrl(null)
       setFetchedProfileImageUrl(null)
+      setLocalSnsLinks(null)
     }
   }, [open])
 
@@ -549,10 +561,17 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             isLoading={isReportLoading}
           />
 
-          {/* SNSリンク */}
+          {/* SNSリンク（Instagram→X→TikTok→YouTube の順で表示） */}
           {displaySnsLinks.length > 0 && (
             <div className="flex gap-4">
-              {displaySnsLinks.map((link) => (
+              {[...displaySnsLinks]
+                .sort((a, b) => {
+                  const order = ['instagram', 'twitter', 'tiktok', 'youtube']
+                  const aIdx = order.findIndex(p => a.url.includes(p) || a.platform === p)
+                  const bIdx = order.findIndex(p => b.url.includes(p) || b.platform === p)
+                  return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx)
+                })
+                .map((link) => (
                 <a
                   key={link.url}
                   href={link.url}
