@@ -549,7 +549,7 @@ export function PhotoContributionDialog({
               <p className="text-sm text-gray-500">
                 地図をドラッグして撮影場所にピンを合わせてください
               </p>
-              <div className="border rounded-lg h-[333px] relative" style={{ overflow: 'clip' }}>
+              <div className="border rounded-lg h-[333px]">
                 <InlineMapPicker
                   position={pinPosition}
                   onPositionChange={setPinPosition}
