@@ -264,6 +264,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
       setPhotosFetched(false)
       setIsImagePendingDelete(false)
       setLocalProfileImageUrl(null)
+      setFetchedProfileImageUrl(null)
     }
   }, [open])
 
