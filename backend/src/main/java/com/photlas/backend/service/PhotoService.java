@@ -455,6 +455,9 @@ public class PhotoService {
                 user.getId(),
                 user.getUsername()
         );
+        if (user.getProfileImageS3Key() != null) {
+            userDTO.setProfileImageUrl(s3Service.generateCdnUrl(user.getProfileImageS3Key()));
+        }
 
         return new PhotoResponse(photoDTO, spotDTO, userDTO);
     }
