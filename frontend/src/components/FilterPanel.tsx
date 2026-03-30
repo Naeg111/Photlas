@@ -9,7 +9,7 @@ import { PHOTO_CATEGORIES } from "../utils/constants"
 
 const MONTHS_NEED_INVERT = new Set(["1月", "2月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]);
 const TIMES_NEED_INVERT = new Set(["夕方"]);
-const ORIENTATIONS_NEED_INVERT = new Set(["縦位置", "横位置"]);
+// OrientationIconsはfill="currentColor"のためinvert不要（テキスト色に追従）
 
 // Issue#63: 上級者向けフィルターの選択肢（機材種別・焦点距離・ISO感度のみ）
 const DEVICE_TYPE_OPTIONS = [
@@ -326,13 +326,12 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
               {ASPECT_RATIO_OPTIONS.map((option) => {
                 const Icon = OrientationIcons[option.label];
                 const isSelected = selectedAspectRatios.includes(option.value);
-                const needsInvert = ORIENTATIONS_NEED_INVERT.has(option.label);
                 return (
                 <FilterButton
                   key={option.label}
                   selected={isSelected}
                   onPointerDown={() => toggleSelection(option.value, selectedAspectRatios, setSelectedAspectRatios)}
-                  className={`gap-1.5 px-2 ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
+                  className="gap-1.5 px-2"
                 >
                   {Icon && <Icon className="w-5 h-5 shrink-0" />}
                   <span>{option.label}</span>
