@@ -604,16 +604,16 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
         {/* タブUI */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="w-full">
-            <TabsTrigger value="posts" className="flex-1 data-[state=active]:!bg-black data-[state=active]:!text-white data-[state=active]:rounded-lg">
-              投稿
-            </TabsTrigger>
-            {isOwnProfile && (
+          {isOwnProfile && (
+            <TabsList className="w-full">
+              <TabsTrigger value="posts" className="flex-1 data-[state=active]:!bg-black data-[state=active]:!text-white data-[state=active]:rounded-lg">
+                投稿
+              </TabsTrigger>
               <TabsTrigger value="favorites" className="flex-1 data-[state=active]:!bg-black data-[state=active]:!text-white data-[state=active]:rounded-lg">
                 お気に入り
               </TabsTrigger>
-            )}
-          </TabsList>
+            </TabsList>
+          )}
 
           <TabsContent value="posts" className="mt-4 data-[state=inactive]:hidden" forceMount>
             {/* ローディング表示 */}

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
-import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2, Share2, Pencil } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2, Share2, Pencil, User } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import MapGL from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -128,6 +128,7 @@ interface PhotoApiResponse {
   user: {
     user_id: number
     username: string
+    profile_image_url?: string | null
   }
 }
 
@@ -217,6 +218,7 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
     user: {
       userId: response.user.user_id,
       username: response.user.username,
+      profileImageUrl: response.user.profile_image_url ?? undefined,
     },
     spot: {
       spotId: response.spot.spot_id,
@@ -1095,9 +1097,17 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       }
                     }}
                   >
-                    <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
-                      {displayedPhoto.user.username.charAt(0).toUpperCase()}
-                    </div>
+                    {displayedPhoto.user.profileImageUrl ? (
+                      <img
+                        src={displayedPhoto.user.profileImageUrl}
+                        alt={displayedPhoto.user.username}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                        <User className="w-5 h-5 text-gray-500" />
+                      </div>
+                    )}
                     <span className="font-medium">{displayedPhoto.user.username}</span>
                   </div>
 
