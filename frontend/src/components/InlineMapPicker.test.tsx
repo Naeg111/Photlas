@@ -309,4 +309,40 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       expect(screen.queryByText(/139\.7454/)).not.toBeInTheDocument()
     })
   })
+
+  // ============================================================
+  // オーバーレイのDOM配置
+  // iOS Safariの大画面端末でオーバーレイがWebGLキャンバスの下に
+  // 描画される問題を防止するため、オーバーレイをMapコンポーネントの
+  // 子要素として.mapboxgl-map内部に配置する
+  // ============================================================
+
+  describe('オーバーレイのDOM配置', () => {
+    it('中央ピンがMapコンポーネント内部にレンダリングされる', () => {
+      render(<InlineMapPicker {...defaultProps} />)
+
+      const mapContainer = screen.getByTestId('mapbox-map')
+      const centerPin = screen.getByTestId('center-pin')
+
+      expect(mapContainer.contains(centerPin)).toBe(true)
+    })
+
+    it('現在地ボタンがMapコンポーネント内部にレンダリングされる', () => {
+      render(<InlineMapPicker {...defaultProps} />)
+
+      const mapContainer = screen.getByTestId('mapbox-map')
+      const locationButton = screen.getByRole('button', { name: /現在地/ })
+
+      expect(mapContainer.contains(locationButton)).toBe(true)
+    })
+
+    it('検索バーがMapコンポーネント内部にレンダリングされる', () => {
+      render(<InlineMapPicker {...defaultProps} />)
+
+      const mapContainer = screen.getByTestId('mapbox-map')
+      const searchInput = screen.getByPlaceholderText(/場所を検索/)
+
+      expect(mapContainer.contains(searchInput)).toBe(true)
+    })
+  })
 })
