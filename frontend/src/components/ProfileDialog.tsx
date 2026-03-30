@@ -566,10 +566,17 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             <div className="flex gap-4">
               {[...displaySnsLinks]
                 .sort((a, b) => {
-                  const order = ['instagram', 'twitter', 'tiktok', 'youtube']
-                  const aIdx = order.findIndex(p => a.url.includes(p) || a.platform === p)
-                  const bIdx = order.findIndex(p => b.url.includes(p) || b.platform === p)
-                  return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx)
+                  const patterns = [
+                    ['instagram'],
+                    ['x.com', 'twitter'],
+                    ['tiktok'],
+                    ['youtube', 'youtu.be'],
+                  ]
+                  const getIdx = (link: typeof a) => {
+                    const idx = patterns.findIndex(ps => ps.some(p => link.url.includes(p)) || (link.platform && ps.includes(link.platform)))
+                    return idx === -1 ? 99 : idx
+                  }
+                  return getIdx(a) - getIdx(b)
                 })
                 .map((link) => (
                 <a
