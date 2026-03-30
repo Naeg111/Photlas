@@ -579,7 +579,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full" data-main-map>
       <Map
         mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
         initialViewState={{
