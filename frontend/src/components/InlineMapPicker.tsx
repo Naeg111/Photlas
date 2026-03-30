@@ -20,8 +20,9 @@ import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
  * - 検索候補選択時は地図のセンタリングのみ（flyTo）
  * - 最終座標は常に地図中心点（ユーザー確定位置）から取得
  *
- * オーバーレイはtranslateZ(0)でGPUレイヤーを強制生成し、
- * iOS Safariでのコンポジティングレイヤーの上に確実に配置する
+ * オーバーレイはz-index: 1で地図の上に配置する
+ * 親コンテナにはoverflow-hiddenを使用し、isolation: isolateは
+ * iOS Safariで大画面端末のGPUコンポジティング問題を引き起こすため使用しない
  */
 
 interface MarkerConfig {
@@ -57,8 +58,7 @@ const SEARCH_DEBOUNCE_MS = 300
 /**
  * オーバーレイのスタイル定数
  * iOS Safariでの表示を保証するためインラインスタイルを使用
- * translateZ(0)でGPUコンポジティングレイヤーを強制生成し、
- * 地図レイヤーの上に確実に描画する
+ * z-index: 1で地図キャンバスの上、Mapboxコントロール（z-index: 2）の下に配置
  */
 const overlayStyles = {
   container: {
@@ -247,7 +247,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         ))}
       </Map>
 
-      {/* オーバーレイ: translateZ(0)でGPUレイヤーを生成し地図の上に表示 */}
+      {/* オーバーレイ: z-index: 1で地図キャンバスの上に表示 */}
       <div style={overlayStyles.container}>
         {/* 検索バー + 候補リスト */}
         <div style={overlayStyles.searchArea}>
