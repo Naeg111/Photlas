@@ -264,22 +264,16 @@ input, textarea, [contenteditable="true"] {
   text-align: center !important;
 }
 
-/* PC display: トーストの右端を投稿ボタン左端から20pxの位置に */
+/* PC display: トーストの左端を画面右端から400pxの位置に、幅300px固定 */
 @media (min-width: 640px) {
   [data-sonner-toaster] {
-    /* コンテナを画面右端に配置 */
     left: auto !important;
-    right: 0 !important;
+    right: 400px !important;
     bottom: 24px !important;
-    width: 100vw !important;
-    pointer-events: none !important;
   }
 
   [data-sonner-toaster] [data-sonner-toast] {
-    max-width: 420px !important;
-    pointer-events: auto !important;
-    /* 投稿ボタン: right-6(24px) + w-14(56px) = 右端から80px、そこから20px左 = 100px */
-    margin-left: auto !important;
-    margin-right: 100px !important;
+    width: 300px !important;
+    max-width: 300px !important;
   }
 }
