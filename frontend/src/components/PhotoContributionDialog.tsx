@@ -402,7 +402,7 @@ export function PhotoContributionDialog({
         <div
           ref={scrollRef}
           className="overflow-y-auto flex-1 px-6 pb-6"
-          style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}
+          style={{ overscrollBehaviorY: 'contain' }}
         >
           <div className="space-y-6 mt-4">
             {/* 写真選択 */}
@@ -549,7 +549,7 @@ export function PhotoContributionDialog({
               <p className="text-sm text-gray-500">
                 地図をドラッグして撮影場所にピンを合わせてください
               </p>
-              <div className="border rounded-lg h-[333px]">
+              <div className="border rounded-lg overflow-hidden h-[333px]">
                 <InlineMapPicker
                   position={pinPosition}
                   onPositionChange={setPinPosition}
