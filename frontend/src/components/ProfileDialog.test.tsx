@@ -215,8 +215,8 @@ describe('ProfileDialog', () => {
         />
       )
 
-      expect(screen.getByRole('tab', { name: '投稿' })).toBeInTheDocument()
-      expect(screen.queryByRole('tab', { name: 'お気に入り' })).not.toBeInTheDocument()
+      // 他ユーザーのプロフィールではタブ自体が表示されない
+      expect(screen.queryByRole('tab')).not.toBeInTheDocument()
     })
 
     it('タブを切り替えることができる', async () => {
