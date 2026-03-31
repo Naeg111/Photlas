@@ -199,7 +199,7 @@ export function PhotoContributionDialog({
   const handleCategoryToggle = (category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category)
-        ? prev.filter((c) => c !== category)
+        ? prev
         : [...prev, category]
     )
   }
@@ -607,17 +607,12 @@ export function PhotoContributionDialog({
                     role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleCategoryToggle(category) }} onClick={() => handleCategoryToggle(category)}
                   >
                     <Checkbox
-                      id={`category-${category}`}
                       checked={selectedCategories.includes(category)}
-                      onCheckedChange={() => handleCategoryToggle(category)}
-                      onClick={(e) => e.stopPropagation()}
                       aria-label={category}
+                      tabIndex={-1}
                     />
                     <CategoryIcon category={category} className="w-5 h-5" />
-                    <Label
-                      htmlFor={`category-${category}`}
-                      className="cursor-pointer flex-1"
-                    >
+                    <Label className="cursor-pointer flex-1">
                       {category}
                     </Label>
                   </div>
