@@ -312,38 +312,34 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
 
   // ============================================================
   // オーバーレイのDOM配置
-  // オーバーレイをMapコンポーネントの子要素として.mapboxgl-map内部に配置し
-  // Mapboxコントロール（z-index: 2）と同じスタッキングコンテキストで
-  // 描画されるようにする。これによりMapboxロゴ・attribution（iマーク）が
-  // オーバーレイに覆われず表示される
+  // react-map-gl v8のMap子要素コンテナは position:static / z-index未指定のため
+  // 内部のabsolute要素がWebGLキャンバスの背面に描画される。
+  // オーバーレイはMapの兄弟要素として配置し、translateZ(0)を使用しないことで
+  // Mapboxコントロールが透明なオーバーレイ越しに表示される。
   // ============================================================
 
   describe('オーバーレイのDOM配置', () => {
-    it('中央ピンがMapコンポーネント内部にレンダリングされる', () => {
+    it('オーバーレイはMapの兄弟要素としてレンダリングされる', () => {
       render(<InlineMapPicker {...defaultProps} />)
 
       const mapContainer = screen.getByTestId('mapbox-map')
       const centerPin = screen.getByTestId('center-pin')
 
-      expect(mapContainer.contains(centerPin)).toBe(true)
+      // Map内部に配置するとreact-map-glの子要素コンテナ(position:static)により
+      // WebGLキャンバスの背面にレンダリングされるため、兄弟要素として配置する
+      expect(mapContainer.contains(centerPin)).toBe(false)
     })
 
-    it('検索バーがMapコンポーネント内部にレンダリングされる', () => {
+    it('オーバーレイにtranslateZが使用されていない', () => {
       render(<InlineMapPicker {...defaultProps} />)
 
-      const mapContainer = screen.getByTestId('mapbox-map')
-      const searchInput = screen.getByPlaceholderText(/場所を検索/)
+      const centerPin = screen.getByTestId('center-pin')
+      const overlay = centerPin.parentElement!
 
-      expect(mapContainer.contains(searchInput)).toBe(true)
-    })
-
-    it('現在地ボタンがMapコンポーネント内部にレンダリングされる', () => {
-      render(<InlineMapPicker {...defaultProps} />)
-
-      const mapContainer = screen.getByTestId('mapbox-map')
-      const locationButton = screen.getByRole('button', { name: /現在地/ })
-
-      expect(mapContainer.contains(locationButton)).toBe(true)
+      // translateZ(0)はGPUコンポジティングレイヤーを生成し
+      // Mapboxコントロールを覆い隠すため使用しない
+      expect(overlay.style.transform).toBe('')
+      expect(overlay.style.webkitTransform).toBe('')
     })
   })
 })
