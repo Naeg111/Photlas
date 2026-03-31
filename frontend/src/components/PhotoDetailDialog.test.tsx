@@ -1201,6 +1201,29 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(screen.queryByTestId('delete-photo-button')).not.toBeInTheDocument()
     })
 
+    it('isDeletable=falseの場合、自分の写真でも編集ボタンが表示されない', async () => {
+      const photoDetail = createMockApiResponse({ userId: TEST_USER_ID })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable={false} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable={false} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
+      })
+
+      expect(screen.queryByTestId('edit-photo-button')).not.toBeInTheDocument()
+    })
+
     it('削除ボタンを押すと確認ダイアログが表示される', async () => {
       const photoDetail = createMockApiResponse({ userId: TEST_USER_ID })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
