@@ -20,10 +20,10 @@ import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
  * - 検索候補選択時は地図のセンタリングのみ（flyTo）
  * - 最終座標は常に地図中心点（ユーザー確定位置）から取得
  *
- * オーバーレイはMapの兄弟要素として配置し、検索バー・ピン・
- * 現在地ボタン・Mapboxロゴ・帰属表示を描画する。
- * ネイティブMapboxコントロールはオーバーレイの背面に隠れるため
- * カスタム実装で代替し、ネイティブ側は無効化/CSS非表示にしている
+ * オーバーレイはMapの兄弟要素として配置し、translateZ(0)で
+ * GPU合成レイヤーを生成してWebGLキャンバスの上に描画する。
+ * Mapboxロゴ・帰属表示はオーバーレイ内にカスタム実装し、
+ * ネイティブ側はattributionControl=false/CSS非表示で無効化
  */
 
 interface MarkerConfig {
