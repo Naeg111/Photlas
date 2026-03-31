@@ -245,6 +245,33 @@ describe('PhotoContributionDialog', () => {
         expect(cityCheckbox).toBeChecked()
       })
     })
+
+    it('選択済みのカテゴリを再度クリックしても解除されない', async () => {
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const landscapeDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')!
+      await user.click(landscapeDiv)
+
+      const checkbox = screen.getByRole('checkbox', { name: /自然風景/ })
+      expect(checkbox).toBeChecked()
+
+      // 再度クリックしても解除されない
+      await user.click(landscapeDiv)
+      expect(checkbox).toBeChecked()
+    })
+
+    it('カテゴリのラベルをクリックして選択できる', async () => {
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      // ラベル要素をクリック（Label htmlForの二重発火テスト）
+      const label = screen.getByText('自然風景')
+      await user.click(label)
+
+      const checkbox = screen.getByRole('checkbox', { name: /自然風景/ })
+      expect(checkbox).toBeChecked()
+    })
   })
 
   describe('Submit Button State - 投稿ボタンの状態', () => {
