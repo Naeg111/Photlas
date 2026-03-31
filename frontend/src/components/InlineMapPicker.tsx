@@ -20,10 +20,10 @@ import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
  * - 検索候補選択時は地図のセンタリングのみ（flyTo）
  * - 最終座標は常に地図中心点（ユーザー確定位置）から取得
  *
- * オーバーレイはMapの兄弟要素として配置する（translateZ不使用）
- * react-map-gl v8のMap子要素コンテナはposition:static/z-index未指定のため
- * 内部のabsolute要素がWebGLキャンバスの背面に描画される。
- * translateZ(0)はGPUコンポジティングレイヤーを生成しMapboxコントロールを遮蔽するため不使用
+ * オーバーレイはMapの兄弟要素として配置し、検索バー・ピン・
+ * 現在地ボタン・Mapboxロゴ・帰属表示を描画する。
+ * ネイティブMapboxコントロールはオーバーレイの背面に隠れるため
+ * カスタム実装で代替し、ネイティブ側は無効化/CSS非表示にしている
  */
 
 interface MarkerConfig {
@@ -55,12 +55,7 @@ export const DEFAULT_CENTER = { lat: 35.6812, lng: 139.7671 } // 東京駅
 const DEFAULT_ZOOM = 15
 const SEARCH_DEBOUNCE_MS = 300
 
-/**
- * オーバーレイのスタイル定数
- * Mapの兄弟要素としてposition: absoluteで地図全体を覆う
- * pointer-events: noneでMapboxコントロールへのクリックを透過させる
- * translateZ(0)はGPUレイヤー生成によりMapboxコントロールを遮蔽するため不使用
- */
+/** オーバーレイのスタイル定数 */
 const overlayStyles = {
   container: {
     position: 'absolute',
