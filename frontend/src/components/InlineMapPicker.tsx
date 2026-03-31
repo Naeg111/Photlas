@@ -20,9 +20,10 @@ import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
  * - 検索候補選択時は地図のセンタリングのみ（flyTo）
  * - 最終座標は常に地図中心点（ユーザー確定位置）から取得
  *
- * オーバーレイはMapコンポーネントの子要素として.mapboxgl-map内部に配置する
- * これによりMapboxコントロール（z-index: 2）と同じスタッキングコンテキストで
- * 描画され、ロゴ・attributionが正しく表示される
+ * オーバーレイはMapの兄弟要素として配置する（translateZ不使用）
+ * react-map-gl v8のMap子要素コンテナはposition:static/z-index未指定のため
+ * 内部のabsolute要素がWebGLキャンバスの背面に描画される。
+ * translateZ(0)はGPUコンポジティングレイヤーを生成しMapboxコントロールを遮蔽するため不使用
  */
 
 interface MarkerConfig {
@@ -56,8 +57,9 @@ const SEARCH_DEBOUNCE_MS = 300
 
 /**
  * オーバーレイのスタイル定数
- * .mapboxgl-map内部でposition: absoluteにより地図全体を覆う
- * z-index: 1でキャンバスの上、Mapboxコントロール（z-index: 2）の下に配置
+ * Mapの兄弟要素としてposition: absoluteで地図全体を覆う
+ * pointer-events: noneでMapboxコントロールへのクリックを透過させる
+ * translateZ(0)はGPUレイヤー生成によりMapboxコントロールを遮蔽するため不使用
  */
 const overlayStyles = {
   container: {
