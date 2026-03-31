@@ -464,13 +464,14 @@ export const useProfileEdit = ({
       setIsEditingSnsLinks(false)
       setEditingSnsLinks([])
     }
-    // Issue#82: 画像変更をリバート
+    // Issue#82: 画像変更をリバート（hook内部の状態のみリセット）
+    // ProfileDialogのクリーンアップeffectがUI状態をリセットするため
+    // onImageUpdatedは呼ばない（呼ぶとisImagePendingDeleteが再設定される）
     if (pendingImageBlob || pendingImageDelete) {
       setPendingImageBlob(null)
       setPendingImageDelete(false)
-      onImageUpdated?.(null)
     }
-  }, [isEditingUsername, isEditingSnsLinks, initialUsername, pendingImageBlob, pendingImageDelete, onImageUpdated])
+  }, [isEditingUsername, isEditingSnsLinks, initialUsername, pendingImageBlob, pendingImageDelete])
 
   return {
     // ユーザー名編集

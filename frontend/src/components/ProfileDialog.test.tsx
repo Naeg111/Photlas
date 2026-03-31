@@ -722,7 +722,7 @@ describe('ProfileDialog', () => {
 
       // トリミング完了
       await user.click(screen.getByTestId('mock-crop-trigger'))
-      await user.click(screen.getByRole('button', { name: 'この範囲で決定' }))
+      await user.click(screen.getByRole('button', { name: '確定' }))
 
       // 保存せずにダイアログを閉じる
       rerender(
