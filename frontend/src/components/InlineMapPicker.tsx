@@ -346,7 +346,8 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
               type="button"
               variant="outline"
               size="icon"
-              className="bg-white shadow-lg"
+              className="shadow-lg"
+              style={{ backgroundColor: 'white' }}
               onClick={handleCurrentLocation}
               aria-label="現在地へ移動"
             >
@@ -399,14 +400,15 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
               height: 24,
               borderRadius: '50%',
               border: 'none',
-              background: 'rgba(0,0,0,0.5)',
+              background: 'white',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
             }}
           >
-            <svg viewBox="0 0 20 20" width="20" height="20" fill="white" fillRule="evenodd">
+            <svg viewBox="0 0 20 20" width="20" height="20" fill="black" fillRule="evenodd">
               <path d="M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0" />
             </svg>
           </button>
