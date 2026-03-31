@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -38,6 +38,17 @@ export function SnsLinkEditDialog({ open, onOpenChange, initialLinks, onSave }: 
       ? initialLinks.map(l => ({ id: generateId(), platform: l.platform || 'twitter', url: l.url }))
       : [{ id: generateId(), platform: 'twitter', url: '' }]
   )
+
+  // ダイアログが開かれたときにinitialLinksで状態をリセット
+  useEffect(() => {
+    if (open) {
+      setLinks(
+        initialLinks.length > 0
+          ? initialLinks.map(l => ({ id: generateId(), platform: l.platform || 'twitter', url: l.url }))
+          : [{ id: generateId(), platform: 'twitter', url: '' }]
+      )
+    }
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAdd = () => {
     if (links.length < MAX_SNS_LINKS) {
