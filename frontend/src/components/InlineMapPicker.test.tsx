@@ -316,6 +316,23 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   // オーバーレイ内にカスタムのロゴ・帰属表示を配置する
   // ============================================================
 
+  // ============================================================
+  // オーバーレイのGPU合成レイヤー
+  // iPhone 15 Pro MaxなどでWebGLキャンバスの背面にオーバーレイが
+  // 描画される問題を防止するため、translateZ(0)でGPU合成レイヤーを生成する
+  // ============================================================
+
+  describe('オーバーレイのGPU合成レイヤー', () => {
+    it('オーバーレイにtranslateZ(0)が設定されている', () => {
+      render(<InlineMapPicker {...defaultProps} />)
+
+      const centerPin = screen.getByTestId('center-pin')
+      const overlay = centerPin.parentElement!
+
+      expect(overlay.style.transform).toContain('translateZ(0)')
+    })
+  })
+
   describe('Mapbox帰属表示', () => {
     it('Mapboxロゴがmapbox.comへのリンクとして表示される', () => {
       render(<InlineMapPicker {...defaultProps} />)
