@@ -1459,7 +1459,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1468,7 +1468,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />)
 
       await waitFor(() => {
         expect(screen.getByTestId('edit-photo-button')).toBeInTheDocument()
@@ -1503,7 +1503,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1512,7 +1512,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />)
 
       await waitFor(() => {
         expect(screen.getByTestId('edit-photo-button')).toBeInTheDocument()
@@ -1532,7 +1532,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
       const { rerender } = render(
-        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />
       )
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -1541,7 +1541,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />)
 
       await waitFor(() => {
         expect(screen.getByTestId('edit-photo-button')).toBeInTheDocument()

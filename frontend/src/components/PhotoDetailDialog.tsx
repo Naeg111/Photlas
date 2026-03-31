@@ -1246,8 +1246,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         <Trash2 className="w-5 h-5" />
                       </Button>
                     )}
-                    {/* 編集ボタン（投稿者本人のみ、編集中は非表示） */}
-                    {isAuthenticated && currentPhoto?.user?.userId === user?.userId && !isEditing && (
+                    {/* 編集ボタン（投稿者本人かつプロフィールから開いた場合のみ、編集中は非表示） */}
+                    {isAuthenticated && isDeletable && currentPhoto?.user?.userId === user?.userId && !isEditing && (
                       <Button
                         variant="outline"
                         data-testid="edit-photo-button"
