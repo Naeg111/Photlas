@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from './ui/dialog'
 import { Button } from './ui/button'
@@ -57,18 +56,15 @@ export function LocationSuggestionDialog({
       <DialogContent className="max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}>
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
-          <DialogHeader>
-            <DialogTitle>撮影場所の指摘</DialogTitle>
-            <DialogDescription className="sr-only">撮影場所の修正を指摘する</DialogDescription>
-          </DialogHeader>
+          <DialogTitle>撮影場所の指摘</DialogTitle>
+          <DialogDescription>
+            マップを動かして、正しいと思われる撮影場所を青いピンに合わせてください。
+          </DialogDescription>
         </div>
 
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-6 pb-6">
-        <p className="text-sm text-muted-foreground mt-4 mb-4">
-          マップを動かして、正しいと思われる撮影場所を青いピンに合わせてください。
-        </p>
-        <div className="w-full h-[333px] rounded-lg overflow-hidden">
+        <div className="w-full h-[333px] rounded-lg overflow-hidden mt-4">
           <InlineMapPicker
             position={{ lat: currentLatitude, lng: currentLongitude }}
             onPositionChange={handlePositionChange}
@@ -76,6 +72,7 @@ export function LocationSuggestionDialog({
             markers={[
               { lat: currentLatitude, lng: currentLongitude, color: '#EF4444' },
             ]}
+            showCoordinates={false}
             showLocationButton={false}
           />
         </div>

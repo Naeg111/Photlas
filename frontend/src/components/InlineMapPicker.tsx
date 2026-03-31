@@ -20,10 +20,8 @@ import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
  * - 検索候補選択時は地図のセンタリングのみ（flyTo）
  * - 最終座標は常に地図中心点（ユーザー確定位置）から取得
  *
- * オーバーレイはMapコンポーネントの子要素として.mapboxgl-map内部に配置する
- * これによりMapboxコントロール（z-index: 2, transform: translate(0)）と
- * 同じコンポジティングコンテキストで描画され、iOS Safariの大画面端末でも
- * WebGLキャンバスの上に正しく表示される
+ * オーバーレイはtranslateZ(0)でGPUレイヤーを強制生成し、
+ * iOS Safariでのコンポジティングレイヤーの上に確実に配置する
  */
 
 interface MarkerConfig {
@@ -39,6 +37,8 @@ interface InlineMapPickerProps {
   pinColor?: string
   /** 地図上に表示する追加マーカー */
   markers?: MarkerConfig[]
+  /** 座標表示の有無（デフォルト: true） */
+  showCoordinates?: boolean
   /** 現在地ボタン表示の有無（デフォルト: true） */
   showLocationButton?: boolean
 }
@@ -58,8 +58,9 @@ const SEARCH_DEBOUNCE_MS = 300
 
 /**
  * オーバーレイのスタイル定数
- * .mapboxgl-map内部でposition: absoluteにより地図全体を覆う
- * z-index: 1でキャンバスの上、Mapboxコントロール（z-index: 2）の下に配置
+ * iOS Safariでの表示を保証するためインラインスタイルを使用
+ * translateZ(0)でGPUコンポジティングレイヤーを強制生成し、
+ * 地図レイヤーの上に確実に描画する
  */
 const overlayStyles = {
   container: {
@@ -69,7 +70,9 @@ const overlayStyles = {
     right: 0,
     bottom: 0,
     pointerEvents: 'none',
-    zIndex: 1,
+    zIndex: 10,
+    WebkitTransform: 'translateZ(0)',
+    transform: 'translateZ(0)',
   } as React.CSSProperties,
   searchArea: {
     position: 'absolute',
@@ -92,11 +95,21 @@ const overlayStyles = {
     right: 8,
     pointerEvents: 'auto',
   } as React.CSSProperties,
+  coordinates: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    background: 'rgba(255,255,255,0.9)',
+    borderRadius: 4,
+    padding: '2px 8px',
+    fontSize: 12,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+  } as React.CSSProperties,
 }
 
 const DEFAULT_PIN_COLOR = '#ef4444'
 
-export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT_PIN_COLOR, markers, showLocationButton = true }: Readonly<InlineMapPickerProps>) {
+export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT_PIN_COLOR, markers, showCoordinates = true, showLocationButton = true }: Readonly<InlineMapPickerProps>) {
   const mapRef = useRef<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
@@ -225,28 +238,30 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const center = position || DEFAULT_CENTER
 
   return (
-    <Map
-      mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
-      initialViewState={{
-        longitude: center.lng,
-        latitude: center.lat,
-        zoom: DEFAULT_ZOOM,
-      }}
-      style={{ width: '100%', height: '100%' }}
-      mapStyle={MAPBOX_STYLE}
-      language="ja"
-      onLoad={handleLoad}
-      onMoveEnd={handleMoveEnd}
-    >
-      {markers?.map((marker, index) => (
-        <Marker key={index} latitude={marker.lat} longitude={marker.lng}>
-          <div data-testid={`additional-marker-${index}`}>
-            <MapPin style={{ width: 32, height: 32, color: marker.color, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
-          </div>
-        </Marker>
-      ))}
+    <div style={{ position: 'relative', height: '100%' }}>
+      <Map
+        mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+        initialViewState={{
+          longitude: center.lng,
+          latitude: center.lat,
+          zoom: DEFAULT_ZOOM,
+        }}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle={MAPBOX_STYLE}
+        language="ja"
+        onLoad={handleLoad}
+        onMoveEnd={handleMoveEnd}
+      >
+        {markers?.map((marker, index) => (
+          <Marker key={index} latitude={marker.lat} longitude={marker.lng}>
+            <div data-testid={`additional-marker-${index}`}>
+              <MapPin style={{ width: 32, height: 32, color: marker.color, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+            </div>
+          </Marker>
+        ))}
+      </Map>
 
-      {/* オーバーレイ: .mapboxgl-map内部に配置しMapboxコントロールと同じコンポジティングコンテキストで描画 */}
+      {/* オーバーレイ: translateZ(0)でGPUレイヤーを生成し地図の上に表示 */}
       <div style={overlayStyles.container}>
         {/* 検索バー + 候補リスト */}
         <div style={overlayStyles.searchArea}>
@@ -336,7 +351,14 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
             </Button>
           </div>
         )}
+
+        {/* 座標表示 */}
+        {showCoordinates && position && (
+          <div style={overlayStyles.coordinates}>
+            緯度: {position.lat.toFixed(4)}, 経度: {position.lng.toFixed(4)}
+          </div>
+        )}
       </div>
-    </Map>
+    </div>
   )
 }
