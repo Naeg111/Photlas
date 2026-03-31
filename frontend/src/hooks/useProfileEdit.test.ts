@@ -336,8 +336,9 @@ describe('useProfileEdit', () => {
         result.current.handleCancelAllChanges()
       })
 
-      // プレビューがリセットされる
-      expect(onImageUpdated).toHaveBeenCalledWith(null)
+      // hook内部の状態のみリセットされる（onImageUpdatedは呼ばない）
+      // ProfileDialogのクリーンアップeffectがUI状態をリセットする
+      expect(onImageUpdated).toHaveBeenCalledTimes(1) // handleCropCompleteの1回のみ
       expect(result.current.hasUnsavedChanges).toBe(false)
     })
   })
