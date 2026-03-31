@@ -53,7 +53,6 @@ export const DEFAULT_CENTER = { lat: 35.6812, lng: 139.7671 } // 東京駅
 const DEFAULT_ZOOM = 15
 const SEARCH_DEBOUNCE_MS = 300
 
-
 /**
  * オーバーレイのスタイル定数
  * iOS Safariでの表示を保証するためインラインスタイルを使用
