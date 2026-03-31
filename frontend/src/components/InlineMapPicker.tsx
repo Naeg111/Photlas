@@ -37,8 +37,6 @@ interface InlineMapPickerProps {
   pinColor?: string
   /** 地図上に表示する追加マーカー */
   markers?: MarkerConfig[]
-  /** 座標表示の有無（デフォルト: true） */
-  showCoordinates?: boolean
   /** 現在地ボタン表示の有無（デフォルト: true） */
   showLocationButton?: boolean
 }
@@ -95,21 +93,11 @@ const overlayStyles = {
     right: 8,
     pointerEvents: 'auto',
   } as React.CSSProperties,
-  coordinates: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    background: 'rgba(255,255,255,0.9)',
-    borderRadius: 4,
-    padding: '2px 8px',
-    fontSize: 12,
-    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-  } as React.CSSProperties,
 }
 
 const DEFAULT_PIN_COLOR = '#ef4444'
 
-export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT_PIN_COLOR, markers, showCoordinates = true, showLocationButton = true }: Readonly<InlineMapPickerProps>) {
+export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT_PIN_COLOR, markers, showLocationButton = true }: Readonly<InlineMapPickerProps>) {
   const mapRef = useRef<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
@@ -352,12 +340,6 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
           </div>
         )}
 
-        {/* 座標表示 */}
-        {showCoordinates && position && (
-          <div style={overlayStyles.coordinates}>
-            緯度: {position.lat.toFixed(4)}, 経度: {position.lng.toFixed(4)}
-          </div>
-        )}
       </div>
     </div>
   )
