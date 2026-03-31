@@ -67,7 +67,7 @@ const overlayStyles = {
     right: 0,
     bottom: 0,
     pointerEvents: 'none',
-    zIndex: 1,
+    zIndex: 10,
   } as React.CSSProperties,
   searchArea: {
     position: 'absolute',
@@ -223,28 +223,30 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const center = position || DEFAULT_CENTER
 
   return (
-    <Map
-      mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
-      initialViewState={{
-        longitude: center.lng,
-        latitude: center.lat,
-        zoom: DEFAULT_ZOOM,
-      }}
-      style={{ width: '100%', height: '100%' }}
-      mapStyle={MAPBOX_STYLE}
-      language="ja"
-      onLoad={handleLoad}
-      onMoveEnd={handleMoveEnd}
-    >
-      {markers?.map((marker, index) => (
-        <Marker key={index} latitude={marker.lat} longitude={marker.lng}>
-          <div data-testid={`additional-marker-${index}`}>
-            <MapPin style={{ width: 32, height: 32, color: marker.color, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
-          </div>
-        </Marker>
-      ))}
+    <div style={{ position: 'relative', height: '100%' }}>
+      <Map
+        mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+        initialViewState={{
+          longitude: center.lng,
+          latitude: center.lat,
+          zoom: DEFAULT_ZOOM,
+        }}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle={MAPBOX_STYLE}
+        language="ja"
+        onLoad={handleLoad}
+        onMoveEnd={handleMoveEnd}
+      >
+        {markers?.map((marker, index) => (
+          <Marker key={index} latitude={marker.lat} longitude={marker.lng}>
+            <div data-testid={`additional-marker-${index}`}>
+              <MapPin style={{ width: 32, height: 32, color: marker.color, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+            </div>
+          </Marker>
+        ))}
+      </Map>
 
-      {/* オーバーレイ: .mapboxgl-map内部に配置しMapboxコントロールと同じスタッキングコンテキストで描画 */}
+      {/* オーバーレイ: Mapの兄弟要素として配置（translateZ不使用でMapboxコントロールを遮蔽しない） */}
       <div style={overlayStyles.container}>
         {/* 検索バー + 候補リスト */}
         <div style={overlayStyles.searchArea}>
@@ -336,6 +338,6 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         )}
 
       </div>
-    </Map>
+    </div>
   )
 }
