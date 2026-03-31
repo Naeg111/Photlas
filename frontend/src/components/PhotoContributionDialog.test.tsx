@@ -666,4 +666,20 @@ describe('PhotoContributionDialog', () => {
       expect(screen.getByText('撮影場所（必須）')).toBeInTheDocument()
     })
   })
+
+  // ============================================================
+  // ミニマップの高さ
+  // LocationSuggestionDialogと同じ333pxに統一する
+  // ============================================================
+
+  describe('ミニマップの高さ', () => {
+    it('ミニマップの高さがLocationSuggestionDialogと同じ333pxである', () => {
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const mapPicker = screen.getByTestId('inline-map-picker')
+      const container = mapPicker.parentElement!
+
+      expect(container.className).toContain('h-[333px]')
+    })
+  })
 })

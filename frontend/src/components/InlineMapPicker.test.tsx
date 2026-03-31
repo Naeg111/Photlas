@@ -296,8 +296,8 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
     })
   })
 
-  describe('座標表示', () => {
-    it('地図の中心座標が表示される', () => {
+  describe('座標表示の廃止', () => {
+    it('positionを指定しても座標テキストが表示されない', () => {
       render(
         <InlineMapPicker
           {...defaultProps}
@@ -305,22 +305,8 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
         />
       )
 
-      // 座標が4桁の精度で表示される（positionが直接渡されるので同期的に表示）
-      expect(screen.getByText(/35\.6585/)).toBeInTheDocument()
-      expect(screen.getByText(/139\.7454/)).toBeInTheDocument()
-    })
-
-    it('showCoordinates=falseの場合は座標が表示されない', () => {
-      render(
-        <InlineMapPicker
-          {...defaultProps}
-          position={{ lat: 35.6585, lng: 139.7454 }}
-          showCoordinates={false}
-        />
-      )
-
-      expect(screen.queryByText(/35\.6585/)).not.toBeInTheDocument()
-      expect(screen.queryByText(/139\.7454/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/緯度/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/経度/)).not.toBeInTheDocument()
     })
   })
 })
