@@ -72,7 +72,6 @@ export function LocationSuggestionDialog({
             markers={[
               { lat: currentLatitude, lng: currentLongitude, color: '#EF4444' },
             ]}
-            showCoordinates={false}
             showLocationButton={false}
           />
         </div>
