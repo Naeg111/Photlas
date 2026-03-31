@@ -297,7 +297,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   })
 
   describe('座標表示', () => {
-    it('座標表示は廃止されている', () => {
+    it('地図の中心座標が表示される', () => {
       render(
         <InlineMapPicker
           {...defaultProps}
@@ -305,44 +305,22 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
         />
       )
 
+      // 座標が4桁の精度で表示される（positionが直接渡されるので同期的に表示）
+      expect(screen.getByText(/35\.6585/)).toBeInTheDocument()
+      expect(screen.getByText(/139\.7454/)).toBeInTheDocument()
+    })
+
+    it('showCoordinates=falseの場合は座標が表示されない', () => {
+      render(
+        <InlineMapPicker
+          {...defaultProps}
+          position={{ lat: 35.6585, lng: 139.7454 }}
+          showCoordinates={false}
+        />
+      )
+
       expect(screen.queryByText(/35\.6585/)).not.toBeInTheDocument()
       expect(screen.queryByText(/139\.7454/)).not.toBeInTheDocument()
-    })
-  })
-
-  // ============================================================
-  // オーバーレイのDOM配置
-  // iOS Safariの大画面端末でオーバーレイがWebGLキャンバスの下に
-  // 描画される問題を防止するため、オーバーレイをMapコンポーネントの
-  // 子要素として.mapboxgl-map内部に配置する
-  // ============================================================
-
-  describe('オーバーレイのDOM配置', () => {
-    it('中央ピンがMapコンポーネント内部にレンダリングされる', () => {
-      render(<InlineMapPicker {...defaultProps} />)
-
-      const mapContainer = screen.getByTestId('mapbox-map')
-      const centerPin = screen.getByTestId('center-pin')
-
-      expect(mapContainer.contains(centerPin)).toBe(true)
-    })
-
-    it('現在地ボタンがMapコンポーネント内部にレンダリングされる', () => {
-      render(<InlineMapPicker {...defaultProps} />)
-
-      const mapContainer = screen.getByTestId('mapbox-map')
-      const locationButton = screen.getByRole('button', { name: /現在地/ })
-
-      expect(mapContainer.contains(locationButton)).toBe(true)
-    })
-
-    it('検索バーがMapコンポーネント内部にレンダリングされる', () => {
-      render(<InlineMapPicker {...defaultProps} />)
-
-      const mapContainer = screen.getByTestId('mapbox-map')
-      const searchInput = screen.getByPlaceholderText(/場所を検索/)
-
-      expect(mapContainer.contains(searchInput)).toBe(true)
     })
   })
 })

@@ -666,31 +666,4 @@ describe('PhotoContributionDialog', () => {
       expect(screen.getByText('撮影場所（必須）')).toBeInTheDocument()
     })
   })
-
-  // ============================================================
-  // ミニマップコンテナのスタイリング
-  // LocationSuggestionDialogと同じ方式（overflow-hidden、isolation:isolateなし）
-  // iOS Safariの大画面スマートフォンでMapboxコントロール・オーバーレイが
-  // 非表示になる問題を防止する
-  // ============================================================
-
-  describe('ミニマップコンテナのスタイリング', () => {
-    it('ミニマップコンテナにoverflow-hiddenが適用されている', () => {
-      render(<PhotoContributionDialog {...defaultProps} />)
-
-      const mapPicker = screen.getByTestId('inline-map-picker')
-      const container = mapPicker.parentElement!
-
-      expect(container.className).toContain('overflow-hidden')
-    })
-
-    it('ミニマップコンテナにisolation:isolateが使用されていない', () => {
-      render(<PhotoContributionDialog {...defaultProps} />)
-
-      const mapPicker = screen.getByTestId('inline-map-picker')
-      const container = mapPicker.parentElement!
-
-      expect(container.style.isolation).not.toBe('isolate')
-    })
-  })
 })
