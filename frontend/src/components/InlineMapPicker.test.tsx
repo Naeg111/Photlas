@@ -311,35 +311,47 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   })
 
   // ============================================================
-  // オーバーレイのDOM配置
-  // react-map-gl v8のMap子要素コンテナは position:static / z-index未指定のため
-  // 内部のabsolute要素がWebGLキャンバスの背面に描画される。
-  // オーバーレイはMapの兄弟要素として配置し、translateZ(0)を使用しないことで
-  // Mapboxコントロールが透明なオーバーレイ越しに表示される。
+  // Mapbox帰属表示
+  // ネイティブのMapboxコントロールはオーバーレイの背面に隠れるため
+  // オーバーレイ内にカスタムのロゴ・帰属表示を配置する
   // ============================================================
 
-  describe('オーバーレイのDOM配置', () => {
-    it('オーバーレイはMapの兄弟要素としてレンダリングされる', () => {
+  describe('Mapbox帰属表示', () => {
+    it('Mapboxロゴがmapbox.comへのリンクとして表示される', () => {
       render(<InlineMapPicker {...defaultProps} />)
 
-      const mapContainer = screen.getByTestId('mapbox-map')
-      const centerPin = screen.getByTestId('center-pin')
-
-      // Map内部に配置するとreact-map-glの子要素コンテナ(position:static)により
-      // WebGLキャンバスの背面にレンダリングされるため、兄弟要素として配置する
-      expect(mapContainer.contains(centerPin)).toBe(false)
+      const logoLink = screen.getByLabelText('Mapbox ホームページ')
+      expect(logoLink.tagName).toBe('A')
+      expect(logoLink).toHaveAttribute('href', 'https://www.mapbox.com/')
+      expect(logoLink).toHaveAttribute('target', '_blank')
+      expect(logoLink).toHaveAttribute('rel', 'noopener noreferrer')
     })
 
-    it('オーバーレイにtranslateZが使用されていない', () => {
+    it('帰属情報ボタンを押すとMapboxとOpenStreetMapの帰属リンクが表示される', () => {
       render(<InlineMapPicker {...defaultProps} />)
 
-      const centerPin = screen.getByTestId('center-pin')
-      const overlay = centerPin.parentElement!
+      const infoButton = screen.getByRole('button', { name: '帰属情報' })
+      fireEvent.click(infoButton)
 
-      // translateZ(0)はGPUコンポジティングレイヤーを生成し
-      // Mapboxコントロールを覆い隠すため使用しない
-      expect(overlay.style.transform).toBe('')
-      expect(overlay.style.webkitTransform).toBe('')
+      const mapboxLink = screen.getByRole('link', { name: '© Mapbox' })
+      expect(mapboxLink).toHaveAttribute('href', 'https://www.mapbox.com/about/maps')
+
+      const osmLink = screen.getByRole('link', { name: '© OpenStreetMap' })
+      expect(osmLink).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright/')
+    })
+
+    it('帰属情報ボタンを再度押すと帰属リンクが非表示になる', () => {
+      render(<InlineMapPicker {...defaultProps} />)
+
+      const infoButton = screen.getByRole('button', { name: '帰属情報' })
+
+      // 開く
+      fireEvent.click(infoButton)
+      expect(screen.getByRole('link', { name: '© Mapbox' })).toBeInTheDocument()
+
+      // 閉じる
+      fireEvent.click(infoButton)
+      expect(screen.queryByRole('link', { name: '© Mapbox' })).not.toBeInTheDocument()
     })
   })
 })
