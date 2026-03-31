@@ -630,6 +630,133 @@ describe('ProfileDialog', () => {
         expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument()
       })
     })
+
+    it('画像削除後に保存せずダイアログを閉じて再度開くと元の画像が表示される', async () => {
+      const user = userEvent.setup()
+
+      global.fetch = vi.fn()
+        .mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+
+      const { rerender } = render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 画像が表示されていることを確認
+      expect(document.querySelector('img[src="https://example.com/avatar.jpg"]')).toBeInTheDocument()
+
+      // 画像を削除
+      const deleteButton = screen.getByTestId('delete-profile-image-button')
+      await user.click(deleteButton)
+
+      // 保存せずにダイアログを閉じる
+      rerender(
+        <ProfileDialog
+          open={false}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // ダイアログを再度開く
+      global.fetch = vi.fn()
+        .mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+
+      rerender(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 未保存なので元の画像が表示される
+      await waitFor(() => {
+        expect(document.querySelector('img[src="https://example.com/avatar.jpg"]')).toBeInTheDocument()
+      })
+    })
+
+    it('画像設定後に保存せずダイアログを閉じて再度開くと元の画像が表示される', async () => {
+      const user = userEvent.setup()
+
+      global.fetch = vi.fn()
+        .mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+
+      const { rerender } = render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 画像設定ボタンをクリック（ファイル選択 → トリミング → 完了のフロー）
+      const file = new File(['dummy'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      // トリミングダイアログが表示される
+      await waitFor(() => {
+        expect(screen.getByTestId('cropper-component')).toBeInTheDocument()
+      })
+
+      // トリミング完了
+      await user.click(screen.getByTestId('mock-crop-trigger'))
+      await user.click(screen.getByRole('button', { name: 'この範囲で決定' }))
+
+      // 保存せずにダイアログを閉じる
+      rerender(
+        <ProfileDialog
+          open={false}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // ダイアログを再度開く
+      global.fetch = vi.fn()
+        .mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+
+      rerender(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 未保存なので元の画像が表示される
+      await waitFor(() => {
+        expect(document.querySelector('img[src="https://example.com/avatar.jpg"]')).toBeInTheDocument()
+      })
+    })
   })
 
   describe('Issue#29: SNSリンク編集機能', () => {
@@ -697,6 +824,60 @@ describe('ProfileDialog', () => {
       expect(optionTexts).toContain('Instagram')
       expect(optionTexts).toContain('YouTube')
       expect(optionTexts).toContain('TikTok')
+    })
+
+    it('SNSリンク編集ダイアログに設定済みのリンクが表示される', async () => {
+      const user = userEvent.setup()
+
+      global.fetch = vi.fn()
+        // プロフィールAPI（snsLinksが空なのでフェッチされる）
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({
+            userId: 123,
+            username: 'testuser',
+            profileImageUrl: null,
+            snsLinks: [
+              { platform: 'instagram', url: 'https://instagram.com/testuser' },
+            ],
+          }),
+        })
+        // 写真一覧API
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={{ ...mockUserProfile, snsLinks: [] }}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // APIからSNSリンクが取得される
+      await waitFor(() => {
+        expect(screen.getByRole('link', { name: /instagram/i })).toBeInTheDocument()
+      })
+
+      // SNSリンク編集ダイアログを開く
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      await user.click(editButton)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
+      })
+
+      // 設定済みのURLが入力欄に表示されている
+      const urlInput = screen.getByTestId('sns-url-input-0')
+      expect(urlInput).toHaveValue('https://instagram.com/testuser')
+
+      // プラットフォームがInstagramに選択されている
+      const platformSelect = screen.getByTestId('sns-platform-select-0')
+      expect(platformSelect).toHaveValue('instagram')
     })
 
     it('SNSリンクを保存するとAPIが呼び出される', async () => {
