@@ -246,6 +246,11 @@ input, textarea, [contenteditable="true"] {
   margin: 0 0 0 10px !important;
 }
 
+/* InlineMapPicker: ネイティブMapboxロゴを非表示（オーバーレイ内にカスタム実装あり） */
+[data-testid="inline-map-picker"] .mapboxgl-ctrl-logo {
+  display: none !important;
+}
+
 /* Toast positioning */
 [data-sonner-toaster] {
   /* Mobile: left-aligned at 24px from left edge, above Mapbox logo + iマーク + safe area */

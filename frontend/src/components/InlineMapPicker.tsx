@@ -92,6 +92,21 @@ const overlayStyles = {
     right: 8,
     pointerEvents: 'auto',
   } as React.CSSProperties,
+  logo: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    pointerEvents: 'auto',
+  } as React.CSSProperties,
+  attribution: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    pointerEvents: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+  } as React.CSSProperties,
 }
 
 const DEFAULT_PIN_COLOR = '#ef4444'
@@ -100,6 +115,9 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const mapRef = useRef<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
+
+  // 帰属情報の表示状態
+  const [isAttributionOpen, setIsAttributionOpen] = useState(false)
 
   // 検索関連のstate
   const [searchQuery, setSearchQuery] = useState('')
@@ -225,7 +243,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const center = position || DEFAULT_CENTER
 
   return (
-    <div style={{ position: 'relative', height: '100%' }}>
+    <div data-testid="inline-map-picker" style={{ position: 'relative', height: '100%' }}>
       <Map
         mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
         initialViewState={{
@@ -236,6 +254,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         style={{ width: '100%', height: '100%' }}
         mapStyle={MAPBOX_STYLE}
         language="ja"
+        attributionControl={false}
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}
       >
@@ -339,6 +358,59 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
           </div>
         )}
 
+        {/* Mapboxロゴ（左下） */}
+        <div style={overlayStyles.logo}>
+          <a
+            href="https://www.mapbox.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Mapbox ホームページ"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 78 31" width="78" height="31">
+              <path d="M10.5 15.5c0-2.8 2.2-5 5-5s5 2.2 5 5-2.2 5-5 5-5-2.2-5-5zm5-15.5C6.9 0 0 6.9 0 15.5S6.9 31 15.5 31 31 24.1 31 15.5 24.1 0 15.5 0zm0 23.6c-4.5 0-8.1-3.6-8.1-8.1s3.6-8.1 8.1-8.1 8.1 3.6 8.1 8.1-3.6 8.1-8.1 8.1z" fill="#333" />
+              <path d="M39.3 7.2c-2.8 0-4.3 2.1-4.3 5v.2c0 2.9 1.5 5 4.3 5 1.5 0 2.7-.8 3.3-2.1l.1-.2h-1.6l-.1.1c-.4.7-1 1-1.7 1-1.4 0-2.3-1-2.5-2.6h6l.1-.4c0-3.5-1.6-6-4.6-6zm-2.4 4.3c.2-1.5 1.1-2.6 2.5-2.6 1.3 0 2.2 1 2.3 2.6h-4.8zM52.4 7.2c-1.4 0-2.5.7-3.1 1.8V7.4h-1.7v17h1.8v-6.6c.6 1.1 1.7 1.8 3.1 1.8 2.6 0 4.2-2.1 4.2-5.2-.1-3.1-1.7-5.2-4.3-5.2zm-.4 8.9c-1.7 0-2.8-1.4-2.8-3.7 0-2.3 1.1-3.7 2.8-3.7s2.8 1.4 2.8 3.7-1.1 3.7-2.8 3.7zM64.8 7.2c-1.4 0-2.5.7-3.1 1.8V.6h-1.8v16.6h1.7V16c.6 1.1 1.7 1.8 3.1 1.8 2.6 0 4.2-2.1 4.2-5.2.1-3.2-1.5-5.4-4.1-5.4zm-.4 8.9c-1.7 0-2.8-1.4-2.8-3.7 0-2.3 1.1-3.7 2.8-3.7s2.8 1.4 2.8 3.7c0 2.4-1.1 3.7-2.8 3.7zM78 12.4c0-3.5-1.6-5.2-4.6-5.2-2.8 0-4.3 2.1-4.3 5v.2c0 2.9 1.5 5 4.3 5 1.5 0 2.7-.8 3.3-2.1l.1-.2h-1.6l-.1.1c-.4.7-1 1-1.7 1-1.4 0-2.3-1-2.5-2.6h6l.1-.2zm-7-1.1c.2-1.5 1.1-2.6 2.5-2.6 1.3 0 2.2 1 2.3 2.6h-4.8zM44.9 7.4h-1.8v9.8h1.8V7.4zm-4.1 6.3L37.2 7.4H35l5 9.8v7.2h1.8v-7.2l2.4-4.5h-1.7l-1.7 3.3z" fill="#333" />
+            </svg>
+          </a>
+        </div>
+
+        {/* 帰属情報（右下） */}
+        <div style={overlayStyles.attribution}>
+          {isAttributionOpen && (
+            <div style={{
+              background: 'rgba(255,255,255,0.9)',
+              borderRadius: 4,
+              padding: '2px 6px',
+              fontSize: 10,
+              whiteSpace: 'nowrap',
+            }}>
+              <a href="https://www.mapbox.com/about/maps" target="_blank" rel="noopener noreferrer" style={{ color: '#333', textDecoration: 'none' }}>© Mapbox</a>
+              {' '}
+              <a href="https://www.openstreetmap.org/copyright/" target="_blank" rel="noopener noreferrer" style={{ color: '#333', textDecoration: 'none' }}>© OpenStreetMap</a>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsAttributionOpen(prev => !prev)}
+            aria-label="帰属情報"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              border: 'none',
+              background: 'rgba(255,255,255,0.9)',
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 700,
+              color: '#333',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+            }}
+          >
+            ⓘ
+          </button>
+        </div>
       </div>
     </div>
   )
