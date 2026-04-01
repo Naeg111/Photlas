@@ -103,6 +103,11 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     deepLinkPhotoIdParam ? Number(deepLinkPhotoIdParam) : undefined
   )
 
+  // プロフィールダイアログのスライドダウン状態
+  const [profileSlideDown, setProfileSlideDown] = useState(false)
+  const profileSlideDownRef = useRef(false)
+  profileSlideDownRef.current = profileSlideDown
+
   // 撮影地点プレビュー状態
   const [shootingLocationPreview, setShootingLocationPreview] = useState<{ lat: number; lng: number } | null>(null)
   const shootingLocationPreviewRef = useRef(shootingLocationPreview)
@@ -372,7 +377,6 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     isPhotoFromProfileRef.current = true
     setIsPhotoFromProfile(true)
     setProfilePhotoId(photoId)
-    dialog.close('profile')
     dialog.open('photoDetail')
   }
 
@@ -391,18 +395,35 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     isInPreviewRef.current = true
     setShootingLocationPreview(location)
     mapRef.current?.showShootingLocationPin(location.lat, location.lng)
+    if (isPhotoFromProfileRef.current) {
+      setTimeout(() => setProfileSlideDown(true), 200)
+    }
   }
 
   // プレビューからの復帰ハンドラー（refでガード、依存配列を空に保つ）
   const handleReturnFromPreview = useCallback(() => {
     if (!shootingLocationPreviewRef.current) return
-    setShootingLocationPreview(null)
-    mapRef.current?.clearShootingLocationPin()
-    setTimeout(() => {
-      if (!shootingLocationPreviewRef.current) {
-        isInPreviewRef.current = false
-      }
-    }, 500)
+    if (profileSlideDownRef.current) {
+      // プロフィールから: 先にProfileDialogスライドアップ→遅延でPhotoDetailDialogスライドアップ
+      setProfileSlideDown(false)
+      setTimeout(() => {
+        setShootingLocationPreview(null)
+        mapRef.current?.clearShootingLocationPin()
+        setTimeout(() => {
+          if (!shootingLocationPreviewRef.current) {
+            isInPreviewRef.current = false
+          }
+        }, 500)
+      }, 200)
+    } else {
+      setShootingLocationPreview(null)
+      mapRef.current?.clearShootingLocationPin()
+      setTimeout(() => {
+        if (!shootingLocationPreviewRef.current) {
+          isInPreviewRef.current = false
+        }
+      }, 500)
+    }
   }, [])
 
   // ライトボックス表示ハンドラー
@@ -631,6 +652,8 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
           isOwnProfile={!viewingUser}
           onPhotoClick={handleProfilePhotoClick}
           initialTab={profileInitialTab}
+          isBackgrounded={isPhotoFromProfile}
+          isSlideDown={profileSlideDown}
         />
       )}
 
@@ -647,11 +670,8 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
             setSelectedSpotIds(null)
             setShootingLocationPreview(null)
             mapRef.current?.clearShootingLocationPin()
-            // プロフィールから開いた場合はProfileDialogに戻る
-            if (isPhotoFromProfile) {
-              dialog.open('profile')
-            }
             setProfilePhotoId(undefined)
+            setProfileSlideDown(false)
             setIsPhotoFromProfile(false)
             isPhotoFromProfileRef.current = false
             // Issue#58: ディープリンクから閉じた場合はトップページに遷移
