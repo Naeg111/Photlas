@@ -396,7 +396,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     setShootingLocationPreview(location)
     mapRef.current?.showShootingLocationPin(location.lat, location.lng)
     if (isPhotoFromProfileRef.current) {
-      setTimeout(() => setProfileSlideDown(true), 200)
+      setProfileSlideDown(true)
     }
   }
 
@@ -404,17 +404,14 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
   const handleReturnFromPreview = useCallback(() => {
     if (!shootingLocationPreviewRef.current) return
     if (profileSlideDownRef.current) {
-      // プロフィールから: 先にProfileDialogスライドアップ→遅延でPhotoDetailDialogスライドアップ
       setProfileSlideDown(false)
+      setShootingLocationPreview(null)
+      mapRef.current?.clearShootingLocationPin()
       setTimeout(() => {
-        setShootingLocationPreview(null)
-        mapRef.current?.clearShootingLocationPin()
-        setTimeout(() => {
-          if (!shootingLocationPreviewRef.current) {
-            isInPreviewRef.current = false
-          }
-        }, 500)
-      }, 200)
+        if (!shootingLocationPreviewRef.current) {
+          isInPreviewRef.current = false
+        }
+      }, 500)
     } else {
       setShootingLocationPreview(null)
       mapRef.current?.clearShootingLocationPin()

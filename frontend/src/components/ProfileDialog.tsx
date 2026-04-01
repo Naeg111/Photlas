@@ -453,7 +453,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   }, [handleSaveAllChanges])
 
   return (
-    <Dialog open={open} onOpenChange={isBackgrounded ? () => {} : onClose} modal={!isBackgrounded}>
+    <Dialog open={open} onOpenChange={isBackgrounded ? () => {} : onClose}>
       <DialogContent
         className="max-h-[80vh] min-h-[80vh]"
         style={{
