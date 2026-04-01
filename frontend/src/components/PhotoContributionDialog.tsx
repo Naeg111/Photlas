@@ -625,7 +625,7 @@ export function PhotoContributionDialog({
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
-                    role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleCategoryToggle(category) }} onClick={() => handleCategoryToggle(category)}
+                    role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleCategoryToggle(category) }} onPointerDown={(e) => { e.preventDefault(); handleCategoryToggle(category) }}
                   >
                     <Checkbox
                       checked={selectedCategories.includes(category)}
@@ -657,7 +657,7 @@ export function PhotoContributionDialog({
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
-                    role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") setSelectedDeviceType(option.value) }} onClick={() => setSelectedDeviceType(option.value)}
+                    role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") setSelectedDeviceType(option.value) }} onPointerDown={(e) => { e.preventDefault(); setSelectedDeviceType(option.value) }}
                   >
                     <Label className="cursor-pointer">
                       {option.label}
@@ -681,7 +681,7 @@ export function PhotoContributionDialog({
                           ? 'bg-primary text-primary-foreground border-primary'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setSelectedWeather(prev => prev === weather ? '' : weather) }} onClick={() => setSelectedWeather(prev => prev === weather ? '' : weather)}
+                      role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setSelectedWeather(prev => prev === weather ? '' : weather) }} onPointerDown={(e) => { e.preventDefault(); setSelectedWeather(prev => prev === weather ? '' : weather) }}
                     >
                       {Icon && <Icon className="w-5 h-5 shrink-0" />}
                       <Label className="cursor-pointer">
