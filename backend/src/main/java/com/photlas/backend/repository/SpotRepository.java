@@ -164,7 +164,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                   ))
                   AND (:minResolution = -1 OR (p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND GREATEST(p2.image_width, p2.image_height) >= :minResolution))
                   AND ('__NONE__' IN (:deviceTypes) OR p2.device_type IN (:deviceTypes))
-                  AND (:hasMaxAge = false OR p2.shot_at >= :maxAgeDate)
+                  AND (p2.shot_at IS NULL OR p2.shot_at >= :maxAgeDate)
                   AND ('__NONE__' IN (:aspectRatios)
                        OR ('HORIZONTAL' IN (:aspectRatios) AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width > p2.image_height)
                        OR ('VERTICAL' IN (:aspectRatios) AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width < p2.image_height)
@@ -197,7 +197,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
           ))
           AND (:minResolution = -1 OR (p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND GREATEST(p.image_width, p.image_height) >= :minResolution))
           AND ('__NONE__' IN (:deviceTypes) OR p.device_type IN (:deviceTypes))
-          AND (:hasMaxAge = false OR p.shot_at >= :maxAgeDate)
+          AND (p.shot_at IS NULL OR p.shot_at >= :maxAgeDate)
           AND ('__NONE__' IN (:aspectRatios)
                OR ('HORIZONTAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width > p.image_height)
                OR ('VERTICAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width < p.image_height)
@@ -225,7 +225,6 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("weathers") List<String> weathers,
         @Param("minResolution") int minResolution,
         @Param("deviceTypes") List<String> deviceTypes,
-        @Param("hasMaxAge") boolean hasMaxAge,
         @Param("maxAgeDate") LocalDateTime maxAgeDate,
         @Param("aspectRatios") List<String> aspectRatios,
         @Param("focalLengthRanges") List<String> focalLengthRanges,

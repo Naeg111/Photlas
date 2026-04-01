@@ -756,6 +756,28 @@ public class SpotControllerTest {
     }
 
     @Test
+    @DisplayName("Issue#63 - 鮮度フィルター: 7日以内の写真のスポットのみ返される")
+    void testGetSpots_WithMaxAgeDays7_ReturnsRecentOnly() throws Exception {
+        // 3日前の写真（7日以内）
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        createPhoto(spot1, LocalDateTime.now().minusDays(3), WEATHER_SUNNY);
+
+        // 10日前の写真（7日超え）
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+        createPhoto(spot2, LocalDateTime.now().minusDays(10), WEATHER_SUNNY);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST)
+                        .param(PARAM_MAX_AGE_DAYS, "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
+    }
+
+    @Test
     @DisplayName("Issue#46 - アスペクト比フィルター: HORIZONTALを指定すると横位置のみ返される")
     void testGetSpots_WithAspectRatioHorizontal_ReturnsHorizontalOnly() throws Exception {
         // 横位置（3000x2000）

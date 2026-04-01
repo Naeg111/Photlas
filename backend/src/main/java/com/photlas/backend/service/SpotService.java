@@ -70,7 +70,6 @@ public class SpotService {
         LocalDateTime safeMaxAgeDate = (maxAgeDays != null)
             ? LocalDateTime.now().minusDays(maxAgeDays)
             : LocalDateTime.of(1900, 1, 1, 0, 0);
-        boolean hasMaxAge = (maxAgeDays != null);
         List<String> safeAspectRatios = safeStringList(aspectRatios);
         List<String> safeFocalLengthRanges = safeStringList(focalLengthRanges);
         int safeMaxIso = (maxIso != null) ? maxIso : -1;
@@ -79,7 +78,7 @@ public class SpotService {
         List<Object[]> results = spotRepository.findSpotsWithAdvancedFilters(
                 north, south, east, west, safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
                 safeMinResolution, safeDeviceTypes,
-                hasMaxAge, safeMaxAgeDate, safeAspectRatios, safeFocalLengthRanges, safeMaxIso
+                safeMaxAgeDate, safeAspectRatios, safeFocalLengthRanges, safeMaxIso
         );
 
         logger.info("Found {} spots", results.size());
