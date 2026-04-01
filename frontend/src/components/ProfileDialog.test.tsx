@@ -1684,4 +1684,28 @@ describe('ProfileDialog', () => {
       })
     })
   })
+
+  // ============================================================
+  // 撮影地点プレビュー時のスライドダウン
+  // ============================================================
+
+  describe('スライドダウン', () => {
+    it('isSlideDown=trueの時、ダイアログが画面下部にスライドする', () => {
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+          isSlideDown={true}
+        />
+      )
+
+      // DialogContentのスタイルにスライドダウン用のtopが設定される
+      const dialogContent = document.querySelector('[data-slot="dialog-content"]') as HTMLElement
+      expect(dialogContent).not.toBeNull()
+      expect(dialogContent.style.top).toContain('100')
+    })
+  })
 })
