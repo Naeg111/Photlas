@@ -76,6 +76,8 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
     vi.clearAllMocks()
     vi.useFakeTimers()
     resetCapturedOnMoveEnd()
+    // GeocodingCoreのデフォルトモック（空結果）
+    mockForward.mockResolvedValue({ features: [] })
   })
 
   afterEach(() => {

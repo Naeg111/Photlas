@@ -3,7 +3,7 @@ import Map, { Marker } from 'react-map-gl'
 import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
 import type { Map as MapboxMap } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
+import { SearchBoxCore, GeocodingCore, SessionToken } from '@mapbox/search-js-core'
 import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
@@ -44,17 +44,22 @@ interface InlineMapPickerProps {
   showLocationButton?: boolean
 }
 
-// Mapbox Search Box APIの検索結果型
+// 統一された検索結果型（SearchBox + Geocoding）
 interface SearchSuggestion {
   name: string
   full_address?: string
   mapbox_id: string
+  source: 'searchbox' | 'geocoding'
+  coordinates?: [number, number]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  originalSuggestion?: any
 }
 
 // 地図の初期設定
 export const DEFAULT_CENTER = { lat: 35.6812, lng: 139.7671 } // 東京駅
 const DEFAULT_ZOOM = 15
 const SEARCH_DEBOUNCE_MS = 300
+const GEOCODING_TYPES = 'country,region,postcode,district,place,locality,neighborhood'
 
 /** オーバーレイのスタイル定数 */
 const overlayStyles = {
@@ -123,10 +128,17 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // SearchBoxCore を初期化（useMemoで即座に生成）
+  // SearchBoxCore + GeocodingCore を初期化
   const searchBox = useMemo(() => {
     if (MAPBOX_ACCESS_TOKEN) {
       return new SearchBoxCore({ accessToken: MAPBOX_ACCESS_TOKEN })
+    }
+    return null
+  }, [])
+
+  const geocoding = useMemo(() => {
+    if (MAPBOX_ACCESS_TOKEN) {
+      return new GeocodingCore({ accessToken: MAPBOX_ACCESS_TOKEN })
     }
     return null
   }, [])
@@ -142,7 +154,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
       clearTimeout(debounceTimerRef.current)
     }
 
-    if (!value.trim() || !searchBox) {
+    if (!value.trim() || !searchBox || !geocoding) {
       setSuggestions([])
       setIsDropdownOpen(false)
       return
@@ -150,11 +162,55 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
 
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const result = await searchBox.suggest(value, {
-          sessionToken: sessionTokenRef.current,
-          language: 'ja',
-        })
-        const items = sortSuggestionsByRelevance(result.suggestions || [], value)
+        const [searchBoxResult, geocodingResult] = await Promise.allSettled([
+          searchBox.suggest(value, {
+            sessionToken: sessionTokenRef.current,
+            language: 'ja',
+          }),
+          geocoding.forward(value, {
+            language: 'ja',
+            types: GEOCODING_TYPES,
+          }),
+        ])
+
+        const merged: SearchSuggestion[] = []
+        const seenIds = new Set<string>()
+
+        // Geocoding結果（行政区分）を先に追加
+        if (geocodingResult.status === 'fulfilled') {
+          for (const feature of geocodingResult.value.features || []) {
+            const id = feature.properties.mapbox_id
+            if (!seenIds.has(id)) {
+              seenIds.add(id)
+              merged.push({
+                name: feature.properties.name,
+                full_address: feature.properties.place_formatted,
+                mapbox_id: id,
+                source: 'geocoding',
+                coordinates: feature.geometry.coordinates as [number, number],
+              })
+            }
+          }
+        }
+
+        // SearchBox結果（POI・住所）を追加
+        if (searchBoxResult.status === 'fulfilled') {
+          for (const suggestion of searchBoxResult.value.suggestions || []) {
+            const id = suggestion.mapbox_id
+            if (!seenIds.has(id)) {
+              seenIds.add(id)
+              merged.push({
+                name: suggestion.name,
+                full_address: suggestion.full_address,
+                mapbox_id: id,
+                source: 'searchbox',
+                originalSuggestion: suggestion,
+              })
+            }
+          }
+        }
+
+        const items = sortSuggestionsByRelevance(merged, value)
         setSuggestions(items)
         setIsDropdownOpen(items.length > 0)
       } catch {
@@ -162,26 +218,28 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         setIsDropdownOpen(false)
       }
     }, SEARCH_DEBOUNCE_MS)
-  }, [])
+  }, [searchBox, geocoding])
 
   // 候補選択ハンドラー（センタリングのみ方式）
   const handleSelectSuggestion = useCallback(async (suggestion: SearchSuggestion) => {
-    if (!searchBox) return
-
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await searchBox.retrieve(suggestion as any, {
-        sessionToken: sessionTokenRef.current,
-      })
-      const feature = result.features?.[0]
-      if (feature?.geometry?.coordinates) {
-        const [lng, lat] = feature.geometry.coordinates
-        // センタリングのみ: flyToで地図を移動するが、onPositionChangeは呼ばない
-        // 最終座標はonMoveEnd経由で地図中心点から取得される
-        mapRef.current?.flyTo({ center: [lng, lat], zoom: DEFAULT_ZOOM })
+    if (suggestion.source === 'geocoding' && suggestion.coordinates) {
+      // Geocoding由来: 座標を直接使用（retrieveは不要）
+      const [lng, lat] = suggestion.coordinates
+      mapRef.current?.flyTo({ center: [lng, lat], zoom: DEFAULT_ZOOM })
+    } else if (suggestion.source === 'searchbox' && searchBox) {
+      // SearchBox由来: retrieveで詳細座標を取得
+      try {
+        const result = await searchBox.retrieve(suggestion.originalSuggestion ?? suggestion, {
+          sessionToken: sessionTokenRef.current,
+        })
+        const feature = result.features?.[0]
+        if (feature?.geometry?.coordinates) {
+          const [lng, lat] = feature.geometry.coordinates
+          mapRef.current?.flyTo({ center: [lng, lat], zoom: DEFAULT_ZOOM })
+        }
+      } catch {
+        // 検索結果の取得に失敗した場合はスキップ
       }
-    } catch {
-      // 検索結果の取得に失敗した場合はスキップ
     }
 
     // retrieve完了後にセッショントークンを更新
