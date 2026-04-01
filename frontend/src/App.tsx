@@ -656,6 +656,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
           onMinimapClick={handleMinimapClick}
           isSlideDown={!!shootingLocationPreview}
           isDeletable={isPhotoFromProfile}
+          filterMaxAgeDays={mapFilterParams?.max_age_days}
         />
       )}
 

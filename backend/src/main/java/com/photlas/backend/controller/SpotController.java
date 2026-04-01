@@ -84,10 +84,12 @@ public class SpotController {
      * @return 写真IDのリスト（撮影日時の新しい順）
      */
     @GetMapping("/{spotId}/photos")
-    public ResponseEntity<List<Long>> getSpotPhotoIds(@PathVariable Long spotId) {
-        logger.info("GET /api/v1/spots/{}/photos", spotId);
+    public ResponseEntity<List<Long>> getSpotPhotoIds(
+            @PathVariable Long spotId,
+            @RequestParam(name = "max_age_days", required = false) Integer maxAgeDays) {
+        logger.info("GET /api/v1/spots/{}/photos - maxAgeDays={}", spotId, maxAgeDays);
 
-        List<Long> photoIds = spotService.getSpotPhotoIds(spotId);
+        List<Long> photoIds = spotService.getSpotPhotoIds(spotId, maxAgeDays);
 
         return ResponseEntity.ok(photoIds);
     }
