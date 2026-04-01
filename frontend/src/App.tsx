@@ -91,6 +91,8 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
 
   // Issue#57: プロフィール投稿一覧からPhotoDetailDialogを開いたかのフラグ
   const [isPhotoFromProfile, setIsPhotoFromProfile] = useState(false)
+  // Radixフォーカス管理のタイミング問題回避用ref（stateより先に参照可能）
+  const isPhotoFromProfileRef = useRef(false)
 
   // プロフィールから開いた写真のID（deepLinkPhotoIdとは別管理でnavigate不要）
   const [profilePhotoId, setProfilePhotoId] = useState<number | undefined>(undefined)
@@ -369,6 +371,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
 
   // Issue#77: プロフィール投稿一覧からの写真クリックハンドラー（photoId方式）
   const handleProfilePhotoClick = (photoId: number) => {
+    isPhotoFromProfileRef.current = true
     setIsPhotoFromProfile(true)
     setProfilePhotoId(photoId)
     dialog.open('photoDetail')
@@ -629,6 +632,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         <ProfileDialog
           open={dialog.isOpen('profile')}
           onClose={() => {
+            if (isPhotoFromProfileRef.current) return
             dialog.close('profile')
             setViewingUser(null)
           }}
@@ -663,9 +667,12 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
             dialog.close('photoDetail')
             setSelectedSpotIds(null)
             setShootingLocationPreview(null)
+            setProfileSlideDown(false)
             setProfilePhotoId(undefined)
             setIsPhotoFromProfile(false)
             mapRef.current?.clearShootingLocationPin()
+            // Radixフォーカス復帰後にrefをクリア（ProfileDialogのonCloseガード用）
+            setTimeout(() => { isPhotoFromProfileRef.current = false }, 200)
             // Issue#58: ディープリンクから閉じた場合はトップページに遷移
             if (deepLinkPhotoId) {
               setDeepLinkPhotoId(undefined)
