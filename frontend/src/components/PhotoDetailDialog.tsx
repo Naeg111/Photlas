@@ -873,7 +873,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   }, [currentPhotoId, editWeather, editPlaceName, editCategories])
 
   return (
-    <Dialog open={open} onOpenChange={onClose} modal={false}>
+    <Dialog open={open} onOpenChange={onClose} modal={isDeletable}>
       <DialogContent
         data-testid={TEST_ID_DIALOG}
         className="max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden border-0"
