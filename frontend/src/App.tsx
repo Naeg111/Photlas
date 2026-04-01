@@ -613,6 +613,8 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         <ProfileDialog
           open={dialog.isOpen('profile')}
           onClose={() => {
+            // PhotoDetailDialogが上に開いている間はProfileDialogを閉じない
+            if (dialog.isOpen('photoDetail')) return
             dialog.close('profile')
             setViewingUser(null)
           }}
