@@ -1030,6 +1030,24 @@ public class SpotControllerTest {
     }
 
     @Test
+    @DisplayName("鮮度フィルター付きで写真IDリストを取得すると古い写真が除外される")
+    void testGetSpotPhotoIds_WithMaxAgeDays_FiltersOldPhotos() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+
+        // 3日前の写真（7日以内）
+        Photo recentPhoto = createPhoto(spot, LocalDateTime.now().minusDays(3), WEATHER_SUNNY);
+
+        // 10日前の写真（7日超え）
+        createPhoto(spot, LocalDateTime.now().minusDays(10), WEATHER_SUNNY);
+
+        mockMvc.perform(get(SPOTS_ENDPOINT + "/" + spot.getSpotId() + "/photos")
+                        .param(PARAM_MAX_AGE_DAYS, "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0]", is(recentPhoto.getPhotoId().intValue())));
+    }
+
+    @Test
     @DisplayName("存在しないスポットIDは404を返す")
     void testGetSpotPhotoIds_NonExistentSpot_Returns404() throws Exception {
         // When & Then
