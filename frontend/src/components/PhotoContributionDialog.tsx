@@ -620,7 +620,7 @@ export function PhotoContributionDialog({
                 {PHOTO_CATEGORIES.map((category) => (
                   <div
                     key={category}
-                    className={`flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${
+                    className={`flex items-center space-x-3 border rounded-lg p-3 cursor-pointer transition-colors touch-manipulation select-none ${
                       selectedCategories.includes(category)
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'border-gray-200 hover:border-gray-300'
@@ -652,7 +652,7 @@ export function PhotoContributionDialog({
                 {DEVICE_TYPE_OPTIONS.map((option) => (
                   <div
                     key={option.value}
-                    className={`flex items-center justify-center border rounded-lg p-3 cursor-pointer transition-colors ${
+                    className={`flex items-center justify-center border rounded-lg p-3 cursor-pointer transition-colors touch-manipulation select-none ${
                       selectedDeviceType === option.value
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'border-gray-200 hover:border-gray-300'
@@ -676,7 +676,7 @@ export function PhotoContributionDialog({
                   return (
                     <div
                       key={weather}
-                      className={`flex items-center justify-center gap-2 border rounded-lg p-3 cursor-pointer transition-colors ${
+                      className={`flex items-center justify-center gap-2 border rounded-lg p-3 cursor-pointer transition-colors touch-manipulation select-none ${
                         selectedWeather === weather
                           ? 'bg-primary text-primary-foreground border-primary'
                           : 'border-gray-200 hover:border-gray-300'
