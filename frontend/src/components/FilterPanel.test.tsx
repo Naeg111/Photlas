@@ -249,8 +249,8 @@ describe('FilterPanel', () => {
         })
       )
 
-      // ダイアログが閉じる
-      expect(mockOnOpenChange).toHaveBeenCalledWith(false)
+      // ダイアログは閉じない（閉じるボタンで閉じる）
+      expect(mockOnOpenChange).not.toHaveBeenCalledWith(false)
     })
   })
 
