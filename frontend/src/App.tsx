@@ -10,6 +10,7 @@ import AdminDeletedUserDetailPage from './pages/AdminDeletedUserDetailPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import ReviewLocationPage from './pages/ReviewLocationPage'
 import { CookieConsentBanner } from './components/CookieConsentBanner'
+import { formatLocalDateTime } from './utils/extractExif'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
 import { PlaceSearchDialog } from './components/PlaceSearchDialog'
@@ -281,7 +282,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
       const photoResponse = await createPhoto({
         placeName: data.placeName,
         s3ObjectKey: objectKey,
-        takenAt: data.takenAt || new Date().toISOString(),
+        takenAt: data.takenAt || formatLocalDateTime(new Date()),
         latitude: data.position.lat,
         longitude: data.position.lng,
         categories: data.categories,

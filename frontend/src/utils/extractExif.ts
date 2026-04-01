@@ -8,6 +8,12 @@
 
 import exifr from 'exifr'
 
+/** DateオブジェクトをローカルISO形式の文字列に変換（UTC変換しない） */
+export function formatLocalDateTime(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
 /**
  * 抽出されたEXIF情報の型定義
  */
@@ -94,7 +100,7 @@ function mapRawToExif(raw: any): ExifData {
     const date = raw.DateTimeOriginal instanceof Date
       ? raw.DateTimeOriginal
       : new Date(raw.DateTimeOriginal)
-    result.takenAt = date.toISOString()
+    result.takenAt = formatLocalDateTime(date)
   }
 
   // GPS座標
