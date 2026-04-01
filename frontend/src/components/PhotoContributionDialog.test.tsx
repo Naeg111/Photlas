@@ -287,12 +287,65 @@ describe('PhotoContributionDialog', () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      // ラベル要素をクリック（Label htmlForの二重発火テスト）
       const label = screen.getByText('自然風景')
       await user.click(label)
 
       const checkbox = screen.getByRole('checkbox', { name: /自然風景/ })
       expect(checkbox).toBeChecked()
+    })
+
+    it('カテゴリのチェックボックスをクリックして選択できる', async () => {
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const checkbox = screen.getByRole('checkbox', { name: /自然風景/ })
+      await user.click(checkbox)
+
+      expect(checkbox).toBeChecked()
+    })
+  })
+
+  // ============================================================
+  // ダイアログを閉じた時の状態リセット
+  // ============================================================
+
+  describe('ダイアログクローズ時の状態リセット', () => {
+    it('ダイアログを閉じて再度開くとカテゴリの選択状態がリセットされる', async () => {
+      const user = userEvent.setup()
+      const { rerender } = render(<PhotoContributionDialog {...defaultProps} />)
+
+      // カテゴリを選択
+      const landscapeDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')!
+      await user.click(landscapeDiv)
+      expect(screen.getByRole('checkbox', { name: /自然風景/ })).toBeChecked()
+
+      // ダイアログを閉じる
+      rerender(<PhotoContributionDialog {...defaultProps} open={false} />)
+
+      // 再度開く
+      rerender(<PhotoContributionDialog {...defaultProps} open={true} />)
+
+      // カテゴリがリセットされている
+      expect(screen.getByRole('checkbox', { name: /自然風景/ })).not.toBeChecked()
+    })
+
+    it('ダイアログを閉じて再度開くと機材種別の選択状態がリセットされる', async () => {
+      const user = userEvent.setup()
+      const { rerender } = render(<PhotoContributionDialog {...defaultProps} />)
+
+      // 機材種別を選択
+      const slrButton = screen.getByText('一眼レフ').closest('div[class*="cursor-pointer"]')!
+      await user.click(slrButton)
+
+      // ダイアログを閉じる
+      rerender(<PhotoContributionDialog {...defaultProps} open={false} />)
+
+      // 再度開く
+      rerender(<PhotoContributionDialog {...defaultProps} open={true} />)
+
+      // 機材種別がリセットされている（選択色クラスが含まれない）
+      const slrButtonAfter = screen.getByText('一眼レフ').closest('div[class*="cursor-pointer"]')!
+      expect(slrButtonAfter.className).not.toContain('bg-primary')
     })
   })
 
