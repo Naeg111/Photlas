@@ -252,6 +252,36 @@ describe('FilterPanel', () => {
       // ダイアログは閉じない（閉じるボタンで閉じる）
       expect(mockOnOpenChange).not.toHaveBeenCalledWith(false)
     })
+
+    it('最後のフィルターを解除すると自動でonApplyが空条件で呼ばれる', async () => {
+      const mockOnApply = vi.fn()
+      const user = userEvent.setup()
+
+      render(
+        <FilterPanel
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onApply={mockOnApply}
+        />
+      )
+
+      // フィルターを1つ選択
+      await user.click(screen.getByText('1週間以内'))
+
+      // 同じフィルターを再度クリックして解除
+      await user.click(screen.getByText('1週間以内'))
+
+      // 全条件がなくなったのでonApplyが空条件で呼ばれる
+      expect(mockOnApply).toHaveBeenCalledWith(
+        expect.objectContaining({
+          categories: [],
+          months: [],
+          timesOfDay: [],
+          weathers: [],
+          maxAgeDays: undefined,
+        })
+      )
+    })
   })
 
   describe('UI Elements（基本）', () => {
