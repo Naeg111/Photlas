@@ -59,6 +59,8 @@ interface SearchSuggestion {
 export const DEFAULT_CENTER = { lat: 35.6812, lng: 139.7671 } // 東京駅
 const DEFAULT_ZOOM = 15
 const SEARCH_DEBOUNCE_MS = 300
+const LONG_DISTANCE_THRESHOLD = 10
+const TRANSITION_FADE_MS = 500
 const GEOCODING_TYPES = 'country,region,postcode,district,place,locality,neighborhood'
 
 /** オーバーレイのスタイル定数 */
@@ -122,6 +124,10 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
 
   // 帰属情報の表示状態
   const [isAttributionOpen, setIsAttributionOpen] = useState(false)
+
+  // ワープアニメーション
+  const [mapTransitioning, setMapTransitioning] = useState(false)
+  const [mapTransitionFading, setMapTransitionFading] = useState(false)
 
   // 検索関連のstate
   const [searchQuery, setSearchQuery] = useState('')
@@ -222,14 +228,41 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
     }, SEARCH_DEBOUNCE_MS)
   }, [searchBox, geocoding])
 
+  // 長距離移動時にワープアニメーション、短距離はflyTo
+  const moveMapTo = useCallback((lng: number, lat: number, zoom: number = DEFAULT_ZOOM) => {
+    if (!mapRef.current) return
+    const currentCenter = mapRef.current.getCenter()
+    const distance = Math.sqrt(
+      Math.pow(lng - currentCenter.lng, 2) + Math.pow(lat - currentCenter.lat, 2)
+    )
+    if (distance > LONG_DISTANCE_THRESHOLD) {
+      setMapTransitioning(true)
+      let completed = false
+      const completeTransition = () => {
+        if (completed) return
+        completed = true
+        setMapTransitionFading(true)
+        setTimeout(() => {
+          setMapTransitioning(false)
+          setMapTransitionFading(false)
+        }, TRANSITION_FADE_MS)
+      }
+      requestAnimationFrame(() => {
+        mapRef.current?.jumpTo({ center: [lng, lat], zoom })
+        mapRef.current?.once('idle', completeTransition)
+        setTimeout(completeTransition, 500)
+      })
+    } else {
+      mapRef.current.flyTo({ center: [lng, lat], zoom })
+    }
+  }, [])
+
   // 候補選択ハンドラー（センタリングのみ方式）
   const handleSelectSuggestion = useCallback(async (suggestion: SearchSuggestion) => {
     if (suggestion.source === 'geocoding' && suggestion.coordinates) {
-      // Geocoding由来: 座標を直接使用（retrieveは不要）
       const [lng, lat] = suggestion.coordinates
-      mapRef.current?.flyTo({ center: [lng, lat], zoom: DEFAULT_ZOOM })
+      moveMapTo(lng, lat)
     } else if (suggestion.source === 'searchbox' && searchBox) {
-      // SearchBox由来: retrieveで詳細座標を取得
       try {
         const result = await searchBox.retrieve(suggestion.originalSuggestion ?? suggestion, {
           sessionToken: sessionTokenRef.current,
@@ -237,7 +270,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         const feature = result.features?.[0]
         if (feature?.geometry?.coordinates) {
           const [lng, lat] = feature.geometry.coordinates
-          mapRef.current?.flyTo({ center: [lng, lat], zoom: DEFAULT_ZOOM })
+          moveMapTo(lng, lat)
         }
       } catch {
         // 検索結果の取得に失敗した場合はスキップ
@@ -277,7 +310,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         }
-        mapRef.current?.flyTo({ center: [newCenter.lng, newCenter.lat] })
+        moveMapTo(newCenter.lng, newCenter.lat)
       },
       () => {
         // 位置情報取得失敗時は現在位置への移動をスキップ
@@ -328,6 +361,16 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         ))}
       </Map>
 
+      {/* ワープアニメーション用暗転オーバーレイ */}
+      {mapTransitioning && (
+        <div style={{
+          position: 'absolute', inset: 0, backgroundColor: 'black', zIndex: 20,
+          opacity: mapTransitionFading ? 0 : 1,
+          transition: mapTransitionFading ? `opacity ${TRANSITION_FADE_MS}ms ease-out` : 'none',
+          pointerEvents: 'none',
+        }} />
+      )}
+
       {/* オーバーレイ: Mapの兄弟要素として配置（translateZ不使用でMapboxコントロールを遮蔽しない） */}
       <div style={overlayStyles.container}>
         {/* 検索バー + 候補リスト */}
@@ -377,7 +420,8 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
                 {suggestions.map((suggestion) => (
                   <li
                     key={suggestion.mapbox_id}
-                    onPointerDown={(e) => { e.preventDefault(); handleSelectSuggestion(suggestion) }}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSelectSuggestion(suggestion)}
                     style={{
                       padding: '8px 12px',
                       fontSize: 14,

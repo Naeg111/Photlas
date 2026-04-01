@@ -186,7 +186,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
 
       // 検索候補が表示されるのを待ってpointerDownで選択
       const suggestion = await screen.findByText('東京タワー')
-      fireEvent.pointerDown(suggestion)
+      fireEvent.click(suggestion)
 
       // flyToが呼ばれることを確認（センタリング）
       await waitFor(() => {
@@ -454,7 +454,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       vi.useRealTimers()
 
       const suggestion = await screen.findByText('渋谷区')
-      fireEvent.pointerDown(suggestion)
+      fireEvent.click(suggestion)
 
       // retrieveは呼ばれず、直接flyToで移動する
       await waitFor(() => {
