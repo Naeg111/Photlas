@@ -317,6 +317,26 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   })
 
   // ============================================================
+  // 検索エリアのz-index
+  // 検索候補ドロップダウンが中央ピンの上に表示されるようにする
+  // ============================================================
+
+  describe('検索エリアのz-index', () => {
+    it('検索エリアが中央ピンより高いz-indexを持つ', () => {
+      render(<InlineMapPicker {...defaultProps} />)
+
+      const searchInput = screen.getByPlaceholderText(/場所を検索/)
+      const searchArea = searchInput.closest('[style]')!.parentElement!
+      const centerPin = screen.getByTestId('center-pin')
+
+      const searchZIndex = Number(getComputedStyle(searchArea).zIndex) || Number((searchArea as HTMLElement).style.zIndex) || 0
+      const pinZIndex = Number(getComputedStyle(centerPin).zIndex) || Number((centerPin as HTMLElement).style.zIndex) || 0
+
+      expect(searchZIndex).toBeGreaterThan(pinZIndex)
+    })
+  })
+
+  // ============================================================
   // Mapbox帰属表示
   // ネイティブのMapboxコントロールはオーバーレイの背面に隠れるため
   // オーバーレイ内にカスタムのロゴ・帰属表示を配置する
