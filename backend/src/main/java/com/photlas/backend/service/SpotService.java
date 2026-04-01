@@ -137,8 +137,8 @@ public class SpotService {
      * @return 写真IDのリスト（撮影日時順）
      */
     @Transactional(readOnly = true)
-    public List<Long> getSpotPhotoIds(Long spotId) {
-        logger.info("Getting photo IDs for spot: spotId={}", spotId);
+    public List<Long> getSpotPhotoIds(Long spotId, Integer maxAgeDays) {
+        logger.info("Getting photo IDs for spot: spotId={}, maxAgeDays={}", spotId, maxAgeDays);
 
         // スポットの存在確認
         spotRepository.findById(spotId)
@@ -146,6 +146,14 @@ public class SpotService {
 
         List<Photo> photos = photoRepository.findBySpotIdAndModerationStatusOrderByShotAtAsc(
                 spotId, ModerationStatus.PUBLISHED);
+
+        // 鮮度フィルター
+        if (maxAgeDays != null) {
+            LocalDateTime maxAgeDate = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).minusDays(maxAgeDays);
+            photos = photos.stream()
+                    .filter(p -> p.getShotAt() == null || !p.getShotAt().isBefore(maxAgeDate))
+                    .collect(Collectors.toList());
+        }
 
         List<Long> photoIds = photos.stream()
                 .map(Photo::getPhotoId)

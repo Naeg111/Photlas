@@ -91,6 +91,8 @@ interface PhotoDetailDialogProps {
   onPhotoDeleted?: () => void
   /** Issue#58: 単体写真表示モード（ディープリンク用）。指定時はスポットの写真一覧取得をスキップ */
   singlePhotoId?: number
+  /** フィルター条件（スポット写真ID取得時に適用） */
+  filterMaxAgeDays?: number
 }
 
 // APIレスポンスの型定義
@@ -229,8 +231,15 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
 }
 
 // Helper Functions
-async function fetchPhotoIdsForSpot(spotId: number): Promise<number[]> {
-  const response = await fetch(`${API_SPOTS_PHOTOS}/${spotId}/photos`, {
+async function fetchPhotoIdsForSpot(spotId: number, maxAgeDays?: number): Promise<number[]> {
+  const params = new URLSearchParams()
+  if (maxAgeDays != null) {
+    params.append('max_age_days', maxAgeDays.toString())
+  }
+  const query = params.toString()
+  const url = `${API_SPOTS_PHOTOS}/${spotId}/photos${query ? `?${query}` : ''}`
+
+  const response = await fetch(url, {
     headers: getAuthHeaders(),
   })
 
@@ -241,8 +250,8 @@ async function fetchPhotoIdsForSpot(spotId: number): Promise<number[]> {
   return await response.json()
 }
 
-async function fetchPhotoIdsForSpots(spotIds: number[]): Promise<number[]> {
-  const results = await Promise.all(spotIds.map(id => fetchPhotoIdsForSpot(id)))
+async function fetchPhotoIdsForSpots(spotIds: number[], maxAgeDays?: number): Promise<number[]> {
+  const results = await Promise.all(spotIds.map(id => fetchPhotoIdsForSpot(id, maxAgeDays)))
   return results.flat()
 }
 
@@ -333,7 +342,7 @@ function DetailMiniMap({
   )
 }
 
-export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted, singlePhotoId }: Readonly<PhotoDetailDialogProps>) {
+export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted, singlePhotoId, filterMaxAgeDays }: Readonly<PhotoDetailDialogProps>) {
   const { isAuthenticated, user } = useAuth()
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -434,7 +443,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           return
         }
 
-        const ids = await fetchPhotoIdsForSpots(spotIds)
+        const ids = await fetchPhotoIdsForSpots(spotIds, filterMaxAgeDays)
         setPhotoIds(ids)
         setCurrentIndex(0)
 
