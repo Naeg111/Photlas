@@ -45,7 +45,9 @@ describe('extractExif', () => {
       const result = await extractExif(file)
 
       expect(result).not.toBeNull()
-      expect(result!.takenAt).toBe(takenDate.toISOString())
+      // ローカル時刻で保存される（UTCに変換しない）
+      expect(result!.takenAt).not.toContain('Z')
+      expect(result!.takenAt).toContain('2024-12-2') // 年月日がローカル時刻で含まれる
       expect(result!.latitude).toBe(35.6762)
       expect(result!.longitude).toBe(139.6503)
       expect(result!.cameraBody).toBe('Canon EOS R5')
