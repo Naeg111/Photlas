@@ -186,7 +186,6 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
       focalLengthRanges: [],
       maxIso: undefined,
     })
-    onOpenChange(false)
   }
 
   const hasAnyFilter =
