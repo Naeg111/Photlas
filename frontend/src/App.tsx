@@ -107,6 +107,8 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
   const [shootingLocationPreview, setShootingLocationPreview] = useState<{ lat: number; lng: number } | null>(null)
   // プロフィールダイアログのスライドダウン状態（写真詳細より遅延して追従）
   const [profileSlideDown, setProfileSlideDown] = useState(false)
+  const profileSlideDownRef = useRef(profileSlideDown)
+  profileSlideDownRef.current = profileSlideDown
   const shootingLocationPreviewRef = useRef(shootingLocationPreview)
   shootingLocationPreviewRef.current = shootingLocationPreview
   // Issue#50: プレビューモード中フラグ（Radix flushSync対策）
@@ -402,7 +404,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
   const handleReturnFromPreview = useCallback(() => {
     if (!shootingLocationPreviewRef.current) return
     // プロフィールから開いた場合：先にプロフィールをスライドアップ、遅延して写真詳細をスライドアップ
-    if (profileSlideDown) {
+    if (profileSlideDownRef.current) {
       setProfileSlideDown(false)
       setTimeout(() => {
         setShootingLocationPreview(null)
@@ -422,7 +424,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         }
       }, 500)
     }
-  }, [profileSlideDown])
+  }, [])
 
   // ライトボックス表示ハンドラー
   const handleShowLightbox = (imageUrl: string) => {
