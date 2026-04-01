@@ -105,10 +105,6 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
 
   // 撮影地点プレビュー状態
   const [shootingLocationPreview, setShootingLocationPreview] = useState<{ lat: number; lng: number } | null>(null)
-  // プロフィールダイアログのスライドダウン状態（写真詳細より遅延して追従）
-  const [profileSlideDown, setProfileSlideDown] = useState(false)
-  const profileSlideDownRef = useRef(profileSlideDown)
-  profileSlideDownRef.current = profileSlideDown
   const shootingLocationPreviewRef = useRef(shootingLocationPreview)
   shootingLocationPreviewRef.current = shootingLocationPreview
   // Issue#50: プレビューモード中フラグ（Radix flushSync対策）
@@ -394,36 +390,26 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     isInPreviewRef.current = true
     setShootingLocationPreview(location)
     mapRef.current?.showShootingLocationPin(location.lat, location.lng)
-    // プロフィールから開いた場合は遅延してプロフィールもスライドダウン
+    // プロフィールから開いた場合はProfileDialog(modal)を閉じてマップ操作を有効化
     if (isPhotoFromProfile) {
-      setTimeout(() => setProfileSlideDown(true), 200)
+      dialog.close('profile')
     }
   }
 
   // プレビューからの復帰ハンドラー（refでガード、依存配列を空に保つ）
   const handleReturnFromPreview = useCallback(() => {
     if (!shootingLocationPreviewRef.current) return
-    // プロフィールから開いた場合：先にプロフィールをスライドアップ、遅延して写真詳細をスライドアップ
-    if (profileSlideDownRef.current) {
-      setProfileSlideDown(false)
-      setTimeout(() => {
-        setShootingLocationPreview(null)
-        mapRef.current?.clearShootingLocationPin()
-        setTimeout(() => {
-          if (!shootingLocationPreviewRef.current) {
-            isInPreviewRef.current = false
-          }
-        }, 500)
-      }, 200)
-    } else {
-      setShootingLocationPreview(null)
-      mapRef.current?.clearShootingLocationPin()
-      setTimeout(() => {
-        if (!shootingLocationPreviewRef.current) {
-          isInPreviewRef.current = false
-        }
-      }, 500)
+    setShootingLocationPreview(null)
+    mapRef.current?.clearShootingLocationPin()
+    // プロフィールから開いた場合はProfileDialogを再度開く
+    if (isPhotoFromProfileRef.current) {
+      dialog.open('profile')
     }
+    setTimeout(() => {
+      if (!shootingLocationPreviewRef.current) {
+        isInPreviewRef.current = false
+      }
+    }, 500)
   }, [])
 
   // ライトボックス表示ハンドラー
@@ -653,7 +639,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
           isOwnProfile={!viewingUser}
           onPhotoClick={handleProfilePhotoClick}
           initialTab={profileInitialTab}
-          isSlideDown={profileSlideDown}
+          isSlideDown={false}
         />
       )}
 
@@ -669,7 +655,6 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
             dialog.close('photoDetail')
             setSelectedSpotIds(null)
             setShootingLocationPreview(null)
-            setProfileSlideDown(false)
             setProfilePhotoId(undefined)
             setIsPhotoFromProfile(false)
             mapRef.current?.clearShootingLocationPin()
