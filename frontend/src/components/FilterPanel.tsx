@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet"
 import { Button } from "./ui/button"
 import { CategoryIcon } from "./CategoryIcon"
@@ -198,6 +198,25 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
     selectedDeviceTypes.length > 0 ||
     selectedFocalLengthRanges.length > 0 ||
     selectedMaxIso !== undefined
+
+  // フィルター条件がすべて解除されたら自動でonApplyを呼ぶ
+  const hadFilterRef = useRef(false)
+  useEffect(() => {
+    if (hadFilterRef.current && !hasAnyFilter) {
+      onApply?.({
+        categories: [],
+        months: [],
+        timesOfDay: [],
+        weathers: [],
+        maxAgeDays: undefined,
+        aspectRatios: [],
+        deviceTypes: [],
+        focalLengthRanges: [],
+        maxIso: undefined,
+      })
+    }
+    hadFilterRef.current = hasAnyFilter
+  }, [hasAnyFilter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleApply = () => {
     if (onApply) {
