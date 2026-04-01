@@ -174,6 +174,19 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
     setSelectedDeviceTypes([])
     setSelectedFocalLengthRanges([])
     setSelectedMaxIso(undefined)
+
+    onApply?.({
+      categories: [],
+      months: [],
+      timesOfDay: [],
+      weathers: [],
+      maxAgeDays: undefined,
+      aspectRatios: [],
+      deviceTypes: [],
+      focalLengthRanges: [],
+      maxIso: undefined,
+    })
+    onOpenChange(false)
   }
 
   const hasAnyFilter =
