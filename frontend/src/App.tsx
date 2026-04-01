@@ -92,6 +92,9 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
   // Issue#57: プロフィール投稿一覧からPhotoDetailDialogを開いたかのフラグ
   const [isPhotoFromProfile, setIsPhotoFromProfile] = useState(false)
 
+  // プロフィールから開いた写真のID（deepLinkPhotoIdとは別管理でnavigate不要）
+  const [profilePhotoId, setProfilePhotoId] = useState<number | undefined>(undefined)
+
   // Issue#58: ディープリンク用の写真ID
   const { photoId: deepLinkPhotoIdParam } = useParams<{ photoId?: string }>()
   const [deepLinkPhotoId, setDeepLinkPhotoId] = useState<number | undefined>(
@@ -365,7 +368,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
   // Issue#77: プロフィール投稿一覧からの写真クリックハンドラー（photoId方式）
   const handleProfilePhotoClick = (photoId: number) => {
     setIsPhotoFromProfile(true)
-    setDeepLinkPhotoId(photoId)
+    setProfilePhotoId(photoId)
     dialog.open('photoDetail')
   }
 
@@ -632,17 +635,19 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
       )}
 
       {/* PhotoDetailDialog - 写真詳細表示 */}
-      {(selectedSpotIds !== null || deepLinkPhotoId) && (
+      {(selectedSpotIds !== null || deepLinkPhotoId || profilePhotoId) && (
         <PhotoDetailDialog
           open={dialog.isOpen('photoDetail')}
           spotIds={selectedSpotIds ?? []}
-          singlePhotoId={deepLinkPhotoId}
+          singlePhotoId={deepLinkPhotoId || profilePhotoId}
           onClose={() => {
             // プレビューモード中はダイアログを閉じない（Radix flushSync対策）
             if (isInPreviewRef.current) return
             dialog.close('photoDetail')
             setSelectedSpotIds(null)
             setShootingLocationPreview(null)
+            setProfilePhotoId(undefined)
+            setIsPhotoFromProfile(false)
             mapRef.current?.clearShootingLocationPin()
             // Issue#58: ディープリンクから閉じた場合はトップページに遷移
             if (deepLinkPhotoId) {
