@@ -15,7 +15,7 @@ import { InlineMapPicker, DEFAULT_CENTER } from './InlineMapPicker'
  */
 
 // Mapbox GL JS (react-map-gl) のモック
-const { mockMap, MapMock, mockSuggest, mockRetrieve, getCapturedOnMoveEnd, resetCapturedOnMoveEnd } = vi.hoisted(() => {
+const { mockMap, MapMock, mockSuggest, mockRetrieve, mockForward, getCapturedOnMoveEnd, resetCapturedOnMoveEnd } = vi.hoisted(() => {
   let _capturedOnMoveEnd: ((e: any) => void) | null = null
 
   const mockMap = {
@@ -40,11 +40,12 @@ const { mockMap, MapMock, mockSuggest, mockRetrieve, getCapturedOnMoveEnd, reset
 
   const mockSuggest = vi.fn()
   const mockRetrieve = vi.fn()
+  const mockForward = vi.fn()
 
   const getCapturedOnMoveEnd = () => _capturedOnMoveEnd
   const resetCapturedOnMoveEnd = () => { _capturedOnMoveEnd = null }
 
-  return { mockMap, MapMock, mockSuggest, mockRetrieve, getCapturedOnMoveEnd, resetCapturedOnMoveEnd }
+  return { mockMap, MapMock, mockSuggest, mockRetrieve, mockForward, getCapturedOnMoveEnd, resetCapturedOnMoveEnd }
 })
 
 vi.mock('react-map-gl', () => ({
@@ -53,11 +54,14 @@ vi.mock('react-map-gl', () => ({
   Marker: ({ children }: any) => <div>{children}</div>,
 }))
 
-// Mapbox Search Box API のモック
+// Mapbox Search Box API / Geocoding API のモック
 vi.mock('@mapbox/search-js-core', () => ({
   SearchBoxCore: vi.fn(() => ({
     suggest: mockSuggest,
     retrieve: mockRetrieve,
+  })),
+  GeocodingCore: vi.fn(() => ({
+    forward: mockForward,
   })),
   SessionToken: vi.fn(),
 }))
@@ -369,6 +373,78 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       // 閉じる
       fireEvent.click(infoButton)
       expect(screen.queryByRole('link', { name: '© Mapbox' })).not.toBeInTheDocument()
+    })
+  })
+
+  // ============================================================
+  // SearchBoxCoreとGeocodingCoreのAPI併用
+  // POI（駅・店舗）と行政区分（都道府県・市区町村）を網羅的に検索する
+  // ============================================================
+
+  describe('API併用検索（SearchBox + Geocoding）', () => {
+    it('SearchBoxCoreとGeocodingCoreの両方の結果が候補に表示される', async () => {
+      mockSuggest.mockResolvedValue({
+        suggestions: [
+          { name: '渋谷駅', full_address: '東京都渋谷区', mapbox_id: 'sb-1' },
+        ],
+      })
+      mockForward.mockResolvedValue({
+        features: [
+          {
+            properties: { name: '渋谷区', place_formatted: '東京都, 日本', mapbox_id: 'geo-1', feature_type: 'district' },
+            geometry: { coordinates: [139.6989, 35.6580] },
+          },
+        ],
+      })
+
+      render(<InlineMapPicker {...defaultProps} />)
+
+      const searchInput = screen.getByPlaceholderText(/場所を検索/)
+      fireEvent.change(searchInput, { target: { value: '渋谷' } })
+
+      await vi.advanceTimersByTimeAsync(300)
+
+      vi.useRealTimers()
+
+      // 両方の結果が表示される
+      await waitFor(() => {
+        expect(screen.getByText('渋谷区')).toBeInTheDocument()
+        expect(screen.getByText('渋谷駅')).toBeInTheDocument()
+      })
+    })
+
+    it('Geocoding由来の結果を選択するとretrieveなしで座標が取得される', async () => {
+      mockSuggest.mockResolvedValue({ suggestions: [] })
+      mockForward.mockResolvedValue({
+        features: [
+          {
+            properties: { name: '渋谷区', place_formatted: '東京都, 日本', mapbox_id: 'geo-1', feature_type: 'district' },
+            geometry: { coordinates: [139.6989, 35.6580] },
+          },
+        ],
+      })
+
+      render(<InlineMapPicker {...defaultProps} />)
+
+      const searchInput = screen.getByPlaceholderText(/場所を検索/)
+      fireEvent.change(searchInput, { target: { value: '渋谷区' } })
+
+      await vi.advanceTimersByTimeAsync(300)
+
+      vi.useRealTimers()
+
+      const suggestion = await screen.findByText('渋谷区')
+      fireEvent.click(suggestion)
+
+      // retrieveは呼ばれず、直接flyToで移動する
+      await waitFor(() => {
+        expect(mockRetrieve).not.toHaveBeenCalled()
+        expect(mockMap.flyTo).toHaveBeenCalledWith(
+          expect.objectContaining({
+            center: [139.6989, 35.6580],
+          })
+        )
+      })
     })
   })
 })
