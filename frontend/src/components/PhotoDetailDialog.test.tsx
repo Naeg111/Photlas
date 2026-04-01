@@ -1869,4 +1869,53 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
   })
+
+  // ============================================================
+  // 投稿詳細ミニマップのMapbox帰属表示
+  // ============================================================
+
+  describe('投稿詳細ミニマップのMapbox帰属表示', () => {
+    it('ミニマップにMapboxロゴリンクが表示される', async () => {
+      const photoDetail = createMockApiResponse({ userId: TEST_USER_ID })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        const logoLink = screen.getByLabelText('Mapbox ホームページ')
+        expect(logoLink).toHaveAttribute('href', 'https://www.mapbox.com/')
+      })
+    })
+
+    it('ミニマップに帰属情報ボタンが表示される', async () => {
+      const photoDetail = createMockApiResponse({ userId: TEST_USER_ID })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '帰属情報' })).toBeInTheDocument()
+      })
+    })
+  })
 })
