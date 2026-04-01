@@ -199,7 +199,7 @@ export function PhotoContributionDialog({
   const handleCategoryToggle = (category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category)
-        ? prev
+        ? prev.length > 1 ? prev.filter((c) => c !== category) : prev
         : [...prev, category]
     )
   }
