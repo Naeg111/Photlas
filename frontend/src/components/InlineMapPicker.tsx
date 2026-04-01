@@ -127,6 +127,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchAreaRef = useRef<HTMLDivElement>(null)
 
   // SearchBoxCore + GeocodingCore を初期化
   const searchBox = useMemo(() => {
@@ -284,15 +285,18 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
     )
   }, [])
 
-  // ドロップダウン外クリック/タップで閉じる
+  // ドロップダウン外クリック/タップで閉じる（検索エリア内のタップでは閉じない）
   useEffect(() => {
     if (!isDropdownOpen) return
-    const handleClick = () => setIsDropdownOpen(false)
-    document.addEventListener('click', handleClick)
-    document.addEventListener('touchstart', handleClick)
+    const handleOutside = (e: Event) => {
+      if (searchAreaRef.current?.contains(e.target as Node)) return
+      setIsDropdownOpen(false)
+    }
+    document.addEventListener('click', handleOutside)
+    document.addEventListener('touchstart', handleOutside)
     return () => {
-      document.removeEventListener('click', handleClick)
-      document.removeEventListener('touchstart', handleClick)
+      document.removeEventListener('click', handleOutside)
+      document.removeEventListener('touchstart', handleOutside)
     }
   }, [isDropdownOpen])
 
@@ -326,7 +330,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
       {/* オーバーレイ: Mapの兄弟要素として配置（translateZ不使用でMapboxコントロールを遮蔽しない） */}
       <div style={overlayStyles.container}>
         {/* 検索バー + 候補リスト */}
-        <div style={overlayStyles.searchArea}>
+        <div ref={searchAreaRef} style={overlayStyles.searchArea}>
           <div style={{ position: 'relative' }}>
             <Search
               style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: '#9ca3af', pointerEvents: 'none' }}
