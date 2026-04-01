@@ -184,9 +184,9 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       // React再レンダリングのためリアルタイマーに切り替え
       vi.useRealTimers()
 
-      // 検索候補が表示されるのを待ってクリック
+      // 検索候補が表示されるのを待ってpointerDownで選択
       const suggestion = await screen.findByText('東京タワー')
-      fireEvent.click(suggestion)
+      fireEvent.pointerDown(suggestion)
 
       // flyToが呼ばれることを確認（センタリング）
       await waitFor(() => {
@@ -326,13 +326,11 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       render(<InlineMapPicker {...defaultProps} />)
 
       const searchInput = screen.getByPlaceholderText(/場所を検索/)
-      const searchArea = searchInput.closest('[style]')!.parentElement!
-      const centerPin = screen.getByTestId('center-pin')
+      // searchInput → relative div → searchArea div
+      const searchArea = searchInput.parentElement!.parentElement! as HTMLElement
+      const centerPin = screen.getByTestId('center-pin') as HTMLElement
 
-      const searchZIndex = Number(getComputedStyle(searchArea).zIndex) || Number((searchArea as HTMLElement).style.zIndex) || 0
-      const pinZIndex = Number(getComputedStyle(centerPin).zIndex) || Number((centerPin as HTMLElement).style.zIndex) || 0
-
-      expect(searchZIndex).toBeGreaterThan(pinZIndex)
+      expect(Number(searchArea.style.zIndex)).toBeGreaterThan(Number(centerPin.style.zIndex || 0))
     })
   })
 
@@ -456,7 +454,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       vi.useRealTimers()
 
       const suggestion = await screen.findByText('渋谷区')
-      fireEvent.click(suggestion)
+      fireEvent.pointerDown(suggestion)
 
       // retrieveは呼ばれず、直接flyToで移動する
       await waitFor(() => {
