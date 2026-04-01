@@ -887,7 +887,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           }),
           transition: 'top 0.4s ease-in-out, translate 0.4s ease-in-out',
         }}
-        overlayClassName={isSlideDown ? 'bg-transparent pointer-events-none' : undefined}
+        overlayClassName={isSlideDown ? 'bg-transparent pointer-events-none' : isDeletable ? 'bg-transparent' : undefined}
         hideCloseButton
         onPointerDownOutside={(e) => { if (isLightboxOpen || wasSlideDownRef.current) e.preventDefault() }}
         onFocusOutside={(e) => { if (isLightboxOpen || wasSlideDownRef.current) e.preventDefault() }}
