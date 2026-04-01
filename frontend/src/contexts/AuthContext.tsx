@@ -38,6 +38,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (token && savedUser) {
       try {
+        // JWTトークンの有効期限チェック
+        const payloadBase64 = token.split('.')[1]
+        if (payloadBase64) {
+          const payload = JSON.parse(atob(payloadBase64))
+          if (payload.exp && payload.exp * 1000 < Date.now()) {
+            logout()
+            return
+          }
+        }
+
         const parsedUser = JSON.parse(savedUser)
         if (!parsedUser.userId) {
           // userIdがない古いデータの場合は再ログインを要求
