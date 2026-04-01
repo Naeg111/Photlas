@@ -134,6 +134,27 @@ export function PhotoContributionDialog({
     }
   }, [])
 
+  // ダイアログが閉じたら入力内容を全てリセット
+  useEffect(() => {
+    if (!open) {
+      setSelectedFile(null)
+      setPreviewUrl('')
+      setSelectedCategories([])
+      setPinPosition(null)
+      setSelectedWeather('')
+      setSelectedDeviceType('')
+      setUploadStatus('idle')
+      setUploadProgress(0)
+      setExifData(null)
+      setPlaceName('')
+      setPlaceNameSuggestions([])
+      setIsPlaceNameDropdownOpen(false)
+      setCrop({ x: 0, y: 0 })
+      setCropZoom(1)
+      setCroppedArea(null)
+    }
+  }, [open])
+
   // ダイアログ表示時にスクロール位置を先頭にリセット
   useEffect(() => {
     if (!open) return
@@ -610,6 +631,7 @@ export function PhotoContributionDialog({
                       checked={selectedCategories.includes(category)}
                       aria-label={category}
                       tabIndex={-1}
+                      style={{ pointerEvents: 'none' }}
                     />
                     <CategoryIcon category={category} className="w-5 h-5" />
                     <Label className="cursor-pointer flex-1">

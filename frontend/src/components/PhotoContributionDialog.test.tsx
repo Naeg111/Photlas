@@ -294,14 +294,11 @@ describe('PhotoContributionDialog', () => {
       expect(checkbox).toBeChecked()
     })
 
-    it('カテゴリのチェックボックスをクリックして選択できる', async () => {
-      const user = userEvent.setup()
+    it('チェックボックスはpointer-events:noneで親divへクリックを透過する', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
       const checkbox = screen.getByRole('checkbox', { name: /自然風景/ })
-      await user.click(checkbox)
-
-      expect(checkbox).toBeChecked()
+      expect(checkbox).toHaveStyle({ pointerEvents: 'none' })
     })
   })
 
