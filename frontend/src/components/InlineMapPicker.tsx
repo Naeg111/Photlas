@@ -80,6 +80,7 @@ const overlayStyles = {
     left: 8,
     right: 8,
     pointerEvents: 'auto',
+    zIndex: 2,
   } as React.CSSProperties,
   pin: {
     position: 'absolute',
@@ -376,9 +377,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
                 {suggestions.map((suggestion) => (
                   <li
                     key={suggestion.mapbox_id}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    onClick={() => handleSelectSuggestion(suggestion)}
+                    onPointerDown={(e) => { e.preventDefault(); handleSelectSuggestion(suggestion) }}
                     style={{
                       padding: '8px 12px',
                       fontSize: 14,
