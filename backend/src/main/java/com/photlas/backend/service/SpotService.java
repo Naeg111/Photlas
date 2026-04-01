@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -68,7 +69,7 @@ public class SpotService {
         int safeMinResolution = (minResolution != null) ? minResolution : -1;
         List<String> safeDeviceTypes = safeStringList(deviceTypes);
         LocalDateTime safeMaxAgeDate = (maxAgeDays != null)
-            ? LocalDateTime.now().minusDays(maxAgeDays)
+            ? LocalDateTime.now(ZoneId.of("Asia/Tokyo")).minusDays(maxAgeDays)
             : LocalDateTime.of(1900, 1, 1, 0, 0);
         List<String> safeAspectRatios = safeStringList(aspectRatios);
         List<String> safeFocalLengthRanges = safeStringList(focalLengthRanges);
