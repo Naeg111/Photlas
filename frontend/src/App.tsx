@@ -372,6 +372,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     isPhotoFromProfileRef.current = true
     setIsPhotoFromProfile(true)
     setProfilePhotoId(photoId)
+    dialog.close('profile')
     dialog.open('photoDetail')
   }
 
@@ -390,10 +391,6 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     isInPreviewRef.current = true
     setShootingLocationPreview(location)
     mapRef.current?.showShootingLocationPin(location.lat, location.lng)
-    // プロフィールから開いた場合はProfileDialog(modal)を閉じてマップ操作を有効化
-    if (isPhotoFromProfile) {
-      dialog.close('profile')
-    }
   }
 
   // プレビューからの復帰ハンドラー（refでガード、依存配列を空に保つ）
@@ -401,10 +398,6 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     if (!shootingLocationPreviewRef.current) return
     setShootingLocationPreview(null)
     mapRef.current?.clearShootingLocationPin()
-    // プロフィールから開いた場合はProfileDialogを再度開く
-    if (isPhotoFromProfileRef.current) {
-      dialog.open('profile')
-    }
     setTimeout(() => {
       if (!shootingLocationPreviewRef.current) {
         isInPreviewRef.current = false
@@ -620,7 +613,6 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         <ProfileDialog
           open={dialog.isOpen('profile')}
           onClose={() => {
-            if (isPhotoFromProfileRef.current) return
             dialog.close('profile')
             setViewingUser(null)
           }}
@@ -639,7 +631,6 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
           isOwnProfile={!viewingUser}
           onPhotoClick={handleProfilePhotoClick}
           initialTab={profileInitialTab}
-          isSlideDown={false}
         />
       )}
 
@@ -655,11 +646,14 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
             dialog.close('photoDetail')
             setSelectedSpotIds(null)
             setShootingLocationPreview(null)
+            mapRef.current?.clearShootingLocationPin()
+            // プロフィールから開いた場合はProfileDialogに戻る
+            if (isPhotoFromProfile) {
+              dialog.open('profile')
+            }
             setProfilePhotoId(undefined)
             setIsPhotoFromProfile(false)
-            mapRef.current?.clearShootingLocationPin()
-            // Radixフォーカス復帰後にrefをクリア（ProfileDialogのonCloseガード用）
-            setTimeout(() => { isPhotoFromProfileRef.current = false }, 200)
+            isPhotoFromProfileRef.current = false
             // Issue#58: ディープリンクから閉じた場合はトップページに遷移
             if (deepLinkPhotoId) {
               setDeepLinkPhotoId(undefined)
