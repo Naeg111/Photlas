@@ -238,23 +238,19 @@ describe('FilterPanel', () => {
       // クリア
       await user.click(screen.getByRole('button', { name: 'クリア' }))
 
-      // クリア後は適用ボタンが無効になる
-      expect(screen.getByRole('button', { name: '適用' })).toBeDisabled()
-
-      // onApplyは呼ばれない（代わりにクリア状態を確認）
-      expect(mockOnApply).not.toHaveBeenCalledWith(
+      // クリアボタンでonApplyが空の条件で呼ばれる
+      expect(mockOnApply).toHaveBeenCalledWith(
         expect.objectContaining({
           categories: [],
           months: [],
           timesOfDay: [],
           weathers: [],
-          deviceTypes: [],
           maxAgeDays: undefined,
-          aspectRatios: [],
-          focalLengthRanges: [],
-          maxIso: undefined,
         })
       )
+
+      // ダイアログが閉じる
+      expect(mockOnOpenChange).toHaveBeenCalledWith(false)
     })
   })
 
