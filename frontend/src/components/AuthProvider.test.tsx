@@ -497,4 +497,68 @@ describe('AuthProvider', () => {
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Not Authenticated')
     })
   })
+
+  describe('JWTトークンの有効期限チェック', () => {
+    it('期限切れトークンがストレージにある場合はログアウト状態になる', () => {
+      // 期限切れのJWTトークンを作成（exp = 1時間前）
+      const payload = { exp: Math.floor(Date.now() / 1000) - 3600, sub: 'test@example.com' }
+      const encodedPayload = btoa(JSON.stringify(payload))
+      const expiredToken = `eyJhbGciOiJIUzI1NiJ9.${encodedPayload}.signature`
+
+      const savedUser = JSON.stringify({
+        userId: 1,
+        username: 'testuser',
+        email: 'test@example.com',
+        role: 'USER',
+      });
+
+      (localStorage.getItem as ReturnType<typeof vi.fn>)
+        .mockImplementation((key: string) => {
+          if (key === 'auth_token') return expiredToken
+          if (key === 'auth_user') return savedUser
+          return null
+        })
+
+      render(
+        <BrowserRouter>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </BrowserRouter>
+      )
+
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('Not Authenticated')
+    })
+
+    it('有効なトークンがストレージにある場合はログイン状態になる', () => {
+      // 有効なJWTトークンを作成（exp = 1時間後）
+      const payload = { exp: Math.floor(Date.now() / 1000) + 3600, sub: 'test@example.com' }
+      const encodedPayload = btoa(JSON.stringify(payload))
+      const validToken = `eyJhbGciOiJIUzI1NiJ9.${encodedPayload}.signature`
+
+      const savedUser = JSON.stringify({
+        userId: 1,
+        username: 'testuser',
+        email: 'test@example.com',
+        role: 'USER',
+      });
+
+      (localStorage.getItem as ReturnType<typeof vi.fn>)
+        .mockImplementation((key: string) => {
+          if (key === 'auth_token') return validToken
+          if (key === 'auth_user') return savedUser
+          return null
+        })
+
+      render(
+        <BrowserRouter>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </BrowserRouter>
+      )
+
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('Authenticated')
+    })
+  })
 })
