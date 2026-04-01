@@ -103,6 +103,8 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
 
   // 撮影地点プレビュー状態
   const [shootingLocationPreview, setShootingLocationPreview] = useState<{ lat: number; lng: number } | null>(null)
+  // プロフィールダイアログのスライドダウン状態（写真詳細より遅延して追従）
+  const [profileSlideDown, setProfileSlideDown] = useState(false)
   const shootingLocationPreviewRef = useRef(shootingLocationPreview)
   shootingLocationPreviewRef.current = shootingLocationPreview
   // Issue#50: プレビューモード中フラグ（Radix flushSync対策）
@@ -387,23 +389,37 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     isInPreviewRef.current = true
     setShootingLocationPreview(location)
     mapRef.current?.showShootingLocationPin(location.lat, location.lng)
+    // プロフィールから開いた場合は遅延してプロフィールもスライドダウン
+    if (isPhotoFromProfile) {
+      setTimeout(() => setProfileSlideDown(true), 200)
+    }
   }
 
   // プレビューからの復帰ハンドラー（refでガード、依存配列を空に保つ）
   const handleReturnFromPreview = useCallback(() => {
     if (!shootingLocationPreviewRef.current) return
-    setShootingLocationPreview(null)
-    mapRef.current?.clearShootingLocationPin()
-    // Issue#50: 500ms遅延でフラグをクリア
-    // モバイルタッチ時、Radixのflushyncやブラウザの遅延イベント（focusin等）が
-    // 予測不能なタイミングでonDismissを呼ぶ可能性がある。
-    // スライドアップアニメーション（400ms）完了後まで全dismiss操作をブロックする。
-    setTimeout(() => {
-      if (!shootingLocationPreviewRef.current) {
-        isInPreviewRef.current = false
-      }
-    }, 500)
-  }, [])
+    // プロフィールから開いた場合：先にプロフィールをスライドアップ、遅延して写真詳細をスライドアップ
+    if (profileSlideDown) {
+      setProfileSlideDown(false)
+      setTimeout(() => {
+        setShootingLocationPreview(null)
+        mapRef.current?.clearShootingLocationPin()
+        setTimeout(() => {
+          if (!shootingLocationPreviewRef.current) {
+            isInPreviewRef.current = false
+          }
+        }, 500)
+      }, 200)
+    } else {
+      setShootingLocationPreview(null)
+      mapRef.current?.clearShootingLocationPin()
+      setTimeout(() => {
+        if (!shootingLocationPreviewRef.current) {
+          isInPreviewRef.current = false
+        }
+      }, 500)
+    }
+  }, [profileSlideDown])
 
   // ライトボックス表示ハンドラー
   const handleShowLightbox = (imageUrl: string) => {
@@ -631,6 +647,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
           isOwnProfile={!viewingUser}
           onPhotoClick={handleProfilePhotoClick}
           initialTab={profileInitialTab}
+          isSlideDown={profileSlideDown}
         />
       )}
 

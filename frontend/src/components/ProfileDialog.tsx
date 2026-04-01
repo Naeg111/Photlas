@@ -122,6 +122,8 @@ interface ProfileDialogProps {
   /** Issue#77: 写真クリック時にphotoIdを渡すコールバック */
   onPhotoClick?: (photoId: number) => void
   initialTab?: 'posts' | 'favorites'
+  /** 撮影地点プレビュー時にダイアログを画面下部にスライドする */
+  isSlideDown?: boolean
 }
 
 /**
@@ -189,6 +191,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   isOwnProfile,
   onPhotoClick,
   initialTab = 'posts',
+  isSlideDown = false,
 }) => {
   // プロフィール画像とSNSリンクのローカルステート（即時反映用）
   const [localProfileImageUrl, setLocalProfileImageUrl] = useState<string | null>(null)
@@ -448,7 +451,16 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-h-[80vh] min-h-[80vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '80dvh', minHeight: '80dvh' }}>
+      <DialogContent
+        className="max-h-[80vh] min-h-[80vh]"
+        style={{
+          display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden',
+          maxHeight: '80dvh', minHeight: '80dvh',
+          ...(isSlideDown ? { top: 'calc(100dvh - 30px)', translate: '-50% 0' } : { translate: '-50% -50%' }),
+          transition: 'top 0.4s ease-in-out, translate 0.4s ease-in-out',
+        }}
+        overlayClassName={isSlideDown ? 'bg-transparent pointer-events-none' : undefined}
+      >
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
