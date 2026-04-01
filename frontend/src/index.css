@@ -246,8 +246,9 @@ input, textarea, [contenteditable="true"] {
   margin: 0 0 0 10px !important;
 }
 
-/* InlineMapPicker: ネイティブMapboxロゴを非表示（オーバーレイ内にカスタム実装あり） */
-[data-testid="inline-map-picker"] .mapboxgl-ctrl-logo {
+/* InlineMapPicker/DetailMiniMap: ネイティブMapboxロゴを非表示（カスタム実装あり） */
+[data-testid="inline-map-picker"] .mapboxgl-ctrl-logo,
+[data-testid="detail-minimap"] .mapboxgl-ctrl-logo {
   display: none !important;
 }
 

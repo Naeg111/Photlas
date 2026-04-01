@@ -281,6 +281,8 @@ function DetailMiniMap({
   longitude: number
   onClick?: () => void
 }>) {
+  const [isAttributionOpen, setIsAttributionOpen] = useState(false)
+
   // ダイアログの開閉アニメーション完了を待ってからMapGLを描画する。
   // singlePhotoIdモード（ディープリンク）ではデータ取得が速く、
   // アニメーション中にMapGLが初期化されるとMarkerの位置計算が失敗する。
@@ -348,6 +350,26 @@ function DetailMiniMap({
                 <g opacity="0.9" fill="#fff"><use xlinkHref="#dm-logo-icon" /><use xlinkHref="#dm-logo-text" /></g>
               </svg>
             </a>
+          </div>
+          {/* 帰属情報（右下） */}
+          <div style={{ position: 'absolute', bottom: 4, right: 4, pointerEvents: 'auto', zIndex: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
+            {isAttributionOpen && (
+              <div style={{ background: 'rgba(255,255,255,0.9)', borderRadius: 4, padding: '2px 6px', fontSize: 10, whiteSpace: 'nowrap' }}>
+                <a href="https://www.mapbox.com/about/maps" target="_blank" rel="noopener noreferrer" style={{ color: '#333', textDecoration: 'none' }}>© Mapbox</a>
+                {' '}
+                <a href="https://www.openstreetmap.org/copyright/" target="_blank" rel="noopener noreferrer" style={{ color: '#333', textDecoration: 'none' }}>© OpenStreetMap</a>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setIsAttributionOpen(prev => !prev) }}
+              aria-label="帰属情報"
+              style={{ width: 24, height: 24, borderRadius: '50%', border: 'none', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
+            >
+              <svg viewBox="0 0 20 20" width="20" height="20" fill="black" fillRule="evenodd">
+                <path d="M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0" />
+              </svg>
+            </button>
           </div>
         </>
       ) : (

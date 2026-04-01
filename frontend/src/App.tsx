@@ -366,6 +366,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
   const handleProfilePhotoClick = (photoId: number) => {
     setIsPhotoFromProfile(true)
     setDeepLinkPhotoId(photoId)
+    dialog.close('profile')
     dialog.open('photoDetail')
   }
 
