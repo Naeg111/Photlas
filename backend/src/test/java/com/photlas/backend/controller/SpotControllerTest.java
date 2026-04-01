@@ -223,8 +223,8 @@ public class SpotControllerTest {
     @Test
     @DisplayName("正常ケース - フィルター条件でスポットを取得（月指定）")
     void testGetSpots_WithMonthFilter_ReturnsFilteredSpots() throws Exception {
-        // 現在月の写真
-        int currentMonth = LocalDateTime.now().getMonthValue();
+        // TEST_SHOT_ATの月でフィルター（月末境界でnow()と月がずれる問題を回避）
+        int currentMonth = TEST_SHOT_AT.getMonthValue();
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
 
