@@ -17,6 +17,7 @@ import { InlineMapPicker } from './InlineMapPicker'
 import { extractExif, type ExifData } from '../utils/extractExif'
 import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
 import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
+import { sortSuggestionsByRelevance } from '../utils/sortSuggestions'
 
 /**
  * PhotoContributionDialog コンポーネント
@@ -253,7 +254,7 @@ export function PhotoContributionDialog({
         }
 
         const result = await placeNameSearchBox.suggest(value, options)
-        const items = (result.suggestions || []) as PlaceNameSuggestion[]
+        const items = sortSuggestionsByRelevance((result.suggestions || []) as PlaceNameSuggestion[], value)
         setPlaceNameSuggestions(items)
         setIsPlaceNameDropdownOpen(items.length > 0)
       } catch {

@@ -7,6 +7,7 @@ import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
 import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
+import { sortSuggestionsByRelevance } from '../utils/sortSuggestions'
 
 /**
  * InlineMapPicker コンポーネント
@@ -153,7 +154,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
           sessionToken: sessionTokenRef.current,
           language: 'ja',
         })
-        const items = result.suggestions || []
+        const items = sortSuggestionsByRelevance(result.suggestions || [], value)
         setSuggestions(items)
         setIsDropdownOpen(items.length > 0)
       } catch {
