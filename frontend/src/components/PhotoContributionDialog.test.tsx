@@ -246,7 +246,29 @@ describe('PhotoContributionDialog', () => {
       })
     })
 
-    it('選択済みのカテゴリを再度クリックしても解除されない', async () => {
+    it('複数選択時は再クリックでカテゴリを解除できる', async () => {
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const landscapeDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')!
+      const cityDiv = screen.getByText('街並み').closest('div[class*="cursor-pointer"]')!
+
+      // 2つ選択
+      await user.click(landscapeDiv)
+      await user.click(cityDiv)
+
+      const landscapeCheckbox = screen.getByRole('checkbox', { name: /自然風景/ })
+      const cityCheckbox = screen.getByRole('checkbox', { name: /街並み/ })
+      expect(landscapeCheckbox).toBeChecked()
+      expect(cityCheckbox).toBeChecked()
+
+      // 1つ解除できる
+      await user.click(landscapeDiv)
+      expect(landscapeCheckbox).not.toBeChecked()
+      expect(cityCheckbox).toBeChecked()
+    })
+
+    it('最後の1つは再クリックしても解除されない', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
@@ -256,7 +278,7 @@ describe('PhotoContributionDialog', () => {
       const checkbox = screen.getByRole('checkbox', { name: /自然風景/ })
       expect(checkbox).toBeChecked()
 
-      // 再度クリックしても解除されない
+      // 最後の1つは解除できない
       await user.click(landscapeDiv)
       expect(checkbox).toBeChecked()
     })
