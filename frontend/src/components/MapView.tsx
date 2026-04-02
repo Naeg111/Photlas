@@ -64,7 +64,7 @@ const CLUSTER_MAX_ZOOM = 17
 const TOAST_DURATION_MS = 3000
 const TOP_UI_HEIGHT = 56
 /** 長距離移動の閾値（緯度経度の度数、約1110km） */
-const LONG_DISTANCE_THRESHOLD = 10
+const LONG_DISTANCE_THRESHOLD = 4.5
 const TRANSITION_FADE_MS = 500
 
 /** 地図遷移完了時のフェードアウト処理を生成（ネスト深度削減用） */
@@ -497,7 +497,21 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           center: [map.getCenter().lng, map.getCenter().lat],
           zoom: map.getZoom(),
         }
-        map.flyTo({ center: [lng, lat], zoom: 16 })
+        const currentCenter = map.getCenter()
+        const distance = Math.sqrt(
+          Math.pow(lng - currentCenter.lng, 2) + Math.pow(lat - currentCenter.lat, 2)
+        )
+        if (distance > LONG_DISTANCE_THRESHOLD) {
+          setMapTransitioning(true)
+          const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading)
+          requestAnimationFrame(() => {
+            map.jumpTo({ center: [lng, lat], zoom: 16 })
+            map.once('idle', completeTransition)
+            setTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
+          })
+        } else {
+          map.flyTo({ center: [lng, lat], zoom: 16 })
+        }
         setShootingLocationPin({ lat, lng })
       }
     },

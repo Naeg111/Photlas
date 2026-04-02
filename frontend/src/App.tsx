@@ -615,6 +615,10 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
       <PhotoContributionDialog
         {...dialog.getProps('photoContribution')}
         onSubmit={handlePhotoSubmit}
+        onOpenChange={(open) => {
+          dialog.getProps('photoContribution').onOpenChange(open)
+          if (!open) mapRef.current?.refreshSpots()
+        }}
       />
 
       {/* 行きたい場所リスト（一時非表示）

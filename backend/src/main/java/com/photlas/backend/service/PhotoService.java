@@ -408,9 +408,15 @@ public class PhotoService {
         return buildPhotoResponse(photo, spot, user, isFavorited, 0L);
     }
 
+    private static final String BLOCKED_CONTENT_IMAGE_KEY = "assets/blocked-content.png";
+
     private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited, long favoriteCount) {
-        // S3オブジェクトキーからCDN URLを生成
-        String imageUrl = s3Service.generateCdnUrl(photo.getS3ObjectKey());
+        // ブロックされた写真は黒色の専用画像で置換（QUARANTINED/REMOVEDのみ）
+        boolean isBlocked = photo.getModerationStatus() == ModerationStatus.QUARANTINED
+                || photo.getModerationStatus() == ModerationStatus.REMOVED;
+        String imageUrl = isBlocked
+                ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
+                : s3Service.generateCdnUrl(photo.getS3ObjectKey());
 
         PhotoResponse.PhotoDTO photoDTO = new PhotoResponse.PhotoDTO(
                 photo.getPhotoId(),
@@ -438,8 +444,10 @@ public class PhotoService {
             photoDTO.setModerationStatus(photo.getModerationStatus().name());
         }
 
-        // Issue#59: サムネイルURLを設定
-        photoDTO.setThumbnailUrl(s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey()));
+        // Issue#59: サムネイルURLを設定（ブロック時は黒色画像）
+        photoDTO.setThumbnailUrl(isBlocked
+                ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
+                : s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey()));
 
         // カテゴリ名リストを設定
         if (photo.getCategories() != null && !photo.getCategories().isEmpty()) {
