@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dial
 import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2, Share2, Pencil, User } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
-import MapGL from 'react-map-gl'
+import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PinSvg } from './PinSvg'
 import { ProtectedImage } from './figma/ProtectedImage'
@@ -316,30 +316,25 @@ function DetailMiniMap({
             language="ja"
             interactive={false}
             attributionControl={false}
-          />
-          {/* ピンをHTML要素として中央に配置（Mapbox Markerのtransform干渉を回避） */}
-          <div
-            data-testid="minimap-pin"
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -100%)',
-              width: '27px',
-              height: '30px',
-              pointerEvents: 'none',
-            }}
           >
-            <PinSvg
-              fill="#ffffff"
-              stroke="#000000"
-              strokeWidth={2}
-              strokeLinejoin="round"
-              shapeRendering="geometricPrecision"
-            >
-              <circle cx="16" cy="14" r="6" fill="#000000" stroke="#000000" strokeWidth="1" />
-            </PinSvg>
-          </div>
+            {/* Mapbox Markerで正確な座標にピンを配置（CSS配置はズームレベルでずれる） */}
+            <Marker longitude={longitude} latitude={latitude} anchor="bottom">
+              <div
+                data-testid="minimap-pin"
+                style={{ width: '27px', height: '30px', pointerEvents: 'none' }}
+              >
+                <PinSvg
+                  fill="#ffffff"
+                  stroke="#000000"
+                  strokeWidth={2}
+                  strokeLinejoin="round"
+                  shapeRendering="geometricPrecision"
+                >
+                  <circle cx="16" cy="14" r="6" fill="#000000" stroke="#000000" strokeWidth="1" />
+                </PinSvg>
+              </div>
+            </Marker>
+          </MapGL>
           {/* Mapboxロゴ（左下） */}
           <div style={{ position: 'absolute', bottom: 4, left: 4, pointerEvents: 'auto', zIndex: 1 }}>
             <a href="https://www.mapbox.com/" target="_blank" rel="noopener noreferrer" aria-label="Mapbox ホームページ">
