@@ -583,14 +583,14 @@ export function PhotoContributionDialog({
             <div className="space-y-3">
               <Label htmlFor="placeName" className="text-base flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                施設名・店名
+                場所の名前
               </Label>
               <div className="relative">
                 <Input
                   id="placeName"
                   value={placeName}
                   onChange={(e) => handlePlaceNameSearch(e.target.value)}
-                  placeholder="例：東京タワー、スターバックス渋谷店"
+                  placeholder="例：東京スカイツリー、富士山"
                   maxLength={PHOTO_UPLOAD.PLACE_NAME_MAX_LENGTH}
                 />
                 {isPlaceNameDropdownOpen && placeNameSuggestions.length > 0 && (
