@@ -122,6 +122,9 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
 
+  // 外部からのposition変更を検知してマップを移動する
+  const lastExternalPositionRef = useRef<{ lat: number; lng: number } | null>(null)
+
   // 帰属情報の表示状態
   const [isAttributionOpen, setIsAttributionOpen] = useState(false)
 
@@ -256,6 +259,20 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
       mapRef.current.flyTo({ center: [lng, lat], zoom })
     }
   }, [])
+
+  // 外部からのposition変更を検知してマップを移動（EXIF GPS座標等）
+  useEffect(() => {
+    if (!position || !mapRef.current) return
+    if (lastExternalPositionRef.current &&
+        lastExternalPositionRef.current.lat === position.lat &&
+        lastExternalPositionRef.current.lng === position.lng) return
+    const current = mapRef.current.getCenter()
+    const dist = Math.abs(current.lat - position.lat) + Math.abs(current.lng - position.lng)
+    if (dist > 0.001) {
+      moveMapTo(position.lng, position.lat)
+    }
+    lastExternalPositionRef.current = position
+  }, [position, moveMapTo])
 
   // 候補選択ハンドラー（センタリングのみ方式）
   const handleSelectSuggestion = useCallback(async (suggestion: SearchSuggestion) => {
