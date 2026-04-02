@@ -162,6 +162,12 @@ describe('PhotoContributionDialog', () => {
       expect(screen.getByPlaceholderText('例：東京スカイツリー、富士山')).toBeInTheDocument()
     })
 
+    it('位置情報の自動設定に関する説明が表示される', () => {
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      expect(screen.getByText('写真に位置情報が登録されている場合は自動で設定されます')).toBeInTheDocument()
+    })
+
     it('renders all 14 genre options', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
