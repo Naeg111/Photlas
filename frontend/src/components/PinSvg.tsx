@@ -33,7 +33,7 @@ export function PinSvg({
   children,
 }: Readonly<PinSvgProps>) {
   return (
-    <svg viewBox="-2 -2 36 42" width="100%" height="100%" shapeRendering={shapeRendering}>
+    <svg viewBox="-2 -2 36 40" width="100%" height="100%" shapeRendering={shapeRendering} overflow="visible">
       <path
         d={PIN_PATH}
         fill="rgba(0,0,0,0.2)"

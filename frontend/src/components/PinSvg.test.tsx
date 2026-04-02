@@ -17,7 +17,7 @@ describe('PinSvg', () => {
 
     const svg = container.querySelector('svg')
     expect(svg).toBeInTheDocument()
-    expect(svg).toHaveAttribute('viewBox', '-2 -2 36 42')
+    expect(svg).toHaveAttribute('viewBox', '-2 -2 36 40')
   })
 
   it('fill属性がピンパスに適用される', () => {
