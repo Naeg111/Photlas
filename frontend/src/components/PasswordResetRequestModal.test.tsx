@@ -256,4 +256,49 @@ describe('PasswordResetRequestModal', () => {
       expect(submitButton.className).toContain('bg-primary')
     })
   })
+
+  describe('送信ボタンの非活性制御', () => {
+    it('メールアドレス未入力時は送信ボタンが非活性', () => {
+      render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
+
+      const submitButton = screen.getByRole('button', { name: '送信' })
+      expect(submitButton).toBeDisabled()
+    })
+
+    it('メールアドレス入力後は送信ボタンが活性になる', () => {
+      render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
+
+      const emailInput = screen.getByLabelText('メールアドレス')
+      fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+
+      const submitButton = screen.getByRole('button', { name: '送信' })
+      expect(submitButton).not.toBeDisabled()
+    })
+
+    it('不正なメールアドレス形式で送信するとトーストが表示される', async () => {
+      render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
+
+      const emailInput = screen.getByLabelText('メールアドレス')
+      fireEvent.change(emailInput, { target: { value: 'invalid-email' } })
+
+      const submitButton = screen.getByRole('button', { name: '送信' })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('メールアドレスの形式が正しくありません')).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('説明文の文字色', () => {
+    it('説明文の文字色が黒である', () => {
+      render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
+
+      const text1 = screen.getByText('登録メールアドレスを入力してください。')
+      const text2 = screen.getByText('入力したら送信ボタンを押してください。')
+
+      expect(text1.className).toContain('text-black')
+      expect(text2.className).toContain('text-black')
+    })
+  })
 })
