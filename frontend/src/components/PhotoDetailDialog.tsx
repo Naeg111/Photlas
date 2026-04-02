@@ -326,7 +326,7 @@ function DetailMiniMap({
               left: '50%',
               transform: 'translate(-50%, -100%)',
               width: '27px',
-              height: '43px',
+              height: '30px',
               pointerEvents: 'none',
             }}
           >
