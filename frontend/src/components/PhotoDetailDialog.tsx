@@ -121,6 +121,7 @@ interface PhotoApiResponse {
     crop_center_y?: number | null
     crop_zoom?: number | null
     moderation_status?: string | null
+    categories?: string[]
   }
   spot: {
     spot_id: number
@@ -161,6 +162,7 @@ interface PhotoDetail {
   cropCenterY?: number | null
   cropZoom?: number | null
   moderationStatus?: string | null
+  categories?: string[]
   user: {
     userId: number
     username: string
@@ -217,6 +219,7 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
     cropCenterY: response.photo.crop_center_y,
     cropZoom: response.photo.crop_zoom,
     moderationStatus: response.photo.moderation_status,
+    categories: response.photo.categories,
     user: {
       userId: response.user.user_id,
       username: response.user.username,
@@ -752,7 +755,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     if (!currentPhoto) return
     setEditWeather(currentPhoto.weather || '')
     setEditPlaceName(currentPhoto.placeName || '')
-    setEditCategories([]) // カテゴリは現在APIレスポンスに含まれないため空で初期化
+    setEditCategories(currentPhoto.categories || [])
     setIsEditing(true)
   }, [currentPhoto])
 
@@ -862,6 +865,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           moderationStatus: data.photo.moderation_status,
         } : prev)
         setIsEditing(false)
+        toast.success('保存しました')
       } else {
         toast.error('更新に失敗しました')
       }
@@ -1014,18 +1018,18 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                           {PHOTO_CATEGORIES.map((category) => (
                             <div
                               key={category}
-                              className={`flex items-center space-x-2 border rounded-lg p-2 cursor-pointer transition-colors text-sm ${
+                              className={`flex items-center space-x-2 border rounded-lg p-2 cursor-pointer transition-colors touch-manipulation select-none text-sm ${
                                 editCategories.includes(category)
-                                  ? 'border-primary bg-primary/5'
+                                  ? 'bg-primary text-primary-foreground border-primary'
                                   : 'border-gray-200 hover:border-gray-300'
                               }`}
-                              role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleEditCategoryToggle(category) }} onClick={() => handleEditCategoryToggle(category)}
+                              role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleEditCategoryToggle(category) }} onPointerDown={(e) => { e.preventDefault(); handleEditCategoryToggle(category) }}
                             >
                               <Checkbox
                                 checked={editCategories.includes(category)}
-                                onCheckedChange={() => handleEditCategoryToggle(category)}
-                                onClick={(e) => e.stopPropagation()}
                                 aria-label={category}
+                                tabIndex={-1}
+                                style={{ pointerEvents: 'none' }}
                               />
                               <CategoryIcon category={category} className="w-4 h-4" />
                               <span className="flex-1">{category}</span>
@@ -1054,7 +1058,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
                       {/* 場所名（Mapbox Search Box） */}
                       <div>
-                        <label htmlFor="edit-place-name" className="text-sm text-gray-500">場所名</label>
+                        <label htmlFor="edit-place-name" className="text-sm text-gray-500">場所の名前</label>
                         <div className="relative">
                           <input
                             id="edit-place-name"
@@ -1094,7 +1098,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                           disabled={isSaving}
                           className="flex-1"
                         >
-                          {isSaving ? '保存中...' : '保存'}
+                          保存
                         </Button>
                         <Button
                           variant="outline"

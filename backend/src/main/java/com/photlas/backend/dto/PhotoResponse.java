@@ -100,6 +100,9 @@ public class PhotoResponse {
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private String thumbnailUrl;
 
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private List<String> categories;
+
         public PhotoDTO() {
         }
 
@@ -248,6 +251,14 @@ public class PhotoResponse {
 
         public void setThumbnailUrl(String thumbnailUrl) {
             this.thumbnailUrl = thumbnailUrl;
+        }
+
+        public List<String> getCategories() {
+            return categories;
+        }
+
+        public void setCategories(List<String> categories) {
+            this.categories = categories;
         }
     }
 

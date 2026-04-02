@@ -441,6 +441,15 @@ public class PhotoService {
         // Issue#59: サムネイルURLを設定
         photoDTO.setThumbnailUrl(s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey()));
 
+        // カテゴリ名リストを設定
+        if (photo.getCategories() != null && !photo.getCategories().isEmpty()) {
+            photoDTO.setCategories(
+                photo.getCategories().stream()
+                    .map(c -> c.getName())
+                    .collect(java.util.stream.Collectors.toList())
+            );
+        }
+
         // EXIF情報を設定（1つでも値があればExifDTOを生成）
         PhotoResponse.ExifDTO exifDTO = buildExifDTO(photo);
         photoDTO.setExif(exifDTO);
