@@ -150,6 +150,18 @@ describe('PhotoContributionDialog', () => {
       expect(screen.getByText(/カテゴリ（必須/)).toBeInTheDocument()
     })
 
+    it('「場所の名前」ラベルが表示される', () => {
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      expect(screen.getByText('場所の名前')).toBeInTheDocument()
+    })
+
+    it('場所の名前の入力欄に正しいプレースホルダーが表示される', () => {
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      expect(screen.getByPlaceholderText('例：東京スカイツリー、富士山')).toBeInTheDocument()
+    })
+
     it('renders all 14 genre options', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
