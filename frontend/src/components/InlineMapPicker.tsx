@@ -306,14 +306,14 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
     mapRef.current = mapInstance
   }, [])
 
-  // 地図移動完了時に中心座標をonPositionChangeに伝播
+  // 地図移動完了時に中心座標をonPositionChangeに伝播（6桁丸めで浮動小数点誤差を除去）
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
     const center = mapInstance.getCenter()
     if (center) {
       onPositionChangeRef.current({
-        lat: center.lat,
-        lng: center.lng,
+        lat: Math.round(center.lat * 1e6) / 1e6,
+        lng: Math.round(center.lng * 1e6) / 1e6,
       })
     }
   }, [])

@@ -692,7 +692,10 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
           onMinimapClick={handleMinimapClick}
           isSlideDown={!!shootingLocationPreview}
           isDeletable={isPhotoFromProfile}
-          onPhotoDeleted={() => setRefreshPhotosKey(prev => prev + 1)}
+          onPhotoDeleted={() => {
+            setRefreshPhotosKey(prev => prev + 1)
+            mapRef.current?.refreshSpots()
+          }}
           filterMaxAgeDays={mapFilterParams?.max_age_days}
         />
       )}
