@@ -1,5 +1,6 @@
 """
 Issue#54: コンテンツモデレーション - スキャン用Lambda関数
+Issue#84: ラベル除外対応とRekognition v7移行
 
 S3イベントをトリガーに Amazon Rekognition Content Moderation でスキャンし、
 結果をバックエンドAPIにコールバックする。
@@ -9,6 +10,7 @@ S3イベントをトリガーに Amazon Rekognition Content Moderation でスキ
   MODERATION_API_KEY: バックエンドAPI認証用APIキー
   SLACK_WEBHOOK_URL: Slack通知用Webhook URL（任意）
   CONFIDENCE_THRESHOLD_HIGH: 自動QUARANTINED閾値（デフォルト: 50）
+  EXCLUDED_LABELS: 除外ラベル（カンマ区切り、例: Smoking,Weapons,Gambling）
 """
 
 import json
@@ -28,6 +30,13 @@ MODERATION_API_KEY = os.environ.get("MODERATION_API_KEY", "")
 SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "")
 CONFIDENCE_THRESHOLD = float(os.environ.get("CONFIDENCE_THRESHOLD_HIGH", "50"))
 
+# Issue#84: 除外ラベル（環境変数からカンマ区切りで設定）
+EXCLUDED_LABELS = set(
+    label.strip()
+    for label in os.environ.get("EXCLUDED_LABELS", "").split(",")
+    if label.strip()
+)
+
 # AWSクライアント
 rekognition_client = boto3.client("rekognition")
 s3_client = boto3.client("s3")
@@ -36,8 +45,29 @@ s3_client = boto3.client("s3")
 STATUS_PUBLISHED = "PUBLISHED"
 STATUS_QUARANTINED = "QUARANTINED"
 
-# CSAM関連のRekognitionラベル
-CSAM_LABELS = {"Explicit Nudity", "Nudity", "Graphic Male Nudity", "Graphic Female Nudity"}
+# Issue#84: CSAM関連のRekognitionラベル（v7対応）
+CSAM_LABELS = {
+    "Explicit Nudity",
+    "Explicit Sexual Activity",
+    "Exposed Male Genitalia",
+    "Exposed Female Genitalia",
+    "Exposed Buttocks or Anus",
+    "Exposed Female Nipple",
+}
+
+# Issue#84: デフォルト除外ラベル（写真共有サービスとして許容するコンテンツ）
+DEFAULT_EXCLUDED_LABELS = {
+    "Non-Explicit Nudity", "Obstructed Intimate Parts", "Kissing on the Lips",
+    "Swimwear or Underwear", "Weapons", "Products",
+    "Drugs & Tobacco Paraphernalia & Use", "Alcohol Use", "Alcoholic Beverages",
+    "Gambling", "Smoking",
+    # L3ラベル（L2除外時に自動的にカバーされるが明示的に含める）
+    "Bare Back", "Exposed Male Nipple", "Partially Exposed Buttocks",
+    "Partially Exposed Female Breast", "Implied Nudity",
+    "Obstructed Female Nipple", "Obstructed Male Genitalia",
+    "Female Swimwear or Underwear", "Male Swimwear or Underwear",
+    "Drinking", "Pills",
+}
 
 # 隔離用プレフィックス
 QUARANTINED_PREFIX = "quarantined/"
@@ -90,14 +120,23 @@ def scan_image(bucket, object_key):
 def evaluate_result(labels):
     """スキャン結果を評価し、ステータス・信頼度・CSAMフラグを返す。
 
+    Issue#84: 除外ラベルをフィルタリング後に判定する。
+
     Returns:
         tuple: (status, max_confidence, is_csam)
     """
     if not labels:
         return STATUS_PUBLISHED, 0.0, False
 
-    max_confidence = max(label["Confidence"] for label in labels)
-    is_csam = any(label["Name"] in CSAM_LABELS for label in labels)
+    # 除外ラベルをフィルタリング（環境変数 + デフォルト）
+    all_excluded = EXCLUDED_LABELS | DEFAULT_EXCLUDED_LABELS
+    filtered = [l for l in labels if l["Name"] not in all_excluded]
+
+    if not filtered:
+        return STATUS_PUBLISHED, 0.0, False
+
+    max_confidence = max(label["Confidence"] for label in filtered)
+    is_csam = any(label["Name"] in CSAM_LABELS for label in filtered)
 
     if max_confidence >= CONFIDENCE_THRESHOLD:
         return STATUS_QUARANTINED, max_confidence, is_csam
