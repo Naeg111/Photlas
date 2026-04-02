@@ -588,6 +588,9 @@ export function PhotoContributionDialog({
               <p className="text-sm text-gray-500">
                 地図をドラッグして撮影場所にピンを合わせてください
               </p>
+              <p className="text-sm text-gray-400">
+                写真に位置情報が登録されている場合は自動で設定されます
+              </p>
               <div className="border rounded-lg overflow-hidden h-[333px]">
                 <InlineMapPicker
                   position={pinPosition}

@@ -59,7 +59,7 @@ interface SearchSuggestion {
 export const DEFAULT_CENTER = { lat: 35.6812, lng: 139.7671 } // 東京駅
 const DEFAULT_ZOOM = 15
 const SEARCH_DEBOUNCE_MS = 300
-const LONG_DISTANCE_THRESHOLD = 10
+const LONG_DISTANCE_THRESHOLD = 4.5
 const TRANSITION_FADE_MS = 500
 const GEOCODING_TYPES = 'country,region,postcode,district,place,locality,neighborhood'
 
