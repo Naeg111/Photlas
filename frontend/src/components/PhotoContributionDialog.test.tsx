@@ -165,7 +165,10 @@ describe('PhotoContributionDialog', () => {
     it('位置情報の自動設定に関する説明が表示される', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      expect(screen.getByText('写真に位置情報が登録されている場合は自動で設定されます')).toBeInTheDocument()
+      const label = screen.getByText('写真に位置情報が登録されている場合は自動で設定されます')
+      expect(label).toBeInTheDocument()
+      // 文字色が「地図をドラッグして...」と同じtext-gray-500であること
+      expect(label.className).toContain('text-gray-500')
     })
 
     it('renders all 14 genre options', () => {
