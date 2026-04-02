@@ -465,6 +465,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           ...(isBackgrounded ? { pointerEvents: 'none' as const } : {}),
         }}
         overlayClassName={isBackgrounded || isSlideDown ? 'bg-transparent pointer-events-none' : undefined}
+        onFocusOutside={(e) => e.preventDefault()}
       >
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
