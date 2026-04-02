@@ -1918,4 +1918,47 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
   })
+
+  describe('投稿削除のトースト文言', () => {
+    it('削除成功時に「削除しました」トーストが表示される', async () => {
+      const photoDetail = createMockApiResponse({ userId: TEST_USER_ID })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('delete-photo-button')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('delete-photo-button'))
+
+      await waitFor(() => {
+        expect(screen.getByText('本当に削除しますか？')).toBeInTheDocument()
+      })
+
+      // 削除API成功を設定
+      Object.defineProperty(globalThis, 'fetch', {
+        value: vi.fn().mockResolvedValue({ ok: true }),
+        writable: true,
+        configurable: true,
+      })
+
+      await user.click(screen.getByTestId('confirm-delete-button'))
+
+      await waitFor(() => {
+        expect(mockToast.success).toHaveBeenCalledWith('削除しました')
+      })
+    })
+  })
 })
