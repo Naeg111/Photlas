@@ -123,6 +123,8 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   onPositionChangeRef.current = onPositionChange
   // moveMapTo呼び出し時のターゲット座標（onMoveEndで正確な座標を返すため）
   const moveTargetRef = useRef<{ lat: number; lng: number } | null>(null)
+  // 初回moveEndスキップフラグ（初回レンダリングのmoveEndでgetCenter()のMercator誤差を拾わない）
+  const isFirstMoveEndRef = useRef(true)
 
   // 外部からのposition変更を検知してマップを移動する
   const lastExternalPositionRef = useRef<{ lat: number; lng: number } | null>(null)
@@ -312,6 +314,11 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
 
   // 地図移動完了時に中心座標をonPositionChangeに伝播
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
+    // 初回レンダリングのmoveEndはスキップ（initialViewStateのgetCenter()にMercator誤差が含まれるため）
+    if (isFirstMoveEndRef.current) {
+      isFirstMoveEndRef.current = false
+      return
+    }
     // moveMapToで移動した場合はターゲット座標を使用（getCenter()のMercator変換誤差を回避）
     if (moveTargetRef.current) {
       onPositionChangeRef.current(moveTargetRef.current)

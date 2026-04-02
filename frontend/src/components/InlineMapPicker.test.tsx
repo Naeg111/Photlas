@@ -212,12 +212,16 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
         />
       )
 
+      const capturedOnMoveEnd = getCapturedOnMoveEnd()
+      expect(capturedOnMoveEnd).not.toBeNull()
+
+      // 初回moveEnd（初期レンダリング）をスキップ
+      capturedOnMoveEnd!({ target: mockMap })
+
       // 地図中心を更新
       mockMap.getCenter.mockReturnValue({ lng: 139.7454, lat: 35.6585 })
 
-      // onMoveEnd イベントをシミュレート
-      const capturedOnMoveEnd = getCapturedOnMoveEnd()
-      expect(capturedOnMoveEnd).not.toBeNull()
+      // 2回目のonMoveEndで座標が伝播される
       capturedOnMoveEnd!({ target: mockMap })
 
       expect(onPositionChange).toHaveBeenCalledWith({
@@ -235,11 +239,15 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
         />
       )
 
+      const capturedOnMoveEnd = getCapturedOnMoveEnd()
+      expect(capturedOnMoveEnd).not.toBeNull()
+
+      // 初回moveEndをスキップ
+      capturedOnMoveEnd!({ target: mockMap })
+
       // 地図をドラッグした後の中心点をシミュレート
       mockMap.getCenter.mockReturnValue({ lng: 139.7000, lat: 35.6500 })
 
-      const capturedOnMoveEnd = getCapturedOnMoveEnd()
-      expect(capturedOnMoveEnd).not.toBeNull()
       capturedOnMoveEnd!({ target: mockMap })
 
       // map.getCenter() の値がそのまま渡される
