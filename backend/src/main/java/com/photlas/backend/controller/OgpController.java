@@ -68,7 +68,9 @@ public class OgpController {
         // OGPクローラー向けにサムネイルURLを使用（元画像は数十MBになりクローラーがタイムアウトするため）
         String thumbnailUrl = s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey());
         String imageUrl = thumbnailUrl != null ? thumbnailUrl : s3Service.generateCdnUrl(photo.getS3ObjectKey());
-        String title = photo.getPlaceName() != null ? photo.getPlaceName() : SITE_NAME;
+        String displayTitle = photo.getPlaceName() != null
+                ? photo.getPlaceName() + " - " + SITE_NAME
+                : SITE_NAME;
         String pageUrl = frontendUrl + "/photo-viewer/" + photoId;
 
         // ユーザー名を取得
@@ -78,12 +80,13 @@ public class OgpController {
             username = userOpt.get().getUsername();
         }
 
+        String jsonLdTitle = photo.getPlaceName() != null ? photo.getPlaceName() : SITE_NAME;
         String description = username + "さんが撮影した写真 - " + SITE_NAME;
 
         // スポット情報を取得（JSON-LD用）
-        String jsonLd = buildJsonLd(photo, title, imageUrl, username, pageUrl);
+        String jsonLd = buildJsonLd(photo, jsonLdTitle, imageUrl, username, pageUrl);
 
-        String html = buildOgpHtml(title, description, imageUrl, pageUrl, jsonLd);
+        String html = buildOgpHtml(displayTitle, description, imageUrl, pageUrl, jsonLd);
         return ResponseEntity.ok(html);
     }
 
@@ -127,9 +130,9 @@ public class OgpController {
                 + "<html lang=\"ja\">\n"
                 + "<head>\n"
                 + "  <meta charset=\"UTF-8\" />\n"
-                + "  <title>" + escapeHtml(title) + " - " + SITE_NAME + "</title>\n"
+                + "  <title>" + escapeHtml(title) + "</title>\n"
                 + "  <meta name=\"description\" content=\"" + escapeHtml(description) + "\" />\n"
-                + "  <meta property=\"og:title\" content=\"" + escapeHtml(title) + " - " + SITE_NAME + "\" />\n"
+                + "  <meta property=\"og:title\" content=\"" + escapeHtml(title) + "\" />\n"
                 + "  <meta property=\"og:description\" content=\"" + escapeHtml(description) + "\" />\n"
                 + "  <meta property=\"og:image\" content=\"" + escapeHtml(imageUrl) + "\" />\n"
                 + "  <meta property=\"og:type\" content=\"article\" />\n"
@@ -137,7 +140,7 @@ public class OgpController {
                 + "  <meta property=\"og:site_name\" content=\"" + SITE_NAME + "\" />\n"
                 + "  <meta property=\"og:locale\" content=\"ja_JP\" />\n"
                 + "  <meta name=\"twitter:card\" content=\"summary_large_image\" />\n"
-                + "  <meta name=\"twitter:title\" content=\"" + escapeHtml(title) + " - " + SITE_NAME + "\" />\n"
+                + "  <meta name=\"twitter:title\" content=\"" + escapeHtml(title) + "\" />\n"
                 + "  <meta name=\"twitter:description\" content=\"" + escapeHtml(description) + "\" />\n"
                 + "  <meta name=\"twitter:image\" content=\"" + escapeHtml(imageUrl) + "\" />\n"
                 + "  <script type=\"application/ld+json\">\n"
