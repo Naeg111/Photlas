@@ -56,12 +56,19 @@ CSAM_LABELS = {
 }
 
 # Issue#84: デフォルト除外ラベル（写真共有サービスとして許容するコンテンツ）
+# Rekognitionは L1/L2/L3 全階層のラベルを返すため、全階層を明示的に除外する
 DEFAULT_EXCLUDED_LABELS = {
+    # L1
+    "Non-Explicit Nudity of Intimate parts and Kissing",
+    "Drugs & Tobacco",
+    "Alcohol",
+    "Gambling",
+    # L2
     "Non-Explicit Nudity", "Obstructed Intimate Parts", "Kissing on the Lips",
     "Swimwear or Underwear", "Weapons", "Products",
     "Drugs & Tobacco Paraphernalia & Use", "Alcohol Use", "Alcoholic Beverages",
-    "Gambling", "Smoking",
-    # L3ラベル（L2除外時に自動的にカバーされるが明示的に含める）
+    "Smoking",
+    # L3
     "Bare Back", "Exposed Male Nipple", "Partially Exposed Buttocks",
     "Partially Exposed Female Breast", "Implied Nudity",
     "Obstructed Female Nipple", "Obstructed Male Genitalia",
