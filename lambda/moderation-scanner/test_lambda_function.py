@@ -83,10 +83,45 @@ class TestEvaluateResult:
 
     def test_below_threshold_with_csam_label(self):
         """CSAM関連ラベルでも信頼度50%未満ならPUBLISHED（CSAMフラグなし）。"""
-        labels = [{"Name": "Nudity", "Confidence": 35.0}]
+        labels = [{"Name": "Explicit Nudity", "Confidence": 35.0}]
         status, confidence, is_csam = evaluate_result(labels)
         assert status == STATUS_PUBLISHED
         assert is_csam is False
+
+    def test_excluded_label_is_not_quarantined(self):
+        """除外ラベル（Tobacco等）は高信頼度でもPUBLISHEDになる。"""
+        labels = [{"Name": "Smoking", "Confidence": 90.0}]
+        status, confidence, is_csam = evaluate_result(labels)
+        assert status == STATUS_PUBLISHED
+
+    def test_excluded_and_blocked_labels_mixed(self):
+        """除外ラベルとブロック対象が混在する場合、ブロック対象で判定される。"""
+        labels = [
+            {"Name": "Smoking", "Confidence": 95.0},         # 除外
+            {"Name": "Graphic Violence", "Confidence": 80.0}, # ブロック対象
+        ]
+        status, confidence, is_csam = evaluate_result(labels)
+        assert status == STATUS_QUARANTINED
+        assert confidence == 80.0
+
+    def test_weapons_label_is_excluded(self):
+        """Weaponsラベルは除外対象でPUBLISHEDになる。"""
+        labels = [{"Name": "Weapons", "Confidence": 85.0}]
+        status, confidence, is_csam = evaluate_result(labels)
+        assert status == STATUS_PUBLISHED
+
+    def test_csam_labels_v7_detected(self):
+        """v7のCSAMラベル名が正しく検出される。"""
+        labels = [{"Name": "Exposed Female Genitalia", "Confidence": 90.0}]
+        status, confidence, is_csam = evaluate_result(labels)
+        assert status == STATUS_QUARANTINED
+        assert is_csam is True
+
+    def test_gambling_label_is_excluded(self):
+        """Gamblingラベルは除外対象でPUBLISHEDになる。"""
+        labels = [{"Name": "Gambling", "Confidence": 80.0}]
+        status, confidence, is_csam = evaluate_result(labels)
+        assert status == STATUS_PUBLISHED
 
 
 # --- scan_image テスト ---
