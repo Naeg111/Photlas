@@ -65,7 +65,9 @@ public class OgpController {
             return ResponseEntity.notFound().build();
         }
 
-        String imageUrl = s3Service.generateCdnUrl(photo.getS3ObjectKey());
+        // OGPクローラー向けにサムネイルURLを使用（元画像は数十MBになりクローラーがタイムアウトするため）
+        String thumbnailUrl = s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey());
+        String imageUrl = thumbnailUrl != null ? thumbnailUrl : s3Service.generateCdnUrl(photo.getS3ObjectKey());
         String title = photo.getPlaceName() != null ? photo.getPlaceName() : SITE_NAME;
         String pageUrl = frontendUrl + "/photo-viewer/" + photoId;
 
