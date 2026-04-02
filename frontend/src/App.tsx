@@ -390,19 +390,6 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     dialog.open('photoDetail')
   }
 
-  // プレビュー中にProfileDialog(modal)のbodyロックを強制解除してマップ操作を可能にする
-  useEffect(() => {
-    if (shootingLocationPreview && isPhotoFromProfile) {
-      const body = document.body
-      body.style.setProperty('pointer-events', 'auto', 'important')
-      body.style.setProperty('overflow', 'auto', 'important')
-      return () => {
-        body.style.removeProperty('pointer-events')
-        body.style.removeProperty('overflow')
-      }
-    }
-  }, [shootingLocationPreview, isPhotoFromProfile])
-
   // ミニマップクリックハンドラー（撮影地点プレビュー開始）
   const handleMinimapClick = (location: { lat: number; lng: number }) => {
     isInPreviewRef.current = true
