@@ -460,7 +460,21 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
             }
             setUserLocation(newLocation)
             if (isFirstUpdate) {
-              map.flyTo({ center: [newLocation.lng, newLocation.lat] })
+              const currentCenter = map.getCenter()
+              const distance = Math.sqrt(
+                Math.pow(newLocation.lng - currentCenter.lng, 2) + Math.pow(newLocation.lat - currentCenter.lat, 2)
+              )
+              if (distance > LONG_DISTANCE_THRESHOLD) {
+                setMapTransitioning(true)
+                const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading)
+                requestAnimationFrame(() => {
+                  map.jumpTo({ center: [newLocation.lng, newLocation.lat] })
+                  map.once('idle', completeTransition)
+                  setTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
+                })
+              } else {
+                map.flyTo({ center: [newLocation.lng, newLocation.lat] })
+              }
               isFirstUpdate = false
             }
           },

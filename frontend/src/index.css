@@ -252,6 +252,12 @@ input, textarea, [contenteditable="true"] {
   display: none !important;
 }
 
+/* DetailMiniMap: ネイティブコントロールのパディングを完全リセット（ピン位置ずれ防止） */
+[data-testid="detail-minimap"] .mapboxgl-ctrl-bottom-left,
+[data-testid="detail-minimap"] .mapboxgl-ctrl-bottom-right {
+  display: none !important;
+}
+
 /* Toast positioning */
 [data-sonner-toaster] {
   /* Mobile: left-aligned at 24px from left edge, above Mapbox logo + iマーク + safe area */
