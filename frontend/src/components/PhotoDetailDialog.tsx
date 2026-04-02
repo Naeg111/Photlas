@@ -432,6 +432,18 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const [editCategories, setEditCategories] = useState<string[]>([])
   const [isSaving, setIsSaving] = useState(false)
 
+  // スクロール時の選択取り消し機構（モバイルタッチ対応）
+  const lastEditToggleRef = useRef<(() => void) | null>(null)
+  const handleEditScrollDuringToggle = useCallback(() => {
+    if (lastEditToggleRef.current) {
+      lastEditToggleRef.current()
+      lastEditToggleRef.current = null
+    }
+  }, [])
+  const handleEditPointerUp = useCallback(() => {
+    lastEditToggleRef.current = null
+  }, [])
+
   // Issue#61: Mapbox Search Box（場所名検索）
   const [placeNameSuggestions, setPlaceNameSuggestions] = useState<{ name: string; full_address?: string; mapbox_id: string }[]>([])
   const [isPlaceNameDropdownOpen, setIsPlaceNameDropdownOpen] = useState(false)
@@ -717,7 +729,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       })
 
       if (response.ok) {
-        toast.success('写真を削除しました')
+        toast.success('削除しました')
         setIsDeleteDialogOpen(false)
         onPhotoDeleted?.()
         onClose()
@@ -766,13 +778,16 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     setIsPlaceNameDropdownOpen(false)
   }, [])
 
-  // Issue#61: カテゴリ切替
+  // Issue#61: カテゴリ切替（最低1つ必須、スクロール取り消し対応）
   const handleEditCategoryToggle = useCallback((category: string) => {
-    setEditCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
+    setEditCategories(prev => {
+      const next = prev.includes(category)
+        ? prev.length > 1 ? prev.filter(c => c !== category) : prev
         : [...prev, category]
-    )
+      // スクロール取り消し用に逆操作を記録
+      lastEditToggleRef.current = () => setEditCategories(prev)
+      return next
+    })
   }, [])
 
   // Issue#61: 場所名検索（Mapbox Search Box）
@@ -1014,7 +1029,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       {/* カテゴリ選択 */}
                       <div>
                         <label htmlFor="edit-categories" className="text-sm text-gray-500">カテゴリ</label>
-                        <div id="edit-categories" className="grid grid-cols-2 gap-2 mt-1">
+                        <div id="edit-categories" className="grid grid-cols-2 gap-2 mt-1" onScroll={handleEditScrollDuringToggle} onTouchMove={handleEditScrollDuringToggle} onPointerUp={handleEditPointerUp}>
                           {PHOTO_CATEGORIES.map((category) => (
                             <div
                               key={category}
@@ -1068,7 +1083,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                             onChange={(e) => handleEditPlaceNameSearch(e.target.value)}
                             className="w-full border rounded-md px-3 py-2 text-sm"
                             maxLength={100}
-                            placeholder="例：東京タワー、スターバックス渋谷店"
+                            placeholder="例：東京スカイツリー、富士山"
                           />
                           {isPlaceNameDropdownOpen && placeNameSuggestions.length > 0 && (
                             <ul className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">

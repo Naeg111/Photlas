@@ -126,6 +126,8 @@ interface ProfileDialogProps {
   isSlideDown?: boolean
   /** PhotoDetailDialogが前面に表示されている場合にtrue（非表示だがマウント維持） */
   isBackgrounded?: boolean
+  /** 写真一覧の再取得トリガー（値が変わると再取得） */
+  refreshPhotosKey?: number
 }
 
 /**
@@ -195,6 +197,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   initialTab = 'posts',
   isSlideDown = false,
   isBackgrounded = false,
+  refreshPhotosKey,
 }) => {
   // プロフィール画像とSNSリンクのローカルステート（即時反映用）
   const [localProfileImageUrl, setLocalProfileImageUrl] = useState<string | null>(null)
@@ -292,6 +295,13 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
       fetchUserPhotos()
     }
   }, [open, photosFetched, fetchUserPhotos])
+
+  // 写真削除時に投稿一覧を再取得
+  useEffect(() => {
+    if (refreshPhotosKey && open) {
+      setPhotosFetched(false)
+    }
+  }, [refreshPhotosKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Issue#30: お気に入り一覧状態
   const [favorites, setFavorites] = useState<FavoritePhoto[]>([])

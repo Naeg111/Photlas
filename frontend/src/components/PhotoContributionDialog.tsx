@@ -116,6 +116,18 @@ export function PhotoContributionDialog({
   const scrollRef = useRef<HTMLDivElement>(null)
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // スクロール時の選択取り消し機構（モバイルタッチ対応）
+  const lastToggleRef = useRef<(() => void) | null>(null)
+  const handleScrollDuringToggle = useCallback(() => {
+    if (lastToggleRef.current) {
+      lastToggleRef.current()
+      lastToggleRef.current = null
+    }
+  }, [])
+  const handlePointerUp = useCallback(() => {
+    lastToggleRef.current = null
+  }, [])
+
   // 施設名検索用SearchBoxCore
   const placeNameSearchBox = useMemo(() => {
     if (MAPBOX_ACCESS_TOKEN) {
@@ -219,11 +231,13 @@ export function PhotoContributionDialog({
   }
 
   const handleCategoryToggle = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
+    setSelectedCategories((prev) => {
+      const next = prev.includes(category)
         ? prev.length > 1 ? prev.filter((c) => c !== category) : prev
         : [...prev, category]
-    )
+      lastToggleRef.current = () => setSelectedCategories(prev)
+      return next
+    })
   }
 
   // 施設名・店名の検索ハンドラー（デバウンス付き）
@@ -424,6 +438,9 @@ export function PhotoContributionDialog({
         <div
           ref={scrollRef}
           className="overflow-y-auto flex-1 px-6 pb-6"
+          onScroll={handleScrollDuringToggle}
+          onTouchMove={handleScrollDuringToggle}
+          onPointerUp={handlePointerUp}
           style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}
         >
           <div className="space-y-6 mt-4">
@@ -658,7 +675,7 @@ export function PhotoContributionDialog({
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
-                    role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") setSelectedDeviceType(option.value) }} onPointerDown={(e) => { e.preventDefault(); setSelectedDeviceType(option.value) }}
+                    role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") setSelectedDeviceType(option.value) }} onPointerDown={(e) => { e.preventDefault(); const prev = selectedDeviceType; setSelectedDeviceType(option.value); lastToggleRef.current = () => setSelectedDeviceType(prev) }}
                   >
                     <Label className="cursor-pointer">
                       {option.label}
@@ -682,7 +699,7 @@ export function PhotoContributionDialog({
                           ? 'bg-primary text-primary-foreground border-primary'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setSelectedWeather(prev => prev === weather ? '' : weather) }} onPointerDown={(e) => { e.preventDefault(); setSelectedWeather(prev => prev === weather ? '' : weather) }}
+                      role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setSelectedWeather(prev => prev === weather ? '' : weather) }} onPointerDown={(e) => { e.preventDefault(); const prev = selectedWeather; setSelectedWeather(p => p === weather ? '' : weather); lastToggleRef.current = () => setSelectedWeather(prev) }}
                     >
                       {Icon && <Icon className="w-5 h-5 shrink-0" />}
                       <Label className="cursor-pointer">

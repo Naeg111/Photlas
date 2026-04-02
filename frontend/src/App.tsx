@@ -91,6 +91,8 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
 
   // Issue#57: プロフィール投稿一覧からPhotoDetailDialogを開いたかのフラグ
   const [isPhotoFromProfile, setIsPhotoFromProfile] = useState(false)
+  // 写真削除後のプロフィール写真一覧再取得トリガー
+  const [refreshPhotosKey, setRefreshPhotosKey] = useState(0)
   // Radixフォーカス管理のタイミング問題回避用ref（stateより先に参照可能）
   const isPhotoFromProfileRef = useRef(false)
 
@@ -652,6 +654,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
           initialTab={profileInitialTab}
           isBackgrounded={isPhotoFromProfile}
           isSlideDown={profileSlideDown}
+          refreshPhotosKey={refreshPhotosKey}
         />
       )}
 
@@ -685,6 +688,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
           onMinimapClick={handleMinimapClick}
           isSlideDown={!!shootingLocationPreview}
           isDeletable={isPhotoFromProfile}
+          onPhotoDeleted={() => setRefreshPhotosKey(prev => prev + 1)}
           filterMaxAgeDays={mapFilterParams?.max_age_days}
         />
       )}

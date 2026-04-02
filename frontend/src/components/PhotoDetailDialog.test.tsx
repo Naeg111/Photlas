@@ -1944,7 +1944,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await user.click(screen.getByTestId('delete-photo-button'))
 
       await waitFor(() => {
-        expect(screen.getByText('本当に削除しますか？')).toBeInTheDocument()
+        expect(screen.getByText('この写真を削除しますか？この操作は取り消せません。')).toBeInTheDocument()
       })
 
       // 削除API成功を設定
@@ -1954,7 +1954,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      await user.click(screen.getByTestId('confirm-delete-button'))
+      await user.click(screen.getByRole('button', { name: '削除する' }))
 
       await waitFor(() => {
         expect(mockToast.success).toHaveBeenCalledWith('削除しました')
