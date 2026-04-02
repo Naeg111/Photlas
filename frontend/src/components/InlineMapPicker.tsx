@@ -121,6 +121,8 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const mapRef = useRef<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
+  // moveMapTo呼び出し時のターゲット座標（onMoveEndで正確な座標を返すため）
+  const moveTargetRef = useRef<{ lat: number; lng: number } | null>(null)
 
   // 外部からのposition変更を検知してマップを移動する
   const lastExternalPositionRef = useRef<{ lat: number; lng: number } | null>(null)
@@ -234,6 +236,8 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   // 長距離移動時にワープアニメーション、短距離はflyTo
   const moveMapTo = useCallback((lng: number, lat: number, zoom: number = DEFAULT_ZOOM) => {
     if (!mapRef.current) return
+    // ターゲット座標を保存（onMoveEndでgetCenter()の代わりに使用し、Mercator変換誤差を回避）
+    moveTargetRef.current = { lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 }
     const currentCenter = mapRef.current.getCenter()
     const distance = Math.sqrt(
       Math.pow(lng - currentCenter.lng, 2) + Math.pow(lat - currentCenter.lat, 2)
@@ -306,8 +310,15 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
     mapRef.current = mapInstance
   }, [])
 
-  // 地図移動完了時に中心座標をonPositionChangeに伝播（6桁丸めで浮動小数点誤差を除去）
+  // 地図移動完了時に中心座標をonPositionChangeに伝播
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
+    // moveMapToで移動した場合はターゲット座標を使用（getCenter()のMercator変換誤差を回避）
+    if (moveTargetRef.current) {
+      onPositionChangeRef.current(moveTargetRef.current)
+      moveTargetRef.current = null
+      return
+    }
+    // ユーザーのドラッグ移動の場合はgetCenter()から取得（6桁丸め）
     const mapInstance = e.target
     const center = mapInstance.getCenter()
     if (center) {
