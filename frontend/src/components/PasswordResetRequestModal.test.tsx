@@ -15,6 +15,12 @@ import PasswordResetRequestModal from './PasswordResetRequestModal'
  * - 送信後の確認メッセージ：「パスワード再設定用のメールを送信しました。受信トレイをご確認ください。」
  */
 
+// sonnerのモック
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: { error: vi.fn(), success: vi.fn() },
+}))
+vi.mock('sonner', () => ({ toast: mockToast }))
+
 // fetch APIのモック
 globalThis.fetch = vi.fn() as any
 
@@ -69,18 +75,14 @@ describe('PasswordResetRequestModal', () => {
   })
 
   describe('Form Validation', () => {
-    it('shows required error for empty email', async () => {
+    it('メールアドレス未入力時は送信ボタンが非活性で送信できない', () => {
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 
       const submitButton = screen.getByRole('button', { name: '送信' })
-      fireEvent.click(submitButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('メールアドレスは必須です')).toBeInTheDocument()
-      })
+      expect(submitButton).toBeDisabled()
     })
 
-    it('shows invalid email format error', async () => {
+    it('不正なメールアドレス形式で送信するとトーストエラーが表示される', async () => {
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 
       const emailInput = screen.getByLabelText('メールアドレス')
@@ -90,7 +92,7 @@ describe('PasswordResetRequestModal', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('正しいメールアドレス形式で入力してください')).toBeInTheDocument()
+        expect(mockToast.error).toHaveBeenCalledWith('メールアドレスの形式が正しくありません')
       })
     })
   })
@@ -285,7 +287,7 @@ describe('PasswordResetRequestModal', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('メールアドレスの形式が正しくありません')).toBeInTheDocument()
+        expect(mockToast.error).toHaveBeenCalledWith('メールアドレスの形式が正しくありません')
       })
     })
   })

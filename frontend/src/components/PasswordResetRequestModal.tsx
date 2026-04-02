@@ -4,6 +4,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { API_V1_URL } from '../config/api'
+import { toast } from 'sonner'
 
 interface PasswordResetRequestModalProps {
   open: boolean
@@ -35,13 +36,12 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
     setError('')
 
     if (!email) {
-      setError('メールアドレスは必須です')
       return
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      setError('正しいメールアドレス形式で入力してください')
+      toast.error('メールアドレスの形式が正しくありません')
       return
     }
 
@@ -86,7 +86,7 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate className="mt-4">
-            <p className="mb-4 text-gray-700">登録メールアドレスを入力してください。</p>
+            <p className="mb-4 text-black">登録メールアドレスを入力してください。</p>
 
             {error && (
               <div className="mb-4 text-red-600 text-sm">{error}</div>
@@ -105,11 +105,11 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
               />
             </div>
 
-            <p className="mb-4 text-gray-700">入力したら送信ボタンを押してください。</p>
+            <p className="mb-4 text-black">入力したら送信ボタンを押してください。</p>
 
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={!email || isSubmitting}
               className="w-full"
             >
               {isSubmitting ? '送信中...' : '送信'}
