@@ -631,6 +631,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         <ProfileDialog
           open={dialog.isOpen('profile')}
           onClose={() => {
+            if (isPhotoFromProfileRef.current) return
             dialog.close('profile')
             setViewingUser(null)
           }}
@@ -670,7 +671,8 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
             setProfilePhotoId(undefined)
             setProfileSlideDown(false)
             setIsPhotoFromProfile(false)
-            isPhotoFromProfileRef.current = false
+            // Radix DismissableLayerのフォーカス復帰処理完了後にrefクリア
+            setTimeout(() => { isPhotoFromProfileRef.current = false }, 300)
             // Issue#58: ディープリンクから閉じた場合はトップページに遷移
             if (deepLinkPhotoId) {
               setDeepLinkPhotoId(undefined)
