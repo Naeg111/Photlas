@@ -27,8 +27,7 @@ describe('SplashScreen', () => {
 
       const svg = container.querySelector('svg')
       expect(svg).toBeInTheDocument()
-      expect(svg).toHaveAttribute('width', '130')
-      expect(svg).toHaveAttribute('height', '130')
+      expect(svg).toHaveAttribute('viewBox', '56 60 400 400')
     })
 
     it('renders with full screen black background', () => {
