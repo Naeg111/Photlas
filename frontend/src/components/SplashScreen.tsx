@@ -17,7 +17,7 @@ export function SplashScreen() {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black"
       style={{ boxShadow: '0 0 0 50px black' }}
     >
-      <div className="animate-drop-bounce">
+      <div className="animate-drop-bounce" style={{ opacity: 0, transform: 'translateY(-100px)' }}>
         <svg
           viewBox="56 60 400 400"
           fill="none"
