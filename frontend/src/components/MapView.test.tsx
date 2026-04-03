@@ -200,7 +200,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(callArgs).toContain('west=')
     })
 
-    it('地図移動後（onMoveEnd イベント）にAPIが呼ばれる', async () => {
+    it('地図移動後（onMoveEnd イベント）にAPIが呼ばれる（デバウンス500ms後）', async () => {
       const mockFetch = setupFetchMock()
 
       render(<MapView />)
@@ -209,7 +209,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         () => {
           expect(mockFetch).toHaveBeenCalledTimes(3)
         },
-        { timeout: 300 }
+        { timeout: 1000 }
       )
     })
   })
