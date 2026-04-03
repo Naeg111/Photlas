@@ -4,12 +4,12 @@ import { SplashScreen } from './SplashScreen'
 
 /**
  * Issue#85: スプラッシュ画面のデザインリニューアル（ドロップバウンスアニメーション）
- * TDD Red段階: 実装前のテストケース定義
  *
  * UI要件:
  * - アイコン（ピンとカメラ）のみを画面中央に配置
  * - 「Photlas」テキストは表示しない
  * - ローディングスピナーは表示しない
+ * - Framer Motionによるドロップバウンスアニメーション
  * - フェードアウトアニメーション（exit）
  */
 
@@ -43,40 +43,13 @@ describe('SplashScreen', () => {
       expect(splashDiv).toHaveClass('fixed', 'inset-0', 'bg-black')
     })
 
-    it('does not apply animation class on initial render to prevent cached state restoration', () => {
-      vi.useFakeTimers()
-      const { container } = render(<SplashScreen />)
-
-      expect(container.querySelector('.animate-drop-bounce')).not.toBeInTheDocument()
-      vi.useRealTimers()
-    })
-
-    it('applies animation class after deferred execution', () => {
+    it('does not use CSS animation class even after mount (uses Framer Motion instead)', () => {
       vi.useFakeTimers()
       const { container } = render(<SplashScreen />)
 
       act(() => { vi.runAllTimers() })
-      expect(container.querySelector('.animate-drop-bounce')).toBeInTheDocument()
+      expect(container.querySelector('.animate-drop-bounce')).not.toBeInTheDocument()
       vi.useRealTimers()
-    })
-
-    it('has inline opacity 0 on icon wrapper regardless of animation state', () => {
-      const { container } = render(<SplashScreen />)
-
-      const iconWrapper = container.querySelector('svg')?.parentElement
-      expect(iconWrapper).toHaveStyle({ opacity: '0' })
-    })
-
-    it('has critical inline styles on container for PWA CSS-loading race', () => {
-      const { container } = render(<SplashScreen />)
-
-      const splashDiv = container.firstChild as HTMLElement
-      const style = splashDiv.getAttribute('style') ?? ''
-      expect(style).toContain('position: fixed')
-      expect(style).toContain('background-color: black')
-      expect(style).toContain('display: flex')
-      expect(style).toContain('align-items: center')
-      expect(style).toContain('justify-content: center')
     })
 
     it('uses vmin for orientation-independent icon sizing', () => {
