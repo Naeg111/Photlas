@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react'
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback'
 import Map, { Marker, AttributionControl } from 'react-map-gl'
 import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
@@ -371,6 +371,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     layersInitializedRef.current = true
   }, [])
 
+  // spotsをGeoJSON形式にメモ化（spots参照が変わっても中身が同じなら再生成しない）
+  const geoJsonData = useMemo(() => spotsToGeoJson(spots), [spots])
+
   // スポットデータが変更されたらSource/画像を更新
   useEffect(() => {
     if (!map || !layersInitializedRef.current) return
@@ -381,9 +384,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     // GeoJSONデータを更新
     const source = map.getSource(SOURCE_ID) as any
     if (source) {
-      source.setData(spotsToGeoJson(spots))
+      source.setData(geoJsonData)
     }
-  }, [map, spots])
+  }, [map, spots, geoJsonData])
 
   // 撮影地点プレビュー時のSymbol Layer表示/非表示
   useEffect(() => {
@@ -590,8 +593,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
     const currentZoom = mapInstance.getZoom()
+    // ズームが変わった場合のみstate更新（パン操作では不要な再レンダリングを回避）
     if (currentZoom !== undefined) {
-      setZoom(currentZoom)
+      setZoom(prev => prev === currentZoom ? prev : currentZoom)
     }
     debouncedFetchSpots(mapInstance)
   }, [debouncedFetchSpots])
