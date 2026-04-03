@@ -57,6 +57,19 @@ describe('SplashScreen', () => {
       expect(animatedElement).toHaveStyle({ opacity: '0' })
     })
 
+    it('has critical inline styles on container for PWA CSS-loading race', () => {
+      const { container } = render(<SplashScreen />)
+
+      const splashDiv = container.firstChild as HTMLElement
+      expect(splashDiv).toHaveStyle({
+        position: 'fixed',
+        backgroundColor: 'black',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      })
+    })
+
     it('uses vmin for orientation-independent icon sizing', () => {
       const { container } = render(<SplashScreen />)
 
