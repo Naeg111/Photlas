@@ -296,7 +296,7 @@ public class UserServiceTest {
     // ===== ログイン (loginUser) =====
 
     @Test
-    @DisplayName("Issue#54 - ログイン: メール未認証でIllegalArgumentException")
+    @DisplayName("Issue#54 - ログイン: メール未認証でEmailNotVerifiedException")
     void testLoginUser_UnverifiedEmail_ThrowsException() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         user.setEmailVerified(false);
@@ -306,7 +306,7 @@ public class UserServiceTest {
         LoginRequest request = new LoginRequest(TEST_EMAIL, CURRENT_PASSWORD);
 
         assertThatThrownBy(() -> userService.loginUser(request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(com.photlas.backend.exception.EmailNotVerifiedException.class)
                 .hasMessageContaining("メールアドレスが認証されていません");
     }
 

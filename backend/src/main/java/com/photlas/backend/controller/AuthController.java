@@ -6,34 +6,26 @@ import com.photlas.backend.dto.PasswordResetRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.RegisterResponse;
 import com.photlas.backend.dto.ResetPasswordRequest;
-import com.photlas.backend.exception.AccountSuspendedException;
-import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 認証関連のエンドポイントを提供するコントローラー
- * Issue#6: パスワードリセット機能
+ *
+ * 例外処理はGlobalExceptionHandlerに委譲する。
+ * バリデーションエラーはSpring MVCが自動的にMethodArgumentNotValidExceptionをスローし、
+ * GlobalExceptionHandler.handleMethodArgumentNotValidで処理される。
  */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-    private static final String ERROR_INTERNAL_SERVER = "サーバー内部エラーが発生しました";
     private static final String KEY_MESSAGE = "message";
     private static final String FIELD_EMAIL = "email";
 
@@ -44,95 +36,27 @@ public class AuthController {
     }
 
     /**
-     * バリデーションエラーをレスポンスに変換するヘルパーメソッド
-     *
-     * @param bindingResult バリデーション結果
-     * @return エラーレスポンス
-     */
-    private ResponseEntity<?> buildValidationErrorResponse(BindingResult bindingResult) {
-        List<ErrorResponse.FieldError> fieldErrors = bindingResult.getFieldErrors().stream()
-            .map(error -> new ErrorResponse.FieldError(
-                error.getField(),
-                error.getRejectedValue(),
-                error.getDefaultMessage()
-            ))
-            .collect(Collectors.toList());
-
-        ErrorResponse errorResponse = new ErrorResponse("バリデーションエラー", fieldErrors);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-
-    /**
      * ユーザー登録エンドポイント
      *
      * @param request 登録リクエスト
-     * @param bindingResult バリデーション結果
      * @return 登録レスポンス
      */
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return buildValidationErrorResponse(bindingResult);
-        }
-
-        try {
-            RegisterResponse response = userService.registerUser(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (ConflictException e) {
-            List<ErrorResponse.FieldError> fieldErrors = List.of(
-                new ErrorResponse.FieldError(FIELD_EMAIL, request.getEmail(), e.getMessage())
-            );
-            ErrorResponse errorResponse = new ErrorResponse("競合エラー", fieldErrors);
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-        } catch (IllegalArgumentException e) {
-            List<ErrorResponse.FieldError> fieldErrors = List.of(
-                new ErrorResponse.FieldError(FIELD_EMAIL, request.getEmail(), e.getMessage())
-            );
-            ErrorResponse errorResponse = new ErrorResponse("バリデーションエラー", fieldErrors);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+        RegisterResponse response = userService.registerUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
      * ログインエンドポイント
      *
      * @param request ログインリクエスト
-     * @param bindingResult バリデーション結果
      * @return ログインレスポンス
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult,
-                                   HttpServletRequest httpRequest) {
-        if (bindingResult.hasErrors()) {
-            return buildValidationErrorResponse(bindingResult);
-        }
-
-        try {
-            RegisterResponse response = userService.loginUser(request);
-            return ResponseEntity.ok(response);
-        } catch (com.photlas.backend.exception.UnauthorizedException e) {
-            // Issue#72: 退会済みアカウントのログイン拒否
-            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-        } catch (AccountSuspendedException e) {
-            // Issue#54: 永久停止アカウントのログイン拒否
-            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().contains("メールアドレスが認証されていません")) {
-                ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
-            }
-            logger.warn("Login failed - email: {}, IP: {}", request.getEmail(), httpRequest.getRemoteAddr());
-            ErrorResponse errorResponse = new ErrorResponse("メールアドレスまたはパスワードが正しくありません");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-        } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+    public ResponseEntity<RegisterResponse> login(@Valid @RequestBody LoginRequest request) {
+        RegisterResponse response = userService.loginUser(request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -142,20 +66,12 @@ public class AuthController {
      * @return レスポンス
      */
     @GetMapping("/verify-email")
-    public ResponseEntity<?> verifyEmail(@RequestParam String token) {
-        try {
-            userService.verifyEmail(token);
+    public ResponseEntity<Map<String, String>> verifyEmail(@RequestParam String token) {
+        userService.verifyEmail(token);
 
-            Map<String, String> response = new HashMap<>();
-            response.put(KEY_MESSAGE, "メールアドレスの認証が完了しました。ログインしてください。");
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+        Map<String, String> response = new HashMap<>();
+        response.put(KEY_MESSAGE, "メールアドレスの認証が完了しました。ログインしてください。");
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -166,24 +82,16 @@ public class AuthController {
      */
     @PostMapping("/resend-verification")
     public ResponseEntity<?> resendVerification(@RequestBody Map<String, String> request) {
-        try {
-            String email = request.get(FIELD_EMAIL);
-            if (email == null || email.isBlank()) {
-                ErrorResponse errorResponse = new ErrorResponse("メールアドレスは必須です");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-            }
-            userService.resendVerificationEmail(email);
-
-            Map<String, String> response = new HashMap<>();
-            response.put(KEY_MESSAGE, "認証メールを再送信しました。メールをご確認ください。");
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        String email = request.get(FIELD_EMAIL);
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("メールアドレスは必須です"));
         }
+        userService.resendVerificationEmail(email);
+
+        Map<String, String> response = new HashMap<>();
+        response.put(KEY_MESSAGE, "認証メールを再送信しました。メールをご確認ください。");
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -191,26 +99,16 @@ public class AuthController {
      * Issue#6: パスワードリセット機能
      *
      * @param request パスワードリセットリクエスト
-     * @param bindingResult バリデーション結果
      * @return レスポンス
      */
     @PostMapping("/password-reset-request")
-    public ResponseEntity<?> passwordResetRequest(@Valid @RequestBody PasswordResetRequest request, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return buildValidationErrorResponse(bindingResult);
-        }
+    public ResponseEntity<Map<String, String>> passwordResetRequest(@Valid @RequestBody PasswordResetRequest request) {
+        userService.requestPasswordReset(request.getEmail());
 
-        try {
-            userService.requestPasswordReset(request.getEmail());
-
-            // セキュリティ上、メールアドレスが存在するかどうかに関わらず同じレスポンスを返す
-            Map<String, String> response = new HashMap<>();
-            response.put(KEY_MESSAGE, "パスワードリセット用のメールを送信しました。メールをご確認ください。");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+        // セキュリティ上、メールアドレスが存在するかどうかに関わらず同じレスポンスを返す
+        Map<String, String> response = new HashMap<>();
+        response.put(KEY_MESSAGE, "パスワードリセット用のメールを送信しました。メールをご確認ください。");
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -218,27 +116,14 @@ public class AuthController {
      * Issue#6: パスワードリセット機能
      *
      * @param request パスワード再設定リクエスト
-     * @param bindingResult バリデーション結果
      * @return レスポンス
      */
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return buildValidationErrorResponse(bindingResult);
-        }
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        userService.resetPassword(request.getToken(), request.getNewPassword(), request.getConfirmPassword());
 
-        try {
-            userService.resetPassword(request.getToken(), request.getNewPassword(), request.getConfirmPassword());
-
-            Map<String, String> response = new HashMap<>();
-            response.put(KEY_MESSAGE, "パスワードが正常に再設定されました");
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            ErrorResponse errorResponse = new ErrorResponse(ERROR_INTERNAL_SERVER);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+        Map<String, String> response = new HashMap<>();
+        response.put(KEY_MESSAGE, "パスワードが正常に再設定されました");
+        return ResponseEntity.ok(response);
     }
 }

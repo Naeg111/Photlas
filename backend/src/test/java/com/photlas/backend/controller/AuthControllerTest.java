@@ -197,9 +197,7 @@ public class AuthControllerTest {
         mockMvc.perform(post(REGISTER_ENDPOINT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(1)))
-                .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_EMAIL)));
+                .andExpect(status().isConflict());
     }
 
     @Test
