@@ -31,44 +31,33 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 /**
- * UserServiceのユニットテスト
- * コントローラー統合テストでカバーされないビジネスロジックを検証する。
+ * サービス層のユニットテスト
+ * AuthService, PasswordService, ProfileService, AccountServiceのビジネスロジックを検証する。
  */
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
+    // ===== AuthService用モック =====
+    @Mock private UserRepository userRepository;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private JwtService jwtService;
+    @Mock private JavaMailSender mailSender;
+    @Mock private EmailVerificationTokenRepository emailVerificationTokenRepository;
+    @InjectMocks private AuthService authService;
 
-    @Mock
-    private UserSnsLinkRepository userSnsLinkRepository;
+    // ===== PasswordService用モック =====
+    @Mock private PasswordResetTokenRepository passwordResetTokenRepository;
+    @InjectMocks private PasswordService passwordService;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
+    // ===== ProfileService用モック =====
+    @Mock private UserSnsLinkRepository userSnsLinkRepository;
+    @Mock private S3Service s3Service;
+    @InjectMocks private ProfileService profileService;
 
-    @Mock
-    private JwtService jwtService;
-
-    @Mock
-    private JavaMailSender mailSender;
-
-    @Mock
-    private PasswordResetTokenRepository passwordResetTokenRepository;
-
-    @Mock
-    private EmailVerificationTokenRepository emailVerificationTokenRepository;
-
-    @Mock
-    private S3Service s3Service;
-
-    @Mock
-    private SpotRepository spotRepository;
-
-    @Mock
-    private PhotoRepository photoRepository;
-
-    @InjectMocks
-    private UserService userService;
+    // ===== AccountService用モック =====
+    @Mock private SpotRepository spotRepository;
+    @Mock private PhotoRepository photoRepository;
+    @InjectMocks private AccountService accountService;
 
     // テスト用定数
     private static final String TEST_EMAIL = "test@example.com";
@@ -81,7 +70,7 @@ public class UserServiceTest {
     private static final String NEW_USERNAME = "newuser";
     private static final String DUPLICATE_USERNAME = "existing";
 
-    // ===== SNSリンクバリデーション (updateSnsLinks) =====
+    // ===== SNSリンクバリデーション (ProfileService.updateSnsLinks) =====
 
     @Test
     @DisplayName("Issue#29 - SNSリンク: 未対応プラットフォームでIllegalArgumentException")
@@ -93,7 +82,7 @@ public class UserServiceTest {
                 new UpdateSnsLinksRequest.SnsLinkRequest("facebook", "https://facebook.com/user")
         );
 
-        assertThatThrownBy(() -> userService.updateSnsLinks(TEST_EMAIL, snsLinks))
+        assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("未対応のプラットフォームです");
     }
@@ -109,7 +98,7 @@ public class UserServiceTest {
                 new UpdateSnsLinksRequest.SnsLinkRequest("twitter", "https://x.com/user2")
         );
 
-        assertThatThrownBy(() -> userService.updateSnsLinks(TEST_EMAIL, snsLinks))
+        assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("同じプラットフォームが重複しています");
     }
@@ -124,7 +113,7 @@ public class UserServiceTest {
                 new UpdateSnsLinksRequest.SnsLinkRequest("instagram", "https://youtube.com/channel")
         );
 
-        assertThatThrownBy(() -> userService.updateSnsLinks(TEST_EMAIL, snsLinks))
+        assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("URLがプラットフォームと一致しません");
     }
@@ -139,7 +128,7 @@ public class UserServiceTest {
                 new UpdateSnsLinksRequest.SnsLinkRequest("twitter", "https://x.com/testuser")
         );
 
-        userService.updateSnsLinks(TEST_EMAIL, snsLinks);
+        profileService.updateSnsLinks(TEST_EMAIL, snsLinks);
 
         verify(userSnsLinkRepository).deleteByUserId(1L);
         verify(userSnsLinkRepository).save(argThat(link ->
@@ -157,7 +146,7 @@ public class UserServiceTest {
                 new UpdateSnsLinksRequest.SnsLinkRequest("twitter", "https://twitter.com/testuser")
         );
 
-        userService.updateSnsLinks(TEST_EMAIL, snsLinks);
+        profileService.updateSnsLinks(TEST_EMAIL, snsLinks);
 
         verify(userSnsLinkRepository).deleteByUserId(1L);
         verify(userSnsLinkRepository).save(argThat(link ->
@@ -175,7 +164,7 @@ public class UserServiceTest {
                 new UpdateSnsLinksRequest.SnsLinkRequest("twitter", "https://x.com.evil.com/phishing")
         );
 
-        assertThatThrownBy(() -> userService.updateSnsLinks(TEST_EMAIL, snsLinks))
+        assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("URLがプラットフォームと一致しません");
     }
@@ -190,7 +179,7 @@ public class UserServiceTest {
                 new UpdateSnsLinksRequest.SnsLinkRequest("instagram", "https://evil.com/fake?redirect=instagram.com")
         );
 
-        assertThatThrownBy(() -> userService.updateSnsLinks(TEST_EMAIL, snsLinks))
+        assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("URLがプラットフォームと一致しません");
     }
@@ -205,12 +194,12 @@ public class UserServiceTest {
                 new UpdateSnsLinksRequest.SnsLinkRequest("instagram", "https://notinstagram.com/user")
         );
 
-        assertThatThrownBy(() -> userService.updateSnsLinks(TEST_EMAIL, snsLinks))
+        assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("URLがプラットフォームと一致しません");
     }
 
-    // ===== メールアドレス変更 (updateEmail) =====
+    // ===== メールアドレス変更 (AccountService.updateEmail) =====
 
     @Test
     @DisplayName("Issue#20 - メール変更: 同じメールアドレスの場合、即座に現在のメールを返す")
@@ -219,7 +208,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
 
-        String result = userService.updateEmail(TEST_EMAIL, TEST_EMAIL, CURRENT_PASSWORD);
+        String result = accountService.updateEmail(TEST_EMAIL, TEST_EMAIL, CURRENT_PASSWORD);
 
         assertThat(result).isEqualTo(TEST_EMAIL);
         verify(userRepository, never()).save(any());
@@ -232,7 +221,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(WRONG_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(false);
 
-        assertThatThrownBy(() -> userService.updateEmail(TEST_EMAIL, OTHER_EMAIL, WRONG_PASSWORD))
+        assertThatThrownBy(() -> accountService.updateEmail(TEST_EMAIL, OTHER_EMAIL, WRONG_PASSWORD))
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessageContaining("パスワードが正しくありません");
     }
@@ -246,12 +235,12 @@ public class UserServiceTest {
         when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
         when(userRepository.findByEmail(OTHER_EMAIL)).thenReturn(Optional.of(existingUser));
 
-        assertThatThrownBy(() -> userService.updateEmail(TEST_EMAIL, OTHER_EMAIL, CURRENT_PASSWORD))
+        assertThatThrownBy(() -> accountService.updateEmail(TEST_EMAIL, OTHER_EMAIL, CURRENT_PASSWORD))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("このメールアドレスはすでに使用されています");
     }
 
-    // ===== パスワード変更 (updatePassword) =====
+    // ===== パスワード変更 (PasswordService.updatePassword) =====
 
     @Test
     @DisplayName("Issue#20 - パスワード変更: 新パスワード不一致でIllegalArgumentException")
@@ -261,7 +250,7 @@ public class UserServiceTest {
         when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
 
         assertThatThrownBy(() ->
-                userService.updatePassword(TEST_EMAIL, CURRENT_PASSWORD, NEW_PASSWORD, "DifferentPass1"))
+                passwordService.updatePassword(TEST_EMAIL, CURRENT_PASSWORD, NEW_PASSWORD, "DifferentPass1"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("新しいパスワードが一致しません");
     }
@@ -274,12 +263,12 @@ public class UserServiceTest {
         when(passwordEncoder.matches(WRONG_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(false);
 
         assertThatThrownBy(() ->
-                userService.updatePassword(TEST_EMAIL, WRONG_PASSWORD, NEW_PASSWORD, NEW_PASSWORD))
+                passwordService.updatePassword(TEST_EMAIL, WRONG_PASSWORD, NEW_PASSWORD, NEW_PASSWORD))
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessageContaining("現在のパスワードが正しくありません");
     }
 
-    // ===== アカウント削除 (deleteAccount) =====
+    // ===== アカウント削除 (AccountService.deleteAccount) =====
 
     @Test
     @DisplayName("Issue#20 - アカウント削除: パスワード不一致でUnauthorizedException")
@@ -288,12 +277,12 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(WRONG_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(false);
 
-        assertThatThrownBy(() -> userService.deleteAccount(TEST_EMAIL, WRONG_PASSWORD))
+        assertThatThrownBy(() -> accountService.deleteAccount(TEST_EMAIL, WRONG_PASSWORD))
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessageContaining("パスワードが正しくありません");
     }
 
-    // ===== ログイン (loginUser) =====
+    // ===== ログイン (AuthService.loginUser) =====
 
     @Test
     @DisplayName("Issue#54 - ログイン: メール未認証でEmailNotVerifiedException")
@@ -305,7 +294,7 @@ public class UserServiceTest {
 
         LoginRequest request = new LoginRequest(TEST_EMAIL, CURRENT_PASSWORD);
 
-        assertThatThrownBy(() -> userService.loginUser(request))
+        assertThatThrownBy(() -> authService.loginUser(request))
                 .isInstanceOf(com.photlas.backend.exception.EmailNotVerifiedException.class)
                 .hasMessageContaining("メールアドレスが認証されていません");
     }
@@ -321,12 +310,12 @@ public class UserServiceTest {
 
         LoginRequest request = new LoginRequest(TEST_EMAIL, CURRENT_PASSWORD);
 
-        assertThatThrownBy(() -> userService.loginUser(request))
+        assertThatThrownBy(() -> authService.loginUser(request))
                 .isInstanceOf(AccountSuspendedException.class)
                 .hasMessageContaining("アカウントが停止されています");
     }
 
-    // ===== ユーザー名更新 (updateUsername) =====
+    // ===== ユーザー名更新 (ProfileService.updateUsername) =====
 
     @Test
     @DisplayName("Issue#29 - ユーザー名更新: 他ユーザーと同じユーザー名でも更新成功する（重複許可）")
@@ -335,7 +324,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        String result = userService.updateUsername(TEST_EMAIL, DUPLICATE_USERNAME);
+        String result = profileService.updateUsername(TEST_EMAIL, DUPLICATE_USERNAME);
 
         assertThat(result).isEqualTo(DUPLICATE_USERNAME);
         verify(userRepository).save(argThat(u -> DUPLICATE_USERNAME.equals(u.getUsername())));
@@ -348,7 +337,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        String result = userService.updateUsername(TEST_EMAIL, NEW_USERNAME);
+        String result = profileService.updateUsername(TEST_EMAIL, NEW_USERNAME);
 
         assertThat(result).isEqualTo(NEW_USERNAME);
         verify(userRepository).save(argThat(u -> NEW_USERNAME.equals(u.getUsername())));
@@ -364,14 +353,10 @@ public class UserServiceTest {
         when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        userService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
 
-        // 物理削除が呼ばれていないことを確認
         verify(userRepository, never()).delete(any(User.class));
-        // saveが呼ばれ、deleted_atが設定されていることを確認
-        verify(userRepository).save(argThat(u ->
-                u.getDeletedAt() != null
-        ));
+        verify(userRepository).save(argThat(u -> u.getDeletedAt() != null));
     }
 
     @Test
@@ -382,7 +367,7 @@ public class UserServiceTest {
         when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        userService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
 
         verify(userRepository).save(argThat(u ->
                 TEST_USERNAME.equals(u.getOriginalUsername()) &&
@@ -402,7 +387,7 @@ public class UserServiceTest {
 
         LoginRequest request = new LoginRequest(TEST_EMAIL, CURRENT_PASSWORD);
 
-        assertThatThrownBy(() -> userService.loginUser(request))
+        assertThatThrownBy(() -> authService.loginUser(request))
                 .isInstanceOf(UnauthorizedException.class);
     }
 
@@ -419,7 +404,7 @@ public class UserServiceTest {
         request.setPassword(CURRENT_PASSWORD);
         request.setUsername("newuser");
 
-        assertThatThrownBy(() -> userService.registerUser(request))
+        assertThatThrownBy(() -> authService.registerUser(request))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("退会処理中");
     }
@@ -440,7 +425,7 @@ public class UserServiceTest {
         when(spotRepository.findByCreatedByUserId(1L)).thenReturn(java.util.List.of(spot));
         when(photoRepository.findOldestActiveUserBySpotExcluding(100L, 1L)).thenReturn(Optional.of(otherUser));
 
-        userService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
 
         assertThat(spot.getCreatedByUserId()).isEqualTo(2L);
     }

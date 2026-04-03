@@ -129,7 +129,7 @@ public class UserControllerTest {
     private static final String USER_ME_ENDPOINT = "/api/v1/users/me";
     private static final String USER_BY_ID_ENDPOINT_PREFIX = "/api/v1/users/";
     private static final String USER_PROFILE_ENDPOINT = "/api/v1/users/me/profile";
-    private static final String USER_AVATAR_UPLOAD_URL_ENDPOINT = "/api/v1/users/me/avatar-upload-url";
+    private static final String USER_AVATAR_UPLOAD_URL_ENDPOINT = "/api/v1/users/me/profile-image/presigned-url";
     private static final String USER_EMAIL_ENDPOINT = "/api/v1/users/me/email";
     private static final String USER_PASSWORD_ENDPOINT = "/api/v1/users/me/password";
     private static final String USER_PHOTOS_SUFFIX = "/photos";
@@ -404,7 +404,7 @@ public class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(JSON_PATH_UPLOAD_URL).exists())
                 .andExpect(jsonPath(JSON_PATH_OBJECT_KEY).exists())
-                .andExpect(jsonPath(JSON_PATH_OBJECT_KEY, startsWith("avatars/" + testUser.getId())));
+                .andExpect(jsonPath(JSON_PATH_OBJECT_KEY, startsWith("profile-images/" + testUser.getId())));
     }
 
     @Test

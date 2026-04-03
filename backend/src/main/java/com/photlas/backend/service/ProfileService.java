@@ -1,0 +1,221 @@
+package com.photlas.backend.service;
+
+import com.photlas.backend.dto.UpdateProfileRequest;
+import com.photlas.backend.dto.UpdateSnsLinksRequest;
+import com.photlas.backend.dto.UserProfileResponse;
+import com.photlas.backend.entity.User;
+import com.photlas.backend.entity.UserSnsLink;
+import com.photlas.backend.exception.UnauthorizedException;
+import com.photlas.backend.exception.UserNotFoundException;
+import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.repository.UserSnsLinkRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * プロフィールサービス
+ * プロフィール取得・更新、画像管理、SNSリンク管理のビジネスロジックを提供する。
+ */
+@Service
+public class ProfileService {
+
+    private static final List<String> ALLOWED_PLATFORMS = List.of("twitter", "instagram", "youtube", "tiktok");
+    private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
+    private static final String ERROR_UNSUPPORTED_PLATFORM = "未対応のプラットフォームです: ";
+    private static final String ERROR_DUPLICATE_PLATFORM = "同じプラットフォームが重複しています: ";
+    private static final String ERROR_INVALID_URL_FOR_PLATFORM = "URLがプラットフォームと一致しません";
+
+    private final UserRepository userRepository;
+    private final UserSnsLinkRepository userSnsLinkRepository;
+    private final S3Service s3Service;
+
+    public ProfileService(
+            UserRepository userRepository,
+            UserSnsLinkRepository userSnsLinkRepository,
+            S3Service s3Service) {
+        this.userRepository = userRepository;
+        this.userSnsLinkRepository = userSnsLinkRepository;
+        this.s3Service = s3Service;
+    }
+
+    /**
+     * 自分のユーザー情報を取得
+     */
+    @Transactional(readOnly = true)
+    public UserProfileResponse getMyProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        return buildProfileResponse(user, true);
+    }
+
+    /**
+     * 他ユーザーのプロフィール情報を取得
+     */
+    @Transactional(readOnly = true)
+    public UserProfileResponse getUserProfile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
+
+        return buildProfileResponse(user, false);
+    }
+
+    /**
+     * プロフィール情報を更新
+     */
+    @Transactional
+    public UserProfileResponse updateProfile(String email, UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        user.setUsername(request.getUsername());
+
+        if (request.getProfileImageS3Key() != null) {
+            user.setProfileImageS3Key(request.getProfileImageS3Key());
+        }
+
+        userRepository.save(user);
+
+        userSnsLinkRepository.deleteByUserId(user.getId());
+        if (request.getSnsLinks() != null) {
+            for (UpdateProfileRequest.SnsLinkRequest snsLinkRequest : request.getSnsLinks()) {
+                UserSnsLink snsLink = new UserSnsLink(user.getId(), snsLinkRequest.getUrl());
+                userSnsLinkRepository.save(snsLink);
+            }
+        }
+
+        return getMyProfile(email);
+    }
+
+    /**
+     * プロフィール画像を更新
+     */
+    @Transactional
+    public String updateProfileImage(String email, String objectKey) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        user.setProfileImageS3Key(objectKey);
+        userRepository.save(user);
+
+        return s3Service.generateCdnUrl(objectKey);
+    }
+
+    /**
+     * プロフィール画像を削除
+     */
+    @Transactional
+    public void deleteProfileImage(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        user.setProfileImageS3Key(null);
+        userRepository.save(user);
+    }
+
+    /**
+     * SNSリンクを更新
+     */
+    @Transactional
+    public List<UserSnsLink> updateSnsLinks(String email, List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        validateSnsLinks(snsLinks);
+
+        userSnsLinkRepository.deleteByUserId(user.getId());
+
+        if (snsLinks != null) {
+            for (var snsLinkRequest : snsLinks) {
+                UserSnsLink snsLink = new UserSnsLink(
+                        user.getId(),
+                        snsLinkRequest.getPlatform(),
+                        snsLinkRequest.getUrl()
+                );
+                userSnsLinkRepository.save(snsLink);
+            }
+        }
+
+        return userSnsLinkRepository.findByUserId(user.getId());
+    }
+
+    /**
+     * ユーザー名を更新
+     */
+    @Transactional
+    public String updateUsername(String email, String username) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        user.setUsername(username);
+        userRepository.save(user);
+
+        return user.getUsername();
+    }
+
+    /**
+     * プロフィールレスポンスを構築（共通ロジック）
+     */
+    private UserProfileResponse buildProfileResponse(User user, boolean includeEmail) {
+        List<UserSnsLink> snsLinks = userSnsLinkRepository.findByUserId(user.getId());
+        List<UserProfileResponse.SnsLink> snsLinkDtos = snsLinks.stream()
+                .map(link -> new UserProfileResponse.SnsLink(link.getUrl()))
+                .collect(Collectors.toList());
+
+        String profileImageUrl = s3Service.generateCdnUrl(user.getProfileImageS3Key());
+
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                includeEmail ? user.getEmail() : null,
+                profileImageUrl,
+                snsLinkDtos
+        );
+    }
+
+    /**
+     * SNSリンクのバリデーション
+     */
+    private void validateSnsLinks(List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks) {
+        if (snsLinks == null) {
+            return;
+        }
+
+        Set<String> platforms = new HashSet<>();
+        for (UpdateSnsLinksRequest.SnsLinkRequest snsLink : snsLinks) {
+            if (!ALLOWED_PLATFORMS.contains(snsLink.getPlatform())) {
+                throw new IllegalArgumentException(ERROR_UNSUPPORTED_PLATFORM + snsLink.getPlatform());
+            }
+            if (!platforms.add(snsLink.getPlatform())) {
+                throw new IllegalArgumentException(ERROR_DUPLICATE_PLATFORM + snsLink.getPlatform());
+            }
+            if (!isValidUrlForPlatform(snsLink.getPlatform(), snsLink.getUrl())) {
+                throw new IllegalArgumentException(ERROR_INVALID_URL_FOR_PLATFORM);
+            }
+        }
+    }
+
+    private boolean isValidUrlForPlatform(String platform, String url) {
+        try {
+            java.net.URI uri = new java.net.URI(url);
+            String host = uri.getHost();
+            if (host == null) return false;
+            host = host.toLowerCase();
+            return switch (platform) {
+                case "twitter" -> host.equals("x.com") || host.equals("twitter.com")
+                        || host.endsWith(".x.com") || host.endsWith(".twitter.com");
+                case "instagram" -> host.equals("instagram.com") || host.endsWith(".instagram.com");
+                case "youtube" -> host.equals("youtube.com") || host.endsWith(".youtube.com");
+                case "tiktok" -> host.equals("tiktok.com") || host.endsWith(".tiktok.com");
+                default -> false;
+            };
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}
