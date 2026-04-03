@@ -1,26 +1,20 @@
-import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 
 /**
  * Issue#85: スプラッシュ画面
  *
  * アイコンのみを画面中央に配置し、ドロップバウンスアニメーションを表示する。
- * アニメーションはCSSで定義（コンポジタースレッド実行でスムーズ描画）。
- * box-shadowでビューポート境界の隙間を防止。
- *
- * アニメーションクラスは初回レンダリング後に遅延適用する。
- * iOS PWAの2回目以降の起動時にブラウザがキャッシュからCSSアニメーション状態を
- * 復元するとinline opacity:0がオーバーライドされるため、初回レンダリング時は
- * クラスを付与せずinline styleのみでアイコンを非表示に保つ。
+ * Framer Motion（initial/animate）で制御することでマウント毎にJS側で初期状態を
+ * 強制設定し、iOS PWAのCSSアニメーション状態キャッシュ復元の影響を受けない。
  */
+
+const DROP_Y = [-100, 0, -30, 0, -30, 0];
+const FADE_IN = [0, 1, 1, 1, 1, 1];
+const KEYFRAME_TIMES = [0, 0.31, 0.49, 0.66, 0.83, 1];
+const ANIMATION_DURATION = 1.33;
+const REPEAT_DELAY = 1.5;
+
 export function SplashScreen() {
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsAnimating(true), 0);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <motion.div
       initial={{ opacity: 1 }}
@@ -39,9 +33,16 @@ export function SplashScreen() {
         boxShadow: '0 0 0 50px black',
       }}
     >
-      <div
-        className={isAnimating ? "animate-drop-bounce" : ""}
-        style={{ opacity: 0, transform: 'translateY(-100px)' }}
+      <motion.div
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: DROP_Y, opacity: FADE_IN }}
+        transition={{
+          duration: ANIMATION_DURATION,
+          times: KEYFRAME_TIMES,
+          repeat: Infinity,
+          repeatDelay: REPEAT_DELAY,
+        }}
+        style={{ willChange: 'transform, opacity' }}
       >
         <svg
           viewBox="56 60 400 400"
@@ -65,7 +66,7 @@ export function SplashScreen() {
           {/* Flash */}
           <circle cx="316" cy="208" r="6" fill="white" opacity="0.6" />
         </svg>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
