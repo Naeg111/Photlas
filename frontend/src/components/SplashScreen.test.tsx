@@ -50,6 +50,13 @@ describe('SplashScreen', () => {
       expect(animatedElement).toBeInTheDocument()
     })
 
+    it('has inline opacity 0 to prevent PWA initial flash', () => {
+      const { container } = render(<SplashScreen />)
+
+      const animatedElement = container.querySelector('.animate-drop-bounce')
+      expect(animatedElement).toHaveStyle({ opacity: '0' })
+    })
+
     it('uses vmin for orientation-independent icon sizing', () => {
       const { container } = render(<SplashScreen />)
 
