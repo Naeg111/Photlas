@@ -333,5 +333,7 @@ input, textarea, [contenteditable="true"] {
 }
 
 .animate-drop-bounce {
+  opacity: 0;
+  transform: translateY(-100px);
   animation: drop-bounce 2.83s infinite;
 }
