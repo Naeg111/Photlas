@@ -40,7 +40,7 @@ describe('SplashScreen', () => {
       const { container } = render(<SplashScreen />)
 
       const splashDiv = container.firstChild
-      expect(splashDiv).toHaveClass('fixed', '-inset-1', 'bg-black')
+      expect(splashDiv).toHaveClass('fixed', '-inset-[8px]', 'bg-black')
     })
   })
 
