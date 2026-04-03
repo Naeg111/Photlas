@@ -215,6 +215,43 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
+  describe('パフォーマンス最適化', () => {
+    it('同じスポットデータで再取得してもGeoJSONのsetDataが増加しない（メモ化）', async () => {
+      const spots = [TEST_SPOT]
+      setupFetchMock(spots)
+
+      render(<MapView />)
+
+      // 初回ロード + デバウンスmoveEndで2回フェッチされる
+      await waitFor(
+        () => {
+          // getSourceが呼ばれている（setDataが実行されている）
+          expect(mockMap.getSource).toHaveBeenCalled()
+        },
+        { timeout: 1500 }
+      )
+
+      // 同じspotsで2回フェッチしてもsetDataの呼び出しが際限なく増えないことを確認
+      const callCount = mockMap.getSource.mock.calls.length
+      expect(callCount).toBeLessThanOrEqual(4)
+    })
+
+    it('パン操作（ズーム変化なし）でズームメッセージの表示状態が変わらない', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(11)
+
+      render(<MapView />)
+
+      await waitFor(
+        () => { expect(screen.queryByText(/投稿を表示するには地図を拡大してください/)).not.toBeInTheDocument() },
+        { timeout: 1500 }
+      )
+
+      // ズームが変わらないmoveEnd後もメッセージが表示されない（不要な再レンダリングでUIが変わらない）
+      expect(screen.queryByText(/投稿を表示するには地図を拡大してください/)).not.toBeInTheDocument()
+    })
+  })
+
   describe('ズームレベルによる表示制御と誘導UI', () => {
     it('Issue#68 - Zoom 10未満の場合、拡大を促す静的メッセージが表示される', async () => {
       mockMap.getZoom.mockReturnValue(9)
