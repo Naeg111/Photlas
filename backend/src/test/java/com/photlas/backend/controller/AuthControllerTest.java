@@ -112,7 +112,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("正常なユーザー登録 - 201 Created とユーザー情報、JWTトークンを返す")
+    @DisplayName("正常なユーザー登録 - 201 Created とユーザー情報を返す（メール認証前のためJWTなし）")
     void testRegisterUser_ValidRequest_ReturnsCreatedWithUserAndToken() throws Exception {
         RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
 
@@ -124,7 +124,7 @@ public class AuthControllerTest {
                 .andExpect(jsonPath(JSON_PATH_USER_EMAIL, is(TEST_EMAIL)))
                 .andExpect(jsonPath(JSON_PATH_USER_ROLE, is(USER_ROLE)))
                 .andExpect(jsonPath(JSON_PATH_USER_PASSWORD_HASH).doesNotExist())
-                .andExpect(jsonPath(JSON_PATH_TOKEN).exists());
+                .andExpect(jsonPath(JSON_PATH_TOKEN).doesNotExist());
     }
 
     @Test

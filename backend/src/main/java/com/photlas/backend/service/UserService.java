@@ -55,7 +55,6 @@ public class UserService {
 
     // Issue#29: エラーメッセージ定数
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
-    private static final String ERROR_USERNAME_ALREADY_EXISTS = "このユーザー名はすでに使用されています";
     private static final String ERROR_UNSUPPORTED_PLATFORM = "未対応のプラットフォームです: ";
     private static final String ERROR_DUPLICATE_PLATFORM = "同じプラットフォームが重複しています: ";
     private static final String ERROR_INVALID_URL_FOR_PLATFORM = "URLがプラットフォームと一致しません";
@@ -128,14 +127,13 @@ public class UserService {
 
         user = userRepository.save(user);
 
-        String token = jwtService.generateTokenWithRole(user.getEmail(), user.getRole());
-
         // メール認証トークンを生成して送信
         sendVerificationEmail(user);
 
+        // メール認証完了前のJWTは返さない（未認証ユーザーの認証済みエンドポイントへのアクセスを防止）
         return new RegisterResponse(
             new RegisterResponse.UserResponse(user),
-            token
+            null
         );
     }
 
@@ -451,11 +449,6 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
-        // ユーザー名重複チェック（自分以外）
-        Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
-        if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
-            throw new IllegalArgumentException(ERROR_USERNAME_ALREADY_EXISTS);
-        }
 
         // ユーザー名を更新
         user.setUsername(request.getUsername());
@@ -722,11 +715,6 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
-        // ユーザー名重複チェック（自分以外）
-        Optional<User> existingUser = userRepository.findByUsername(username);
-        if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
-            throw new ConflictException(ERROR_USERNAME_ALREADY_EXISTS);
-        }
 
         user.setUsername(username);
         userRepository.save(user);

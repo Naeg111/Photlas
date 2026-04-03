@@ -360,15 +360,15 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PUT /api/v1/users/me/profile - ユーザー名重複の場合は409を返す")
-    void testUpdateProfile_UsernameConflict_ReturnsConflict() throws Exception {
+    @DisplayName("PUT /api/v1/users/me/profile - 他ユーザーと同じユーザー名でも更新成功する（重複許可）")
+    void testUpdateProfile_DuplicateUsername_ReturnsOk() throws Exception {
         // 別のユーザーを作成
         createTestUser(EXISTING_USERNAME, OTHER_EMAIL);
 
         UpdateProfileRequest request = createUpdateProfileRequest(EXISTING_USERNAME, new ArrayList<>());
 
         performUpdateProfile(request)
-                .andExpect(status().isConflict());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -941,8 +941,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - ユーザー名が重複している場合は409を返す")
-    void testUpdateUsername_DuplicateUsername_ReturnsConflict() throws Exception {
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 他ユーザーと同じユーザー名でも更新成功する（重複許可）")
+    void testUpdateUsername_DuplicateUsername_ReturnsOk() throws Exception {
         // 別のユーザーを作成
         createTestUser("existingname", "existing@example.com");
 
@@ -953,7 +953,7 @@ public class UserControllerTest {
                 .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
-                .andExpect(status().isConflict());
+                .andExpect(status().isOk());
     }
 
     @Test

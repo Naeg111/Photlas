@@ -329,30 +329,16 @@ public class UserServiceTest {
     // ===== ユーザー名更新 (updateUsername) =====
 
     @Test
-    @DisplayName("Issue#29 - ユーザー名更新: 重複ユーザー名でConflictException")
-    void testUpdateUsername_DuplicateUsername_ThrowsConflict() {
-        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
-        User existingUser = createMockUser(2L, OTHER_EMAIL, DUPLICATE_USERNAME);
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
-        when(userRepository.findByUsername(DUPLICATE_USERNAME)).thenReturn(Optional.of(existingUser));
-
-        assertThatThrownBy(() -> userService.updateUsername(TEST_EMAIL, DUPLICATE_USERNAME))
-                .isInstanceOf(ConflictException.class)
-                .hasMessageContaining("このユーザー名はすでに使用されています");
-    }
-
-    @Test
-    @DisplayName("Issue#29 - ユーザー名更新: 自分と同じユーザー名は更新成功する")
-    void testUpdateUsername_SameUsername_Succeeds() {
+    @DisplayName("Issue#29 - ユーザー名更新: 他ユーザーと同じユーザー名でも更新成功する（重複許可）")
+    void testUpdateUsername_DuplicateUsername_Succeeds() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
-        when(userRepository.findByUsername(TEST_USERNAME)).thenReturn(Optional.of(user));
-        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        String result = userService.updateUsername(TEST_EMAIL, TEST_USERNAME);
+        String result = userService.updateUsername(TEST_EMAIL, DUPLICATE_USERNAME);
 
-        assertThat(result).isEqualTo(TEST_USERNAME);
-        verify(userRepository).save(user);
+        assertThat(result).isEqualTo(DUPLICATE_USERNAME);
+        verify(userRepository).save(argThat(u -> DUPLICATE_USERNAME.equals(u.getUsername())));
     }
 
     @Test
@@ -360,11 +346,7 @@ public class UserServiceTest {
     void testUpdateUsername_NewUsername_Succeeds() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
-        when(userRepository.findByUsername(NEW_USERNAME)).thenReturn(Optional.empty());
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-            User saved = invocation.getArgument(0);
-            return saved;
-        });
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         String result = userService.updateUsername(TEST_EMAIL, NEW_USERNAME);
 
