@@ -33,6 +33,7 @@ export function SplashScreen() {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
+      data-testid="splash-screen"
       className="fixed -inset-px bg-black flex items-center justify-center z-50"
     >
       <motion.div

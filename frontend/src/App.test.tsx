@@ -158,14 +158,14 @@ describe('App - Issue#28: App.tsx再構築', () => {
   describe('SplashScreen Integration - スプラッシュ画面', () => {
     it('displays SplashScreen on initial load', () => {
       renderApp()
-      expect(screen.getByText('Photlas')).toBeInTheDocument()
+      expect(screen.getByTestId('splash-screen')).toBeInTheDocument()
     })
 
     it('hides SplashScreen after 2 seconds', () => {
       renderApp()
-      expect(screen.getByText('Photlas')).toBeInTheDocument()
+      expect(screen.getByTestId('splash-screen')).toBeInTheDocument()
       skipSplashScreen()
-      expect(screen.queryByText('Photlas')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('splash-screen')).not.toBeInTheDocument()
     })
 
     it('shows main content after SplashScreen disappears', () => {
