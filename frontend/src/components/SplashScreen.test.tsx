@@ -3,23 +3,29 @@ import { describe, it, expect } from 'vitest'
 import { SplashScreen } from './SplashScreen'
 
 /**
- * Issue#11: フロントエンドデザインのコード導入 - スプラッシュスクリーン
+ * Issue#85: スプラッシュ画面のデザインリニューアル（ドロップバウンスアニメーション）
  * TDD Red段階: 実装前のテストケース定義
  *
  * UI要件:
- * - アプリケーション起動時に表示される
- * - ロゴ（ピンとカメラアパーチャー）の表示
- * - アプリ名「Photlas」の表示
- * - ローディングアニメーション（スピナー）の表示
- * - フェードアウトアニメーション
+ * - アイコン（ピンとカメラ）のみを画面中央に配置
+ * - 「Photlas」テキストは表示しない
+ * - ローディングスピナーは表示しない
+ * - フェードアウトアニメーション（exit）
  */
 
 describe('SplashScreen', () => {
   describe('UI Elements', () => {
-    it('renders the application name', () => {
+    it('does not render the application name', () => {
       render(<SplashScreen />)
 
-      expect(screen.getByText('Photlas')).toBeInTheDocument()
+      expect(screen.queryByText('Photlas')).not.toBeInTheDocument()
+    })
+
+    it('does not render loading spinner', () => {
+      const { container } = render(<SplashScreen />)
+
+      const spinner = container.querySelector('[class*="animate-spin"]')
+      expect(spinner).not.toBeInTheDocument()
     })
 
     it('renders the logo SVG element', () => {
@@ -35,14 +41,6 @@ describe('SplashScreen', () => {
 
       const splashDiv = container.firstChild
       expect(splashDiv).toHaveClass('fixed', '-inset-px', 'bg-black')
-    })
-
-    it('renders loading spinner icon', () => {
-      const { container } = render(<SplashScreen />)
-
-      // lucide-reactのLoader2アイコンを探す
-      const spinner = container.querySelector('[class*="animate-spin"]')
-      expect(spinner).toBeInTheDocument()
     })
   })
 
