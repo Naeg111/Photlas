@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react'
+import { useDebouncedCallback } from '../hooks/useDebouncedCallback'
 import Map, { Marker, AttributionControl } from 'react-map-gl'
 import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
 import type { Map as MapboxMap, ExpressionSpecification } from 'mapbox-gl'
@@ -84,6 +85,8 @@ function createTransitionCompleter(
   }
 }
 const TRANSITION_TIMEOUT_MS = 5000
+/** マップ移動完了時のスポット取得デバウンス（ms） */
+const FETCH_SPOTS_DEBOUNCE_MS = 500
 const SHOOTING_PIN_SCALE = 1.4
 
 /**
@@ -578,15 +581,20 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     onMapReady?.()
   }, [fetchSpots, onMapReady, initializeSymbolLayers])
 
-  // 地図移動完了時の処理
+  // 地図移動完了時のスポット取得（デバウンス: 連続操作を1回のAPI呼び出しにまとめる）
+  const debouncedFetchSpots = useDebouncedCallback(
+    (mapInstance: MapboxMap) => fetchSpots(mapInstance),
+    FETCH_SPOTS_DEBOUNCE_MS
+  )
+
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
     const currentZoom = mapInstance.getZoom()
     if (currentZoom !== undefined) {
       setZoom(currentZoom)
     }
-    fetchSpots(mapInstance)
-  }, [fetchSpots])
+    debouncedFetchSpots(mapInstance)
+  }, [debouncedFetchSpots])
 
   // フィルター条件が変更されたときにスポットを再取得
   useEffect(() => {
