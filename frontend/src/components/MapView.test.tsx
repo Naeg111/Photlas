@@ -200,16 +200,17 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(callArgs).toContain('west=')
     })
 
-    it('地図移動後（onMoveEnd イベント）にAPIが呼ばれる（デバウンス500ms後）', async () => {
+    it('地図移動後（onMoveEnd イベント）にAPIが呼ばれる（デバウンス500msで連続移動が1回にまとまる）', async () => {
       const mockFetch = setupFetchMock()
 
       render(<MapView />)
 
+      // 初回ロード(1回) + onMoveEnd 100ms,200ms がデバウンスで1回にまとまる = 計2回
       await waitFor(
         () => {
-          expect(mockFetch).toHaveBeenCalledTimes(3)
+          expect(mockFetch).toHaveBeenCalledTimes(2)
         },
-        { timeout: 1000 }
+        { timeout: 1500 }
       )
     })
   })
