@@ -24,7 +24,7 @@ const OPACITY_KEYFRAMES = [
   1, 1, 1, 1, // バウンド中は不透明を維持
 ];
 
-const ANIMATION_DURATION = 2;
+const ANIMATION_DURATION = 1.33;
 const REPEAT_DELAY = 1.5;
 
 export function SplashScreen() {
@@ -34,7 +34,7 @@ export function SplashScreen() {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
       data-testid="splash-screen"
-      className="fixed -inset-px bg-black flex items-center justify-center z-50"
+      className="fixed -inset-1 bg-black flex items-center justify-center z-50"
     >
       <motion.div
         animate={{
