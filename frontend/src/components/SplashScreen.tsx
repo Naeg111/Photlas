@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 
 /**
@@ -6,8 +7,20 @@ import { motion } from "motion/react";
  * アイコンのみを画面中央に配置し、ドロップバウンスアニメーションを表示する。
  * アニメーションはCSSで定義（コンポジタースレッド実行でスムーズ描画）。
  * box-shadowでビューポート境界の隙間を防止。
+ *
+ * アニメーションクラスは初回レンダリング後に遅延適用する。
+ * iOS PWAの2回目以降の起動時にブラウザがキャッシュからCSSアニメーション状態を
+ * 復元するとinline opacity:0がオーバーライドされるため、初回レンダリング時は
+ * クラスを付与せずinline styleのみでアイコンを非表示に保つ。
  */
 export function SplashScreen() {
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsAnimating(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 1 }}
@@ -26,7 +39,10 @@ export function SplashScreen() {
         boxShadow: '0 0 0 50px black',
       }}
     >
-      <div className="animate-drop-bounce" style={{ opacity: 0, transform: 'translateY(-100px)' }}>
+      <div
+        className={isAnimating ? "animate-drop-bounce" : ""}
+        style={{ opacity: 0, transform: 'translateY(-100px)' }}
+      >
         <svg
           viewBox="56 60 400 400"
           fill="none"
