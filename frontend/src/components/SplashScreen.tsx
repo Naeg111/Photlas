@@ -1,20 +1,32 @@
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 
 /**
  * Issue#85: スプラッシュ画面
  *
  * アイコンのみを画面中央に配置し、ドロップバウンスアニメーションを表示する。
- * Framer Motion（initial/animate）で制御することでマウント毎にJS側で初期状態を
- * 強制設定し、iOS PWAのCSSアニメーション状態キャッシュ復元の影響を受けない。
+ * アニメーションはCSSで定義（コンポジタースレッド実行でスムーズ描画）。
+ *
+ * iOS PWA（standalone）起動時はビューポートの初期化に時間がかかるため、
+ * アニメーションクラスの適用を遅延させ、ビューポートが安定してから開始する。
+ * 通常ブラウザでは遅延なしで即時開始する。
  */
 
-const DROP_Y = [-100, 0, -30, 0, -30, 0];
-const FADE_IN = [0, 1, 1, 1, 1, 1];
-const KEYFRAME_TIMES = [0, 0.31, 0.49, 0.66, 0.83, 1];
-const ANIMATION_DURATION = 1.33;
-const REPEAT_DELAY = 1.5;
+/** PWA standalone時のビューポート安定化待機時間（ms） */
+const PWA_VIEWPORT_SETTLE_MS = 300;
 
 export function SplashScreen() {
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    const isStandalone =
+      (navigator as unknown as { standalone?: boolean }).standalone === true ||
+      window.matchMedia('(display-mode: standalone)').matches;
+    const delay = isStandalone ? PWA_VIEWPORT_SETTLE_MS : 0;
+    const timer = setTimeout(() => setIsAnimating(true), delay);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 1 }}
@@ -33,16 +45,9 @@ export function SplashScreen() {
         boxShadow: '0 0 0 50px black',
       }}
     >
-      <motion.div
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: DROP_Y, opacity: FADE_IN }}
-        transition={{
-          duration: ANIMATION_DURATION,
-          times: KEYFRAME_TIMES,
-          repeat: Infinity,
-          repeatDelay: REPEAT_DELAY,
-        }}
-        style={{ willChange: 'transform, opacity' }}
+      <div
+        className={isAnimating ? "animate-drop-bounce" : ""}
+        style={{ opacity: 0, transform: 'translateY(-100px)' }}
       >
         <svg
           viewBox="56 60 400 400"
@@ -66,7 +71,7 @@ export function SplashScreen() {
           {/* Flash */}
           <circle cx="316" cy="208" r="6" fill="white" opacity="0.6" />
         </svg>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
