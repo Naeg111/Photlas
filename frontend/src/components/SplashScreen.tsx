@@ -10,9 +10,9 @@ export function SplashScreen() {
       className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50"
     >
       <motion.div
-        initial={{ scale: 0.5, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
         className="text-center"
       >
         {/* Logo Design - Pin with Camera */}
