@@ -9,8 +9,8 @@ import { SplashScreen } from './SplashScreen'
  * - アイコン（ピンとカメラ）のみを画面中央に配置
  * - 「Photlas」テキストは表示しない
  * - ローディングスピナーは表示しない
- * - Framer Motionによるドロップバウンスアニメーション
- * - フェードアウトアニメーション（exit）
+ * - CSSアニメーション（コンポジタースレッド実行）
+ * - PWA起動時はビューポート安定化を待ってからアニメーション開始
  */
 
 describe('SplashScreen', () => {
@@ -43,12 +43,27 @@ describe('SplashScreen', () => {
       expect(splashDiv).toHaveClass('fixed', 'inset-0', 'bg-black')
     })
 
-    it('does not use CSS animation class even after mount (uses Framer Motion instead)', () => {
+    it('icon wrapper is invisible on initial render', () => {
+      const { container } = render(<SplashScreen />)
+
+      const iconWrapper = container.querySelector('svg')?.parentElement
+      expect(iconWrapper).toHaveStyle({ opacity: '0' })
+    })
+
+    it('does not apply animation class on initial render', () => {
       vi.useFakeTimers()
       const { container } = render(<SplashScreen />)
 
-      act(() => { vi.runAllTimers() })
       expect(container.querySelector('.animate-drop-bounce')).not.toBeInTheDocument()
+      vi.useRealTimers()
+    })
+
+    it('applies animation class after viewport stabilization delay', () => {
+      vi.useFakeTimers()
+      const { container } = render(<SplashScreen />)
+
+      act(() => { vi.advanceTimersByTime(500) })
+      expect(container.querySelector('.animate-drop-bounce')).toBeInTheDocument()
       vi.useRealTimers()
     })
 
