@@ -22,7 +22,7 @@ export function SplashScreen() {
           viewBox="56 60 400 400"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          style={{ width: '21.0vw', height: '21.0vw' }}
+          style={{ width: '21.0vmin', height: '21.0vmin' }}
         >
           {/* Map Pin Shape */}
           <path
