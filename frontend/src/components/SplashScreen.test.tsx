@@ -40,7 +40,14 @@ describe('SplashScreen', () => {
       const { container } = render(<SplashScreen />)
 
       const splashDiv = container.firstChild
-      expect(splashDiv).toHaveClass('fixed', '-inset-[8px]', 'bg-black')
+      expect(splashDiv).toHaveClass('fixed', 'inset-0', 'bg-black')
+    })
+
+    it('applies CSS drop-bounce animation to the icon wrapper', () => {
+      const { container } = render(<SplashScreen />)
+
+      const animatedElement = container.querySelector('.animate-drop-bounce')
+      expect(animatedElement).toBeInTheDocument()
     })
   })
 
