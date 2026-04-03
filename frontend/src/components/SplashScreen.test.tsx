@@ -49,6 +49,15 @@ describe('SplashScreen', () => {
       const animatedElement = container.querySelector('.animate-drop-bounce')
       expect(animatedElement).toBeInTheDocument()
     })
+
+    it('uses vmin for orientation-independent icon sizing', () => {
+      const { container } = render(<SplashScreen />)
+
+      const svg = container.querySelector('svg')
+      const style = svg?.getAttribute('style') ?? ''
+      expect(style).toContain('vmin')
+      expect(style).not.toContain('vw')
+    })
   })
 
   describe('Layout', () => {
