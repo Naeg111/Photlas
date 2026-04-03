@@ -187,10 +187,10 @@ export function SignUpDialog({
       } else if (response.status === 409) {
         setErrors({ email: 'このメールアドレスは既に登録されています' })
       } else {
-        setErrors({ general: '登録に失敗しました' })
+        setErrors({ general: '登録に失敗しました。再度お試しください。' })
       }
     } catch {
-      setErrors({ general: '登録に失敗しました' })
+      setErrors({ general: '登録に失敗しました。再度お試しください。' })
     } finally {
       setIsLoading(false)
     }
