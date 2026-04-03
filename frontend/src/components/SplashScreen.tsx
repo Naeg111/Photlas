@@ -7,7 +7,7 @@ export function SplashScreen() {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50"
+      className="fixed -inset-px bg-black flex flex-col items-center justify-center z-50"
     >
       <motion.div
         initial={{ opacity: 0 }}
@@ -22,7 +22,7 @@ export function SplashScreen() {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className="mx-auto"
-            style={{ width: '23.3vw', height: '23.3vw' }}
+            style={{ width: '21.0vw', height: '21.0vw' }}
           >
             {/* Map Pin Shape */}
             <path
