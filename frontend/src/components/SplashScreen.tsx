@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { motion, type Easing } from "motion/react";
 
 /**
  * Issue#85: スプラッシュ画面
@@ -40,7 +40,7 @@ const KEYFRAME_TIMES = [
  * - バウンド上昇: easeOut（減速して頂点へ）
  * - バウンド下降: easeIn（重力で加速）
  */
-const SEGMENT_EASING = [
+const SEGMENT_EASING: Easing[] = [
   "easeIn",  // -100 → 0: 落下（加速）
   "easeOut", // 0 → -25: バウンド1上昇（減速）
   "easeIn",  // -25 → 0: バウンド1下降（加速）
