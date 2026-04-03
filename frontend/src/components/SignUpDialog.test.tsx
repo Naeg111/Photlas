@@ -532,7 +532,7 @@ describe('SignUpDialog', () => {
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
-        expect(screen.getByText('登録に失敗しました')).toBeInTheDocument()
+        expect(screen.getByText('登録に失敗しました。再度お試しください。')).toBeInTheDocument()
       })
     })
   })

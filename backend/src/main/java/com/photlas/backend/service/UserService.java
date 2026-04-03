@@ -105,10 +105,12 @@ public class UserService {
      * @param request 登録リクエスト
      * @return 登録レスポンス（JWT付き、プロフィール設定用）
      */
+    @Transactional
     public RegisterResponse registerUser(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = request.getEmail().toLowerCase();
+        if (userRepository.existsByEmail(normalizedEmail)) {
             // Issue#72: 退会済みメールアドレスの場合は専用メッセージ
-            Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+            Optional<User> existingUser = userRepository.findByEmail(normalizedEmail);
             if (existingUser.isPresent() && existingUser.get().getDeletedAt() != null) {
                 throw new ConflictException("このメールアドレスは退会処理中のため、現在ご利用いただけません");
             }
@@ -119,7 +121,7 @@ public class UserService {
 
         User user = new User(
             request.getUsername(),
-            request.getEmail(),
+            normalizedEmail,
             hashedPassword,
             "USER"
         );
@@ -145,7 +147,7 @@ public class UserService {
      * @return ログインレスポンス
      */
     public RegisterResponse loginUser(LoginRequest request) {
-        Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+        Optional<User> userOptional = userRepository.findByEmail(request.getEmail().toLowerCase());
 
         if (userOptional.isEmpty()) {
             throw new IllegalArgumentException("メールアドレスまたはパスワードが正しくありません");
@@ -186,7 +188,7 @@ public class UserService {
      * @param email リセット対象のメールアドレス
      */
     public void requestPasswordReset(String email) {
-        Optional<User> userOptional = userRepository.findByEmail(email);
+        Optional<User> userOptional = userRepository.findByEmail(email.toLowerCase());
 
         // セキュリティ上、メールアドレスが存在しない場合でも同じ処理を行う
         if (userOptional.isEmpty()) {
@@ -313,22 +315,18 @@ public class UserService {
                 user.getId(), token, expiryDate);
         emailVerificationTokenRepository.save(verificationToken);
 
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(user.getEmail());
-            message.setSubject("【Photlas】メールアドレスの確認");
-            message.setText(user.getUsername() + " さん\n\n" +
-                           "Photlasへのご登録ありがとうございます！\n" +
-                           "以下のリンクをクリックして、メールアドレスを確認してください：\n\n" +
-                           frontendUrl + "/verify-email?token=" + token + "\n\n" +
-                           "このリンクの有効期限は24時間です。\n\n" +
-                           "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                           "Photlas チーム");
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(user.getEmail());
+        message.setSubject("【Photlas】メールアドレスの確認");
+        message.setText(user.getUsername() + " さん\n\n" +
+                       "Photlasへのご登録ありがとうございます！\n" +
+                       "以下のリンクをクリックして、メールアドレスを確認してください：\n\n" +
+                       frontendUrl + "/verify-email?token=" + token + "\n\n" +
+                       "このリンクの有効期限は24時間です。\n\n" +
+                       "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
+                       "Photlas チーム");
 
-            mailSender.send(message);
-        } catch (Exception e) {
-            logger.error("Failed to send verification email: {}", e.getMessage());
-        }
+        mailSender.send(message);
     }
 
     /**
@@ -371,7 +369,7 @@ public class UserService {
      */
     @Transactional
     public void resendVerificationEmail(String email) {
-        Optional<User> userOptional = userRepository.findByEmail(email);
+        Optional<User> userOptional = userRepository.findByEmail(email.toLowerCase());
 
         if (userOptional.isEmpty()) {
             // セキュリティ上、メールアドレスが存在しない場合でも同じレスポンスを返す
@@ -501,18 +499,19 @@ public class UserService {
         }
 
         // 同じメールアドレスの場合は成功を返す（決定事項）
-        if (email.equals(newEmail)) {
+        String normalizedNewEmail = newEmail.toLowerCase();
+        if (email.equals(normalizedNewEmail)) {
             return user.getEmail();
         }
 
         // メールアドレス重複チェック（自分以外）
-        Optional<User> existingUser = userRepository.findByEmail(newEmail);
+        Optional<User> existingUser = userRepository.findByEmail(normalizedNewEmail);
         if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
             throw new ConflictException("このメールアドレスはすでに使用されています");
         }
 
         // メールアドレスを更新
-        user.setEmail(newEmail);
+        user.setEmail(normalizedNewEmail);
         userRepository.save(user);
 
         return user.getEmail();
