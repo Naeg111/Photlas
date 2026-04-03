@@ -59,11 +59,9 @@ function maskableHtml(size) {
 
 function splashHtml(width, height) {
   const iconSize = Math.min(width, height) * 0.21
-  const fontSize = Math.min(width, height) * 0.08
   return `<!DOCTYPE html>
-<html><body style="margin:0;padding:0;width:${width}px;height:${height}px;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-<div style="width:${iconSize}px;height:${iconSize}px;margin-bottom:${fontSize * 0.6}px;">${ICON_SVG}</div>
-<div style="color:white;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:${fontSize}px;letter-spacing:-0.02em;">Photlas</div>
+<html><body style="margin:0;padding:0;width:${width}px;height:${height}px;background:#000;display:flex;align-items:center;justify-content:center;">
+<div style="width:${iconSize}px;height:${iconSize}px;">${ICON_SVG}</div>
 </body></html>`
 }
 
