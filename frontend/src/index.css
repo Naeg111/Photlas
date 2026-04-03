@@ -290,3 +290,48 @@ input, textarea, [contenteditable="true"] {
     max-width: 300px !important;
   }
 }
+
+/**
+ * Issue#85: スプラッシュ画面ドロップバウンスアニメーション
+ *
+ * 物理ベースのタイミング配分（時間 ∝ √距離）:
+ * - 落下100px: 31.3% → cycle全体の15%
+ * - バウンド30px×4半周: 各17.2% → cycle全体の各8%
+ * - 待機1.5s: cycle全体の53%
+ *
+ * イージング:
+ * - 落下/バウンド下降: cubic-bezier(0.33, 0, 1, 1) — 重力加速
+ * - バウンド上昇: cubic-bezier(0, 0, 0.67, 1) — 重力減速
+ */
+@keyframes drop-bounce {
+  0% {
+    transform: translateY(-100px);
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.33, 0, 1, 1);
+  }
+  15% {
+    transform: translateY(0);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0, 0, 0.67, 1);
+  }
+  23% {
+    transform: translateY(-30px);
+    animation-timing-function: cubic-bezier(0.33, 0, 1, 1);
+  }
+  31% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.67, 1);
+  }
+  39% {
+    transform: translateY(-30px);
+    animation-timing-function: cubic-bezier(0.33, 0, 1, 1);
+  }
+  47%, 100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-drop-bounce {
+  animation: drop-bounce 2.83s infinite;
+}
