@@ -58,7 +58,7 @@ function maskableHtml(size) {
 }
 
 function splashHtml(width, height) {
-  const iconSize = Math.min(width, height) * 0.25
+  const iconSize = Math.min(width, height) * 0.21
   const fontSize = Math.min(width, height) * 0.08
   return `<!DOCTYPE html>
 <html><body style="margin:0;padding:0;width:${width}px;height:${height}px;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;">

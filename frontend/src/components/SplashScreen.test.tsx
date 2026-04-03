@@ -34,7 +34,7 @@ describe('SplashScreen', () => {
       const { container } = render(<SplashScreen />)
 
       const splashDiv = container.firstChild
-      expect(splashDiv).toHaveClass('fixed', 'inset-0', 'bg-black')
+      expect(splashDiv).toHaveClass('fixed', '-inset-px', 'bg-black')
     })
 
     it('renders loading spinner icon', () => {
