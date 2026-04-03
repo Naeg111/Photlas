@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { render, screen, act } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
 import { SplashScreen } from './SplashScreen'
 
 /**
@@ -43,18 +43,28 @@ describe('SplashScreen', () => {
       expect(splashDiv).toHaveClass('fixed', 'inset-0', 'bg-black')
     })
 
-    it('applies CSS drop-bounce animation to the icon wrapper', () => {
+    it('does not apply animation class on initial render to prevent cached state restoration', () => {
+      vi.useFakeTimers()
       const { container } = render(<SplashScreen />)
 
-      const animatedElement = container.querySelector('.animate-drop-bounce')
-      expect(animatedElement).toBeInTheDocument()
+      expect(container.querySelector('.animate-drop-bounce')).not.toBeInTheDocument()
+      vi.useRealTimers()
     })
 
-    it('has inline opacity 0 to prevent PWA initial flash', () => {
+    it('applies animation class after deferred execution', () => {
+      vi.useFakeTimers()
       const { container } = render(<SplashScreen />)
 
-      const animatedElement = container.querySelector('.animate-drop-bounce')
-      expect(animatedElement).toHaveStyle({ opacity: '0' })
+      act(() => { vi.runAllTimers() })
+      expect(container.querySelector('.animate-drop-bounce')).toBeInTheDocument()
+      vi.useRealTimers()
+    })
+
+    it('has inline opacity 0 on icon wrapper regardless of animation state', () => {
+      const { container } = render(<SplashScreen />)
+
+      const iconWrapper = container.querySelector('svg')?.parentElement
+      expect(iconWrapper).toHaveStyle({ opacity: '0' })
     })
 
     it('has critical inline styles on container for PWA CSS-loading race', () => {
