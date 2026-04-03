@@ -11,6 +11,7 @@ import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserSnsLink;
 import com.photlas.backend.exception.AccountSuspendedException;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.EmailNotVerifiedException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.entity.EmailVerificationToken;
@@ -148,13 +149,13 @@ public class UserService {
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail().toLowerCase());
 
         if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException("メールアドレスまたはパスワードが正しくありません");
+            throw new UnauthorizedException("メールアドレスまたはパスワードが正しくありません");
         }
 
         User user = userOptional.get();
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("メールアドレスまたはパスワードが正しくありません");
+            throw new UnauthorizedException("メールアドレスまたはパスワードが正しくありません");
         }
 
         // Issue#72: 退会済みユーザーのログインを拒否
@@ -163,7 +164,7 @@ public class UserService {
         }
 
         if (!user.isEmailVerified()) {
-            throw new IllegalArgumentException("メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。");
+            throw new EmailNotVerifiedException("メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。");
         }
 
         // Issue#54: 永久停止アカウントのログインブロック
