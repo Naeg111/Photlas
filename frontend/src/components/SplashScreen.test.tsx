@@ -61,13 +61,12 @@ describe('SplashScreen', () => {
       const { container } = render(<SplashScreen />)
 
       const splashDiv = container.firstChild as HTMLElement
-      expect(splashDiv).toHaveStyle({
-        position: 'fixed',
-        backgroundColor: 'black',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      })
+      const style = splashDiv.getAttribute('style') ?? ''
+      expect(style).toContain('position: fixed')
+      expect(style).toContain('background-color: black')
+      expect(style).toContain('display: flex')
+      expect(style).toContain('align-items: center')
+      expect(style).toContain('justify-content: center')
     })
 
     it('uses vmin for orientation-independent icon sizing', () => {

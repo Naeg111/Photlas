@@ -15,7 +15,16 @@ export function SplashScreen() {
       transition={{ duration: 0.5 }}
       data-testid="splash-screen"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black"
-      style={{ boxShadow: '0 0 0 50px black' }}
+      style={{
+        position: 'fixed',
+        top: 0, right: 0, bottom: 0, left: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'black',
+        zIndex: 50,
+        boxShadow: '0 0 0 50px black',
+      }}
     >
       <div className="animate-drop-bounce" style={{ opacity: 0, transform: 'translateY(-100px)' }}>
         <svg
