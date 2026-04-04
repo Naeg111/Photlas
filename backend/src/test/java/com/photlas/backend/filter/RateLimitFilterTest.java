@@ -137,6 +137,37 @@ public class RateLimitFilterTest {
     }
 
     @Test
+    @DisplayName("キャッシュのTTL経過後はレート制限がリセットされる")
+    void testRateLimitFilter_AfterTTLExpiry_LimitResets() throws Exception {
+        String registerUrl = "/api/v1/auth/register";
+
+        // レート制限を超えるまでリクエストを送信
+        for (int i = 0; i < 10; i++) {
+            mockMvc.perform(post(registerUrl)
+                    .with(csrf())
+                    .contentType("application/json")
+                    .content("{}"));
+        }
+
+        // 11回目はレート制限で拒否される
+        mockMvc.perform(post(registerUrl)
+                .with(csrf())
+                .contentType("application/json")
+                .content("{}"))
+                .andExpect(status().isTooManyRequests());
+
+        // TTLを強制的に期限切れにする
+        rateLimitFilter.expireAllEntries();
+
+        // TTL期限切れ後はリクエストが再び通過する
+        mockMvc.perform(post(registerUrl)
+                .with(csrf())
+                .contentType("application/json")
+                .content("{}"))
+                .andExpect(status().is4xxClientError()); // バリデーションエラー（レート制限は通過）
+    }
+
+    @Test
     @DisplayName("異なるIPアドレスからのリクエストは独立してレート制限される")
     void testRateLimitFilter_DifferentIPs_IndependentLimits() throws Exception {
         String healthUrl = "/api/v1/health";
