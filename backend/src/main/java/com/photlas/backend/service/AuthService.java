@@ -106,12 +106,13 @@ public class AuthService {
 
         User user = userOptional.get();
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        // 退会チェックをパスワード検証の前に実行（レスポンスの違いで退会状態を推測させない）
+        if (user.getDeletedAt() != null) {
             throw new UnauthorizedException("メールアドレスまたはパスワードが正しくありません");
         }
 
-        if (user.getDeletedAt() != null) {
-            throw new UnauthorizedException("このアカウントは退会済みです");
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("メールアドレスまたはパスワードが正しくありません");
         }
 
         if (!user.isEmailVerified()) {
