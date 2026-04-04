@@ -33,4 +33,10 @@ public interface EmailVerificationTokenRepository extends JpaRepository<EmailVer
      * @param userId ユーザーID
      */
     void deleteByUserId(Long userId);
+
+    /**
+     * 指定日時より前に期限切れのトークンを削除
+     * @param now 現在日時
+     */
+    void deleteByExpiryDateBefore(java.util.Date now);
 }
