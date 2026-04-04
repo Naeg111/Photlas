@@ -243,19 +243,6 @@ public class UserServiceTest {
     // ===== パスワード変更 (PasswordService.updatePassword) =====
 
     @Test
-    @DisplayName("Issue#20 - パスワード変更: 新パスワード不一致でIllegalArgumentException")
-    void testUpdatePassword_MismatchedNewPasswords_ThrowsException() {
-        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
-
-        assertThatThrownBy(() ->
-                passwordService.updatePassword(TEST_EMAIL, CURRENT_PASSWORD, NEW_PASSWORD, "DifferentPass1"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("新しいパスワードが一致しません");
-    }
-
-    @Test
     @DisplayName("Issue#20 - パスワード変更: 現在のパスワード不一致でUnauthorizedException")
     void testUpdatePassword_WrongCurrentPassword_ThrowsUnauthorized() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
@@ -263,7 +250,7 @@ public class UserServiceTest {
         when(passwordEncoder.matches(WRONG_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(false);
 
         assertThatThrownBy(() ->
-                passwordService.updatePassword(TEST_EMAIL, WRONG_PASSWORD, NEW_PASSWORD, NEW_PASSWORD))
+                passwordService.updatePassword(TEST_EMAIL, WRONG_PASSWORD, NEW_PASSWORD))
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessageContaining("現在のパスワードが正しくありません");
     }

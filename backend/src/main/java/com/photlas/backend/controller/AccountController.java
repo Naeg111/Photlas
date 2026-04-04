@@ -52,8 +52,7 @@ public class AccountController {
         passwordService.updatePassword(
                 email,
                 request.getCurrentPassword(),
-                request.getNewPassword(),
-                request.getNewPasswordConfirm()
+                request.getNewPassword()
         );
         return ResponseEntity.ok().build();
     }

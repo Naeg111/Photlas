@@ -1,5 +1,6 @@
 package com.photlas.backend.dto;
 
+import com.photlas.backend.validation.PasswordMatch;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.Size;
  *
  * POST /api/v1/auth/reset-password のリクエストボディ
  */
+@PasswordMatch(passwordField = "newPassword", confirmField = "confirmPassword")
 public class ResetPasswordRequest {
     @NotBlank(message = "トークンは必須です")
     private String token;

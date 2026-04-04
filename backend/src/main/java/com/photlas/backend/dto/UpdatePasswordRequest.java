@@ -1,12 +1,14 @@
 package com.photlas.backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.photlas.backend.validation.PasswordMatch;
 import jakarta.validation.constraints.*;
 
 /**
  * Issue#20: アカウント設定機能 - パスワード変更リクエスト
  * Issue#21: パスワードバリデーション統一
  */
+@PasswordMatch(passwordField = "newPassword", confirmField = "newPasswordConfirm")
 public class UpdatePasswordRequest {
     @JsonProperty("current_password")
     @NotNull(message = "現在のパスワードは必須です")

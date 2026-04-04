@@ -99,7 +99,7 @@ public class AuthController {
      */
     @PostMapping("/reset-password")
     public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        passwordService.resetPassword(request.getToken(), request.getNewPassword(), request.getConfirmPassword());
+        passwordService.resetPassword(request.getToken(), request.getNewPassword());
 
         Map<String, String> response = new HashMap<>();
         response.put(KEY_MESSAGE, "パスワードが正常に再設定されました");
