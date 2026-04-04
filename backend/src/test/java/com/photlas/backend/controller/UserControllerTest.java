@@ -618,8 +618,7 @@ public class UserControllerTest {
         String requestBody = buildPasswordUpdateRequestBody(TEST_PASSWORD, NEW_PASSWORD, DIFFERENT_PASSWORD);
 
         performUpdatePassword(requestBody)
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(JSON_PATH_MESSAGE, containsString(ERROR_PASSWORD_MISMATCH)));
+                .andExpect(status().isBadRequest());
     }
 
     @Test

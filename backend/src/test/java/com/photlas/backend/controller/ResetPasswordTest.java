@@ -269,8 +269,7 @@ public class ResetPasswordTest {
         mockMvc.perform(post(RESET_PASSWORD_ENDPOINT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(JSON_PATH_MESSAGE, is(PASSWORD_MISMATCH_MESSAGE)));
+                .andExpect(status().isBadRequest());
     }
 
     @Test

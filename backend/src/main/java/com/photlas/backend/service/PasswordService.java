@@ -9,8 +9,6 @@ import com.photlas.backend.util.TokenGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +30,7 @@ public class PasswordService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final JavaMailSender mailSender;
+    private final EmailService emailService;
 
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
@@ -41,11 +39,11 @@ public class PasswordService {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             PasswordResetTokenRepository passwordResetTokenRepository,
-            JavaMailSender mailSender) {
+            EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
-        this.mailSender = mailSender;
+        this.emailService = emailService;
     }
 
     /**
@@ -89,11 +87,7 @@ public class PasswordService {
      * @param confirmPassword 確認用パスワード
      */
     @Transactional
-    public void resetPassword(String token, String newPassword, String confirmPassword) {
-        if (!newPassword.equals(confirmPassword)) {
-            throw new IllegalArgumentException("パスワードが一致しません");
-        }
-
+    public void resetPassword(String token, String newPassword) {
         Optional<PasswordResetToken> tokenOptional = passwordResetTokenRepository.findByToken(token);
         if (tokenOptional.isEmpty()) {
             throw new IllegalArgumentException("トークンが無効または期限切れです");
@@ -129,16 +123,12 @@ public class PasswordService {
      * @param newPasswordConfirm 新しいパスワード（確認用）
      */
     @Transactional
-    public void updatePassword(String email, String currentPassword, String newPassword, String newPasswordConfirm) {
+    public void updatePassword(String email, String currentPassword, String newPassword) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
             throw new UnauthorizedException("現在のパスワードが正しくありません");
-        }
-
-        if (!newPassword.equals(newPasswordConfirm)) {
-            throw new IllegalArgumentException("新しいパスワードが一致しません");
         }
 
         String hashedPassword = passwordEncoder.encode(newPassword);
@@ -151,17 +141,15 @@ public class PasswordService {
      */
     private void sendPasswordResetEmail(String email, String token) {
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email);
-            message.setSubject("【Photlas】パスワードの再設定");
-            message.setText("パスワード再設定のリクエストを受け付けました。\n\n" +
-                           "以下のリンクをクリックして、パスワードを再設定してください：\n" +
-                           frontendUrl + "/reset-password?token=" + token + "\n\n" +
-                           "このリンクの有効期限は30分です。\n\n" +
-                           "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                           "Photlas チーム");
-
-            mailSender.send(message);
+            emailService.send(
+                    email,
+                    "【Photlas】パスワードの再設定",
+                    "パスワード再設定のリクエストを受け付けました。\n\n" +
+                    "以下のリンクをクリックして、パスワードを再設定してください：\n" +
+                    frontendUrl + "/reset-password?token=" + token + "\n\n" +
+                    "このリンクの有効期限は30分です。\n\n" +
+                    "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
+                    "Photlas チーム");
         } catch (Exception e) {
             logger.error("Failed to send password reset email: {}", e.getMessage());
         }

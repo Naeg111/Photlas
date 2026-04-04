@@ -13,8 +13,6 @@ import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.util.TokenGenerator;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +33,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final JavaMailSender mailSender;
+    private final EmailService emailService;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
 
     @Value("${app.frontend-url:https://photlas.jp}")
@@ -45,12 +43,12 @@ public class AuthService {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            JavaMailSender mailSender,
+            EmailService emailService,
             EmailVerificationTokenRepository emailVerificationTokenRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-        this.mailSender = mailSender;
+        this.emailService = emailService;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
     }
 
@@ -202,17 +200,15 @@ public class AuthService {
                 user.getId(), token, expiryDate);
         emailVerificationTokenRepository.save(verificationToken);
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(user.getEmail());
-        message.setSubject("【Photlas】メールアドレスの確認");
-        message.setText(user.getUsername() + " さん\n\n" +
-                       "Photlasへのご登録ありがとうございます！\n" +
-                       "以下のリンクをクリックして、メールアドレスを確認してください：\n\n" +
-                       frontendUrl + "/verify-email?token=" + token + "\n\n" +
-                       "このリンクの有効期限は24時間です。\n\n" +
-                       "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                       "Photlas チーム");
-
-        mailSender.send(message);
+        emailService.send(
+                user.getEmail(),
+                "【Photlas】メールアドレスの確認",
+                user.getUsername() + " さん\n\n" +
+                "Photlasへのご登録ありがとうございます！\n" +
+                "以下のリンクをクリックして、メールアドレスを確認してください：\n\n" +
+                frontendUrl + "/verify-email?token=" + token + "\n\n" +
+                "このリンクの有効期限は24時間です。\n\n" +
+                "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
+                "Photlas チーム");
     }
 }
