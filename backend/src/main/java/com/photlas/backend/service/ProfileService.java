@@ -114,15 +114,20 @@ public class ProfileService {
     }
 
     /**
-     * プロフィール画像を削除
+     * プロフィール画像を削除（S3上のファイルも削除）
      */
     @Transactional
     public void deleteProfileImage(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
+        String oldKey = user.getProfileImageS3Key();
         user.setProfileImageS3Key(null);
         userRepository.save(user);
+
+        if (oldKey != null) {
+            s3Service.deleteS3Object(oldKey);
+        }
     }
 
     /**
