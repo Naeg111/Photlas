@@ -78,7 +78,7 @@ export function AccountSettingsDialog({
       );
 
       if (response.ok) {
-        toast.success("メールアドレスを変更しました");
+        toast.success("確認メールを送信しました。新しいメールアドレスに届いたリンクをクリックして変更を完了してください。", { duration: 8000 });
         setNewEmail("");
         setEmailPassword("");
       } else if (response.status === 401) {
