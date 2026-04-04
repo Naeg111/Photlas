@@ -377,18 +377,21 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#72 - ログイン: 退会済みユーザーはログインできない")
-    void testLoginUser_DeletedUser_ThrowsUnauthorized() {
+    @DisplayName("Issue#72 - ログイン: 退会済みユーザーは汎用エラーメッセージで拒否される（退会状態を漏洩しない）")
+    void testLoginUser_DeletedUser_ThrowsGenericError() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         user.setEmailVerified(true);
         user.setDeletedAt(java.time.LocalDateTime.now());
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
 
         LoginRequest request = new LoginRequest(TEST_EMAIL, CURRENT_PASSWORD);
 
         assertThatThrownBy(() -> authService.loginUser(request))
-                .isInstanceOf(UnauthorizedException.class);
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("メールアドレスまたはパスワードが正しくありません");
+
+        // パスワード検証が呼ばれていないことを確認（退会チェックが先に行われる）
+        verify(passwordEncoder, never()).matches(any(), any());
     }
 
     @Test
