@@ -381,10 +381,10 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PUT /api/v1/users/me/profile - SNSリンクが最大3件を超える場合は400を返す")
+    @DisplayName("PUT /api/v1/users/me/profile - SNSリンクが最大4件を超える場合は400を返す")
     void testUpdateProfile_TooManySnsLinks_ReturnsBadRequest() throws Exception {
         UpdateProfileRequest request = createUpdateProfileRequest(TEST_USERNAME,
-                List.of(SNS_LINK_X, SNS_LINK_INSTAGRAM, SNS_LINK_FACEBOOK, SNS_LINK_LINKEDIN));
+                List.of(SNS_LINK_X, SNS_LINK_INSTAGRAM, SNS_LINK_FACEBOOK, SNS_LINK_LINKEDIN, "https://x.com/extra"));
 
         performUpdateProfile(request)
                 .andExpect(status().isBadRequest());

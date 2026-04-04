@@ -10,7 +10,7 @@ public class UpdateProfileRequest {
     @Size(min = 2, max = 12, message = "ユーザー名は2〜12文字で入力してください")
     private String username;
 
-    @Size(max = 3, message = "SNSリンクは最大3件まで登録できます")
+    @Size(max = 4, message = "SNSリンクは最大4件まで登録できます")
     private List<SnsLinkRequest> snsLinks;
 
     private String profileImageS3Key;
