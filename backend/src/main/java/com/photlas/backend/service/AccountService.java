@@ -6,6 +6,8 @@ import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.EmailChangeTokenRepository;
+import com.photlas.backend.repository.EmailVerificationTokenRepository;
+import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
@@ -38,6 +40,8 @@ public class AccountService {
     private final SpotRepository spotRepository;
     private final PhotoRepository photoRepository;
     private final EmailChangeTokenRepository emailChangeTokenRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
     private final JwtService jwtService;
 
@@ -50,6 +54,8 @@ public class AccountService {
             SpotRepository spotRepository,
             PhotoRepository photoRepository,
             EmailChangeTokenRepository emailChangeTokenRepository,
+            EmailVerificationTokenRepository emailVerificationTokenRepository,
+            PasswordResetTokenRepository passwordResetTokenRepository,
             EmailService emailService,
             JwtService jwtService) {
         this.userRepository = userRepository;
@@ -57,6 +63,8 @@ public class AccountService {
         this.spotRepository = spotRepository;
         this.photoRepository = photoRepository;
         this.emailChangeTokenRepository = emailChangeTokenRepository;
+        this.emailVerificationTokenRepository = emailVerificationTokenRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailService = emailService;
         this.jwtService = jwtService;
     }
@@ -181,6 +189,13 @@ public class AccountService {
         }
 
         transferSpotOwnership(user);
+
+        // 関連トークンを削除
+        emailVerificationTokenRepository.deleteByUserId(user.getId());
+        passwordResetTokenRepository.findByUserId(user.getId()).ifPresent(
+                t -> passwordResetTokenRepository.delete(t));
+        emailChangeTokenRepository.findByUserId(user.getId()).ifPresent(
+                t -> emailChangeTokenRepository.delete(t));
 
         user.setOriginalUsername(user.getUsername());
         user.setUsername("d_" + UUID.randomUUID().toString().substring(0, 10));

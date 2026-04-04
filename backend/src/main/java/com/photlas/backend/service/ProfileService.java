@@ -94,11 +94,18 @@ public class ProfileService {
 
     /**
      * プロフィール画像を更新
+     * S3キーのプレフィックスがログインユーザーのIDと一致するか検証する。
      */
     @Transactional
     public String updateProfileImage(String email, String objectKey) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        // S3キーの正当性チェック: profile-images/{userId}/ で始まるか検証
+        String expectedPrefix = "profile-images/" + user.getId() + "/";
+        if (!objectKey.startsWith(expectedPrefix)) {
+            throw new IllegalArgumentException("不正なオブジェクトキーです");
+        }
 
         user.setProfileImageS3Key(objectKey);
         userRepository.save(user);

@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Size;
 public class UpdateUsernameRequest {
 
     @NotBlank(message = "ユーザー名は必須です")
-    @Size(min = 1, max = 30, message = "ユーザー名は1〜30文字で入力してください")
+    @Size(min = 2, max = 12, message = "ユーザー名は2〜12文字で入力してください")
     private String username;
 
     public UpdateUsernameRequest() {
