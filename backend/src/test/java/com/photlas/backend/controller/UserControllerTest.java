@@ -760,7 +760,7 @@ public class UserControllerTest {
     @Test
     @DisplayName("Issue#29 - PUT /api/v1/users/me/profile-image - プロフィール画像キー登録成功")
     void testUpdateProfileImage_ValidRequest_ReturnsOk() throws Exception {
-        String requestBody = "{\"objectKey\":\"profile-images/1/test-uuid.jpg\"}";
+        String requestBody = "{\"objectKey\":\"profile-images/" + testUser.getId() + "/test-uuid.jpg\"}";
 
         mockMvc.perform(put(PROFILE_IMAGE_ENDPOINT)
                 .with(csrf())
