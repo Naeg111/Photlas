@@ -254,4 +254,53 @@ public class PasswordResetRequestTest {
         assertTrue(savedToken.getToken().length() >= 32, "トークンは十分に長い（32文字以上）");
         assertTrue(savedToken.getToken().matches("^[a-zA-Z0-9\\-_]+$"), "トークンは英数字で構成されている");
     }
+
+    @Test
+    @DisplayName("退会済みユーザーにはリセットトークンが生成されない（セキュリティ）")
+    void testPasswordResetRequest_DeletedUser_DoesNotGenerateToken() throws Exception {
+        User user = new User();
+        user.setUsername("deleteduser");
+        user.setEmail("deleted@example.com");
+        user.setPasswordHash("hashed-password");
+        user.setRole("USER");
+        user.setDeletedAt(java.time.LocalDateTime.now().minusDays(5));
+        userRepository.save(user);
+
+        PasswordResetRequest request = new PasswordResetRequest();
+        request.setEmail("deleted@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/password-reset-request")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", is("パスワードリセット用のメールを送信しました。メールをご確認ください。")));
+
+        // トークンが生成されていないことを確認
+        assertTrue(passwordResetTokenRepository.findByUserId(user.getId()).isEmpty(),
+                "退会済みユーザーにはリセットトークンが生成されない");
+    }
+
+    @Test
+    @DisplayName("停止ユーザーにはリセットトークンが生成されない（セキュリティ）")
+    void testPasswordResetRequest_SuspendedUser_DoesNotGenerateToken() throws Exception {
+        User user = new User();
+        user.setUsername("suspendeduser");
+        user.setEmail("suspended@example.com");
+        user.setPasswordHash("hashed-password");
+        user.setRole("SUSPENDED");
+        userRepository.save(user);
+
+        PasswordResetRequest request = new PasswordResetRequest();
+        request.setEmail("suspended@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/password-reset-request")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", is("パスワードリセット用のメールを送信しました。メールをご確認ください。")));
+
+        // トークンが生成されていないことを確認
+        assertTrue(passwordResetTokenRepository.findByUserId(user.getId()).isEmpty(),
+                "停止ユーザーにはリセットトークンが生成されない");
+    }
 }
