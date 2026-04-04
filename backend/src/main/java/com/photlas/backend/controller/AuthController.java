@@ -6,6 +6,7 @@ import com.photlas.backend.dto.PasswordResetRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.RegisterResponse;
 import com.photlas.backend.dto.ResetPasswordRequest;
+import com.photlas.backend.service.AccountService;
 import com.photlas.backend.service.AuthService;
 import com.photlas.backend.service.PasswordService;
 import jakarta.validation.Valid;
@@ -29,10 +30,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final PasswordService passwordService;
+    private final AccountService accountService;
 
-    public AuthController(AuthService authService, PasswordService passwordService) {
+    public AuthController(AuthService authService, PasswordService passwordService, AccountService accountService) {
         this.authService = authService;
         this.passwordService = passwordService;
+        this.accountService = accountService;
     }
 
     /**
@@ -103,6 +106,20 @@ public class AuthController {
 
         Map<String, String> response = new HashMap<>();
         response.put(KEY_MESSAGE, "パスワードが正常に再設定されました");
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Issue#86: メールアドレス変更確認
+     * トークンを検証し、メールアドレスを更新してJWTを再発行する。
+     */
+    @GetMapping("/confirm-email-change")
+    public ResponseEntity<Map<String, String>> confirmEmailChange(@RequestParam String token) {
+        AccountService.EmailChangeResult result = accountService.confirmEmailChange(token);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("token", result.token());
+        response.put(FIELD_EMAIL, result.email());
         return ResponseEntity.ok(response);
     }
 }

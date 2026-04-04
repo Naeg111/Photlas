@@ -529,13 +529,13 @@ public class UserControllerTest {
 
     // PUT /api/v1/users/me/email のテスト
     @Test
-    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - メールアドレス変更成功")
-    void testUpdateEmail_ValidRequest_ReturnsOk() throws Exception {
+    @DisplayName("Issue#86 - PUT /api/v1/users/me/email - メール変更リクエストで確認メッセージが返る")
+    void testUpdateEmail_ValidRequest_ReturnsConfirmationMessage() throws Exception {
         String requestBody = buildEmailUpdateRequestBody(NEW_EMAIL, TEST_PASSWORD);
 
         performUpdateEmail(requestBody)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath(JSON_PATH_EMAIL, is(NEW_EMAIL)));
+                .andExpect(jsonPath(JSON_PATH_MESSAGE).exists());
     }
 
     @Test
@@ -562,13 +562,12 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - 同じメールアドレスの場合は200を返す")
-    void testUpdateEmail_SameEmail_ReturnsOk() throws Exception {
+    @DisplayName("Issue#86 - PUT /api/v1/users/me/email - 同じメールアドレスの場合は400を返す")
+    void testUpdateEmail_SameEmail_ReturnsBadRequest() throws Exception {
         String requestBody = buildEmailUpdateRequestBody(TEST_EMAIL, TEST_PASSWORD);
 
         performUpdateEmail(requestBody)
-                .andExpect(status().isOk())
-                .andExpect(jsonPath(JSON_PATH_EMAIL, is(TEST_EMAIL)));
+                .andExpect(status().isBadRequest());
     }
 
     @Test

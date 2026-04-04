@@ -57,6 +57,8 @@ public class UserServiceTest {
     // ===== AccountService用モック =====
     @Mock private SpotRepository spotRepository;
     @Mock private PhotoRepository photoRepository;
+    @Mock private com.photlas.backend.repository.EmailChangeTokenRepository emailChangeTokenRepository;
+    @Mock private EmailService emailService;
     @InjectMocks private AccountService accountService;
 
     // テスト用定数
@@ -199,43 +201,42 @@ public class UserServiceTest {
                 .hasMessageContaining("URLがプラットフォームと一致しません");
     }
 
-    // ===== メールアドレス変更 (AccountService.updateEmail) =====
+    // ===== メールアドレス変更リクエスト (AccountService.requestEmailChange) =====
 
     @Test
-    @DisplayName("Issue#20 - メール変更: 同じメールアドレスの場合、即座に現在のメールを返す")
-    void testUpdateEmail_SameEmail_ReturnsImmediately() {
-        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
-        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
-
-        String result = accountService.updateEmail(TEST_EMAIL, TEST_EMAIL, CURRENT_PASSWORD);
-
-        assertThat(result).isEqualTo(TEST_EMAIL);
-        verify(userRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("Issue#20 - メール変更: パスワード不一致でUnauthorizedException")
-    void testUpdateEmail_WrongPassword_ThrowsUnauthorized() {
+    @DisplayName("Issue#86 - メール変更: パスワード不一致でUnauthorizedException")
+    void testRequestEmailChange_WrongPassword_ThrowsUnauthorized() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(WRONG_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(false);
 
-        assertThatThrownBy(() -> accountService.updateEmail(TEST_EMAIL, OTHER_EMAIL, WRONG_PASSWORD))
+        assertThatThrownBy(() -> accountService.requestEmailChange(TEST_EMAIL, OTHER_EMAIL, WRONG_PASSWORD))
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessageContaining("パスワードが正しくありません");
     }
 
     @Test
-    @DisplayName("Issue#20 - メール変更: 重複メールアドレスでConflictException")
-    void testUpdateEmail_DuplicateEmail_ThrowsConflict() {
+    @DisplayName("Issue#86 - メール変更: 同じメールアドレスでIllegalArgumentException")
+    void testRequestEmailChange_SameEmail_ThrowsException() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+
+        assertThatThrownBy(() -> accountService.requestEmailChange(TEST_EMAIL, TEST_EMAIL, CURRENT_PASSWORD))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("現在のメールアドレスと同じです");
+    }
+
+    @Test
+    @DisplayName("Issue#86 - メール変更: 重複メールアドレスでConflictException")
+    void testRequestEmailChange_DuplicateEmail_ThrowsConflict() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         User existingUser = createMockUser(2L, OTHER_EMAIL, "otheruser");
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
         when(userRepository.findByEmail(OTHER_EMAIL)).thenReturn(Optional.of(existingUser));
 
-        assertThatThrownBy(() -> accountService.updateEmail(TEST_EMAIL, OTHER_EMAIL, CURRENT_PASSWORD))
+        assertThatThrownBy(() -> accountService.requestEmailChange(TEST_EMAIL, OTHER_EMAIL, CURRENT_PASSWORD))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("このメールアドレスはすでに使用されています");
     }

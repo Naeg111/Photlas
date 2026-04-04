@@ -2,7 +2,6 @@ package com.photlas.backend.controller;
 
 import com.photlas.backend.dto.DeleteAccountRequest;
 import com.photlas.backend.dto.UpdateEmailRequest;
-import com.photlas.backend.dto.UpdateEmailResponse;
 import com.photlas.backend.dto.UpdatePasswordRequest;
 import com.photlas.backend.service.AccountService;
 import com.photlas.backend.service.PasswordService;
@@ -10,6 +9,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * アカウント設定関連のエンドポイントを提供するコントローラー
@@ -28,16 +29,17 @@ public class AccountController {
     }
 
     /**
-     * メールアドレス変更
+     * Issue#86: メールアドレス変更リクエスト
+     * 即座に変更せず、新メールアドレスに確認リンクを送信する。
      * PUT /api/v1/users/me/email
      */
     @PutMapping("/email")
-    public ResponseEntity<UpdateEmailResponse> updateEmail(
+    public ResponseEntity<Map<String, String>> requestEmailChange(
             @Valid @RequestBody UpdateEmailRequest request,
             Authentication authentication) {
         String email = authentication.getName();
-        String updatedEmail = accountService.updateEmail(email, request.getNewEmail(), request.getCurrentPassword());
-        return ResponseEntity.ok(new UpdateEmailResponse(updatedEmail));
+        accountService.requestEmailChange(email, request.getNewEmail(), request.getCurrentPassword());
+        return ResponseEntity.ok(Map.of("message", "確認メールを送信しました。新しいメールアドレスに届いたリンクをクリックして変更を完了してください。"));
     }
 
     /**
