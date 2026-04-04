@@ -1,5 +1,7 @@
 package com.photlas.backend.filter;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.photlas.backend.config.RateLimitConfig;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.FilterChain;
@@ -15,13 +17,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
+import java.time.Duration;
 
 /**
  * APIレート制限フィルター
  * Issue#22: API Rate Limiting の実装
  *
- * Token Bucketアルゴリズムを使用してエンドポイント別にレート制限を適用する
+ * Token Bucketアルゴリズムを使用してエンドポイント別にレート制限を適用する。
+ * Caffeineキャッシュにより、一定時間アクセスがないエントリは自動的に削除される。
  */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -46,11 +49,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
     // レスポンスメッセージ
     private static final String RATE_LIMIT_EXCEEDED_MESSAGE = "Too many requests. Please try again later.";
 
+    /** キャッシュのTTL: 最終アクセスから10分 */
+    private static final Duration CACHE_TTL = Duration.ofMinutes(10);
+
     /**
-     * ユーザー/IPごとのBucketを管理するキャッシュ
-     * キー形式: "rate_limit:user_identifier"
+     * ユーザー/IPごとのBucketを管理するキャッシュ（TTL付き）
+     * 最終アクセスから10分経過したエントリは自動的に削除される
      */
-    private final ConcurrentHashMap<String, Bucket> bucketCache = new ConcurrentHashMap<>();
+    private Cache<String, Bucket> bucketCache = Caffeine.newBuilder()
+            .expireAfterAccess(CACHE_TTL)
+            .build();
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -63,7 +71,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String cacheKey = rateLimit + ":" + userIdentifier;
 
         // Bucketを取得または作成
-        Bucket bucket = bucketCache.computeIfAbsent(cacheKey, k -> RateLimitConfig.createBucket(rateLimit));
+        Bucket bucket = bucketCache.get(cacheKey, k -> RateLimitConfig.createBucket(rateLimit));
 
         // トークンの消費を試みる
         if (bucket.tryConsume(1)) {
@@ -77,12 +85,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     /**
      * レート制限超過時のレスポンスを処理する
-     *
-     * @param response HTTPレスポンス
-     * @param userIdentifier ユーザー識別子
-     * @param requestPath リクエストパス
-     * @param rateLimit レート制限
-     * @throws IOException IO例外
      */
     private void handleRateLimitExceeded(HttpServletResponse response, String userIdentifier,
                                           String requestPath, int rateLimit) throws IOException {
@@ -95,9 +97,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     /**
      * リクエストパスに基づいてレート制限を決定する
-     *
-     * @param path リクエストパス
-     * @return レート制限（リクエスト/分）
      */
     private int determineRateLimit(String path) {
         if (isAuthEndpoint(path)) {
@@ -109,22 +108,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
     }
 
-    /**
-     * 認証エンドポイントかどうかを判定する
-     *
-     * @param path リクエストパス
-     * @return 認証エンドポイントの場合true
-     */
     private boolean isAuthEndpoint(String path) {
         return path.startsWith(AUTH_REGISTER_PATH) || path.startsWith(AUTH_LOGIN_PATH);
     }
 
-    /**
-     * 写真エンドポイントかどうかを判定する
-     *
-     * @param path リクエストパス
-     * @return 写真エンドポイントの場合true
-     */
     private boolean isPhotoEndpoint(String path) {
         return path.startsWith(PHOTO_PATH_PREFIX);
     }
@@ -132,27 +119,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /**
      * ユーザー識別子を取得する
      * 認証済みユーザーの場合はユーザーID、未認証の場合はIPアドレスを返す
-     *
-     * @param request HTTPリクエスト
-     * @return ユーザー識別子
      */
     private String getUserIdentifier(HttpServletRequest request) {
         if (isAuthenticatedUser()) {
-            // 認証済みユーザー: ユーザーIDを使用
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             return USER_PREFIX + authentication.getName();
         }
 
-        // 未認証ユーザー: IPアドレスを使用
         String clientIp = extractClientIp(request);
         return IP_PREFIX + clientIp;
     }
 
-    /**
-     * 認証済みユーザーかどうかを判定する
-     *
-     * @return 認証済みユーザーの場合true
-     */
     private boolean isAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null
@@ -160,18 +137,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 && !ANONYMOUS_USER.equals(authentication.getPrincipal());
     }
 
-    /**
-     * クライアントのIPアドレスを抽出する
-     * X-Forwarded-Forヘッダーを優先し、存在しない場合はリモートアドレスを使用する
-     *
-     * @param request HTTPリクエスト
-     * @return クライアントのIPアドレス
-     */
     private String extractClientIp(HttpServletRequest request) {
         String forwardedFor = request.getHeader(X_FORWARDED_FOR_HEADER);
 
         if (forwardedFor != null && !forwardedFor.isEmpty()) {
-            // X-Forwarded-Forに複数のIPが含まれる場合、最初のIPを使用
             return forwardedFor.split(",")[0].trim();
         }
 
@@ -182,7 +151,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
      * テスト用: Bucketキャッシュをクリアする
      */
     public void clearCache() {
-        bucketCache.clear();
+        bucketCache.invalidateAll();
         logger.debug("レート制限キャッシュをクリアしました");
+    }
+
+    /**
+     * テスト用: 全エントリを強制的に期限切れにする
+     */
+    public void expireAllEntries() {
+        bucketCache.invalidateAll();
+        bucketCache.cleanUp();
+        logger.debug("レート制限キャッシュの全エントリを期限切れにしました");
     }
 }
