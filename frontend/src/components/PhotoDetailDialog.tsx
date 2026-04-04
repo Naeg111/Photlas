@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2, Share2, Pencil, User } from 'lucide-react'
@@ -275,7 +275,7 @@ async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
  * 撮影地点ミニマップコンポーネント
  * Issue#45: 写真詳細ダイアログ内に撮影地点を表示する静的地図
  */
-function DetailMiniMap({
+const DetailMiniMap = React.memo(function DetailMiniMap({
   latitude,
   longitude,
   onClick,
@@ -375,7 +375,7 @@ function DetailMiniMap({
       )}
     </div>
   )
-}
+})
 
 export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted, singlePhotoId, filterMaxAgeDays }: Readonly<PhotoDetailDialogProps>) {
   const { isAuthenticated, user } = useAuth()
@@ -458,6 +458,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   // 取得中のphotoIdを追跡（重複リクエスト防止）
   const fetchingIdsRef = useRef(new Set<number>())
 
+  // 指摘ステータスのキャッシュ（#8: 同じ写真に戻った時の再API呼び出し防止）
+  const suggestionCacheRef = useRef(new Map<number, boolean>())
+
   // 最後に表示した写真情報を保持（点滅防止）
   const [displayedPhoto, setDisplayedPhoto] = useState<PhotoDetail | null>(null)
 
@@ -471,6 +474,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       setLoading(true)
       setDisplayedPhoto(null)
       fetchingIdsRef.current.clear()
+      suggestionCacheRef.current.clear()
       return
     }
 
@@ -565,9 +569,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const currentPhotoId = photoIds[currentIndex]
   const currentPhoto = currentPhotoId ? photoDetails.get(currentPhotoId) : null
 
-  // 現在のスライドの写真詳細を取得 + 前後1枚をプリフェッチ
+  // 現在のスライドの写真詳細を取得 + 前後1枚をプリフェッチ + 画像プリロード
+  // photoDetailsをrefで参照し、依存配列ループを防止（#7）
   useEffect(() => {
-    if (currentPhotoId && !photoDetails.has(currentPhotoId)) {
+    if (currentPhotoId && !photoDetailsRef.current.has(currentPhotoId)) {
       fetchPhotoDetail(currentPhotoId)
     }
     // 前後1枚の写真データを事前取得
@@ -575,39 +580,35 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     const nextId = photoIds[currentIndex + 1]
     if (prevId) fetchPhotoDetail(prevId)
     if (nextId) fetchPhotoDetail(nextId)
-  }, [currentPhotoId, currentIndex, photoIds, photoDetails, fetchPhotoDetail])
 
-  // プリフェッチ済みの前後写真の画像をブラウザキャッシュにプリロード
-  useEffect(() => {
-    const adjacentIds = [photoIds[currentIndex - 1], photoIds[currentIndex + 1]].filter(Boolean)
-    for (const id of adjacentIds) {
-      const photo = photoDetails.get(id)
+    // プリフェッチ済みの前後写真の画像をブラウザキャッシュにプリロード
+    for (const id of [prevId, nextId].filter(Boolean)) {
+      const photo = photoDetailsRef.current.get(id)
       if (photo?.imageUrl) {
         const img = new Image()
         img.src = photo.imageUrl
       }
     }
-  }, [currentIndex, photoIds, photoDetails])
+  }, [currentPhotoId, currentIndex, photoIds, fetchPhotoDetail])
 
-  // 表示用の写真情報を更新（nullにはしない→点滅防止）
+  // 表示用の写真情報を更新 + お気に入り状態を同期（1つのuseEffectで再レンダリング削減: #9）
   useEffect(() => {
     if (currentPhoto) {
       setDisplayedPhoto(currentPhoto)
-    }
-  }, [currentPhoto])
-
-  // Issue#30: お気に入り状態を写真詳細から同期
-  useEffect(() => {
-    if (currentPhoto) {
       setIsFavorited(currentPhoto.isFavorited ?? false)
       setFavoriteCount(currentPhoto.favoriteCount ?? 0)
     }
   }, [currentPhoto])
 
-  // Issue#65: 指摘済みステータスを取得
+  // Issue#65: 指摘済みステータスを取得（キャッシュ付き: #8）
   useEffect(() => {
     if (!currentPhotoId || !isAuthenticated) {
       setHasAlreadySuggested(false)
+      return
+    }
+    // キャッシュにあればAPIを呼ばない
+    if (suggestionCacheRef.current.has(currentPhotoId)) {
+      setHasAlreadySuggested(suggestionCacheRef.current.get(currentPhotoId)!)
       return
     }
     const checkSuggestionStatus = async () => {
@@ -618,7 +619,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         )
         if (response.ok) {
           const data = await response.json()
-          setHasAlreadySuggested(data.hasSuggested === true)
+          const hasSuggested = data.hasSuggested === true
+          suggestionCacheRef.current.set(currentPhotoId, hasSuggested)
+          setHasAlreadySuggested(hasSuggested)
         }
       } catch {
         // エラー時はデフォルト（非表示にしない）
