@@ -53,6 +53,7 @@ public class PasswordService {
      *
      * @param email リセット対象のメールアドレス
      */
+    @Transactional
     public void requestPasswordReset(String email) {
         Optional<User> userOptional = userRepository.findByEmail(email.toLowerCase());
 
@@ -61,6 +62,11 @@ public class PasswordService {
         }
 
         User user = userOptional.get();
+
+        // 退会済み・停止ユーザーにはリセットメールを送信しない（レスポンスは正常時と同一）
+        if (user.getDeletedAt() != null || "SUSPENDED".equals(user.getRole())) {
+            return;
+        }
 
         passwordResetTokenRepository.findByUserId(user.getId()).ifPresent(
             token -> passwordResetTokenRepository.delete(token)
@@ -82,6 +88,7 @@ public class PasswordService {
      * @param newPassword 新しいパスワード
      * @param confirmPassword 確認用パスワード
      */
+    @Transactional
     public void resetPassword(String token, String newPassword, String confirmPassword) {
         if (!newPassword.equals(confirmPassword)) {
             throw new IllegalArgumentException("パスワードが一致しません");
