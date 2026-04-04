@@ -9,6 +9,7 @@ import AdminDeletedUsersPage from './pages/AdminDeletedUsersPage'
 import AdminDeletedUserDetailPage from './pages/AdminDeletedUserDetailPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import ReviewLocationPage from './pages/ReviewLocationPage'
+import ConfirmEmailChangePage from './pages/ConfirmEmailChangePage'
 import { CookieConsentBanner } from './components/CookieConsentBanner'
 import { formatLocalDateTime } from './utils/extractExif'
 import { FilterPanel } from './components/FilterPanel'
@@ -770,6 +771,7 @@ function App() {
         <Route path="/verify-email" element={<EmailVerificationPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/review-location" element={<ReviewLocationPage />} />
+        <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
         <Route path="/photo-viewer/:photoId" element={<MainApp />} />
         <Route path="/manage/moderation" element={<AdminModerationPage />} />
         <Route path="/manage/deleted-users" element={<AdminDeletedUsersPage />} />
