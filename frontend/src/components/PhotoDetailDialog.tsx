@@ -565,12 +565,29 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const currentPhotoId = photoIds[currentIndex]
   const currentPhoto = currentPhotoId ? photoDetails.get(currentPhotoId) : null
 
-  // 現在のスライドの写真詳細を取得
+  // 現在のスライドの写真詳細を取得 + 前後1枚をプリフェッチ
   useEffect(() => {
     if (currentPhotoId && !photoDetails.has(currentPhotoId)) {
       fetchPhotoDetail(currentPhotoId)
     }
-  }, [currentPhotoId, photoDetails, fetchPhotoDetail])
+    // 前後1枚の写真データを事前取得
+    const prevId = photoIds[currentIndex - 1]
+    const nextId = photoIds[currentIndex + 1]
+    if (prevId) fetchPhotoDetail(prevId)
+    if (nextId) fetchPhotoDetail(nextId)
+  }, [currentPhotoId, currentIndex, photoIds, photoDetails, fetchPhotoDetail])
+
+  // プリフェッチ済みの前後写真の画像をブラウザキャッシュにプリロード
+  useEffect(() => {
+    const adjacentIds = [photoIds[currentIndex - 1], photoIds[currentIndex + 1]].filter(Boolean)
+    for (const id of adjacentIds) {
+      const photo = photoDetails.get(id)
+      if (photo?.imageUrl) {
+        const img = new Image()
+        img.src = photo.imageUrl
+      }
+    }
+  }, [currentIndex, photoIds, photoDetails])
 
   // 表示用の写真情報を更新（nullにはしない→点滅防止）
   useEffect(() => {
@@ -941,8 +958,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
               <div className="relative flex-shrink-0 max-h-[60vh] overflow-hidden flex items-center" style={{ maxHeight: '60dvh' }}>
                 <div className="overflow-hidden w-full" ref={emblaRef}>
                   <div className="flex items-center">
-                    {photoIds.map((photoId) => {
-                      const photo = photoDetails.get(photoId)
+                    {photoIds.map((photoId, index) => {
+                      // 仮想化: 現在の前後1枚のみ画像コンテンツをレンダリング
+                      const isNearCurrent = Math.abs(index - currentIndex) <= 1
+                      const photo = isNearCurrent ? photoDetails.get(photoId) : null
                       const cx = photo?.cropCenterX ?? 0.5
                       const cy = photo?.cropCenterY ?? 0.5
                       const zoom = photo?.cropZoom ?? 1
