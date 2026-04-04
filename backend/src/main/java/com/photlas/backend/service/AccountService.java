@@ -1,50 +1,72 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.entity.EmailChangeToken;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.UnauthorizedException;
+import com.photlas.backend.repository.EmailChangeTokenRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.util.TokenGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
  * アカウントサービス
- * メールアドレス変更��アカウント削除のビジネスロジックを提供する。
+ * メールアドレス変更、アカウント削除のビジネスロジックを提供する。
  */
 @Service
 public class AccountService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AccountService.class);
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
+    private static final int EMAIL_CHANGE_TOKEN_EXPIRATION_MINUTES = 30;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final SpotRepository spotRepository;
     private final PhotoRepository photoRepository;
+    private final EmailChangeTokenRepository emailChangeTokenRepository;
+    private final EmailService emailService;
+    private final JwtService jwtService;
+
+    @Value("${app.frontend-url:https://photlas.jp}")
+    private String frontendUrl;
 
     public AccountService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             SpotRepository spotRepository,
-            PhotoRepository photoRepository) {
+            PhotoRepository photoRepository,
+            EmailChangeTokenRepository emailChangeTokenRepository,
+            EmailService emailService,
+            JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.spotRepository = spotRepository;
         this.photoRepository = photoRepository;
+        this.emailChangeTokenRepository = emailChangeTokenRepository;
+        this.emailService = emailService;
+        this.jwtService = jwtService;
     }
 
     /**
-     * メールアドレス変更
+     * Issue#86: メールアドレス変更リクエスト
+     * 即座に変更せず、新メールアドレスに確認リンクを送信する。
      */
     @Transactional
-    public String updateEmail(String email, String newEmail, String currentPassword) {
+    public void requestEmailChange(String email, String newEmail, String currentPassword) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
@@ -54,7 +76,7 @@ public class AccountService {
 
         String normalizedNewEmail = newEmail.toLowerCase();
         if (email.equals(normalizedNewEmail)) {
-            return user.getEmail();
+            throw new IllegalArgumentException("現在のメールアドレスと同じです");
         }
 
         Optional<User> existingUser = userRepository.findByEmail(normalizedNewEmail);
@@ -62,16 +84,92 @@ public class AccountService {
             throw new ConflictException("このメールアドレスはすでに使用されています");
         }
 
-        user.setEmail(normalizedNewEmail);
-        userRepository.save(user);
+        // 既存トークンを削除して新規作成
+        emailChangeTokenRepository.findByUserId(user.getId()).ifPresent(
+                t -> emailChangeTokenRepository.delete(t)
+        );
 
-        return user.getEmail();
+        String token = TokenGenerator.generateSecureToken();
+        Date expiryDate = new Date(System.currentTimeMillis()
+                + EMAIL_CHANGE_TOKEN_EXPIRATION_MINUTES * 60 * 1000);
+
+        EmailChangeToken changeToken = new EmailChangeToken(
+                user.getId(), normalizedNewEmail, token, expiryDate);
+        emailChangeTokenRepository.save(changeToken);
+
+        // 新メールアドレスに確認リンクを送信
+        emailService.send(
+                normalizedNewEmail,
+                "【Photlas】メールアドレス変更の確認",
+                user.getUsername() + " さん\n\n" +
+                "メールアドレスの変更リクエストを受け付けました。\n" +
+                "以下のリンクをクリックして、変更を確定してください：\n\n" +
+                frontendUrl + "/confirm-email-change?token=" + token + "\n\n" +
+                "このリンクの有効期限は30分です。\n\n" +
+                "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
+                "Photlas チーム");
+
+        // 旧メールアドレスに通知
+        try {
+            emailService.send(
+                    email,
+                    "【Photlas】メールアドレスの変更がリクエストされました",
+                    user.getUsername() + " さん\n\n" +
+                    "お客様のアカウントでメールアドレスの変更がリクエストされました。\n\n" +
+                    "心当たりがない場合は、ただちにパスワードを変更してください。\n\n" +
+                    "Photlas チーム");
+        } catch (Exception e) {
+            logger.error("Failed to send email change notification to old address: {}", e.getMessage());
+        }
     }
 
     /**
+     * Issue#86: メールアドレス変更確認
+     * トークンを検証し、メールアドレスを更新してJWTを再発行する。
+     *
+     * @return 新メールアドレスベースのJWTと新メールアドレス
+     */
+    @Transactional
+    public EmailChangeResult confirmEmailChange(String token) {
+        Optional<EmailChangeToken> tokenOptional = emailChangeTokenRepository.findByToken(token);
+        if (tokenOptional.isEmpty()) {
+            throw new IllegalArgumentException("トークンが無効または期限切れです");
+        }
+
+        EmailChangeToken changeToken = tokenOptional.get();
+
+        if (changeToken.getExpiryDate().before(new Date())) {
+            emailChangeTokenRepository.delete(changeToken);
+            throw new IllegalArgumentException("トークンが無効または期限切れです");
+        }
+
+        // 新メールアドレスの重複チェック（リクエスト〜確認の間に別ユーザーが登録した場合に備える）
+        Optional<User> existingUser = userRepository.findByEmail(changeToken.getNewEmail());
+        if (existingUser.isPresent() && !existingUser.get().getId().equals(changeToken.getUserId())) {
+            emailChangeTokenRepository.delete(changeToken);
+            throw new ConflictException("このメールアドレスはすでに使用されています");
+        }
+
+        User user = userRepository.findById(changeToken.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
+
+        user.setEmail(changeToken.getNewEmail());
+        userRepository.save(user);
+
+        emailChangeTokenRepository.delete(changeToken);
+
+        String newJwt = jwtService.generateTokenWithRole(user.getEmail(), user.getRole());
+
+        return new EmailChangeResult(newJwt, user.getEmail());
+    }
+
+    /**
+     * メールアドレス変更確認の結果
+     */
+    public record EmailChangeResult(String token, String email) {}
+
+    /**
      * アカウント削除 - ソフトデリート
-     * 即時物理削除は行わず、deleted_atを設定して論理削除する。
-     * 90日後にバッチ処理で物理削除される。
      */
     @Transactional
     public void deleteAccount(String email, String password) {
@@ -91,9 +189,6 @@ public class AccountService {
         userRepository.save(user);
     }
 
-    /**
-     * スポット所有権の移転
-     */
     private void transferSpotOwnership(User deletingUser) {
         List<Spot> ownedSpots = spotRepository.findByCreatedByUserId(deletingUser.getId());
         for (Spot spot : ownedSpots) {

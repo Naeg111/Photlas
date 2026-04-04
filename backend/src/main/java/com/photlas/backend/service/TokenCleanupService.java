@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.repository.EmailChangeTokenRepository;
 import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import org.slf4j.Logger;
@@ -21,12 +22,15 @@ public class TokenCleanupService {
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final EmailChangeTokenRepository emailChangeTokenRepository;
 
     public TokenCleanupService(
             PasswordResetTokenRepository passwordResetTokenRepository,
-            EmailVerificationTokenRepository emailVerificationTokenRepository) {
+            EmailVerificationTokenRepository emailVerificationTokenRepository,
+            EmailChangeTokenRepository emailChangeTokenRepository) {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
+        this.emailChangeTokenRepository = emailChangeTokenRepository;
     }
 
     /**
@@ -40,6 +44,7 @@ public class TokenCleanupService {
 
         passwordResetTokenRepository.deleteByExpiryDateBefore(now);
         emailVerificationTokenRepository.deleteByExpiryDateBefore(now);
+        emailChangeTokenRepository.deleteByExpiryDateBefore(now);
 
         logger.info("期限切れトークンのクリーンアップを実行しました");
     }
