@@ -284,7 +284,7 @@ public class PasswordResetRequestTest {
     @DisplayName("停止ユーザーにはリセットトークンが生成されない（セキュリティ）")
     void testPasswordResetRequest_SuspendedUser_DoesNotGenerateToken() throws Exception {
         User user = new User();
-        user.setUsername("suspendeduser");
+        user.setUsername("suspended");
         user.setEmail("suspended@example.com");
         user.setPasswordHash("hashed-password");
         user.setRole("SUSPENDED");
