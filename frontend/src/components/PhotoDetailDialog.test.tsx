@@ -352,6 +352,56 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
+  describe('パフォーマンス最適化 - プリフェッチとレンダリング最適化', () => {
+    it('最初の写真表示時に前後の写真データが事前にフェッチされる', async () => {
+      const photoIds = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2, TEST_PHOTO_ID_3]
+      const photoDetail1 = createMockPhotoDetail({ photoId: TEST_PHOTO_ID_1, imageUrls: { standard: TEST_STANDARD_URL }, user: { userId: TEST_USER_ID, username: TEST_USERNAME }, spot: { spotId: TEST_SPOT_ID } })
+      const photoDetail2 = createMockPhotoDetail({ photoId: TEST_PHOTO_ID_2, imageUrls: { standard: 'https://example.com/photo2.jpg' }, user: { userId: TEST_USER_ID, username: TEST_USERNAME }, spot: { spotId: TEST_SPOT_ID } })
+      const photoDetail3 = createMockPhotoDetail({ photoId: TEST_PHOTO_ID_3, imageUrls: { standard: 'https://example.com/photo3.jpg' }, user: { userId: TEST_USER_ID, username: TEST_USERNAME }, spot: { spotId: TEST_SPOT_ID } })
+      const mockFetch = setupMockFetch(photoIds, [photoDetail1, photoDetail2, photoDetail3])
+
+      const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      // 最初の写真(1) + 次の写真(2)のプリフェッチが呼ばれる
+      await waitFor(() => {
+        const photoCalls = mockFetch.mock.calls.filter((call: string[]) =>
+          call[0]?.includes('/api/v1/photos/') && !call[0]?.includes('/photos?')
+        )
+        expect(photoCalls.length).toBeGreaterThanOrEqual(2)
+      })
+    })
+
+    it('5枚の写真がある場合、currentIndex=0ではimgタグは最大2枚のみレンダリングされる（仮想化）', async () => {
+      const ids = [101, 102, 103, 104, 105]
+      const details = ids.map(id => createMockPhotoDetail({
+        photoId: id,
+        imageUrls: { standard: `https://example.com/photo${id}.jpg` },
+        user: { userId: TEST_USER_ID, username: TEST_USERNAME },
+        spot: { spotId: TEST_SPOT_ID },
+      }))
+      const mockFetch = setupMockFetch(ids, details)
+
+      const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
+      })
+
+      // currentIndex=0の場合、自身(0)と次(1)の最大2枚のみ画像がレンダリングされる
+      // 3枚目以降はスライド枠はあるがimg要素は存在しない
+      const images = screen.queryAllByAltText('画像')
+      expect(images.length).toBeLessThanOrEqual(2)
+    })
+  })
+
   describe('ローディングとエラーハンドリング', () => {
     it('写真読み込み中はローディングスピナーが表示される', async () => {
       const mockFetch = vi.fn().mockImplementation(() =>
