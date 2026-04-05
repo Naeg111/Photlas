@@ -532,7 +532,7 @@ public class PhotoService {
         // 一時停止チェック
         List<AccountSanction> sanctions = accountSanctionRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
         for (AccountSanction sanction : sanctions) {
-            if ("TEMPORARY_SUSPENSION".equals(sanction.getSanctionType())
+            if (Integer.valueOf(CodeConstants.SANCTION_TEMPORARY_SUSPENSION).equals(sanction.getSanctionType())
                     && sanction.getSuspendedUntil() != null
                     && sanction.getSuspendedUntil().isAfter(LocalDateTime.now())) {
                 throw new AccountSuspendedException(
