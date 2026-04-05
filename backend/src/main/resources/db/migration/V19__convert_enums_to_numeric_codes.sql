@@ -173,64 +173,58 @@ ALTER TABLE location_suggestions DROP COLUMN status;
 ALTER TABLE location_suggestions RENAME COLUMN status_new TO status;
 
 -- ========== 16. categories.category_id (自動採番 → 200番台固定ID) ==========
--- FK制約を一���的に無効化（HibernateがManyToManyから自動生成したFK）
+-- FK制約を一時的に無効化（HibernateがManyToManyから自動生成したFK）
 ALTER TABLE photo_categories DROP CONSTRAINT IF EXISTS fkq1sjuro3tbb32a8xd18k3oi5c;
 ALTER TABLE photo_categories DROP CONSTRAINT IF EXISTS fk_photo_categories_category;
 
--- 旧ID→新IDのマッピングテーブルを作成
+-- Step 1: 旧カテゴリの参照を新カテゴリに振り替え
+-- 風景 → 自然風景, 食べ物 → グルメ, ポートレート → その他
+UPDATE photo_categories SET category_id = (SELECT category_id FROM categories WHERE name = '自然風景')
+WHERE category_id IN (SELECT category_id FROM categories WHERE name = '風景');
+UPDATE photo_categories SET category_id = (SELECT category_id FROM categories WHERE name = 'グルメ')
+WHERE category_id IN (SELECT category_id FROM categories WHERE name = '食べ物');
+UPDATE photo_categories SET category_id = (SELECT category_id FROM categories WHERE name = 'その他')
+WHERE category_id IN (SELECT category_id FROM categories WHERE name = 'ポートレート');
+
+-- 重複するphoto_categoriesレコードを削除
+DELETE FROM photo_categories a USING photo_categories b
+WHERE a.ctid < b.ctid AND a.photo_id = b.photo_id AND a.category_id = b.category_id;
+
+-- 旧カテゴリ行を削除
+DELETE FROM categories WHERE name IN ('風景', '食べ物', 'ポートレート');
+
+-- Step 2: 残り14カテゴリのIDを200番台に変更
 CREATE TEMPORARY TABLE category_id_map (old_id INTEGER, new_id INTEGER);
 INSERT INTO category_id_map (old_id, new_id)
-SELECT c.category_id, CASE c.name
-    WHEN '自然風景' THEN 201
-    WHEN '街並み' THEN 202
-    WHEN '建造物' THEN 203
-    WHEN '夜景' THEN 204
-    WHEN 'グルメ' THEN 205
-    WHEN '植物' THEN 206
-    WHEN '動物' THEN 207
-    WHEN '野鳥' THEN 208
-    WHEN '自動車' THEN 209
-    WHEN 'バイク' THEN 210
-    WHEN '鉄道' THEN 211
-    WHEN '飛行機' THEN 212
-    WHEN '星空' THEN 213
-    WHEN 'その他' THEN 214
-    -- 旧カテゴリ名への対応
-    WHEN '風景' THEN 201
-    WHEN '食べ物' THEN 205
-    WHEN 'ポートレート' THEN 214
-    ELSE 214
-END
-FROM categories c;
+SELECT category_id, CASE name
+    WHEN '自然風景' THEN 201 WHEN '街並み' THEN 202 WHEN '建造物' THEN 203
+    WHEN '夜景' THEN 204 WHEN 'グルメ' THEN 205 WHEN '植物' THEN 206
+    WHEN '動物' THEN 207 WHEN '野鳥' THEN 208 WHEN '自動車' THEN 209
+    WHEN 'バイク' THEN 210 WHEN '鉄道' THEN 211 WHEN '飛行機' THEN 212
+    WHEN '星空' THEN 213 WHEN 'その他' THEN 214
+END FROM categories;
 
--- categoriesテーブル��新IDの行を先に作成（FK制約チェック対策）
+-- 新ID行を作成
 INSERT INTO categories (category_id, name)
-SELECT m.new_id, c.name
-FROM category_id_map m
+SELECT m.new_id, c.name FROM category_id_map m
 JOIN categories c ON c.category_id = m.old_id
-WHERE m.new_id != m.old_id
 ON CONFLICT (category_id) DO NOTHING;
 
--- photo_categoriesのcategory_idを新IDに更新
+-- photo_categoriesを新IDに更新
 UPDATE photo_categories SET category_id = (
     SELECT new_id FROM category_id_map WHERE old_id = photo_categories.category_id
-)
-WHERE EXISTS (SELECT 1 FROM category_id_map WHERE old_id = photo_categories.category_id);
+) WHERE EXISTS (SELECT 1 FROM category_id_map WHERE old_id = photo_categories.category_id);
 
--- 旧IDの行���削除（���IDに移行済みの場合のみ）
-DELETE FROM categories WHERE category_id IN (
-    SELECT old_id FROM category_id_map WHERE old_id != new_id
-);
-
+-- 旧ID行を削除
+DELETE FROM categories WHERE category_id IN (SELECT old_id FROM category_id_map WHERE old_id != new_id);
 DROP TABLE category_id_map;
 
 -- FK制約を再作成
 ALTER TABLE photo_categories ADD CONSTRAINT fk_photo_categories_category
     FOREIGN KEY (category_id) REFERENCES categories(category_id);
 
--- categoriesのSERIAL自動採番シーケンスを200番台以降に設定
+-- SERIAL自動採番シーケンスを215にリスタート
 ALTER SEQUENCE categories_category_id_seq RESTART WITH 215;
 
 -- reports テーブルのユニーク制約を再作成（target_typeカラムの型が変わったため）
--- 既存の制約は自動的にカラム削除時に除去されるため、再作成のみ
 ALTER TABLE reports ADD CONSTRAINT uk_reports_reporter_target UNIQUE (reporter_user_id, target_type, target_id);
