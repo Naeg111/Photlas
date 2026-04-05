@@ -47,6 +47,9 @@ public class RemovedPhotoCleanupServiceTest {
     private SpotRepository spotRepository;
 
     @Autowired
+    private com.photlas.backend.repository.CategoryRepository categoryRepository;
+
+    @Autowired
     private EntityManager entityManager;
 
     @MockBean
@@ -150,6 +153,30 @@ public class RemovedPhotoCleanupServiceTest {
         cleanupService.cleanupRemovedPhotos();
 
         verify(s3Service, never()).deleteS3Object(anyString());
+    }
+
+    // ===== レポート#41 #1: 関連レコード削除テスト =====
+
+    @Test
+    @DisplayName("レポート#41 #1 - photo_categoriesの関連レコードがある写真を物理削除できる")
+    void testCleanup_deletesPhotosWithCategories() {
+        // カテゴリ付きの写真を作成
+        com.photlas.backend.entity.Category category = new com.photlas.backend.entity.Category();
+        category.setCategoryId(CodeConstants.CATEGORY_NATURE);
+        category.setName("自然風景");
+        categoryRepository.save(category);
+
+        Photo photo = createPhoto("uploads/1/cat-test.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
+        photo.setCategories(java.util.List.of(category));
+        photoRepository.save(photo);
+        entityManager.flush();
+
+        updateUpdatedAt(photo.getPhotoId(), LocalDateTime.now().minusDays(200));
+
+        // 物理削除を実行 - photo_categoriesの関連レコードがあってもエラーにならないこと
+        cleanupService.cleanupRemovedPhotos();
+
+        assertThat(photoRepository.findById(photo.getPhotoId())).isEmpty();
     }
 
     // ===== ヘルパーメソッド =====
