@@ -139,15 +139,15 @@ public class FavoriteService {
                 .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<Favorite> favoritePage = favoriteRepository.findByUserId(user.getId(), pageable);
+        Page<Favorite> favoritePage = favoriteRepository.findByUserIdExcludingDeletedUsers(user.getId(), pageable);
 
-        // 写真詳細情報を取得（Issue#72: 退会済みユーザーの写真を除外）
+        // 写真詳細情報を取得
         List<PhotoResponse> photoResponseList = favoritePage.getContent().stream()
             .map(favorite -> {
                 Photo photo = photoRepository.findById(favorite.getPhotoId()).orElse(null);
                 if (photo == null) return null;
                 User photoUser = userRepository.findById(photo.getUserId()).orElse(null);
-                if (photoUser == null || photoUser.getDeletedAt() != null) return null;
+                if (photoUser == null) return null;
                 Spot spot = spotRepository.findById(photo.getSpotId()).orElse(null);
                 if (spot == null) return null;
                 long favoriteCount = favoriteRepository.countByPhotoId(photo.getPhotoId());
@@ -166,7 +166,7 @@ public class FavoriteService {
         response.put("pageable", pageableInfo);
 
         response.put("total_pages", favoritePage.getTotalPages());
-        response.put("total_elements", (long) photoResponseList.size());
+        response.put("total_elements", favoritePage.getTotalElements());
         response.put("last", favoritePage.isLast());
 
         return response;

@@ -29,6 +29,21 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Favorite.Fav
     Page<Favorite> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
     /**
+     * レポート#27-1: ユーザーIDでお気に入り一覧を取得（退会済みユーザーの写真を除外、ページネーション対応）
+     */
+    @Query(value = "SELECT f.* FROM favorites f " +
+            "INNER JOIN photos p ON f.photo_id = p.photo_id " +
+            "INNER JOIN users u ON p.user_id = u.id " +
+            "WHERE f.user_id = :userId AND u.deleted_at IS NULL " +
+            "ORDER BY f.created_at DESC",
+            countQuery = "SELECT COUNT(*) FROM favorites f " +
+            "INNER JOIN photos p ON f.photo_id = p.photo_id " +
+            "INNER JOIN users u ON p.user_id = u.id " +
+            "WHERE f.user_id = :userId AND u.deleted_at IS NULL",
+            nativeQuery = true)
+    Page<Favorite> findByUserIdExcludingDeletedUsers(@Param("userId") Long userId, Pageable pageable);
+
+    /**
      * Issue#30: 写真IDでお気に入り数をカウント
      */
     long countByPhotoId(Long photoId);
