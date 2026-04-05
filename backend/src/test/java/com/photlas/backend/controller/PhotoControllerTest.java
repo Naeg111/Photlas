@@ -237,6 +237,9 @@ public class PhotoControllerTest {
                     return new S3Service.UploadUrlResult(uploadUrl, objectKey);
                 });
 
+        // S3ファイル存在確認のモック（テストではすべてtrue）
+        when(s3Service.existsInS3(anyString())).thenReturn(true);
+
         // CDN URL生成のモック（s3ObjectKeyをそのままURLに含める）
         when(s3Service.generateCdnUrl(anyString()))
                 .thenAnswer(invocation -> {

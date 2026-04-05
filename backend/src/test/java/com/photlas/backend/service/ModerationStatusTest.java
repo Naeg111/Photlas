@@ -67,12 +67,19 @@ public class ModerationStatusTest {
     @Autowired
     private AccountSanctionRepository accountSanctionRepository;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private S3Service s3Service;
+
     private User testUser;
     private User otherUser;
     private Category landscapeCategory;
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.when(s3Service.existsInS3(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
+        org.mockito.Mockito.when(s3Service.generateCdnUrl(org.mockito.ArgumentMatchers.anyString())).thenReturn("https://cdn.example.com/test.jpg");
+        org.mockito.Mockito.when(s3Service.generateThumbnailCdnUrl(org.mockito.ArgumentMatchers.anyString())).thenReturn("https://cdn.example.com/thumb.webp");
+
         accountSanctionRepository.deleteAll();
         photoCategoryRepository.deleteAll();
         favoriteRepository.deleteAll();
