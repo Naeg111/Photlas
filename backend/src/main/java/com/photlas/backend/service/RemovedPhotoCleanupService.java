@@ -25,10 +25,14 @@ public class RemovedPhotoCleanupService {
     private static final int RETENTION_DAYS = 180;
 
     private final PhotoRepository photoRepository;
+    private final com.photlas.backend.repository.PhotoCategoryRepository photoCategoryRepository;
     private final S3Service s3Service;
 
-    public RemovedPhotoCleanupService(PhotoRepository photoRepository, S3Service s3Service) {
+    public RemovedPhotoCleanupService(PhotoRepository photoRepository,
+                                       com.photlas.backend.repository.PhotoCategoryRepository photoCategoryRepository,
+                                       S3Service s3Service) {
         this.photoRepository = photoRepository;
+        this.photoCategoryRepository = photoCategoryRepository;
         this.s3Service = s3Service;
     }
 
@@ -64,6 +68,10 @@ public class RemovedPhotoCleanupService {
         }
 
         if (!s3DeletedPhotos.isEmpty()) {
+            // 関連レコード（photo_categories）を先に削除してFK制約違反を防止
+            for (Photo photo : s3DeletedPhotos) {
+                photoCategoryRepository.deleteByPhotoId(photo.getPhotoId());
+            }
             photoRepository.deleteAll(s3DeletedPhotos);
             logger.info("REMOVED写真の物理削除完了: {}件（S3削除失敗: {}件）",
                     s3DeletedPhotos.size(), expiredPhotos.size() - s3DeletedPhotos.size());
