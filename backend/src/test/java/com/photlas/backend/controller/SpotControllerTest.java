@@ -1055,6 +1055,38 @@ public class SpotControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    @DisplayName("退会済みユーザーの写真はスポット写真ID一覧に含まれない")
+    void testGetSpotPhotoIds_DeletedUser_PhotosExcluded() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+
+        // 通常ユーザーの写真
+        Photo activePhoto = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+
+        // 退会済みユーザーの写真
+        User deletedUser = new User();
+        deletedUser.setUsername("退会済み");
+        deletedUser.setEmail("deleted-spot@example.com");
+        deletedUser.setPasswordHash("hashedpassword");
+        deletedUser.setRole(CodeConstants.ROLE_USER);
+        deletedUser.setDeletedAt(java.time.LocalDateTime.now());
+        deletedUser = userRepository.save(deletedUser);
+
+        Photo deletedUserPhoto = new Photo();
+        deletedUserPhoto.setSpotId(spot.getSpotId());
+        deletedUserPhoto.setUserId(deletedUser.getId());
+        deletedUserPhoto.setS3ObjectKey("uploads/" + deletedUser.getId() + "/deleted-user-photo.jpg");
+        deletedUserPhoto.setShotAt(TEST_SHOT_AT.plusHours(1));
+        deletedUserPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
+        photoRepository.save(deletedUserPhoto);
+
+        // 退会済みユーザーの写真はIDリストに含まれないこと
+        mockMvc.perform(get(SPOTS_ENDPOINT + "/" + spot.getSpotId() + "/photos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0]", is(activePhoto.getPhotoId().intValue())));
+    }
+
     // --- Issue#54: モデレーションステータスによるフィルタリングテスト ---
 
     @Test
