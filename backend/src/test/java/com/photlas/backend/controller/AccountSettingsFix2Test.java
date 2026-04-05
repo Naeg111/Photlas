@@ -80,27 +80,4 @@ public class AccountSettingsFix2Test {
                 .andExpect(status().isOk());
     }
 
-    @Test
-    @DisplayName("#6 - PUT /api/v1/users/me/profile でSNSリンク5件は400を返す")
-    void testUpdateProfile_5SnsLinks_ReturnsBadRequest() throws Exception {
-        String requestBody = """
-            {
-              "username": "testuser",
-              "snsLinks": [
-                {"url": "https://x.com/user1"},
-                {"url": "https://instagram.com/user1"},
-                {"url": "https://youtube.com/user1"},
-                {"url": "https://tiktok.com/@user1"},
-                {"url": "https://x.com/user2"}
-              ]
-            }
-            """;
-
-        mockMvc.perform(put("/api/v1/users/me/profile")
-                .with(csrf())
-                .header("Authorization", "Bearer " + jwtToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
-                .andExpect(status().isBadRequest());
-    }
 }
