@@ -14,6 +14,17 @@ import { PHOTO_CATEGORIES, PHOTO_UPLOAD, UPLOAD_STATUS } from '../utils/constant
 import { ApiError } from '../utils/apiClient'
 import { WeatherIcons } from './FilterIcons'
 import { InlineMapPicker } from './InlineMapPicker'
+import {
+  WEATHER_OPTIONS as CODE_WEATHER_OPTIONS,
+  WEATHER_LABELS,
+  DEVICE_TYPE_LABELS,
+  DEVICE_TYPE_SMARTPHONE,
+  DEVICE_TYPE_MIRRORLESS,
+  DEVICE_TYPE_SLR,
+  DEVICE_TYPE_COMPACT,
+  DEVICE_TYPE_FILM,
+  DEVICE_TYPE_OTHER,
+} from '../utils/codeConstants'
 import { extractExif, type ExifData } from '../utils/extractExif'
 import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
 import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
@@ -31,19 +42,15 @@ import { sortSuggestionsByRelevance } from '../utils/sortSuggestions'
  * DialogContentのoverflow-y-autoではなく内部divでスクロールを管理する
  */
 
-// 天気の選択肢
-const WEATHER_OPTIONS = ['晴れ', '曇り', '雨', '雪'] as const
-type WeatherOption = typeof WEATHER_OPTIONS[number]
-
-// Issue#46: 機材種別の選択肢
-// Issue#67: 投稿数の多い機材順に並び替え
+// Issue#87: 天気・機材種別の選択肢は codeConstants から取得
+// Issue#67: 機材種別は投稿数の多い順に並び替え
 const DEVICE_TYPE_OPTIONS = [
-  { label: 'スマートフォン', value: 'SMARTPHONE' },
-  { label: 'ミラーレス', value: 'MIRRORLESS' },
-  { label: '一眼レフ', value: 'SLR' },
-  { label: 'コンパクトデジカメ', value: 'COMPACT' },
-  { label: 'フィルム', value: 'FILM' },
-  { label: 'その他', value: 'OTHER' },
+  { value: DEVICE_TYPE_SMARTPHONE, label: DEVICE_TYPE_LABELS[DEVICE_TYPE_SMARTPHONE] },
+  { value: DEVICE_TYPE_MIRRORLESS, label: DEVICE_TYPE_LABELS[DEVICE_TYPE_MIRRORLESS] },
+  { value: DEVICE_TYPE_SLR, label: DEVICE_TYPE_LABELS[DEVICE_TYPE_SLR] },
+  { value: DEVICE_TYPE_COMPACT, label: DEVICE_TYPE_LABELS[DEVICE_TYPE_COMPACT] },
+  { value: DEVICE_TYPE_FILM, label: DEVICE_TYPE_LABELS[DEVICE_TYPE_FILM] },
+  { value: DEVICE_TYPE_OTHER, label: DEVICE_TYPE_LABELS[DEVICE_TYPE_OTHER] },
 ] as const
 
 // 施設名・店名の検索候補型
@@ -64,9 +71,9 @@ interface PhotoContributionDialogProps {
     placeName?: string
     categories: string[]
     position: { lat: number; lng: number }
-    weather?: string
+    weather?: number
     takenAt?: string
-    deviceType: string
+    deviceType: number
     exif?: {
       cameraBody?: string
       cameraLens?: string
@@ -101,8 +108,8 @@ export function PhotoContributionDialog({
   const [previewUrl, setPreviewUrl] = useState<string>('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [pinPosition, setPinPosition] = useState<{ lat: number; lng: number } | null>(null)
-  const [selectedWeather, setSelectedWeather] = useState<WeatherOption | ''>('')
-  const [selectedDeviceType, setSelectedDeviceType] = useState<string>('')
+  const [selectedWeather, setSelectedWeather] = useState<number | ''>('')
+  const [selectedDeviceType, setSelectedDeviceType] = useState<number | ''>('')
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
   const [exifData, setExifData] = useState<ExifData | null>(null)
@@ -217,7 +224,7 @@ export function PhotoContributionDialog({
 
       // Issue#46: スマートフォン判定時に機材種別を自動選択
       if (exif?.isSmartphone) {
-        setSelectedDeviceType('SMARTPHONE')
+        setSelectedDeviceType(DEVICE_TYPE_SMARTPHONE)
       }
 
       // GPS座標がEXIFに含まれる場合はピンを自動配置
@@ -329,7 +336,7 @@ export function PhotoContributionDialog({
           position: pinPosition,
           weather: selectedWeather || undefined,
           takenAt: exifData?.takenAt,
-          deviceType: selectedDeviceType,
+          deviceType: selectedDeviceType as number,
           exif: exifData ? {
             cameraBody: exifData.cameraBody,
             cameraLens: exifData.cameraLens,
@@ -694,21 +701,22 @@ export function PhotoContributionDialog({
             <div className="space-y-3">
               <Label className="text-base">天気</Label>
               <div className="grid grid-cols-4 gap-3">
-                {WEATHER_OPTIONS.map((weather) => {
-                  const Icon = WeatherIcons[weather]
+                {CODE_WEATHER_OPTIONS.map((option) => {
+                  const label = WEATHER_LABELS[option.value] ?? ''
+                  const Icon = WeatherIcons[label]
                   return (
                     <div
-                      key={weather}
+                      key={option.value}
                       className={`flex items-center justify-center gap-2 border rounded-lg p-3 cursor-pointer transition-colors touch-manipulation select-none ${
-                        selectedWeather === weather
+                        selectedWeather === option.value
                           ? 'bg-primary text-primary-foreground border-primary'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setSelectedWeather(prev => prev === weather ? '' : weather) }} onPointerDown={(e) => { e.preventDefault(); const prev = selectedWeather; setSelectedWeather(p => p === weather ? '' : weather); lastToggleRef.current = () => setSelectedWeather(prev) }}
+                      role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setSelectedWeather(prev => prev === option.value ? '' : option.value) }} onPointerDown={(e) => { e.preventDefault(); const prev = selectedWeather; setSelectedWeather(p => p === option.value ? '' : option.value); lastToggleRef.current = () => setSelectedWeather(prev) }}
                     >
                       {Icon && <Icon className="w-5 h-5 shrink-0" />}
                       <Label className="cursor-pointer">
-                        {weather}
+                        {label}
                       </Label>
                     </div>
                   )

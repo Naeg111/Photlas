@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ReportDialog } from './ReportDialog'
+import { REASON_ADULT_CONTENT, REASON_COPYRIGHT_INFRINGEMENT } from '../utils/codeConstants'
 
 /**
  * Issue#54: 通報ダイアログ
@@ -45,8 +46,8 @@ describe('ReportDialog', () => {
         />
       )
 
-      expect(screen.getByText('成人向け')).toBeInTheDocument()
-      expect(screen.getByText('暴力的')).toBeInTheDocument()
+      expect(screen.getByText('成人向けコンテンツ')).toBeInTheDocument()
+      expect(screen.getByText('暴力的なコンテンツ')).toBeInTheDocument()
       expect(screen.getByText('著作権侵害')).toBeInTheDocument()
       expect(screen.getByText('プライバシー侵害')).toBeInTheDocument()
       expect(screen.getByText('スパム')).toBeInTheDocument()
@@ -120,7 +121,7 @@ describe('ReportDialog', () => {
         />
       )
 
-      const reasonRadio = screen.getByLabelText('成人向け')
+      const reasonRadio = screen.getByLabelText('成人向けコンテンツ')
       fireEvent.click(reasonRadio)
 
       const submitButton = screen.getByRole('button', { name: /通報する/i })
@@ -191,7 +192,7 @@ describe('ReportDialog', () => {
         />
       )
 
-      const reasonRadio = screen.getByLabelText('成人向け')
+      const reasonRadio = screen.getByLabelText('成人向けコンテンツ')
       fireEvent.click(reasonRadio)
 
       const submitButton = screen.getByRole('button', { name: /通報する/i })
@@ -224,7 +225,7 @@ describe('ReportDialog', () => {
         />
       )
 
-      const reasonRadio = screen.getByLabelText('成人向け')
+      const reasonRadio = screen.getByLabelText('成人向けコンテンツ')
       fireEvent.click(reasonRadio)
 
       expect(screen.getByText(/詳細説明（任意）/)).toBeInTheDocument()
@@ -295,7 +296,7 @@ describe('ReportDialog', () => {
         />
       )
 
-      const reasonRadio = screen.getByLabelText('成人向け')
+      const reasonRadio = screen.getByLabelText('成人向けコンテンツ')
       fireEvent.click(reasonRadio)
 
       const submitButton = screen.getByRole('button', { name: /通報する/i })
@@ -303,7 +304,7 @@ describe('ReportDialog', () => {
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith({
-          reason: 'ADULT_CONTENT',
+          reason: REASON_ADULT_CONTENT,
           details: undefined,
         })
       })
@@ -330,7 +331,7 @@ describe('ReportDialog', () => {
 
       await waitFor(() => {
         expect(mockOnSubmit).toHaveBeenCalledWith({
-          reason: 'COPYRIGHT_INFRINGEMENT',
+          reason: REASON_COPYRIGHT_INFRINGEMENT,
           details: 'テスト詳細内容',
         })
       })
@@ -346,7 +347,7 @@ describe('ReportDialog', () => {
         />
       )
 
-      const reasonRadio = screen.getByLabelText('成人向け')
+      const reasonRadio = screen.getByLabelText('成人向けコンテンツ')
       fireEvent.click(reasonRadio)
 
       const textarea = screen.getByPlaceholderText(/通報理由の詳細を入力してください/)

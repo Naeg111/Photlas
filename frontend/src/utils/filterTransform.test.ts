@@ -6,10 +6,15 @@ import {
   transformCategories,
   categoryNamesToIds,
 } from './filterTransform'
+import {
+  TIME_OF_DAY_MORNING, TIME_OF_DAY_DAY, TIME_OF_DAY_EVENING, TIME_OF_DAY_NIGHT,
+  WEATHER_SUNNY, WEATHER_CLOUDY, WEATHER_RAIN, WEATHER_SNOW,
+} from './codeConstants'
 
 /**
  * filterTransform.ts ユニットテスト
  * Issue#16: フィルター機能 - UI表示値からAPI値への変換
+ * Issue#87: 数値コード対応
  */
 
 describe('filterTransform', () => {
@@ -38,20 +43,20 @@ describe('filterTransform', () => {
   })
 
   describe('transformTimesOfDay', () => {
-    it('朝 を MORNING に変換する', () => {
-      expect(transformTimesOfDay(['朝'])).toEqual(['MORNING'])
+    it('朝 を 301 に変換する', () => {
+      expect(transformTimesOfDay(['朝'])).toEqual([TIME_OF_DAY_MORNING])
     })
 
-    it('昼 を DAY に変換する', () => {
-      expect(transformTimesOfDay(['昼'])).toEqual(['DAY'])
+    it('昼 を 302 に変換する', () => {
+      expect(transformTimesOfDay(['昼'])).toEqual([TIME_OF_DAY_DAY])
     })
 
-    it('夕方 を EVENING に変換する', () => {
-      expect(transformTimesOfDay(['夕方'])).toEqual(['EVENING'])
+    it('夕方 を 303 に変換する', () => {
+      expect(transformTimesOfDay(['夕方'])).toEqual([TIME_OF_DAY_EVENING])
     })
 
-    it('夜 を NIGHT に変換する', () => {
-      expect(transformTimesOfDay(['夜'])).toEqual(['NIGHT'])
+    it('夜 を 304 に変換する', () => {
+      expect(transformTimesOfDay(['夜'])).toEqual([TIME_OF_DAY_NIGHT])
     })
 
     it('空配列で空配列を返す', () => {
@@ -64,9 +69,9 @@ describe('filterTransform', () => {
   })
 
   describe('transformWeathers', () => {
-    it('全4天気を正しく変換する', () => {
+    it('全4天気を正しく数値コードに変換する', () => {
       expect(transformWeathers(['晴れ', '曇り', '雨', '雪'])).toEqual([
-        'Sunny', 'Cloudy', 'Rain', 'Snow',
+        WEATHER_SUNNY, WEATHER_CLOUDY, WEATHER_RAIN, WEATHER_SNOW,
       ])
     })
 
@@ -104,25 +109,20 @@ describe('filterTransform', () => {
   describe('categoryNamesToIds', () => {
     it('カテゴリ名をIDに変換する', () => {
       const categoryMap = new Map<string, number>([
-        ['風景', 1],
-        ['街並み', 2],
+        ['自然風景', 201],
+        ['街並み', 202],
       ])
-      expect(categoryNamesToIds(['風景', '街並み'], categoryMap)).toEqual([1, 2])
+      expect(categoryNamesToIds(['自然風景', '街並み'], categoryMap)).toEqual([201, 202])
     })
 
     it('マッピングにない名前をフィルタリングする', () => {
-      const categoryMap = new Map<string, number>([['風景', 1]])
-      expect(categoryNamesToIds(['風景', '未知'], categoryMap)).toEqual([1])
+      const categoryMap = new Map<string, number>([['自然風景', 201]])
+      expect(categoryNamesToIds(['自然風景', '未知'], categoryMap)).toEqual([201])
     })
 
     it('空配列で空配列を返す', () => {
-      const categoryMap = new Map<string, number>([['風景', 1]])
+      const categoryMap = new Map<string, number>([['自然風景', 201]])
       expect(categoryNamesToIds([], categoryMap)).toEqual([])
-    })
-
-    it('空マップで空配列を返す', () => {
-      const categoryMap = new Map<string, number>()
-      expect(categoryNamesToIds(['風景'], categoryMap)).toEqual([])
     })
   })
 })

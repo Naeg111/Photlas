@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { PLATFORM_TWITTER } from '../utils/codeConstants'
 
 // APIエンドポイント定数
 const API_ENDPOINTS = {
@@ -31,7 +32,7 @@ const HTTP_STATUS = {
 interface SnsLink {
   id?: string
   url: string
-  platform?: string
+  platform?: number
 }
 
 let snsLinkIdCounter = 0
@@ -85,7 +86,7 @@ interface UseProfileEditReturn {
   handleCancelEditSnsLinks: () => void
   handleAddSnsLink: () => void
   handleRemoveSnsLink: (index: number) => void
-  handleUpdateSnsLink: (index: number, field: 'platform' | 'url', value: string) => void
+  handleUpdateSnsLink: (index: number, field: 'platform' | 'url', value: string | number) => void
   handleSaveSnsLinks: () => Promise<void>
 
   // 統一保存機能
@@ -267,7 +268,7 @@ export const useProfileEdit = ({
     // 空の場合は1つの空エントリを追加
     const initialLinks = snsLinks.length > 0
       ? ensureSnsLinkIds(snsLinks)
-      : [{ id: generateSnsLinkId(), platform: 'twitter', url: '' }]
+      : [{ id: generateSnsLinkId(), platform: PLATFORM_TWITTER, url: '' }]
     setEditingSnsLinks(initialLinks)
     setIsEditingSnsLinks(true)
   }, [snsLinks])
@@ -285,7 +286,7 @@ export const useProfileEdit = ({
    */
   const handleAddSnsLink = useCallback(() => {
     if (editingSnsLinks.length < VALIDATION.MAX_SNS_LINKS) {
-      setEditingSnsLinks([...editingSnsLinks, { id: generateSnsLinkId(), platform: 'twitter', url: '' }])
+      setEditingSnsLinks([...editingSnsLinks, { id: generateSnsLinkId(), platform: PLATFORM_TWITTER, url: '' }])
     }
   }, [editingSnsLinks])
 
@@ -299,7 +300,7 @@ export const useProfileEdit = ({
   /**
    * Issue#37: SNSリンクを更新
    */
-  const handleUpdateSnsLink = useCallback((index: number, field: 'platform' | 'url', value: string) => {
+  const handleUpdateSnsLink = useCallback((index: number, field: 'platform' | 'url', value: string | number) => {
     const updated = [...editingSnsLinks]
     updated[index] = { ...updated[index], [field]: value }
     setEditingSnsLinks(updated)

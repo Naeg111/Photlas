@@ -58,7 +58,7 @@ export function SignUpDialog({
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [snsLinks, setSnsLinks] = useState<Array<{ platform: string; url: string }>>([])
+  const [snsLinks, setSnsLinks] = useState<Array<{ platform: number; url: string }>>([])
   const [isSnsEditDialogOpen, setIsSnsEditDialogOpen] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -234,7 +234,7 @@ export function SignUpDialog({
    * 登録後にSNSリンクをサーバーに送信する
    * SNSリンク送信の失敗は登録処理には影響しない
    */
-  const uploadSnsLinks = async (token: string, links: Array<{ platform: string; url: string }>) => {
+  const uploadSnsLinks = async (token: string, links: Array<{ platform: number; url: string }>) => {
     try {
       await fetch(`${API_V1_URL}/users/me/sns-links`, {
         method: 'PUT',

@@ -33,8 +33,9 @@ import MapView from './components/MapView'
 import type { MapViewFilterParams, MapViewHandle } from './components/MapView'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useDialogState } from './hooks/useDialogState'
-import { transformMonths, transformTimesOfDay, transformWeathers, transformCategories, categoryNamesToIds } from './utils/filterTransform'
+import { transformMonths, transformTimesOfDay, transformWeathers, transformDeviceTypes, transformCategories, categoryNamesToIds } from './utils/filterTransform'
 import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto, ApiError, getAuthHeaders } from './utils/apiClient'
+import { MODERATION_STATUS_PUBLISHED, MODERATION_STATUS_QUARANTINED, ROLE_ADMIN } from './utils/codeConstants'
 import { stripExif } from './utils/stripExif'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
 import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed, Search } from 'lucide-react'
@@ -159,14 +160,14 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         const data = await response.json()
         const status = data.moderation_status
 
-        if (status === 'PUBLISHED') {
+        if (status === MODERATION_STATUS_PUBLISHED) {
           toast.success('写真が公開されました')
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current)
             pollingIntervalRef.current = null
           }
           mapRef.current?.refreshSpots()
-        } else if (status === 'QUARANTINED') {
+        } else if (status === MODERATION_STATUS_QUARANTINED) {
           toast.error('写真がコンテンツポリシーに違反している可能性があります')
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current)
@@ -231,7 +232,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
       months: conditions.months.length > 0 ? transformMonths(conditions.months) : undefined,
       times_of_day: conditions.timesOfDay.length > 0 ? transformTimesOfDay(conditions.timesOfDay) : undefined,
       weathers: conditions.weathers.length > 0 ? transformWeathers(conditions.weathers) : undefined,
-      device_types: conditions.deviceTypes && conditions.deviceTypes.length > 0 ? conditions.deviceTypes : undefined,
+      device_types: conditions.deviceTypes && conditions.deviceTypes.length > 0 ? transformDeviceTypes(conditions.deviceTypes) : undefined,
       max_age_days: conditions.maxAgeDays,
       aspect_ratios: conditions.aspectRatios && conditions.aspectRatios.length > 0 ? conditions.aspectRatios : undefined,
       focal_length_ranges: conditions.focalLengthRanges && conditions.focalLengthRanges.length > 0 ? conditions.focalLengthRanges : undefined,
@@ -263,9 +264,9 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     placeName?: string
     categories: string[]
     position: { lat: number; lng: number }
-    weather?: string
+    weather?: number
     takenAt?: string
-    deviceType: string
+    deviceType: number
     cropCenterX?: number
     cropCenterY?: number
     cropZoom?: number
@@ -569,7 +570,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
       <TopMenuPanel
         {...dialog.getProps('topMenu')}
         isLoggedIn={!!user}
-        isAdmin={user?.role === 'ADMIN'}
+        isAdmin={user?.role === ROLE_ADMIN}
         onMyPageClick={handleShowProfile}
         // onFavoritesClick={handleShowWantToGoList} // 行きたい場所リスト（一時非表示）
         onAccountSettingsClick={() => dialog.open('accountSettings')}

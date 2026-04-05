@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { SignUpDialog } from './SignUpDialog'
+import { PLATFORM_TWITTER } from '../utils/codeConstants'
 
 /**
  * SignUpDialog コンポーネントのテスト
@@ -684,7 +685,7 @@ describe('SignUpDialog', () => {
               Authorization: 'Bearer test-jwt-token',
             }),
             body: JSON.stringify({
-              snsLinks: [{ platform: 'twitter', url: 'https://x.com/testuser' }],
+              snsLinks: [{ platform: PLATFORM_TWITTER, url: 'https://x.com/testuser' }],
             }),
           })
         )

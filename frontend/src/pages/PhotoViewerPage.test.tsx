@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import PhotoViewerPage from './PhotoViewerPage'
+import { MODERATION_STATUS_PUBLISHED } from '../utils/codeConstants'
 
 // Mapbox GL JS のモック
 vi.mock('react-map-gl', () => ({
@@ -48,7 +49,7 @@ function createMockPhotoResponse(overrides?: { photoId?: number; placeName?: str
       crop_center_x: null,
       crop_center_y: null,
       crop_zoom: null,
-      moderation_status: 'PUBLISHED',
+      moderation_status: MODERATION_STATUS_PUBLISHED,
     },
     spot: {
       spot_id: 1,

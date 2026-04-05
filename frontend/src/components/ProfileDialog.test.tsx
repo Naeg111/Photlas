@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ProfileDialog from './ProfileDialog'
+import { PLATFORM_TWITTER, PLATFORM_INSTAGRAM } from '../utils/codeConstants'
 
 /**
  * Issue#18: マイページ機能 (UI + API)
@@ -181,7 +182,7 @@ describe('ProfileDialog', () => {
         />
       )
 
-      const xLink = screen.getByRole('link', { name: /^X$/i })
+      const xLink = screen.getByRole('link', { name: /X \(Twitter\)/i })
       const instaLink = screen.getByRole('link', { name: /instagram/i })
       expect(xLink).toBeInTheDocument()
       expect(instaLink).toBeInTheDocument()
@@ -820,7 +821,7 @@ describe('ProfileDialog', () => {
       const platformSelect = screen.getByTestId('sns-platform-select-0')
       const options = platformSelect.querySelectorAll('option')
       const optionTexts = Array.from(options).map((opt) => opt.textContent)
-      expect(optionTexts).toContain('X')
+      expect(optionTexts).toContain('X (Twitter)')
       expect(optionTexts).toContain('Instagram')
       expect(optionTexts).toContain('YouTube')
       expect(optionTexts).toContain('TikTok')
@@ -838,7 +839,7 @@ describe('ProfileDialog', () => {
             username: 'testuser',
             profileImageUrl: null,
             snsLinks: [
-              { platform: 'instagram', url: 'https://instagram.com/testuser' },
+              { platform: PLATFORM_INSTAGRAM, url: 'https://instagram.com/testuser' },
             ],
           }),
         })
@@ -877,7 +878,7 @@ describe('ProfileDialog', () => {
 
       // プラットフォームがInstagramに選択されている
       const platformSelect = screen.getByTestId('sns-platform-select-0')
-      expect(platformSelect).toHaveValue('instagram')
+      expect(platformSelect).toHaveValue(String(PLATFORM_INSTAGRAM))
     })
 
     it('SNSリンクを保存するとAPIが呼び出される', async () => {
@@ -891,7 +892,7 @@ describe('ProfileDialog', () => {
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve({
-            snsLinks: [{ platform: 'twitter', url: 'https://x.com/newuser' }]
+            snsLinks: [{ platform: PLATFORM_TWITTER, url: 'https://x.com/newuser' }]
           })
         })
 
@@ -1020,7 +1021,7 @@ describe('ProfileDialog', () => {
         <ProfileDialog
           open={true}
           onClose={mockOnClose}
-          userProfile={{ ...mockUserProfile, snsLinks: [{ url: 'https://x.com/test', platform: 'twitter' }] }}
+          userProfile={{ ...mockUserProfile, snsLinks: [{ url: 'https://x.com/test', platform: PLATFORM_TWITTER }] }}
           isOwnProfile={true}
           onPhotoClick={mockOnPhotoClick}
         />
@@ -1658,8 +1659,8 @@ describe('ProfileDialog', () => {
             username: 'testuser',
             profileImageUrl: 'https://example.com/avatar.jpg',
             snsLinks: [
-              { platform: 'twitter', url: 'https://x.com/test' },
-              { platform: 'instagram', url: 'https://instagram.com/test' },
+              { platform: PLATFORM_TWITTER, url: 'https://x.com/test' },
+              { platform: PLATFORM_INSTAGRAM, url: 'https://instagram.com/test' },
             ],
           }),
         })
@@ -1679,7 +1680,7 @@ describe('ProfileDialog', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByRole('link', { name: /^X$/i })).toBeInTheDocument()
+        expect(screen.getByRole('link', { name: /X \(Twitter\)/i })).toBeInTheDocument()
         expect(screen.getByRole('link', { name: /instagram/i })).toBeInTheDocument()
       })
     })

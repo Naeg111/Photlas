@@ -13,6 +13,13 @@ import {
   PaginationPrevious,
 } from './ui/pagination'
 import { User, Flag } from 'lucide-react'
+import {
+  PLATFORM_TWITTER,
+  PLATFORM_INSTAGRAM,
+  PLATFORM_YOUTUBE,
+  PLATFORM_TIKTOK,
+  PLATFORM_LABELS,
+} from '../utils/codeConstants'
 import { toast } from 'sonner'
 import { useProfileEdit } from '../hooks/useProfileEdit'
 import { useAuth } from '../contexts/AuthContext'
@@ -47,7 +54,7 @@ const PHOTOS_PER_PAGE = 20
 interface SnsLink {
   id?: string
   url: string
-  platform?: string
+  platform?: number
 }
 
 interface UserProfile {
@@ -131,56 +138,58 @@ interface ProfileDialogProps {
 }
 
 /**
+ * SNSプラットフォームコードを解決する
+ * platformコードがある場合はそれを使い、なければURLから推定する
+ */
+const resolvePlatform = (link: { url: string; platform?: number }): number | null => {
+  if (link.platform) return link.platform
+  const url = link.url
+  if (url.includes('x.com') || url.includes('twitter.com')) return PLATFORM_TWITTER
+  if (url.includes('instagram.com')) return PLATFORM_INSTAGRAM
+  if (url.includes('tiktok.com')) return PLATFORM_TIKTOK
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return PLATFORM_YOUTUBE
+  return null
+}
+
+/** SNSアイコンSVGマッピング */
+const SNS_ICON_MAP: Record<number, React.ReactNode> = {
+  [PLATFORM_TWITTER]: (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  ),
+  [PLATFORM_INSTAGRAM]: (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+    </svg>
+  ),
+  [PLATFORM_TIKTOK]: (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.75a8.18 8.18 0 0 0 4.76 1.52V6.83a4.83 4.83 0 0 1-1-.14z" />
+    </svg>
+  ),
+  [PLATFORM_YOUTUBE]: (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+    </svg>
+  ),
+}
+
+/**
  * SNSアイコンを取得
  */
-const getSnsIcon = (url: string) => {
-  if (url.includes('x.com') || url.includes('twitter.com')) {
-    return (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-      </svg>
-    )
-  }
-  if (url.includes('instagram.com')) {
-    return (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-      </svg>
-    )
-  }
-  if (url.includes('tiktok.com')) {
-    return (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.75a8.18 8.18 0 0 0 4.76 1.52V6.83a4.83 4.83 0 0 1-1-.14z" />
-      </svg>
-    )
-  }
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    return (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-      </svg>
-    )
-  }
+const getSnsIcon = (link: { url: string; platform?: number }) => {
+  const platform = resolvePlatform(link)
+  if (platform !== null) return SNS_ICON_MAP[platform] ?? null
   return null
 }
 
 /**
  * SNSラベルを取得
  */
-const getSnsLabel = (url: string) => {
-  if (url.includes('x.com') || url.includes('twitter.com')) {
-    return 'X'
-  }
-  if (url.includes('instagram.com')) {
-    return 'Instagram'
-  }
-  if (url.includes('tiktok.com')) {
-    return 'TikTok'
-  }
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    return 'YouTube'
-  }
+const getSnsLabel = (link: { url: string; platform?: number }) => {
+  const platform = resolvePlatform(link)
+  if (platform !== null) return PLATFORM_LABELS[platform] ?? 'Link'
   return 'Link'
 }
 
@@ -356,7 +365,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isReportLoading, setIsReportLoading] = useState(false)
 
-  const handleProfileReport = useCallback(async (data: { reason: string; details?: string }) => {
+  const handleProfileReport = useCallback(async (data: { reason: number; details?: string }) => {
     setIsReportLoading(true)
     try {
       const response = await fetch(`/api/v1/users/${userProfile.userId}/report`, {
@@ -384,7 +393,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   }, [onPhotoClick])
 
   // SNSリンク保存ハンドラー（ダイアログから呼び出される）
-  const handleSaveSnsLinksFromDialog = useCallback(async (newLinks: Array<{ platform: string; url: string }>) => {
+  const handleSaveSnsLinksFromDialog = useCallback(async (newLinks: Array<{ platform: number; url: string }>) => {
     try {
       const response = await fetch('/api/v1/users/me/sns-links', {
         method: 'PUT',
@@ -594,14 +603,11 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             <div className="flex gap-4">
               {[...displaySnsLinks]
                 .sort((a, b) => {
-                  const patterns = [
-                    ['instagram'],
-                    ['x.com', 'twitter'],
-                    ['tiktok'],
-                    ['youtube', 'youtu.be'],
-                  ]
+                  const platformOrder = [PLATFORM_INSTAGRAM, PLATFORM_TWITTER, PLATFORM_TIKTOK, PLATFORM_YOUTUBE]
                   const getIdx = (link: typeof a) => {
-                    const idx = patterns.findIndex(ps => ps.some(p => link.url.includes(p)) || (link.platform && ps.includes(link.platform)))
+                    const platform = resolvePlatform(link)
+                    if (platform === null) return 99
+                    const idx = platformOrder.indexOf(platform)
                     return idx === -1 ? 99 : idx
                   }
                   return getIdx(a) - getIdx(b)
@@ -612,10 +618,10 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={getSnsLabel(link.url)}
+                  aria-label={getSnsLabel(link)}
                   className="text-gray-600 hover:text-gray-900 transition-colors"
                 >
-                  {getSnsIcon(link.url)}
+                  {getSnsIcon(link)}
                 </a>
               ))}
             </div>
