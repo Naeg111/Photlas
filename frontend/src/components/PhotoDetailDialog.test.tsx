@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import PhotoDetailDialog from './PhotoDetailDialog'
+import { MODERATION_STATUS_QUARANTINED, MODERATION_STATUS_PENDING_REVIEW, MODERATION_STATUS_PUBLISHED } from '../utils/codeConstants'
 
 // Mapbox GL JS (react-map-gl) のモック
 const { MapMock } = vi.hoisted(() => {
@@ -1123,7 +1124,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       mockUseAuth.mockReturnValue({ isAuthenticated: true, userId: TEST_USER_ID })
 
       const photoDetail = createMockApiResponse({
-        moderationStatus: 'QUARANTINED',
+        moderationStatus: MODERATION_STATUS_QUARANTINED,
       })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
@@ -1150,7 +1151,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       mockUseAuth.mockReturnValue({ isAuthenticated: true, userId: TEST_USER_ID })
 
       const photoDetail = createMockApiResponse({
-        moderationStatus: 'PENDING_REVIEW',
+        moderationStatus: MODERATION_STATUS_PENDING_REVIEW,
       })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
@@ -1177,7 +1178,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       mockUseAuth.mockReturnValue({ isAuthenticated: true, userId: TEST_USER_ID })
 
       const photoDetail = createMockApiResponse({
-        moderationStatus: 'PUBLISHED',
+        moderationStatus: MODERATION_STATUS_PUBLISHED,
       })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 

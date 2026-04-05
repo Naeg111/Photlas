@@ -1,9 +1,17 @@
 /**
  * フィルター条件の変換ユーティリティ
  * Issue#16: フィルター機能 - UI表示値からAPI値への変換
+ * Issue#87: 数値コード対応
  *
- * FilterPanelで選択された日本語の値をバックエンドAPIが期待する形式に変換する
+ * FilterPanelで選択された日本語の値をバックエンドAPIが期待する数値コードに変換する
  */
+
+import {
+  TIME_OF_DAY_MORNING, TIME_OF_DAY_DAY, TIME_OF_DAY_EVENING, TIME_OF_DAY_NIGHT,
+  WEATHER_SUNNY, WEATHER_CLOUDY, WEATHER_RAIN, WEATHER_SNOW,
+  DEVICE_TYPE_SLR, DEVICE_TYPE_MIRRORLESS, DEVICE_TYPE_COMPACT,
+  DEVICE_TYPE_SMARTPHONE, DEVICE_TYPE_FILM, DEVICE_TYPE_OTHER,
+} from './codeConstants'
 
 /**
  * 月の変換: "1月" → 1, "2月" → 2, ..., "12月" → 12
@@ -19,15 +27,15 @@ export function transformMonths(months: string[]): number[] {
 }
 
 /**
- * 時間帯の変換
- * "朝" → "MORNING", "昼" → "DAY", "夕方" → "EVENING", "夜" → "NIGHT"
+ * 時間帯の変換（数値コード）
+ * "朝" → 301, "昼" → 302, "夕方" → 303, "夜" → 304
  */
-export function transformTimesOfDay(timesOfDay: string[]): string[] {
-  const mapping: Record<string, string> = {
-    '朝': 'MORNING',
-    '昼': 'DAY',
-    '夕方': 'EVENING',
-    '夜': 'NIGHT'
+export function transformTimesOfDay(timesOfDay: string[]): number[] {
+  const mapping: Record<string, number> = {
+    '朝': TIME_OF_DAY_MORNING,
+    '昼': TIME_OF_DAY_DAY,
+    '夕方': TIME_OF_DAY_EVENING,
+    '夜': TIME_OF_DAY_NIGHT,
   };
 
   return timesOfDay
@@ -36,20 +44,38 @@ export function transformTimesOfDay(timesOfDay: string[]): string[] {
 }
 
 /**
- * 天候の変換
- * "晴れ" → "Sunny", "曇り" → "Cloudy", "雨" → "Rain", "雪" → "Snow"
+ * 天候の変換（数値コード）
+ * "晴れ" → 401, "曇り" → 402, "雨" → 403, "雪" → 404
  */
-export function transformWeathers(weathers: string[]): string[] {
-  const mapping: Record<string, string> = {
-    '晴れ': 'Sunny',
-    '曇り': 'Cloudy',
-    '雨': 'Rain',
-    '雪': 'Snow'
+export function transformWeathers(weathers: string[]): number[] {
+  const mapping: Record<string, number> = {
+    '晴れ': WEATHER_SUNNY,
+    '曇り': WEATHER_CLOUDY,
+    '雨': WEATHER_RAIN,
+    '雪': WEATHER_SNOW,
   };
 
   return weathers
     .map(weather => mapping[weather])
     .filter(weather => weather !== undefined);
+}
+
+/**
+ * 機材種別の変換（数値コード）
+ */
+export function transformDeviceTypes(deviceTypes: string[]): number[] {
+  const mapping: Record<string, number> = {
+    '一眼レフ': DEVICE_TYPE_SLR,
+    'ミラーレス': DEVICE_TYPE_MIRRORLESS,
+    'コンパクト': DEVICE_TYPE_COMPACT,
+    'スマートフォン': DEVICE_TYPE_SMARTPHONE,
+    'フィルム': DEVICE_TYPE_FILM,
+    'その他': DEVICE_TYPE_OTHER,
+  };
+
+  return deviceTypes
+    .map(dt => mapping[dt])
+    .filter(dt => dt !== undefined);
 }
 
 /**
@@ -78,7 +104,7 @@ export function transformCategories(categories: string[]): string[] {
     '鉄道': '鉄道',
     '飛行機': '飛行機',
     '星空': '星空',
-    'その他': 'その他'
+    'その他': 'その他',
   };
 
   return categories

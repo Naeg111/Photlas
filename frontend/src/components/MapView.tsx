@@ -39,13 +39,13 @@ interface SpotResponse {
   photoCount: number
 }
 
-// フィルター条件の型定義（Issue#16, Issue#46）
+// フィルター条件の型定義（Issue#16, Issue#46, Issue#87）
 export interface MapViewFilterParams {
   subject_categories?: number[]
   months?: number[]
-  times_of_day?: string[]
-  weathers?: string[]
-  device_types?: string[]
+  times_of_day?: number[]
+  weathers?: number[]
+  device_types?: number[]
   max_age_days?: number
   aspect_ratios?: string[]
   focal_length_ranges?: string[]

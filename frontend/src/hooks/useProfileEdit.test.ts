@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useProfileEdit } from './useProfileEdit'
+import { PLATFORM_TWITTER, PLATFORM_INSTAGRAM } from '../utils/codeConstants'
 
 // AuthContextのモック
 const mockGetAuthToken = vi.fn(() => 'test-token')
@@ -21,7 +22,7 @@ globalThis.fetch = mockFetch
 describe('useProfileEdit', () => {
   const defaultProps = {
     initialUsername: 'testuser',
-    snsLinks: [] as { url: string; platform?: string }[],
+    snsLinks: [] as { url: string; platform?: number }[],
     onUsernameUpdated: vi.fn(),
     onImageUpdated: vi.fn(),
     onSnsLinksUpdated: vi.fn(),
@@ -346,7 +347,7 @@ describe('useProfileEdit', () => {
   describe('SNSリンク', () => {
     it('handleStartEditSnsLinksで既存のリンクから初期化される', () => {
       const existingLinks = [
-        { platform: 'twitter', url: 'https://twitter.com/test' },
+        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
       ]
       const { result } = renderHook(() =>
         useProfileEdit({ ...defaultProps, snsLinks: existingLinks })
@@ -358,7 +359,7 @@ describe('useProfileEdit', () => {
 
       expect(result.current.isEditingSnsLinks).toBe(true)
       expect(result.current.editingSnsLinks).toEqual([
-        expect.objectContaining({ platform: 'twitter', url: 'https://twitter.com/test' }),
+        expect.objectContaining({ platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' }),
       ])
     })
 
@@ -372,7 +373,7 @@ describe('useProfileEdit', () => {
       })
 
       expect(result.current.editingSnsLinks).toEqual([
-        expect.objectContaining({ platform: 'twitter', url: '' }),
+        expect.objectContaining({ platform: PLATFORM_TWITTER, url: '' }),
       ])
     })
 
@@ -407,8 +408,8 @@ describe('useProfileEdit', () => {
 
     it('handleRemoveSnsLinkで指定インデックスのエントリが削除される', () => {
       const existingLinks = [
-        { platform: 'twitter', url: 'https://twitter.com/test' },
-        { platform: 'instagram', url: 'https://instagram.com/test' },
+        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
+        { platform: PLATFORM_INSTAGRAM, url: 'https://instagram.com/test' },
       ]
       const { result } = renderHook(() =>
         useProfileEdit({ ...defaultProps, snsLinks: existingLinks })
@@ -424,12 +425,12 @@ describe('useProfileEdit', () => {
       })
 
       expect(result.current.editingSnsLinks).toHaveLength(1)
-      expect(result.current.editingSnsLinks[0].platform).toBe('instagram')
+      expect(result.current.editingSnsLinks[0].platform).toBe(PLATFORM_INSTAGRAM)
     })
 
     it('handleUpdateSnsLinkで指定インデックスのフィールドが更新される', () => {
       const existingLinks = [
-        { platform: 'twitter', url: 'https://twitter.com/test' },
+        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
       ]
       const { result } = renderHook(() =>
         useProfileEdit({ ...defaultProps, snsLinks: existingLinks })
@@ -448,18 +449,18 @@ describe('useProfileEdit', () => {
       )
 
       act(() => {
-        result.current.handleUpdateSnsLink(0, 'platform', 'instagram')
+        result.current.handleUpdateSnsLink(0, 'platform', PLATFORM_INSTAGRAM)
       })
 
-      expect(result.current.editingSnsLinks[0].platform).toBe('instagram')
+      expect(result.current.editingSnsLinks[0].platform).toBe(PLATFORM_INSTAGRAM)
     })
 
     it('handleSaveSnsLinksでURLが空でないリンクのみPUTリクエストが送信される', async () => {
       mockFetch.mockResolvedValueOnce({ ok: true })
       const onSnsLinksUpdated = vi.fn()
       const existingLinks = [
-        { platform: 'twitter', url: 'https://twitter.com/test' },
-        { platform: 'instagram', url: '' },
+        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
+        { platform: PLATFORM_INSTAGRAM, url: '' },
       ]
       const { result } = renderHook(() =>
         useProfileEdit({
@@ -484,17 +485,17 @@ describe('useProfileEdit', () => {
           Authorization: 'Bearer test-token',
         },
         body: JSON.stringify({
-          snsLinks: [{ platform: 'twitter', url: 'https://twitter.com/test' }],
+          snsLinks: [{ platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' }],
         }),
       })
       expect(onSnsLinksUpdated).toHaveBeenCalledWith([
-        { platform: 'twitter', url: 'https://twitter.com/test' },
+        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
       ])
     })
 
     it('handleCancelEditSnsLinksで編集状態がリセットされる', () => {
       const existingLinks = [
-        { platform: 'twitter', url: 'https://twitter.com/test' },
+        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
       ]
       const { result } = renderHook(() =>
         useProfileEdit({ ...defaultProps, snsLinks: existingLinks })
@@ -525,7 +526,7 @@ describe('useProfileEdit', () => {
       const onUsernameUpdated = vi.fn()
       const onSnsLinksUpdated = vi.fn()
       const existingLinks = [
-        { platform: 'twitter', url: 'https://twitter.com/test' },
+        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
       ]
       const { result } = renderHook(() =>
         useProfileEdit({
@@ -571,7 +572,7 @@ describe('useProfileEdit', () => {
 
     it('handleCancelAllChangesで全ての編集状態がリセットされる', () => {
       const existingLinks = [
-        { platform: 'twitter', url: 'https://twitter.com/test' },
+        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
       ]
       const { result } = renderHook(() =>
         useProfileEdit({

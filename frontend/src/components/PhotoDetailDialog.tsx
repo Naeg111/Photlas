@@ -28,6 +28,12 @@ import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
 import { Checkbox } from './ui/checkbox'
 import { CategoryIcon } from './CategoryIcon'
 import { PHOTO_CATEGORIES } from '../utils/constants'
+import {
+  WEATHER_LABELS as CODE_WEATHER_LABELS,
+  WEATHER_OPTIONS,
+  MODERATION_STATUS_QUARANTINED,
+  MODERATION_STATUS_PENDING_REVIEW,
+} from '../utils/codeConstants'
 
 // API Endpoints
 const API_SPOTS_PHOTOS = `${API_V1_URL}/spots`
@@ -55,21 +61,7 @@ const SR_DESCRIPTION = '写真の詳細情報と撮影コンテクスト'
 const MSG_LOCATION_SUGGESTION_SUCCESS = '指摘を送信しました'
 const MSG_LOCATION_SUGGESTION_ERROR = '指摘の送信に失敗しました'
 
-// Weather labels（DB値は日本語・英語どちらもありうるため両方対応）
-const WEATHER_LABELS: Record<string, string> = {
-  Sunny: '晴れ',
-  Cloudy: '曇り',
-  Rain: '雨',
-  Snow: '雪',
-  sunny: '晴れ',
-  cloudy: '曇り',
-  rainy: '雨',
-  snowy: '雪',
-  晴れ: '晴れ',
-  曇り: '曇り',
-  雨: '雨',
-  雪: '雪',
-}
+// Issue#87: 天気ラベルは codeConstants から取得
 
 // Error messages
 const ERROR_LOAD_FAILED = '読み込みに失敗しました'
@@ -102,7 +94,7 @@ interface PhotoApiResponse {
     place_name?: string | null
     image_url: string
     shot_at: string
-    weather?: string
+    weather?: number | null
     is_favorited?: boolean
     favorite_count?: number
     latitude?: number | null
@@ -120,7 +112,7 @@ interface PhotoApiResponse {
     crop_center_x?: number | null
     crop_center_y?: number | null
     crop_zoom?: number | null
-    moderation_status?: string | null
+    moderation_status?: number | null
     categories?: string[]
   }
   spot: {
@@ -152,7 +144,7 @@ interface PhotoDetail {
   placeName?: string | null
   imageUrl: string
   shotAt: string
-  weather?: string
+  weather?: number | null
   isFavorited?: boolean
   favoriteCount?: number
   latitude?: number | null
@@ -161,7 +153,7 @@ interface PhotoDetail {
   cropCenterX?: number | null
   cropCenterY?: number | null
   cropZoom?: number | null
-  moderationStatus?: string | null
+  moderationStatus?: number | null
   categories?: string[]
   user: {
     userId: number
@@ -422,7 +414,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
   // Issue#61: 写真メタデータ編集状態管理
   const [isEditing, setIsEditing] = useState(false)
-  const [editWeather, setEditWeather] = useState('')
+  const [editWeather, setEditWeather] = useState<number | ''>('')
   const [editPlaceName, setEditPlaceName] = useState('')
   const [editCategories, setEditCategories] = useState<string[]>([])
   const [isSaving, setIsSaving] = useState(false)
@@ -669,7 +661,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   }, [currentPhotoId, isFavorited, favoriteCount, isFavoriteLoading])
 
   // Issue#54: 通報送信処理
-  const handleReport = useCallback(async (data: { reason: string; details?: string }) => {
+  const handleReport = useCallback(async (data: { reason: number; details?: string }) => {
     if (!currentPhotoId) return
 
     setIsReportLoading(true)
@@ -780,7 +772,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   // Issue#61: 編集モード開始
   const handleStartEdit = useCallback(() => {
     if (!currentPhoto) return
-    setEditWeather(currentPhoto.weather || '')
+    setEditWeather(currentPhoto.weather ?? '')
     setEditPlaceName(currentPhoto.placeName || '')
     setEditCategories(currentPhoto.categories || [])
     setIsEditing(true)
@@ -867,7 +859,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          weather: editWeather || null,
+          weather: editWeather !== '' ? editWeather : null,
           placeName: editPlaceName || null,
           categories: editCategories.length > 0 ? editCategories : null,
         }),
@@ -1077,14 +1069,13 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                           id="edit-weather"
                           data-testid="edit-weather-select"
                           value={editWeather}
-                          onChange={(e) => setEditWeather(e.target.value)}
+                          onChange={(e) => setEditWeather(e.target.value ? Number(e.target.value) : '')}
                           className="w-full border rounded-md px-3 py-2 text-sm"
                         >
                           <option value="">未設定</option>
-                          <option value="晴れ">晴れ</option>
-                          <option value="曇り">曇り</option>
-                          <option value="雨">雨</option>
-                          <option value="雪">雪</option>
+                          {WEATHER_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
                         </select>
                       </div>
 
@@ -1145,7 +1136,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                   )}
 
                   {/* Issue#54: モデレーションステータスバナー */}
-                  {displayedPhoto.moderationStatus === 'QUARANTINED' && (
+                  {displayedPhoto.moderationStatus === MODERATION_STATUS_QUARANTINED && (
                     <div
                       className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700"
                       data-testid="quarantined-banner"
@@ -1153,7 +1144,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       この投稿はコンテンツポリシーに違反している可能性があるため、現在非公開です。
                     </div>
                   )}
-                  {displayedPhoto.moderationStatus === 'PENDING_REVIEW' && (
+                  {displayedPhoto.moderationStatus === MODERATION_STATUS_PENDING_REVIEW && (
                     <div
                       className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700"
                       data-testid="pending-review-banner"
@@ -1211,9 +1202,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     )}
 
                     {/* 天気情報 */}
-                    {displayedPhoto.weather && (
+                    {displayedPhoto.weather != null && (
                       <div className="text-sm text-gray-600">
-                        天気: {WEATHER_LABELS[displayedPhoto.weather] ?? displayedPhoto.weather}
+                        天気: {CODE_WEATHER_LABELS[displayedPhoto.weather] ?? displayedPhoto.weather}
                       </div>
                     )}
 

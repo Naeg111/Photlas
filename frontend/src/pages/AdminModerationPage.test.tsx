@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import AdminModerationPage from './AdminModerationPage'
+import { ROLE_ADMIN, REASON_ADULT_CONTENT, REASON_VIOLENCE } from '../utils/codeConstants'
 
 /**
  * Issue#54: 管理者モデレーションページのテスト
@@ -38,7 +39,7 @@ const MOCK_QUEUE_ITEMS = [
     username: 'testuser1',
     created_at: '2026-03-10T12:00:00',
     report_count: 2,
-    report_reasons: ['ADULT_CONTENT', 'VIOLENCE'],
+    report_reasons: [REASON_ADULT_CONTENT, REASON_VIOLENCE],
   },
   {
     photo_id: 2,
@@ -93,7 +94,7 @@ describe('AdminModerationPage', () => {
 
   it('管理者ユーザーにはモデレーションキューが表示される', async () => {
     mockUseAuth.mockReturnValue({
-      user: { userId: 1, role: 'ADMIN' },
+      user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
     })
 
@@ -118,7 +119,7 @@ describe('AdminModerationPage', () => {
 
   it('画像をクリックするとぼかしが解除される', async () => {
     mockUseAuth.mockReturnValue({
-      user: { userId: 1, role: 'ADMIN' },
+      user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
     })
 
@@ -148,7 +149,7 @@ describe('AdminModerationPage', () => {
 
   it('審査待ちの写真がない場合はメッセージが表示される', async () => {
     mockUseAuth.mockReturnValue({
-      user: { userId: 1, role: 'ADMIN' },
+      user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
     })
 
@@ -170,7 +171,7 @@ describe('AdminModerationPage', () => {
 
   it('Issue#54 - 通報件数と通報理由が表示される', async () => {
     mockUseAuth.mockReturnValue({
-      user: { userId: 1, role: 'ADMIN' },
+      user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
     })
 
@@ -199,7 +200,7 @@ describe('AdminModerationPage', () => {
 
   it('承認ボタンをクリックすると写真が承認される', async () => {
     mockUseAuth.mockReturnValue({
-      user: { userId: 1, role: 'ADMIN' },
+      user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
     })
 
@@ -235,7 +236,7 @@ describe('AdminModerationPage', () => {
 
   it('拒否ボタンをクリックすると写真が拒否される', async () => {
     mockUseAuth.mockReturnValue({
-      user: { userId: 1, role: 'ADMIN' },
+      user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
     })
 

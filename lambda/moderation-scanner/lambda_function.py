@@ -41,9 +41,9 @@ EXCLUDED_LABELS = set(
 rekognition_client = boto3.client("rekognition")
 s3_client = boto3.client("s3")
 
-# モデレーションステータス
-STATUS_PUBLISHED = "PUBLISHED"
-STATUS_QUARANTINED = "QUARANTINED"
+# モデレーションステータス（Issue#87: 数値コード）
+STATUS_PUBLISHED = 1002
+STATUS_QUARANTINED = 1003
 
 # Issue#84: CSAM関連のRekognitionラベル（v7対応）
 CSAM_LABELS = {

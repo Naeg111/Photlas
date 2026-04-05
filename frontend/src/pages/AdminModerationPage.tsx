@@ -7,21 +7,12 @@ import { Button } from '../components/ui/button'
 import { ArrowLeft, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Toaster } from '../components/ui/sonner'
+import { REPORT_REASON_LABELS, ROLE_ADMIN } from '../utils/codeConstants'
 
 /**
  * Issue#54: 管理者モデレーションページ
  * 隔離キューの写真を承認・拒否する管理画面
  */
-
-// Issue#54: 通報理由の日本語マッピング
-const REPORT_REASON_LABELS: Record<string, string> = {
-  ADULT_CONTENT: '成人向けコンテンツ',
-  VIOLENCE: '暴力的なコンテンツ',
-  COPYRIGHT_INFRINGEMENT: '著作権侵害',
-  PRIVACY_VIOLATION: 'プライバシー侵害',
-  SPAM: 'スパム',
-  OTHER: 'その他',
-}
 
 interface ModerationQueueItem {
   photo_id: number
@@ -30,7 +21,7 @@ interface ModerationQueueItem {
   username: string
   created_at: string | null
   report_count: number
-  report_reasons: string[]
+  report_reasons: number[]
 }
 
 interface ModerationQueueResponse {
@@ -51,7 +42,7 @@ export default function AdminModerationPage() {
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set())
   const [revealedIds, setRevealedIds] = useState<Set<number>>(new Set())
 
-  const isAdmin = user?.role === 'ADMIN'
+  const isAdmin = user?.role === ROLE_ADMIN
 
   const fetchQueue = useCallback(async () => {
     setIsLoading(true)

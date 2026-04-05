@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import AdminDeletedUserDetailPage from './AdminDeletedUserDetailPage'
+import { ROLE_ADMIN } from '../utils/codeConstants'
 
 const mockFetch = vi.fn()
 const originalFetch = global.fetch
@@ -22,7 +23,7 @@ vi.mock('react-router-dom', async () => {
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
     getAuthToken: () => 'test-admin-token',
-    user: { role: 'ADMIN' },
+    user: { role: ROLE_ADMIN },
   }),
 }))
 

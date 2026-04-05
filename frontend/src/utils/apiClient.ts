@@ -163,8 +163,8 @@ export interface CreatePhotoRequest {
   latitude: number
   longitude: number
   categories: string[]
-  weather?: string
-  deviceType?: string
+  weather?: number
+  deviceType?: number
   cameraBody?: string
   cameraLens?: string
   focalLength35mm?: number

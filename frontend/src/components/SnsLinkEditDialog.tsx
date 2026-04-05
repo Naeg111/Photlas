@@ -3,27 +3,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { XIcon } from 'lucide-react'
-
-const SNS_PLATFORMS = [
-  { label: 'Instagram', value: 'instagram' },
-  { label: 'X', value: 'twitter' },
-  { label: 'TikTok', value: 'tiktok' },
-  { label: 'YouTube', value: 'youtube' },
-]
+import { PLATFORM_OPTIONS, PLATFORM_TWITTER } from '../utils/codeConstants'
 
 const MAX_SNS_LINKS = 4
 
 interface SnsLinkInput {
   id: string
-  platform: string
+  platform: number
   url: string
 }
 
 interface SnsLinkEditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  initialLinks: Array<{ platform?: string; url: string }>
-  onSave: (links: Array<{ platform: string; url: string }>) => void
+  initialLinks: Array<{ platform?: number; url: string }>
+  onSave: (links: Array<{ platform: number; url: string }>) => void
 }
 
 let snsLinkIdCounter = 0
@@ -35,8 +29,8 @@ function generateId(): string {
 export function SnsLinkEditDialog({ open, onOpenChange, initialLinks, onSave }: Readonly<SnsLinkEditDialogProps>) {
   const [links, setLinks] = useState<SnsLinkInput[]>(() =>
     initialLinks.length > 0
-      ? initialLinks.map(l => ({ id: generateId(), platform: l.platform || 'twitter', url: l.url }))
-      : [{ id: generateId(), platform: 'twitter', url: '' }]
+      ? initialLinks.map(l => ({ id: generateId(), platform: l.platform || PLATFORM_TWITTER, url: l.url }))
+      : [{ id: generateId(), platform: PLATFORM_TWITTER, url: '' }]
   )
 
   // ダイアログが開かれたときにinitialLinksで状態をリセット
@@ -44,15 +38,15 @@ export function SnsLinkEditDialog({ open, onOpenChange, initialLinks, onSave }: 
     if (open) {
       setLinks(
         initialLinks.length > 0
-          ? initialLinks.map(l => ({ id: generateId(), platform: l.platform || 'twitter', url: l.url }))
-          : [{ id: generateId(), platform: 'twitter', url: '' }]
+          ? initialLinks.map(l => ({ id: generateId(), platform: l.platform || PLATFORM_TWITTER, url: l.url }))
+          : [{ id: generateId(), platform: PLATFORM_TWITTER, url: '' }]
       )
     }
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAdd = () => {
     if (links.length < MAX_SNS_LINKS) {
-      setLinks([...links, { id: generateId(), platform: 'twitter', url: '' }])
+      setLinks([...links, { id: generateId(), platform: PLATFORM_TWITTER, url: '' }])
     }
   }
 
@@ -60,7 +54,7 @@ export function SnsLinkEditDialog({ open, onOpenChange, initialLinks, onSave }: 
     setLinks(links.filter((_, i) => i !== index))
   }
 
-  const handleUpdate = (index: number, field: 'platform' | 'url', value: string) => {
+  const handleUpdate = (index: number, field: 'platform' | 'url', value: string | number) => {
     const updated = [...links]
     updated[index] = { ...updated[index], [field]: value }
     setLinks(updated)
@@ -92,9 +86,9 @@ export function SnsLinkEditDialog({ open, onOpenChange, initialLinks, onSave }: 
                 data-testid={`sns-platform-select-${index}`}
                 className="w-32 border rounded-md px-3 py-2"
                 value={link.platform}
-                onChange={(e) => handleUpdate(index, 'platform', e.target.value)}
+                onChange={(e) => handleUpdate(index, 'platform', Number(e.target.value))}
               >
-                {SNS_PLATFORMS.map(p => (
+                {PLATFORM_OPTIONS.map(p => (
                   <option key={p.value} value={p.value}>{p.label}</option>
                 ))}
               </select>
