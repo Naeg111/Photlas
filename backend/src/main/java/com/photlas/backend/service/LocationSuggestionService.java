@@ -133,6 +133,8 @@ public class LocationSuggestionService {
 
         Spot newSpot = findOrCreateSpot(suggestion.getSuggestedLatitude(), suggestion.getSuggestedLongitude());
         photo.setSpotId(newSpot.getSpotId());
+        photo.setLatitude(suggestion.getSuggestedLatitude());
+        photo.setLongitude(suggestion.getSuggestedLongitude());
         photoRepository.save(photo);
 
         resolveSuggestion(suggestion, CodeConstants.SUGGESTION_STATUS_ACCEPTED);
