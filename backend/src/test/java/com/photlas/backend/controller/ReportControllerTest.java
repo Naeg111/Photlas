@@ -223,7 +223,7 @@ public class ReportControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath(JSON_PATH_REPORTING_USER_ID).value(testUser.getId()))
                 .andExpect(jsonPath(JSON_PATH_PHOTO_ID).value(testPhoto.getPhotoId()))
-                .andExpect(jsonPath(JSON_PATH_REASON).value(REASON_ADULT_CONTENT))
+                .andExpect(jsonPath(JSON_PATH_REASON).value("ADULT_CONTENT"))
                 .andExpect(jsonPath(JSON_PATH_DETAILS).value(DETAILS_ADULT_CONTENT));
     }
 

@@ -95,7 +95,7 @@ public class AdminModerationService {
         violation.setUserId(userId);
         violation.setTargetType(CodeConstants.TARGET_TYPE_PHOTO);
         violation.setTargetId(photoId);
-        violation.setViolationType(mapReasonToCode(reason));
+        violation.setViolationType(CodeConstants.REASON_OTHER);
         violation.setActionTaken(CodeConstants.ACTION_TAKEN_REMOVED);
         violationRepository.save(violation);
 
@@ -192,21 +192,4 @@ public class AdminModerationService {
         return violationRepository.countByUserId(userId);
     }
 
-    /**
-     * 違反理由文字列を数値コードに変換する
-     *
-     * @param reason 違反理由文字列（例: "ADULT_CONTENT"）
-     * @return 対応する数値コード
-     */
-    private int mapReasonToCode(String reason) {
-        return switch (reason) {
-            case "ADULT_CONTENT" -> CodeConstants.REASON_ADULT_CONTENT;
-            case "VIOLENCE" -> CodeConstants.REASON_VIOLENCE;
-            case "COPYRIGHT_INFRINGEMENT" -> CodeConstants.REASON_COPYRIGHT_INFRINGEMENT;
-            case "PRIVACY_VIOLATION" -> CodeConstants.REASON_PRIVACY_VIOLATION;
-            case "SPAM" -> CodeConstants.REASON_SPAM;
-            case "OTHER" -> CodeConstants.REASON_OTHER;
-            default -> throw new IllegalArgumentException("不明な違反理由: " + reason);
-        };
-    }
 }

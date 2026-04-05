@@ -135,7 +135,7 @@ public class UserServiceTest {
 
         verify(userSnsLinkRepository).deleteByUserId(1L);
         verify(userSnsLinkRepository).save(argThat(link ->
-                "twitter".equals(link.getPlatform()) && "https://x.com/testuser".equals(link.getUrl())
+                Integer.valueOf(CodeConstants.PLATFORM_TWITTER).equals(link.getPlatform()) && "https://x.com/testuser".equals(link.getUrl())
         ));
     }
 
@@ -153,7 +153,7 @@ public class UserServiceTest {
 
         verify(userSnsLinkRepository).deleteByUserId(1L);
         verify(userSnsLinkRepository).save(argThat(link ->
-                "twitter".equals(link.getPlatform()) && "https://twitter.com/testuser".equals(link.getUrl())
+                Integer.valueOf(CodeConstants.PLATFORM_TWITTER).equals(link.getPlatform()) && "https://twitter.com/testuser".equals(link.getUrl())
         ));
     }
 

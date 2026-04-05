@@ -805,8 +805,8 @@ public class UserControllerTest {
     @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - SNSリンク保存成功")
     void testUpdateSnsLinks_ValidRequest_ReturnsOk() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
-                "{\"platform\":\"twitter\",\"url\":\"https://x.com/testuser\"}," +
-                "{\"platform\":\"instagram\",\"url\":\"https://instagram.com/testuser\"}" +
+                "{\"platform\":" + CodeConstants.PLATFORM_TWITTER + ",\"url\":\"https://x.com/testuser\"}," +
+                "{\"platform\":" + CodeConstants.PLATFORM_INSTAGRAM + ",\"url\":\"https://instagram.com/testuser\"}" +
                 "]}";
 
         mockMvc.perform(put(SNS_LINKS_ENDPOINT)
@@ -822,10 +822,10 @@ public class UserControllerTest {
     @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - 4種類のSNSを登録可能")
     void testUpdateSnsLinks_AllPlatforms_ReturnsOk() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
-                "{\"platform\":\"twitter\",\"url\":\"https://x.com/testuser\"}," +
-                "{\"platform\":\"instagram\",\"url\":\"https://instagram.com/testuser\"}," +
-                "{\"platform\":\"youtube\",\"url\":\"https://youtube.com/@testuser\"}," +
-                "{\"platform\":\"tiktok\",\"url\":\"https://tiktok.com/@testuser\"}" +
+                "{\"platform\":" + CodeConstants.PLATFORM_TWITTER + ",\"url\":\"https://x.com/testuser\"}," +
+                "{\"platform\":" + CodeConstants.PLATFORM_INSTAGRAM + ",\"url\":\"https://instagram.com/testuser\"}," +
+                "{\"platform\":" + CodeConstants.PLATFORM_YOUTUBE + ",\"url\":\"https://youtube.com/@testuser\"}," +
+                "{\"platform\":" + CodeConstants.PLATFORM_TIKTOK + ",\"url\":\"https://tiktok.com/@testuser\"}" +
                 "]}";
 
         mockMvc.perform(put(SNS_LINKS_ENDPOINT)
@@ -841,7 +841,7 @@ public class UserControllerTest {
     @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - 未対応プラットフォームの場合は400を返す")
     void testUpdateSnsLinks_InvalidPlatform_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
-                "{\"platform\":\"facebook\",\"url\":\"https://facebook.com/testuser\"}" +
+                "{\"platform\":999,\"url\":\"https://facebook.com/testuser\"}" +
                 "]}";
 
         mockMvc.perform(put(SNS_LINKS_ENDPOINT)
@@ -856,7 +856,7 @@ public class UserControllerTest {
     @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - URLがプラットフォームと不一致の場合は400を返す")
     void testUpdateSnsLinks_UrlMismatch_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
-                "{\"platform\":\"twitter\",\"url\":\"https://instagram.com/testuser\"}" +
+                "{\"platform\":" + CodeConstants.PLATFORM_TWITTER + ",\"url\":\"https://instagram.com/testuser\"}" +
                 "]}";
 
         mockMvc.perform(put(SNS_LINKS_ENDPOINT)

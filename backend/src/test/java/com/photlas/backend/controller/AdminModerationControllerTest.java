@@ -307,7 +307,7 @@ public class AdminModerationControllerTest {
                 .andExpect(jsonPath("$.content[0].report_count").value(2))
                 .andExpect(jsonPath("$.content[0].report_reasons", hasSize(2)))
                 .andExpect(jsonPath("$.content[0].report_reasons",
-                        containsInAnyOrder("ADULT_CONTENT", "VIOLENCE")));
+                        containsInAnyOrder(CodeConstants.REASON_ADULT_CONTENT, CodeConstants.REASON_VIOLENCE)));
     }
 
     @Test
