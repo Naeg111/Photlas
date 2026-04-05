@@ -20,9 +20,8 @@ public class UserSnsLink {
     @NotNull
     private Long userId;
 
-    @Column(length = 20)
-    @Size(max = 20)
-    private String platform;
+    @Column
+    private Integer platform;
 
     @Column(nullable = false, length = 2048)
     @NotNull
@@ -36,7 +35,7 @@ public class UserSnsLink {
         this.url = url;
     }
 
-    public UserSnsLink(Long userId, String platform, String url) {
+    public UserSnsLink(Long userId, Integer platform, String url) {
         this.userId = userId;
         this.platform = platform;
         this.url = url;
@@ -59,11 +58,11 @@ public class UserSnsLink {
         this.userId = userId;
     }
 
-    public String getPlatform() {
+    public Integer getPlatform() {
         return platform;
     }
 
-    public void setPlatform(String platform) {
+    public void setPlatform(Integer platform) {
         this.platform = platform;
     }
 

@@ -1,7 +1,6 @@
 package com.photlas.backend.repository;
 
 import com.photlas.backend.entity.Report;
-import com.photlas.backend.entity.ReportTargetType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -17,20 +16,20 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
      * 通報ユーザーID・対象種別・対象IDで通報を検索（重複チェック用）
      */
     Optional<Report> findByReporterUserIdAndTargetTypeAndTargetId(
-            Long reporterUserId, ReportTargetType targetType, Long targetId);
+            Long reporterUserId, Integer targetType, Long targetId);
 
     /**
      * 対象種別・対象IDで通報件数をカウント
      */
-    long countByTargetTypeAndTargetId(ReportTargetType targetType, Long targetId);
+    long countByTargetTypeAndTargetId(Integer targetType, Long targetId);
 
     /**
      * Issue#54: 対象種別・対象IDで通報を検索
      */
-    java.util.List<Report> findByTargetTypeAndTargetId(ReportTargetType targetType, Long targetId);
+    java.util.List<Report> findByTargetTypeAndTargetId(Integer targetType, Long targetId);
 
     /**
      * Issue#57: 対象種別・対象IDで通報を全て削除する
      */
-    void deleteByTargetTypeAndTargetId(ReportTargetType targetType, Long targetId);
+    void deleteByTargetTypeAndTargetId(Integer targetType, Long targetId);
 }

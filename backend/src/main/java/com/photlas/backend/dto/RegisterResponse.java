@@ -35,7 +35,7 @@ public class RegisterResponse {
         private Long id;
         private String username;
         private String email;
-        private String role;
+        private Integer role;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -75,11 +75,11 @@ public class RegisterResponse {
             this.email = email;
         }
 
-        public String getRole() {
+        public Integer getRole() {
             return role;
         }
 
-        public void setRole(String role) {
+        public void setRole(Integer role) {
             this.role = role;
         }
 

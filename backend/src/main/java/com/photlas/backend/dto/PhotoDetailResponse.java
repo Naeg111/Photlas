@@ -21,10 +21,10 @@ public class PhotoDetailResponse {
     private LocalDateTime shotAt;
 
     @JsonProperty("weather")
-    private String weather;
+    private Integer weather;
 
     @JsonProperty("timeOfDay")
-    private String timeOfDay;
+    private Integer timeOfDay;
 
     @JsonProperty("subjectCategory")
     private String subjectCategory;
@@ -181,10 +181,10 @@ public class PhotoDetailResponse {
     public void setImageUrls(ImageUrls imageUrls) { this.imageUrls = imageUrls; }
     public LocalDateTime getShotAt() { return shotAt; }
     public void setShotAt(LocalDateTime shotAt) { this.shotAt = shotAt; }
-    public String getWeather() { return weather; }
-    public void setWeather(String weather) { this.weather = weather; }
-    public String getTimeOfDay() { return timeOfDay; }
-    public void setTimeOfDay(String timeOfDay) { this.timeOfDay = timeOfDay; }
+    public Integer getWeather() { return weather; }
+    public void setWeather(Integer weather) { this.weather = weather; }
+    public Integer getTimeOfDay() { return timeOfDay; }
+    public void setTimeOfDay(Integer timeOfDay) { this.timeOfDay = timeOfDay; }
     public String getSubjectCategory() { return subjectCategory; }
     public void setSubjectCategory(String subjectCategory) { this.subjectCategory = subjectCategory; }
     public CameraInfo getCameraInfo() { return cameraInfo; }

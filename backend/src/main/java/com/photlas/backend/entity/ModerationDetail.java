@@ -18,15 +18,14 @@ public class ModerationDetail {
     @Column(name = "id")
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "target_type", nullable = false, length = 20)
-    private ReportTargetType targetType;
+    @Column(name = "target_type", nullable = false)
+    private Integer targetType;
 
     @Column(name = "target_id", nullable = false)
     private Long targetId;
 
-    @Column(name = "source", nullable = false, length = 20)
-    private String source;
+    @Column(name = "source", nullable = false)
+    private Integer source;
 
     @Column(name = "ai_confidence_score")
     private Double aiConfidenceScore;
@@ -47,14 +46,14 @@ public class ModerationDetail {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public ReportTargetType getTargetType() { return targetType; }
-    public void setTargetType(ReportTargetType targetType) { this.targetType = targetType; }
+    public Integer getTargetType() { return targetType; }
+    public void setTargetType(Integer targetType) { this.targetType = targetType; }
 
     public Long getTargetId() { return targetId; }
     public void setTargetId(Long targetId) { this.targetId = targetId; }
 
-    public String getSource() { return source; }
-    public void setSource(String source) { this.source = source; }
+    public Integer getSource() { return source; }
+    public void setSource(Integer source) { this.source = source; }
 
     public Double getAiConfidenceScore() { return aiConfidenceScore; }
     public void setAiConfidenceScore(Double aiConfidenceScore) { this.aiConfidenceScore = aiConfidenceScore; }

@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
@@ -68,13 +69,10 @@ public class ReportControllerTest {
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_EMAIL = "test@example.com";
     private static final String TEST_PASSWORD_HASH = "hashedpassword";
-    private static final String USER_ROLE = "USER";
-
     // Test Data Constants - Photo Owner
     private static final String PHOTO_OWNER_USERNAME = "photoowner";
     private static final String PHOTO_OWNER_EMAIL = "owner@example.com";
     private static final String PHOTO_OWNER_PASSWORD_HASH = "hashedpassword";
-    private static final String PHOTO_OWNER_ROLE = "USER";
 
     // Test Data Constants - Category
     private static final String TEST_CATEGORY_NAME = "風景";
@@ -85,17 +83,17 @@ public class ReportControllerTest {
 
     // Test Data Constants - Photo
     private static final String TEST_S3_OBJECT_KEY = "uploads/test.jpg";
-    private static final String TEST_TIME_OF_DAY = "朝";
-    private static final String TEST_WEATHER = "晴れ";
+    private static final int TEST_TIME_OF_DAY = CodeConstants.TIME_OF_DAY_MORNING;
+    private static final int TEST_WEATHER = CodeConstants.WEATHER_SUNNY;
 
     // Test Data Constants - Report Reasons (Issue#54)
-    private static final String REASON_ADULT_CONTENT = "ADULT_CONTENT";
-    private static final String REASON_VIOLENCE = "VIOLENCE";
-    private static final String REASON_PRIVACY_VIOLATION = "PRIVACY_VIOLATION";
-    private static final String REASON_COPYRIGHT_INFRINGEMENT = "COPYRIGHT_INFRINGEMENT";
-    private static final String REASON_SPAM = "SPAM";
-    private static final String REASON_OTHER = "OTHER";
-    private static final String REASON_INVALID = "INVALID_REASON";
+    private static final int REASON_ADULT_CONTENT = CodeConstants.REASON_ADULT_CONTENT;
+    private static final int REASON_VIOLENCE = CodeConstants.REASON_VIOLENCE;
+    private static final int REASON_PRIVACY_VIOLATION = CodeConstants.REASON_PRIVACY_VIOLATION;
+    private static final int REASON_COPYRIGHT_INFRINGEMENT = CodeConstants.REASON_COPYRIGHT_INFRINGEMENT;
+    private static final int REASON_SPAM = CodeConstants.REASON_SPAM;
+    private static final int REASON_OTHER = CodeConstants.REASON_OTHER;
+    private static final int REASON_INVALID = 899;
 
     // Test Data Constants - Report Details
     private static final String DETAILS_ADULT_CONTENT = "不適切な内容が含まれています";
@@ -148,7 +146,7 @@ public class ReportControllerTest {
         user.setUsername(username);
         user.setEmail(email);
         user.setPasswordHash(TEST_PASSWORD_HASH);
-        user.setRole(USER_ROLE);
+        user.setRole(CodeConstants.ROLE_USER);
         return userRepository.save(user);
     }
 
@@ -157,7 +155,7 @@ public class ReportControllerTest {
         user.setUsername(PHOTO_OWNER_USERNAME);
         user.setEmail(PHOTO_OWNER_EMAIL);
         user.setPasswordHash(PHOTO_OWNER_PASSWORD_HASH);
-        user.setRole(PHOTO_OWNER_ROLE);
+        user.setRole(CodeConstants.ROLE_USER);
         return userRepository.save(user);
     }
 
@@ -184,11 +182,11 @@ public class ReportControllerTest {
         photo.setTimeOfDay(TEST_TIME_OF_DAY);
         photo.setWeather(TEST_WEATHER);
         photo.setShotAt(LocalDateTime.now());
-        photo.setModerationStatus(com.photlas.backend.entity.ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(com.photlas.backend.entity.CodeConstants.MODERATION_STATUS_PUBLISHED);
         return photoRepository.save(photo);
     }
 
-    private com.photlas.backend.dto.ReportRequest createReportRequest(String reason, String details) {
+    private com.photlas.backend.dto.ReportRequest createReportRequest(Integer reason, String details) {
         return new com.photlas.backend.dto.ReportRequest(reason, details);
     }
 
@@ -307,7 +305,7 @@ public class ReportControllerTest {
     @DisplayName("Issue#54 - バリデーションエラー: 不正なreason値")
     void testCreateReport_InvalidReason_ReturnsBadRequest() throws Exception {
         // JSON文字列を直接作成して不正なreason値を送信
-        String invalidRequest = "{\"reason\":\"" + REASON_INVALID + "\",\"details\":\"" + DETAILS_GENERIC + "\"}";
+        String invalidRequest = "{\"reason\":" + REASON_INVALID + ",\"details\":\"" + DETAILS_GENERIC + "\"}";
 
         mockMvc.perform(post(getReportEndpoint(testPhoto.getPhotoId()))
                 .with(csrf())

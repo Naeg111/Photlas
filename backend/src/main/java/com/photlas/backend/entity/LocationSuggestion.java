@@ -33,9 +33,8 @@ public class LocationSuggestion {
     @Column(name = "suggested_longitude", nullable = false, precision = 9, scale = 6)
     private BigDecimal suggestedLongitude;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    private LocationSuggestionStatus status = LocationSuggestionStatus.PENDING;
+    @Column(name = "status", nullable = false)
+    private Integer status = 1201;
 
     @Column(name = "review_token", unique = true)
     private String reviewToken;
@@ -70,8 +69,8 @@ public class LocationSuggestion {
     public BigDecimal getSuggestedLongitude() { return suggestedLongitude; }
     public void setSuggestedLongitude(BigDecimal suggestedLongitude) { this.suggestedLongitude = suggestedLongitude; }
 
-    public LocationSuggestionStatus getStatus() { return status; }
-    public void setStatus(LocationSuggestionStatus status) { this.status = status; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
 
     public String getReviewToken() { return reviewToken; }
     public void setReviewToken(String reviewToken) { this.reviewToken = reviewToken; }

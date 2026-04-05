@@ -33,9 +33,9 @@ public class User {
     @NotNull
     private String passwordHash;
 
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false)
     @NotNull
-    private String role;
+    private Integer role;
 
     @Column(name = "profile_image_s3_key", length = 512)
     private String profileImageS3Key;
@@ -62,7 +62,7 @@ public class User {
 
     public User() {}
 
-    public User(String username, String email, String passwordHash, String role) {
+    public User(String username, String email, String passwordHash, Integer role) {
         this.username = username;
         this.email = email;
         this.passwordHash = passwordHash;
@@ -102,11 +102,11 @@ public class User {
         this.passwordHash = passwordHash;
     }
 
-    public String getRole() {
+    public Integer getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(Integer role) {
         this.role = role;
     }
 
@@ -186,7 +186,7 @@ public class User {
                "id=" + id +
                ", username='" + username + '\'' +
                ", email='" + email + '\'' +
-               ", role='" + role + '\'' +
+               ", role=" + role +
                ", createdAt=" + createdAt +
                ", updatedAt=" + updatedAt +
                '}';

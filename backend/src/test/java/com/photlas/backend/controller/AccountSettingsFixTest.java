@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.EmailVerificationToken;
 import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.User;
@@ -61,7 +62,7 @@ public class AccountSettingsFixTest {
         testUser.setUsername("testuser");
         testUser.setEmail(TEST_EMAIL);
         testUser.setPasswordHash(passwordEncoder.encode(TEST_PASSWORD));
-        testUser.setRole("USER");
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser.setEmailVerified(true);
         testUser = userRepository.save(testUser);
 

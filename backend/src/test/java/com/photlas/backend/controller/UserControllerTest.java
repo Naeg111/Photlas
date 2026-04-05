@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.UpdateProfileRequest;
 import com.photlas.backend.dto.UploadUrlRequest;
@@ -91,8 +92,6 @@ public class UserControllerTest {
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_EMAIL = "test@example.com";
     private static final String TEST_PASSWORD = "password";
-    private static final String USER_ROLE = "USER";
-
     private static final String NEW_USERNAME = "newusername";
     private static final String NEW_EMAIL = "newemail@example.com";
     private static final String EXISTING_USERNAME = "existinguser";
@@ -209,7 +208,7 @@ public class UserControllerTest {
 
     // Helper Methods
     private User createTestUser(String username, String email) {
-        User user = new User(username, email, passwordEncoder.encode(TEST_PASSWORD), USER_ROLE);
+        User user = new User(username, email, passwordEncoder.encode(TEST_PASSWORD), CodeConstants.ROLE_USER);
         return userRepository.save(user);
     }
 
@@ -999,8 +998,8 @@ public class UserControllerTest {
         photo.setUserId(userId);
         photo.setS3ObjectKey(s3Key);
         photo.setShotAt(LocalDateTime.of(2026, 1, 15, 10, 0));
-        photo.setWeather("sunny");
-        photo.setModerationStatus(com.photlas.backend.entity.ModerationStatus.PUBLISHED);
+        photo.setWeather(CodeConstants.WEATHER_SUNNY);
+        photo.setModerationStatus(com.photlas.backend.entity.CodeConstants.MODERATION_STATUS_PUBLISHED);
         return photoRepository.save(photo);
     }
 }

@@ -2,9 +2,8 @@ package com.photlas.backend.controller;
 
 import com.photlas.backend.dto.ErrorResponse;
 import com.photlas.backend.entity.ModerationDetail;
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
-import com.photlas.backend.entity.ReportTargetType;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.repository.ModerationDetailRepository;
@@ -80,7 +79,7 @@ public class ModerationCallbackController {
                 ? ((Number) request.get("confidence_score")).doubleValue()
                 : null;
 
-        ModerationStatus newStatus = ModerationStatus.valueOf(statusStr);
+        Integer newStatus = parseStatus(statusStr);
 
         // Issue#54: プロフィール画像の場合は別処理
         if (s3ObjectKey.startsWith(PROFILE_IMAGE_PREFIX)) {
@@ -96,10 +95,10 @@ public class ModerationCallbackController {
         photoRepository.save(photo);
 
         // モデレーション詳細を保存
-        saveModerationDetail(ReportTargetType.PHOTO, photo.getPhotoId(), confidenceScore, newStatus);
+        saveModerationDetail(CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId(), confidenceScore, newStatus);
 
         // Issue#54: 隔離時にユーザーへメール通知
-        if (newStatus == ModerationStatus.QUARANTINED) {
+        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(newStatus)) {
             userRepository.findById(photo.getUserId()).ifPresent(user ->
                     notificationService.sendQuarantineNotification(
                             user.getEmail(), user.getUsername(), photo.getCreatedAt()));
@@ -116,7 +115,7 @@ public class ModerationCallbackController {
      * QUARANTINEDの場合はプロフィール画像をリセット（デフォルトに戻す）
      */
     private ResponseEntity<?> handleProfileImageCallback(
-            String s3ObjectKey, ModerationStatus status, Double confidenceScore) {
+            String s3ObjectKey, Integer status, Double confidenceScore) {
 
         User user = userRepository.findByProfileImageS3Key(s3ObjectKey).orElse(null);
 
@@ -125,7 +124,7 @@ public class ModerationCallbackController {
             return ResponseEntity.ok(Map.of(KEY_MESSAGE, "対象ユーザーが見つかりませんでした"));
         }
 
-        if (status == ModerationStatus.QUARANTINED) {
+        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(status)) {
             // プロフィール画像をデフォルトにリセット
             user.setProfileImageS3Key(null);
             userRepository.save(user);
@@ -133,7 +132,7 @@ public class ModerationCallbackController {
         }
 
         // モデレーション詳細を保存
-        saveModerationDetail(ReportTargetType.PROFILE, user.getId(), confidenceScore, status);
+        saveModerationDetail(CodeConstants.TARGET_TYPE_PROFILE, user.getId(), confidenceScore, status);
 
         logger.info("プロフィール画像モデレーション完了: userId={}, status={}, confidence={}",
                 user.getId(), status, confidenceScore);
@@ -145,15 +144,15 @@ public class ModerationCallbackController {
      * モデレーション詳細を保存する
      */
     private void saveModerationDetail(
-            ReportTargetType targetType, Long targetId,
-            Double confidenceScore, ModerationStatus status) {
+            Integer targetType, Long targetId,
+            Double confidenceScore, Integer status) {
 
         ModerationDetail detail = new ModerationDetail();
         detail.setTargetType(targetType);
         detail.setTargetId(targetId);
-        detail.setSource("AI_SCAN");
+        detail.setSource(CodeConstants.MODERATION_SOURCE_AI_SCAN);
         detail.setAiConfidenceScore(confidenceScore);
-        if (status == ModerationStatus.QUARANTINED) {
+        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(status)) {
             detail.setQuarantinedAt(LocalDateTime.now());
         }
         moderationDetailRepository.save(detail);
@@ -179,11 +178,33 @@ public class ModerationCallbackController {
 
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(thresholdMinutes);
         long staleCount = photoRepository.countByModerationStatusAndCreatedAtBefore(
-                ModerationStatus.PENDING_REVIEW, threshold
+                CodeConstants.MODERATION_STATUS_PENDING_REVIEW, threshold
         );
 
         logger.info("PENDING_REVIEW滞留チェック: threshold={}分, staleCount={}", thresholdMinutes, staleCount);
 
         return ResponseEntity.ok(Map.of("stale_count", staleCount));
+    }
+
+    /**
+     * ステータス文字列を数値コードに変換する
+     * 数値文字列の場合はそのまま変換し、レガシー文字列の場合はCodeConstantsの値にマッピングする
+     *
+     * @param statusStr ステータス文字列（数値または列挙名）
+     * @return 数値コード
+     */
+    private Integer parseStatus(String statusStr) {
+        try {
+            return Integer.parseInt(statusStr);
+        } catch (NumberFormatException e) {
+            // Legacy string compatibility
+        }
+        return switch (statusStr) {
+            case "PENDING_REVIEW" -> CodeConstants.MODERATION_STATUS_PENDING_REVIEW;
+            case "PUBLISHED" -> CodeConstants.MODERATION_STATUS_PUBLISHED;
+            case "QUARANTINED" -> CodeConstants.MODERATION_STATUS_QUARANTINED;
+            case "REMOVED" -> CodeConstants.MODERATION_STATUS_REMOVED;
+            default -> throw new IllegalArgumentException("Unknown status: " + statusStr);
+        };
     }
 }

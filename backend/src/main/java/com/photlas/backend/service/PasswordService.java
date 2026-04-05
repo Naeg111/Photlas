@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.UnauthorizedException;
@@ -62,7 +63,7 @@ public class PasswordService {
         User user = userOptional.get();
 
         // 退会済み・停止ユーザーにはリセットメールを送信しない（レスポンスは正常時と同一）
-        if (user.getDeletedAt() != null || "SUSPENDED".equals(user.getRole())) {
+        if (user.getDeletedAt() != null || Integer.valueOf(CodeConstants.ROLE_SUSPENDED).equals(user.getRole())) {
             return;
         }
 

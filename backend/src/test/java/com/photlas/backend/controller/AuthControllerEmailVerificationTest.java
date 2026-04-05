@@ -1,5 +1,7 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.entity.EmailVerificationToken;
 import com.photlas.backend.entity.User;
@@ -63,7 +65,6 @@ public class AuthControllerEmailVerificationTest {
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_EMAIL = "test@example.com";
     private static final String TEST_PASSWORD = "Password123";
-    private static final String USER_ROLE = "USER";
     private static final String VALID_TOKEN = "valid-test-token-12345";
 
     // エンドポイント定数
@@ -84,7 +85,7 @@ public class AuthControllerEmailVerificationTest {
         testUser.setUsername(TEST_USERNAME);
         testUser.setEmail(TEST_EMAIL);
         testUser.setPasswordHash(passwordEncoder.encode(TEST_PASSWORD));
-        testUser.setRole(USER_ROLE);
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser.setEmailVerified(false);
         testUser = userRepository.save(testUser);
     }

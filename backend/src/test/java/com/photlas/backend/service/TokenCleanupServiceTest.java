@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.EmailVerificationToken;
 import com.photlas.backend.entity.User;
@@ -50,7 +51,7 @@ public class TokenCleanupServiceTest {
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
         testUser.setPasswordHash("hashed");
-        testUser.setRole("USER");
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser = userRepository.save(testUser);
     }
 

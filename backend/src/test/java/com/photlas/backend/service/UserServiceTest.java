@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.dto.LoginRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.UpdateSnsLinksRequest;
@@ -81,7 +82,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
         List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks = List.of(
-                new UpdateSnsLinksRequest.SnsLinkRequest("facebook", "https://facebook.com/user")
+                new UpdateSnsLinksRequest.SnsLinkRequest(999, "https://facebook.com/user")
         );
 
         assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
@@ -96,8 +97,8 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
         List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks = List.of(
-                new UpdateSnsLinksRequest.SnsLinkRequest("twitter", "https://x.com/user1"),
-                new UpdateSnsLinksRequest.SnsLinkRequest("twitter", "https://x.com/user2")
+                new UpdateSnsLinksRequest.SnsLinkRequest(CodeConstants.PLATFORM_TWITTER, "https://x.com/user1"),
+                new UpdateSnsLinksRequest.SnsLinkRequest(CodeConstants.PLATFORM_TWITTER, "https://x.com/user2")
         );
 
         assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
@@ -112,7 +113,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
         List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks = List.of(
-                new UpdateSnsLinksRequest.SnsLinkRequest("instagram", "https://youtube.com/channel")
+                new UpdateSnsLinksRequest.SnsLinkRequest(CodeConstants.PLATFORM_INSTAGRAM, "https://youtube.com/channel")
         );
 
         assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
@@ -127,7 +128,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
         List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks = List.of(
-                new UpdateSnsLinksRequest.SnsLinkRequest("twitter", "https://x.com/testuser")
+                new UpdateSnsLinksRequest.SnsLinkRequest(CodeConstants.PLATFORM_TWITTER, "https://x.com/testuser")
         );
 
         profileService.updateSnsLinks(TEST_EMAIL, snsLinks);
@@ -145,7 +146,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
         List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks = List.of(
-                new UpdateSnsLinksRequest.SnsLinkRequest("twitter", "https://twitter.com/testuser")
+                new UpdateSnsLinksRequest.SnsLinkRequest(CodeConstants.PLATFORM_TWITTER, "https://twitter.com/testuser")
         );
 
         profileService.updateSnsLinks(TEST_EMAIL, snsLinks);
@@ -163,7 +164,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
         List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks = List.of(
-                new UpdateSnsLinksRequest.SnsLinkRequest("twitter", "https://x.com.evil.com/phishing")
+                new UpdateSnsLinksRequest.SnsLinkRequest(CodeConstants.PLATFORM_TWITTER, "https://x.com.evil.com/phishing")
         );
 
         assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
@@ -178,7 +179,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
         List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks = List.of(
-                new UpdateSnsLinksRequest.SnsLinkRequest("instagram", "https://evil.com/fake?redirect=instagram.com")
+                new UpdateSnsLinksRequest.SnsLinkRequest(CodeConstants.PLATFORM_INSTAGRAM, "https://evil.com/fake?redirect=instagram.com")
         );
 
         assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
@@ -193,7 +194,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
         List<UpdateSnsLinksRequest.SnsLinkRequest> snsLinks = List.of(
-                new UpdateSnsLinksRequest.SnsLinkRequest("instagram", "https://notinstagram.com/user")
+                new UpdateSnsLinksRequest.SnsLinkRequest(CodeConstants.PLATFORM_INSTAGRAM, "https://notinstagram.com/user")
         );
 
         assertThatThrownBy(() -> profileService.updateSnsLinks(TEST_EMAIL, snsLinks))
@@ -292,7 +293,7 @@ public class UserServiceTest {
     void testLoginUser_SuspendedRole_ThrowsAccountSuspended() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         user.setEmailVerified(true);
-        user.setRole("SUSPENDED");
+        user.setRole(CodeConstants.ROLE_SUSPENDED);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
 
@@ -429,7 +430,7 @@ public class UserServiceTest {
         user.setEmail(email);
         user.setUsername(username);
         user.setPasswordHash(TEST_PASSWORD_HASH);
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         user.setEmailVerified(true);
         return user;
     }

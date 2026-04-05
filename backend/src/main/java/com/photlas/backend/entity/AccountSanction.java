@@ -20,8 +20,8 @@ public class AccountSanction {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "sanction_type", nullable = false, length = 30)
-    private String sanctionType;
+    @Column(name = "sanction_type", nullable = false)
+    private Integer sanctionType;
 
     @Column(name = "reason", length = 500)
     private String reason;
@@ -44,8 +44,8 @@ public class AccountSanction {
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 
-    public String getSanctionType() { return sanctionType; }
-    public void setSanctionType(String sanctionType) { this.sanctionType = sanctionType; }
+    public Integer getSanctionType() { return sanctionType; }
+    public void setSanctionType(Integer sanctionType) { this.sanctionType = sanctionType; }
 
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }

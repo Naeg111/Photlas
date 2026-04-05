@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.*;
 import com.photlas.backend.repository.LocationSuggestionRepository;
 import com.photlas.backend.repository.PhotoRepository;
@@ -79,7 +80,7 @@ public class LocationSuggestionServiceTest {
         when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
         when(locationSuggestionRepository.existsByPhotoIdAndSuggesterId(PHOTO_ID, SUGGESTER_ID)).thenReturn(false);
         when(locationSuggestionRepository.existsByPhotoIdAndStatusAndEmailSent(
-                PHOTO_ID, LocationSuggestionStatus.PENDING, true)).thenReturn(false);
+                PHOTO_ID, CodeConstants.SUGGESTION_STATUS_PENDING, true)).thenReturn(false);
         when(locationSuggestionRepository.save(any(LocationSuggestion.class))).thenAnswer(i -> i.getArgument(0));
 
         // Act
@@ -87,7 +88,7 @@ public class LocationSuggestionServiceTest {
 
         // Assert
         assertThat(result).isNotNull();
-        assertThat(result.getStatus()).isEqualTo(LocationSuggestionStatus.PENDING);
+        assertThat(result.getStatus()).isEqualTo(CodeConstants.SUGGESTION_STATUS_PENDING);
         assertThat(result.isEmailSent()).isTrue();
         assertThat(result.getReviewToken()).isNotNull();
 
@@ -136,7 +137,7 @@ public class LocationSuggestionServiceTest {
         when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
         when(locationSuggestionRepository.existsByPhotoIdAndSuggesterId(PHOTO_ID, SUGGESTER_ID)).thenReturn(false);
         when(locationSuggestionRepository.existsByPhotoIdAndStatusAndEmailSent(
-                PHOTO_ID, LocationSuggestionStatus.PENDING, true)).thenReturn(true);
+                PHOTO_ID, CodeConstants.SUGGESTION_STATUS_PENDING, true)).thenReturn(true);
         when(locationSuggestionRepository.save(any(LocationSuggestion.class))).thenAnswer(i -> i.getArgument(0));
 
         // Act
@@ -173,7 +174,7 @@ public class LocationSuggestionServiceTest {
         // Arrange
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
-        photo.setModerationStatus(ModerationStatus.REMOVED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
 
         when(userRepository.findByEmail(SUGGESTER_EMAIL)).thenReturn(Optional.of(suggester));
         when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
@@ -190,7 +191,7 @@ public class LocationSuggestionServiceTest {
         // Arrange
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
-        photo.setModerationStatus(ModerationStatus.QUARANTINED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         when(userRepository.findByEmail(SUGGESTER_EMAIL)).thenReturn(Optional.of(suggester));
         when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
@@ -219,13 +220,13 @@ public class LocationSuggestionServiceTest {
         when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
         when(spotRepository.findSpotsWithin200m(SUGGESTED_LAT, SUGGESTED_LNG)).thenReturn(List.of(newSpot));
         when(locationSuggestionRepository.findByPhotoIdAndStatusAndEmailSentOrderByCreatedAtAsc(
-                PHOTO_ID, LocationSuggestionStatus.PENDING, false)).thenReturn(List.of());
+                PHOTO_ID, CodeConstants.SUGGESTION_STATUS_PENDING, false)).thenReturn(List.of());
 
         // Act
         service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL);
 
         // Assert
-        assertThat(suggestion.getStatus()).isEqualTo(LocationSuggestionStatus.ACCEPTED);
+        assertThat(suggestion.getStatus()).isEqualTo(CodeConstants.SUGGESTION_STATUS_ACCEPTED);
         assertThat(suggestion.getResolvedAt()).isNotNull();
         assertThat(photo.getSpotId()).isEqualTo(200L);
         verify(photoRepository).save(photo);
@@ -250,7 +251,7 @@ public class LocationSuggestionServiceTest {
         when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
         when(spotRepository.findSpotsWithin200m(SUGGESTED_LAT, SUGGESTED_LNG)).thenReturn(List.of(newSpot));
         when(locationSuggestionRepository.findByPhotoIdAndStatusAndEmailSentOrderByCreatedAtAsc(
-                PHOTO_ID, LocationSuggestionStatus.PENDING, false)).thenReturn(List.of(nextSuggestion));
+                PHOTO_ID, CodeConstants.SUGGESTION_STATUS_PENDING, false)).thenReturn(List.of(nextSuggestion));
 
         // Act
         service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL);
@@ -279,13 +280,13 @@ public class LocationSuggestionServiceTest {
         when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
         when(userRepository.findById(SUGGESTER_ID)).thenReturn(Optional.of(suggester));
         when(locationSuggestionRepository.findByPhotoIdAndStatusAndEmailSentOrderByCreatedAtAsc(
-                PHOTO_ID, LocationSuggestionStatus.PENDING, false)).thenReturn(List.of());
+                PHOTO_ID, CodeConstants.SUGGESTION_STATUS_PENDING, false)).thenReturn(List.of());
 
         // Act
         service.rejectSuggestion(REVIEW_TOKEN, OWNER_EMAIL);
 
         // Assert
-        assertThat(suggestion.getStatus()).isEqualTo(LocationSuggestionStatus.REJECTED);
+        assertThat(suggestion.getStatus()).isEqualTo(CodeConstants.SUGGESTION_STATUS_REJECTED);
         assertThat(suggestion.getResolvedAt()).isNotNull();
 
         ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
@@ -303,7 +304,7 @@ public class LocationSuggestionServiceTest {
     void testAcceptSuggestion_AlreadyAccepted_ThrowsException() {
         // Arrange: ステータスがACCEPTEDの指摘
         LocationSuggestion suggestion = createMockSuggestion();
-        suggestion.setStatus(LocationSuggestionStatus.ACCEPTED);
+        suggestion.setStatus(CodeConstants.SUGGESTION_STATUS_ACCEPTED);
 
         User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -323,7 +324,7 @@ public class LocationSuggestionServiceTest {
     void testRejectSuggestion_AlreadyRejected_ThrowsException() {
         // Arrange: ステータスがREJECTEDの指摘
         LocationSuggestion suggestion = createMockSuggestion();
-        suggestion.setStatus(LocationSuggestionStatus.REJECTED);
+        suggestion.setStatus(CodeConstants.SUGGESTION_STATUS_REJECTED);
 
         User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -355,7 +356,7 @@ public class LocationSuggestionServiceTest {
         photo.setPhotoId(photoId);
         photo.setUserId(userId);
         photo.setSpotId(spotId);
-        photo.setModerationStatus(ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         return photo;
     }
 
@@ -374,7 +375,7 @@ public class LocationSuggestionServiceTest {
         suggestion.setSuggesterId(SUGGESTER_ID);
         suggestion.setSuggestedLatitude(SUGGESTED_LAT);
         suggestion.setSuggestedLongitude(SUGGESTED_LNG);
-        suggestion.setStatus(LocationSuggestionStatus.PENDING);
+        suggestion.setStatus(CodeConstants.SUGGESTION_STATUS_PENDING);
         suggestion.setReviewToken(REVIEW_TOKEN);
         suggestion.setEmailSent(true);
         return suggestion;

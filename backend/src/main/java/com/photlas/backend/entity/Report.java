@@ -24,16 +24,14 @@ public class Report {
     @Column(name = "reporter_user_id", nullable = false)
     private Long reporterUserId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "target_type", nullable = false, length = 20)
-    private ReportTargetType targetType;
+    @Column(name = "target_type", nullable = false)
+    private Integer targetType;
 
     @Column(name = "target_id", nullable = false)
     private Long targetId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "reason_category", nullable = false, length = 50)
-    private ReportReason reasonCategory;
+    @Column(name = "reason_category", nullable = false)
+    private Integer reasonCategory;
 
     @Column(name = "reason_text", length = 300)
     private String reasonText;
@@ -63,11 +61,11 @@ public class Report {
         this.reporterUserId = reporterUserId;
     }
 
-    public ReportTargetType getTargetType() {
+    public Integer getTargetType() {
         return targetType;
     }
 
-    public void setTargetType(ReportTargetType targetType) {
+    public void setTargetType(Integer targetType) {
         this.targetType = targetType;
     }
 
@@ -79,11 +77,11 @@ public class Report {
         this.targetId = targetId;
     }
 
-    public ReportReason getReasonCategory() {
+    public Integer getReasonCategory() {
         return reasonCategory;
     }
 
-    public void setReasonCategory(ReportReason reasonCategory) {
+    public void setReasonCategory(Integer reasonCategory) {
         this.reasonCategory = reasonCategory;
     }
 

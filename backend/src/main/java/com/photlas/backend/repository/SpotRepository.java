@@ -86,11 +86,11 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                 FROM photos p2
                 INNER JOIN users u2 ON p2.user_id = u2.id
                 WHERE p2.spot_id = s.spot_id
-                  AND p2.moderation_status = 'PUBLISHED'
+                  AND p2.moderation_status = 1002
                   AND u2.deleted_at IS NULL
                   AND (-1 IN (:months) OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
-                  AND ('__NONE__' IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
-                  AND ('__NONE__' IN (:weathers) OR p2.weather IN (:weathers))
+                  AND (-1 IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
+                  AND (-1 IN (:weathers) OR p2.weather IN (:weathers))
                   AND (-1 IN (:subjectCategories) OR EXISTS (
                       SELECT 1 FROM photo_categories pc2
                       WHERE pc2.photo_id = p2.photo_id
@@ -104,11 +104,11 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         INNER JOIN users u ON p.user_id = u.id
         WHERE s.latitude BETWEEN :south AND :north
           AND s.longitude BETWEEN :west AND :east
-          AND p.moderation_status = 'PUBLISHED'
+          AND p.moderation_status = 1002
           AND u.deleted_at IS NULL
           AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
-          AND ('__NONE__' IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
-          AND ('__NONE__' IN (:weathers) OR p.weather IN (:weathers))
+          AND (-1 IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
+          AND (-1 IN (:weathers) OR p.weather IN (:weathers))
           AND (-1 IN (:subjectCategories) OR EXISTS (
               SELECT 1 FROM photo_categories pc
               WHERE pc.photo_id = p.photo_id
@@ -125,8 +125,8 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("west") BigDecimal west,
         @Param("subjectCategories") List<Integer> subjectCategories,
         @Param("months") List<Integer> months,
-        @Param("timesOfDay") List<String> timesOfDay,
-        @Param("weathers") List<String> weathers
+        @Param("timesOfDay") List<Integer> timesOfDay,
+        @Param("weathers") List<Integer> weathers
     );
 
     /**
@@ -152,18 +152,18 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                 FROM photos p2
                 INNER JOIN users u2 ON p2.user_id = u2.id
                 WHERE p2.spot_id = s.spot_id
-                  AND p2.moderation_status = 'PUBLISHED'
+                  AND p2.moderation_status = 1002
                   AND u2.deleted_at IS NULL
                   AND (-1 IN (:months) OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
-                  AND ('__NONE__' IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
-                  AND ('__NONE__' IN (:weathers) OR p2.weather IN (:weathers))
+                  AND (-1 IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
+                  AND (-1 IN (:weathers) OR p2.weather IN (:weathers))
                   AND (-1 IN (:subjectCategories) OR EXISTS (
                       SELECT 1 FROM photo_categories pc2
                       WHERE pc2.photo_id = p2.photo_id
                         AND pc2.category_id IN (:subjectCategories)
                   ))
                   AND (:minResolution = -1 OR (p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND GREATEST(p2.image_width, p2.image_height) >= :minResolution))
-                  AND ('__NONE__' IN (:deviceTypes) OR p2.device_type IN (:deviceTypes))
+                  AND (-1 IN (:deviceTypes) OR p2.device_type IN (:deviceTypes))
                   AND (p2.shot_at IS NULL OR p2.shot_at >= :maxAgeDate)
                   AND ('__NONE__' IN (:aspectRatios)
                        OR ('HORIZONTAL' IN (:aspectRatios) AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width > p2.image_height)
@@ -185,18 +185,18 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         INNER JOIN users u ON p.user_id = u.id
         WHERE s.latitude BETWEEN :south AND :north
           AND s.longitude BETWEEN :west AND :east
-          AND p.moderation_status = 'PUBLISHED'
+          AND p.moderation_status = 1002
           AND u.deleted_at IS NULL
           AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
-          AND ('__NONE__' IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
-          AND ('__NONE__' IN (:weathers) OR p.weather IN (:weathers))
+          AND (-1 IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
+          AND (-1 IN (:weathers) OR p.weather IN (:weathers))
           AND (-1 IN (:subjectCategories) OR EXISTS (
               SELECT 1 FROM photo_categories pc
               WHERE pc.photo_id = p.photo_id
                 AND pc.category_id IN (:subjectCategories)
           ))
           AND (:minResolution = -1 OR (p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND GREATEST(p.image_width, p.image_height) >= :minResolution))
-          AND ('__NONE__' IN (:deviceTypes) OR p.device_type IN (:deviceTypes))
+          AND (-1 IN (:deviceTypes) OR p.device_type IN (:deviceTypes))
           AND (p.shot_at IS NULL OR p.shot_at >= :maxAgeDate)
           AND ('__NONE__' IN (:aspectRatios)
                OR ('HORIZONTAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width > p.image_height)
@@ -221,10 +221,10 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("west") BigDecimal west,
         @Param("subjectCategories") List<Integer> subjectCategories,
         @Param("months") List<Integer> months,
-        @Param("timesOfDay") List<String> timesOfDay,
-        @Param("weathers") List<String> weathers,
+        @Param("timesOfDay") List<Integer> timesOfDay,
+        @Param("weathers") List<Integer> weathers,
         @Param("minResolution") int minResolution,
-        @Param("deviceTypes") List<String> deviceTypes,
+        @Param("deviceTypes") List<Integer> deviceTypes,
         @Param("maxAgeDate") LocalDateTime maxAgeDate,
         @Param("aspectRatios") List<String> aspectRatios,
         @Param("focalLengthRanges") List<String> focalLengthRanges,

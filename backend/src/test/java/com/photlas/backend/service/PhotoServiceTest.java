@@ -1,10 +1,10 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.entity.AccountSanction;
 import com.photlas.backend.entity.Category;
-import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -80,7 +80,7 @@ public class PhotoServiceTest {
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
         testUser.setPasswordHash("hashedpassword");
-        testUser.setRole("USER");
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser = userRepository.save(testUser);
 
         // カテゴリマスターデータを作成
@@ -269,12 +269,12 @@ public class PhotoServiceTest {
         request.setLatitude(new BigDecimal("35.658581"));
         request.setLongitude(new BigDecimal("139.745433"));
         request.setCategories(List.of("風景"));
-        request.setWeather("晴れ");
+        request.setWeather(CodeConstants.WEATHER_SUNNY);
 
         PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
 
         assertThat(response).isNotNull();
-        assertThat(response.getPhoto().getWeather()).isEqualTo("晴れ");
+        assertThat(response.getPhoto().getWeather()).isEqualTo(CodeConstants.WEATHER_SUNNY);
     }
 
     @Test
@@ -385,7 +385,7 @@ public class PhotoServiceTest {
 
         assertThat(response).isNotNull();
         Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
-        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("MORNING");
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo(CodeConstants.TIME_OF_DAY_MORNING);
     }
 
     @Test
@@ -402,7 +402,7 @@ public class PhotoServiceTest {
 
         assertThat(response).isNotNull();
         Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
-        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("DAY");
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo(CodeConstants.TIME_OF_DAY_DAY);
     }
 
     @Test
@@ -419,7 +419,7 @@ public class PhotoServiceTest {
 
         assertThat(response).isNotNull();
         Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
-        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("EVENING");
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo(CodeConstants.TIME_OF_DAY_EVENING);
     }
 
     @Test
@@ -436,7 +436,7 @@ public class PhotoServiceTest {
 
         assertThat(response).isNotNull();
         Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
-        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("NIGHT");
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo(CodeConstants.TIME_OF_DAY_NIGHT);
     }
 
     @Test
@@ -453,7 +453,7 @@ public class PhotoServiceTest {
 
         assertThat(response).isNotNull();
         Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
-        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("NIGHT");
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo(CodeConstants.TIME_OF_DAY_NIGHT);
     }
 
     @Test
@@ -469,7 +469,7 @@ public class PhotoServiceTest {
         PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
 
         Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
-        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("MORNING");
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo(CodeConstants.TIME_OF_DAY_MORNING);
     }
 
     @Test
@@ -485,7 +485,7 @@ public class PhotoServiceTest {
         PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
 
         Photo savedPhoto = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
-        assertThat(savedPhoto.getTimeOfDay()).isEqualTo("NIGHT");
+        assertThat(savedPhoto.getTimeOfDay()).isEqualTo(CodeConstants.TIME_OF_DAY_NIGHT);
     }
 
     // ===== Issue#40: Photo Entity拡張テスト =====
@@ -569,7 +569,7 @@ public class PhotoServiceTest {
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/exifdetail001.jpg");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 15, 17, 30));
-        photo.setWeather("sunny");
+        photo.setWeather(CodeConstants.WEATHER_SUNNY);
         photo.setCameraBody("Sony α7 IV");
         photo.setCameraLens("FE 24-105mm F4 G OSS");
         photo.setFocalLength35mm(50);
@@ -610,7 +610,7 @@ public class PhotoServiceTest {
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/partialexif001.jpg");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 16, 10, 0));
-        photo.setWeather("cloudy");
+        photo.setWeather(CodeConstants.WEATHER_CLOUDY);
         // カメラ名とISOのみ設定
         photo.setCameraBody("iPhone 15 Pro");
         photo.setIso(100);
@@ -642,7 +642,7 @@ public class PhotoServiceTest {
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/coord001.jpg");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 17, 12, 0));
-        photo.setWeather("sunny");
+        photo.setWeather(CodeConstants.WEATHER_SUNNY);
         photo.setLatitude(new BigDecimal("35.658600"));
         photo.setLongitude(new BigDecimal("139.745450"));
         photo.setCategories(List.of(landscapeCategory));
@@ -715,7 +715,7 @@ public class PhotoServiceTest {
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/cropdetail001.jpg");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 2, 8, 10, 0));
-        photo.setWeather("sunny");
+        photo.setWeather(CodeConstants.WEATHER_SUNNY);
         photo.setCropCenterX(0.25);
         photo.setCropCenterY(0.75);
         photo.setCropZoom(2.0);
@@ -744,7 +744,7 @@ public class PhotoServiceTest {
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/nocropdetail001.jpg");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 2, 8, 11, 0));
-        photo.setWeather("cloudy");
+        photo.setWeather(CodeConstants.WEATHER_CLOUDY);
         photo.setCategories(List.of(landscapeCategory));
         photo = photoRepository.save(photo);
 
@@ -766,9 +766,9 @@ public class PhotoServiceTest {
         Spot spot = createSpot("35.658581", "139.745433");
 
         createPhotoForUser(spot, "photos/user001.jpg",
-                java.time.LocalDateTime.of(2026, 1, 15, 10, 0), "sunny");
+                java.time.LocalDateTime.of(2026, 1, 15, 10, 0), CodeConstants.WEATHER_SUNNY);
         createPhotoForUser(spot, "photos/user002.jpg",
-                java.time.LocalDateTime.of(2026, 1, 16, 10, 0), "cloudy");
+                java.time.LocalDateTime.of(2026, 1, 16, 10, 0), CodeConstants.WEATHER_CLOUDY);
 
         Pageable pageable = PageRequest.of(0, 20);
 
@@ -813,7 +813,7 @@ public class PhotoServiceTest {
         photo.setUserId(testUser.getId());
         photo.setS3ObjectKey("photos/detail001.jpg");
         photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 15, 10, 0));
-        photo.setWeather("sunny");
+        photo.setWeather(CodeConstants.WEATHER_SUNNY);
         photo.setCropCenterX(0.5);
         photo.setCropCenterY(0.5);
         photo.setCropZoom(1.2);
@@ -849,7 +849,7 @@ public class PhotoServiceTest {
     }
 
     private Photo createPhotoForUser(Spot spot, String s3Key,
-                                     java.time.LocalDateTime shotAt, String weather) {
+                                     java.time.LocalDateTime shotAt, Integer weather) {
         Photo photo = new Photo();
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
@@ -860,7 +860,7 @@ public class PhotoServiceTest {
         return photoRepository.save(photo);
     }
 
-    private Photo createPhotoWithStatus(Spot spot, String s3Key, ModerationStatus status) {
+    private Photo createPhotoWithStatus(Spot spot, String s3Key, Integer status) {
         Photo photo = new Photo();
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
@@ -876,7 +876,7 @@ public class PhotoServiceTest {
     @Test
     @DisplayName("Issue#54 - 永久停止ユーザーは写真投稿が拒否される")
     void testCreatePhoto_PermanentlySuspendedUser_ThrowsException() {
-        testUser.setRole("SUSPENDED");
+        testUser.setRole(CodeConstants.ROLE_SUSPENDED);
         userRepository.save(testUser);
 
         CreatePhotoRequest request = new CreatePhotoRequest();
@@ -895,7 +895,7 @@ public class PhotoServiceTest {
     void testCreatePhoto_TemporarilySuspendedUser_ThrowsException() {
         AccountSanction sanction = new AccountSanction();
         sanction.setUserId(testUser.getId());
-        sanction.setSanctionType("TEMPORARY_SUSPENSION");
+        sanction.setSanctionType(CodeConstants.SANCTION_TEMPORARY_SUSPENSION);
         sanction.setReason("テスト用一時停止");
         sanction.setSuspendedUntil(java.time.LocalDateTime.now().plusDays(7));
         accountSanctionRepository.save(sanction);
@@ -916,7 +916,7 @@ public class PhotoServiceTest {
     void testCreatePhoto_ExpiredTemporarySuspension_Succeeds() {
         AccountSanction sanction = new AccountSanction();
         sanction.setUserId(testUser.getId());
-        sanction.setSanctionType("TEMPORARY_SUSPENSION");
+        sanction.setSanctionType(CodeConstants.SANCTION_TEMPORARY_SUSPENSION);
         sanction.setReason("期限切れ停止");
         sanction.setSuspendedUntil(java.time.LocalDateTime.now().minusDays(1));
         accountSanctionRepository.save(sanction);
@@ -938,7 +938,7 @@ public class PhotoServiceTest {
     @DisplayName("Issue#54 - REMOVED写真はオーナーでも閲覧不可（404）")
     void testGetPhotoDetail_RemovedPhoto_ThrowsNotFoundForOwner() {
         Spot spot = createSpot("35.658581", "139.745433");
-        Photo photo = createPhotoWithStatus(spot, "photos/removed001.jpg", ModerationStatus.REMOVED);
+        Photo photo = createPhotoWithStatus(spot, "photos/removed001.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
 
         assertThatThrownBy(() -> photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail()))
                 .isInstanceOf(PhotoNotFoundException.class);
@@ -948,7 +948,7 @@ public class PhotoServiceTest {
     @DisplayName("Issue#54 - PENDING_REVIEW写真はオーナーのみ閲覧可能")
     void testGetPhotoDetail_PendingReviewPhoto_VisibleToOwnerOnly() {
         Spot spot = createSpot("35.658581", "139.745433");
-        Photo photo = createPhotoWithStatus(spot, "photos/pending001.jpg", ModerationStatus.PENDING_REVIEW);
+        Photo photo = createPhotoWithStatus(spot, "photos/pending001.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
         // オーナーは閲覧可能
         PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
@@ -960,14 +960,14 @@ public class PhotoServiceTest {
     @DisplayName("Issue#54 - PENDING_REVIEW写真は他ユーザーから閲覧不可（404）")
     void testGetPhotoDetail_PendingReviewPhoto_NotVisibleToOtherUser() {
         Spot spot = createSpot("35.658581", "139.745433");
-        Photo photo = createPhotoWithStatus(spot, "photos/pending002.jpg", ModerationStatus.PENDING_REVIEW);
+        Photo photo = createPhotoWithStatus(spot, "photos/pending002.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
         // 別ユーザーを作成
         User otherUser = new User();
         otherUser.setUsername("otheruser");
         otherUser.setEmail("other@example.com");
         otherUser.setPasswordHash("hashedpassword");
-        otherUser.setRole("USER");
+        otherUser.setRole(CodeConstants.ROLE_USER);
         userRepository.save(otherUser);
 
         assertThatThrownBy(() -> photoService.getPhotoDetail(photo.getPhotoId(), otherUser.getEmail()))
@@ -978,7 +978,7 @@ public class PhotoServiceTest {
     @DisplayName("Issue#54 - PENDING_REVIEW写真は未認証ユーザーから閲覧不可（404）")
     void testGetPhotoDetail_PendingReviewPhoto_NotVisibleToAnonymous() {
         Spot spot = createSpot("35.658581", "139.745433");
-        Photo photo = createPhotoWithStatus(spot, "photos/pending003.jpg", ModerationStatus.PENDING_REVIEW);
+        Photo photo = createPhotoWithStatus(spot, "photos/pending003.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
         assertThatThrownBy(() -> photoService.getPhotoDetail(photo.getPhotoId(), null))
                 .isInstanceOf(PhotoNotFoundException.class);
@@ -988,7 +988,7 @@ public class PhotoServiceTest {
     @DisplayName("Issue#54 - QUARANTINED写真はオーナーのみ閲覧可能")
     void testGetPhotoDetail_QuarantinedPhoto_VisibleToOwnerOnly() {
         Spot spot = createSpot("35.658581", "139.745433");
-        Photo photo = createPhotoWithStatus(spot, "photos/quarantined001.jpg", ModerationStatus.QUARANTINED);
+        Photo photo = createPhotoWithStatus(spot, "photos/quarantined001.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         // オーナーは閲覧可能
         PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
@@ -999,7 +999,7 @@ public class PhotoServiceTest {
         otherUser.setUsername("otheruser2");
         otherUser.setEmail("other2@example.com");
         otherUser.setPasswordHash("hashedpassword");
-        otherUser.setRole("USER");
+        otherUser.setRole(CodeConstants.ROLE_USER);
         userRepository.save(otherUser);
 
         assertThatThrownBy(() -> photoService.getPhotoDetail(photo.getPhotoId(), otherUser.getEmail()))
@@ -1010,7 +1010,7 @@ public class PhotoServiceTest {
     @DisplayName("Issue#54 - PUBLISHED写真は誰でも閲覧可能")
     void testGetPhotoDetail_PublishedPhoto_VisibleToEveryone() {
         Spot spot = createSpot("35.658581", "139.745433");
-        Photo photo = createPhotoWithStatus(spot, "photos/published001.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhotoWithStatus(spot, "photos/published001.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         // オーナー
         assertThat(photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail())).isNotNull();
@@ -1020,7 +1020,7 @@ public class PhotoServiceTest {
         otherUser.setUsername("otheruser3");
         otherUser.setEmail("other3@example.com");
         otherUser.setPasswordHash("hashedpassword");
-        otherUser.setRole("USER");
+        otherUser.setRole(CodeConstants.ROLE_USER);
         userRepository.save(otherUser);
         assertThat(photoService.getPhotoDetail(photo.getPhotoId(), otherUser.getEmail())).isNotNull();
 
@@ -1035,10 +1035,10 @@ public class PhotoServiceTest {
     @SuppressWarnings("unchecked")
     void testGetUserPhotos_OwnerSeesAllNonRemovedStatuses() {
         Spot spot = createSpot("35.658581", "139.745433");
-        createPhotoWithStatus(spot, "photos/vis-pending.jpg", ModerationStatus.PENDING_REVIEW);
-        createPhotoWithStatus(spot, "photos/vis-published.jpg", ModerationStatus.PUBLISHED);
-        createPhotoWithStatus(spot, "photos/vis-quarantined.jpg", ModerationStatus.QUARANTINED);
-        createPhotoWithStatus(spot, "photos/vis-removed.jpg", ModerationStatus.REMOVED);
+        createPhotoWithStatus(spot, "photos/vis-pending.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
+        createPhotoWithStatus(spot, "photos/vis-published.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
+        createPhotoWithStatus(spot, "photos/vis-quarantined.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
+        createPhotoWithStatus(spot, "photos/vis-removed.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
 
         Pageable pageable = PageRequest.of(0, 20);
         Map<String, Object> result = photoService.getUserPhotos(
@@ -1053,15 +1053,15 @@ public class PhotoServiceTest {
     @SuppressWarnings("unchecked")
     void testGetUserPhotos_OtherUserSeesOnlyPublished() {
         Spot spot = createSpot("35.658581", "139.745433");
-        createPhotoWithStatus(spot, "photos/vis2-pending.jpg", ModerationStatus.PENDING_REVIEW);
-        createPhotoWithStatus(spot, "photos/vis2-published.jpg", ModerationStatus.PUBLISHED);
-        createPhotoWithStatus(spot, "photos/vis2-quarantined.jpg", ModerationStatus.QUARANTINED);
+        createPhotoWithStatus(spot, "photos/vis2-pending.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
+        createPhotoWithStatus(spot, "photos/vis2-published.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
+        createPhotoWithStatus(spot, "photos/vis2-quarantined.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         User otherUser = new User();
         otherUser.setUsername("viewer");
         otherUser.setEmail("viewer@example.com");
         otherUser.setPasswordHash("hashedpassword");
-        otherUser.setRole("USER");
+        otherUser.setRole(CodeConstants.ROLE_USER);
         userRepository.save(otherUser);
 
         Pageable pageable = PageRequest.of(0, 20);
@@ -1077,8 +1077,8 @@ public class PhotoServiceTest {
     @SuppressWarnings("unchecked")
     void testGetUserPhotos_AnonymousSeesOnlyPublished() {
         Spot spot = createSpot("35.658581", "139.745433");
-        createPhotoWithStatus(spot, "photos/vis3-pending.jpg", ModerationStatus.PENDING_REVIEW);
-        createPhotoWithStatus(spot, "photos/vis3-published.jpg", ModerationStatus.PUBLISHED);
+        createPhotoWithStatus(spot, "photos/vis3-pending.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
+        createPhotoWithStatus(spot, "photos/vis3-published.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         Pageable pageable = PageRequest.of(0, 20);
         Map<String, Object> result = photoService.getUserPhotos(
@@ -1094,24 +1094,24 @@ public class PhotoServiceTest {
     @DisplayName("Issue#54 - 写真ステータス取得: オーナーは自分の写真のステータスを取得できる")
     void testGetPhotoForOwner_OwnerCanAccessOwnPhoto() {
         Spot spot = createSpot("35.658581", "139.745433");
-        Photo photo = createPhotoWithStatus(spot, "photos/status001.jpg", ModerationStatus.PENDING_REVIEW);
+        Photo photo = createPhotoWithStatus(spot, "photos/status001.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
         Photo result = photoService.getPhotoForOwner(photo.getPhotoId(), testUser.getId());
         assertThat(result).isNotNull();
-        assertThat(result.getModerationStatus()).isEqualTo(ModerationStatus.PENDING_REVIEW);
+        assertThat(result.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
     }
 
     @Test
     @DisplayName("Issue#54 - 写真ステータス取得: 他ユーザーは取得不可（404）")
     void testGetPhotoForOwner_NonOwnerCannotAccess() {
         Spot spot = createSpot("35.658581", "139.745433");
-        Photo photo = createPhotoWithStatus(spot, "photos/status002.jpg", ModerationStatus.PENDING_REVIEW);
+        Photo photo = createPhotoWithStatus(spot, "photos/status002.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
         User otherUser = new User();
         otherUser.setUsername("nonowner");
         otherUser.setEmail("nonowner@example.com");
         otherUser.setPasswordHash("hashedpassword");
-        otherUser.setRole("USER");
+        otherUser.setRole(CodeConstants.ROLE_USER);
         otherUser = userRepository.save(otherUser);
 
         Long otherUserId = otherUser.getId();

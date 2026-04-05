@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.LoginRequest;
 import com.photlas.backend.dto.RegisterRequest;
@@ -55,7 +56,7 @@ public class AuthControllerTest {
     private static final String TEST_PASSWORD = "Password123";
     private static final String EXISTING_USERNAME = "existing";
     private static final String EXISTING_PASSWORD_HASH = "hash";
-    private static final String USER_ROLE = "USER";
+    private static final int USER_ROLE = CodeConstants.ROLE_USER;
     private static final String INVALID_EMAIL = "invalid-email";
     private static final String INVALID_PASSWORD_SHORT = "Pass1";
     private static final String INVALID_PASSWORD_WEAK = "password";
@@ -107,7 +108,7 @@ public class AuthControllerTest {
         user.setUsername(username);
         user.setEmail(email);
         user.setPasswordHash(EXISTING_PASSWORD_HASH);
-        user.setRole(USER_ROLE);
+        user.setRole(CodeConstants.ROLE_USER);
         return userRepository.save(user);
     }
 
@@ -328,7 +329,7 @@ public class AuthControllerTest {
         suspendedUser.setUsername("suspended");
         suspendedUser.setEmail("suspended@example.com");
         suspendedUser.setPasswordHash(passwordEncoder.encode(TEST_PASSWORD));
-        suspendedUser.setRole("SUSPENDED");
+        suspendedUser.setRole(CodeConstants.ROLE_SUSPENDED);
         suspendedUser.setEmailVerified(true);
         userRepository.save(suspendedUser);
 

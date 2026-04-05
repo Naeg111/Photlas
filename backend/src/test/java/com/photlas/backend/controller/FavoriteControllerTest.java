@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -58,8 +59,6 @@ public class FavoriteControllerTest {
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_EMAIL = "test@example.com";
     private static final String TEST_PASSWORD_HASH = "hashedpassword";
-    private static final String USER_ROLE = "USER";
-
     // Test Data Constants - Photo
     private static final String TEST_S3_OBJECT_KEY = "test/photo.jpg";
 
@@ -121,7 +120,7 @@ public class FavoriteControllerTest {
         user.setUsername(TEST_USERNAME);
         user.setEmail(TEST_EMAIL);
         user.setPasswordHash(TEST_PASSWORD_HASH);
-        user.setRole(USER_ROLE);
+        user.setRole(CodeConstants.ROLE_USER);
         return userRepository.save(user);
     }
 
@@ -139,7 +138,7 @@ public class FavoriteControllerTest {
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(user.getId());
         photo.setSpotId(spot.getSpotId());
-        photo.setModerationStatus(com.photlas.backend.entity.ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(com.photlas.backend.entity.CodeConstants.MODERATION_STATUS_PUBLISHED);
         return photoRepository.save(photo);
     }
 
@@ -368,7 +367,7 @@ public class FavoriteControllerTest {
         secondUser.setUsername("seconduser");
         secondUser.setEmail("second@example.com");
         secondUser.setPasswordHash(TEST_PASSWORD_HASH);
-        secondUser.setRole(USER_ROLE);
+        secondUser.setRole(CodeConstants.ROLE_USER);
         userRepository.save(secondUser);
 
         String secondToken = jwtService.generateToken(secondUser.getEmail());

@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.entity.EmailChangeToken;
 import com.photlas.backend.entity.User;
@@ -77,7 +78,7 @@ public class EmailChangeTest {
         testUser.setUsername("testuser");
         testUser.setEmail(TEST_EMAIL);
         testUser.setPasswordHash(passwordEncoder.encode(TEST_PASSWORD));
-        testUser.setRole("USER");
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser.setEmailVerified(true);
         testUser = userRepository.save(testUser);
 
@@ -221,7 +222,7 @@ public class EmailChangeTest {
         otherUser.setUsername("other");
         otherUser.setEmail(NEW_EMAIL);
         otherUser.setPasswordHash("hash");
-        otherUser.setRole("USER");
+        otherUser.setRole(CodeConstants.ROLE_USER);
         userRepository.save(otherUser);
 
         EmailChangeToken token = new EmailChangeToken(

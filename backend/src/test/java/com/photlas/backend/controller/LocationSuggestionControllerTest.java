@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.LocationSuggestionRequest;
 import com.photlas.backend.entity.*;
@@ -178,7 +179,7 @@ public class LocationSuggestionControllerTest {
         user.setEmail(email);
         user.setUsername(username);
         user.setPasswordHash("hashedpassword");
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         user.setEmailVerified(true);
         return userRepository.save(user);
     }
@@ -196,7 +197,7 @@ public class LocationSuggestionControllerTest {
         p.setSpotId(spotId);
         p.setUserId(userId);
         p.setS3ObjectKey("uploads/" + userId + "/test.jpg");
-        p.setModerationStatus(ModerationStatus.PUBLISHED);
+        p.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         p.setShotAt(LocalDateTime.now());
         return photoRepository.save(p);
     }

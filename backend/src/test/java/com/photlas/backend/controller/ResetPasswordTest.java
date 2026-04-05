@@ -1,5 +1,7 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.ResetPasswordRequest;
 import com.photlas.backend.entity.User;
@@ -70,8 +72,6 @@ public class ResetPasswordTest {
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_EMAIL = "test@example.com";
     private static final String OLD_HASHED_PASSWORD = "old-hashed-password";
-    private static final String USER_ROLE = "USER";
-
     // JSONPath定数
     private static final String JSON_PATH_MESSAGE = "$.message";
     private static final String JSON_PATH_ERRORS = "$.errors";
@@ -115,7 +115,7 @@ public class ResetPasswordTest {
         testUser.setUsername(TEST_USERNAME);
         testUser.setEmail(TEST_EMAIL);
         testUser.setPasswordHash(OLD_HASHED_PASSWORD);
-        testUser.setRole(USER_ROLE);
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser = userRepository.save(testUser);
 
         // 有効なトークンを作成

@@ -1,12 +1,10 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.dto.ReportRequest;
 import com.photlas.backend.dto.ReportResponse;
-import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Report;
-import com.photlas.backend.entity.ReportReason;
-import com.photlas.backend.entity.ReportTargetType;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.SelfReportException;
@@ -53,7 +51,7 @@ public class ReportServiceTest {
         Photo photo = new Photo();
         photo.setPhotoId(TEST_PHOTO_ID);
         photo.setUserId(TEST_PHOTO_OWNER_USER_ID);
-        photo.setModerationStatus(ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         return photo;
     }
 
@@ -61,7 +59,7 @@ public class ReportServiceTest {
      * テスト用ReportRequestを作成する
      */
     private ReportRequest createTestReportRequest() {
-        return new ReportRequest("SPAM", "スパム投稿です");
+        return new ReportRequest(CodeConstants.REASON_SPAM, "スパム投稿です");
     }
 
     /**
@@ -71,9 +69,9 @@ public class ReportServiceTest {
         Report report = new Report();
         report.setId(1L);
         report.setReporterUserId(TEST_REPORTER_USER_ID);
-        report.setTargetType(ReportTargetType.PHOTO);
+        report.setTargetType(CodeConstants.TARGET_TYPE_PHOTO);
         report.setTargetId(TEST_PHOTO_ID);
-        report.setReasonCategory(ReportReason.SPAM);
+        report.setReasonCategory(CodeConstants.REASON_SPAM);
         report.setReasonText("スパム投稿です");
         return report;
     }
@@ -101,7 +99,7 @@ public class ReportServiceTest {
 
         Report existingReport = createSavedReport();
         when(reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
-                TEST_REPORTER_USER_ID, ReportTargetType.PHOTO, TEST_PHOTO_ID))
+                TEST_REPORTER_USER_ID, CodeConstants.TARGET_TYPE_PHOTO, TEST_PHOTO_ID))
                 .thenReturn(Optional.of(existingReport));
 
         ReportRequest request = createTestReportRequest();
@@ -132,14 +130,14 @@ public class ReportServiceTest {
         Photo photo = createTestPhoto();
         when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
         when(reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
-                TEST_REPORTER_USER_ID, ReportTargetType.PHOTO, TEST_PHOTO_ID))
+                TEST_REPORTER_USER_ID, CodeConstants.TARGET_TYPE_PHOTO, TEST_PHOTO_ID))
                 .thenReturn(Optional.empty());
 
         Report savedReport = createSavedReport();
         when(reportRepository.save(any(Report.class))).thenReturn(savedReport);
 
         // 閾値の2件に到達
-        when(reportRepository.countByTargetTypeAndTargetId(ReportTargetType.PHOTO, TEST_PHOTO_ID))
+        when(reportRepository.countByTargetTypeAndTargetId(CodeConstants.TARGET_TYPE_PHOTO, TEST_PHOTO_ID))
                 .thenReturn(2L);
 
         ReportRequest request = createTestReportRequest();
@@ -148,7 +146,7 @@ public class ReportServiceTest {
         reportService.createReport(TEST_PHOTO_ID, request, TEST_REPORTER_USER_ID);
 
         // Then
-        assertThat(photo.getModerationStatus()).isEqualTo(ModerationStatus.QUARANTINED);
+        assertThat(photo.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_QUARANTINED);
         verify(photoRepository).save(photo);
     }
 
@@ -159,14 +157,14 @@ public class ReportServiceTest {
         Photo photo = createTestPhoto();
         when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
         when(reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
-                TEST_REPORTER_USER_ID, ReportTargetType.PHOTO, TEST_PHOTO_ID))
+                TEST_REPORTER_USER_ID, CodeConstants.TARGET_TYPE_PHOTO, TEST_PHOTO_ID))
                 .thenReturn(Optional.empty());
 
         Report savedReport = createSavedReport();
         when(reportRepository.save(any(Report.class))).thenReturn(savedReport);
 
         // 閾値の2件未満
-        when(reportRepository.countByTargetTypeAndTargetId(ReportTargetType.PHOTO, TEST_PHOTO_ID))
+        when(reportRepository.countByTargetTypeAndTargetId(CodeConstants.TARGET_TYPE_PHOTO, TEST_PHOTO_ID))
                 .thenReturn(1L);
 
         ReportRequest request = createTestReportRequest();
@@ -175,7 +173,7 @@ public class ReportServiceTest {
         reportService.createReport(TEST_PHOTO_ID, request, TEST_REPORTER_USER_ID);
 
         // Then
-        assertThat(photo.getModerationStatus()).isEqualTo(ModerationStatus.PUBLISHED);
+        assertThat(photo.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_PUBLISHED);
         verify(photoRepository, never()).save(any(Photo.class));
     }
 
@@ -186,12 +184,12 @@ public class ReportServiceTest {
         Photo photo = createTestPhoto();
         when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
         when(reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
-                TEST_REPORTER_USER_ID, ReportTargetType.PHOTO, TEST_PHOTO_ID))
+                TEST_REPORTER_USER_ID, CodeConstants.TARGET_TYPE_PHOTO, TEST_PHOTO_ID))
                 .thenReturn(Optional.empty());
 
         Report savedReport = createSavedReport();
         when(reportRepository.save(any(Report.class))).thenReturn(savedReport);
-        when(reportRepository.countByTargetTypeAndTargetId(ReportTargetType.PHOTO, TEST_PHOTO_ID))
+        when(reportRepository.countByTargetTypeAndTargetId(CodeConstants.TARGET_TYPE_PHOTO, TEST_PHOTO_ID))
                 .thenReturn(1L);
 
         ReportRequest request = createTestReportRequest();
@@ -211,7 +209,7 @@ public class ReportServiceTest {
     void createReport_QuarantinedPhoto_ThrowsIllegalStateException() {
         // Given
         Photo photo = createTestPhoto();
-        photo.setModerationStatus(ModerationStatus.QUARANTINED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
         when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
         ReportRequest request = createTestReportRequest();
 
@@ -226,7 +224,7 @@ public class ReportServiceTest {
     void createReport_RemovedPhoto_ThrowsIllegalStateException() {
         // Given
         Photo photo = createTestPhoto();
-        photo.setModerationStatus(ModerationStatus.REMOVED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
         when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
         ReportRequest request = createTestReportRequest();
 

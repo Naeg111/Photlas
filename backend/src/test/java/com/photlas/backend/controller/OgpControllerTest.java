@@ -1,6 +1,6 @@
 package com.photlas.backend.controller;
 
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -66,7 +66,7 @@ public class OgpControllerTest {
         testUser.setUsername("photographer");
         testUser.setEmail("photo@example.com");
         testUser.setPasswordHash("hashedpassword");
-        testUser.setRole("USER");
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser = userRepository.save(testUser);
 
         testSpot = new Spot();
@@ -80,7 +80,7 @@ public class OgpControllerTest {
         testPhoto.setShotAt(LocalDateTime.of(2025, 8, 15, 18, 30));
         testPhoto.setUserId(testUser.getId());
         testPhoto.setSpotId(testSpot.getSpotId());
-        testPhoto.setModerationStatus(ModerationStatus.PUBLISHED);
+        testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         testPhoto = photoRepository.save(testPhoto);
 
         when(s3Service.generateCdnUrl(anyString())).thenReturn(TEST_CDN_URL);
@@ -121,7 +121,7 @@ public class OgpControllerTest {
     @DisplayName("Issue#54 - QUARANTINED写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_QuarantinedPhoto_Returns404() throws Exception {
         // Given: QUARANTINED写真
-        testPhoto.setModerationStatus(ModerationStatus.QUARANTINED);
+        testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
         photoRepository.save(testPhoto);
 
         // When & Then
@@ -160,7 +160,7 @@ public class OgpControllerTest {
     @DisplayName("Issue#54 - REMOVED写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_RemovedPhoto_Returns404() throws Exception {
         // Given: REMOVED写真
-        testPhoto.setModerationStatus(ModerationStatus.REMOVED);
+        testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
         photoRepository.save(testPhoto);
 
         // When & Then

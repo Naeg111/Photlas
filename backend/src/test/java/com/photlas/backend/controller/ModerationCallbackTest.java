@@ -1,7 +1,7 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -78,7 +78,7 @@ public class ModerationCallbackTest {
         user.setUsername("testuser");
         user.setEmail("test@example.com");
         user.setPasswordHash("hashedpassword");
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         user = userRepository.save(user);
 
         Spot spot = new Spot();
@@ -92,7 +92,7 @@ public class ModerationCallbackTest {
         testPhoto.setUserId(user.getId());
         testPhoto.setS3ObjectKey("uploads/" + user.getId() + "/test.jpg");
         testPhoto.setShotAt(LocalDateTime.now());
-        testPhoto.setModerationStatus(ModerationStatus.PENDING_REVIEW);
+        testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
         testPhoto = photoRepository.save(testPhoto);
     }
 
@@ -112,7 +112,7 @@ public class ModerationCallbackTest {
                 .andExpect(status().isOk());
 
         Photo updated = photoRepository.findById(testPhoto.getPhotoId()).orElseThrow();
-        assertThat(updated.getModerationStatus()).isEqualTo(ModerationStatus.PUBLISHED);
+        assertThat(updated.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_PUBLISHED);
     }
 
     @Test
@@ -131,7 +131,7 @@ public class ModerationCallbackTest {
                 .andExpect(status().isOk());
 
         Photo updated = photoRepository.findById(testPhoto.getPhotoId()).orElseThrow();
-        assertThat(updated.getModerationStatus()).isEqualTo(ModerationStatus.QUARANTINED);
+        assertThat(updated.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_QUARANTINED);
     }
 
     @Test
@@ -208,7 +208,7 @@ public class ModerationCallbackTest {
     @DisplayName("Issue#54 - PENDING_REVIEWでない写真は滞留チェックでカウントされない")
     void testStaleCheck_NonPendingReview_NotCounted() throws Exception {
         // testPhotoをPUBLISHEDに変更
-        testPhoto.setModerationStatus(ModerationStatus.PUBLISHED);
+        testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         photoRepository.save(testPhoto);
 
         // created_atを10分前に更新

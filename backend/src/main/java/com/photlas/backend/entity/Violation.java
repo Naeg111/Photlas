@@ -20,18 +20,17 @@ public class Violation {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "target_type", nullable = false, length = 20)
-    private ReportTargetType targetType;
+    @Column(name = "target_type", nullable = false)
+    private Integer targetType;
 
     @Column(name = "target_id", nullable = false)
     private Long targetId;
 
-    @Column(name = "violation_type", nullable = false, length = 50)
-    private String violationType;
+    @Column(name = "violation_type", nullable = false)
+    private Integer violationType;
 
-    @Column(name = "action_taken", nullable = false, length = 50)
-    private String actionTaken;
+    @Column(name = "action_taken", nullable = false)
+    private Integer actionTaken;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -48,17 +47,17 @@ public class Violation {
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 
-    public ReportTargetType getTargetType() { return targetType; }
-    public void setTargetType(ReportTargetType targetType) { this.targetType = targetType; }
+    public Integer getTargetType() { return targetType; }
+    public void setTargetType(Integer targetType) { this.targetType = targetType; }
 
     public Long getTargetId() { return targetId; }
     public void setTargetId(Long targetId) { this.targetId = targetId; }
 
-    public String getViolationType() { return violationType; }
-    public void setViolationType(String violationType) { this.violationType = violationType; }
+    public Integer getViolationType() { return violationType; }
+    public void setViolationType(Integer violationType) { this.violationType = violationType; }
 
-    public String getActionTaken() { return actionTaken; }
-    public void setActionTaken(String actionTaken) { this.actionTaken = actionTaken; }
+    public Integer getActionTaken() { return actionTaken; }
+    public void setActionTaken(Integer actionTaken) { this.actionTaken = actionTaken; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

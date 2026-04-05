@@ -1,8 +1,8 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.entity.Category;
-import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -113,7 +113,7 @@ public class PhotoUpdateTest {
         user.setUsername(username);
         user.setEmail(email);
         user.setPasswordHash("hashedpassword");
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         return userRepository.save(user);
     }
 
@@ -131,14 +131,14 @@ public class PhotoUpdateTest {
         return category;
     }
 
-    private Photo createPhoto(String s3Key, ModerationStatus status) {
+    private Photo createPhoto(String s3Key, Integer status) {
         Photo photo = new Photo();
         photo.setS3ObjectKey(s3Key);
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(ownerUser.getId());
         photo.setSpotId(testSpot.getSpotId());
         photo.setModerationStatus(status);
-        photo.setWeather("晴れ");
+        photo.setWeather(CodeConstants.WEATHER_SUNNY);
         photo.setPlaceName("東京タワー");
         return photoRepository.save(photo);
     }
@@ -146,10 +146,10 @@ public class PhotoUpdateTest {
     @Test
     @DisplayName("Issue#61 - 天気・場所名を更新すると200が返る")
     void updatePhoto_success_returns200() throws Exception {
-        Photo photo = createPhoto("uploads/1/test.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhoto("uploads/1/test.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         Map<String, Object> request = Map.of(
-                "weather", "曇り",
+                "weather", CodeConstants.WEATHER_CLOUDY,
                 "placeName", "スカイツリー"
         );
 
@@ -164,7 +164,7 @@ public class PhotoUpdateTest {
     @Test
     @DisplayName("Issue#61 - 天気のみ変更時はmoderation_statusが変わらない")
     void updatePhoto_weatherChanged_statusUnchanged() throws Exception {
-        Photo photo = createPhoto("uploads/1/test3.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhoto("uploads/1/test3.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         Map<String, Object> request = Map.of(
                 "weather", "雨"
@@ -178,15 +178,15 @@ public class PhotoUpdateTest {
                 .andExpect(status().isOk());
 
         Photo updated = photoRepository.findById(photo.getPhotoId()).orElseThrow();
-        assertEquals(ModerationStatus.PUBLISHED, updated.getModerationStatus());
+        assertEquals(CodeConstants.MODERATION_STATUS_PUBLISHED, updated.getModerationStatus());
     }
 
     @Test
     @DisplayName("Issue#61 - 非オーナーが編集しようとすると403が返る")
     void updatePhoto_nonOwner_returns403() throws Exception {
-        Photo photo = createPhoto("uploads/1/test4.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhoto("uploads/1/test4.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
-        Map<String, Object> request = Map.of("weather", "雨");
+        Map<String, Object> request = Map.of("weather", CodeConstants.WEATHER_RAIN);
 
         mockMvc.perform(put(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf())
@@ -212,7 +212,7 @@ public class PhotoUpdateTest {
     @Test
     @DisplayName("Issue#61 - REMOVEDの写真を編集しようとすると404が返る")
     void updatePhoto_removed_returns404() throws Exception {
-        Photo photo = createPhoto("uploads/1/test5.jpg", ModerationStatus.REMOVED);
+        Photo photo = createPhoto("uploads/1/test5.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
 
         Map<String, Object> request = Map.of("weather", "晴れ");
 
@@ -227,7 +227,7 @@ public class PhotoUpdateTest {
     @Test
     @DisplayName("Issue#61 - 未認証ユーザーが編集しようとすると401が返る")
     void updatePhoto_unauthenticated_returns401() throws Exception {
-        Photo photo = createPhoto("uploads/1/test6.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhoto("uploads/1/test6.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         Map<String, Object> request = Map.of("weather", "晴れ");
 
