@@ -29,8 +29,17 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
 
     /**
      * Issue#54: スポットIDとモデレーションステータスで写真を検索し、撮影日時の古い順で返す
+     * レポート#12 #2: 退会済みユーザーの写真を除外
      */
-    List<Photo> findBySpotIdAndModerationStatusOrderByShotAtAsc(Long spotId, Integer moderationStatus);
+    @org.springframework.data.jpa.repository.Query(
+        value = "SELECT p.* FROM photos p " +
+                "INNER JOIN users u ON p.user_id = u.id " +
+                "WHERE p.spot_id = :spotId AND p.moderation_status = :moderationStatus AND u.deleted_at IS NULL " +
+                "ORDER BY p.shot_at ASC",
+        nativeQuery = true)
+    List<Photo> findBySpotIdAndModerationStatusOrderByShotAtAsc(
+        @org.springframework.data.repository.query.Param("spotId") Long spotId,
+        @org.springframework.data.repository.query.Param("moderationStatus") Integer moderationStatus);
 
     /**
      * Issue#54: モデレーションステータスで写真を検索
