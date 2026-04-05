@@ -206,7 +206,7 @@ public class FavoriteServiceTest {
                 PageRequest.of(0, 10),
                 1
         );
-        when(favoriteRepository.findByUserId(eq(TEST_USER_ID), any())).thenReturn(favoritePage);
+        when(favoriteRepository.findByUserIdExcludingDeletedUsers(eq(TEST_USER_ID), any())).thenReturn(favoritePage);
 
         Photo photo = createTestPhoto();
         when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
@@ -275,34 +275,16 @@ public class FavoriteServiceTest {
     @Test
     @DisplayName("Issue#72 - getFavorites: 退会済みユーザーの写真がお気に入り一覧から除外される")
     void getFavorites_ExcludesDeletedUserPhotos() {
-        // Given
+        // Given: 退会済みユーザーの写真はDB側で除外されるため、リポジトリが空ページを返す
         User user = createTestUser();
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
-        // 退会済みユーザーの写真をお気に入りに登録している状態
-        User deletedUser = new User("退会済み", "deleted@example.com", "hash", CodeConstants.ROLE_USER);
-        deletedUser.setId(99L);
-        deletedUser.setDeletedAt(LocalDateTime.now().minusDays(10));
-
-        Photo deletedUserPhoto = new Photo();
-        deletedUserPhoto.setPhotoId(20L);
-        deletedUserPhoto.setUserId(99L);
-        deletedUserPhoto.setSpotId(100L);
-        deletedUserPhoto.setS3ObjectKey("photos/deleted.jpg");
-        deletedUserPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
-
-        Favorite favorite = new Favorite();
-        favorite.setUserId(TEST_USER_ID);
-        favorite.setPhotoId(20L);
-
-        Page<Favorite> favoritePage = new PageImpl<>(
-                List.of(favorite),
+        Page<Favorite> emptyPage = new PageImpl<>(
+                List.of(),
                 PageRequest.of(0, 10),
-                1
+                0
         );
-        when(favoriteRepository.findByUserId(eq(TEST_USER_ID), any())).thenReturn(favoritePage);
-        when(photoRepository.findById(20L)).thenReturn(Optional.of(deletedUserPhoto));
-        when(userRepository.findById(99L)).thenReturn(Optional.of(deletedUser));
+        when(favoriteRepository.findByUserIdExcludingDeletedUsers(eq(TEST_USER_ID), any())).thenReturn(emptyPage);
 
         // When
         Map<String, Object> result = favoriteService.getFavorites(TEST_EMAIL, 0, 10);
@@ -310,5 +292,73 @@ public class FavoriteServiceTest {
         // Then: 退会済みユーザーの写真は結果に含まれない
         List<?> content = (List<?>) result.get("content");
         assertThat(content).isEmpty();
+        assertThat(result.get("total_elements")).isEqualTo(0L);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    @DisplayName("レポート#27-1 - getFavorites: 退会済みユーザーの写真がある場合もtotal_elementsとtotal_pagesが整合する")
+    void getFavorites_WithDeletedUserPhotos_TotalElementsAndTotalPagesAreConsistent() {
+        // Given: 全3件のお気に入りのうち退会済みユーザーの写真1件はDB側で除外済み
+        // リポジトリは有効な2件のみ返す（ページサイズ2 → 1ページ）
+        User user = createTestUser();
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+
+        User activeUser = new User("アクティブ", "active@example.com", "hash", CodeConstants.ROLE_USER);
+        activeUser.setId(2L);
+
+        Photo photo1 = createTestPhoto();
+        photo1.setPhotoId(10L);
+        photo1.setUserId(2L);
+
+        Photo photo2 = createTestPhoto();
+        photo2.setPhotoId(11L);
+        photo2.setUserId(2L);
+        photo2.setS3ObjectKey("photos/test2.jpg");
+
+        Favorite fav1 = new Favorite();
+        fav1.setUserId(TEST_USER_ID);
+        fav1.setPhotoId(10L);
+
+        Favorite fav2 = new Favorite();
+        fav2.setUserId(TEST_USER_ID);
+        fav2.setPhotoId(11L);
+
+        // DB側で退会済みユーザーの写真を除外済みの結果（2件、ページサイズ2 → 1ページ）
+        Page<Favorite> favoritePage = new PageImpl<>(
+                List.of(fav1, fav2),
+                PageRequest.of(0, 2),
+                2
+        );
+        when(favoriteRepository.findByUserIdExcludingDeletedUsers(eq(TEST_USER_ID), any())).thenReturn(favoritePage);
+
+        when(photoRepository.findById(10L)).thenReturn(Optional.of(photo1));
+        when(photoRepository.findById(11L)).thenReturn(Optional.of(photo2));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(activeUser));
+
+        Spot spot = new Spot();
+        spot.setSpotId(100L);
+        spot.setLatitude(new BigDecimal("35.681236"));
+        spot.setLongitude(new BigDecimal("139.767125"));
+        when(spotRepository.findById(100L)).thenReturn(Optional.of(spot));
+        when(favoriteRepository.countByPhotoId(any())).thenReturn(1L);
+        when(s3Service.generateCdnUrl(any())).thenReturn("https://cdn.example.com/photo.jpg");
+
+        // When
+        Map<String, Object> result = favoriteService.getFavorites(TEST_EMAIL, 0, 2);
+
+        // Then: total_elementsとtotal_pagesが整合する
+        List<?> content = (List<?>) result.get("content");
+        assertThat(content).hasSize(2);
+        assertThat(result.get("total_elements")).isEqualTo(2L);
+        assertThat(result.get("total_pages")).isEqualTo(1);
+
+        long totalElements = (long) result.get("total_elements");
+        int totalPages = (int) result.get("total_pages");
+        int pageSize = 2;
+        int expectedTotalPages = (int) Math.ceil((double) totalElements / pageSize);
+        assertThat(totalPages)
+                .as("total_pages(%d)はtotal_elements(%d)/pageSize(%d)と整合すべき", totalPages, totalElements, pageSize)
+                .isEqualTo(expectedTotalPages);
     }
 }
