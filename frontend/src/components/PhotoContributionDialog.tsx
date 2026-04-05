@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -204,13 +205,13 @@ export function PhotoContributionDialog({
     if (file) {
       // ファイルサイズチェック
       if (file.size > PHOTO_UPLOAD.MAX_FILE_SIZE) {
-        alert(`ファイルサイズは${PHOTO_UPLOAD.MAX_FILE_SIZE_DISPLAY}以下にしてください。`)
+        toast.error(`ファイルサイズは${PHOTO_UPLOAD.MAX_FILE_SIZE_DISPLAY}以下にしてください。`)
         return
       }
 
       // ファイル形式チェック
       if (!PHOTO_UPLOAD.ALLOWED_FILE_TYPES.includes(file.type as typeof PHOTO_UPLOAD.ALLOWED_FILE_TYPES[number])) {
-        alert(`${PHOTO_UPLOAD.ALLOWED_FILE_TYPES_DISPLAY}形式のファイルのみ対応しています。`)
+        toast.error(`${PHOTO_UPLOAD.ALLOWED_FILE_TYPES_DISPLAY}形式のファイルのみ対応しています。`)
         return
       }
 
@@ -304,11 +305,11 @@ export function PhotoContributionDialog({
   const handleSubmit = async () => {
     // バリデーション
     if (!selectedFile) {
-      alert('写真を選択してください。')
+      toast.error('写真を選択してください。')
       return
     }
     if (!pinPosition) {
-      alert('位置情報を設定してください。')
+      toast.error('位置情報を設定してください。')
       return
     }
 

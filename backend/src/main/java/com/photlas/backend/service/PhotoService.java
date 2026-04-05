@@ -105,6 +105,11 @@ public class PhotoService {
         // Issue#54: アカウント停止チェック
         validateAccountNotSuspended(user);
 
+        // S3ファイル存在確認
+        if (!s3Service.existsInS3(request.getS3ObjectKey())) {
+            throw new IllegalArgumentException("S3上にファイルが存在しません: " + request.getS3ObjectKey());
+        }
+
         // 1. スポットの集約と作成
         Spot spot = findOrCreateSpot(request, user);
 
