@@ -608,6 +608,8 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
 
       <PrivacyPolicyPage {...dialog.getProps('privacy')} />
 
+      <CookieConsentBanner onPrivacyPolicyClick={() => dialog.open('privacy')} />
+
       <PasswordResetRequestModal
         open={dialog.isOpen('passwordReset')}
         onClose={() => dialog.close('passwordReset')}
@@ -779,7 +781,6 @@ function App() {
         <Route path="/manage/deleted-users/:userId" element={<AdminDeletedUserDetailPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-      <CookieConsentBanner />
     </AuthProvider>
   )
 }

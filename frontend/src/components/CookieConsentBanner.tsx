@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 
 const CONSENT_KEY = 'cookie_consent'
 
@@ -15,7 +14,12 @@ const CONSENT_KEY = 'cookie_consent'
  * 全画面transparent overlay（fixed inset-0）の中にバナーを配置。
  * バナーの下に透明スペーサーを置き、ビューポート最下端にbodyの黒が透過する。
  */
-export function CookieConsentBanner() {
+
+interface CookieConsentBannerProps {
+  onPrivacyPolicyClick?: () => void
+}
+
+export function CookieConsentBanner({ onPrivacyPolicyClick }: Readonly<CookieConsentBannerProps>) {
   const [isVisible, setIsVisible] = useState(() => {
     const consent = localStorage.getItem(CONSENT_KEY)
     return consent === null
@@ -55,14 +59,17 @@ export function CookieConsentBanner() {
           <div className="text-center">
             <p>
               このサイトでは、サービス改善のためにGoogle Analyticsを使用し、Cookieによるアクセス情報を収集しています。詳しくは
-              <Link to="/" className="text-blue-600 underline hover:text-blue-800 mx-1">
+              <button
+                onClick={onPrivacyPolicyClick}
+                className="text-blue-600 underline hover:text-blue-800 mx-1"
+              >
                 プライバシーポリシー
-              </Link>
+              </button>
               をご覧ください。
             </p>
             <p className="mt-1 text-xs text-gray-500">
               This site uses Google Analytics and cookies to collect access information for service improvement.
-              See our <Link to="/" className="text-blue-600 underline hover:text-blue-800 mx-1">Privacy Policy</Link> for details.
+              See our <button onClick={onPrivacyPolicyClick} className="text-blue-600 underline hover:text-blue-800 mx-1">Privacy Policy</button> for details.
             </p>
           </div>
           <div className="flex gap-3">
