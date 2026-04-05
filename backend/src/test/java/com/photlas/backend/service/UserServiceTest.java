@@ -3,6 +3,7 @@ package com.photlas.backend.service;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.dto.LoginRequest;
 import com.photlas.backend.dto.RegisterRequest;
+import com.photlas.backend.dto.UpdateProfileRequest;
 import com.photlas.backend.dto.UpdateSnsLinksRequest;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -420,6 +421,25 @@ public class UserServiceTest {
         accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
 
         assertThat(spot.getCreatedByUserId()).isEqualTo(2L);
+    }
+
+    // ===== updateProfileのSNSリンク非更新 (ProfileService.updateProfile) =====
+
+    @Test
+    @DisplayName("レポート#5-1 - updateProfile: SNSリンクを含むリクエストでもSNSリンクが更新されない")
+    void testUpdateProfile_DoesNotUpdateSnsLinks() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        request.setUsername("newname");
+
+        profileService.updateProfile(TEST_EMAIL, request);
+
+        // SNSリンクリポジトリの削除・保存が呼ばれないこと
+        verify(userSnsLinkRepository, never()).deleteByUserId(anyLong());
+        verify(userSnsLinkRepository, never()).save(any());
     }
 
     // ===== ヘルパーメソッド =====
