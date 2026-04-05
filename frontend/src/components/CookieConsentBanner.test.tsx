@@ -67,6 +67,20 @@ describe('CookieConsentBanner - Issue#71 GDPR対応', () => {
 
       expect(screen.getByText('プライバシーポリシー')).toBeInTheDocument()
     })
+
+    it('プライバシーポリシーリンクをクリックするとonPrivacyPolicyClickが呼ばれる', () => {
+      const mockOnPrivacyPolicyClick = vi.fn()
+      render(
+        <MemoryRouter>
+          <CookieConsentBanner onPrivacyPolicyClick={mockOnPrivacyPolicyClick} />
+        </MemoryRouter>
+      )
+      act(() => { vi.advanceTimersByTime(500) })
+
+      fireEvent.click(screen.getByText('プライバシーポリシー'))
+
+      expect(mockOnPrivacyPolicyClick).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('ボタン表示', () => {
