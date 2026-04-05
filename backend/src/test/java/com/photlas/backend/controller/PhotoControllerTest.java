@@ -154,9 +154,9 @@ public class PhotoControllerTest {
         token = jwtService.generateToken(testUser.getEmail());
 
         // カテゴリマスターデータを作成
-        createCategory(CATEGORY_LANDSCAPE);
-        createCategory(CATEGORY_CITYSCAPE);
-        createCategory(CATEGORY_ARCHITECTURE);
+        createCategory(CodeConstants.CATEGORY_NATURE, CATEGORY_LANDSCAPE);
+        createCategory(CodeConstants.CATEGORY_CITYSCAPE, CATEGORY_CITYSCAPE);
+        createCategory(CodeConstants.CATEGORY_ARCHITECTURE, CATEGORY_ARCHITECTURE);
 
         // S3Serviceのモック設定
         setupS3ServiceMock();
@@ -177,8 +177,9 @@ public class PhotoControllerTest {
     /**
      * カテゴリを作成するヘルパーメソッド
      */
-    private Category createCategory(String name) {
+    private Category createCategory(int categoryId, String name) {
         Category category = new Category();
+        category.setCategoryId(categoryId);
         category.setName(name);
         return categoryRepository.save(category);
     }

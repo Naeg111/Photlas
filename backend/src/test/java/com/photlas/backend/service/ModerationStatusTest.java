@@ -96,6 +96,7 @@ public class ModerationStatusTest {
         otherUser = userRepository.save(otherUser);
 
         landscapeCategory = new Category();
+        landscapeCategory.setCategoryId(CodeConstants.CATEGORY_NATURE);
         landscapeCategory.setName("風景");
         landscapeCategory = categoryRepository.save(landscapeCategory);
     }
