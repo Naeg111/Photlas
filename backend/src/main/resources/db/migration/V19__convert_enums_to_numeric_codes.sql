@@ -173,7 +173,11 @@ ALTER TABLE location_suggestions DROP COLUMN status;
 ALTER TABLE location_suggestions RENAME COLUMN status_new TO status;
 
 -- ========== 16. categories.category_id (自動採番 → 200番台固定ID) ==========
--- まず旧ID→新IDのマッピングテーブルを作成
+-- FK制約を一���的に無効化（HibernateがManyToManyから自動生成したFK）
+ALTER TABLE photo_categories DROP CONSTRAINT IF EXISTS fkq1sjuro3tbb32a8xd18k3oi5c;
+ALTER TABLE photo_categories DROP CONSTRAINT IF EXISTS fk_photo_categories_category;
+
+-- 旧ID→新IDのマッピングテーブルを作成
 CREATE TEMPORARY TABLE category_id_map (old_id INTEGER, new_id INTEGER);
 INSERT INTO category_id_map (old_id, new_id)
 SELECT c.category_id, CASE c.name
@@ -199,13 +203,7 @@ SELECT c.category_id, CASE c.name
 END
 FROM categories c;
 
--- photo_categoriesのcategory_idを新IDに更新（FK制約なし）
-UPDATE photo_categories SET category_id = (
-    SELECT new_id FROM category_id_map WHERE old_id = photo_categories.category_id
-)
-WHERE EXISTS (SELECT 1 FROM category_id_map WHERE old_id = photo_categories.category_id);
-
--- categoriesテーブルに新IDの行を作成
+-- categoriesテーブル��新IDの行を先に作成（FK制約チェック対策）
 INSERT INTO categories (category_id, name)
 SELECT m.new_id, c.name
 FROM category_id_map m
@@ -213,12 +211,22 @@ JOIN categories c ON c.category_id = m.old_id
 WHERE m.new_id != m.old_id
 ON CONFLICT (category_id) DO NOTHING;
 
--- 旧IDの行を削除（新IDに移行済みの場合のみ）
+-- photo_categoriesのcategory_idを新IDに更新
+UPDATE photo_categories SET category_id = (
+    SELECT new_id FROM category_id_map WHERE old_id = photo_categories.category_id
+)
+WHERE EXISTS (SELECT 1 FROM category_id_map WHERE old_id = photo_categories.category_id);
+
+-- 旧IDの行���削除（���IDに移行済みの場合のみ）
 DELETE FROM categories WHERE category_id IN (
     SELECT old_id FROM category_id_map WHERE old_id != new_id
 );
 
 DROP TABLE category_id_map;
+
+-- FK制約を再作成
+ALTER TABLE photo_categories ADD CONSTRAINT fk_photo_categories_category
+    FOREIGN KEY (category_id) REFERENCES categories(category_id);
 
 -- categoriesのSERIAL自動採番シーケンスを200番台以降に設定
 ALTER SEQUENCE categories_category_id_seq RESTART WITH 215;
