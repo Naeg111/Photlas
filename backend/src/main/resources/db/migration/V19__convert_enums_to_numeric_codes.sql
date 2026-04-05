@@ -172,12 +172,11 @@ END;
 ALTER TABLE location_suggestions DROP COLUMN status;
 ALTER TABLE location_suggestions RENAME COLUMN status_new TO status;
 
--- ========== 16. categories.id (自動採番 → 200番台固定ID) ==========
--- photo_categoriesのFK制約を一時的に無効化してIDを変更
--- まず新IDへのマッピングテーブルを作成
+-- ========== 16. categories.category_id (自動採番 → 200番台固定ID) ==========
+-- まず旧ID→新IDのマッピングテーブルを作成
 CREATE TEMPORARY TABLE category_id_map (old_id INTEGER, new_id INTEGER);
 INSERT INTO category_id_map (old_id, new_id)
-SELECT c.id, CASE c.name
+SELECT c.category_id, CASE c.name
     WHEN '自然風景' THEN 201
     WHEN '街並み' THEN 202
     WHEN '建造物' THEN 203
@@ -200,20 +199,29 @@ SELECT c.id, CASE c.name
 END
 FROM categories c;
 
--- photo_categoriesのcategory_idを新IDに更新
+-- photo_categoriesのcategory_idを新IDに更新（FK制約なし）
 UPDATE photo_categories SET category_id = (
     SELECT new_id FROM category_id_map WHERE old_id = photo_categories.category_id
 )
 WHERE EXISTS (SELECT 1 FROM category_id_map WHERE old_id = photo_categories.category_id);
 
--- categoriesテーブルのIDを更新（FK制約があるため一時的に新IDで新行を作成→旧行を削除）
-INSERT INTO categories (id, name) SELECT new_id, (SELECT name FROM categories WHERE id = old_id) FROM category_id_map
-ON CONFLICT (id) DO NOTHING;
+-- categoriesテーブルに新IDの行を作成
+INSERT INTO categories (category_id, name)
+SELECT m.new_id, c.name
+FROM category_id_map m
+JOIN categories c ON c.category_id = m.old_id
+WHERE m.new_id != m.old_id
+ON CONFLICT (category_id) DO NOTHING;
 
--- 旧IDの行を削除（photo_categoriesは既に新IDに更新済み）
-DELETE FROM categories WHERE id NOT IN (SELECT new_id FROM category_id_map);
+-- 旧IDの行を削除（新IDに移行済みの場合のみ）
+DELETE FROM categories WHERE category_id IN (
+    SELECT old_id FROM category_id_map WHERE old_id != new_id
+);
 
 DROP TABLE category_id_map;
+
+-- categoriesのSERIAL自動採番シーケンスを200番台以降に設定
+ALTER SEQUENCE categories_category_id_seq RESTART WITH 215;
 
 -- reports テーブルのユニーク制約を再作成（target_typeカラムの型が変わったため）
 -- 既存の制約は自動的にカラム削除時に除去されるため、再作成のみ
