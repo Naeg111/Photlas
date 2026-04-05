@@ -65,6 +65,10 @@ public class ProfileService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
+        if (user.getDeletedAt() != null) {
+            throw new UserNotFoundException(ERROR_USER_NOT_FOUND);
+        }
+
         return buildProfileResponse(user, false);
     }
 
