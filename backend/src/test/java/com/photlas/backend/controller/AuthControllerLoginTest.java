@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.LoginRequest;
 import com.photlas.backend.dto.RegisterRequest;
@@ -63,7 +64,7 @@ public class AuthControllerLoginTest {
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
         testUser.setPasswordHash(passwordEncoder.encode("Password123"));
-        testUser.setRole("USER");
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser.setEmailVerified(true);
         userRepository.save(testUser);
     }
@@ -230,7 +231,7 @@ public class AuthControllerLoginTest {
         unverifiedUser.setUsername("unverified");
         unverifiedUser.setEmail("unverified@example.com");
         unverifiedUser.setPasswordHash(passwordEncoder.encode("Password123"));
-        unverifiedUser.setRole("USER");
+        unverifiedUser.setRole(CodeConstants.ROLE_USER);
         unverifiedUser.setEmailVerified(false);
         userRepository.save(unverifiedUser);
 

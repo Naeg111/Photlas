@@ -1,7 +1,7 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Favorite;
-import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -68,7 +68,7 @@ public class FavoriteServiceTest {
      * テスト用Userエンティティを作成する
      */
     private User createTestUser() {
-        User user = new User("テストユーザー", TEST_EMAIL, "hashedPassword", "USER");
+        User user = new User("テストユーザー", TEST_EMAIL, "hashedPassword", CodeConstants.ROLE_USER);
         user.setId(TEST_USER_ID);
         return user;
     }
@@ -83,8 +83,8 @@ public class FavoriteServiceTest {
         photo.setSpotId(100L);
         photo.setS3ObjectKey("photos/test.jpg");
         photo.setShotAt(LocalDateTime.of(2026, 1, 1, 12, 0));
-        photo.setWeather("晴れ");
-        photo.setModerationStatus(ModerationStatus.PUBLISHED);
+        photo.setWeather(CodeConstants.WEATHER_SUNNY);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         return photo;
     }
 
@@ -243,7 +243,7 @@ public class FavoriteServiceTest {
         // Given
         User user = createTestUser();
         Photo photo = createTestPhoto();
-        photo.setModerationStatus(ModerationStatus.QUARANTINED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
@@ -260,7 +260,7 @@ public class FavoriteServiceTest {
         // Given
         User user = createTestUser();
         Photo photo = createTestPhoto();
-        photo.setModerationStatus(ModerationStatus.PENDING_REVIEW);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
@@ -280,7 +280,7 @@ public class FavoriteServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
 
         // 退会済みユーザーの写真をお気に入りに登録している状態
-        User deletedUser = new User("退会済み", "deleted@example.com", "hash", "USER");
+        User deletedUser = new User("退会済み", "deleted@example.com", "hash", CodeConstants.ROLE_USER);
         deletedUser.setId(99L);
         deletedUser.setDeletedAt(LocalDateTime.now().minusDays(10));
 
@@ -289,7 +289,7 @@ public class FavoriteServiceTest {
         deletedUserPhoto.setUserId(99L);
         deletedUserPhoto.setSpotId(100L);
         deletedUserPhoto.setS3ObjectKey("photos/deleted.jpg");
-        deletedUserPhoto.setModerationStatus(ModerationStatus.PUBLISHED);
+        deletedUserPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         Favorite favorite = new Favorite();
         favorite.setUserId(TEST_USER_ID);

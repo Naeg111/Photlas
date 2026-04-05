@@ -22,7 +22,6 @@ import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
-import com.photlas.backend.entity.ReportTargetType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -51,7 +50,6 @@ public class PhotoService {
 
     private static final Logger logger = LoggerFactory.getLogger(PhotoService.class);
 
-    private static final String ROLE_SUSPENDED = "SUSPENDED";
     private static final String ERROR_PHOTO_NOT_FOUND = "写真が見つかりません";
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
     private static final String ERROR_SPOT_NOT_FOUND = "スポットが見つかりません";
@@ -117,10 +115,7 @@ public class PhotoService {
 
         // 3. 天気情報の設定（ユーザー入力があればそのまま使用、なければnull）
         LocalDateTime takenAt = LocalDateTime.parse(request.getTakenAt(), DateTimeFormatter.ISO_DATE_TIME);
-        String weather = request.getWeather();
-        if (weather != null && weather.isBlank()) {
-            weather = null;
-        }
+        Integer weather = request.getWeather();
 
         // 4. 写真の保存
         Photo photo = new Photo();
@@ -213,7 +208,7 @@ public class PhotoService {
         }
 
         // Issue#54: モデレーションステータスによるフィルタリング
-        Collection<ModerationStatus> visibleStatuses = getVisibleStatuses(userId, currentUser);
+        Collection<Integer> visibleStatuses = getVisibleStatuses(userId, currentUser);
         Page<Photo> photoPage = photoRepository.findByUserIdAndModerationStatusInOrderByCreatedAtDesc(
                 userId, visibleStatuses, pageable);
 
@@ -287,7 +282,7 @@ public class PhotoService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
-        if (photo.getModerationStatus() == ModerationStatus.REMOVED) {
+        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(photo.getModerationStatus())) {
             throw new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND);
         }
 
@@ -297,11 +292,11 @@ public class PhotoService {
 
         // 関連レコードの削除
         photoCategoryRepository.deleteByPhotoId(photoId);
-        reportRepository.deleteByTargetTypeAndTargetId(ReportTargetType.PHOTO, photoId);
-        moderationDetailRepository.deleteByTargetTypeAndTargetId(ReportTargetType.PHOTO, photoId);
+        reportRepository.deleteByTargetTypeAndTargetId(CodeConstants.TARGET_TYPE_PHOTO, photoId);
+        moderationDetailRepository.deleteByTargetTypeAndTargetId(CodeConstants.TARGET_TYPE_PHOTO, photoId);
 
         // ソフトデリート
-        photo.setModerationStatus(ModerationStatus.REMOVED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
         photoRepository.save(photo);
 
         logger.info("写真を削除しました: photoId={}, userId={}", photoId, user.getId());
@@ -325,7 +320,7 @@ public class PhotoService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
-        if (photo.getModerationStatus() == ModerationStatus.REMOVED) {
+        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(photo.getModerationStatus())) {
             throw new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND);
         }
 
@@ -412,8 +407,8 @@ public class PhotoService {
 
     private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited, long favoriteCount) {
         // ブロックされた写真は黒色の専用画像で置換（QUARANTINED/REMOVEDのみ）
-        boolean isBlocked = photo.getModerationStatus() == ModerationStatus.QUARANTINED
-                || photo.getModerationStatus() == ModerationStatus.REMOVED;
+        boolean isBlocked = Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(photo.getModerationStatus())
+                || Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(photo.getModerationStatus());
         String imageUrl = isBlocked
                 ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateCdnUrl(photo.getS3ObjectKey());
@@ -441,7 +436,7 @@ public class PhotoService {
 
         // Issue#54: モデレーションステータスを設定
         if (photo.getModerationStatus() != null) {
-            photoDTO.setModerationStatus(photo.getModerationStatus().name());
+            photoDTO.setModerationStatus(photo.getModerationStatus());
         }
 
         // Issue#59: サムネイルURLを設定（ブロック時は黒色画像）
@@ -490,13 +485,14 @@ public class PhotoService {
      * @throws PhotoNotFoundException 閲覧権限がない場合
      */
     private void validatePhotoVisibility(Photo photo, User currentUser) {
-        ModerationStatus status = photo.getModerationStatus();
+        Integer status = photo.getModerationStatus();
 
-        if (status == ModerationStatus.REMOVED) {
+        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(status)) {
             throw new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND);
         }
 
-        if (status == ModerationStatus.PENDING_REVIEW || status == ModerationStatus.QUARANTINED) {
+        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_PENDING_REVIEW).equals(status)
+                || Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(status)) {
             boolean isOwner = currentUser != null && currentUser.getId().equals(photo.getUserId());
             if (!isOwner) {
                 throw new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND);
@@ -511,13 +507,13 @@ public class PhotoService {
      * @param currentUser リクエスト者（未認証の場合はnull）
      * @return 表示可能なステータスのコレクション
      */
-    private Collection<ModerationStatus> getVisibleStatuses(Long targetUserId, User currentUser) {
+    private Collection<Integer> getVisibleStatuses(Long targetUserId, User currentUser) {
         if (currentUser != null && currentUser.getId().equals(targetUserId)) {
             // 投稿者本人: PENDING_REVIEW, PUBLISHED, QUARANTINED が閲覧可能
-            return List.of(ModerationStatus.PENDING_REVIEW, ModerationStatus.PUBLISHED, ModerationStatus.QUARANTINED);
+            return List.of(CodeConstants.MODERATION_STATUS_PENDING_REVIEW, CodeConstants.MODERATION_STATUS_PUBLISHED, CodeConstants.MODERATION_STATUS_QUARANTINED);
         }
         // 他ユーザー・未認証: PUBLISHEDのみ
-        return List.of(ModerationStatus.PUBLISHED);
+        return List.of(CodeConstants.MODERATION_STATUS_PUBLISHED);
     }
 
     /**
@@ -529,7 +525,7 @@ public class PhotoService {
      */
     private void validateAccountNotSuspended(User user) {
         // 永久停止チェック
-        if (ROLE_SUSPENDED.equals(user.getRole())) {
+        if (Integer.valueOf(CodeConstants.ROLE_SUSPENDED).equals(user.getRole())) {
             throw new AccountSuspendedException("アカウントが停止されています");
         }
 
@@ -549,21 +545,21 @@ public class PhotoService {
      * 撮影日時から時間帯を自動判定する
      *
      * @param shotAt 撮影日時（nullの場合はnullを返す）
-     * @return 時間帯（MORNING/DAY/EVENING/NIGHT）
+     * @return 時間帯の数値コード（CodeConstants.TIME_OF_DAY_*）
      */
-    private String calculateTimeOfDay(LocalDateTime shotAt) {
+    private Integer calculateTimeOfDay(LocalDateTime shotAt) {
         if (shotAt == null) {
             return null;
         }
         int hour = shotAt.getHour();
         if (hour >= 5 && hour <= 9) {
-            return "MORNING";
+            return CodeConstants.TIME_OF_DAY_MORNING;
         } else if (hour >= 10 && hour <= 15) {
-            return "DAY";
+            return CodeConstants.TIME_OF_DAY_DAY;
         } else if (hour >= 16 && hour <= 17) {
-            return "EVENING";
+            return CodeConstants.TIME_OF_DAY_EVENING;
         } else {
-            return "NIGHT";
+            return CodeConstants.TIME_OF_DAY_NIGHT;
         }
     }
 

@@ -1,7 +1,11 @@
 package com.photlas.backend.service;
 
 import com.photlas.backend.dto.LocationSuggestionReviewResponse;
-import com.photlas.backend.entity.*;
+import com.photlas.backend.entity.CodeConstants;
+import com.photlas.backend.entity.LocationSuggestion;
+import com.photlas.backend.entity.Photo;
+import com.photlas.backend.entity.Spot;
+import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.LocationSuggestionRepository;
@@ -75,7 +79,7 @@ public class LocationSuggestionService {
         }
 
         // 公開中の写真のみ指摘可能
-        if (photo.getModerationStatus() != ModerationStatus.PUBLISHED) {
+        if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
             throw new IllegalStateException("公開中の写真のみ撮影場所の指摘ができます");
         }
 
@@ -94,11 +98,11 @@ public class LocationSuggestionService {
         suggestion.setSuggesterId(suggester.getId());
         suggestion.setSuggestedLatitude(latitude);
         suggestion.setSuggestedLongitude(longitude);
-        suggestion.setStatus(LocationSuggestionStatus.PENDING);
+        suggestion.setStatus(CodeConstants.SUGGESTION_STATUS_PENDING);
 
         // 未解決のメール通知済み指摘があるか確認
         boolean hasPendingNotified = locationSuggestionRepository
-                .existsByPhotoIdAndStatusAndEmailSent(photoId, LocationSuggestionStatus.PENDING, true);
+                .existsByPhotoIdAndStatusAndEmailSent(photoId, CodeConstants.SUGGESTION_STATUS_PENDING, true);
 
         if (hasPendingNotified) {
             // メール送信しない（投稿者が最初の指摘を解決するまで待つ）
@@ -131,7 +135,7 @@ public class LocationSuggestionService {
         photo.setSpotId(newSpot.getSpotId());
         photoRepository.save(photo);
 
-        resolveSuggestion(suggestion, LocationSuggestionStatus.ACCEPTED);
+        resolveSuggestion(suggestion, CodeConstants.SUGGESTION_STATUS_ACCEPTED);
         logger.info("位置情報の指摘を受け入れました: suggestionId={}, newSpotId={}",
                 suggestion.getId(), newSpot.getSpotId());
     }
@@ -143,7 +147,7 @@ public class LocationSuggestionService {
     public void rejectSuggestion(String reviewToken, String ownerEmail) {
         LocationSuggestion suggestion = findAndValidateSuggestion(reviewToken, ownerEmail);
 
-        resolveSuggestion(suggestion, LocationSuggestionStatus.REJECTED);
+        resolveSuggestion(suggestion, CodeConstants.SUGGESTION_STATUS_REJECTED);
 
         // 指摘者にメールで拒否を通知
         User suggester = userRepository.findById(suggestion.getSuggesterId()).orElse(null);
@@ -197,7 +201,7 @@ public class LocationSuggestionService {
     // private メソッド
     // ========================================
 
-    private void resolveSuggestion(LocationSuggestion suggestion, LocationSuggestionStatus status) {
+    private void resolveSuggestion(LocationSuggestion suggestion, int status) {
         suggestion.setStatus(status);
         suggestion.setResolvedAt(LocalDateTime.now());
         locationSuggestionRepository.save(suggestion);
@@ -219,7 +223,7 @@ public class LocationSuggestionService {
         }
 
         // Issue#65: 解決済みの指摘への再操作を防止
-        if (suggestion.getStatus() != LocationSuggestionStatus.PENDING) {
+        if (!Integer.valueOf(CodeConstants.SUGGESTION_STATUS_PENDING).equals(suggestion.getStatus())) {
             throw new IllegalStateException("この指摘は既に解決済みです");
         }
 
@@ -241,7 +245,7 @@ public class LocationSuggestionService {
     private void sendNextPendingEmail(Long photoId) {
         List<LocationSuggestion> pending = locationSuggestionRepository
                 .findByPhotoIdAndStatusAndEmailSentOrderByCreatedAtAsc(
-                        photoId, LocationSuggestionStatus.PENDING, false);
+                        photoId, CodeConstants.SUGGESTION_STATUS_PENDING, false);
 
         if (!pending.isEmpty()) {
             LocationSuggestion next = pending.get(0);

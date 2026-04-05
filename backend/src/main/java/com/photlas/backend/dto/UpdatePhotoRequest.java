@@ -11,7 +11,7 @@ public class UpdatePhotoRequest {
 
     private List<String> categories;
 
-    private String weather;
+    private Integer weather;
 
     @Size(max = 100, message = "施設名・店名は100文字以内で入力してください")
     private String placeName;
@@ -24,11 +24,11 @@ public class UpdatePhotoRequest {
         this.categories = categories;
     }
 
-    public String getWeather() {
+    public Integer getWeather() {
         return weather;
     }
 
-    public void setWeather(String weather) {
+    public void setWeather(Integer weather) {
         this.weather = weather;
     }
 

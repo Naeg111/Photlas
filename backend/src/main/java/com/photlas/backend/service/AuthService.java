@@ -3,6 +3,7 @@ package com.photlas.backend.service;
 import com.photlas.backend.dto.LoginRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.RegisterResponse;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.EmailVerificationToken;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.AccountSuspendedException;
@@ -76,7 +77,7 @@ public class AuthService {
             request.getUsername(),
             normalizedEmail,
             hashedPassword,
-            "USER"
+            CodeConstants.ROLE_USER
         );
 
         user = userRepository.save(user);
@@ -117,11 +118,11 @@ public class AuthService {
             throw new EmailNotVerifiedException("メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。");
         }
 
-        if ("SUSPENDED".equals(user.getRole())) {
+        if (Integer.valueOf(CodeConstants.ROLE_SUSPENDED).equals(user.getRole())) {
             throw new AccountSuspendedException("アカウントが停止されています");
         }
 
-        String token = jwtService.generateTokenWithRole(user.getEmail(), user.getRole());
+        String token = jwtService.generateTokenWithRole(user.getEmail(), CodeConstants.roleToJwtString(user.getRole()));
 
         return new RegisterResponse(
             new RegisterResponse.UserResponse(user),

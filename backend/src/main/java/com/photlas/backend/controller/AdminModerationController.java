@@ -1,10 +1,9 @@
 package com.photlas.backend.controller;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Report;
-import com.photlas.backend.entity.ReportTargetType;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
@@ -61,7 +60,7 @@ public class AdminModerationController {
     @GetMapping("/queue")
     public ResponseEntity<Map<String, Object>> getModerationQueue(Pageable pageable) {
         Page<Photo> quarantinedPhotos = photoRepository.findByModerationStatusOrderByUpdatedAtDesc(
-                ModerationStatus.QUARANTINED, pageable);
+                CodeConstants.MODERATION_STATUS_QUARANTINED, pageable);
 
         List<ModerationQueueItem> items = quarantinedPhotos.getContent().stream()
                 .map(this::toQueueItem)
@@ -87,10 +86,10 @@ public class AdminModerationController {
 
         // Issue#54: 通報情報を取得
         List<Report> reports = reportRepository.findByTargetTypeAndTargetId(
-                ReportTargetType.PHOTO, photo.getPhotoId());
+                CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId());
         int reportCount = reports.size();
-        List<String> reportReasons = reports.stream()
-                .map(r -> r.getReasonCategory().name())
+        List<Integer> reportReasons = reports.stream()
+                .map(r -> r.getReasonCategory())
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -111,7 +110,7 @@ public class AdminModerationController {
             String username,
             @JsonProperty("created_at") String createdAt,
             @JsonProperty("report_count") int reportCount,
-            @JsonProperty("report_reasons") List<String> reportReasons
+            @JsonProperty("report_reasons") List<Integer> reportReasons
     ) {}
 
     /**

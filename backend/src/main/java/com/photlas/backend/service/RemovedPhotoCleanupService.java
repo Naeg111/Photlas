@@ -1,6 +1,6 @@
 package com.photlas.backend.service;
 
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.repository.PhotoRepository;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public class RemovedPhotoCleanupService {
     public void cleanupRemovedPhotos() {
         LocalDateTime threshold = LocalDateTime.now().minusDays(RETENTION_DAYS);
         List<Photo> expiredPhotos = photoRepository.findByModerationStatusAndUpdatedAtBefore(
-                ModerationStatus.REMOVED, threshold);
+                CodeConstants.MODERATION_STATUS_REMOVED, threshold);
 
         if (expiredPhotos.isEmpty()) {
             logger.info("削除対象のREMOVED写真はありません");

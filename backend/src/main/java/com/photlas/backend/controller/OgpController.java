@@ -1,6 +1,6 @@
 package com.photlas.backend.controller;
 
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -61,7 +61,7 @@ public class OgpController {
         Photo photo = photoOpt.get();
 
         // Issue#54: 非公開写真のOGPは404を返す
-        if (photo.getModerationStatus() != ModerationStatus.PUBLISHED) {
+        if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
             return ResponseEntity.notFound().build();
         }
 

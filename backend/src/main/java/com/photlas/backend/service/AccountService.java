@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.EmailChangeToken;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -166,7 +167,7 @@ public class AccountService {
 
         emailChangeTokenRepository.delete(changeToken);
 
-        String newJwt = jwtService.generateTokenWithRole(user.getEmail(), user.getRole());
+        String newJwt = jwtService.generateTokenWithRole(user.getEmail(), CodeConstants.roleToJwtString(user.getRole()));
 
         return new EmailChangeResult(newJwt, user.getEmail());
     }

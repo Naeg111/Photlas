@@ -1,7 +1,7 @@
 package com.photlas.backend.service;
 
 import com.photlas.backend.dto.SpotResponse;
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.exception.SpotNotFoundException;
@@ -44,7 +44,7 @@ public class SpotService {
     @Transactional(readOnly = true)
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
                                        List<Integer> subjectCategories, List<Integer> months,
-                                       List<String> timesOfDay, List<String> weathers) {
+                                       List<Integer> timesOfDay, List<Integer> weathers) {
         return getSpots(north, south, east, west, subjectCategories, months, timesOfDay, weathers,
                 null, null, null, null, null, null);
     }
@@ -56,18 +56,18 @@ public class SpotService {
     @Transactional(readOnly = true)
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
                                        List<Integer> subjectCategories, List<Integer> months,
-                                       List<String> timesOfDay, List<String> weathers,
-                                       Integer minResolution, List<String> deviceTypes, Integer maxAgeDays,
+                                       List<Integer> timesOfDay, List<Integer> weathers,
+                                       Integer minResolution, List<Integer> deviceTypes, Integer maxAgeDays,
                                        List<String> aspectRatios, List<String> focalLengthRanges, Integer maxIso) {
         logger.info("Getting spots within bounds: north={}, south={}, east={}, west={}", north, south, east, west);
 
         // null/空リストをセンチネル値に変換
         List<Integer> safeSubjectCategories = safeIntList(subjectCategories);
         List<Integer> safeMonths = safeIntList(months);
-        List<String> safeTimesOfDay = safeStringList(timesOfDay);
-        List<String> safeWeathers = safeStringList(weathers);
+        List<Integer> safeTimesOfDay = safeIntList(timesOfDay);
+        List<Integer> safeWeathers = safeIntList(weathers);
         int safeMinResolution = (minResolution != null) ? minResolution : -1;
-        List<String> safeDeviceTypes = safeStringList(deviceTypes);
+        List<Integer> safeDeviceTypes = safeIntList(deviceTypes);
         LocalDateTime safeMaxAgeDate = (maxAgeDays != null)
             ? LocalDateTime.now(ZoneId.of("Asia/Tokyo")).minusDays(maxAgeDays)
             : LocalDateTime.of(1900, 1, 1, 0, 0);
@@ -145,7 +145,7 @@ public class SpotService {
                 .orElseThrow(() -> new SpotNotFoundException("Spot not found"));
 
         List<Photo> photos = photoRepository.findBySpotIdAndModerationStatusOrderByShotAtAsc(
-                spotId, ModerationStatus.PUBLISHED);
+                spotId, CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         // 鮮度フィルター
         if (maxAgeDays != null) {

@@ -3,6 +3,7 @@ package com.photlas.backend.service;
 import com.photlas.backend.dto.UpdateProfileRequest;
 import com.photlas.backend.dto.UpdateSnsLinksRequest;
 import com.photlas.backend.dto.UserProfileResponse;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserSnsLink;
 import com.photlas.backend.exception.UnauthorizedException;
@@ -24,7 +25,9 @@ import java.util.stream.Collectors;
 @Service
 public class ProfileService {
 
-    private static final List<String> ALLOWED_PLATFORMS = List.of("twitter", "instagram", "youtube", "tiktok");
+    private static final List<Integer> ALLOWED_PLATFORMS = List.of(
+            CodeConstants.PLATFORM_TWITTER, CodeConstants.PLATFORM_INSTAGRAM,
+            CodeConstants.PLATFORM_YOUTUBE, CodeConstants.PLATFORM_TIKTOK);
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
     private static final String ERROR_UNSUPPORTED_PLATFORM = "未対応のプラットフォームです: ";
     private static final String ERROR_DUPLICATE_PLATFORM = "同じプラットフォームが重複しています: ";
@@ -198,32 +201,33 @@ public class ProfileService {
             return;
         }
 
-        Set<String> platforms = new HashSet<>();
+        Set<Integer> platforms = new HashSet<>();
         for (UpdateSnsLinksRequest.SnsLinkRequest snsLink : snsLinks) {
-            if (!ALLOWED_PLATFORMS.contains(snsLink.getPlatform())) {
-                throw new IllegalArgumentException(ERROR_UNSUPPORTED_PLATFORM + snsLink.getPlatform());
+            int platformCode = snsLink.getPlatform();
+            if (!ALLOWED_PLATFORMS.contains(platformCode)) {
+                throw new IllegalArgumentException(ERROR_UNSUPPORTED_PLATFORM + platformCode);
             }
-            if (!platforms.add(snsLink.getPlatform())) {
-                throw new IllegalArgumentException(ERROR_DUPLICATE_PLATFORM + snsLink.getPlatform());
+            if (!platforms.add(platformCode)) {
+                throw new IllegalArgumentException(ERROR_DUPLICATE_PLATFORM + platformCode);
             }
-            if (!isValidUrlForPlatform(snsLink.getPlatform(), snsLink.getUrl())) {
+            if (!isValidUrlForPlatform(platformCode, snsLink.getUrl())) {
                 throw new IllegalArgumentException(ERROR_INVALID_URL_FOR_PLATFORM);
             }
         }
     }
 
-    private boolean isValidUrlForPlatform(String platform, String url) {
+    private boolean isValidUrlForPlatform(int platformCode, String url) {
         try {
             java.net.URI uri = new java.net.URI(url);
             String host = uri.getHost();
             if (host == null) return false;
             host = host.toLowerCase();
-            return switch (platform) {
-                case "twitter" -> host.equals("x.com") || host.equals("twitter.com")
+            return switch (platformCode) {
+                case CodeConstants.PLATFORM_TWITTER -> host.equals("x.com") || host.equals("twitter.com")
                         || host.endsWith(".x.com") || host.endsWith(".twitter.com");
-                case "instagram" -> host.equals("instagram.com") || host.endsWith(".instagram.com");
-                case "youtube" -> host.equals("youtube.com") || host.endsWith(".youtube.com");
-                case "tiktok" -> host.equals("tiktok.com") || host.endsWith(".tiktok.com");
+                case CodeConstants.PLATFORM_INSTAGRAM -> host.equals("instagram.com") || host.endsWith(".instagram.com");
+                case CodeConstants.PLATFORM_YOUTUBE -> host.equals("youtube.com") || host.endsWith(".youtube.com");
+                case CodeConstants.PLATFORM_TIKTOK -> host.equals("tiktok.com") || host.endsWith(".tiktok.com");
                 default -> false;
             };
         } catch (Exception e) {

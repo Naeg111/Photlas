@@ -35,9 +35,9 @@ public class CreatePhotoRequest {
 
     private List<String> categories;
 
-    private String weather;
+    private Integer weather;
 
-    private String deviceType;
+    private Integer deviceType;
 
     private String cameraBody;
 
@@ -112,19 +112,19 @@ public class CreatePhotoRequest {
         this.categories = categories;
     }
 
-    public String getWeather() {
+    public Integer getWeather() {
         return weather;
     }
 
-    public void setWeather(String weather) {
+    public void setWeather(Integer weather) {
         this.weather = weather;
     }
 
-    public String getDeviceType() {
+    public Integer getDeviceType() {
         return deviceType;
     }
 
-    public void setDeviceType(String deviceType) {
+    public void setDeviceType(Integer deviceType) {
         this.deviceType = deviceType;
     }
 

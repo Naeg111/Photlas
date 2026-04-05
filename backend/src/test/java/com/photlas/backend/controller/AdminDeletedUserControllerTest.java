@@ -1,5 +1,7 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
+
 import com.photlas.backend.entity.*;
 import com.photlas.backend.repository.*;
 import com.photlas.backend.service.JwtService;
@@ -54,7 +56,6 @@ public class AdminDeletedUserControllerTest {
 
     private static final String ADMIN_EMAIL = "admin@example.com";
     private static final String ADMIN_ROLE = "ADMIN";
-    private static final String USER_ROLE = "USER";
     private static final String ENDPOINT = "/api/v1/admin/deleted-users";
 
     private String adminToken;
@@ -66,7 +67,7 @@ public class AdminDeletedUserControllerTest {
         userRepository.deleteAll();
 
         User admin = new User("adminuser", ADMIN_EMAIL,
-                new BCryptPasswordEncoder().encode("AdminPass1"), ADMIN_ROLE);
+                new BCryptPasswordEncoder().encode("AdminPass1"), CodeConstants.ROLE_ADMIN);
         admin.setEmailVerified(true);
         userRepository.save(admin);
         adminToken = jwtService.generateTokenWithRole(ADMIN_EMAIL, ADMIN_ROLE);
@@ -166,7 +167,7 @@ public class AdminDeletedUserControllerTest {
         // ユーザー名は@Size(max=12)制約があるため12文字以内にする
         String shortId = String.valueOf(System.nanoTime() % 100000);
         User user = new User("del_" + shortId, email,
-                new BCryptPasswordEncoder().encode("Pass1234"), USER_ROLE);
+                new BCryptPasswordEncoder().encode("Pass1234"), CodeConstants.ROLE_USER);
         user.setDeletedAt(LocalDateTime.now().minusDays(daysAgo));
         user.setOriginalUsername(originalUsername);
         return userRepository.save(user);

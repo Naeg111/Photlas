@@ -1,6 +1,6 @@
 package com.photlas.backend.service;
 
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -85,7 +85,7 @@ public class AccountCleanupServiceTest {
         activeUser.setUsername("active");
         activeUser.setEmail("active@example.com");
         activeUser.setPasswordHash("hashedpassword");
-        activeUser.setRole("USER");
+        activeUser.setRole(CodeConstants.ROLE_USER);
         activeUser = userRepository.save(activeUser);
 
         // 退会済みユーザー
@@ -104,7 +104,7 @@ public class AccountCleanupServiceTest {
         photo.setS3ObjectKey("photos/orphan-" + System.nanoTime() + ".jpg");
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(deletedUser.getId());
-        photo.setModerationStatus(ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         photoRepository.save(photo);
 
         entityManager.flush();
@@ -127,7 +127,7 @@ public class AccountCleanupServiceTest {
         user.setUsername(username);
         user.setEmail(email);
         user.setPasswordHash("hashedpassword");
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         user.setDeletedAt(deletedAt);
         user.setOriginalUsername(username);
         return userRepository.save(user);

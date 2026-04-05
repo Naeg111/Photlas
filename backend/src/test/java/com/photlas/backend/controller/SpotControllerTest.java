@@ -1,7 +1,7 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Category;
-import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -66,8 +66,6 @@ public class SpotControllerTest {
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_EMAIL = "test@example.com";
     private static final String TEST_PASSWORD_HASH = "hashedpassword";
-    private static final String USER_ROLE = "USER";
-
     // Test Data Constants - Category
     private static final String CATEGORY_NAME_1 = "風景";
     private static final String CATEGORY_NAME_2 = "都市・街並み";
@@ -97,13 +95,13 @@ public class SpotControllerTest {
     private static final LocalDateTime TEST_SHOT_AT_OUTSIDE_PERIOD = LocalDateTime.now().minusHours(500);
 
     // Test Data Constants - Weather
-    private static final String WEATHER_SUNNY = "Sunny";
-    private static final String WEATHER_CLOUDY = "Cloudy";
+    private static final int WEATHER_SUNNY = CodeConstants.WEATHER_SUNNY;
+    private static final int WEATHER_CLOUDY = CodeConstants.WEATHER_CLOUDY;
 
     // Test Data Constants - Time of Day
-    private static final String TIME_OF_DAY_MORNING = "MORNING";
-    private static final String TIME_OF_DAY_DAY = "DAY";
-    private static final String TIME_OF_DAY_EVENING = "EVENING";
+    private static final int TIME_OF_DAY_MORNING = CodeConstants.TIME_OF_DAY_MORNING;
+    private static final int TIME_OF_DAY_DAY = CodeConstants.TIME_OF_DAY_DAY;
+    private static final int TIME_OF_DAY_EVENING = CodeConstants.TIME_OF_DAY_EVENING;
 
     // Test Data Constants - Photo
     private static final String TEST_S3_OBJECT_KEY = "test-key";
@@ -167,7 +165,7 @@ public class SpotControllerTest {
         testUser.setUsername(TEST_USERNAME);
         testUser.setEmail(TEST_EMAIL);
         testUser.setPasswordHash(TEST_PASSWORD_HASH);
-        testUser.setRole(USER_ROLE);
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser = userRepository.save(testUser);
 
         // JWTトークンを生成
@@ -199,7 +197,7 @@ public class SpotControllerTest {
         photo.setUserId(testUser.getId());
         photo.setShotAt(TEST_SHOT_AT);
         photo.setWeather(WEATHER_SUNNY);
-        photo.setModerationStatus(ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
@@ -261,7 +259,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_WEATHERS, WEATHER_SUNNY))
+                        .param(PARAM_WEATHERS, String.valueOf(WEATHER_SUNNY)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -531,7 +529,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_TIMES_OF_DAY, TIME_OF_DAY_MORNING))
+                        .param(PARAM_TIMES_OF_DAY, String.valueOf(TIME_OF_DAY_MORNING)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -557,7 +555,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_TIMES_OF_DAY, TIME_OF_DAY_MORNING, TIME_OF_DAY_EVENING))
+                        .param(PARAM_TIMES_OF_DAY, String.valueOf(TIME_OF_DAY_MORNING), String.valueOf(TIME_OF_DAY_EVENING)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[*].spotId", containsInAnyOrder(
@@ -578,12 +576,12 @@ public class SpotControllerTest {
     private static final String PARAM_FOCAL_LENGTH_RANGES = "focal_length_ranges";
     private static final String PARAM_MAX_ISO = "max_iso";
 
-    private static final String DEVICE_TYPE_SLR = "SLR";
-    private static final String DEVICE_TYPE_MIRRORLESS = "MIRRORLESS";
-    private static final String DEVICE_TYPE_COMPACT = "COMPACT";
-    private static final String DEVICE_TYPE_SMARTPHONE = "SMARTPHONE";
-    private static final String DEVICE_TYPE_FILM = "FILM";
-    private static final String DEVICE_TYPE_OTHER = "OTHER";
+    private static final int DEVICE_TYPE_SLR = CodeConstants.DEVICE_TYPE_SLR;
+    private static final int DEVICE_TYPE_MIRRORLESS = CodeConstants.DEVICE_TYPE_MIRRORLESS;
+    private static final int DEVICE_TYPE_COMPACT = CodeConstants.DEVICE_TYPE_COMPACT;
+    private static final int DEVICE_TYPE_SMARTPHONE = CodeConstants.DEVICE_TYPE_SMARTPHONE;
+    private static final int DEVICE_TYPE_FILM = CodeConstants.DEVICE_TYPE_FILM;
+    private static final int DEVICE_TYPE_OTHER = CodeConstants.DEVICE_TYPE_OTHER;
     private static final String ASPECT_HORIZONTAL = "HORIZONTAL";
     private static final String ASPECT_VERTICAL = "VERTICAL";
     private static final String ASPECT_SQUARE = "SQUARE";
@@ -661,7 +659,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_DEVICE_TYPES, DEVICE_TYPE_SLR))
+                        .param(PARAM_DEVICE_TYPES, String.valueOf(DEVICE_TYPE_SLR)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -683,7 +681,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_DEVICE_TYPES, DEVICE_TYPE_MIRRORLESS))
+                        .param(PARAM_DEVICE_TYPES, String.valueOf(DEVICE_TYPE_MIRRORLESS)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -705,7 +703,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_DEVICE_TYPES, DEVICE_TYPE_SMARTPHONE))
+                        .param(PARAM_DEVICE_TYPES, String.valueOf(DEVICE_TYPE_SMARTPHONE)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot2.getSpotId().intValue())));
@@ -727,7 +725,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_DEVICE_TYPES, DEVICE_TYPE_COMPACT))
+                        .param(PARAM_DEVICE_TYPES, String.valueOf(DEVICE_TYPE_COMPACT)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
@@ -990,7 +988,7 @@ public class SpotControllerTest {
                         .param(PARAM_SOUTH, BOUND_SOUTH)
                         .param(PARAM_EAST, BOUND_EAST)
                         .param(PARAM_WEST, BOUND_WEST)
-                        .param(PARAM_WEATHERS, WEATHER_SUNNY)
+                        .param(PARAM_WEATHERS, String.valueOf(WEATHER_SUNNY))
                         .param(PARAM_FOCAL_LENGTH_RANGES, FOCAL_WIDE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
@@ -1063,7 +1061,7 @@ public class SpotControllerTest {
         // Given: スポットにQUARANTINED写真のみ
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo photo = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo.setModerationStatus(ModerationStatus.QUARANTINED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
         photoRepository.save(photo);
 
         // When & Then: スポットが結果に含まれない
@@ -1082,7 +1080,7 @@ public class SpotControllerTest {
         // Given: スポットにREMOVED写真のみ
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo photo = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo.setModerationStatus(ModerationStatus.REMOVED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
         photoRepository.save(photo);
 
         // When & Then: スポットが結果に含まれない
@@ -1101,7 +1099,7 @@ public class SpotControllerTest {
         // Given: スポットにPENDING_REVIEW写真のみ
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo photo = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
-        photo.setModerationStatus(ModerationStatus.PENDING_REVIEW);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
         photoRepository.save(photo);
 
         // When & Then: スポットが結果に含まれない
@@ -1121,15 +1119,15 @@ public class SpotControllerTest {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
 
         Photo publishedPhoto = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
-        publishedPhoto.setModerationStatus(ModerationStatus.PUBLISHED);
+        publishedPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         photoRepository.save(publishedPhoto);
 
         Photo quarantinedPhoto = createPhoto(spot, TEST_SHOT_AT.minusHours(1), WEATHER_SUNNY);
-        quarantinedPhoto.setModerationStatus(ModerationStatus.QUARANTINED);
+        quarantinedPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
         photoRepository.save(quarantinedPhoto);
 
         Photo removedPhoto = createPhoto(spot, TEST_SHOT_AT.minusHours(2), WEATHER_SUNNY);
-        removedPhoto.setModerationStatus(ModerationStatus.REMOVED);
+        removedPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
         photoRepository.save(removedPhoto);
 
         // When & Then: PUBLISHEDの1枚のみ返る
@@ -1148,21 +1146,21 @@ public class SpotControllerTest {
         return spotRepository.save(spot);
     }
 
-    private Photo createPhoto(Spot spot, LocalDateTime shotAt, String weather) {
+    private Photo createPhoto(Spot spot, LocalDateTime shotAt, Integer weather) {
         Photo photo = new Photo();
         photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-" + System.nanoTime());
         photo.setSpotId(spot.getSpotId());
         photo.setUserId(testUser.getId());
         photo.setShotAt(shotAt);
         photo.setWeather(weather);
-        photo.setModerationStatus(ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
         return photoRepository.save(photo);
     }
 
-    private Photo createPhotoWithDeviceType(Spot spot, LocalDateTime shotAt, String weather, String deviceType) {
+    private Photo createPhotoWithDeviceType(Spot spot, LocalDateTime shotAt, Integer weather, Integer deviceType) {
         Photo photo = new Photo();
         photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-" + System.nanoTime());
         photo.setSpotId(spot.getSpotId());
@@ -1170,14 +1168,14 @@ public class SpotControllerTest {
         photo.setShotAt(shotAt);
         photo.setWeather(weather);
         photo.setDeviceType(deviceType);
-        photo.setModerationStatus(ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
         return photoRepository.save(photo);
     }
 
-    private Photo createPhotoWithTimeOfDay(Spot spot, LocalDateTime shotAt, String weather, String timeOfDay) {
+    private Photo createPhotoWithTimeOfDay(Spot spot, LocalDateTime shotAt, Integer weather, Integer timeOfDay) {
         Photo photo = new Photo();
         photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-" + System.nanoTime());
         photo.setSpotId(spot.getSpotId());
@@ -1185,7 +1183,7 @@ public class SpotControllerTest {
         photo.setShotAt(shotAt);
         photo.setWeather(weather);
         photo.setTimeOfDay(timeOfDay);
-        photo.setModerationStatus(ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         List<Category> categories = new ArrayList<>();
         categories.add(category1);
         photo.setCategories(categories);
@@ -1204,7 +1202,7 @@ public class SpotControllerTest {
         deletedUser.setUsername("deleteduser");
         deletedUser.setEmail("deleted@example.com");
         deletedUser.setPasswordHash(TEST_PASSWORD_HASH);
-        deletedUser.setRole(USER_ROLE);
+        deletedUser.setRole(CodeConstants.ROLE_USER);
         deletedUser.setDeletedAt(LocalDateTime.now().minusDays(1));
         deletedUser = userRepository.save(deletedUser);
 
@@ -1221,7 +1219,7 @@ public class SpotControllerTest {
         photo.setUserId(deletedUser.getId());
         photo.setShotAt(TEST_SHOT_AT);
         photo.setWeather(WEATHER_SUNNY);
-        photo.setModerationStatus(ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         photoRepository.save(photo);
 
         // 検索結果に含まれないことを確認

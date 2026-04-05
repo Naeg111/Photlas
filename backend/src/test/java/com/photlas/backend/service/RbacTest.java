@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,14 +52,14 @@ public class RbacTest {
         adminUser.setUsername("admin");
         adminUser.setEmail("admin@example.com");
         adminUser.setPasswordHash("hashedpassword");
-        adminUser.setRole("ADMIN");
+        adminUser.setRole(CodeConstants.ROLE_ADMIN);
         adminUser = userRepository.save(adminUser);
 
         normalUser = new User();
         normalUser.setUsername("user");
         normalUser.setEmail("user@example.com");
         normalUser.setPasswordHash("hashedpassword");
-        normalUser.setRole("USER");
+        normalUser.setRole(CodeConstants.ROLE_USER);
         normalUser = userRepository.save(normalUser);
 
         // Issue#54: ロール情報をJWTに含めてトークン生成

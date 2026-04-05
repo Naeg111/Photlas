@@ -1,7 +1,7 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Category;
-import com.photlas.backend.entity.ModerationStatus;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -116,7 +116,7 @@ public class PhotoDeleteTest {
         user.setUsername(username);
         user.setEmail(email);
         user.setPasswordHash("hashedpassword");
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         return userRepository.save(user);
     }
 
@@ -128,7 +128,7 @@ public class PhotoDeleteTest {
         return spotRepository.save(spot);
     }
 
-    private Photo createPhoto(String s3Key, ModerationStatus status) {
+    private Photo createPhoto(String s3Key, Integer status) {
         Photo photo = new Photo();
         photo.setS3ObjectKey(s3Key);
         photo.setShotAt(LocalDateTime.now());
@@ -141,7 +141,7 @@ public class PhotoDeleteTest {
     @Test
     @DisplayName("Issue#57 - オーナーがPUBLISHED写真を削除すると204が返る")
     void deletePhoto_published_returns204() throws Exception {
-        Photo photo = createPhoto("test/photo1.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhoto("test/photo1.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         mockMvc.perform(delete(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf())
@@ -150,13 +150,13 @@ public class PhotoDeleteTest {
 
         // ソフトデリート確認: ステータスがREMOVEDに変更されていること
         Photo deleted = photoRepository.findById(photo.getPhotoId()).orElseThrow();
-        assertEquals(ModerationStatus.REMOVED, deleted.getModerationStatus());
+        assertEquals(CodeConstants.MODERATION_STATUS_REMOVED, deleted.getModerationStatus());
     }
 
     @Test
     @DisplayName("Issue#57 - オーナーがPENDING_REVIEW写真を削除すると204が返る")
     void deletePhoto_pendingReview_returns204() throws Exception {
-        Photo photo = createPhoto("test/photo2.jpg", ModerationStatus.PENDING_REVIEW);
+        Photo photo = createPhoto("test/photo2.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
         mockMvc.perform(delete(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf())
@@ -164,13 +164,13 @@ public class PhotoDeleteTest {
                 .andExpect(status().isNoContent());
 
         Photo deleted = photoRepository.findById(photo.getPhotoId()).orElseThrow();
-        assertEquals(ModerationStatus.REMOVED, deleted.getModerationStatus());
+        assertEquals(CodeConstants.MODERATION_STATUS_REMOVED, deleted.getModerationStatus());
     }
 
     @Test
     @DisplayName("Issue#57 - オーナーがQUARANTINED写真を削除すると204が返る")
     void deletePhoto_quarantined_returns204() throws Exception {
-        Photo photo = createPhoto("test/photo3.jpg", ModerationStatus.QUARANTINED);
+        Photo photo = createPhoto("test/photo3.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         mockMvc.perform(delete(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf())
@@ -178,13 +178,13 @@ public class PhotoDeleteTest {
                 .andExpect(status().isNoContent());
 
         Photo deleted = photoRepository.findById(photo.getPhotoId()).orElseThrow();
-        assertEquals(ModerationStatus.REMOVED, deleted.getModerationStatus());
+        assertEquals(CodeConstants.MODERATION_STATUS_REMOVED, deleted.getModerationStatus());
     }
 
     @Test
     @DisplayName("Issue#57 - 非オーナーが削除しようとすると403が返る")
     void deletePhoto_nonOwner_returns403() throws Exception {
-        Photo photo = createPhoto("test/photo4.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhoto("test/photo4.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         mockMvc.perform(delete(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf())
@@ -193,7 +193,7 @@ public class PhotoDeleteTest {
 
         // 写真のステータスが変更されていないこと
         Photo unchanged = photoRepository.findById(photo.getPhotoId()).orElseThrow();
-        assertEquals(ModerationStatus.PUBLISHED, unchanged.getModerationStatus());
+        assertEquals(CodeConstants.MODERATION_STATUS_PUBLISHED, unchanged.getModerationStatus());
     }
 
     @Test
@@ -208,7 +208,7 @@ public class PhotoDeleteTest {
     @Test
     @DisplayName("Issue#57 - 既にREMOVEDの写真を削除しようとすると404が返る")
     void deletePhoto_alreadyRemoved_returns404() throws Exception {
-        Photo photo = createPhoto("test/photo5.jpg", ModerationStatus.REMOVED);
+        Photo photo = createPhoto("test/photo5.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
 
         mockMvc.perform(delete(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf())
@@ -219,7 +219,7 @@ public class PhotoDeleteTest {
     @Test
     @DisplayName("Issue#57 - 未認証ユーザーが削除しようとすると401が返る")
     void deletePhoto_unauthenticated_returns401() throws Exception {
-        Photo photo = createPhoto("test/photo6.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhoto("test/photo6.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         mockMvc.perform(delete(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf()))

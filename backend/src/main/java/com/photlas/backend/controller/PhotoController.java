@@ -111,7 +111,7 @@ public class PhotoController {
      * @return モデレーションステータス
      */
     @GetMapping("/{photoId}/status")
-    public ResponseEntity<java.util.Map<String, String>> getPhotoStatus(
+    public ResponseEntity<java.util.Map<String, Object>> getPhotoStatus(
             @PathVariable Long photoId,
             Authentication authentication
     ) {
@@ -125,7 +125,7 @@ public class PhotoController {
         com.photlas.backend.entity.Photo photo = photoService.getPhotoForOwner(photoId, user.getId());
         return ResponseEntity.ok(java.util.Map.of(
                 "photo_id", photo.getPhotoId().toString(),
-                "moderation_status", photo.getModerationStatus().name()
+                "moderation_status", photo.getModerationStatus()
         ));
     }
 

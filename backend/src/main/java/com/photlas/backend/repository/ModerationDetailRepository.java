@@ -1,7 +1,6 @@
 package com.photlas.backend.repository;
 
 import com.photlas.backend.entity.ModerationDetail;
-import com.photlas.backend.entity.ReportTargetType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,10 +15,10 @@ public interface ModerationDetailRepository extends JpaRepository<ModerationDeta
     /**
      * 対象種別・対象IDでモデレーション詳細を検索
      */
-    Optional<ModerationDetail> findByTargetTypeAndTargetId(ReportTargetType targetType, Long targetId);
+    Optional<ModerationDetail> findByTargetTypeAndTargetId(Integer targetType, Long targetId);
 
     /**
      * Issue#57: 対象種別・対象IDでモデレーション詳細を全て削除する
      */
-    void deleteByTargetTypeAndTargetId(ReportTargetType targetType, Long targetId);
+    void deleteByTargetTypeAndTargetId(Integer targetType, Long targetId);
 }

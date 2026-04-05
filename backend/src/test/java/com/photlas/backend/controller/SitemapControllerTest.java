@@ -1,6 +1,6 @@
 package com.photlas.backend.controller;
 
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -63,7 +63,7 @@ public class SitemapControllerTest {
         testUser.setUsername("sitemapuser");
         testUser.setEmail("sitemap@example.com");
         testUser.setPasswordHash("hashedpassword");
-        testUser.setRole("USER");
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser = userRepository.save(testUser);
 
         testSpot = new Spot();
@@ -95,7 +95,7 @@ public class SitemapControllerTest {
     @Test
     @DisplayName("サイトマップ - PUBLISHED写真ページが含まれる")
     void testGetSitemap_ContainsPhotoPages() throws Exception {
-        Photo photo = createPhoto("photos/sitemap-test.jpg", ModerationStatus.PUBLISHED);
+        Photo photo = createPhoto("photos/sitemap-test.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         mockMvc.perform(get(ENDPOINT_SITEMAP))
                 .andExpect(status().isOk())
@@ -105,7 +105,7 @@ public class SitemapControllerTest {
     @Test
     @DisplayName("Issue#54 - QUARANTINED写真はサイトマップに含まれない")
     void testGetSitemap_ExcludesQuarantinedPhotos() throws Exception {
-        Photo quarantinedPhoto = createPhoto("photos/quarantined.jpg", ModerationStatus.QUARANTINED);
+        Photo quarantinedPhoto = createPhoto("photos/quarantined.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         mockMvc.perform(get(ENDPOINT_SITEMAP))
                 .andExpect(status().isOk())
@@ -116,8 +116,8 @@ public class SitemapControllerTest {
     @Test
     @DisplayName("Issue#54 - PUBLISHED写真のみがサイトマップに含まれる")
     void testGetSitemap_OnlyPublishedPhotosIncluded() throws Exception {
-        Photo publishedPhoto = createPhoto("photos/published.jpg", ModerationStatus.PUBLISHED);
-        Photo removedPhoto = createPhoto("photos/removed.jpg", ModerationStatus.REMOVED);
+        Photo publishedPhoto = createPhoto("photos/published.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
+        Photo removedPhoto = createPhoto("photos/removed.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
 
         mockMvc.perform(get(ENDPOINT_SITEMAP))
                 .andExpect(status().isOk())
@@ -126,7 +126,7 @@ public class SitemapControllerTest {
                         containsString("/photo-viewer/" + removedPhoto.getPhotoId()))));
     }
 
-    private Photo createPhoto(String s3ObjectKey, ModerationStatus status) {
+    private Photo createPhoto(String s3ObjectKey, Integer status) {
         Photo photo = new Photo();
         photo.setS3ObjectKey(s3ObjectKey);
         photo.setShotAt(LocalDateTime.now());

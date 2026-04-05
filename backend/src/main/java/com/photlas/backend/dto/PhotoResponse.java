@@ -61,7 +61,7 @@ public class PhotoResponse {
         @JsonProperty("shot_at")
         private String shotAt;
 
-        private String weather;
+        private Integer weather;
 
         @JsonProperty("is_favorited")
         private Boolean isFavorited;
@@ -94,7 +94,7 @@ public class PhotoResponse {
 
         @JsonProperty("moderation_status")
         @JsonInclude(JsonInclude.Include.NON_NULL)
-        private String moderationStatus;
+        private Integer moderationStatus;
 
         @JsonProperty("thumbnail_url")
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -106,7 +106,7 @@ public class PhotoResponse {
         public PhotoDTO() {
         }
 
-        public PhotoDTO(Long photoId, String imageUrl, String shotAt, String weather) {
+        public PhotoDTO(Long photoId, String imageUrl, String shotAt, Integer weather) {
             this.photoId = photoId;
             this.imageUrl = imageUrl;
             this.shotAt = shotAt;
@@ -115,7 +115,7 @@ public class PhotoResponse {
             this.favoriteCount = 0L;
         }
 
-        public PhotoDTO(Long photoId, String imageUrl, String shotAt, String weather, Boolean isFavorited) {
+        public PhotoDTO(Long photoId, String imageUrl, String shotAt, Integer weather, Boolean isFavorited) {
             this.photoId = photoId;
             this.imageUrl = imageUrl;
             this.shotAt = shotAt;
@@ -124,7 +124,7 @@ public class PhotoResponse {
             this.favoriteCount = 0L;
         }
 
-        public PhotoDTO(Long photoId, String imageUrl, String shotAt, String weather, Boolean isFavorited, Long favoriteCount) {
+        public PhotoDTO(Long photoId, String imageUrl, String shotAt, Integer weather, Boolean isFavorited, Long favoriteCount) {
             this.photoId = photoId;
             this.imageUrl = imageUrl;
             this.shotAt = shotAt;
@@ -165,11 +165,11 @@ public class PhotoResponse {
             this.shotAt = shotAt;
         }
 
-        public String getWeather() {
+        public Integer getWeather() {
             return weather;
         }
 
-        public void setWeather(String weather) {
+        public void setWeather(Integer weather) {
             this.weather = weather;
         }
 
@@ -237,11 +237,11 @@ public class PhotoResponse {
             this.cropZoom = cropZoom;
         }
 
-        public String getModerationStatus() {
+        public Integer getModerationStatus() {
             return moderationStatus;
         }
 
-        public void setModerationStatus(String moderationStatus) {
+        public void setModerationStatus(Integer moderationStatus) {
             this.moderationStatus = moderationStatus;
         }
 

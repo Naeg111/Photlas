@@ -1,9 +1,8 @@
 package com.photlas.backend.service;
 
 import com.photlas.backend.entity.AccountSanction;
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
-import com.photlas.backend.entity.ReportTargetType;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.Violation;
 import com.photlas.backend.exception.PhotoNotFoundException;
@@ -20,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -31,10 +31,6 @@ public class AdminModerationService {
 
     private static final Logger logger = LoggerFactory.getLogger(AdminModerationService.class);
 
-    private static final String SANCTION_WARNING = "WARNING";
-    private static final String SANCTION_TEMPORARY_SUSPENSION = "TEMPORARY_SUSPENSION";
-    private static final String SANCTION_PERMANENT_SUSPENSION = "PERMANENT_SUSPENSION";
-    private static final String ROLE_SUSPENDED = "SUSPENDED";
     private static final int TEMPORARY_SUSPENSION_DAYS = 60;
 
     private final PhotoRepository photoRepository;
@@ -69,7 +65,7 @@ public class AdminModerationService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
 
-        photo.setModerationStatus(ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         photoRepository.save(photo);
 
         logger.info("写真を承認しました: photoId={}", photoId);
@@ -91,16 +87,16 @@ public class AdminModerationService {
         Long userId = photo.getUserId();
 
         // ステータスをREMOVEDに変更
-        photo.setModerationStatus(ModerationStatus.REMOVED);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
         photoRepository.save(photo);
 
         // 違反履歴を作成
         Violation violation = new Violation();
         violation.setUserId(userId);
-        violation.setTargetType(ReportTargetType.PHOTO);
+        violation.setTargetType(CodeConstants.TARGET_TYPE_PHOTO);
         violation.setTargetId(photoId);
-        violation.setViolationType(reason);
-        violation.setActionTaken("REMOVED");
+        violation.setViolationType(mapReasonToCode(reason));
+        violation.setActionTaken(CodeConstants.ACTION_TAKEN_REMOVED);
         violationRepository.save(violation);
 
         // アカウント制裁を適用
@@ -129,7 +125,7 @@ public class AdminModerationService {
 
         if (violationCount >= 3) {
             // 3回目以降: 永久停止
-            sanction.setSanctionType(SANCTION_PERMANENT_SUSPENSION);
+            sanction.setSanctionType(CodeConstants.SANCTION_PERMANENT_SUSPENSION);
             accountSanctionRepository.save(sanction);
             applyPermanentSuspension(userId);
             if (email != null) {
@@ -137,7 +133,7 @@ public class AdminModerationService {
             }
         } else if (violationCount == 2) {
             // 2回目: 60日間投稿停止
-            sanction.setSanctionType(SANCTION_TEMPORARY_SUSPENSION);
+            sanction.setSanctionType(CodeConstants.SANCTION_TEMPORARY_SUSPENSION);
             sanction.setSuspendedUntil(LocalDateTime.now().plusDays(TEMPORARY_SUSPENSION_DAYS));
             accountSanctionRepository.save(sanction);
             if (email != null) {
@@ -147,7 +143,7 @@ public class AdminModerationService {
             logger.info("一時停止を適用: userId={}, until={}", userId, sanction.getSuspendedUntil());
         } else {
             // 1回目: 警告
-            sanction.setSanctionType(SANCTION_WARNING);
+            sanction.setSanctionType(CodeConstants.SANCTION_WARNING);
             accountSanctionRepository.save(sanction);
             if (email != null) {
                 notificationService.sendWarningNotification(email, username, reason);
@@ -166,19 +162,19 @@ public class AdminModerationService {
         // ユーザーロールをSUSPENDEDに変更
         User user = userRepository.findById(userId).orElse(null);
         if (user != null) {
-            user.setRole(ROLE_SUSPENDED);
+            user.setRole(CodeConstants.ROLE_SUSPENDED);
             userRepository.save(user);
         }
 
         // 公開中・審査待ちの写真を全てREMOVEDにする（既にREMOVED/QUARANTINEDのものは除く）
-        List<ModerationStatus> activeStatuses = Arrays.asList(
-                ModerationStatus.PUBLISHED, ModerationStatus.PENDING_REVIEW
+        Collection<Integer> activeStatuses = Arrays.asList(
+                CodeConstants.MODERATION_STATUS_PUBLISHED, CodeConstants.MODERATION_STATUS_PENDING_REVIEW
         );
         var photosPage = photoRepository.findByUserIdAndModerationStatusInOrderByCreatedAtDesc(
                 userId, activeStatuses, PageRequest.of(0, Integer.MAX_VALUE)
         );
         for (Photo photo : photosPage.getContent()) {
-            photo.setModerationStatus(ModerationStatus.REMOVED);
+            photo.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
             photoRepository.save(photo);
         }
 
@@ -194,5 +190,23 @@ public class AdminModerationService {
     @Transactional(readOnly = true)
     public long getViolationCount(Long userId) {
         return violationRepository.countByUserId(userId);
+    }
+
+    /**
+     * 違反理由文字列を数値コードに変換する
+     *
+     * @param reason 違反理由文字列（例: "ADULT_CONTENT"）
+     * @return 対応する数値コード
+     */
+    private int mapReasonToCode(String reason) {
+        return switch (reason) {
+            case "ADULT_CONTENT" -> CodeConstants.REASON_ADULT_CONTENT;
+            case "VIOLENCE" -> CodeConstants.REASON_VIOLENCE;
+            case "COPYRIGHT_INFRINGEMENT" -> CodeConstants.REASON_COPYRIGHT_INFRINGEMENT;
+            case "PRIVACY_VIOLATION" -> CodeConstants.REASON_PRIVACY_VIOLATION;
+            case "SPAM" -> CodeConstants.REASON_SPAM;
+            case "OTHER" -> CodeConstants.REASON_OTHER;
+            default -> throw new IllegalArgumentException("不明な違反理由: " + reason);
+        };
     }
 }

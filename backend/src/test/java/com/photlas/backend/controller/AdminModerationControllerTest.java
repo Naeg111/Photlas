@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.*;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
@@ -110,9 +111,9 @@ public class AdminModerationControllerTest {
         categoryRepository.deleteAll();
         userRepository.deleteAll();
 
-        adminUser = createUser(ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_ROLE);
-        normalUser = createUser(USER_USERNAME, USER_EMAIL, USER_ROLE);
-        photoOwner = createUser(OWNER_USERNAME, OWNER_EMAIL, USER_ROLE);
+        adminUser = createUser(ADMIN_USERNAME, ADMIN_EMAIL, CodeConstants.ROLE_ADMIN);
+        normalUser = createUser(USER_USERNAME, USER_EMAIL, CodeConstants.ROLE_USER);
+        photoOwner = createUser(OWNER_USERNAME, OWNER_EMAIL, CodeConstants.ROLE_USER);
         testSpot = createSpot(photoOwner.getId());
 
         adminToken = jwtService.generateTokenWithRole(ADMIN_EMAIL, ADMIN_ROLE);
@@ -134,7 +135,7 @@ public class AdminModerationControllerTest {
     @Test
     @DisplayName("Issue#54 - 隔離キュー: 隔離写真が正しいJSON構造で返る")
     void testGetQueue_WithQuarantinedPhotos_ReturnsCorrectStructure() throws Exception {
-        createPhotoWithStatus(TEST_S3_KEY, ModerationStatus.QUARANTINED);
+        createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         mockMvc.perform(get(QUEUE_ENDPOINT)
                 .header(HEADER_AUTHORIZATION, getBearerToken(adminToken)))
@@ -150,9 +151,9 @@ public class AdminModerationControllerTest {
     @Test
     @DisplayName("Issue#54 - 隔離キュー: ページネーションパラメータが反映される")
     void testGetQueue_WithPagination_RespectsParameters() throws Exception {
-        createPhotoWithStatus("uploads/q1.jpg", ModerationStatus.QUARANTINED);
-        createPhotoWithStatus("uploads/q2.jpg", ModerationStatus.QUARANTINED);
-        createPhotoWithStatus("uploads/q3.jpg", ModerationStatus.QUARANTINED);
+        createPhotoWithStatus("uploads/q1.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
+        createPhotoWithStatus("uploads/q2.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
+        createPhotoWithStatus("uploads/q3.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         mockMvc.perform(get(QUEUE_ENDPOINT + "?page=0&size=2")
                 .header(HEADER_AUTHORIZATION, getBearerToken(adminToken)))
@@ -165,7 +166,7 @@ public class AdminModerationControllerTest {
     @Test
     @DisplayName("Issue#54 - 隔離キュー: total_elementsとtotal_pagesが返る")
     void testGetQueue_ReturnsTotalElementsAndPages() throws Exception {
-        createPhotoWithStatus("uploads/t1.jpg", ModerationStatus.QUARANTINED);
+        createPhotoWithStatus("uploads/t1.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         mockMvc.perform(get(QUEUE_ENDPOINT)
                 .header(HEADER_AUTHORIZATION, getBearerToken(adminToken)))
@@ -194,7 +195,7 @@ public class AdminModerationControllerTest {
     @Test
     @DisplayName("Issue#54 - 承認: 隔離写真を承認すると200が返る")
     void testApprovePhoto_QuarantinedPhoto_ReturnsOk() throws Exception {
-        Photo photo = createPhotoWithStatus(TEST_S3_KEY, ModerationStatus.QUARANTINED);
+        Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         mockMvc.perform(post(getApproveEndpoint(photo.getPhotoId()))
                 .with(csrf())
@@ -206,7 +207,7 @@ public class AdminModerationControllerTest {
     @Test
     @DisplayName("Issue#54 - 承認: USERロールで403が返る")
     void testApprovePhoto_UserRole_ReturnsForbidden() throws Exception {
-        Photo photo = createPhotoWithStatus(TEST_S3_KEY, ModerationStatus.QUARANTINED);
+        Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         mockMvc.perform(post(getApproveEndpoint(photo.getPhotoId()))
                 .with(csrf())
@@ -228,7 +229,7 @@ public class AdminModerationControllerTest {
     @Test
     @DisplayName("Issue#54 - 拒否: 理由付きで写真を拒否すると200が返る")
     void testRejectPhoto_WithReason_ReturnsOk() throws Exception {
-        Photo photo = createPhotoWithStatus(TEST_S3_KEY, ModerationStatus.QUARANTINED);
+        Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         mockMvc.perform(post(getRejectEndpoint(photo.getPhotoId()))
                 .with(csrf())
@@ -242,7 +243,7 @@ public class AdminModerationControllerTest {
     @Test
     @DisplayName("Issue#54 - 拒否: 理由なしの場合デフォルト理由が使用される")
     void testRejectPhoto_NoReason_UsesDefaultReason() throws Exception {
-        Photo photo = createPhotoWithStatus(TEST_S3_KEY, ModerationStatus.QUARANTINED);
+        Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         mockMvc.perform(post(getRejectEndpoint(photo.getPhotoId()))
                 .with(csrf())
@@ -256,7 +257,7 @@ public class AdminModerationControllerTest {
     @Test
     @DisplayName("Issue#54 - 拒否: USERロールで403が返る")
     void testRejectPhoto_UserRole_ReturnsForbidden() throws Exception {
-        Photo photo = createPhotoWithStatus(TEST_S3_KEY, ModerationStatus.QUARANTINED);
+        Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         mockMvc.perform(post(getRejectEndpoint(photo.getPhotoId()))
                 .with(csrf())
@@ -292,13 +293,13 @@ public class AdminModerationControllerTest {
     @Test
     @DisplayName("Issue#54 - 隔離キュー: 通報件数と通報理由が含まれる")
     void testGetQueue_IncludesReportCountAndReasons() throws Exception {
-        Photo photo = createPhotoWithStatus(TEST_S3_KEY, ModerationStatus.QUARANTINED);
+        Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         // 2件の通報を作成（異なるユーザー、異なる理由）
-        createReport(normalUser.getId(), ReportTargetType.PHOTO, photo.getPhotoId(),
-                ReportReason.ADULT_CONTENT);
-        createReport(adminUser.getId(), ReportTargetType.PHOTO, photo.getPhotoId(),
-                ReportReason.VIOLENCE);
+        createReport(normalUser.getId(), CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId(),
+                CodeConstants.REASON_ADULT_CONTENT);
+        createReport(adminUser.getId(), CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId(),
+                CodeConstants.REASON_VIOLENCE);
 
         mockMvc.perform(get(QUEUE_ENDPOINT)
                 .header(HEADER_AUTHORIZATION, getBearerToken(adminToken)))
@@ -312,7 +313,7 @@ public class AdminModerationControllerTest {
     @Test
     @DisplayName("Issue#54 - 隔離キュー: 通報がない場合は0件で空配列が返る")
     void testGetQueue_NoReports_ReturnsZeroCountAndEmptyReasons() throws Exception {
-        createPhotoWithStatus(TEST_S3_KEY, ModerationStatus.QUARANTINED);
+        createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         mockMvc.perform(get(QUEUE_ENDPOINT)
                 .header(HEADER_AUTHORIZATION, getBearerToken(adminToken)))
@@ -323,7 +324,7 @@ public class AdminModerationControllerTest {
 
     // ===== ヘルパーメソッド =====
 
-    private User createUser(String username, String email, String role) {
+    private User createUser(String username, String email, Integer role) {
         User user = new User();
         user.setUsername(username);
         user.setEmail(email);
@@ -341,7 +342,7 @@ public class AdminModerationControllerTest {
         return spotRepository.save(spot);
     }
 
-    private Photo createPhotoWithStatus(String s3Key, ModerationStatus status) {
+    private Photo createPhotoWithStatus(String s3Key, Integer status) {
         Photo photo = new Photo();
         photo.setSpotId(testSpot.getSpotId());
         photo.setUserId(photoOwner.getId());
@@ -363,8 +364,8 @@ public class AdminModerationControllerTest {
         return REJECT_ENDPOINT_PREFIX + photoId + REJECT_ENDPOINT_SUFFIX;
     }
 
-    private Report createReport(Long reporterUserId, ReportTargetType targetType,
-                                Long targetId, ReportReason reason) {
+    private Report createReport(Long reporterUserId, Integer targetType,
+                                Long targetId, Integer reason) {
         Report report = new Report();
         report.setReporterUserId(reporterUserId);
         report.setTargetType(targetType);

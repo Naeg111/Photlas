@@ -1,6 +1,6 @@
 package com.photlas.backend.service;
 
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
@@ -65,7 +65,7 @@ public class RemovedPhotoCleanupServiceTest {
         testUser.setUsername("cleanup");
         testUser.setEmail("cleanup@example.com");
         testUser.setPasswordHash("hashedpassword");
-        testUser.setRole("USER");
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser = userRepository.save(testUser);
 
         testSpot = new Spot();
@@ -78,7 +78,7 @@ public class RemovedPhotoCleanupServiceTest {
     @Test
     @DisplayName("Issue#54 - 180日以上前にREMOVEDされた写真が物理削除される")
     void testCleanup_RemovesOldRemovedPhotos() {
-        Photo oldRemoved = createPhoto("old-removed.jpg", ModerationStatus.REMOVED);
+        Photo oldRemoved = createPhoto("old-removed.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
         // updated_atを181日前に設定
         updateUpdatedAt(oldRemoved.getPhotoId(), LocalDateTime.now().minusDays(181));
 
@@ -90,7 +90,7 @@ public class RemovedPhotoCleanupServiceTest {
     @Test
     @DisplayName("Issue#54 - 180日未満のREMOVED写真は削除されない")
     void testCleanup_KeepsRecentRemovedPhotos() {
-        Photo recentRemoved = createPhoto("recent-removed.jpg", ModerationStatus.REMOVED);
+        Photo recentRemoved = createPhoto("recent-removed.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
         // updated_atを179日前に設定
         updateUpdatedAt(recentRemoved.getPhotoId(), LocalDateTime.now().minusDays(179));
 
@@ -102,7 +102,7 @@ public class RemovedPhotoCleanupServiceTest {
     @Test
     @DisplayName("Issue#54 - PUBLISHED写真は削除されない")
     void testCleanup_KeepsPublishedPhotos() {
-        Photo published = createPhoto("published.jpg", ModerationStatus.PUBLISHED);
+        Photo published = createPhoto("published.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
         // 古い写真でもPUBLISHEDなら削除されない
         updateUpdatedAt(published.getPhotoId(), LocalDateTime.now().minusDays(365));
 
@@ -114,9 +114,9 @@ public class RemovedPhotoCleanupServiceTest {
     @Test
     @DisplayName("Issue#54 - 複数のREMOVED写真のうち古いものだけ削除される")
     void testCleanup_OnlyDeletesOldOnes() {
-        Photo old1 = createPhoto("old1.jpg", ModerationStatus.REMOVED);
-        Photo old2 = createPhoto("old2.jpg", ModerationStatus.REMOVED);
-        Photo recent = createPhoto("recent.jpg", ModerationStatus.REMOVED);
+        Photo old1 = createPhoto("old1.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
+        Photo old2 = createPhoto("old2.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
+        Photo recent = createPhoto("recent.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
 
         updateUpdatedAt(old1.getPhotoId(), LocalDateTime.now().minusDays(200));
         updateUpdatedAt(old2.getPhotoId(), LocalDateTime.now().minusDays(190));
@@ -134,7 +134,7 @@ public class RemovedPhotoCleanupServiceTest {
     @Test
     @DisplayName("Issue#62 - 物理削除時にS3の元画像とサムネイルが削除される")
     void testCleanup_deletesS3Objects() {
-        Photo photo = createPhoto("uploads/1/abc.jpg", ModerationStatus.REMOVED);
+        Photo photo = createPhoto("uploads/1/abc.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
         updateUpdatedAt(photo.getPhotoId(), LocalDateTime.now().minusDays(200));
 
         cleanupService.cleanupRemovedPhotos();
@@ -154,7 +154,7 @@ public class RemovedPhotoCleanupServiceTest {
 
     // ===== ヘルパーメソッド =====
 
-    private Photo createPhoto(String s3Key, ModerationStatus status) {
+    private Photo createPhoto(String s3Key, Integer status) {
         Photo photo = new Photo();
         photo.setSpotId(testSpot.getSpotId());
         photo.setUserId(testUser.getId());

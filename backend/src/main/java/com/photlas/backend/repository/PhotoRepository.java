@@ -1,6 +1,6 @@
 package com.photlas.backend.repository;
 
-import com.photlas.backend.entity.ModerationStatus;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,12 +30,12 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     /**
      * Issue#54: スポットIDとモデレーションステータスで写真を検索し、撮影日時の古い順で返す
      */
-    List<Photo> findBySpotIdAndModerationStatusOrderByShotAtAsc(Long spotId, ModerationStatus moderationStatus);
+    List<Photo> findBySpotIdAndModerationStatusOrderByShotAtAsc(Long spotId, Integer moderationStatus);
 
     /**
      * Issue#54: モデレーションステータスで写真を検索
      */
-    List<Photo> findByModerationStatus(ModerationStatus moderationStatus);
+    List<Photo> findByModerationStatus(Integer moderationStatus);
 
     /**
      * ユーザーIDで写真を検索し、作成日時の新しい順で返す（ページネーション対応）
@@ -55,13 +55,13 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
      * @return 写真のページ
      */
     Page<Photo> findByUserIdAndModerationStatusInOrderByCreatedAtDesc(
-            Long userId, Collection<ModerationStatus> statuses, Pageable pageable);
+            Long userId, Collection<Integer> statuses, Pageable pageable);
 
     /**
      * Issue#54: モデレーションステータスで写真を検索（管理者用、ページネーション対応）
      */
     Page<Photo> findByModerationStatusOrderByUpdatedAtDesc(
-            ModerationStatus status, Pageable pageable);
+            Integer status, Pageable pageable);
 
     /**
      * Issue#54: S3オブジェクトキーで写真を検索（Lambdaコールバック用）
@@ -71,12 +71,12 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     /**
      * Issue#54: 指定ステータスで指定日時より前に作成された写真の件数を取得（滞留チェック用）
      */
-    long countByModerationStatusAndCreatedAtBefore(ModerationStatus status, LocalDateTime createdAt);
+    long countByModerationStatusAndCreatedAtBefore(Integer status, LocalDateTime createdAt);
 
     /**
      * Issue#54: 指定ステータスで指定日時より前に更新された写真を取得（物理削除用）
      */
-    List<Photo> findByModerationStatusAndUpdatedAtBefore(ModerationStatus status, LocalDateTime updatedAt);
+    List<Photo> findByModerationStatusAndUpdatedAtBefore(Integer status, LocalDateTime updatedAt);
 
     /**
      * Issue#72: 指定ユーザーの全写真を取得

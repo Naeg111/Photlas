@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.entity.Category;
@@ -74,8 +75,6 @@ public class PhotoControllerTest {
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_EMAIL = "test@example.com";
     private static final String TEST_PASSWORD_HASH = "hashedpassword";
-    private static final String USER_ROLE = "USER";
-
     // テストデータ定数 - カテゴリ
     private static final String CATEGORY_LANDSCAPE = "風景";
     private static final String CATEGORY_CITYSCAPE = "都市・街並み";
@@ -171,7 +170,7 @@ public class PhotoControllerTest {
         user.setUsername(TEST_USERNAME);
         user.setEmail(TEST_EMAIL);
         user.setPasswordHash(TEST_PASSWORD_HASH);
-        user.setRole(USER_ROLE);
+        user.setRole(CodeConstants.ROLE_USER);
         return userRepository.save(user);
     }
 
@@ -204,7 +203,7 @@ public class PhotoControllerTest {
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(testUser.getId());
         photo.setSpotId(spotId);
-        photo.setModerationStatus(com.photlas.backend.entity.ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(com.photlas.backend.entity.CodeConstants.MODERATION_STATUS_PUBLISHED);
         return photoRepository.save(photo);
     }
 
@@ -679,7 +678,7 @@ public class PhotoControllerTest {
         Photo photo = new Photo();
         photo.setS3ObjectKey("photos/exif-detail-api001.jpg");
         photo.setShotAt(LocalDateTime.of(2026, 1, 15, 17, 30));
-        photo.setWeather("sunny");
+        photo.setWeather(CodeConstants.WEATHER_SUNNY);
         photo.setUserId(testUser.getId());
         photo.setSpotId(spot.getSpotId());
         photo.setLatitude(new BigDecimal("35.658600"));
@@ -761,7 +760,7 @@ public class PhotoControllerTest {
         Photo photo = new Photo();
         photo.setS3ObjectKey("photos/crop-detail-api001.jpg");
         photo.setShotAt(LocalDateTime.of(2026, 2, 8, 10, 0));
-        photo.setWeather("sunny");
+        photo.setWeather(CodeConstants.WEATHER_SUNNY);
         photo.setUserId(testUser.getId());
         photo.setSpotId(spot.getSpotId());
         photo.setCropCenterX(0.4);
@@ -819,7 +818,7 @@ public class PhotoControllerTest {
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.photo_id", is(photo.getPhotoId().toString())))
-                .andExpect(jsonPath("$.moderation_status", is("PUBLISHED")));
+                .andExpect(jsonPath("$.moderation_status", is(CodeConstants.MODERATION_STATUS_PUBLISHED)));
     }
 
     @Test
@@ -996,7 +995,7 @@ public class PhotoControllerTest {
         deletedUser.setUsername("deletedphoto");
         deletedUser.setEmail("deletedphoto@example.com");
         deletedUser.setPasswordHash(TEST_PASSWORD_HASH);
-        deletedUser.setRole(USER_ROLE);
+        deletedUser.setRole(CodeConstants.ROLE_USER);
         deletedUser.setDeletedAt(LocalDateTime.now().minusDays(1));
         deletedUser = userRepository.save(deletedUser);
 
@@ -1007,7 +1006,7 @@ public class PhotoControllerTest {
         photo.setShotAt(LocalDateTime.now());
         photo.setUserId(deletedUser.getId());
         photo.setSpotId(spot.getSpotId());
-        photo.setModerationStatus(com.photlas.backend.entity.ModerationStatus.PUBLISHED);
+        photo.setModerationStatus(com.photlas.backend.entity.CodeConstants.MODERATION_STATUS_PUBLISHED);
         photo = photoRepository.save(photo);
 
         mockMvc.perform(get(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())

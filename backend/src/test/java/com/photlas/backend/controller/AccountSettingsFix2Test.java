@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.repository.UserRepository;
@@ -47,7 +48,7 @@ public class AccountSettingsFix2Test {
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
         testUser.setPasswordHash(passwordEncoder.encode("Password123"));
-        testUser.setRole("USER");
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser.setEmailVerified(true);
         testUser = userRepository.save(testUser);
 

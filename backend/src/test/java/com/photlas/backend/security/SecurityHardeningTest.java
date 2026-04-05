@@ -1,5 +1,7 @@
 package com.photlas.backend.security;
 
+import com.photlas.backend.entity.CodeConstants;
+
 import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.JwtService;
@@ -41,8 +43,6 @@ public class SecurityHardeningTest {
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_EMAIL = "test@example.com";
     private static final String TEST_PASSWORD = "TestPassword123";
-    private static final String TEST_USER_ROLE = "USER";
-
     // エンドポイント定数
     private static final String PHOTOS_ENDPOINT = "/api/v1/photos";
     private static final String AUTH_LOGIN_ENDPOINT = "/api/v1/auth/login";
@@ -75,7 +75,7 @@ public class SecurityHardeningTest {
         testUser.setUsername(TEST_USERNAME);
         testUser.setEmail(TEST_EMAIL);
         testUser.setPasswordHash(passwordEncoder.encode(TEST_PASSWORD));
-        testUser.setRole(TEST_USER_ROLE);
+        testUser.setRole(CodeConstants.ROLE_USER);
         testUser.setEmailVerified(true);
         testUser = userRepository.save(testUser);
 

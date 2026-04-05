@@ -39,11 +39,11 @@ public class Photo {
     @Column(name = "shot_at")
     private LocalDateTime shotAt;
 
-    @Column(name = "weather", length = 50)
-    private String weather;
+    @Column(name = "weather")
+    private Integer weather;
 
-    @Column(name = "time_of_day", length = 20)
-    private String timeOfDay;
+    @Column(name = "time_of_day")
+    private Integer timeOfDay;
 
     @Column(name = "latitude", precision = 9, scale = 6)
     private BigDecimal latitude;
@@ -51,8 +51,8 @@ public class Photo {
     @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
 
-    @Column(name = "device_type", length = 20)
-    private String deviceType;
+    @Column(name = "device_type")
+    private Integer deviceType;
 
     @Column(name = "camera_body", length = 100)
     private String cameraBody;
@@ -87,9 +87,8 @@ public class Photo {
     @Column(name = "crop_zoom")
     private Double cropZoom;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "moderation_status", nullable = false, length = 20)
-    private ModerationStatus moderationStatus = ModerationStatus.PENDING_REVIEW;
+    @Column(name = "moderation_status", nullable = false)
+    private Integer moderationStatus = 1001;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -165,19 +164,19 @@ public class Photo {
         this.shotAt = shotAt;
     }
 
-    public String getWeather() {
+    public Integer getWeather() {
         return weather;
     }
 
-    public void setWeather(String weather) {
+    public void setWeather(Integer weather) {
         this.weather = weather;
     }
 
-    public String getTimeOfDay() {
+    public Integer getTimeOfDay() {
         return timeOfDay;
     }
 
-    public void setTimeOfDay(String timeOfDay) {
+    public void setTimeOfDay(Integer timeOfDay) {
         this.timeOfDay = timeOfDay;
     }
 
@@ -213,11 +212,11 @@ public class Photo {
         this.longitude = longitude;
     }
 
-    public String getDeviceType() {
+    public Integer getDeviceType() {
         return deviceType;
     }
 
-    public void setDeviceType(String deviceType) {
+    public void setDeviceType(Integer deviceType) {
         this.deviceType = deviceType;
     }
 
@@ -309,11 +308,11 @@ public class Photo {
         this.cropZoom = cropZoom;
     }
 
-    public ModerationStatus getModerationStatus() {
+    public Integer getModerationStatus() {
         return moderationStatus;
     }
 
-    public void setModerationStatus(ModerationStatus moderationStatus) {
+    public void setModerationStatus(Integer moderationStatus) {
         this.moderationStatus = moderationStatus;
     }
 

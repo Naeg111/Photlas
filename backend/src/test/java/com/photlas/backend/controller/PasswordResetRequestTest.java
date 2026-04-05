@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.entity.CodeConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.PasswordResetRequest;
 import com.photlas.backend.entity.User;
@@ -67,7 +68,7 @@ public class PasswordResetRequestTest {
         user.setUsername("testuser");
         user.setEmail("test@example.com");
         user.setPasswordHash("hashed-password");
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         userRepository.save(user);
 
         PasswordResetRequest request = new PasswordResetRequest();
@@ -88,7 +89,7 @@ public class PasswordResetRequestTest {
         user.setUsername("testuser");
         user.setEmail("test@example.com");
         user.setPasswordHash("hashed-password");
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         userRepository.save(user);
 
         PasswordResetRequest request = new PasswordResetRequest();
@@ -115,7 +116,7 @@ public class PasswordResetRequestTest {
         user.setUsername("testuser");
         user.setEmail("test@example.com");
         user.setPasswordHash("hashed-password");
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         userRepository.save(user);
 
         PasswordResetRequest request = new PasswordResetRequest();
@@ -205,7 +206,7 @@ public class PasswordResetRequestTest {
         user.setUsername("testuser");
         user.setEmail("test@example.com");
         user.setPasswordHash("hashed-password");
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         user = userRepository.save(user);
 
         // 既存のトークンを作成
@@ -237,7 +238,7 @@ public class PasswordResetRequestTest {
         user.setUsername("testuser");
         user.setEmail("test@example.com");
         user.setPasswordHash("hashed-password");
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         userRepository.save(user);
 
         PasswordResetRequest request = new PasswordResetRequest();
@@ -262,7 +263,7 @@ public class PasswordResetRequestTest {
         user.setUsername("deleteduser");
         user.setEmail("deleted@example.com");
         user.setPasswordHash("hashed-password");
-        user.setRole("USER");
+        user.setRole(CodeConstants.ROLE_USER);
         user.setDeletedAt(java.time.LocalDateTime.now().minusDays(5));
         userRepository.save(user);
 
@@ -287,7 +288,7 @@ public class PasswordResetRequestTest {
         user.setUsername("suspended");
         user.setEmail("suspended@example.com");
         user.setPasswordHash("hashed-password");
-        user.setRole("SUSPENDED");
+        user.setRole(CodeConstants.ROLE_SUSPENDED);
         userRepository.save(user);
 
         PasswordResetRequest request = new PasswordResetRequest();

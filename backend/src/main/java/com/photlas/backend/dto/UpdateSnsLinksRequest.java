@@ -34,7 +34,7 @@ public class UpdateSnsLinksRequest {
 
     public static class SnsLinkRequest {
         @NotNull(message = "プラットフォームは必須です")
-        private String platform;
+        private Integer platform;
 
         @NotNull(message = "URLは必須です")
         private String url;
@@ -42,16 +42,16 @@ public class UpdateSnsLinksRequest {
         public SnsLinkRequest() {
         }
 
-        public SnsLinkRequest(String platform, String url) {
+        public SnsLinkRequest(Integer platform, String url) {
             this.platform = platform;
             this.url = url;
         }
 
-        public String getPlatform() {
+        public Integer getPlatform() {
             return platform;
         }
 
-        public void setPlatform(String platform) {
+        public void setPlatform(Integer platform) {
             this.platform = platform;
         }
 

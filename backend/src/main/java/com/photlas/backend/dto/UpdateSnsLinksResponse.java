@@ -26,22 +26,22 @@ public class UpdateSnsLinksResponse {
     }
 
     public static class SnsLinkResponse {
-        private String platform;
+        private Integer platform;
         private String url;
 
         public SnsLinkResponse() {
         }
 
-        public SnsLinkResponse(String platform, String url) {
+        public SnsLinkResponse(Integer platform, String url) {
             this.platform = platform;
             this.url = url;
         }
 
-        public String getPlatform() {
+        public Integer getPlatform() {
             return platform;
         }
 
-        public void setPlatform(String platform) {
+        public void setPlatform(Integer platform) {
             this.platform = platform;
         }
 
