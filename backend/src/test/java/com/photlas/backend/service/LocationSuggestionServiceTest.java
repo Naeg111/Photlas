@@ -229,6 +229,9 @@ public class LocationSuggestionServiceTest {
         assertThat(suggestion.getStatus()).isEqualTo(CodeConstants.SUGGESTION_STATUS_ACCEPTED);
         assertThat(suggestion.getResolvedAt()).isNotNull();
         assertThat(photo.getSpotId()).isEqualTo(200L);
+        // レポート#32 #2: 写真自体の座標も指摘された座標に更新されること
+        assertThat(photo.getLatitude()).isEqualByComparingTo(SUGGESTED_LAT);
+        assertThat(photo.getLongitude()).isEqualByComparingTo(SUGGESTED_LNG);
         verify(photoRepository).save(photo);
     }
 
