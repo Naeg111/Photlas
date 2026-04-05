@@ -167,7 +167,7 @@ public class PhotoUpdateTest {
         Photo photo = createPhoto("uploads/1/test3.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         Map<String, Object> request = Map.of(
-                "weather", "雨"
+                "weather", CodeConstants.WEATHER_RAIN
         );
 
         mockMvc.perform(put(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
@@ -199,7 +199,7 @@ public class PhotoUpdateTest {
     @Test
     @DisplayName("Issue#61 - 存在しない写真を編集しようとすると404が返る")
     void updatePhoto_notFound_returns404() throws Exception {
-        Map<String, Object> request = Map.of("weather", "晴れ");
+        Map<String, Object> request = Map.of("weather", CodeConstants.WEATHER_SUNNY);
 
         mockMvc.perform(put(ENDPOINT_PHOTOS + "/99999")
                 .with(csrf())
@@ -214,7 +214,7 @@ public class PhotoUpdateTest {
     void updatePhoto_removed_returns404() throws Exception {
         Photo photo = createPhoto("uploads/1/test5.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
 
-        Map<String, Object> request = Map.of("weather", "晴れ");
+        Map<String, Object> request = Map.of("weather", CodeConstants.WEATHER_SUNNY);
 
         mockMvc.perform(put(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf())
@@ -229,7 +229,7 @@ public class PhotoUpdateTest {
     void updatePhoto_unauthenticated_returns401() throws Exception {
         Photo photo = createPhoto("uploads/1/test6.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
-        Map<String, Object> request = Map.of("weather", "晴れ");
+        Map<String, Object> request = Map.of("weather", CodeConstants.WEATHER_SUNNY);
 
         mockMvc.perform(put(ENDPOINT_PHOTOS + "/" + photo.getPhotoId())
                 .with(csrf())

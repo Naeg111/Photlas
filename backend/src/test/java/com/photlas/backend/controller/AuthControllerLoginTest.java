@@ -83,7 +83,7 @@ public class AuthControllerLoginTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.username", is("testuser")))
                 .andExpect(jsonPath("$.user.email", is("test@example.com")))
-                .andExpect(jsonPath("$.user.role", is("USER")))
+                .andExpect(jsonPath("$.user.role", is(CodeConstants.ROLE_USER)))
                 .andExpect(jsonPath("$.user.passwordHash").doesNotExist())
                 .andExpect(jsonPath("$.token").exists());
     }
