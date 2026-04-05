@@ -116,6 +116,28 @@ public class S3Service {
     }
 
     /**
+     * S3上にオブジェクトが存在するか確認する（HeadObject）
+     *
+     * @param s3ObjectKey 確認するS3オブジェクトキー
+     * @return 存在する場合true
+     */
+    public boolean existsInS3(String s3ObjectKey) {
+        try (S3Client s3Client = S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build()) {
+
+            s3Client.headObject(software.amazon.awssdk.services.s3.model.HeadObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3ObjectKey)
+                    .build());
+            return true;
+        } catch (software.amazon.awssdk.services.s3.model.NoSuchKeyException e) {
+            return false;
+        }
+    }
+
+    /**
      * Issue#59: S3オブジェクトキーからサムネイルのCDN URLを生成する
      * 命名規則: uploads/1/abc.jpg → thumbnails/uploads/1/abc.webp
      *
