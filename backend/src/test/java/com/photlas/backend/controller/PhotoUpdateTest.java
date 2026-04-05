@@ -98,9 +98,9 @@ public class PhotoUpdateTest {
         otherToken = jwtService.generateToken(otherUser.getEmail());
         testSpot = createSpot();
 
-        categoryRepository.save(createCategory("風景"));
-        categoryRepository.save(createCategory("建築"));
-        categoryRepository.save(createCategory("都市・街並み"));
+        categoryRepository.save(createCategory(CodeConstants.CATEGORY_NATURE, "風景"));
+        categoryRepository.save(createCategory(CodeConstants.CATEGORY_ARCHITECTURE, "建築"));
+        categoryRepository.save(createCategory(CodeConstants.CATEGORY_CITYSCAPE, "都市・街並み"));
 
         when(s3Service.generateCdnUrl(anyString()))
                 .thenAnswer(inv -> "https://cdn.example.com/" + inv.getArgument(0));
@@ -125,8 +125,9 @@ public class PhotoUpdateTest {
         return spotRepository.save(spot);
     }
 
-    private Category createCategory(String name) {
+    private Category createCategory(int categoryId, String name) {
         Category category = new Category();
+        category.setCategoryId(categoryId);
         category.setName(name);
         return category;
     }

@@ -134,7 +134,7 @@ public class ReportControllerTest {
         // テストデータを作成
         testUser = createTestUser(TEST_USERNAME, TEST_EMAIL);
         token = jwtService.generateToken(testUser.getEmail());
-        Category category = createTestCategory(TEST_CATEGORY_NAME);
+        Category category = createTestCategory(CodeConstants.CATEGORY_NATURE, TEST_CATEGORY_NAME);
         Spot spot = createTestSpot(TEST_LATITUDE, TEST_LONGITUDE);
         User photoOwner = createPhotoOwner();
         testPhoto = createTestPhoto(photoOwner, spot, category);
@@ -159,8 +159,9 @@ public class ReportControllerTest {
         return userRepository.save(user);
     }
 
-    private Category createTestCategory(String name) {
+    private Category createTestCategory(int categoryId, String name) {
         Category category = new Category();
+        category.setCategoryId(categoryId);
         category.setName(name);
         return categoryRepository.save(category);
     }

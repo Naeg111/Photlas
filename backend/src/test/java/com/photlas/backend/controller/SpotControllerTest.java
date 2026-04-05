@@ -173,10 +173,12 @@ public class SpotControllerTest {
 
         // カテゴリマスターデータを作成
         category1 = new Category();
+        category1.setCategoryId(CodeConstants.CATEGORY_NATURE);
         category1.setName(CATEGORY_NAME_1);
         category1 = categoryRepository.save(category1);
 
         category2 = new Category();
+        category2.setCategoryId(CodeConstants.CATEGORY_CITYSCAPE);
         category2.setName(CATEGORY_NAME_2);
         category2 = categoryRepository.save(category2);
     }

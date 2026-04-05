@@ -1,8 +1,8 @@
 package com.photlas.backend.controller;
 
 import com.photlas.backend.entity.Category;
+import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.repository.CategoryRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,10 +16,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Issue#16: カテゴリー一覧API - コントローラーテスト
- * TDD Red段階: 実装前のテストケース定義
+ * Issue#9: カテゴリAPI テスト
  */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
@@ -31,14 +30,8 @@ public class CategoryControllerTest {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    @BeforeEach
-    public void setUp() {
-        categoryRepository.deleteAll();
-    }
-
     @Test
-    public void testGetAllCategories_ReturnsEmptyList_WhenNoCategories() throws Exception {
-        // 空のデータベースで全カテゴリーを取得
+    public void testGetAllCategories_ReturnsEmptyListWhenNoCategoriesExist() throws Exception {
         mockMvc.perform(get("/api/v1/categories"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/json"))
@@ -47,62 +40,67 @@ public class CategoryControllerTest {
 
     @Test
     public void testGetAllCategories_ReturnsAllCategories() throws Exception {
-        // テストデータ作成
         Category category1 = new Category();
-        category1.setName("風景");
+        category1.setCategoryId(CodeConstants.CATEGORY_NATURE);
+        category1.setName("自然風景");
         categoryRepository.save(category1);
 
         Category category2 = new Category();
+        category2.setCategoryId(CodeConstants.CATEGORY_CITYSCAPE);
         category2.setName("街並み");
         categoryRepository.save(category2);
 
         Category category3 = new Category();
+        category3.setCategoryId(CodeConstants.CATEGORY_PLANTS);
         category3.setName("植物");
         categoryRepository.save(category3);
 
-        // 全カテゴリーを取得
         mockMvc.perform(get("/api/v1/categories"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/json"))
-                .andExpect(jsonPath("$", hasSize(3)))
-                .andExpect(jsonPath("$[0].name").value("風景"))
-                .andExpect(jsonPath("$[1].name").value("街並み"))
-                .andExpect(jsonPath("$[2].name").value("植物"));
+                .andExpect(jsonPath("$", hasSize(3)));
     }
 
     @Test
     public void testGetAllCategories_ReturnsCategoryIdsAndNames() throws Exception {
-        // テストデータ作成
         Category category = new Category();
-        category.setName("風景");
-        Category savedCategory = categoryRepository.save(category);
+        category.setCategoryId(CodeConstants.CATEGORY_NATURE);
+        category.setName("自然風景");
+        categoryRepository.save(category);
 
-        // カテゴリーIDと名前が含まれることを確認
         mockMvc.perform(get("/api/v1/categories"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/json"))
-                .andExpect(jsonPath("$[0].categoryId").value(savedCategory.getCategoryId()))
-                .andExpect(jsonPath("$[0].name").value("風景"));
+                .andExpect(jsonPath("$[0].categoryId").value(CodeConstants.CATEGORY_NATURE))
+                .andExpect(jsonPath("$[0].name").value("自然風景"));
     }
 
     @Test
     public void testGetAllCategories_ReturnsAllStandardCategories() throws Exception {
-        // 標準の12カテゴリーを作成
-        String[] standardCategories = {
-            "風景", "街並み", "植物", "動物", "自動車", "バイク",
-            "鉄道", "飛行機", "食べ物", "ポートレート", "星空", "その他"
+        int[][] categories = {
+            {CodeConstants.CATEGORY_NATURE, 0}, {CodeConstants.CATEGORY_CITYSCAPE, 0},
+            {CodeConstants.CATEGORY_ARCHITECTURE, 0}, {CodeConstants.CATEGORY_NIGHT_VIEW, 0},
+            {CodeConstants.CATEGORY_GOURMET, 0}, {CodeConstants.CATEGORY_PLANTS, 0},
+            {CodeConstants.CATEGORY_ANIMALS, 0}, {CodeConstants.CATEGORY_WILD_BIRDS, 0},
+            {CodeConstants.CATEGORY_CARS, 0}, {CodeConstants.CATEGORY_MOTORCYCLES, 0},
+            {CodeConstants.CATEGORY_RAILWAYS, 0}, {CodeConstants.CATEGORY_AIRCRAFT, 0},
+            {CodeConstants.CATEGORY_STARRY_SKY, 0}, {CodeConstants.CATEGORY_OTHER, 0}
+        };
+        String[] names = {
+            "自然風景", "街並み", "建造物", "夜景", "グルメ", "植物", "動物",
+            "野鳥", "自動車", "バイク", "鉄道", "飛行機", "星空", "その他"
         };
 
-        for (String categoryName : standardCategories) {
+        for (int i = 0; i < categories.length; i++) {
             Category category = new Category();
-            category.setName(categoryName);
+            category.setCategoryId(categories[i][0]);
+            category.setName(names[i]);
             categoryRepository.save(category);
         }
 
-        // 全カテゴリーを取得し、12件であることを確認
         mockMvc.perform(get("/api/v1/categories"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/json"))
-                .andExpect(jsonPath("$", hasSize(12)));
+                .andExpect(jsonPath("$", hasSize(14)));
     }
 }

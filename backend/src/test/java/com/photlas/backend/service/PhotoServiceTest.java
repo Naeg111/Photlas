@@ -85,10 +85,12 @@ public class PhotoServiceTest {
 
         // カテゴリマスターデータを作成
         landscapeCategory = new Category();
+        landscapeCategory.setCategoryId(CodeConstants.CATEGORY_NATURE);
         landscapeCategory.setName("風景");
         landscapeCategory = categoryRepository.save(landscapeCategory);
 
         cityCategory = new Category();
+        cityCategory.setCategoryId(CodeConstants.CATEGORY_CITYSCAPE);
         cityCategory.setName("都市・街並み");
         cityCategory = categoryRepository.save(cityCategory);
     }
