@@ -345,6 +345,18 @@ public class UserControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    @DisplayName("レポート#6 #1 - GET /api/v1/users/{userId} - 退会済みユーザーのプロフィールは404を返す")
+    void testGetUserProfile_DeletedUser_ReturnsNotFound() throws Exception {
+        // 退会済みユーザーを作成
+        User deletedUser = createTestUser("deleted", "deleted@example.com");
+        deletedUser.setDeletedAt(java.time.LocalDateTime.now());
+        userRepository.save(deletedUser);
+
+        performGetUserProfile(deletedUser.getId())
+                .andExpect(status().isNotFound());
+    }
+
     // PUT /api/v1/users/me/profile のテスト
     @Test
     @DisplayName("PUT /api/v1/users/me/profile - プロフィール更新成功")
