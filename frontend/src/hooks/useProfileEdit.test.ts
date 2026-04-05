@@ -1,7 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
+import { toast } from 'sonner'
 import { useProfileEdit } from './useProfileEdit'
 import { PLATFORM_TWITTER, PLATFORM_INSTAGRAM } from '../utils/codeConstants'
+
+// sonnerのモック
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}))
 
 // AuthContextのモック
 const mockGetAuthToken = vi.fn(() => 'test-token')
@@ -316,6 +325,112 @@ describe('useProfileEdit', () => {
         '/api/v1/users/me/profile-image/presigned-url',
         expect.objectContaining({ method: 'POST' })
       )
+    })
+
+    it('レポート#5-3 - handleSaveAllChangesでS3 PUTが失敗した場合にエラートーストが表示される', async () => {
+      mockFetch
+        // 署名付きURL取得: 成功
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ uploadUrl: 'https://s3.example.com/upload', objectKey: 'profiles/test-key.jpg' }),
+        })
+        // S3 PUT: 失敗
+        .mockResolvedValueOnce({ ok: false, status: 500 })
+
+      const { result } = renderHook(() => useProfileEdit(defaultProps))
+
+      const croppedBlob = new Blob(['cropped-data'], { type: 'image/jpeg' })
+
+      await act(async () => {
+        await result.current.handleCropComplete(croppedBlob)
+      })
+
+      await act(async () => {
+        await result.current.handleSaveAllChanges()
+      })
+
+      // エラートーストが表示される
+      expect(toast.error).toHaveBeenCalledWith('プロフィール画像の登録に失敗しました')
+
+      // pendingImageBlobが保持される（クリアされない）
+      expect(result.current.hasUnsavedChanges).toBe(true)
+    })
+
+    it('レポート#5-3 - handleSaveAllChangesでバックエンドPUTが失敗した場合にエラートーストが表示される', async () => {
+      mockFetch
+        // 署名付きURL取得: 成功
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ uploadUrl: 'https://s3.example.com/upload', objectKey: 'profiles/test-key.jpg' }),
+        })
+        // S3 PUT: 成功
+        .mockResolvedValueOnce({ ok: true })
+        // バックエンド画像キー登録PUT: 失敗
+        .mockResolvedValueOnce({ ok: false, status: 500 })
+
+      const { result } = renderHook(() => useProfileEdit(defaultProps))
+
+      const croppedBlob = new Blob(['cropped-data'], { type: 'image/jpeg' })
+
+      await act(async () => {
+        await result.current.handleCropComplete(croppedBlob)
+      })
+
+      await act(async () => {
+        await result.current.handleSaveAllChanges()
+      })
+
+      // エラートーストが表示される
+      expect(toast.error).toHaveBeenCalledWith('プロフィール画像の登録に失敗しました')
+
+      // pendingImageBlobが保持される（クリアされない）
+      expect(result.current.hasUnsavedChanges).toBe(true)
+    })
+
+    it('レポート#5-3 - 画像アップロード失敗時もユーザー名やSNSリンクの保存は続行される', async () => {
+      mockFetch
+        // 署名付きURL取得: 成功
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ uploadUrl: 'https://s3.example.com/upload', objectKey: 'profiles/test-key.jpg' }),
+        })
+        // S3 PUT: 失敗
+        .mockResolvedValueOnce({ ok: false, status: 500 })
+        // SNSリンク保存: 成功
+        .mockResolvedValueOnce({ ok: true })
+
+      const onSnsLinksUpdated = vi.fn()
+      const existingLinks = [
+        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
+      ]
+      const { result } = renderHook(() =>
+        useProfileEdit({ ...defaultProps, snsLinks: existingLinks, onSnsLinksUpdated })
+      )
+
+      // 画像クロップ
+      const croppedBlob = new Blob(['cropped-data'], { type: 'image/jpeg' })
+      await act(async () => {
+        await result.current.handleCropComplete(croppedBlob)
+      })
+
+      // SNSリンク編集開始
+      act(() => {
+        result.current.handleStartEditSnsLinks()
+      })
+
+      await act(async () => {
+        await result.current.handleSaveAllChanges()
+      })
+
+      // 画像はエラー
+      expect(toast.error).toHaveBeenCalledWith('プロフィール画像の登録に失敗しました')
+
+      // SNSリンクの保存は続行されている
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/v1/users/me/sns-links',
+        expect.objectContaining({ method: 'PUT' })
+      )
+      expect(onSnsLinksUpdated).toHaveBeenCalled()
     })
 
     it('Issue#82 - handleCancelAllChangesで画像変更がリバートされる', async () => {

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { toast } from 'sonner'
 import { useAuth } from '../contexts/AuthContext'
 import { PLATFORM_TWITTER } from '../utils/codeConstants'
 
@@ -16,6 +17,7 @@ const ERROR_MESSAGES = {
   USERNAME_TOO_LONG: '30文字以内で入力してください',
   FAILED_TO_GET_PRESIGNED_URL: 'Failed to get presigned URL',
   FAILED_TO_UPDATE_USERNAME: 'Failed to update username',
+  FAILED_TO_REGISTER_PROFILE_IMAGE: 'プロフィール画像の登録に失敗しました',
 } as const
 
 // バリデーション定数
@@ -395,19 +397,27 @@ export const useProfileEdit = ({
         if (presignedResponse.ok) {
           const { uploadUrl, objectKey } = await presignedResponse.json()
 
-          await fetch(uploadUrl, {
+          const s3Response = await fetch(uploadUrl, {
             method: 'PUT',
             body: pendingImageBlob,
           })
 
-          await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
-            method: 'PUT',
-            headers,
-            body: JSON.stringify({ objectKey }),
-          })
-        }
+          if (!s3Response.ok) {
+            toast.error(ERROR_MESSAGES.FAILED_TO_REGISTER_PROFILE_IMAGE)
+          } else {
+            const registerResponse = await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
+              method: 'PUT',
+              headers,
+              body: JSON.stringify({ objectKey }),
+            })
 
-        setPendingImageBlob(null)
+            if (!registerResponse.ok) {
+              toast.error(ERROR_MESSAGES.FAILED_TO_REGISTER_PROFILE_IMAGE)
+            } else {
+              setPendingImageBlob(null)
+            }
+          }
+        }
       }
 
       // Issue#82: 画像削除（削除フラグがある場合のみ）
