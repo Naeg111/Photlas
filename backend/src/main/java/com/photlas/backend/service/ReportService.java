@@ -154,21 +154,6 @@ public class ReportService {
     }
 
     /**
-     * 違反理由文字列を数値コードに変換する
-     */
-    private int mapReasonToCode(String reason) {
-        return switch (reason) {
-            case "ADULT_CONTENT" -> CodeConstants.REASON_ADULT_CONTENT;
-            case "VIOLENCE" -> CodeConstants.REASON_VIOLENCE;
-            case "COPYRIGHT_INFRINGEMENT" -> CodeConstants.REASON_COPYRIGHT_INFRINGEMENT;
-            case "PRIVACY_VIOLATION" -> CodeConstants.REASON_PRIVACY_VIOLATION;
-            case "SPAM" -> CodeConstants.REASON_SPAM;
-            case "OTHER" -> CodeConstants.REASON_OTHER;
-            default -> throw new IllegalArgumentException("不明な通報理由: " + reason);
-        };
-    }
-
-    /**
      * 数値コードを理由文字列に変換する（レスポンス用）
      */
     private String mapCodeToReasonName(int code) {
