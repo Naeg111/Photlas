@@ -167,7 +167,7 @@ public class RemovedPhotoCleanupServiceTest {
         categoryRepository.save(category);
 
         Photo photo = createPhoto("uploads/1/cat-test.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
-        photo.setCategories(java.util.List.of(category));
+        photo.setCategories(new java.util.ArrayList<>(java.util.List.of(category)));
         photoRepository.save(photo);
         entityManager.flush();
 
