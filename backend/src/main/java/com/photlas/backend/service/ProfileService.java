@@ -88,14 +88,6 @@ public class ProfileService {
 
         userRepository.save(user);
 
-        userSnsLinkRepository.deleteByUserId(user.getId());
-        if (request.getSnsLinks() != null) {
-            for (UpdateProfileRequest.SnsLinkRequest snsLinkRequest : request.getSnsLinks()) {
-                UserSnsLink snsLink = new UserSnsLink(user.getId(), snsLinkRequest.getUrl());
-                userSnsLinkRepository.save(snsLink);
-            }
-        }
-
         return getMyProfile(email);
     }
 

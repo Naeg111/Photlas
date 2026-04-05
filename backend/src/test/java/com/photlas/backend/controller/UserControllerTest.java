@@ -38,7 +38,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
@@ -212,14 +211,9 @@ public class UserControllerTest {
         return userRepository.save(user);
     }
 
-    private UpdateProfileRequest createUpdateProfileRequest(String username, List<String> snsLinks) {
+    private UpdateProfileRequest createUpdateProfileRequest(String username) {
         UpdateProfileRequest request = new UpdateProfileRequest();
         request.setUsername(username);
-        List<UpdateProfileRequest.SnsLinkRequest> snsLinkRequests = new ArrayList<>();
-        for (String url : snsLinks) {
-            snsLinkRequests.add(new UpdateProfileRequest.SnsLinkRequest(url));
-        }
-        request.setSnsLinks(snsLinkRequests);
         return request;
     }
 
@@ -361,13 +355,11 @@ public class UserControllerTest {
     @Test
     @DisplayName("PUT /api/v1/users/me/profile - プロフィール更新成功")
     void testUpdateProfile_ValidRequest_ReturnsUpdatedProfile() throws Exception {
-        UpdateProfileRequest request = createUpdateProfileRequest(NEW_USERNAME, List.of(SNS_LINK_NEW_X));
+        UpdateProfileRequest request = createUpdateProfileRequest(NEW_USERNAME);
 
         performUpdateProfile(request)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath(JSON_PATH_USERNAME, is(NEW_USERNAME)))
-                .andExpect(jsonPath(JSON_PATH_SNS_LINKS, hasSize(1)))
-                .andExpect(jsonPath(JSON_PATH_SNS_LINK_0_URL, is(SNS_LINK_NEW_X)));
+                .andExpect(jsonPath(JSON_PATH_USERNAME, is(NEW_USERNAME)));
     }
 
     @Test
@@ -376,7 +368,7 @@ public class UserControllerTest {
         // 別のユーザーを作成
         createTestUser(EXISTING_USERNAME, OTHER_EMAIL);
 
-        UpdateProfileRequest request = createUpdateProfileRequest(EXISTING_USERNAME, new ArrayList<>());
+        UpdateProfileRequest request = createUpdateProfileRequest(EXISTING_USERNAME);
 
         performUpdateProfile(request)
                 .andExpect(status().isOk());
@@ -385,17 +377,7 @@ public class UserControllerTest {
     @Test
     @DisplayName("PUT /api/v1/users/me/profile - バリデーションエラー（ユーザー名が短すぎる）")
     void testUpdateProfile_UsernameTooShort_ReturnsBadRequest() throws Exception {
-        UpdateProfileRequest request = createUpdateProfileRequest(INVALID_USERNAME_SHORT, new ArrayList<>());
-
-        performUpdateProfile(request)
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("PUT /api/v1/users/me/profile - SNSリンクが最大4件を超える場合は400を返す")
-    void testUpdateProfile_TooManySnsLinks_ReturnsBadRequest() throws Exception {
-        UpdateProfileRequest request = createUpdateProfileRequest(TEST_USERNAME,
-                List.of(SNS_LINK_X, SNS_LINK_INSTAGRAM, SNS_LINK_FACEBOOK, SNS_LINK_LINKEDIN, "https://x.com/extra"));
+        UpdateProfileRequest request = createUpdateProfileRequest(INVALID_USERNAME_SHORT);
 
         performUpdateProfile(request)
                 .andExpect(status().isBadRequest());
