@@ -35,6 +35,7 @@ const MOCK_QUEUE_ITEMS = [
   {
     photo_id: 1,
     image_url: 'https://example.com/photo1.jpg',
+    thumbnail_url: 'https://example.com/thumb1.webp',
     user_id: 10,
     username: 'testuser1',
     created_at: '2026-03-10T12:00:00',
@@ -44,6 +45,7 @@ const MOCK_QUEUE_ITEMS = [
   {
     photo_id: 2,
     image_url: 'https://example.com/photo2.jpg',
+    thumbnail_url: 'https://example.com/thumb2.webp',
     user_id: 20,
     username: 'testuser2',
     created_at: '2026-03-10T13:00:00',
@@ -117,7 +119,7 @@ describe('AdminModerationPage', () => {
     expect(screen.getByText('2件の審査待ち')).toBeInTheDocument()
   })
 
-  it('画像をクリックするとぼかしが解除される', async () => {
+  it('Issue#89 - トグルボタンクリックでぼかしが解除される', async () => {
     mockUseAuth.mockReturnValue({
       user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
@@ -142,9 +144,123 @@ describe('AdminModerationPage', () => {
     expect(image.className).toContain('blur-lg')
 
     const user = userEvent.setup()
-    await user.click(screen.getByTestId('moderation-image-container-1'))
+    await user.click(screen.getByTestId('blur-toggle-1'))
 
     expect(image.className).not.toContain('blur-lg')
+  })
+
+  it('Issue#89 - トグルボタン再クリックでぼかしが再適用される', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        content: MOCK_QUEUE_ITEMS,
+        total_elements: 2,
+        total_pages: 1,
+      }),
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('moderation-image-1')).toBeInTheDocument()
+    })
+
+    const user = userEvent.setup()
+    // ぼかし解除
+    await user.click(screen.getByTestId('blur-toggle-1'))
+    expect(screen.getByTestId('moderation-image-1').className).not.toContain('blur-lg')
+
+    // ぼかし再適用
+    await user.click(screen.getByTestId('blur-toggle-1'))
+    expect(screen.getByTestId('moderation-image-1').className).toContain('blur-lg')
+  })
+
+  it('Issue#89 - ぼかし解除済みの画像クリックでライトボックスが表示される', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        content: MOCK_QUEUE_ITEMS,
+        total_elements: 2,
+        total_pages: 1,
+      }),
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('moderation-image-1')).toBeInTheDocument()
+    })
+
+    const user = userEvent.setup()
+    // ぼかし解除
+    await user.click(screen.getByTestId('blur-toggle-1'))
+
+    // 画像クリック → ライトボックス表示
+    await user.click(screen.getByTestId('moderation-image-container-1'))
+    expect(screen.getByAltText('フルサイズ写真')).toBeInTheDocument()
+  })
+
+  it('Issue#89 - ぼかし中の画像クリックではライトボックスが開かない', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        content: MOCK_QUEUE_ITEMS,
+        total_elements: 2,
+        total_pages: 1,
+      }),
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('moderation-image-1')).toBeInTheDocument()
+    })
+
+    const user = userEvent.setup()
+    // ぼかし中に画像クリック
+    await user.click(screen.getByTestId('moderation-image-container-1'))
+
+    // ライトボックスは表示されない
+    expect(screen.queryByAltText('フルサイズ写真')).not.toBeInTheDocument()
+  })
+
+  it('Issue#89 - 「クリックで表示」オーバーレイが表示されない', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        content: MOCK_QUEUE_ITEMS,
+        total_elements: 2,
+        total_pages: 1,
+      }),
+    })
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('moderation-image-1')).toBeInTheDocument()
+    })
+
+    expect(screen.queryByText('クリックで表示')).not.toBeInTheDocument()
   })
 
   it('審査待ちの写真がない場合はメッセージが表示される', async () => {
