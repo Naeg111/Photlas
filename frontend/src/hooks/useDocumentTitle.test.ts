@@ -22,7 +22,7 @@ describe('useDocumentTitle', () => {
 
     unmount()
 
-    expect(document.title).toBe('Photlas - 誰かの一枚が、次の目的地に')
+    expect(document.title).toBe('Photlas')
   })
 
   it('タイトルが変更されると更新される', () => {
