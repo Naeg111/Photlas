@@ -155,6 +155,7 @@ jobs:
         DEPLOY_SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
         DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         DEPLOY_MODERATION_API_KEY: ${{ secrets.STAGING_MODERATION_API_KEY }}
+        DEPLOY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # デプロイスクリプトを生成してbase64エンコード
         cat > /tmp/deploy_script.sh << 'SCRIPT_END'
@@ -197,10 +198,12 @@ jobs:
         aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
         echo '=== Fetching latest code ==='
+        REPO_URL="https://x-access-token:__GITHUB_TOKEN__@github.com/Naeg111/Photlas.git"
         if [ ! -d /home/ec2-user/photlas ]; then
-          git clone https://github.com/Naeg111/Photlas.git /home/ec2-user/photlas
+          git clone "$REPO_URL" /home/ec2-user/photlas
         fi
         cd /home/ec2-user/photlas
+        git remote set-url origin "$REPO_URL"
         git fetch origin develop
         git checkout origin/develop -- docker/docker-compose.staging.yml docker/nginx/staging.conf scripts/certbot-renew.sh scripts/certbot-renew.service scripts/certbot-renew.timer
 
@@ -255,6 +258,7 @@ jobs:
         sed -i "s|__SMTP_USERNAME__|${DEPLOY_SMTP_USERNAME}|g" /tmp/deploy_script.sh
         sed -i "s|__SMTP_PASSWORD__|${DEPLOY_SMTP_PASSWORD}|g" /tmp/deploy_script.sh
         sed -i "s|__MODERATION_API_KEY__|${DEPLOY_MODERATION_API_KEY}|g" /tmp/deploy_script.sh
+        sed -i "s|__GITHUB_TOKEN__|${DEPLOY_GITHUB_TOKEN}|g" /tmp/deploy_script.sh
 
         # base64エンコード
         ENCODED_SCRIPT=$(base64 -w 0 /tmp/deploy_script.sh)
@@ -380,6 +384,7 @@ jobs:
         DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         DEPLOY_MODERATION_API_KEY: ${{ secrets.PRODUCTION_MODERATION_API_KEY }}
         DEPLOY_AWS_CLOUDFRONT_DOMAIN: ${{ secrets.PRODUCTION_CLOUDFRONT_DOMAIN }}
+        DEPLOY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # デプロイスクリプトを生成してbase64エンコード
         cat > /tmp/deploy_script.sh << 'SCRIPT_END'
@@ -423,10 +428,12 @@ jobs:
         aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
         echo '=== Fetching latest code ==='
+        REPO_URL="https://x-access-token:__GITHUB_TOKEN__@github.com/Naeg111/Photlas.git"
         if [ ! -d /home/ec2-user/photlas ]; then
-          git clone https://github.com/Naeg111/Photlas.git /home/ec2-user/photlas
+          git clone "$REPO_URL" /home/ec2-user/photlas
         fi
         cd /home/ec2-user/photlas
+        git remote set-url origin "$REPO_URL"
         git fetch origin main
         git checkout origin/main -- docker/docker-compose.prod.yml docker/nginx/prod.conf scripts/certbot-renew.sh scripts/certbot-renew.service scripts/certbot-renew.timer
 
@@ -470,6 +477,7 @@ jobs:
         sed -i "s|__SMTP_PASSWORD__|${DEPLOY_SMTP_PASSWORD}|g" /tmp/deploy_script.sh
         sed -i "s|__MODERATION_API_KEY__|${DEPLOY_MODERATION_API_KEY}|g" /tmp/deploy_script.sh
         sed -i "s|__AWS_CLOUDFRONT_DOMAIN__|${DEPLOY_AWS_CLOUDFRONT_DOMAIN}|g" /tmp/deploy_script.sh
+        sed -i "s|__GITHUB_TOKEN__|${DEPLOY_GITHUB_TOKEN}|g" /tmp/deploy_script.sh
 
         # base64エンコード
         ENCODED_SCRIPT=$(base64 -w 0 /tmp/deploy_script.sh)
