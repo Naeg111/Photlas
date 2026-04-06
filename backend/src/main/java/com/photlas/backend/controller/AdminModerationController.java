@@ -90,7 +90,7 @@ public class AdminModerationController {
                 CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId());
         int reportCount = reports.size();
         List<Integer> reportReasons = reports.stream()
-                .map(r -> r.getReasonCategory())
+                .map(Report::getReasonCategory)
                 .distinct()
                 .collect(Collectors.toList());
 
