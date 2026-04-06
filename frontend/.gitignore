@@ -29,5 +29,8 @@ dist-ssr
 /blob-report/
 /playwright/.cache/
 
+# SonarQube
+.scannerwork/
+
 # Production environment (contains API keys)
 .env.production
