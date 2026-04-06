@@ -87,43 +87,45 @@ interface PhotoDetailDialogProps {
   filterMaxAgeDays?: number
 }
 
-// APIレスポンスの型定義
+// Issue#88: APIレスポンスの型定義（PhotoDetailResponse形式）
 interface PhotoApiResponse {
-  photo: {
-    photo_id: number
-    place_name?: string | null
-    image_url: string
-    shot_at: string
-    weather?: number | null
-    is_favorited?: boolean
-    favorite_count?: number
-    latitude?: number | null
-    longitude?: number | null
-    exif?: {
-      camera_body?: string
-      camera_lens?: string
-      focal_length_35mm?: number
-      f_value?: string
-      shutter_speed?: string
-      iso?: number
-      image_width?: number
-      image_height?: number
-    } | null
-    crop_center_x?: number | null
-    crop_center_y?: number | null
-    crop_zoom?: number | null
-    moderation_status?: number | null
-    categories?: string[]
+  photoId: number
+  imageUrls: {
+    thumbnail: string | null
+    standard: string
+    original: string
+  }
+  placeName?: string | null
+  shotAt: string
+  weather?: number | null
+  isFavorited?: boolean
+  favoriteCount?: number
+  latitude?: number | null
+  longitude?: number | null
+  cameraInfo?: {
+    body?: string
+    lens?: string
+    focalLength35mm?: number
+    fValue?: string
+    shutterSpeed?: string
+    iso?: string
+    imageWidth?: number
+    imageHeight?: number
+  } | null
+  cropCenterX?: number | null
+  cropCenterY?: number | null
+  cropZoom?: number | null
+  moderationStatus?: number | null
+  categories?: string[]
+  user: {
+    userId: number
+    username: string
+    profileImageUrl?: string | null
   }
   spot: {
-    spot_id: number
+    spotId: number
     latitude: number
     longitude: number
-  }
-  user: {
-    user_id: number
-    username: string
-    profile_image_url?: string | null
   }
 }
 
@@ -142,7 +144,8 @@ interface ExifInfo {
 interface PhotoDetail {
   photoId: number
   placeName?: string | null
-  imageUrl: string
+  thumbnailUrl: string
+  originalUrl: string
   shotAt: string
   weather?: number | null
   isFavorited?: boolean
@@ -182,43 +185,48 @@ function formatShotAt(shotAt: string): string {
 
 // Mapbox アクセストークン
 
-// APIレスポンスを内部形式に変換
+// Issue#88: APIレスポンスを内部形式に変換（PhotoDetailResponse形式対応）
 function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
-  const exifRaw = response.photo.exif
-  const exif: ExifInfo | null = exifRaw ? {
-    cameraBody: exifRaw.camera_body,
-    cameraLens: exifRaw.camera_lens,
-    focalLength35mm: exifRaw.focal_length_35mm,
-    fValue: exifRaw.f_value,
-    shutterSpeed: exifRaw.shutter_speed,
-    iso: exifRaw.iso,
-    imageWidth: exifRaw.image_width,
-    imageHeight: exifRaw.image_height,
+  const cam = response.cameraInfo
+  const exif: ExifInfo | null = cam ? {
+    cameraBody: cam.body,
+    cameraLens: cam.lens,
+    focalLength35mm: cam.focalLength35mm,
+    fValue: cam.fValue,
+    shutterSpeed: cam.shutterSpeed,
+    iso: cam.iso != null ? Number(cam.iso) : undefined,
+    imageWidth: cam.imageWidth,
+    imageHeight: cam.imageHeight,
   } : null
 
+  // Issue#88: サムネイルフォールバック: thumbnail → standard → original
+  const thumbnailUrl = response.imageUrls.thumbnail ?? response.imageUrls.standard ?? response.imageUrls.original
+  const originalUrl = response.imageUrls.original ?? response.imageUrls.standard
+
   return {
-    photoId: response.photo.photo_id,
-    placeName: response.photo.place_name,
-    imageUrl: response.photo.image_url,
-    shotAt: response.photo.shot_at,
-    weather: response.photo.weather,
-    isFavorited: response.photo.is_favorited,
-    favoriteCount: response.photo.favorite_count,
-    latitude: response.photo.latitude,
-    longitude: response.photo.longitude,
+    photoId: response.photoId,
+    placeName: response.placeName,
+    thumbnailUrl,
+    originalUrl,
+    shotAt: response.shotAt,
+    weather: response.weather,
+    isFavorited: response.isFavorited,
+    favoriteCount: response.favoriteCount,
+    latitude: response.latitude,
+    longitude: response.longitude,
     exif,
-    cropCenterX: response.photo.crop_center_x,
-    cropCenterY: response.photo.crop_center_y,
-    cropZoom: response.photo.crop_zoom,
-    moderationStatus: response.photo.moderation_status,
-    categories: response.photo.categories,
+    cropCenterX: response.cropCenterX,
+    cropCenterY: response.cropCenterY,
+    cropZoom: response.cropZoom,
+    moderationStatus: response.moderationStatus,
+    categories: response.categories,
     user: {
-      userId: response.user.user_id,
+      userId: response.user.userId,
       username: response.user.username,
-      profileImageUrl: response.user.profile_image_url ?? undefined,
+      profileImageUrl: response.user.profileImageUrl ?? undefined,
     },
     spot: {
-      spotId: response.spot.spot_id,
+      spotId: response.spot.spotId,
       latitude: response.spot.latitude,
       longitude: response.spot.longitude,
     },
@@ -576,9 +584,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     // プリフェッチ済みの前後写真の画像をブラウザキャッシュにプリロード
     for (const id of [prevId, nextId].filter(Boolean)) {
       const photo = photoDetailsRef.current.get(id)
-      if (photo?.imageUrl) {
+      if (photo?.thumbnailUrl) {
         const img = new Image()
-        img.src = photo.imageUrl
+        img.src = photo.thumbnailUrl
       }
     }
   }, [currentPhotoId, currentIndex, photoIds, fetchPhotoDetail])
@@ -873,18 +881,18 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           if (existing) {
             next.set(currentPhotoId, {
               ...existing,
-              weather: data.photo.weather,
-              placeName: data.photo.place_name,
-              moderationStatus: data.photo.moderation_status,
+              weather: data.weather,
+              placeName: data.placeName,
+              moderationStatus: data.moderationStatus,
             })
           }
           return next
         })
         setDisplayedPhoto(prev => prev ? {
           ...prev,
-          weather: data.photo.weather,
-          placeName: data.photo.place_name,
-          moderationStatus: data.photo.moderation_status,
+          weather: data.weather,
+          placeName: data.placeName,
+          moderationStatus: data.moderationStatus,
         } : prev)
         setIsEditing(false)
         toast.success('保存しました')
@@ -966,17 +974,17 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                             <div
                               data-testid="photo-crop-container"
                               className="aspect-square w-full overflow-hidden cursor-pointer"
-                              onClick={() => onImageClick?.(photo.imageUrl)}
+                              onClick={() => onImageClick?.(photo.originalUrl)}
                               role="button"
                               tabIndex={0}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
-                                  onImageClick?.(photo.imageUrl)
+                                  onImageClick?.(photo.originalUrl)
                                 }
                               }}
                             >
                               <ProtectedImage
-                                src={photo.imageUrl}
+                                src={photo.thumbnailUrl}
                                 alt="画像"
                                 className="w-full h-full"
                                 style={{

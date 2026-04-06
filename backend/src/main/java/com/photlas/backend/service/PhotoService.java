@@ -193,8 +193,7 @@ public class PhotoService {
         // Issue#30: お気に入り数を取得
         long favoriteCount = favoriteRepository.countByPhotoId(photoId);
 
-        // Issue#88: TODO Green段階で実装
-        return null;
+        return buildPhotoDetailResponse(photo, spot, user, isFavorited, favoriteCount);
     }
 
 
@@ -354,8 +353,7 @@ public class PhotoService {
 
         logger.info("写真を更新しました: photoId={}, userId={}", photoId, user.getId());
 
-        // Issue#88: TODO Green段階で実装
-        return null;
+        return buildPhotoDetailResponse(savedPhoto, spot, user, false, 0L);
     }
 
     /**
@@ -599,6 +597,90 @@ public class PhotoService {
         exifDTO.setImageWidth(photo.getImageWidth());
         exifDTO.setImageHeight(photo.getImageHeight());
         return exifDTO;
+    }
+
+    /**
+     * Issue#88: PhotoDetailResponseを構築する
+     */
+    private PhotoDetailResponse buildPhotoDetailResponse(Photo photo, Spot spot, User user,
+                                                          boolean isFavorited, long favoriteCount) {
+        boolean isBlocked = Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(photo.getModerationStatus())
+                || Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(photo.getModerationStatus());
+
+        String standardUrl = isBlocked
+                ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
+                : s3Service.generateCdnUrl(photo.getS3ObjectKey());
+        String thumbnailUrl = isBlocked
+                ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
+                : s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey());
+
+        PhotoDetailResponse response = new PhotoDetailResponse();
+        response.setPhotoId(photo.getPhotoId());
+        response.setImageUrls(new PhotoDetailResponse.ImageUrls(thumbnailUrl, standardUrl, standardUrl));
+        response.setPlaceName(photo.getPlaceName());
+        response.setShotAt(photo.getShotAt());
+        response.setWeather(photo.getWeather());
+        response.setIsFavorited(isFavorited);
+        response.setFavoriteCount(favoriteCount);
+        response.setLatitude(photo.getLatitude());
+        response.setLongitude(photo.getLongitude());
+        response.setCropCenterX(photo.getCropCenterX());
+        response.setCropCenterY(photo.getCropCenterY());
+        response.setCropZoom(photo.getCropZoom());
+        response.setModerationStatus(photo.getModerationStatus());
+
+        if (photo.getCategories() != null && !photo.getCategories().isEmpty()) {
+            response.setCategories(
+                photo.getCategories().stream()
+                    .map(c -> c.getName())
+                    .collect(java.util.stream.Collectors.toList())
+            );
+        }
+
+        response.setCameraInfo(buildCameraInfo(photo));
+
+        PhotoDetailResponse.UserInfo userInfo = new PhotoDetailResponse.UserInfo();
+        userInfo.setUserId(user.getId());
+        userInfo.setUsername(user.getUsername());
+        if (user.getProfileImageS3Key() != null) {
+            userInfo.setProfileImageUrl(s3Service.generateCdnUrl(user.getProfileImageS3Key()));
+        }
+        response.setUser(userInfo);
+
+        response.setSpot(new PhotoDetailResponse.SpotInfo(spot.getSpotId(), spot.getLatitude(), spot.getLongitude()));
+
+        return response;
+    }
+
+    /**
+     * Issue#88: Photo エンティティからCameraInfoを構築する
+     * カメラ情報が全てnullの場合はnullを返す
+     */
+    private PhotoDetailResponse.CameraInfo buildCameraInfo(Photo photo) {
+        boolean hasAnyCameraInfo = photo.getCameraBody() != null
+                || photo.getCameraLens() != null
+                || photo.getFocalLength35mm() != null
+                || photo.getFValue() != null
+                || photo.getShutterSpeed() != null
+                || photo.getIso() != null
+                || photo.getImageWidth() != null
+                || photo.getImageHeight() != null;
+
+        if (!hasAnyCameraInfo) {
+            return null;
+        }
+
+        PhotoDetailResponse.CameraInfo cameraInfo = new PhotoDetailResponse.CameraInfo();
+        cameraInfo.setBody(photo.getCameraBody());
+        cameraInfo.setLens(photo.getCameraLens());
+        cameraInfo.setFocalLength35mm(photo.getFocalLength35mm());
+        cameraInfo.setFValue(photo.getFValue());
+        cameraInfo.setShutterSpeed(photo.getShutterSpeed());
+        cameraInfo.setIso(photo.getIso() != null ? String.valueOf(photo.getIso()) : null);
+        cameraInfo.setImageWidth(photo.getImageWidth());
+        cameraInfo.setImageHeight(photo.getImageHeight());
+
+        return cameraInfo;
     }
 
 }

@@ -87,7 +87,7 @@ public class PhotoControllerTest {
     private static final String ENDPOINT_PHOTO_DETAIL = "/api/v1/photos/";
     private static final String ENDPOINT_FAVORITE = "/favorite";
 
-    // テストデータ定数 - JSONPath
+    // テストデータ定数 - JSONPath（createPhoto: PhotoResponse形式）
     private static final String JSON_PATH_PHOTO_ID = "$.photo.photo_id";
     private static final String JSON_PATH_PHOTO_IMAGE_URL = "$.photo.image_url";
     private static final String JSON_PATH_PHOTO_SHOT_AT = "$.photo.shot_at";
@@ -102,6 +102,33 @@ public class PhotoControllerTest {
     private static final String JSON_PATH_MESSAGE = "$.message";
     private static final String JSON_PATH_UPLOAD_URL = "$.uploadUrl";
     private static final String JSON_PATH_OBJECT_KEY = "$.objectKey";
+
+    // テストデータ定数 - JSONPath（getPhotoDetail: PhotoDetailResponse形式）
+    private static final String DETAIL_JSON_PATH_PHOTO_ID = "$.photoId";
+    private static final String DETAIL_JSON_PATH_IMAGE_URL_STANDARD = "$.imageUrls.standard";
+    private static final String DETAIL_JSON_PATH_IMAGE_URL_THUMBNAIL = "$.imageUrls.thumbnail";
+    private static final String DETAIL_JSON_PATH_WEATHER = "$.weather";
+    private static final String DETAIL_JSON_PATH_IS_FAVORITED = "$.isFavorited";
+    private static final String DETAIL_JSON_PATH_FAVORITE_COUNT = "$.favoriteCount";
+    private static final String DETAIL_JSON_PATH_LATITUDE = "$.latitude";
+    private static final String DETAIL_JSON_PATH_LONGITUDE = "$.longitude";
+    private static final String DETAIL_JSON_PATH_CAMERA_BODY = "$.cameraInfo.body";
+    private static final String DETAIL_JSON_PATH_CAMERA_LENS = "$.cameraInfo.lens";
+    private static final String DETAIL_JSON_PATH_FOCAL_LENGTH_35MM = "$.cameraInfo.focalLength35mm";
+    private static final String DETAIL_JSON_PATH_F_VALUE = "$.cameraInfo.fValue";
+    private static final String DETAIL_JSON_PATH_SHUTTER_SPEED = "$.cameraInfo.shutterSpeed";
+    private static final String DETAIL_JSON_PATH_ISO = "$.cameraInfo.iso";
+    private static final String DETAIL_JSON_PATH_IMAGE_WIDTH = "$.cameraInfo.imageWidth";
+    private static final String DETAIL_JSON_PATH_IMAGE_HEIGHT = "$.cameraInfo.imageHeight";
+    private static final String DETAIL_JSON_PATH_CROP_CENTER_X = "$.cropCenterX";
+    private static final String DETAIL_JSON_PATH_CROP_CENTER_Y = "$.cropCenterY";
+    private static final String DETAIL_JSON_PATH_CROP_ZOOM = "$.cropZoom";
+    private static final String DETAIL_JSON_PATH_MODERATION_STATUS = "$.moderationStatus";
+    private static final String DETAIL_JSON_PATH_SPOT_ID = "$.spot.spotId";
+    private static final String DETAIL_JSON_PATH_SPOT_LATITUDE = "$.spot.latitude";
+    private static final String DETAIL_JSON_PATH_SPOT_LONGITUDE = "$.spot.longitude";
+    private static final String DETAIL_JSON_PATH_USER_ID = "$.user.userId";
+    private static final String DETAIL_JSON_PATH_USER_USERNAME = "$.user.username";
 
     // テストデータ定数 - S3関連
     private static final String S3_OBJECT_KEY_TEST = "uploads/1/00000000-0000-0000-0000-000000000000.jpg";
@@ -472,8 +499,8 @@ public class PhotoControllerTest {
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId())
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).value(photo.getPhotoId()))
-                .andExpect(jsonPath(JSON_PATH_PHOTO_IS_FAVORITED).value(false));
+                .andExpect(jsonPath(DETAIL_JSON_PATH_PHOTO_ID).value(photo.getPhotoId()))
+                .andExpect(jsonPath(DETAIL_JSON_PATH_IS_FAVORITED).value(false));
     }
 
     @Test
@@ -493,8 +520,8 @@ public class PhotoControllerTest {
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId())
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).value(photo.getPhotoId()))
-                .andExpect(jsonPath(JSON_PATH_PHOTO_IS_FAVORITED).value(true));
+                .andExpect(jsonPath(DETAIL_JSON_PATH_PHOTO_ID).value(photo.getPhotoId()))
+                .andExpect(jsonPath(DETAIL_JSON_PATH_IS_FAVORITED).value(true));
     }
 
     @Test
@@ -507,8 +534,8 @@ public class PhotoControllerTest {
         // 写真詳細取得（認証なし）
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).value(photo.getPhotoId()))
-                .andExpect(jsonPath(JSON_PATH_PHOTO_IS_FAVORITED).value(false));
+                .andExpect(jsonPath(DETAIL_JSON_PATH_PHOTO_ID).value(photo.getPhotoId()))
+                .andExpect(jsonPath(DETAIL_JSON_PATH_IS_FAVORITED).value(false));
     }
 
     // Issue#9: 写真アップロード処理 - 署名付きURL発行API
@@ -697,13 +724,13 @@ public class PhotoControllerTest {
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId())
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.photo.latitude", is(35.658600)))
-                .andExpect(jsonPath("$.photo.longitude", is(139.745450)))
-                .andExpect(jsonPath("$.photo.exif.camera_body", is("Nikon Z9")))
-                .andExpect(jsonPath("$.photo.exif.focal_length_35mm", is(70)))
-                .andExpect(jsonPath("$.photo.exif.iso", is(800)))
-                .andExpect(jsonPath("$.photo.exif.image_width", is(8256)))
-                .andExpect(jsonPath("$.photo.exif.image_height", is(5504)));
+                .andExpect(jsonPath(DETAIL_JSON_PATH_LATITUDE, is(35.658600)))
+                .andExpect(jsonPath(DETAIL_JSON_PATH_LONGITUDE, is(139.745450)))
+                .andExpect(jsonPath(DETAIL_JSON_PATH_CAMERA_BODY, is("Nikon Z9")))
+                .andExpect(jsonPath(DETAIL_JSON_PATH_FOCAL_LENGTH_35MM, is(70)))
+                .andExpect(jsonPath(DETAIL_JSON_PATH_ISO, is("800")))
+                .andExpect(jsonPath(DETAIL_JSON_PATH_IMAGE_WIDTH, is(8256)))
+                .andExpect(jsonPath(DETAIL_JSON_PATH_IMAGE_HEIGHT, is(5504)));
     }
 
     // ===== Issue#49: クロップ（トリミング）データ コントローラーテスト =====
@@ -775,9 +802,9 @@ public class PhotoControllerTest {
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId())
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.photo.crop_center_x", is(0.4)))
-                .andExpect(jsonPath("$.photo.crop_center_y", is(0.6)))
-                .andExpect(jsonPath("$.photo.crop_zoom", is(2.0)));
+                .andExpect(jsonPath(DETAIL_JSON_PATH_CROP_CENTER_X, is(0.4)))
+                .andExpect(jsonPath(DETAIL_JSON_PATH_CROP_CENTER_Y, is(0.6)))
+                .andExpect(jsonPath(DETAIL_JSON_PATH_CROP_ZOOM, is(2.0)));
     }
 
     // ===== 署名付きURL追加バリデーションテスト =====

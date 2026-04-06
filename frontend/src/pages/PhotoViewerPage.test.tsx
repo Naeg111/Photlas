@@ -32,32 +32,35 @@ const TEST_PHOTO_ID = 123
 const TEST_PLACE_NAME = '東京タワー'
 const API_PHOTOS = '/api/v1/photos'
 
-// モックAPIレスポンス
+// Issue#88: モックAPIレスポンス（PhotoDetailResponse形式）
 function createMockPhotoResponse(overrides?: { photoId?: number; placeName?: string }) {
   return {
-    photo: {
-      photo_id: overrides?.photoId ?? TEST_PHOTO_ID,
-      place_name: overrides?.placeName ?? TEST_PLACE_NAME,
-      image_url: 'https://example.com/photo.jpg',
-      shot_at: '2024-01-15T14:30:00',
-      weather: '晴れ',
-      is_favorited: false,
-      favorite_count: 5,
-      exif: null,
-      latitude: 35.658581,
-      longitude: 139.745433,
-      crop_center_x: null,
-      crop_center_y: null,
-      crop_zoom: null,
-      moderation_status: MODERATION_STATUS_PUBLISHED,
+    photoId: overrides?.photoId ?? TEST_PHOTO_ID,
+    imageUrls: {
+      thumbnail: 'https://example.com/thumb.webp',
+      standard: 'https://example.com/photo.jpg',
+      original: 'https://example.com/photo.jpg',
     },
+    placeName: overrides?.placeName ?? TEST_PLACE_NAME,
+    shotAt: '2024-01-15T14:30:00',
+    weather: 401,
+    isFavorited: false,
+    favoriteCount: 5,
+    cameraInfo: null,
+    latitude: 35.658581,
+    longitude: 139.745433,
+    cropCenterX: null,
+    cropCenterY: null,
+    cropZoom: null,
+    moderationStatus: MODERATION_STATUS_PUBLISHED,
+    categories: null,
     spot: {
-      spot_id: 1,
+      spotId: 1,
       latitude: 35.658581,
       longitude: 139.745433,
     },
     user: {
-      user_id: 1,
+      userId: 1,
       username: 'testuser',
     },
   }

@@ -43,7 +43,7 @@ export default function PhotoViewerPage() {
 
         if (response.ok) {
           const data = await response.json()
-          setPlaceName(data.photo.place_name || '')
+          setPlaceName(data.placeName || '')
           setStatus('ready')
         } else {
           setStatus('error')

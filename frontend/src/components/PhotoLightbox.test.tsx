@@ -1,11 +1,12 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { PhotoLightbox } from './PhotoLightbox'
 
 /**
  * PhotoLightbox コンポーネントのテスト
  * Issue#27: パネル・ダイアログ群の移行
+ * Issue#88: ローディング表示テスト追加
  *
  * 写真を全画面で拡大表示するライトボックス
  */
@@ -18,6 +19,34 @@ vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
 
+// Issue#65: sonnerのモック
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+}))
+
+// jsdom は URL.createObjectURL をサポートしないためモック
+let objectUrlCounter = 0
+if (!URL.createObjectURL) {
+  URL.createObjectURL = () => ''
+}
+if (!URL.revokeObjectURL) {
+  URL.revokeObjectURL = () => {}
+}
+vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
+  return `blob:http://localhost/mock-${++objectUrlCounter}`
+})
+vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+
+/**
+ * fetch をモックして画像Blobを即座に返すヘルパー
+ */
+function mockFetchImmediate() {
+  const blob = new Blob(['fake-image'], { type: 'image/jpeg' })
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+    new Response(blob, { headers: { 'Content-Length': String(blob.size) } })
+  ))
+}
+
 describe('PhotoLightbox', () => {
   const defaultProps = {
     open: true,
@@ -27,13 +56,20 @@ describe('PhotoLightbox', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockFetchImmediate()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   describe('UI Elements - UI要素', () => {
-    it('renders lightbox when open prop is true', () => {
+    it('renders lightbox when open prop is true', async () => {
       render(<PhotoLightbox {...defaultProps} />)
 
-      expect(screen.getByAltText('フルサイズ写真')).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByAltText('フルサイズ写真')).toBeInTheDocument()
+      })
     })
 
     it('does not render lightbox when open prop is false', () => {
@@ -50,11 +86,14 @@ describe('PhotoLightbox', () => {
       expect(closeButton).toBeInTheDocument()
     })
 
-    it('renders image with provided URL', () => {
+    it('renders image with provided URL', async () => {
       render(<PhotoLightbox {...defaultProps} />)
 
-      const image = screen.getByAltText('フルサイズ写真')
-      expect(image).toHaveAttribute('src', defaultProps.imageUrl)
+      await waitFor(() => {
+        const image = screen.getByAltText('フルサイズ写真')
+        // Issue#88: BlobURLで表示されるため、src属性はblob:で始まる
+        expect(image).toHaveAttribute('src', expect.stringContaining('blob:'))
+      })
     })
 
     it('renders zoom percentage display', () => {
@@ -79,6 +118,10 @@ describe('PhotoLightbox', () => {
     it('calls onOpenChange(false) when background is clicked', async () => {
       const user = userEvent.setup()
       render(<PhotoLightbox {...defaultProps} />)
+
+      await waitFor(() => {
+        expect(screen.getByAltText('フルサイズ写真')).toBeInTheDocument()
+      })
 
       // 背景（黒い部分）をクリック
       const background = screen.getByAltText('フルサイズ写真').parentElement?.parentElement?.parentElement
@@ -136,8 +179,12 @@ describe('PhotoLightbox', () => {
   })
 
   describe('Zoom Functionality - ズーム機能', () => {
-    it('changes zoom level on wheel scroll', () => {
+    it('changes zoom level on wheel scroll', async () => {
       render(<PhotoLightbox {...defaultProps} />)
+
+      await waitFor(() => {
+        expect(screen.getByAltText('フルサイズ写真')).toBeInTheDocument()
+      })
 
       // 初期状態は100%
       expect(screen.getByText('拡大: 100%')).toBeInTheDocument()
