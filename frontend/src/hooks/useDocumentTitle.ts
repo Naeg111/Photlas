@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const DEFAULT_TITLE = 'Photlas - 誰かの一枚が、次の目的地に'
+const DEFAULT_TITLE = 'Photlas'
 
 /**
  * document.titleを設定するカスタムフック
