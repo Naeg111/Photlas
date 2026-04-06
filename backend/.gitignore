@@ -36,5 +36,8 @@ out/
 ### VS Code ###
 .vscode/
 
+### SonarQube ###
+.scannerwork/
+
 ### Production environment ###
 # Note: application-prod.properties now uses environment variables, not hardcoded secrets

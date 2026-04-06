@@ -11,8 +11,8 @@ env:
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-1.amazonaws.com
   FRONTEND_IMAGE: photlas-frontend
   BACKEND_IMAGE: photlas-backend
-  STAGING_INSTANCE_ID: i-075d50b85132855ba
-  PRODUCTION_INSTANCE_ID: i-083e8c40050732b8f
+  STAGING_INSTANCE_ID: ${{ secrets.STAGING_INSTANCE_ID }}
+  PRODUCTION_INSTANCE_ID: ${{ secrets.PRODUCTION_INSTANCE_ID }}
 
 jobs:
   # Dockerイメージをビルドしてプッシュ
@@ -135,7 +135,7 @@ jobs:
 
     - name: Invalidate CloudFront cache
       run: |
-        aws cloudfront create-invalidation --distribution-id E33UFH77Q11V2Q --paths "/*"
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.STAGING_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
 
     - name: Deploy to Staging EC2 via SSM
       env:
@@ -359,7 +359,7 @@ jobs:
 
     - name: Invalidate CloudFront cache
       run: |
-        aws cloudfront create-invalidation --distribution-id E3RXKAXCTDAFOI --paths "/*"
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.PRODUCTION_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
 
     - name: Deploy to Production EC2 via SSM
       env:
