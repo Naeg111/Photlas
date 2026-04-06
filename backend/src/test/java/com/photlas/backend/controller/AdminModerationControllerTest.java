@@ -143,6 +143,7 @@ public class AdminModerationControllerTest {
                 .andExpect(jsonPath(JSON_PATH_CONTENT, hasSize(1)))
                 .andExpect(jsonPath("$.content[0].photo_id").isNumber())
                 .andExpect(jsonPath("$.content[0].image_url").isString())
+                .andExpect(jsonPath("$.content[0].thumbnail_url").isString())
                 .andExpect(jsonPath("$.content[0].user_id").value(photoOwner.getId()))
                 .andExpect(jsonPath("$.content[0].username").value(OWNER_USERNAME))
                 .andExpect(jsonPath("$.content[0].created_at").isString());
