@@ -23,6 +23,7 @@ import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -411,10 +412,16 @@ public class PhotoService {
 
     private static final String BLOCKED_CONTENT_IMAGE_KEY = "assets/blocked-content.png";
 
-    private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited, long favoriteCount) {
-        // ブロックされた写真は黒色の専用画像で置換（QUARANTINED/REMOVEDのみ）
-        boolean isBlocked = Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(photo.getModerationStatus())
+    /**
+     * コンテンツポリシー違反によりブロックされた写真かどうかを判定する
+     */
+    private boolean isBlockedContent(Photo photo) {
+        return Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(photo.getModerationStatus())
                 || Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(photo.getModerationStatus());
+    }
+
+    private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited, long favoriteCount) {
+        boolean isBlocked = isBlockedContent(photo);
         String imageUrl = isBlocked
                 ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateCdnUrl(photo.getS3ObjectKey());
@@ -454,8 +461,8 @@ public class PhotoService {
         if (photo.getCategories() != null && !photo.getCategories().isEmpty()) {
             photoDTO.setCategories(
                 photo.getCategories().stream()
-                    .map(c -> c.getName())
-                    .collect(java.util.stream.Collectors.toList())
+                    .map(Category::getName)
+                    .collect(Collectors.toList())
             );
         }
 
@@ -601,11 +608,17 @@ public class PhotoService {
 
     /**
      * Issue#88: PhotoDetailResponseを構築する
+     *
+     * @param photo 写真エンティティ
+     * @param spot スポットエンティティ
+     * @param user ユーザーエンティティ
+     * @param isFavorited リクエスト者がお気に入り登録しているか
+     * @param favoriteCount お気に入り数
+     * @return 写真詳細レスポンス
      */
     private PhotoDetailResponse buildPhotoDetailResponse(Photo photo, Spot spot, User user,
                                                           boolean isFavorited, long favoriteCount) {
-        boolean isBlocked = Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(photo.getModerationStatus())
-                || Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(photo.getModerationStatus());
+        boolean isBlocked = isBlockedContent(photo);
 
         String standardUrl = isBlocked
                 ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
@@ -632,8 +645,8 @@ public class PhotoService {
         if (photo.getCategories() != null && !photo.getCategories().isEmpty()) {
             response.setCategories(
                 photo.getCategories().stream()
-                    .map(c -> c.getName())
-                    .collect(java.util.stream.Collectors.toList())
+                    .map(Category::getName)
+                    .collect(Collectors.toList())
             );
         }
 
