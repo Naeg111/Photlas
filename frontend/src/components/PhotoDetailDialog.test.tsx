@@ -755,15 +755,15 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   describe('Issue#44: EXIF情報ブロックの表示', () => {
     it('EXIF情報が全て揃っている場合、撮影情報ブロックが全項目表示される', async () => {
       const photoDetail = createMockApiResponse({
-        exif: {
-          camera_body: 'Canon EOS R5',
-          camera_lens: 'RF 24-70mm f/2.8L',
-          focal_length_35mm: 35,
-          f_value: 'f/2.8',
-          shutter_speed: '1/1000',
-          iso: 400,
-          image_width: 8192,
-          image_height: 5464,
+        cameraInfo: {
+          body: 'Canon EOS R5',
+          lens: 'RF 24-70mm f/2.8L',
+          focalLength35mm: 35,
+          fValue: 'f/2.8',
+          shutterSpeed: '1/1000',
+          iso: '400',
+          imageWidth: 8192,
+          imageHeight: 5464,
         },
       })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
@@ -794,9 +794,9 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
     it('EXIF情報が一部のみの場合、取得できた項目のみ表示される', async () => {
       const photoDetail = createMockApiResponse({
-        exif: {
-          camera_body: 'iPhone 15 Pro',
-          iso: 100,
+        cameraInfo: {
+          body: 'iPhone 15 Pro',
+          iso: '100',
         },
       })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
@@ -1127,7 +1127,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const user = userEvent.setup()
       await user.click(screen.getByAltText('画像'))
 
-      expect(mockImageClick).toHaveBeenCalledWith(photoDetail.photo.image_url)
+      expect(mockImageClick).toHaveBeenCalledWith(photoDetail.imageUrls.original)
     })
   })
 
@@ -1914,8 +1914,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       mockUseAuth.mockReturnValue({ user: null, isAuthenticated: false })
 
       const mockDetail = createMockApiResponse()
-      // APIレスポンスにprofile_image_urlを追加
-      mockDetail.user = { ...mockDetail.user, profile_image_url: 'https://cdn.example.com/profile/1.jpg' } as typeof mockDetail.user & { profile_image_url: string }
+      // APIレスポンスにprofileImageUrlを追加
+      mockDetail.user = { ...mockDetail.user, profileImageUrl: 'https://cdn.example.com/profile/1.jpg' }
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [mockDetail])
       global.fetch = mockFetch
 

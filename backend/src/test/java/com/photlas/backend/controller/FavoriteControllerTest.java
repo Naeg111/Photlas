@@ -332,7 +332,7 @@ public class FavoriteControllerTest {
     // ============================================================
 
     private static final String PHOTO_DETAIL_ENDPOINT = "/api/v1/photos/";
-    private static final String JSON_PATH_FAVORITE_COUNT = "$.photo.favorite_count";
+    private static final String JSON_PATH_FAVORITE_COUNT = "$.favoriteCount";
 
     @Test
     @DisplayName("Issue#30 - 写真詳細APIでfavoriteCountが返される（0件の場合）")
