@@ -78,6 +78,7 @@ public class AdminModerationController {
      */
     private ModerationQueueItem toQueueItem(Photo photo) {
         String imageUrl = s3Service.generateCdnUrl(photo.getS3ObjectKey());
+        String thumbnailUrl = s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey());
         String username = userRepository.findById(photo.getUserId())
                 .map(User::getUsername)
                 .orElse("不明");
@@ -94,7 +95,7 @@ public class AdminModerationController {
                 .collect(Collectors.toList());
 
         return new ModerationQueueItem(
-                photo.getPhotoId(), imageUrl,
+                photo.getPhotoId(), imageUrl, thumbnailUrl,
                 photo.getUserId(), username, createdAt,
                 reportCount, reportReasons
         );
@@ -106,6 +107,7 @@ public class AdminModerationController {
     record ModerationQueueItem(
             @JsonProperty("photo_id") Long photoId,
             @JsonProperty("image_url") String imageUrl,
+            @JsonProperty("thumbnail_url") String thumbnailUrl,
             @JsonProperty("user_id") Long userId,
             String username,
             @JsonProperty("created_at") String createdAt,

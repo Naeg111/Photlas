@@ -4,10 +4,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { API_V1_URL } from '../config/api'
 import { getAuthHeaders } from '../utils/apiClient'
 import { Button } from '../components/ui/button'
-import { ArrowLeft, Check, X } from 'lucide-react'
+import { ArrowLeft, Check, X, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { Toaster } from '../components/ui/sonner'
 import { REPORT_REASON_LABELS, ROLE_ADMIN } from '../utils/codeConstants'
+import { PhotoLightbox } from '../components/PhotoLightbox'
 
 /**
  * Issue#54: 管理者モデレーションページ
@@ -17,6 +18,7 @@ import { REPORT_REASON_LABELS, ROLE_ADMIN } from '../utils/codeConstants'
 interface ModerationQueueItem {
   photo_id: number
   image_url: string
+  thumbnail_url: string | null
   user_id: number
   username: string
   created_at: string | null
@@ -41,6 +43,8 @@ export default function AdminModerationPage() {
   const [error, setError] = useState<string | null>(null)
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set())
   const [revealedIds, setRevealedIds] = useState<Set<number>>(new Set())
+  const [selectedImageUrl, setSelectedImageUrl] = useState('')
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
 
   const isAdmin = user?.role === ROLE_ADMIN
 
@@ -186,36 +190,49 @@ export default function AdminModerationPage() {
                 className="bg-white rounded-lg shadow overflow-hidden"
                 data-testid={`moderation-item-${item.photo_id}`}
               >
-                {/* 画像（クリックでぼかし切替） */}
+                {/* Issue#89: 画像（サムネイル表示＋トグルボタン＋ライトボックス） */}
                 <div
-                  role="button" tabIndex={0} className="aspect-square relative overflow-hidden cursor-pointer"
-                  onKeyDown={(e) => { if (e.key === "Enter") setRevealedIds(prev => { const next = new Set(prev); if (next.has(item.photo_id)) next.delete(item.photo_id); else next.add(item.photo_id); return next }) }}
-                  onClick={() => setRevealedIds(prev => {
-                    const next = new Set(prev)
-                    if (next.has(item.photo_id)) {
-                      next.delete(item.photo_id)
-                    } else {
-                      next.add(item.photo_id)
+                  role="button" tabIndex={0}
+                  className={`aspect-square relative overflow-hidden ${revealedIds.has(item.photo_id) ? 'cursor-pointer' : 'cursor-default'}`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && revealedIds.has(item.photo_id)) {
+                      setSelectedImageUrl(item.image_url)
+                      setIsLightboxOpen(true)
                     }
-                    return next
-                  })}
+                  }}
+                  onClick={() => {
+                    if (revealedIds.has(item.photo_id)) {
+                      setSelectedImageUrl(item.image_url)
+                      setIsLightboxOpen(true)
+                    }
+                  }}
                   data-testid={`moderation-image-container-${item.photo_id}`}
                 >
                   <img
-                    src={item.image_url}
+                    src={item.thumbnail_url || item.image_url}
                     alt="画像"
                     className={`w-full h-full object-cover transition-all duration-300 ${
                       revealedIds.has(item.photo_id) ? '' : 'blur-lg'
                     }`}
                     data-testid={`moderation-image-${item.photo_id}`}
                   />
-                  {!revealedIds.has(item.photo_id) && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                      <span className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">
-                        クリックで表示
-                      </span>
-                    </div>
-                  )}
+                  {/* ぼかしトグルボタン */}
+                  <button
+                    className="absolute bottom-2 right-2 p-1.5 rounded bg-black/50 text-white hover:bg-black/70 transition-colors z-10"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setRevealedIds(prev => {
+                        const next = new Set(prev)
+                        if (next.has(item.photo_id)) next.delete(item.photo_id)
+                        else next.add(item.photo_id)
+                        return next
+                      })
+                    }}
+                    data-testid={`blur-toggle-${item.photo_id}`}
+                    aria-label={revealedIds.has(item.photo_id) ? 'ぼかしを適用' : 'ぼかしを解除'}
+                  >
+                    {revealedIds.has(item.photo_id) ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </button>
                 </div>
 
                 {/* 情報 */}
@@ -271,6 +288,16 @@ export default function AdminModerationPage() {
           </div>
         )}
       </main>
+
+      {/* Issue#89: ライトボックス */}
+      <PhotoLightbox
+        open={isLightboxOpen}
+        onOpenChange={(open) => {
+          setIsLightboxOpen(open)
+          if (!open) setSelectedImageUrl('')
+        }}
+        imageUrl={selectedImageUrl}
+      />
     </div>
   )
 }

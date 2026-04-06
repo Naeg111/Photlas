@@ -28,6 +28,12 @@ vi.mock('../components/ui/sonner', () => ({
   Toaster: () => null,
 }))
 
+// Issue#89: PhotoLightboxのモック
+vi.mock('../components/PhotoLightbox', () => ({
+  PhotoLightbox: ({ open, imageUrl }: { open: boolean; imageUrl: string }) =>
+    open ? <div data-testid="photo-lightbox"><img src={imageUrl} alt="フルサイズ写真" /></div> : null,
+}))
+
 // fetch APIのモック
 const mockFetch = vi.fn()
 
