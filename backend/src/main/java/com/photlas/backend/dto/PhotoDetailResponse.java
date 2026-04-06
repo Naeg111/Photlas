@@ -3,10 +3,13 @@ package com.photlas.backend.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Issue#14: 写真詳細情報レスポンスDTO
+ * Issue#88: フィールド追加（placeName, isFavorited, favoriteCount, 座標, crop, moderationStatus, categories等）
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PhotoDetailResponse {
@@ -17,11 +20,41 @@ public class PhotoDetailResponse {
     @JsonProperty("imageUrls")
     private ImageUrls imageUrls;
 
+    @JsonProperty("placeName")
+    private String placeName;
+
     @JsonProperty("shotAt")
     private LocalDateTime shotAt;
 
     @JsonProperty("weather")
     private Integer weather;
+
+    @JsonProperty("isFavorited")
+    private Boolean isFavorited;
+
+    @JsonProperty("favoriteCount")
+    private Long favoriteCount;
+
+    @JsonProperty("latitude")
+    private BigDecimal latitude;
+
+    @JsonProperty("longitude")
+    private BigDecimal longitude;
+
+    @JsonProperty("cropCenterX")
+    private Double cropCenterX;
+
+    @JsonProperty("cropCenterY")
+    private Double cropCenterY;
+
+    @JsonProperty("cropZoom")
+    private Double cropZoom;
+
+    @JsonProperty("moderationStatus")
+    private Integer moderationStatus;
+
+    @JsonProperty("categories")
+    private List<String> categories;
 
     @JsonProperty("timeOfDay")
     private Integer timeOfDay;
@@ -72,6 +105,9 @@ public class PhotoDetailResponse {
         @JsonProperty("lens")
         private String lens;
 
+        @JsonProperty("focalLength35mm")
+        private Integer focalLength35mm;
+
         @JsonProperty("fValue")
         private String fValue;
 
@@ -81,26 +117,42 @@ public class PhotoDetailResponse {
         @JsonProperty("iso")
         private String iso;
 
+        @JsonProperty("imageWidth")
+        private Integer imageWidth;
+
+        @JsonProperty("imageHeight")
+        private Integer imageHeight;
+
         public CameraInfo() {}
 
-        public CameraInfo(String body, String lens, String fValue, String shutterSpeed, String iso) {
+        public CameraInfo(String body, String lens, Integer focalLength35mm, String fValue,
+                          String shutterSpeed, String iso, Integer imageWidth, Integer imageHeight) {
             this.body = body;
             this.lens = lens;
+            this.focalLength35mm = focalLength35mm;
             this.fValue = fValue;
             this.shutterSpeed = shutterSpeed;
             this.iso = iso;
+            this.imageWidth = imageWidth;
+            this.imageHeight = imageHeight;
         }
 
         public String getBody() { return body; }
         public void setBody(String body) { this.body = body; }
         public String getLens() { return lens; }
         public void setLens(String lens) { this.lens = lens; }
+        public Integer getFocalLength35mm() { return focalLength35mm; }
+        public void setFocalLength35mm(Integer focalLength35mm) { this.focalLength35mm = focalLength35mm; }
         public String getFValue() { return fValue; }
         public void setFValue(String fValue) { this.fValue = fValue; }
         public String getShutterSpeed() { return shutterSpeed; }
         public void setShutterSpeed(String shutterSpeed) { this.shutterSpeed = shutterSpeed; }
         public String getIso() { return iso; }
         public void setIso(String iso) { this.iso = iso; }
+        public Integer getImageWidth() { return imageWidth; }
+        public void setImageWidth(Integer imageWidth) { this.imageWidth = imageWidth; }
+        public Integer getImageHeight() { return imageHeight; }
+        public void setImageHeight(Integer imageHeight) { this.imageHeight = imageHeight; }
     }
 
     public static class UserInfo {
@@ -159,19 +211,30 @@ public class PhotoDetailResponse {
         @JsonProperty("spotId")
         private Long spotId;
 
+        @JsonProperty("latitude")
+        private BigDecimal latitude;
+
+        @JsonProperty("longitude")
+        private BigDecimal longitude;
+
         public SpotInfo() {}
 
-        public SpotInfo(Long spotId) {
+        public SpotInfo(Long spotId, BigDecimal latitude, BigDecimal longitude) {
             this.spotId = spotId;
+            this.latitude = latitude;
+            this.longitude = longitude;
         }
 
         public Long getSpotId() { return spotId; }
         public void setSpotId(Long spotId) { this.spotId = spotId; }
+        public BigDecimal getLatitude() { return latitude; }
+        public void setLatitude(BigDecimal latitude) { this.latitude = latitude; }
+        public BigDecimal getLongitude() { return longitude; }
+        public void setLongitude(BigDecimal longitude) { this.longitude = longitude; }
     }
 
     /** Jackson デシリアライゼーション用のデフォルトコンストラクタ */
     public PhotoDetailResponse() {
-        // Jacksonが使用するデフォルトコンストラクタ
     }
 
     // Getters and Setters
@@ -179,10 +242,30 @@ public class PhotoDetailResponse {
     public void setPhotoId(Long photoId) { this.photoId = photoId; }
     public ImageUrls getImageUrls() { return imageUrls; }
     public void setImageUrls(ImageUrls imageUrls) { this.imageUrls = imageUrls; }
+    public String getPlaceName() { return placeName; }
+    public void setPlaceName(String placeName) { this.placeName = placeName; }
     public LocalDateTime getShotAt() { return shotAt; }
     public void setShotAt(LocalDateTime shotAt) { this.shotAt = shotAt; }
     public Integer getWeather() { return weather; }
     public void setWeather(Integer weather) { this.weather = weather; }
+    public Boolean getIsFavorited() { return isFavorited; }
+    public void setIsFavorited(Boolean isFavorited) { this.isFavorited = isFavorited; }
+    public Long getFavoriteCount() { return favoriteCount; }
+    public void setFavoriteCount(Long favoriteCount) { this.favoriteCount = favoriteCount; }
+    public BigDecimal getLatitude() { return latitude; }
+    public void setLatitude(BigDecimal latitude) { this.latitude = latitude; }
+    public BigDecimal getLongitude() { return longitude; }
+    public void setLongitude(BigDecimal longitude) { this.longitude = longitude; }
+    public Double getCropCenterX() { return cropCenterX; }
+    public void setCropCenterX(Double cropCenterX) { this.cropCenterX = cropCenterX; }
+    public Double getCropCenterY() { return cropCenterY; }
+    public void setCropCenterY(Double cropCenterY) { this.cropCenterY = cropCenterY; }
+    public Double getCropZoom() { return cropZoom; }
+    public void setCropZoom(Double cropZoom) { this.cropZoom = cropZoom; }
+    public Integer getModerationStatus() { return moderationStatus; }
+    public void setModerationStatus(Integer moderationStatus) { this.moderationStatus = moderationStatus; }
+    public List<String> getCategories() { return categories; }
+    public void setCategories(List<String> categories) { this.categories = categories; }
     public Integer getTimeOfDay() { return timeOfDay; }
     public void setTimeOfDay(Integer timeOfDay) { this.timeOfDay = timeOfDay; }
     public String getSubjectCategory() { return subjectCategory; }

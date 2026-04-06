@@ -2,6 +2,7 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.dto.CreatePhotoRequest;
+import com.photlas.backend.dto.PhotoDetailResponse;
 import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.entity.AccountSanction;
 import com.photlas.backend.entity.Category;
@@ -210,7 +211,7 @@ public class ModerationStatusTest {
         Photo pending = createPhotoWithStatus(spot, "photos/pend010.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
         // 投稿者本人は取得可能
-        PhotoResponse response = photoService.getPhotoDetail(pending.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(pending.getPhotoId(), testUser.getEmail());
         assertThat(response).isNotNull();
 
         // 他ユーザーは取得不可
@@ -227,7 +228,7 @@ public class ModerationStatusTest {
         Photo quarantined = createPhotoWithStatus(spot, "photos/quar010.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         // 投稿者本人は取得可能
-        PhotoResponse response = photoService.getPhotoDetail(quarantined.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(quarantined.getPhotoId(), testUser.getEmail());
         assertThat(response).isNotNull();
 
         // 未認証ユーザーは取得不可
@@ -244,11 +245,11 @@ public class ModerationStatusTest {
         Photo published = createPhotoWithStatus(spot, "photos/pub010.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
         // 他ユーザーが取得可能
-        PhotoResponse response = photoService.getPhotoDetail(published.getPhotoId(), otherUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(published.getPhotoId(), otherUser.getEmail());
         assertThat(response).isNotNull();
 
         // 未認証ユーザーも取得可能
-        PhotoResponse response2 = photoService.getPhotoDetail(published.getPhotoId(), null);
+        PhotoDetailResponse response2 = photoService.getPhotoDetail(published.getPhotoId(), null);
         assertThat(response2).isNotNull();
     }
 
@@ -260,9 +261,9 @@ public class ModerationStatusTest {
         Spot spot = createSpot();
         Photo quarantined = createPhotoWithStatus(spot, "photos/quar020.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
-        PhotoResponse response = photoService.getPhotoDetail(quarantined.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(quarantined.getPhotoId(), testUser.getEmail());
 
-        assertThat(response.getPhoto().getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_QUARANTINED);
+        assertThat(response.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_QUARANTINED);
     }
 
     @Test
@@ -271,9 +272,9 @@ public class ModerationStatusTest {
         Spot spot = createSpot();
         Photo pending = createPhotoWithStatus(spot, "photos/pend020.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
-        PhotoResponse response = photoService.getPhotoDetail(pending.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(pending.getPhotoId(), testUser.getEmail());
 
-        assertThat(response.getPhoto().getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
+        assertThat(response.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
     }
 
     @Test
@@ -282,9 +283,9 @@ public class ModerationStatusTest {
         Spot spot = createSpot();
         Photo published = createPhotoWithStatus(spot, "photos/pub020.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
-        PhotoResponse response = photoService.getPhotoDetail(published.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(published.getPhotoId(), testUser.getEmail());
 
-        assertThat(response.getPhoto().getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_PUBLISHED);
+        assertThat(response.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_PUBLISHED);
     }
 
     // ===== REMOVED写真の投稿者本人アクセステスト =====

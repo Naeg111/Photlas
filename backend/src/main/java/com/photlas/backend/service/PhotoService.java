@@ -1,6 +1,7 @@
 package com.photlas.backend.service;
 
 import com.photlas.backend.dto.CreatePhotoRequest;
+import com.photlas.backend.dto.PhotoDetailResponse;
 import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.dto.UpdatePhotoRequest;
 import com.photlas.backend.entity.Category;
@@ -164,7 +165,7 @@ public class PhotoService {
      * @return 写真の詳細情報
      */
     @Transactional(readOnly = true)
-    public PhotoResponse getPhotoDetail(Long photoId, String email) {
+    public PhotoDetailResponse getPhotoDetail(Long photoId, String email) {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
@@ -192,7 +193,8 @@ public class PhotoService {
         // Issue#30: お気に入り数を取得
         long favoriteCount = favoriteRepository.countByPhotoId(photoId);
 
-        return buildPhotoResponse(photo, spot, user, isFavorited, favoriteCount);
+        // Issue#88: TODO Green段階で実装
+        return null;
     }
 
 
@@ -318,7 +320,7 @@ public class PhotoService {
      * @throws org.springframework.security.access.AccessDeniedException オーナーでない場合
      */
     @Transactional
-    public PhotoResponse updatePhoto(Long photoId, UpdatePhotoRequest request, String email) {
+    public PhotoDetailResponse updatePhoto(Long photoId, UpdatePhotoRequest request, String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
@@ -352,7 +354,8 @@ public class PhotoService {
 
         logger.info("写真を更新しました: photoId={}, userId={}", photoId, user.getId());
 
-        return buildPhotoResponse(savedPhoto, spot, user, false, 0L);
+        // Issue#88: TODO Green段階で実装
+        return null;
     }
 
     /**

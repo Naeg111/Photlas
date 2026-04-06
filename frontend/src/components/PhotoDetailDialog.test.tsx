@@ -101,10 +101,14 @@ const TEST_INSTAGRAM_URL = 'https://instagram.com/testuser'
 const ERROR_MESSAGE_NETWORK = 'Network error'
 const ERROR_TEXT_LOAD_FAILED = '読み込みに失敗しました'
 
-// Helper Functions - Create mock API response in the new format
+// Helper Functions - Create mock API response in PhotoDetailResponse format (Issue#88)
 function createMockApiResponse(overrides?: {
   photoId?: number
-  imageUrl?: string
+  imageUrls?: {
+    thumbnail?: string | null
+    standard?: string
+    original?: string
+  }
   shotAt?: string
   weather?: string
   isFavorited?: boolean
@@ -112,49 +116,53 @@ function createMockApiResponse(overrides?: {
   userId?: number
   username?: string
   spotId?: number
-  exif?: {
-    camera_body?: string
-    camera_lens?: string
-    focal_length_35mm?: number
-    f_value?: string
-    shutter_speed?: string
-    iso?: number
-    image_width?: number
-    image_height?: number
+  cameraInfo?: {
+    body?: string
+    lens?: string
+    focalLength35mm?: number
+    fValue?: string
+    shutterSpeed?: string
+    iso?: string
+    imageWidth?: number
+    imageHeight?: number
   } | null
   latitude?: number
   longitude?: number
   cropCenterX?: number | null
   cropCenterY?: number | null
   cropZoom?: number | null
-  moderationStatus?: string | null
+  moderationStatus?: number | null
   placeName?: string
+  categories?: string[] | null
 }) {
   return {
-    photo: {
-      photo_id: overrides?.photoId ?? TEST_PHOTO_ID_1,
-      image_url: overrides?.imageUrl ?? TEST_STANDARD_URL,
-      place_name: overrides?.placeName ?? null,
-      shot_at: overrides?.shotAt ?? TEST_SHOT_AT,
-      weather: overrides?.weather ?? TEST_WEATHER,
-      is_favorited: overrides?.isFavorited ?? false,
-      favorite_count: overrides?.favoriteCount ?? 0,
-      exif: overrides?.exif ?? null,
-      latitude: overrides?.latitude ?? null,
-      longitude: overrides?.longitude ?? null,
-      crop_center_x: overrides?.cropCenterX ?? null,
-      crop_center_y: overrides?.cropCenterY ?? null,
-      crop_zoom: overrides?.cropZoom ?? null,
-      moderation_status: overrides?.moderationStatus ?? null,
+    photoId: overrides?.photoId ?? TEST_PHOTO_ID_1,
+    imageUrls: {
+      thumbnail: overrides?.imageUrls?.thumbnail ?? TEST_THUMBNAIL_URL,
+      standard: overrides?.imageUrls?.standard ?? TEST_STANDARD_URL,
+      original: overrides?.imageUrls?.original ?? TEST_ORIGINAL_URL,
+    },
+    placeName: overrides?.placeName ?? null,
+    shotAt: overrides?.shotAt ?? TEST_SHOT_AT,
+    weather: overrides?.weather ?? TEST_WEATHER,
+    isFavorited: overrides?.isFavorited ?? false,
+    favoriteCount: overrides?.favoriteCount ?? 0,
+    cameraInfo: overrides?.cameraInfo ?? null,
+    latitude: overrides?.latitude ?? null,
+    longitude: overrides?.longitude ?? null,
+    cropCenterX: overrides?.cropCenterX ?? null,
+    cropCenterY: overrides?.cropCenterY ?? null,
+    cropZoom: overrides?.cropZoom ?? null,
+    moderationStatus: overrides?.moderationStatus ?? null,
+    categories: overrides?.categories ?? null,
+    user: {
+      userId: overrides?.userId ?? TEST_USER_ID,
+      username: overrides?.username ?? TEST_USERNAME,
     },
     spot: {
-      spot_id: overrides?.spotId ?? TEST_SPOT_ID,
+      spotId: overrides?.spotId ?? TEST_SPOT_ID,
       latitude: 35.6762,
       longitude: 139.6503,
-    },
-    user: {
-      user_id: overrides?.userId ?? TEST_USER_ID,
-      username: overrides?.username ?? TEST_USERNAME,
     },
   }
 }
@@ -163,13 +171,18 @@ function createMockApiResponse(overrides?: {
 function createMockPhotoDetail(overrides?: any) {
   return createMockApiResponse({
     photoId: overrides?.photoId,
-    imageUrl: overrides?.imageUrls?.standard ?? TEST_STANDARD_URL,
+    imageUrls: overrides?.imageUrls ? {
+      thumbnail: overrides.imageUrls.thumbnail ?? TEST_THUMBNAIL_URL,
+      standard: overrides.imageUrls.standard ?? TEST_STANDARD_URL,
+      original: overrides.imageUrls.original ?? TEST_ORIGINAL_URL,
+    } : undefined,
     weather: overrides?.weather,
     isFavorited: overrides?.isFavorited,
     favoriteCount: overrides?.favoriteCount,
     userId: overrides?.user?.userId,
     username: overrides?.user?.username,
     spotId: overrides?.spot?.spotId,
+    moderationStatus: overrides?.moderationStatus,
   })
 }
 
