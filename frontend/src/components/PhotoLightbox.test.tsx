@@ -90,6 +90,51 @@ describe('PhotoLightbox', () => {
     })
   })
 
+  // ===== Issue#88: ローディング表示テスト =====
+  describe('Issue#88: オリジナル画像ローディング表示', () => {
+    it('画像読み込み中にローディング画面が表示される（200ms超過時）', async () => {
+      // fetch をモックして遅延させる（ReadableStreamで進捗取得を想定）
+      const mockFetch = vi.fn().mockImplementation(
+        () => new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(new Response(new Blob(['fake-image-data']), {
+              headers: { 'Content-Length': '1000000' },
+            }))
+          }, 500)
+        })
+      )
+      vi.stubGlobal('fetch', mockFetch)
+
+      render(<PhotoLightbox {...defaultProps} />)
+
+      // 200ms超過後にローディング画面（Photlasアイコン＋プログレスバー）が表示される
+      await new Promise(r => setTimeout(r, 300))
+      expect(screen.queryByTestId('lightbox-loading')).toBeInTheDocument()
+
+      vi.unstubAllGlobals()
+    })
+
+    it('ローディング画面にプログレスバーが表示される', async () => {
+      const mockFetch = vi.fn().mockImplementation(
+        () => new Promise((resolve) => {
+          setTimeout(() => {
+            resolve(new Response(new Blob(['fake-image-data']), {
+              headers: { 'Content-Length': '1000000' },
+            }))
+          }, 500)
+        })
+      )
+      vi.stubGlobal('fetch', mockFetch)
+
+      render(<PhotoLightbox {...defaultProps} />)
+
+      await new Promise(r => setTimeout(r, 300))
+      expect(screen.queryByTestId('lightbox-progress-bar')).toBeInTheDocument()
+
+      vi.unstubAllGlobals()
+    })
+  })
+
   describe('Zoom Functionality - ズーム機能', () => {
     it('changes zoom level on wheel scroll', () => {
       render(<PhotoLightbox {...defaultProps} />)

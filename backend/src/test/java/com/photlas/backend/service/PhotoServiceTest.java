@@ -2,6 +2,7 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.dto.CreatePhotoRequest;
+import com.photlas.backend.dto.PhotoDetailResponse;
 import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.entity.AccountSanction;
 import com.photlas.backend.entity.Category;
@@ -591,19 +592,19 @@ public class PhotoServiceTest {
         photo.setCategories(List.of(landscapeCategory));
         photo = photoRepository.save(photo);
 
-        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
 
         assertThat(response).isNotNull();
-        PhotoResponse.ExifDTO exif = response.getPhoto().getExif();
-        assertThat(exif).isNotNull();
-        assertThat(exif.getCameraBody()).isEqualTo("Sony α7 IV");
-        assertThat(exif.getCameraLens()).isEqualTo("FE 24-105mm F4 G OSS");
-        assertThat(exif.getFocalLength35mm()).isEqualTo(50);
-        assertThat(exif.getFValue()).isEqualTo("f/4.0");
-        assertThat(exif.getShutterSpeed()).isEqualTo("1/500");
-        assertThat(exif.getIso()).isEqualTo(200);
-        assertThat(exif.getImageWidth()).isEqualTo(7008);
-        assertThat(exif.getImageHeight()).isEqualTo(4672);
+        PhotoDetailResponse.CameraInfo cameraInfo = response.getCameraInfo();
+        assertThat(cameraInfo).isNotNull();
+        assertThat(cameraInfo.getBody()).isEqualTo("Sony α7 IV");
+        assertThat(cameraInfo.getLens()).isEqualTo("FE 24-105mm F4 G OSS");
+        assertThat(cameraInfo.getFocalLength35mm()).isEqualTo(50);
+        assertThat(cameraInfo.getFValue()).isEqualTo("f/4.0");
+        assertThat(cameraInfo.getShutterSpeed()).isEqualTo("1/500");
+        assertThat(cameraInfo.getIso()).isEqualTo("200");
+        assertThat(cameraInfo.getImageWidth()).isEqualTo(7008);
+        assertThat(cameraInfo.getImageHeight()).isEqualTo(4672);
     }
 
     @Test
@@ -627,15 +628,15 @@ public class PhotoServiceTest {
         photo.setCategories(List.of(landscapeCategory));
         photo = photoRepository.save(photo);
 
-        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
 
         assertThat(response).isNotNull();
-        PhotoResponse.ExifDTO exif = response.getPhoto().getExif();
-        assertThat(exif).isNotNull();
-        assertThat(exif.getCameraBody()).isEqualTo("iPhone 15 Pro");
-        assertThat(exif.getIso()).isEqualTo(100);
-        assertThat(exif.getCameraLens()).isNull();
-        assertThat(exif.getFocalLength35mm()).isNull();
+        PhotoDetailResponse.CameraInfo cameraInfo = response.getCameraInfo();
+        assertThat(cameraInfo).isNotNull();
+        assertThat(cameraInfo.getBody()).isEqualTo("iPhone 15 Pro");
+        assertThat(cameraInfo.getIso()).isEqualTo("100");
+        assertThat(cameraInfo.getLens()).isNull();
+        assertThat(cameraInfo.getFocalLength35mm()).isNull();
     }
 
     @Test
@@ -658,12 +659,12 @@ public class PhotoServiceTest {
         photo.setCategories(List.of(landscapeCategory));
         photo = photoRepository.save(photo);
 
-        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
 
         assertThat(response).isNotNull();
         // 写真ごとのピンポイント座標が返されることを確認
-        assertThat(response.getPhoto().getLatitude()).isEqualByComparingTo(new BigDecimal("35.658600"));
-        assertThat(response.getPhoto().getLongitude()).isEqualByComparingTo(new BigDecimal("139.745450"));
+        assertThat(response.getLatitude()).isEqualByComparingTo(new BigDecimal("35.658600"));
+        assertThat(response.getLongitude()).isEqualByComparingTo(new BigDecimal("139.745450"));
         // スポット座標は別途返される
         assertThat(response.getSpot().getLatitude()).isEqualByComparingTo(new BigDecimal("35.658581"));
     }
@@ -732,12 +733,12 @@ public class PhotoServiceTest {
         photo.setCategories(List.of(landscapeCategory));
         photo = photoRepository.save(photo);
 
-        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
 
         assertThat(response).isNotNull();
-        assertThat(response.getPhoto().getCropCenterX()).isEqualTo(0.25);
-        assertThat(response.getPhoto().getCropCenterY()).isEqualTo(0.75);
-        assertThat(response.getPhoto().getCropZoom()).isEqualTo(2.0);
+        assertThat(response.getCropCenterX()).isEqualTo(0.25);
+        assertThat(response.getCropCenterY()).isEqualTo(0.75);
+        assertThat(response.getCropZoom()).isEqualTo(2.0);
     }
 
     @Test
@@ -758,12 +759,12 @@ public class PhotoServiceTest {
         photo.setCategories(List.of(landscapeCategory));
         photo = photoRepository.save(photo);
 
-        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
 
         assertThat(response).isNotNull();
-        assertThat(response.getPhoto().getCropCenterX()).isNull();
-        assertThat(response.getPhoto().getCropCenterY()).isNull();
-        assertThat(response.getPhoto().getCropZoom()).isNull();
+        assertThat(response.getCropCenterX()).isNull();
+        assertThat(response.getCropCenterY()).isNull();
+        assertThat(response.getCropZoom()).isNull();
     }
 
     // ===== ユーザー投稿一覧テスト =====
@@ -961,9 +962,9 @@ public class PhotoServiceTest {
         Photo photo = createPhotoWithStatus(spot, "photos/pending001.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
         // オーナーは閲覧可能
-        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
         assertThat(response).isNotNull();
-        assertThat(response.getPhoto().getPhotoId()).isEqualTo(photo.getPhotoId());
+        assertThat(response.getPhotoId()).isEqualTo(photo.getPhotoId());
     }
 
     @Test
@@ -1001,7 +1002,7 @@ public class PhotoServiceTest {
         Photo photo = createPhotoWithStatus(spot, "photos/quarantined001.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
         // オーナーは閲覧可能
-        PhotoResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
+        PhotoDetailResponse response = photoService.getPhotoDetail(photo.getPhotoId(), testUser.getEmail());
         assertThat(response).isNotNull();
 
         // 他ユーザーは閲覧不可

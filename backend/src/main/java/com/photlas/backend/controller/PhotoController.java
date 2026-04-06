@@ -2,6 +2,7 @@ package com.photlas.backend.controller;
 
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.dto.ErrorResponse;
+import com.photlas.backend.dto.PhotoDetailResponse;
 import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.dto.UpdatePhotoRequest;
 import com.photlas.backend.dto.UploadUrlRequest;
@@ -61,12 +62,12 @@ public class PhotoController {
      * @return 写真の詳細情報
      */
     @GetMapping("/{photoId}")
-    public ResponseEntity<PhotoResponse> getPhotoDetail(
+    public ResponseEntity<PhotoDetailResponse> getPhotoDetail(
             @PathVariable Long photoId,
             Authentication authentication
     ) {
         String email = authentication != null ? authentication.getName() : null;
-        PhotoResponse response = photoService.getPhotoDetail(photoId, email);
+        PhotoDetailResponse response = photoService.getPhotoDetail(photoId, email);
         return ResponseEntity.ok(response);
     }
 
@@ -138,13 +139,13 @@ public class PhotoController {
      * @return 更新後の写真詳細情報
      */
     @PutMapping("/{photoId}")
-    public ResponseEntity<PhotoResponse> updatePhoto(
+    public ResponseEntity<PhotoDetailResponse> updatePhoto(
             @PathVariable Long photoId,
             @Valid @RequestBody UpdatePhotoRequest request,
             Authentication authentication
     ) {
         String email = authentication.getName();
-        PhotoResponse response = photoService.updatePhoto(photoId, request, email);
+        PhotoDetailResponse response = photoService.updatePhoto(photoId, request, email);
         return ResponseEntity.ok(response);
     }
 
