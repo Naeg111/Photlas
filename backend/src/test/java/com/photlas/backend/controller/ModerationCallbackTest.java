@@ -241,6 +241,46 @@ public class ModerationCallbackTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ===== 数値コードステータスのテスト =====
+
+    @Test
+    @DisplayName("Issue#54 - 数値コードのステータス(1002) → PUBLISHED")
+    void testModerationCallback_NumericStatusPublished() throws Exception {
+        Map<String, Object> request = Map.of(
+                "s3_object_key", testPhoto.getS3ObjectKey(),
+                "status", CodeConstants.MODERATION_STATUS_PUBLISHED,
+                "confidence_score", 0.1
+        );
+
+        mockMvc.perform(post("/api/v1/internal/moderation/callback")
+                .header(API_KEY_HEADER, TEST_API_KEY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        Photo updated = photoRepository.findById(testPhoto.getPhotoId()).orElseThrow();
+        assertThat(updated.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_PUBLISHED);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 数値コードのステータス(1003) → QUARANTINED")
+    void testModerationCallback_NumericStatusQuarantined() throws Exception {
+        Map<String, Object> request = Map.of(
+                "s3_object_key", testPhoto.getS3ObjectKey(),
+                "status", CodeConstants.MODERATION_STATUS_QUARANTINED,
+                "confidence_score", 0.85
+        );
+
+        mockMvc.perform(post("/api/v1/internal/moderation/callback")
+                .header(API_KEY_HEADER, TEST_API_KEY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        Photo updated = photoRepository.findById(testPhoto.getPhotoId()).orElseThrow();
+        assertThat(updated.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_QUARANTINED);
+    }
+
     // ===== Issue#54: プロフィール画像モデレーションテスト =====
 
     @Test
