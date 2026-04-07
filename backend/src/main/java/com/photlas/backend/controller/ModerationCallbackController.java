@@ -74,7 +74,7 @@ public class ModerationCallbackController {
         }
 
         String s3ObjectKey = (String) request.get("s3_object_key");
-        String statusStr = (String) request.get("status");
+        String statusStr = String.valueOf(request.get("status"));
         Double confidenceScore = request.get("confidence_score") != null
                 ? ((Number) request.get("confidence_score")).doubleValue()
                 : null;
