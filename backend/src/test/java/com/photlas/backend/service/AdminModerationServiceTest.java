@@ -231,6 +231,30 @@ public class AdminModerationServiceTest {
         assertThat(updatedPublished.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_REMOVED);
     }
 
+    // ===== Issue#54: S3隔離フロー整合性テスト =====
+
+    @Test
+    @DisplayName("Issue#54 - 承認時にs3_object_keyからquarantined/プレフィックスが除去される")
+    void testApprovePhoto_RestoresS3ObjectKey() {
+        Photo photo = createPhotoWithStatus("quarantined/uploads/1/test.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
+
+        adminModerationService.approvePhoto(photo.getPhotoId());
+
+        Photo updated = photoRepository.findById(photo.getPhotoId()).orElseThrow();
+        assertThat(updated.getS3ObjectKey()).isEqualTo("uploads/1/test.jpg");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 拒否時にs3_object_keyはquarantined/のまま維持される")
+    void testRejectPhoto_KeepsQuarantinedS3ObjectKey() {
+        Photo photo = createPhotoWithStatus("quarantined/uploads/1/test.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
+
+        adminModerationService.rejectPhoto(photo.getPhotoId(), "利用規約違反");
+
+        Photo updated = photoRepository.findById(photo.getPhotoId()).orElseThrow();
+        assertThat(updated.getS3ObjectKey()).startsWith("quarantined/");
+    }
+
     // ===== テストヘルパーメソッド =====
 
     private User createUser(String username, String email) {

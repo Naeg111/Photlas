@@ -281,6 +281,47 @@ public class ModerationCallbackTest {
         assertThat(updated.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_QUARANTINED);
     }
 
+    // ===== Issue#54: S3隔離フロー整合性テスト =====
+
+    @Test
+    @DisplayName("Issue#54 - QUARANTINEDコールバック時にs3_object_keyがquarantined/プレフィックス付きに更新される")
+    void testModerationCallback_Quarantined_S3ObjectKeyUpdated() throws Exception {
+        Map<String, Object> request = Map.of(
+                "s3_object_key", testPhoto.getS3ObjectKey(),
+                "status", CodeConstants.MODERATION_STATUS_QUARANTINED,
+                "confidence_score", 0.85
+        );
+
+        mockMvc.perform(post("/api/v1/internal/moderation/callback")
+                .header(API_KEY_HEADER, TEST_API_KEY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        Photo updated = photoRepository.findById(testPhoto.getPhotoId()).orElseThrow();
+        assertThat(updated.getS3ObjectKey()).startsWith("quarantined/");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - PUBLISHEDコールバック時にs3_object_keyは変更されない")
+    void testModerationCallback_Published_S3ObjectKeyUnchanged() throws Exception {
+        String originalKey = testPhoto.getS3ObjectKey();
+        Map<String, Object> request = Map.of(
+                "s3_object_key", originalKey,
+                "status", CodeConstants.MODERATION_STATUS_PUBLISHED,
+                "confidence_score", 0.1
+        );
+
+        mockMvc.perform(post("/api/v1/internal/moderation/callback")
+                .header(API_KEY_HEADER, TEST_API_KEY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        Photo updated = photoRepository.findById(testPhoto.getPhotoId()).orElseThrow();
+        assertThat(updated.getS3ObjectKey()).isEqualTo(originalKey);
+    }
+
     // ===== Issue#54: プロフィール画像モデレーションテスト =====
 
     @Test

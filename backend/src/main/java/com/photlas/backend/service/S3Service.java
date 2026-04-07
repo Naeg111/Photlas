@@ -155,6 +155,16 @@ public class S3Service {
     }
 
     /**
+     * Issue#54: S3オブジェクトを別のキーに移動する（コピー＋削除）
+     *
+     * @param sourceKey 移動元のS3オブジェクトキー
+     * @param destinationKey 移動先のS3オブジェクトキー
+     */
+    public void moveS3Object(String sourceKey, String destinationKey) {
+        // TODO: Green段階で実装
+    }
+
+    /**
      * 署名付きURL生成結果を保持するクラス
      */
     public static class UploadUrlResult {
