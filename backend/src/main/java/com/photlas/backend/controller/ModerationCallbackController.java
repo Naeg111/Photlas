@@ -96,9 +96,10 @@ public class ModerationCallbackController {
 
         // ステータスを更新
         photo.setModerationStatus(newStatus);
+        boolean isQuarantined = Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(newStatus);
 
         // Issue#54: 隔離時にS3ファイルをquarantined/プレフィックスに移動
-        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(newStatus)) {
+        if (isQuarantined) {
             quarantineService.quarantinePhoto(photo);
         } else {
             photoRepository.save(photo);
@@ -108,7 +109,7 @@ public class ModerationCallbackController {
         saveModerationDetail(CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId(), confidenceScore, newStatus);
 
         // Issue#54: 隔離時にユーザーへメール通知
-        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(newStatus)) {
+        if (isQuarantined) {
             userRepository.findById(photo.getUserId()).ifPresent(user ->
                     notificationService.sendQuarantineNotification(
                             user.getEmail(), user.getUsername(), photo.getCreatedAt()));

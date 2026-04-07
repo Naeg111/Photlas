@@ -39,7 +39,6 @@ EXCLUDED_LABELS = set(
 
 # AWSクライアント
 rekognition_client = boto3.client("rekognition")
-s3_client = boto3.client("s3")
 
 # モデレーションステータス（Issue#87: 数値コード）
 STATUS_PUBLISHED = 1002
@@ -76,9 +75,6 @@ DEFAULT_EXCLUDED_LABELS = {
     "Drinking", "Pills",
 }
 
-# 隔離用プレフィックス
-QUARANTINED_PREFIX = "quarantined/"
-
 
 def lambda_handler(event, context):
     """S3イベントをトリガーにRekognitionスキャンを実行する。"""
@@ -87,7 +83,7 @@ def lambda_handler(event, context):
         object_key = record["s3"]["object"]["key"]
 
         # 隔離プレフィックスのオブジェクトはスキップ
-        if object_key.startswith(QUARANTINED_PREFIX):
+        if object_key.startswith("quarantined/"):
             logger.info("隔離プレフィックスのためスキップ: %s", object_key)
             continue
 
@@ -179,22 +175,6 @@ def callback_to_backend(s3_object_key, status, confidence_score):
         logger.error("コールバック接続エラー: %s", e.reason)
         raise
 
-
-def move_to_quarantine(bucket, object_key):
-    """画像を隔離用プレフィックスに移動する。"""
-    quarantined_key = f"{QUARANTINED_PREFIX}{object_key}"
-
-    try:
-        s3_client.copy_object(
-            Bucket=bucket,
-            CopySource={"Bucket": bucket, "Key": object_key},
-            Key=quarantined_key,
-        )
-        s3_client.delete_object(Bucket=bucket, Key=object_key)
-        logger.info("隔離完了: %s → %s", object_key, quarantined_key)
-    except Exception:
-        logger.exception("隔離処理でエラー: key=%s", object_key)
-        raise
 
 
 def send_slack_notification(object_key, confidence, is_csam, labels):

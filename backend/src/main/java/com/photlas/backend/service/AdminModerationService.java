@@ -69,8 +69,7 @@ public class AdminModerationService {
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
 
         // Issue#54: S3ファイルをquarantined/から元の場所に復元
-        if (photo.getS3ObjectKey() != null
-                && photo.getS3ObjectKey().startsWith(QuarantineService.QUARANTINED_PREFIX)) {
+        if (quarantineService.isQuarantined(photo.getS3ObjectKey())) {
             quarantineService.restorePhoto(photo);
         }
 
