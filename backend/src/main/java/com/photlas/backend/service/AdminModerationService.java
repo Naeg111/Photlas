@@ -38,19 +38,22 @@ public class AdminModerationService {
     private final AccountSanctionRepository accountSanctionRepository;
     private final UserRepository userRepository;
     private final ModerationNotificationService notificationService;
+    private final QuarantineService quarantineService;
 
     public AdminModerationService(
             PhotoRepository photoRepository,
             ViolationRepository violationRepository,
             AccountSanctionRepository accountSanctionRepository,
             UserRepository userRepository,
-            ModerationNotificationService notificationService
+            ModerationNotificationService notificationService,
+            QuarantineService quarantineService
     ) {
         this.photoRepository = photoRepository;
         this.violationRepository = violationRepository;
         this.accountSanctionRepository = accountSanctionRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.quarantineService = quarantineService;
     }
 
     /**
@@ -64,6 +67,12 @@ public class AdminModerationService {
     public void approvePhoto(Long photoId) {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
+
+        // Issue#54: S3ファイルをquarantined/から元の場所に復元
+        if (photo.getS3ObjectKey() != null
+                && photo.getS3ObjectKey().startsWith(QuarantineService.QUARANTINED_PREFIX)) {
+            quarantineService.restorePhoto(photo);
+        }
 
         photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         photoRepository.save(photo);

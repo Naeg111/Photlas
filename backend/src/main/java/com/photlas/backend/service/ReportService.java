@@ -32,12 +32,14 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final PhotoRepository photoRepository;
     private final UserRepository userRepository;
+    private final QuarantineService quarantineService;
 
     public ReportService(ReportRepository reportRepository, PhotoRepository photoRepository,
-                         UserRepository userRepository) {
+                         UserRepository userRepository, QuarantineService quarantineService) {
         this.reportRepository = reportRepository;
         this.photoRepository = photoRepository;
         this.userRepository = userRepository;
+        this.quarantineService = quarantineService;
     }
 
     /**
@@ -75,7 +77,7 @@ public class ReportService {
         if (reportCount >= QUARANTINE_THRESHOLD
                 && Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
             photo.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
-            photoRepository.save(photo);
+            quarantineService.quarantinePhoto(photo);
             logger.info("通報件数が閾値に達したため写真を隔離: photoId={}, reportCount={}",
                     photoId, reportCount);
         }

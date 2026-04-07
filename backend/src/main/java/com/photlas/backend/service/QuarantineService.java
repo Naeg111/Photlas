@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class QuarantineService {
 
     private static final Logger logger = LoggerFactory.getLogger(QuarantineService.class);
-    private static final String QUARANTINED_PREFIX = "quarantined/";
+    static final String QUARANTINED_PREFIX = "quarantined/";
     private static final String THUMBNAILS_PREFIX = "thumbnails/";
 
     private final S3Service s3Service;
@@ -32,7 +32,22 @@ public class QuarantineService {
      * @param photo 隔離対象の写真
      */
     public void quarantinePhoto(Photo photo) {
-        // TODO: Green段階で実装
+        String originalKey = photo.getS3ObjectKey();
+        String quarantinedKey = toQuarantinedKey(originalKey);
+
+        // 元画像を移動
+        s3Service.moveS3Object(originalKey, quarantinedKey);
+
+        // サムネイルを移動
+        String thumbnailKey = toThumbnailKey(originalKey);
+        String quarantinedThumbnailKey = toQuarantinedKey(thumbnailKey);
+        s3Service.moveS3Object(thumbnailKey, quarantinedThumbnailKey);
+
+        // DBのs3_object_keyを更新
+        photo.setS3ObjectKey(quarantinedKey);
+        photoRepository.save(photo);
+
+        logger.info("写真を隔離しました: photoId={}, {} → {}", photo.getPhotoId(), originalKey, quarantinedKey);
     }
 
     /**
@@ -42,7 +57,22 @@ public class QuarantineService {
      * @param photo 復元対象の写真
      */
     public void restorePhoto(Photo photo) {
-        // TODO: Green段階で実装
+        String quarantinedKey = photo.getS3ObjectKey();
+        String restoredKey = fromQuarantinedKey(quarantinedKey);
+
+        // 元画像を復元
+        s3Service.moveS3Object(quarantinedKey, restoredKey);
+
+        // サムネイルを復元（元キーからサムネイルパスを導出し、隔離プレフィックスを付与）
+        String restoredThumbnailKey = toThumbnailKey(restoredKey);
+        String quarantinedThumbnailKey = toQuarantinedKey(restoredThumbnailKey);
+        s3Service.moveS3Object(quarantinedThumbnailKey, restoredThumbnailKey);
+
+        // DBのs3_object_keyを更新
+        photo.setS3ObjectKey(restoredKey);
+        photoRepository.save(photo);
+
+        logger.info("写真を復元しました: photoId={}, {} → {}", photo.getPhotoId(), quarantinedKey, restoredKey);
     }
 
     /**

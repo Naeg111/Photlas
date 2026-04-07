@@ -37,6 +37,9 @@ public class ReportServiceTest {
     @Mock
     private ReportRepository reportRepository;
 
+    @Mock
+    private QuarantineService quarantineService;
+
     @InjectMocks
     private ReportService reportService;
 
@@ -147,7 +150,7 @@ public class ReportServiceTest {
 
         // Then
         assertThat(photo.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_QUARANTINED);
-        verify(photoRepository).save(photo);
+        verify(quarantineService).quarantinePhoto(photo);
     }
 
     @Test

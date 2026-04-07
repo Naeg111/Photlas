@@ -10,6 +10,7 @@ import com.photlas.backend.repository.ModerationDetailRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.ModerationNotificationService;
+import com.photlas.backend.service.QuarantineService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,17 +42,20 @@ public class ModerationCallbackController {
     private final ModerationDetailRepository moderationDetailRepository;
     private final UserRepository userRepository;
     private final ModerationNotificationService notificationService;
+    private final QuarantineService quarantineService;
 
     public ModerationCallbackController(
             PhotoRepository photoRepository,
             ModerationDetailRepository moderationDetailRepository,
             UserRepository userRepository,
-            ModerationNotificationService notificationService
+            ModerationNotificationService notificationService,
+            QuarantineService quarantineService
     ) {
         this.photoRepository = photoRepository;
         this.moderationDetailRepository = moderationDetailRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.quarantineService = quarantineService;
     }
 
     /**
@@ -92,7 +96,13 @@ public class ModerationCallbackController {
 
         // ステータスを更新
         photo.setModerationStatus(newStatus);
-        photoRepository.save(photo);
+
+        // Issue#54: 隔離時にS3ファイルをquarantined/プレフィックスに移動
+        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(newStatus)) {
+            quarantineService.quarantinePhoto(photo);
+        } else {
+            photoRepository.save(photo);
+        }
 
         // モデレーション詳細を保存
         saveModerationDetail(CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId(), confidenceScore, newStatus);
