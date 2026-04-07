@@ -144,6 +144,21 @@ public class ReportModerationTest {
                 .hasMessageContaining("公開中の写真のみ");
     }
 
+    // ===== Issue#54: S3隔離フロー整合性テスト =====
+
+    @Test
+    @DisplayName("Issue#54 - 通報2件でQUARANTINED時にs3_object_keyがquarantined/プレフィックス付きに更新される")
+    void testCreateReport_TwoReports_S3ObjectKeyUpdated() {
+        ReportRequest request1 = new ReportRequest(CodeConstants.REASON_ADULT_CONTENT, "不適切");
+        ReportRequest request2 = new ReportRequest(CodeConstants.REASON_VIOLENCE, "暴力的");
+
+        reportService.createReport(testPhoto.getPhotoId(), request1, reporter1.getId());
+        reportService.createReport(testPhoto.getPhotoId(), request2, reporter2.getId());
+
+        Photo updatedPhoto = photoRepository.findById(testPhoto.getPhotoId()).orElseThrow();
+        assertThat(updatedPhoto.getS3ObjectKey()).startsWith("quarantined/");
+    }
+
     // ===== テストヘルパーメソッド =====
 
     private User createUser(String username, String email) {
