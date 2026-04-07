@@ -76,6 +76,16 @@ public class QuarantineService {
     }
 
     /**
+     * S3キーがquarantined/プレフィックスで始まるかどうかを判定する
+     *
+     * @param s3Key S3オブジェクトキー
+     * @return quarantined/プレフィックス付きの場合true
+     */
+    public boolean isQuarantined(String s3Key) {
+        return s3Key != null && s3Key.startsWith(QUARANTINED_PREFIX);
+    }
+
+    /**
      * S3キーにquarantined/プレフィックスを付与する
      *
      * @param s3Key 元のS3キー
