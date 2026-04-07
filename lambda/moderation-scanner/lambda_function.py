@@ -105,9 +105,8 @@ def lambda_handler(event, context):
             # バックエンドAPIにコールバック
             callback_to_backend(object_key, status, confidence)
 
-            # QUARANTINED時の追加処理
+            # QUARANTINED時の追加処理（S3移動はBackendが担当）
             if status == STATUS_QUARANTINED:
-                move_to_quarantine(bucket, object_key)
                 send_slack_notification(object_key, confidence, is_csam, result)
 
         except Exception:

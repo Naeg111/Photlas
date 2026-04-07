@@ -12,11 +12,13 @@ import com.photlas.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.photlas.backend.service.S3Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +45,9 @@ public class ModerationCallbackTest {
 
     private static final String API_KEY_HEADER = "X-API-Key";
     private static final String TEST_API_KEY = "test-moderation-api-key";
+
+    @MockitoBean
+    private S3Service s3Service;
 
     @Autowired
     private MockMvc mockMvc;
