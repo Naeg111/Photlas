@@ -65,6 +65,14 @@ public class OgpController {
             return ResponseEntity.notFound().build();
         }
 
+        // Issue#54: 退会済み・永久停止ユーザーの写真のOGPは404を返す
+        Optional<User> ownerOpt = userRepository.findById(photo.getUserId());
+        if (ownerOpt.isEmpty()
+                || ownerOpt.get().getDeletedAt() != null
+                || Integer.valueOf(CodeConstants.ROLE_SUSPENDED).equals(ownerOpt.get().getRole())) {
+            return ResponseEntity.notFound().build();
+        }
+
         // OGPクローラー向けにサムネイルURLを使用（元画像は数十MBになりクローラーがタイムアウトするため）
         String thumbnailUrl = s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey());
         String imageUrl = thumbnailUrl != null ? thumbnailUrl : s3Service.generateCdnUrl(photo.getS3ObjectKey());

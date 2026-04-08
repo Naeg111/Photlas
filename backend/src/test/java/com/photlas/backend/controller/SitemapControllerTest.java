@@ -74,52 +74,52 @@ public class SitemapControllerTest {
     }
 
     @Test
-    @DisplayName("サイトマップ - 有効なXMLが返る")
+    @DisplayName("サイトマップインデックス - 有効なXMLが返る")
     void testGetSitemap_ReturnsValidXml() throws Exception {
         mockMvc.perform(get(ENDPOINT_SITEMAP))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/xml"))
                 .andExpect(content().string(containsString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")))
-                .andExpect(content().string(containsString("<urlset")))
-                .andExpect(content().string(containsString("</urlset>")));
+                .andExpect(content().string(containsString("<sitemapindex")));
     }
 
     @Test
-    @DisplayName("サイトマップ - トップページが含まれる")
+    @DisplayName("静的サイトマップ - トップページが含まれる")
     void testGetSitemap_ContainsTopPage() throws Exception {
-        mockMvc.perform(get(ENDPOINT_SITEMAP))
+        mockMvc.perform(get("/api/v1/sitemap-static.xml"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("<priority>1.0</priority>")));
     }
 
     @Test
-    @DisplayName("サイトマップ - PUBLISHED写真ページが含まれる")
+    @DisplayName("写真サイトマップ - PUBLISHED写真が含まれる")
     void testGetSitemap_ContainsPhotoPages() throws Exception {
         Photo photo = createPhoto("photos/sitemap-test.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
-        mockMvc.perform(get(ENDPOINT_SITEMAP))
+        mockMvc.perform(get("/api/v1/sitemap-photos-0.xml"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("/photo-viewer/" + photo.getPhotoId())));
     }
 
     @Test
-    @DisplayName("Issue#54 - QUARANTINED写真はサイトマップに含まれない")
+    @DisplayName("Issue#54 - QUARANTINED写真は写真サイトマップに含まれない")
     void testGetSitemap_ExcludesQuarantinedPhotos() throws Exception {
+        createPhoto("photos/published-q.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
         Photo quarantinedPhoto = createPhoto("photos/quarantined.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
-        mockMvc.perform(get(ENDPOINT_SITEMAP))
+        mockMvc.perform(get("/api/v1/sitemap-photos-0.xml"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(not(
                         containsString("/photo-viewer/" + quarantinedPhoto.getPhotoId()))));
     }
 
     @Test
-    @DisplayName("Issue#54 - PUBLISHED写真のみがサイトマップに含まれる")
+    @DisplayName("Issue#54 - PUBLISHED写真のみが写真サイトマップに含まれる")
     void testGetSitemap_OnlyPublishedPhotosIncluded() throws Exception {
         Photo publishedPhoto = createPhoto("photos/published.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
         Photo removedPhoto = createPhoto("photos/removed.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
 
-        mockMvc.perform(get(ENDPOINT_SITEMAP))
+        mockMvc.perform(get("/api/v1/sitemap-photos-0.xml"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("/photo-viewer/" + publishedPhoto.getPhotoId())))
                 .andExpect(content().string(not(
@@ -163,10 +163,14 @@ public class SitemapControllerTest {
         testUser.setDeletedAt(LocalDateTime.now());
         userRepository.save(testUser);
 
+        // 退会ユーザーの写真のみなのでページ0は404（写真なし）
         mockMvc.perform(get("/api/v1/sitemap-photos-0.xml"))
+                .andExpect(status().isNotFound());
+
+        // インデックスにも写真サイトマップが含まれない
+        mockMvc.perform(get(ENDPOINT_SITEMAP))
                 .andExpect(status().isOk())
-                .andExpect(content().string(not(
-                        containsString("/photo-viewer/" + photo.getPhotoId()))));
+                .andExpect(content().string(not(containsString("sitemap-photos"))));
     }
 
     @Test
