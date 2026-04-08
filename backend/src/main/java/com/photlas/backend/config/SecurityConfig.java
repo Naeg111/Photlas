@@ -111,7 +111,9 @@ public class SecurityConfig {
                 .requestMatchers(SPOTS_ENDPOINT, SPOTS_ENDPOINT_PATTERN).permitAll()  // スポット関連（一覧・詳細）
                 .requestMatchers(CATEGORIES_ENDPOINT).permitAll()        // カテゴリ一覧
                 .requestMatchers("/api/v1/ogp/**").permitAll()              // OGPメタタグ
-                .requestMatchers("/api/v1/sitemap.xml").permitAll()         // サイトマップ
+                .requestMatchers("/api/v1/sitemap.xml").permitAll()         // サイトマップインデックス
+                .requestMatchers("/api/v1/sitemap-static.xml").permitAll()   // 静的サイトマップ
+                .requestMatchers("/api/v1/sitemap-photos-*.xml").permitAll() // 写真サイトマップ
                 .requestMatchers("/api/v1/internal/**").permitAll()         // Issue#54: 内部API（APIキー認証）
                 .requestMatchers(HttpMethod.GET, PHOTOS_ENDPOINT_PATTERN).permitAll()  // 写真閲覧
                 .requestMatchers(new RegexRequestMatcher(USER_PROFILE_PATTERN, HttpMethod.GET.name())).permitAll()  // ユーザープロフィール閲覧

@@ -5,6 +5,8 @@ import com.photlas.backend.entity.Photo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -45,6 +47,22 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
      * Issue#54: モデレーションステータスで写真を検索
      */
     List<Photo> findByModerationStatus(Integer moderationStatus);
+
+    /**
+     * Issue#54: サイトマップ用 - 公開中の写真を退会済みユーザーを除外して取得（ページネーション対応）
+     */
+    @Query("SELECT p FROM Photo p JOIN User u ON p.userId = u.id " +
+            "WHERE p.moderationStatus = :status AND u.deletedAt IS NULL " +
+            "ORDER BY p.createdAt DESC")
+    Page<Photo> findPublishedPhotosExcludingDeletedUsers(
+            @Param("status") Integer status, Pageable pageable);
+
+    /**
+     * Issue#54: サイトマップ用 - 公開中の写真を退会済みユーザーを除外してカウント
+     */
+    @Query("SELECT COUNT(p) FROM Photo p JOIN User u ON p.userId = u.id " +
+            "WHERE p.moderationStatus = :status AND u.deletedAt IS NULL")
+    long countPublishedPhotosExcludingDeletedUsers(@Param("status") Integer status);
 
     /**
      * ユーザーIDで写真を検索し、作成日時の新しい順で返す（ページネーション対応）
