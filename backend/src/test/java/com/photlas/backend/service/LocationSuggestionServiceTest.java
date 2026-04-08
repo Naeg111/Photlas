@@ -512,6 +512,64 @@ public class LocationSuggestionServiceTest {
     }
 
     // ========================================
+    // Issue#90: 指摘承認通知メール
+    // ========================================
+
+    @Test
+    @DisplayName("Issue#90 - 受け入れ: 指摘者に承認通知メールが送信される（投稿リンク付き）")
+    void testAcceptSuggestion_SendsAcceptanceNotificationToSuggester() {
+        // Arrange
+        LocationSuggestion suggestion = createMockSuggestion();
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+        User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
+        Spot newSpot = createMockSpot(200L, SUGGESTED_LAT, SUGGESTED_LNG);
+
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(userRepository.findById(SUGGESTER_ID)).thenReturn(Optional.of(suggester));
+        when(spotRepository.findSpotsWithin200m(SUGGESTED_LAT, SUGGESTED_LNG)).thenReturn(List.of(newSpot));
+        when(locationSuggestionRepository.findByPhotoIdAndStatusAndEmailSentOrderByCreatedAtAsc(
+                PHOTO_ID, CodeConstants.SUGGESTION_STATUS_PENDING, false)).thenReturn(List.of());
+
+        // Act
+        service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL);
+
+        // Assert: 指摘者への承認通知メールが送信されること
+        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender, times(1)).send(captor.capture());
+        SimpleMailMessage sentMail = captor.getValue();
+        assertThat(sentMail.getTo()).containsExactly(SUGGESTER_EMAIL);
+        assertThat(sentMail.getSubject()).contains("受け入れられました");
+        assertThat(sentMail.getText()).contains("/photo-viewer/" + PHOTO_ID);
+    }
+
+    @Test
+    @DisplayName("Issue#90 - 受け入れ: 承認通知メール送信失敗時も承認処理は成功する")
+    void testAcceptSuggestion_AcceptanceEmailFailure_DoesNotAffectAcceptance() {
+        // Arrange
+        LocationSuggestion suggestion = createMockSuggestion();
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+        Spot newSpot = createMockSpot(200L, SUGGESTED_LAT, SUGGESTED_LNG);
+
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(spotRepository.findSpotsWithin200m(SUGGESTED_LAT, SUGGESTED_LNG)).thenReturn(List.of(newSpot));
+        when(locationSuggestionRepository.findByPhotoIdAndStatusAndEmailSentOrderByCreatedAtAsc(
+                PHOTO_ID, CodeConstants.SUGGESTION_STATUS_PENDING, false)).thenReturn(List.of());
+
+        // Act
+        service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL);
+
+        // Assert: 承認処理は完了していること
+        assertThat(suggestion.getStatus()).isEqualTo(CodeConstants.SUGGESTION_STATUS_ACCEPTED);
+        assertThat(suggestion.getResolvedAt()).isNotNull();
+    }
+
+    // ========================================
     // ヘルパーメソッド
     // ========================================
 

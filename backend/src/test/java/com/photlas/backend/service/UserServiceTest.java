@@ -458,6 +458,45 @@ public class UserServiceTest {
         assertThat(spot.getCreatedByUserId()).isEqualTo(2L);
     }
 
+    // ===== Issue#90: アカウント削除確認メール =====
+
+    @Test
+    @DisplayName("Issue#90 - アカウント削除: 確認メールが送信される（元のユーザー名で宛名が記載される）")
+    void testDeleteAccount_SendsConfirmationEmail() {
+        // Arrange
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+
+        // Assert: 元のユーザー名と90日間保持の案内を含むメールが送信されること
+        verify(emailService).send(
+                eq(TEST_EMAIL),
+                contains("アカウント削除"),
+                argThat(body -> body.contains(TEST_USERNAME) && body.contains("90日間"))
+        );
+    }
+
+    @Test
+    @DisplayName("Issue#90 - アカウント削除: メール送信失敗時も削除処理は成功する")
+    void testDeleteAccount_EmailFailure_DoesNotAffectDeletion() {
+        // Arrange
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        doThrow(new RuntimeException("SMTP error")).when(emailService).send(anyString(), anyString(), anyString());
+
+        // Act - 例外がスローされないこと
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+
+        // Assert: 削除処理は完了していること
+        verify(userRepository).save(argThat(u -> u.getDeletedAt() != null));
+    }
+
     // ===== updateProfileのSNSリンク非更新 (ProfileService.updateProfile) =====
 
     @Test
