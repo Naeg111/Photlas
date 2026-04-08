@@ -113,6 +113,8 @@ public class PasswordService {
         userRepository.save(user);
 
         passwordResetTokenRepository.delete(resetToken);
+
+        sendPasswordChangedNotification(user.getEmail(), user.getUsername());
     }
 
     /**
@@ -135,6 +137,26 @@ public class PasswordService {
         String hashedPassword = passwordEncoder.encode(newPassword);
         user.setPasswordHash(hashedPassword);
         userRepository.save(user);
+
+        sendPasswordChangedNotification(email, user.getUsername());
+    }
+
+    /**
+     * パスワード変更完了の通知メールを送信
+     */
+    private void sendPasswordChangedNotification(String email, String username) {
+        try {
+            emailService.send(
+                    email,
+                    "【Photlas】パスワードが変更されました",
+                    (username != null ? username : "") + " 様\n\n" +
+                    "お客様のアカウントのパスワードが変更されました。\n\n" +
+                    "この変更に心当たりがない場合は、至急以下のメールアドレスまでご連絡ください。\n" +
+                    "support@photlas.jp\n\n" +
+                    "Photlas チーム\nsupport@photlas.jp");
+        } catch (Exception e) {
+            logger.error("パスワード変更通知メールの送信に失敗しました: {}", e.getMessage());
+        }
     }
 
     /**
