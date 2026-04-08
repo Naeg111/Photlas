@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import Map, { Marker } from 'react-map-gl'
+import { MapPin, Calendar } from 'lucide-react'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { PinSvg } from '../components/PinSvg'
-import { Button } from '../components/ui/button'
 import { LoginDialog } from '../components/LoginDialog'
 import { useAuth } from '../contexts/AuthContext'
 import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
 
 /**
- * Issue#65: 位置情報修正のレビューページ
+ * Issue#65, Issue#54: 位置情報修正のレビューページ（ダイアログスタイル）
  */
 
 const MSG_FETCH_ERROR = 'レビュー情報の取得に失敗しました'
@@ -23,10 +23,19 @@ interface ReviewData {
   suggestedLatitude: number
   suggestedLongitude: number
   photoTitle: string
+  imageUrl: string
+  thumbnailUrl: string
+  username: string
+  placeName: string
+  shotAt: string
+  cropCenterX: number | null
+  cropCenterY: number | null
+  cropZoom: number | null
 }
 
 export default function ReviewLocationPage() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const token = searchParams.get('token')
   const { user } = useAuth()
 
@@ -36,6 +45,7 @@ export default function ReviewLocationPage() {
   const [isResolved, setIsResolved] = useState(false)
   const [resolvedMessage, setResolvedMessage] = useState('')
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false)
+  const [isSpotPreview, setIsSpotPreview] = useState(false)
 
   useEffect(() => {
     if (!token || !user) return
@@ -53,12 +63,13 @@ export default function ReviewLocationPage() {
           }
         )
         if (!response.ok) {
-          throw new Error(MSG_FETCH_ERROR)
+          const data = await response.json().catch(() => null)
+          throw new Error(data?.message || MSG_FETCH_ERROR)
         }
         const data = await response.json()
         setReviewData(data)
-      } catch {
-        setError(MSG_FETCH_ERROR)
+      } catch (e) {
+        setError(e instanceof Error ? e.message : MSG_FETCH_ERROR)
       } finally {
         setIsLoading(false)
       }
@@ -98,22 +109,42 @@ export default function ReviewLocationPage() {
     }
   }
 
+  const handleClose = () => {
+    navigate('/')
+  }
+
+  const formatShotAt = (shotAt: string) => {
+    try {
+      const date = new Date(shotAt)
+      return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+    } catch {
+      return shotAt
+    }
+  }
+
+  // トークンなし
   if (!token) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg text-red-600">無効なリンクです</p>
+      <div className="flex items-center justify-center min-h-screen bg-black/50">
+        <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+          <p className="text-lg text-red-600">無効なリンクです</p>
+        </div>
       </div>
     )
   }
 
+  // 未ログイン
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-lg">ログインが必要です</p>
         <p className="text-sm text-gray-600">レビューを行うにはログインしてください。</p>
-        <Button onClick={() => setIsLoginDialogOpen(true)}>
+        <button
+          className="px-4 py-2 bg-black text-white rounded-full"
+          onClick={() => setIsLoginDialogOpen(true)}
+        >
           ログイン
-        </Button>
+        </button>
         <LoginDialog
           open={isLoginDialogOpen}
           onOpenChange={setIsLoginDialogOpen}
@@ -124,22 +155,72 @@ export default function ReviewLocationPage() {
     )
   }
 
-  if (isResolved) {
+  // フルスクリーンマップ（撮影場所プレビュー）
+  if (isSpotPreview && reviewData) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg">{resolvedMessage}</p>
+      <div
+        className="fixed inset-0 z-50"
+        onClick={() => setIsSpotPreview(false)}
+        data-testid="spot-preview-overlay"
+      >
+        <Map
+          mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+          initialViewState={{
+            latitude: reviewData.suggestedLatitude,
+            longitude: reviewData.suggestedLongitude,
+            zoom: 16,
+          }}
+          mapStyle={MAPBOX_STYLE}
+          style={{ width: '100%', height: '100%' }}
+        >
+          {/* 現在の撮影地点（赤） */}
+          <Marker latitude={reviewData.currentLatitude} longitude={reviewData.currentLongitude}>
+            <div style={{ width: 32, height: 38 }}><PinSvg fill="#EF4444" stroke="#B91C1C" /></div>
+          </Marker>
+          {/* 指摘された地点（青） */}
+          <Marker latitude={reviewData.suggestedLatitude} longitude={reviewData.suggestedLongitude}>
+            <div style={{ width: 32, height: 38 }}><PinSvg fill="#3B82F6" stroke="#1D4ED8" /></div>
+          </Marker>
+        </Map>
       </div>
     )
   }
 
+  // エラー表示
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg text-red-600">{error}</p>
+      <div className="flex items-center justify-center min-h-screen bg-black/50">
+        <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+          <p className="text-lg text-red-600 mb-6">{error}</p>
+          <button
+            className="px-6 py-2 bg-white text-black border border-black rounded-full"
+            onClick={handleClose}
+          >
+            閉じる
+          </button>
+        </div>
       </div>
     )
   }
 
+  // 解決済み
+  if (isResolved) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black/50">
+        <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+          <p className="text-lg mb-6">{resolvedMessage}</p>
+          <button
+            className="px-6 py-2 bg-white text-black border border-black rounded-full"
+            onClick={handleClose}
+          >
+            閉じる
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ローディング
   if (isLoading || !reviewData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -148,42 +229,96 @@ export default function ReviewLocationPage() {
     )
   }
 
-  const centerLat = (reviewData.currentLatitude + reviewData.suggestedLatitude) / 2
-  const centerLng = (reviewData.currentLongitude + reviewData.suggestedLongitude) / 2
+  // メインレビュー画面（ダイアログスタイル）
+  const imageStyle: React.CSSProperties = {}
+  if (reviewData.cropCenterX != null && reviewData.cropCenterY != null) {
+    imageStyle.objectPosition = `${reviewData.cropCenterX * 100}% ${reviewData.cropCenterY * 100}%`
+  }
+  if (reviewData.cropZoom != null && reviewData.cropZoom > 1) {
+    imageStyle.transform = `scale(${reviewData.cropZoom})`
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <h1 className="text-xl font-bold mb-4">撮影場所の指摘レビュー</h1>
+    <div className="fixed inset-0 z-40 bg-black/50 flex items-end sm:items-center justify-center">
+      <div className="bg-white w-full sm:max-w-md sm:rounded-lg overflow-hidden max-h-[90dvh] flex flex-col">
+        {/* 写真 */}
+        <div className="relative w-full aspect-[4/3] overflow-hidden flex-shrink-0">
+          <img
+            src={reviewData.imageUrl}
+            alt="レビュー対象の写真"
+            className="w-full h-full object-cover"
+            style={imageStyle}
+            data-testid="review-photo"
+          />
+        </div>
 
-      <div className="w-full max-w-lg h-80 rounded-lg overflow-hidden mb-4">
-        <Map
-          mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
-          initialViewState={{
-            latitude: centerLat,
-            longitude: centerLng,
-            zoom: 13,
-          }}
-          mapStyle={MAPBOX_STYLE}
-        >
-          {/* 現在の撮影地点（赤） */}
-          <Marker latitude={reviewData.currentLatitude} longitude={reviewData.currentLongitude}>
-            <div style={{ width: 32, height: 38 }}><PinSvg fill="#EF4444" stroke="#B91C1C" /></div>
-          </Marker>
+        {/* スクロール可能コンテンツ */}
+        <div className="overflow-y-auto px-6 pt-4 pb-6 flex-1">
+          {/* ユーザー名 */}
+          <p className="text-sm font-medium mb-2" data-testid="review-username">
+            {reviewData.username}
+          </p>
 
-          {/* 指摘された地点（青） */}
-          <Marker latitude={reviewData.suggestedLatitude} longitude={reviewData.suggestedLongitude}>
-            <div style={{ width: 32, height: 38 }}><PinSvg fill="#3B82F6" stroke="#1D4ED8" /></div>
-          </Marker>
-        </Map>
-      </div>
+          {/* メタデータ */}
+          <div className="flex flex-col gap-1 mb-4 text-sm text-gray-600">
+            {reviewData.shotAt && (
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4" />
+                <span data-testid="review-shot-at">{formatShotAt(reviewData.shotAt)}</span>
+              </div>
+            )}
+            {reviewData.placeName && (
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-4 h-4" />
+                <span data-testid="review-place-name">{reviewData.placeName}</span>
+              </div>
+            )}
+          </div>
 
-      <div className="flex gap-4">
-        <Button onClick={() => handleAction('accept')} disabled={isLoading}>
-          受け入れる
-        </Button>
-        <Button variant="outline" onClick={() => handleAction('reject')} disabled={isLoading}>
-          拒否する
-        </Button>
+          {/* ミニマップ（2ピン） */}
+          <div
+            className="w-full h-[200px] rounded-lg overflow-hidden mb-4 cursor-pointer"
+            onClick={() => setIsSpotPreview(true)}
+            data-testid="review-minimap"
+          >
+            <Map
+              mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+              initialViewState={{
+                latitude: reviewData.suggestedLatitude,
+                longitude: reviewData.suggestedLongitude,
+                zoom: 15,
+              }}
+              mapStyle={MAPBOX_STYLE}
+              interactive={false}
+              style={{ width: '100%', height: '100%' }}
+            >
+              <Marker latitude={reviewData.currentLatitude} longitude={reviewData.currentLongitude}>
+                <div style={{ width: 24, height: 28 }}><PinSvg fill="#EF4444" stroke="#B91C1C" /></div>
+              </Marker>
+              <Marker latitude={reviewData.suggestedLatitude} longitude={reviewData.suggestedLongitude}>
+                <div style={{ width: 24, height: 28 }}><PinSvg fill="#3B82F6" stroke="#1D4ED8" /></div>
+              </Marker>
+            </Map>
+          </div>
+
+          {/* アクションボタン */}
+          <div className="flex gap-3">
+            <button
+              className="flex-1 py-2.5 bg-black text-white rounded-full text-sm font-medium disabled:opacity-50"
+              onClick={() => handleAction('accept')}
+              disabled={isLoading}
+            >
+              受け入れる
+            </button>
+            <button
+              className="flex-1 py-2.5 bg-white text-black border border-black rounded-full text-sm font-medium disabled:opacity-50"
+              onClick={() => handleAction('reject')}
+              disabled={isLoading}
+            >
+              拒否する
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
