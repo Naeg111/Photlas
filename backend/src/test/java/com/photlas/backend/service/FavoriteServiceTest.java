@@ -20,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import com.photlas.backend.dto.PhotoResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -360,5 +361,44 @@ public class FavoriteServiceTest {
         assertThat(totalPages)
                 .as("total_pages(%d)はtotal_elements(%d)/pageSize(%d)と整合すべき", totalPages, totalElements, pageSize)
                 .isEqualTo(expectedTotalPages);
+    }
+
+    // ===== Issue#54: ブロックコンテンツチェック =====
+
+    @SuppressWarnings("unchecked")
+    @Test
+    @DisplayName("Issue#54 - getFavorites: QUARANTINED写真はblocked-content画像で表示される")
+    void getFavorites_QuarantinedPhoto_ReturnsBlockedContentUrl() {
+        // Given
+        User user = createTestUser();
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+
+        Photo photo = createTestPhoto();
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
+
+        Favorite favorite = new Favorite();
+        favorite.setUserId(TEST_USER_ID);
+        favorite.setPhotoId(TEST_PHOTO_ID);
+
+        Page<Favorite> favoritePage = new PageImpl<>(List.of(favorite), PageRequest.of(0, 10), 1);
+        when(favoriteRepository.findByUserIdExcludingDeletedUsers(eq(TEST_USER_ID), any())).thenReturn(favoritePage);
+        when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.of(photo));
+
+        Spot spot = new Spot();
+        spot.setSpotId(100L);
+        spot.setLatitude(new BigDecimal("35.681236"));
+        spot.setLongitude(new BigDecimal("139.767125"));
+        when(spotRepository.findById(100L)).thenReturn(Optional.of(spot));
+        when(userRepository.findById(TEST_USER_ID)).thenReturn(Optional.of(user));
+        when(favoriteRepository.countByPhotoId(TEST_PHOTO_ID)).thenReturn(1L);
+        when(s3Service.generateCdnUrl("assets/blocked-content.png")).thenReturn("https://cdn/assets/blocked-content.png");
+
+        // When
+        Map<String, Object> result = favoriteService.getFavorites(TEST_EMAIL, 0, 10);
+
+        // Then
+        List<PhotoResponse> content = (List<PhotoResponse>) result.get("content");
+        assertThat(content).hasSize(1);
+        assertThat(content.get(0).getPhoto().getImageUrl()).isEqualTo("https://cdn/assets/blocked-content.png");
     }
 }

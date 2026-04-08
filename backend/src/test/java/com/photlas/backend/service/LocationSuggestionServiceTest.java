@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.LocationSuggestionReviewResponse;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.*;
 import com.photlas.backend.repository.LocationSuggestionRepository;
@@ -59,6 +60,9 @@ public class LocationSuggestionServiceTest {
 
     @Mock
     private JavaMailSender mailSender;
+
+    @Mock
+    private S3Service s3Service;
 
     @InjectMocks
     private LocationSuggestionService service;
@@ -340,6 +344,170 @@ public class LocationSuggestionServiceTest {
         assertThatThrownBy(() -> service.rejectSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("解決済み");
+    }
+
+    // ========================================
+    // #3: メール送信失敗時のemailSentフラグ
+    // ========================================
+
+    @Test
+    @DisplayName("Issue#54 - 指摘作成: メール送信失敗時はemailSentがfalseになる")
+    void testCreateSuggestion_MailSendFails_EmailSentIsFalse() {
+        // Arrange
+        User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+
+        when(userRepository.findByEmail(SUGGESTER_EMAIL)).thenReturn(Optional.of(suggester));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+        when(locationSuggestionRepository.existsByPhotoIdAndSuggesterId(PHOTO_ID, SUGGESTER_ID)).thenReturn(false);
+        when(locationSuggestionRepository.existsByPhotoIdAndStatusAndEmailSent(
+                PHOTO_ID, CodeConstants.SUGGESTION_STATUS_PENDING, true)).thenReturn(false);
+        when(locationSuggestionRepository.save(any(LocationSuggestion.class))).thenAnswer(i -> i.getArgument(0));
+
+        // メール送信を失敗させる
+        doThrow(new RuntimeException("SMTP error")).when(mailSender).send(any(SimpleMailMessage.class));
+
+        // Act
+        LocationSuggestion result = service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG);
+
+        // Assert: メール送信に失敗したのでemailSentはfalse
+        assertThat(result.isEmailSent()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Issue#54 - sendNextPendingEmail: メール送信失敗時はemailSentがfalseのまま")
+    void testAcceptSuggestion_NextPendingMailFails_EmailSentIsFalse() {
+        // Arrange
+        LocationSuggestion suggestion = createMockSuggestion();
+        LocationSuggestion nextSuggestion = new LocationSuggestion();
+        nextSuggestion.setPhotoId(PHOTO_ID);
+        nextSuggestion.setEmailSent(false);
+
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+        Spot newSpot = createMockSpot(200L, SUGGESTED_LAT, SUGGESTED_LNG);
+
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+        when(spotRepository.findSpotsWithin200m(SUGGESTED_LAT, SUGGESTED_LNG)).thenReturn(List.of(newSpot));
+        when(locationSuggestionRepository.findByPhotoIdAndStatusAndEmailSentOrderByCreatedAtAsc(
+                PHOTO_ID, CodeConstants.SUGGESTION_STATUS_PENDING, false)).thenReturn(List.of(nextSuggestion));
+
+        // 次の指摘のメール送信を失敗させる
+        doThrow(new RuntimeException("SMTP error")).when(mailSender).send(any(SimpleMailMessage.class));
+
+        // Act
+        service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL);
+
+        // Assert: メール送信に失敗したのでemailSentはfalse
+        assertThat(nextSuggestion.isEmailSent()).isFalse();
+    }
+
+    // ========================================
+    // #5: QUARANTINED/REMOVED写真への指摘操作ブロック
+    // ========================================
+
+    @Test
+    @DisplayName("Issue#54 - 受け入れ: QUARANTINED写真への操作はブロックされる")
+    void testAcceptSuggestion_QuarantinedPhoto_ThrowsException() {
+        LocationSuggestion suggestion = createMockSuggestion();
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+
+        assertThatThrownBy(() -> service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("審査中");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 受け入れ: REMOVED写真への操作はブロックされる")
+    void testAcceptSuggestion_RemovedPhoto_ThrowsException() {
+        LocationSuggestion suggestion = createMockSuggestion();
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+
+        assertThatThrownBy(() -> service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("削除された");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 拒否: QUARANTINED写真への操作はブロックされる")
+    void testRejectSuggestion_QuarantinedPhoto_ThrowsException() {
+        LocationSuggestion suggestion = createMockSuggestion();
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+
+        assertThatThrownBy(() -> service.rejectSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("審査中");
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 拒否: REMOVED写真への操作はブロックされる")
+    void testRejectSuggestion_RemovedPhoto_ThrowsException() {
+        LocationSuggestion suggestion = createMockSuggestion();
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+
+        assertThatThrownBy(() -> service.rejectSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("削除された");
+    }
+
+    // ========================================
+    // ReviewResponse DTO拡張
+    // ========================================
+
+    @Test
+    @DisplayName("Issue#54 - getReviewResponse: 画像URL・ユーザー名・場所名・撮影日時が含まれる")
+    void testGetReviewResponse_IncludesPhotoDetails() {
+        LocationSuggestion suggestion = createMockSuggestion();
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setPlaceName("東京タワー");
+        photo.setShotAt(LocalDateTime.of(2026, 3, 1, 12, 0));
+        photo.setS3ObjectKey("uploads/1/test.jpg");
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+        Spot spot = createMockSpot(SPOT_ID, ORIGINAL_LAT, ORIGINAL_LNG);
+
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(spotRepository.findById(SPOT_ID)).thenReturn(Optional.of(spot));
+        when(s3Service.generateCdnUrl("uploads/1/test.jpg")).thenReturn("https://cdn/uploads/1/test.jpg");
+        when(s3Service.generateThumbnailCdnUrl("uploads/1/test.jpg")).thenReturn("https://cdn/thumbnails/uploads/1/test.webp");
+
+        LocationSuggestionReviewResponse response = service.getReviewResponse(REVIEW_TOKEN, OWNER_EMAIL);
+
+        assertThat(response.getImageUrl()).isEqualTo("https://cdn/uploads/1/test.jpg");
+        assertThat(response.getThumbnailUrl()).isEqualTo("https://cdn/thumbnails/uploads/1/test.webp");
+        assertThat(response.getUsername()).isEqualTo("投稿者");
+        assertThat(response.getPlaceName()).isEqualTo("東京タワー");
+        assertThat(response.getShotAt()).isNotNull();
     }
 
     // ========================================
