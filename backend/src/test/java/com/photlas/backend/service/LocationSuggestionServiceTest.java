@@ -495,6 +495,7 @@ public class LocationSuggestionServiceTest {
         Spot spot = createMockSpot(SPOT_ID, ORIGINAL_LAT, ORIGINAL_LNG);
 
         when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
         when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
         when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
         when(spotRepository.findById(SPOT_ID)).thenReturn(Optional.of(spot));

@@ -2,6 +2,7 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.dto.LocationSuggestionReviewResponse;
 import com.photlas.backend.entity.CodeConstants;
+import java.time.format.DateTimeFormatter;
 import com.photlas.backend.entity.LocationSuggestion;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
@@ -42,6 +43,7 @@ public class LocationSuggestionService {
     private final SpotRepository spotRepository;
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
+    private final S3Service s3Service;
 
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
@@ -51,12 +53,14 @@ public class LocationSuggestionService {
             PhotoRepository photoRepository,
             SpotRepository spotRepository,
             UserRepository userRepository,
-            JavaMailSender mailSender) {
+            JavaMailSender mailSender,
+            S3Service s3Service) {
         this.locationSuggestionRepository = locationSuggestionRepository;
         this.photoRepository = photoRepository;
         this.spotRepository = spotRepository;
         this.userRepository = userRepository;
         this.mailSender = mailSender;
+        this.s3Service = s3Service;
     }
 
     /**
@@ -110,8 +114,8 @@ public class LocationSuggestionService {
         } else {
             // メールを送信する
             suggestion.setReviewToken(generateSecureToken());
-            suggestion.setEmailSent(true);
-            sendSuggestionNotification(photo, suggestion);
+            boolean sent = sendSuggestionNotification(photo, suggestion);
+            suggestion.setEmailSent(sent);
         }
 
         LocationSuggestion saved = locationSuggestionRepository.save(suggestion);
@@ -186,6 +190,19 @@ public class LocationSuggestionService {
         }
         if (photo != null) {
             response.setPhotoTitle(photo.getPlaceName());
+            response.setPlaceName(photo.getPlaceName());
+            response.setImageUrl(s3Service.generateCdnUrl(photo.getS3ObjectKey()));
+            response.setThumbnailUrl(s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey()));
+            response.setCropCenterX(photo.getCropCenterX());
+            response.setCropCenterY(photo.getCropCenterY());
+            response.setCropZoom(photo.getCropZoom());
+            if (photo.getShotAt() != null) {
+                response.setShotAt(photo.getShotAt().format(DateTimeFormatter.ISO_DATE_TIME));
+            }
+            User photoOwner = userRepository.findById(photo.getUserId()).orElse(null);
+            if (photoOwner != null) {
+                response.setUsername(photoOwner.getUsername());
+            }
         }
         return response;
     }
@@ -224,6 +241,14 @@ public class LocationSuggestionService {
             throw new AccessDeniedException("この指摘をレビューする権限がありません");
         }
 
+        // Issue#54: QUARANTINED/REMOVED写真への操作をブロック
+        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(photo.getModerationStatus())) {
+            throw new IllegalStateException("この写真は現在審査中のため操作できません");
+        }
+        if (Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(photo.getModerationStatus())) {
+            throw new IllegalStateException("この写真は削除されたため操作できません");
+        }
+
         // Issue#65: 解決済みの指摘への再操作を防止
         if (!Integer.valueOf(CodeConstants.SUGGESTION_STATUS_PENDING).equals(suggestion.getStatus())) {
             throw new IllegalStateException("この指摘は既に解決済みです");
@@ -252,20 +277,18 @@ public class LocationSuggestionService {
         if (!pending.isEmpty()) {
             LocationSuggestion next = pending.get(0);
             next.setReviewToken(generateSecureToken());
-            next.setEmailSent(true);
-            locationSuggestionRepository.save(next);
 
             Photo photo = photoRepository.findById(photoId).orElse(null);
-            if (photo != null) {
-                sendSuggestionNotification(photo, next);
-            }
+            boolean sent = (photo != null) && sendSuggestionNotification(photo, next);
+            next.setEmailSent(sent);
+            locationSuggestionRepository.save(next);
         }
     }
 
-    private void sendSuggestionNotification(Photo photo, LocationSuggestion suggestion) {
+    private boolean sendSuggestionNotification(Photo photo, LocationSuggestion suggestion) {
         try {
             User owner = userRepository.findById(photo.getUserId()).orElse(null);
-            if (owner == null) return;
+            if (owner == null) return false;
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(owner.getEmail());
@@ -278,8 +301,10 @@ public class LocationSuggestionService {
                     "Photlas チーム\nsupport@photlas.jp"
             );
             mailSender.send(message);
+            return true;
         } catch (Exception e) {
             logger.error("位置情報指摘通知メールの送信に失敗しました: {}", e.getMessage());
+            return false;
         }
     }
 
