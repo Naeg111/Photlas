@@ -42,6 +42,9 @@ public class ModerationDetail {
     @Column(name = "scheduled_deletion_at")
     private LocalDateTime scheduledDeletionAt;
 
+    @Column(name = "detected_labels")
+    private String detectedLabels;
+
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -69,4 +72,7 @@ public class ModerationDetail {
 
     public LocalDateTime getScheduledDeletionAt() { return scheduledDeletionAt; }
     public void setScheduledDeletionAt(LocalDateTime scheduledDeletionAt) { this.scheduledDeletionAt = scheduledDeletionAt; }
+
+    public String getDetectedLabels() { return detectedLabels; }
+    public void setDetectedLabels(String detectedLabels) { this.detectedLabels = detectedLabels; }
 }
