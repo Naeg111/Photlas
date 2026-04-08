@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter;
 public class ModerationNotificationService {
 
     private static final Logger logger = LoggerFactory.getLogger(ModerationNotificationService.class);
-    private static final String MAIL_SIGNATURE = "\n\nPhotlas チーム\nsupport@photlas.jp";
+    private static final String MAIL_SIGNATURE = "\n\nPhotlas 運営\nsupport@photlas.jp";
 
     private final JavaMailSender mailSender;
 

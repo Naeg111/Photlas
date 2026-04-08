@@ -210,6 +210,6 @@ public class AuthService {
                 frontendUrl + "/verify-email?token=" + token + "\n\n" +
                 "このリンクの有効期限は24時間です。\n\n" +
                 "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                "Photlas チーム");
+                "Photlas 運営");
     }
 }

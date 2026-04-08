@@ -116,7 +116,7 @@ public class AccountService {
                 frontendUrl + "/confirm-email-change?token=" + token + "\n\n" +
                 "このリンクの有効期限は30分です。\n\n" +
                 "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                "Photlas チーム");
+                "Photlas 運営");
 
         // 旧メールアドレスに通知
         try {
@@ -126,7 +126,7 @@ public class AccountService {
                     user.getUsername() + " さん\n\n" +
                     "お客様のアカウントでメールアドレスの変更がリクエストされました。\n\n" +
                     "心当たりがない場合は、ただちにパスワードを変更してください。\n\n" +
-                    "Photlas チーム");
+                    "Photlas 運営");
         } catch (Exception e) {
             logger.error("Failed to send email change notification to old address: {}", e.getMessage());
         }
