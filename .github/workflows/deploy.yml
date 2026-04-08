@@ -215,15 +215,24 @@ jobs:
 
         echo '=== Stopping old containers ==='
         docker-compose -f docker/docker-compose.staging.yml down || true
+        sleep 5
 
         echo '=== Pulling images ==='
-        docker-compose -f docker/docker-compose.staging.yml pull --ignore-pull-failures || true
+        docker-compose -f docker/docker-compose.staging.yml pull
 
         echo '=== Debug: Docker images ==='
         docker images | grep photlas || true
 
-        echo '=== Starting containers ==='
-        docker-compose -f docker/docker-compose.staging.yml up -d --remove-orphans
+        echo '=== Starting containers (with retry) ==='
+        RETRY=0
+        MAX_RETRY=3
+        while [ $RETRY -lt $MAX_RETRY ]; do
+          docker-compose -f docker/docker-compose.staging.yml up -d --remove-orphans && break
+          RETRY=$((RETRY+1))
+          echo "Container start failed, retrying ($RETRY/$MAX_RETRY)..."
+          docker-compose -f docker/docker-compose.staging.yml down || true
+          sleep 10
+        done
 
         echo '=== Debug: Running containers ==='
         docker ps
@@ -439,12 +448,21 @@ jobs:
 
         echo '=== Stopping old containers ==='
         docker-compose -f docker/docker-compose.prod.yml down || true
+        sleep 5
 
         echo '=== Pulling images ==='
         docker-compose -f docker/docker-compose.prod.yml pull
 
-        echo '=== Starting containers ==='
-        docker-compose -f docker/docker-compose.prod.yml up -d --remove-orphans
+        echo '=== Starting containers (with retry) ==='
+        RETRY=0
+        MAX_RETRY=3
+        while [ $RETRY -lt $MAX_RETRY ]; do
+          docker-compose -f docker/docker-compose.prod.yml up -d --remove-orphans && break
+          RETRY=$((RETRY+1))
+          echo "Container start failed, retrying ($RETRY/$MAX_RETRY)..."
+          docker-compose -f docker/docker-compose.prod.yml down || true
+          sleep 10
+        done
 
         echo '=== Cleanup: remove all unused images ==='
         docker image prune -af
