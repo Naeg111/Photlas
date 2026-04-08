@@ -66,10 +66,10 @@ public class OgpController {
         }
 
         // Issue#54: 退会済み・永久停止ユーザーの写真のOGPは404を返す
-        Optional<User> ownerOpt = userRepository.findById(photo.getUserId());
-        if (ownerOpt.isEmpty()
-                || ownerOpt.get().getDeletedAt() != null
-                || Integer.valueOf(CodeConstants.ROLE_SUSPENDED).equals(ownerOpt.get().getRole())) {
+        User owner = userRepository.findById(photo.getUserId()).orElse(null);
+        if (owner == null
+                || owner.getDeletedAt() != null
+                || Integer.valueOf(CodeConstants.ROLE_SUSPENDED).equals(owner.getRole())) {
             return ResponseEntity.notFound().build();
         }
 
@@ -80,13 +80,7 @@ public class OgpController {
                 ? photo.getPlaceName() + " - " + SITE_NAME
                 : SITE_NAME;
         String pageUrl = frontendUrl + "/photo-viewer/" + photoId;
-
-        // ユーザー名を取得
-        String username = SITE_NAME;
-        Optional<User> userOpt = userRepository.findById(photo.getUserId());
-        if (userOpt.isPresent()) {
-            username = userOpt.get().getUsername();
-        }
+        String username = owner.getUsername();
 
         String jsonLdTitle = photo.getPlaceName() != null ? photo.getPlaceName() : SITE_NAME;
         String description = username + "さんが撮影した写真 - " + SITE_NAME;
