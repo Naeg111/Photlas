@@ -70,7 +70,7 @@ public class LocationSuggestionController {
             LocationSuggestionReviewResponse response =
                     locationSuggestionService.getReviewResponse(token, email);
             return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest()
                     .body(Map.of(KEY_MESSAGE, e.getMessage()));
         }
@@ -87,7 +87,7 @@ public class LocationSuggestionController {
             String email = authentication.getName();
             locationSuggestionService.acceptSuggestion(token, email);
             return ResponseEntity.ok(Map.of(KEY_MESSAGE, "撮影場所の指摘を受け入れました"));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest()
                     .body(Map.of(KEY_MESSAGE, e.getMessage()));
         }
@@ -104,7 +104,7 @@ public class LocationSuggestionController {
             String email = authentication.getName();
             locationSuggestionService.rejectSuggestion(token, email);
             return ResponseEntity.ok(Map.of(KEY_MESSAGE, "撮影場所の指摘を拒否しました"));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest()
                     .body(Map.of(KEY_MESSAGE, e.getMessage()));
         }

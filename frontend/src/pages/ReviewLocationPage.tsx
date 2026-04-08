@@ -94,7 +94,8 @@ export default function ReviewLocationPage() {
         }
       )
       if (!response.ok) {
-        throw new Error(MSG_ACTION_ERROR)
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.message || MSG_ACTION_ERROR)
       }
       setIsResolved(true)
       setResolvedMessage(
