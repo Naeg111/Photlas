@@ -157,6 +157,26 @@ public class OgpControllerTest {
     }
 
     @Test
+    @DisplayName("Issue#54 - 退会済みユーザーの写真のOGPリクエストは404を返す")
+    void testGetPhotoOgp_DeletedUser_Returns404() throws Exception {
+        testUser.setDeletedAt(LocalDateTime.now());
+        userRepository.save(testUser);
+
+        mockMvc.perform(get(ENDPOINT_OGP_PHOTO + testPhoto.getPhotoId()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 永久停止ユーザーの写真のOGPリクエストは404を返す")
+    void testGetPhotoOgp_SuspendedUser_Returns404() throws Exception {
+        testUser.setRole(CodeConstants.ROLE_SUSPENDED);
+        userRepository.save(testUser);
+
+        mockMvc.perform(get(ENDPOINT_OGP_PHOTO + testPhoto.getPhotoId()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     @DisplayName("Issue#54 - REMOVED写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_RemovedPhoto_Returns404() throws Exception {
         // Given: REMOVED写真
