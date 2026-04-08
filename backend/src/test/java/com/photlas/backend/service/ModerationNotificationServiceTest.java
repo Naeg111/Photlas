@@ -95,6 +95,22 @@ public class ModerationNotificationServiceTest {
         assertThat(message.getText()).contains("テストユーザー");
     }
 
+    // ===== Issue#54: Fromアドレス設定テスト =====
+
+    @Test
+    @DisplayName("Issue#54 - メールにFromアドレスが設定されている")
+    void testSendEmail_HasFromAddress() {
+        notificationService.sendQuarantineNotification(
+                "user@example.com", "テストユーザー", LocalDateTime.of(2026, 3, 15, 14, 30));
+
+        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender, times(1)).send(captor.capture());
+
+        SimpleMailMessage message = captor.getValue();
+        assertThat(message.getFrom()).isNotNull();
+        assertThat(message.getFrom()).contains("noreply@photlas.jp");
+    }
+
     @Test
     @DisplayName("Issue#54 - メール送信失敗時に例外がスローされない")
     void testSendEmail_Failure_DoesNotThrow() {

@@ -2,11 +2,15 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.AccountSanction;
+import com.photlas.backend.entity.ModerationDetail;
 import com.photlas.backend.entity.Photo;
+import com.photlas.backend.entity.Report;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.entity.Violation;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.repository.AccountSanctionRepository;
+import com.photlas.backend.repository.ModerationDetailRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
 import com.photlas.backend.repository.SpotRepository;
@@ -61,6 +65,9 @@ public class AdminModerationServiceTest {
     @Autowired
     private AccountSanctionRepository accountSanctionRepository;
 
+    @Autowired
+    private ModerationDetailRepository moderationDetailRepository;
+
     private User photoOwner;
     private Spot testSpot;
 
@@ -68,6 +75,7 @@ public class AdminModerationServiceTest {
     void setUp() {
         accountSanctionRepository.deleteAll();
         violationRepository.deleteAll();
+        moderationDetailRepository.deleteAll();
         reportRepository.deleteAll();
         photoRepository.deleteAll();
         spotRepository.deleteAll();
@@ -235,6 +243,64 @@ public class AdminModerationServiceTest {
         assertThat(updatedPublished.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_REMOVED);
     }
 
+    // ===== Issue#54: violationType振り分けテスト =====
+
+    @Test
+    @DisplayName("Issue#54 - 拒否: ユーザー通報がある場合、最多の通報理由がviolationTypeになる")
+    void testRejectPhoto_WithReports_ViolationTypeFromMostCommonReason() {
+        Photo photo = createPhotoWithStatus("photos/vt1.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
+        User reporter1 = createUser("reporter1", "r1@example.com");
+        User reporter2 = createUser("reporter2", "r2@example.com");
+
+        // 2件がADULT_CONTENT、1件がVIOLENCE
+        createReport(reporter1.getId(), photo.getPhotoId(), CodeConstants.REASON_ADULT_CONTENT);
+        createReport(reporter2.getId(), photo.getPhotoId(), CodeConstants.REASON_ADULT_CONTENT);
+
+        adminModerationService.rejectPhoto(photo.getPhotoId(), "不適切なコンテンツ");
+
+        List<Violation> violations = violationRepository.findAll();
+        assertThat(violations).hasSize(1);
+        assertThat(violations.get(0).getViolationType()).isEqualTo(CodeConstants.REASON_ADULT_CONTENT);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 拒否: AI検知のみでExplicit Nudityラベルの場合、ADULT_CONTENTになる")
+    void testRejectPhoto_AiDetectedAdultContent_ViolationTypeAdultContent() {
+        Photo photo = createPhotoWithStatus("photos/vt2.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
+        createModerationDetail(photo.getPhotoId(), "Explicit Nudity,Exposed Female Genitalia");
+
+        adminModerationService.rejectPhoto(photo.getPhotoId(), "AI検知");
+
+        List<Violation> violations = violationRepository.findAll();
+        assertThat(violations).hasSize(1);
+        assertThat(violations.get(0).getViolationType()).isEqualTo(CodeConstants.REASON_ADULT_CONTENT);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 拒否: AI検知のみでViolenceラベルの場合、VIOLENCEになる")
+    void testRejectPhoto_AiDetectedViolence_ViolationTypeViolence() {
+        Photo photo = createPhotoWithStatus("photos/vt3.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
+        createModerationDetail(photo.getPhotoId(), "Violence,Graphic Violence");
+
+        adminModerationService.rejectPhoto(photo.getPhotoId(), "AI検知");
+
+        List<Violation> violations = violationRepository.findAll();
+        assertThat(violations).hasSize(1);
+        assertThat(violations.get(0).getViolationType()).isEqualTo(CodeConstants.REASON_VIOLENCE);
+    }
+
+    @Test
+    @DisplayName("Issue#54 - 拒否: 通報もAI検知もない場合、REASON_OTHERになる")
+    void testRejectPhoto_NoReportsNoAi_ViolationTypeOther() {
+        Photo photo = createPhotoWithStatus("photos/vt4.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
+
+        adminModerationService.rejectPhoto(photo.getPhotoId(), "手動対応");
+
+        List<Violation> violations = violationRepository.findAll();
+        assertThat(violations).hasSize(1);
+        assertThat(violations.get(0).getViolationType()).isEqualTo(CodeConstants.REASON_OTHER);
+    }
+
     // ===== Issue#54: S3隔離フロー整合性テスト =====
 
     @Test
@@ -286,5 +352,23 @@ public class AdminModerationServiceTest {
         photo.setShotAt(LocalDateTime.of(2026, 3, 1, 12, 0));
         photo.setModerationStatus(status);
         return photoRepository.save(photo);
+    }
+
+    private void createReport(Long reporterUserId, Long photoId, int reasonCategory) {
+        Report report = new Report();
+        report.setReporterUserId(reporterUserId);
+        report.setTargetType(CodeConstants.TARGET_TYPE_PHOTO);
+        report.setTargetId(photoId);
+        report.setReasonCategory(reasonCategory);
+        reportRepository.save(report);
+    }
+
+    private void createModerationDetail(Long photoId, String detectedLabels) {
+        ModerationDetail detail = new ModerationDetail();
+        detail.setTargetType(CodeConstants.TARGET_TYPE_PHOTO);
+        detail.setTargetId(photoId);
+        detail.setSource(CodeConstants.MODERATION_SOURCE_AI_SCAN);
+        detail.setDetectedLabels(detectedLabels);
+        moderationDetailRepository.save(detail);
     }
 }
