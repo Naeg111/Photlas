@@ -12,6 +12,7 @@ import com.photlas.backend.exception.EmailNotVerifiedException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.util.LanguageUtils;
 import com.photlas.backend.util.TokenGenerator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -79,7 +80,7 @@ public class AuthService {
             hashedPassword,
             CodeConstants.ROLE_USER
         );
-        user.setLanguage(resolveLanguage(acceptLanguage));
+        user.setLanguage(LanguageUtils.resolve(acceptLanguage));
 
         user = userRepository.save(user);
 
@@ -132,7 +133,7 @@ public class AuthService {
         }
 
         // 言語設定を更新
-        String language = resolveLanguage(acceptLanguage);
+        String language = LanguageUtils.resolve(acceptLanguage);
         if (!language.equals(user.getLanguage())) {
             user.setLanguage(language);
             userRepository.save(user);
@@ -251,13 +252,4 @@ public class AuthService {
         }
     }
 
-    /**
-     * Accept-Languageヘッダーから言語を判定する
-     */
-    static String resolveLanguage(String acceptLanguage) {
-        if (acceptLanguage == null || acceptLanguage.isBlank()) {
-            return "ja";
-        }
-        return acceptLanguage.trim().startsWith("ja") ? "ja" : "en";
-    }
 }
