@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -7,6 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
@@ -27,6 +29,11 @@ public class ModerationNotificationServiceTest {
 
     @InjectMocks
     private ModerationNotificationService notificationService;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(notificationService, "mailFrom", "noreply@photlas.jp");
+    }
 
     @Test
     @DisplayName("Issue#54 - 隔離通知メールが正しい件名・本文で送信される")

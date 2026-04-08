@@ -48,6 +48,9 @@ public class LocationSuggestionService {
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
 
+    @Value("${app.mail.from:noreply@photlas.jp}")
+    private String mailFrom;
+
     public LocationSuggestionService(
             LocationSuggestionRepository locationSuggestionRepository,
             PhotoRepository photoRepository,
@@ -291,6 +294,7 @@ public class LocationSuggestionService {
             if (owner == null) return false;
 
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(mailFrom);
             message.setTo(owner.getEmail());
             message.setSubject("【Photlas】撮影場所について指摘がありました");
             message.setText(
@@ -311,6 +315,7 @@ public class LocationSuggestionService {
     private void sendRejectionNotification(String suggesterEmail) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(mailFrom);
             message.setTo(suggesterEmail);
             message.setSubject("【Photlas】撮影場所の指摘について");
             message.setText(

@@ -91,7 +91,7 @@ def lambda_handler(event, context):
 
         try:
             result = scan_image(bucket, object_key)
-            status, confidence, is_csam = evaluate_result(result)
+            status, confidence, is_csam, detected_labels = evaluate_result(result)
 
             logger.info(
                 "スキャン結果: key=%s, status=%s, confidence=%.2f, csam=%s",
@@ -99,7 +99,7 @@ def lambda_handler(event, context):
             )
 
             # バックエンドAPIにコールバック
-            callback_to_backend(object_key, status, confidence)
+            callback_to_backend(object_key, status, confidence, detected_labels)
 
             # QUARANTINED時の追加処理（S3移動はBackendが担当）
             if status == STATUS_QUARANTINED:
@@ -125,35 +125,39 @@ def evaluate_result(labels):
     Issue#84: 除外ラベルをフィルタリング後に判定する。
 
     Returns:
-        tuple: (status, max_confidence, is_csam)
+        tuple: (status, max_confidence, is_csam, filtered_label_names)
     """
     if not labels:
-        return STATUS_PUBLISHED, 0.0, False
+        return STATUS_PUBLISHED, 0.0, False, []
 
     # 除外ラベルをフィルタリング（環境変数 + デフォルト）
     all_excluded = EXCLUDED_LABELS | DEFAULT_EXCLUDED_LABELS
     filtered = [l for l in labels if l["Name"] not in all_excluded]
 
     if not filtered:
-        return STATUS_PUBLISHED, 0.0, False
+        return STATUS_PUBLISHED, 0.0, False, []
 
     max_confidence = max(label["Confidence"] for label in filtered)
     is_csam = any(label["Name"] in CSAM_LABELS for label in filtered)
+    filtered_label_names = [l["Name"] for l in filtered]
 
     if max_confidence >= CONFIDENCE_THRESHOLD:
-        return STATUS_QUARANTINED, max_confidence, is_csam
+        return STATUS_QUARANTINED, max_confidence, is_csam, filtered_label_names
 
-    return STATUS_PUBLISHED, max_confidence, False
+    return STATUS_PUBLISHED, max_confidence, False, filtered_label_names
 
 
-def callback_to_backend(s3_object_key, status, confidence_score):
+def callback_to_backend(s3_object_key, status, confidence_score, detected_labels=None):
     """バックエンドAPIにモデレーション結果をコールバックする。"""
     url = f"{BACKEND_API_URL}/api/v1/internal/moderation/callback"
-    payload = json.dumps({
+    body = {
         "s3_object_key": s3_object_key,
         "status": status,
         "confidence_score": confidence_score,
-    }).encode("utf-8")
+    }
+    if detected_labels:
+        body["detected_labels"] = detected_labels
+    payload = json.dumps(body).encode("utf-8")
 
     req = urllib.request.Request(
         url,

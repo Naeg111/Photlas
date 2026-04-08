@@ -82,6 +82,8 @@ public class ModerationCallbackController {
         Double confidenceScore = request.get("confidence_score") != null
                 ? ((Number) request.get("confidence_score")).doubleValue()
                 : null;
+        @SuppressWarnings("unchecked")
+        java.util.List<String> detectedLabels = (java.util.List<String>) request.get("detected_labels");
 
         Integer newStatus = parseStatus(statusStr);
 
@@ -106,7 +108,8 @@ public class ModerationCallbackController {
         }
 
         // モデレーション詳細を保存
-        saveModerationDetail(CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId(), confidenceScore, newStatus);
+        saveModerationDetail(CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId(),
+                confidenceScore, newStatus, detectedLabels);
 
         // Issue#54: 隔離時にユーザーへメール通知
         if (isQuarantined) {
@@ -143,7 +146,8 @@ public class ModerationCallbackController {
         }
 
         // モデレーション詳細を保存
-        saveModerationDetail(CodeConstants.TARGET_TYPE_PROFILE, user.getId(), confidenceScore, status);
+        saveModerationDetail(CodeConstants.TARGET_TYPE_PROFILE, user.getId(),
+                confidenceScore, status, null);
 
         logger.info("プロフィール画像モデレーション完了: userId={}, status={}, confidence={}",
                 user.getId(), status, confidenceScore);
@@ -156,13 +160,17 @@ public class ModerationCallbackController {
      */
     private void saveModerationDetail(
             Integer targetType, Long targetId,
-            Double confidenceScore, Integer status) {
+            Double confidenceScore, Integer status,
+            java.util.List<String> detectedLabels) {
 
         ModerationDetail detail = new ModerationDetail();
         detail.setTargetType(targetType);
         detail.setTargetId(targetId);
         detail.setSource(CodeConstants.MODERATION_SOURCE_AI_SCAN);
         detail.setAiConfidenceScore(confidenceScore);
+        if (detectedLabels != null && !detectedLabels.isEmpty()) {
+            detail.setDetectedLabels(String.join(",", detectedLabels));
+        }
         if (Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(status)) {
             detail.setQuarantinedAt(LocalDateTime.now());
         }
