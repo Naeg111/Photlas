@@ -497,6 +497,51 @@ public class UserServiceTest {
         verify(userRepository).save(argThat(u -> u.getDeletedAt() != null));
     }
 
+    // ===== Issue#91: メールの英語対応 =====
+
+    @Test
+    @DisplayName("Issue#91 - アカウント削除: 英語ユーザーには英語の確認メールが送信される")
+    void testDeleteAccount_EnglishUser_SendsEnglishEmail() {
+        // Arrange
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        user.setLanguage("en");
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+
+        // Assert: 英語のメールが送信されること
+        verify(emailService).send(
+                eq(TEST_EMAIL),
+                contains("Account Deletion"),
+                argThat(body -> body.contains("Your account has been deleted")
+                        && body.contains("90 days"))
+        );
+    }
+
+    @Test
+    @DisplayName("Issue#91 - パスワード変更通知: 英語ユーザーには英語の通知メールが送信される")
+    void testPasswordChanged_EnglishUser_SendsEnglishEmail() {
+        // Arrange
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        user.setLanguage("en");
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        passwordService.updatePassword(TEST_EMAIL, CURRENT_PASSWORD, NEW_PASSWORD);
+
+        // Assert: 英語の通知メールが送信されること
+        verify(emailService).send(
+                eq(TEST_EMAIL),
+                contains("Password Changed"),
+                argThat(body -> body.contains("Your account password has been changed"))
+        );
+    }
+
     // ===== updateProfileのSNSリンク非更新 (ProfileService.updateProfile) =====
 
     @Test

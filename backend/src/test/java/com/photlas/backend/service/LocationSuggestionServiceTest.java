@@ -546,6 +546,37 @@ public class LocationSuggestionServiceTest {
     }
 
     @Test
+    @DisplayName("Issue#91 - 受け入れ: 英語ユーザーの指摘者には英語の承認通知メールが送信される")
+    void testAcceptSuggestion_EnglishSuggester_SendsEnglishEmail() {
+        // Arrange
+        LocationSuggestion suggestion = createMockSuggestion();
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+        User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "Suggester");
+        suggester.setLanguage("en");
+        Spot newSpot = createMockSpot(200L, SUGGESTED_LAT, SUGGESTED_LNG);
+
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(userRepository.findById(SUGGESTER_ID)).thenReturn(Optional.of(suggester));
+        when(spotRepository.findSpotsWithin200m(SUGGESTED_LAT, SUGGESTED_LNG)).thenReturn(List.of(newSpot));
+        when(locationSuggestionRepository.findByPhotoIdAndStatusAndEmailSentOrderByCreatedAtAsc(
+                PHOTO_ID, CodeConstants.SUGGESTION_STATUS_PENDING, false)).thenReturn(List.of());
+
+        // Act
+        service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL);
+
+        // Assert: 英語の承認通知メールが送信されること
+        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender, times(1)).send(captor.capture());
+        SimpleMailMessage sentMail = captor.getValue();
+        assertThat(sentMail.getTo()).containsExactly(SUGGESTER_EMAIL);
+        assertThat(sentMail.getSubject()).contains("Accepted");
+        assertThat(sentMail.getText()).contains("has been accepted");
+    }
+
+    @Test
     @DisplayName("Issue#90 - 受け入れ: 承認通知メール送信失敗時も承認処理は成功する")
     void testAcceptSuggestion_AcceptanceEmailFailure_DoesNotAffectAcceptance() {
         // Arrange
