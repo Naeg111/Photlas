@@ -145,8 +145,37 @@ public class LocationSuggestionService {
         photoRepository.save(photo);
 
         resolveSuggestion(suggestion, CodeConstants.SUGGESTION_STATUS_ACCEPTED);
+
+        // 指摘者にメールで承認を通知
+        User suggester = userRepository.findById(suggestion.getSuggesterId()).orElse(null);
+        if (suggester != null) {
+            sendAcceptanceNotification(suggester.getEmail(), suggestion.getPhotoId());
+        }
+
         logger.info("位置情報の指摘を受け入れました: suggestionId={}, newSpotId={}",
                 suggestion.getId(), newSpot.getSpotId());
+    }
+
+    /**
+     * 指摘承認通知メールを送信する
+     */
+    private void sendAcceptanceNotification(String suggesterEmail, Long photoId) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(mailFrom);
+            message.setTo(suggesterEmail);
+            message.setSubject("【Photlas】撮影場所の指摘が受け入れられました");
+            message.setText(
+                    "撮影場所の指摘が投稿者に受け入れられました。\n\n" +
+                    "対象の投稿はこちらからご確認いただけます。\n" +
+                    frontendUrl + "/photo-viewer/" + photoId + "\n\n" +
+                    "ご協力いただきありがとうございます。\n\n" +
+                    "Photlas 運営\nsupport@photlas.jp"
+            );
+            mailSender.send(message);
+        } catch (Exception e) {
+            logger.error("承認通知メールの送信に失敗しました: {}", e.getMessage());
+        }
     }
 
     /**

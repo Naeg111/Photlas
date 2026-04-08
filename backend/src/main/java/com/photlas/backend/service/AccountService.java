@@ -198,11 +198,33 @@ public class AccountService {
         emailChangeTokenRepository.findByUserId(user.getId()).ifPresent(
                 t -> emailChangeTokenRepository.delete(t));
 
-        user.setOriginalUsername(user.getUsername());
+        String originalUsername = user.getUsername();
+        user.setOriginalUsername(originalUsername);
         user.setUsername("d_" + UUID.randomUUID().toString().substring(0, 10));
 
         user.setDeletedAt(java.time.LocalDateTime.now());
         userRepository.save(user);
+
+        sendAccountDeletionConfirmation(email, originalUsername);
+    }
+
+    /**
+     * アカウント削除確認メールを送信する
+     */
+    private void sendAccountDeletionConfirmation(String email, String username) {
+        try {
+            emailService.send(
+                    email,
+                    "【Photlas】アカウント削除のご確認",
+                    username + " さん\n\n" +
+                    "アカウントの削除が完了しました。\n\n" +
+                    "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
+                    "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
+                    "support@photlas.jp\n\n" +
+                    "Photlas 運営\nsupport@photlas.jp");
+        } catch (Exception e) {
+            logger.error("アカウント削除確認メールの送信に失敗しました: {}", e.getMessage());
+        }
     }
 
     private void transferSpotOwnership(User deletingUser) {
