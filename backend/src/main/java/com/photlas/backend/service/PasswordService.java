@@ -153,7 +153,7 @@ public class PasswordService {
                     "お客様のアカウントのパスワードが変更されました。\n\n" +
                     "この変更に心当たりがない場合は、至急以下のメールアドレスまでご連絡ください。\n" +
                     "support@photlas.jp\n\n" +
-                    "Photlas チーム\nsupport@photlas.jp");
+                    "Photlas 運営\nsupport@photlas.jp");
         } catch (Exception e) {
             logger.error("パスワード変更通知メールの送信に失敗しました: {}", e.getMessage());
         }
@@ -172,7 +172,7 @@ public class PasswordService {
                     frontendUrl + "/reset-password?token=" + token + "\n\n" +
                     "このリンクの有効期限は30分です。\n\n" +
                     "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                    "Photlas チーム\nsupport@photlas.jp");
+                    "Photlas 運営\nsupport@photlas.jp");
         } catch (Exception e) {
             logger.error("パスワードリセットメールの送信に失敗しました: {}", e.getMessage());
         }
