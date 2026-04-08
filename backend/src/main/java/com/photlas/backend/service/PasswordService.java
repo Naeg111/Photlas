@@ -172,9 +172,9 @@ public class PasswordService {
                     frontendUrl + "/reset-password?token=" + token + "\n\n" +
                     "このリンクの有効期限は30分です。\n\n" +
                     "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                    "Photlas チーム");
+                    "Photlas チーム\nsupport@photlas.jp");
         } catch (Exception e) {
-            logger.error("Failed to send password reset email: {}", e.getMessage());
+            logger.error("パスワードリセットメールの送信に失敗しました: {}", e.getMessage());
         }
     }
 }
