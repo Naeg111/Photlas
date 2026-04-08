@@ -61,7 +61,7 @@ public class AuthService {
      * @return 登録レスポンス
      */
     @Transactional
-    public RegisterResponse registerUser(RegisterRequest request) {
+    public RegisterResponse registerUser(RegisterRequest request, String acceptLanguage) {
         String normalizedEmail = request.getEmail().toLowerCase();
         if (userRepository.existsByEmail(normalizedEmail)) {
             Optional<User> existingUser = userRepository.findByEmail(normalizedEmail);
@@ -79,6 +79,7 @@ public class AuthService {
             hashedPassword,
             CodeConstants.ROLE_USER
         );
+        user.setLanguage(resolveLanguage(acceptLanguage));
 
         user = userRepository.save(user);
 
@@ -91,12 +92,20 @@ public class AuthService {
     }
 
     /**
+     * 後方互換性のためのオーバーロード
+     */
+    @Transactional
+    public RegisterResponse registerUser(RegisterRequest request) {
+        return registerUser(request, null);
+    }
+
+    /**
      * ログイン処理
      *
      * @param request ログインリクエスト
      * @return ログインレスポンス
      */
-    public RegisterResponse loginUser(LoginRequest request) {
+    public RegisterResponse loginUser(LoginRequest request, String acceptLanguage) {
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail().toLowerCase());
 
         if (userOptional.isEmpty()) {
@@ -122,12 +131,26 @@ public class AuthService {
             throw new AccountSuspendedException("アカウントが停止されています");
         }
 
+        // 言語設定を更新
+        String language = resolveLanguage(acceptLanguage);
+        if (!language.equals(user.getLanguage())) {
+            user.setLanguage(language);
+            userRepository.save(user);
+        }
+
         String token = jwtService.generateTokenWithRole(user.getEmail(), CodeConstants.roleToJwtString(user.getRole()));
 
         return new RegisterResponse(
             new RegisterResponse.UserResponse(user),
             token
         );
+    }
+
+    /**
+     * 後方互換性のためのオーバーロード
+     */
+    public RegisterResponse loginUser(LoginRequest request) {
+        return loginUser(request, null);
     }
 
     /**
@@ -201,15 +224,40 @@ public class AuthService {
                 user.getId(), token, expiryDate);
         emailVerificationTokenRepository.save(verificationToken);
 
-        emailService.send(
-                user.getEmail(),
-                "【Photlas】メールアドレスの確認",
-                user.getUsername() + " さん\n\n" +
-                "Photlasへのご登録ありがとうございます！\n" +
-                "以下のリンクをクリックして、メールアドレスを確認してください：\n\n" +
-                frontendUrl + "/verify-email?token=" + token + "\n\n" +
-                "このリンクの有効期限は24時間です。\n\n" +
-                "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                "Photlas 運営");
+        String link = frontendUrl + "/verify-email?token=" + token;
+
+        if ("en".equals(user.getLanguage())) {
+            emailService.send(
+                    user.getEmail(),
+                    "【Photlas】Email Verification",
+                    "Hi " + user.getUsername() + ",\n\n" +
+                    "Thank you for registering with Photlas!\n" +
+                    "Please click the link below to verify your email address:\n\n" +
+                    link + "\n\n" +
+                    "This link will expire in 24 hours.\n\n" +
+                    "If you did not create an account, please ignore this email.\n\n" +
+                    "Photlas Team");
+        } else {
+            emailService.send(
+                    user.getEmail(),
+                    "【Photlas】メールアドレスの確認",
+                    user.getUsername() + " さん\n\n" +
+                    "Photlasへのご登録ありがとうございます！\n" +
+                    "以下のリンクをクリックして、メールアドレスを確認してください：\n\n" +
+                    link + "\n\n" +
+                    "このリンクの有効期限は24時間です。\n\n" +
+                    "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
+                    "Photlas 運営");
+        }
+    }
+
+    /**
+     * Accept-Languageヘッダーから言語を判定する
+     */
+    static String resolveLanguage(String acceptLanguage) {
+        if (acceptLanguage == null || acceptLanguage.isBlank()) {
+            return "ja";
+        }
+        return acceptLanguage.trim().startsWith("ja") ? "ja" : "en";
     }
 }
