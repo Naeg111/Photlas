@@ -93,6 +93,17 @@ public final class CodeConstants {
     public static final int MODERATION_STATUS_QUARANTINED = 1003;
     public static final int MODERATION_STATUS_REMOVED = 1004;
 
+    /** ブロックコンテンツ表示用の画像キー */
+    public static final String BLOCKED_CONTENT_IMAGE_KEY = "assets/blocked-content.png";
+
+    /**
+     * 写真がブロックコンテンツ（QUARANTINED/REMOVED）かどうかを判定する
+     */
+    public static boolean isBlockedContent(Integer moderationStatus) {
+        return Integer.valueOf(MODERATION_STATUS_QUARANTINED).equals(moderationStatus)
+                || Integer.valueOf(MODERATION_STATUS_REMOVED).equals(moderationStatus);
+    }
+
     // ========== 1100番台: Report.target_type / Violation.target_type / ModerationDetail.target_type ==========
     public static final int TARGET_TYPE_PHOTO = 1101;
     public static final int TARGET_TYPE_PROFILE = 1102;

@@ -410,20 +410,17 @@ public class PhotoService {
         return buildPhotoResponse(photo, spot, user, isFavorited, 0L);
     }
 
-    private static final String BLOCKED_CONTENT_IMAGE_KEY = "assets/blocked-content.png";
-
     /**
      * コンテンツポリシー違反によりブロックされた写真かどうかを判定する
      */
     private boolean isBlockedContent(Photo photo) {
-        return Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(photo.getModerationStatus())
-                || Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(photo.getModerationStatus());
+        return CodeConstants.isBlockedContent(photo.getModerationStatus());
     }
 
     private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited, long favoriteCount) {
         boolean isBlocked = isBlockedContent(photo);
         String imageUrl = isBlocked
-                ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
+                ? s3Service.generateCdnUrl(CodeConstants.BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateCdnUrl(photo.getS3ObjectKey());
 
         PhotoResponse.PhotoDTO photoDTO = new PhotoResponse.PhotoDTO(
@@ -454,7 +451,7 @@ public class PhotoService {
 
         // Issue#59: サムネイルURLを設定（ブロック時は黒色画像）
         photoDTO.setThumbnailUrl(isBlocked
-                ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
+                ? s3Service.generateCdnUrl(CodeConstants.BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey()));
 
         // カテゴリ名リストを設定
@@ -621,10 +618,10 @@ public class PhotoService {
         boolean isBlocked = isBlockedContent(photo);
 
         String standardUrl = isBlocked
-                ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
+                ? s3Service.generateCdnUrl(CodeConstants.BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateCdnUrl(photo.getS3ObjectKey());
         String thumbnailUrl = isBlocked
-                ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
+                ? s3Service.generateCdnUrl(CodeConstants.BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey());
 
         PhotoDetailResponse response = new PhotoDetailResponse();
