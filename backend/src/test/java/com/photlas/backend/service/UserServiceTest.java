@@ -5,6 +5,7 @@ import com.photlas.backend.dto.LoginRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.UpdateProfileRequest;
 import com.photlas.backend.dto.UpdateSnsLinksRequest;
+import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.PhotoRepository;
@@ -25,11 +26,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -256,6 +259,38 @@ public class UserServiceTest {
                 passwordService.updatePassword(TEST_EMAIL, WRONG_PASSWORD, NEW_PASSWORD))
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessageContaining("現在のパスワードが正しくありません");
+    }
+
+    @Test
+    @DisplayName("Issue#20 - パスワード変更: 成功時に通知メールが送信される")
+    void testUpdatePassword_Success_SendsNotificationEmail() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn("$2a$10$newhashedpassword");
+
+        passwordService.updatePassword(TEST_EMAIL, CURRENT_PASSWORD, NEW_PASSWORD);
+
+        verify(emailService).send(eq(TEST_EMAIL), contains("パスワード"), anyString());
+    }
+
+    // ===== パスワードリセット (PasswordService.resetPassword) =====
+
+    @Test
+    @DisplayName("Issue#6 - パスワードリセット: 成功時に通知メールが送信される")
+    void testResetPassword_Success_SendsNotificationEmail() {
+        String token = "valid-reset-token";
+        PasswordResetToken resetToken = new PasswordResetToken(
+                1L, token, new Date(System.currentTimeMillis() + 30 * 60 * 1000));
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+
+        when(passwordResetTokenRepository.findByToken(token)).thenReturn(Optional.of(resetToken));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn("$2a$10$newhashedpassword");
+
+        passwordService.resetPassword(token, NEW_PASSWORD);
+
+        verify(emailService).send(eq(TEST_EMAIL), contains("パスワード"), anyString());
     }
 
     // ===== アカウント削除 (AccountService.deleteAccount) =====
