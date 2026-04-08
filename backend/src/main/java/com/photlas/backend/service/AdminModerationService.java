@@ -2,12 +2,16 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.entity.AccountSanction;
 import com.photlas.backend.entity.CodeConstants;
+import com.photlas.backend.entity.ModerationDetail;
 import com.photlas.backend.entity.Photo;
+import com.photlas.backend.entity.Report;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.Violation;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.repository.AccountSanctionRepository;
+import com.photlas.backend.repository.ModerationDetailRepository;
 import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.ReportRepository;
 
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.repository.ViolationRepository;
@@ -33,10 +37,22 @@ public class AdminModerationService {
 
     private static final int TEMPORARY_SUSPENSION_DAYS = 60;
 
+    private static final java.util.Set<String> ADULT_CONTENT_LABELS = java.util.Set.of(
+            "Explicit Nudity", "Explicit Sexual Activity",
+            "Exposed Male Genitalia", "Exposed Female Genitalia",
+            "Exposed Buttocks or Anus", "Exposed Female Nipple"
+    );
+
+    private static final java.util.Set<String> VIOLENCE_LABELS = java.util.Set.of(
+            "Violence", "Graphic Violence", "Visually Disturbing"
+    );
+
     private final PhotoRepository photoRepository;
     private final ViolationRepository violationRepository;
     private final AccountSanctionRepository accountSanctionRepository;
     private final UserRepository userRepository;
+    private final ReportRepository reportRepository;
+    private final ModerationDetailRepository moderationDetailRepository;
     private final ModerationNotificationService notificationService;
     private final QuarantineService quarantineService;
 
@@ -45,6 +61,8 @@ public class AdminModerationService {
             ViolationRepository violationRepository,
             AccountSanctionRepository accountSanctionRepository,
             UserRepository userRepository,
+            ReportRepository reportRepository,
+            ModerationDetailRepository moderationDetailRepository,
             ModerationNotificationService notificationService,
             QuarantineService quarantineService
     ) {
@@ -52,6 +70,8 @@ public class AdminModerationService {
         this.violationRepository = violationRepository;
         this.accountSanctionRepository = accountSanctionRepository;
         this.userRepository = userRepository;
+        this.reportRepository = reportRepository;
+        this.moderationDetailRepository = moderationDetailRepository;
         this.notificationService = notificationService;
         this.quarantineService = quarantineService;
     }
@@ -98,12 +118,12 @@ public class AdminModerationService {
         photo.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
         photoRepository.save(photo);
 
-        // 違反履歴を作成
+        // 違反履歴を作成（violationTypeを通報理由/AI検出ラベルから決定）
         Violation violation = new Violation();
         violation.setUserId(userId);
         violation.setTargetType(CodeConstants.TARGET_TYPE_PHOTO);
         violation.setTargetId(photoId);
-        violation.setViolationType(CodeConstants.REASON_OTHER);
+        violation.setViolationType(determineViolationType(photoId));
         violation.setActionTaken(CodeConstants.ACTION_TAKEN_REMOVED);
         violationRepository.save(violation);
 
@@ -198,6 +218,55 @@ public class AdminModerationService {
     @Transactional(readOnly = true)
     public long getViolationCount(Long userId) {
         return violationRepository.countByUserId(userId);
+    }
+
+    /**
+     * 写真のviolationTypeを通報理由またはAI検出ラベルから決定する
+     *
+     * @param photoId 写真ID
+     * @return violationType（通報理由 → AI検出ラベル → REASON_OTHERの優先順）
+     */
+    private int determineViolationType(Long photoId) {
+        // 1. ユーザー通報がある場合、最多の通報理由カテゴリを使用
+        List<Report> reports = reportRepository.findByTargetTypeAndTargetId(
+                CodeConstants.TARGET_TYPE_PHOTO, photoId);
+        if (!reports.isEmpty()) {
+            return reports.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            Report::getReasonCategory, java.util.stream.Collectors.counting()))
+                    .entrySet().stream()
+                    .max(java.util.Map.Entry.comparingByValue())
+                    .map(java.util.Map.Entry::getKey)
+                    .orElse(CodeConstants.REASON_OTHER);
+        }
+
+        // 2. AI検出ラベルからマッピング
+        ModerationDetail detail = moderationDetailRepository
+                .findByTargetTypeAndTargetId(CodeConstants.TARGET_TYPE_PHOTO, photoId)
+                .orElse(null);
+        if (detail != null && detail.getDetectedLabels() != null) {
+            return mapLabelsToViolationType(detail.getDetectedLabels());
+        }
+
+        // 3. どちらもない場合
+        return CodeConstants.REASON_OTHER;
+    }
+
+    /**
+     * AI検出ラベル文字列からviolationTypeにマッピングする
+     */
+    private int mapLabelsToViolationType(String detectedLabels) {
+        String[] labels = detectedLabels.split(",");
+        for (String label : labels) {
+            String trimmed = label.trim();
+            if (ADULT_CONTENT_LABELS.contains(trimmed)) {
+                return CodeConstants.REASON_ADULT_CONTENT;
+            }
+            if (VIOLENCE_LABELS.contains(trimmed)) {
+                return CodeConstants.REASON_VIOLENCE;
+            }
+        }
+        return CodeConstants.REASON_OTHER;
     }
 
 }

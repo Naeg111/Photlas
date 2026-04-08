@@ -2,6 +2,7 @@ package com.photlas.backend.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
@@ -22,6 +23,9 @@ public class ModerationNotificationService {
     private static final String MAIL_SIGNATURE = "\n\nPhotlas チーム\nsupport@photlas.jp";
 
     private final JavaMailSender mailSender;
+
+    @Value("${app.mail.from:noreply@photlas.jp}")
+    private String mailFrom;
 
     public ModerationNotificationService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -118,6 +122,7 @@ public class ModerationNotificationService {
     private void sendEmail(String to, String subject, String body) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(mailFrom);
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);
