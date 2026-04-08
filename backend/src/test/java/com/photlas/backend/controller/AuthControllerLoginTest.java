@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -221,6 +222,28 @@ public class AuthControllerLoginTest {
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email", is("test@example.com")));
+    }
+
+    // ===== Issue#91: ログイン時の言語設定更新 =====
+
+    @Test
+    @DisplayName("Issue#91 - ログイン: Accept-Language が en の場合、language が en に更新される")
+    void testLogin_AcceptLanguageEn_UpdatesLanguageToEn() throws Exception {
+        // ユーザーの初期言語は ja
+        assertThat(testUser.getLanguage()).isEqualTo("ja");
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@example.com");
+        request.setPassword("Password123");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .header("Accept-Language", "en-US,en;q=0.9")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        User updatedUser = userRepository.findByEmail("test@example.com").orElseThrow();
+        assertThat(updatedUser.getLanguage()).isEqualTo("en");
     }
 
     @Test

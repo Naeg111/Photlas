@@ -60,6 +60,9 @@ public class User {
     @Column(name = "deletion_hold_until")
     private LocalDateTime deletionHoldUntil;
 
+    @Column(name = "language", nullable = false, length = 5)
+    private String language = "ja";
+
     public User() {}
 
     public User(String username, String email, String passwordHash, Integer role) {
@@ -164,6 +167,14 @@ public class User {
 
     public void setDeletionHoldUntil(LocalDateTime deletionHoldUntil) {
         this.deletionHoldUntil = deletionHoldUntil;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
     @Override
