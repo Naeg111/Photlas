@@ -186,17 +186,10 @@ public class FavoriteService {
     /**
      * PhotoResponseを構築する
      */
-    private static final String BLOCKED_CONTENT_IMAGE_KEY = "assets/blocked-content.png";
-
-    private boolean isBlockedContent(Photo photo) {
-        return Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(photo.getModerationStatus())
-                || Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(photo.getModerationStatus());
-    }
-
     private PhotoResponse buildPhotoResponse(Photo photo, Spot spot, User user, boolean isFavorited, long favoriteCount) {
-        boolean isBlocked = isBlockedContent(photo);
+        boolean isBlocked = CodeConstants.isBlockedContent(photo.getModerationStatus());
         String imageUrl = isBlocked
-                ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
+                ? s3Service.generateCdnUrl(CodeConstants.BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateCdnUrl(photo.getS3ObjectKey());
 
         PhotoResponse.PhotoDTO photoDTO = new PhotoResponse.PhotoDTO(
@@ -209,7 +202,7 @@ public class FavoriteService {
         );
 
         photoDTO.setThumbnailUrl(isBlocked
-                ? s3Service.generateCdnUrl(BLOCKED_CONTENT_IMAGE_KEY)
+                ? s3Service.generateCdnUrl(CodeConstants.BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey()));
         photoDTO.setCropCenterX(photo.getCropCenterX());
         photoDTO.setCropCenterY(photo.getCropCenterY());
