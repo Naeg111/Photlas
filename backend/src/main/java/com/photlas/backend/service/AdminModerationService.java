@@ -25,6 +25,9 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Issue#54: 管理者モデレーションサービス
@@ -37,13 +40,13 @@ public class AdminModerationService {
 
     private static final int TEMPORARY_SUSPENSION_DAYS = 60;
 
-    private static final java.util.Set<String> ADULT_CONTENT_LABELS = java.util.Set.of(
+    private static final Set<String> ADULT_CONTENT_LABELS = Set.of(
             "Explicit Nudity", "Explicit Sexual Activity",
             "Exposed Male Genitalia", "Exposed Female Genitalia",
             "Exposed Buttocks or Anus", "Exposed Female Nipple"
     );
 
-    private static final java.util.Set<String> VIOLENCE_LABELS = java.util.Set.of(
+    private static final Set<String> VIOLENCE_LABELS = Set.of(
             "Violence", "Graphic Violence", "Visually Disturbing"
     );
 
@@ -232,11 +235,10 @@ public class AdminModerationService {
                 CodeConstants.TARGET_TYPE_PHOTO, photoId);
         if (!reports.isEmpty()) {
             return reports.stream()
-                    .collect(java.util.stream.Collectors.groupingBy(
-                            Report::getReasonCategory, java.util.stream.Collectors.counting()))
+                    .collect(Collectors.groupingBy(Report::getReasonCategory, Collectors.counting()))
                     .entrySet().stream()
-                    .max(java.util.Map.Entry.comparingByValue())
-                    .map(java.util.Map.Entry::getKey)
+                    .max(Map.Entry.comparingByValue())
+                    .map(Map.Entry::getKey)
                     .orElse(CodeConstants.REASON_OTHER);
         }
 
