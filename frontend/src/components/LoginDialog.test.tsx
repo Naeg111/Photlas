@@ -239,6 +239,7 @@ describe('LoginDialog', () => {
         ok: false,
         status: 403,
         json: () => Promise.resolve({
+          code: 'EMAIL_NOT_VERIFIED',
           message: 'メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。',
         }),
       })
@@ -263,6 +264,7 @@ describe('LoginDialog', () => {
         ok: false,
         status: 403,
         json: () => Promise.resolve({
+          code: 'EMAIL_NOT_VERIFIED',
           message: 'メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。',
         }),
       })
@@ -363,7 +365,7 @@ describe('LoginDialog', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 403,
-        json: async () => ({ message: 'アカウントが停止されています' }),
+        json: async () => ({ code: 'ACCOUNT_SUSPENDED', message: 'アカウントが停止されています' }),
       })
 
       const user = userEvent.setup()

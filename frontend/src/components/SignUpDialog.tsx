@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -32,12 +33,6 @@ function getPasswordStrengthStyle(strength: PasswordStrength): string {
   return 'bg-red-100 text-red-700'
 }
 
-/** パスワード強度に対応するラベルを返す */
-function getPasswordStrengthLabel(strength: PasswordStrength): string {
-  if (strength === 'strong') return '強'
-  if (strength === 'medium') return '中'
-  return '弱'
-}
 
 interface SignUpDialogProps {
   open: boolean
@@ -52,6 +47,7 @@ export function SignUpDialog({
   onShowTerms,
   onShowLogin,
 }: Readonly<SignUpDialogProps>) {
+  const { t } = useTranslation()
   const [profileImage, setProfileImage] = useState<string>('')
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [displayName, setDisplayName] = useState('')
@@ -76,7 +72,7 @@ export function SignUpDialog({
 
     // 表示名
     if (!displayName.trim()) {
-      newErrors.displayName = '表示名を入力してください'
+      newErrors.displayName = t('auth.displayNameRequired')
     }
 
     // メールアドレス
@@ -93,12 +89,12 @@ export function SignUpDialog({
 
     // パスワード（確認用）
     if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'パスワードが一致しません'
+      newErrors.confirmPassword = t('auth.passwordMismatch')
     }
 
     // 利用規約
     if (!agreedToTerms) {
-      newErrors.terms = '利用規約に同意してください'
+      newErrors.terms = t('auth.agreeRequired')
     }
 
     setErrors(newErrors)
@@ -180,17 +176,17 @@ export function SignUpDialog({
           await uploadSnsLinks(token, filledSnsLinks)
         }
 
-        toast('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。', {
+        toast(t('auth.signupSuccess'), {
           duration: 8000,
         })
         onOpenChange(false)
       } else if (response.status === 409) {
-        setErrors({ email: 'このメールアドレスは既に登録されています' })
+        setErrors({ email: t('auth.emailAlreadyUsed') })
       } else {
-        setErrors({ general: '登録に失敗しました。再度お試しください。' })
+        setErrors({ general: t('auth.signupFailed') })
       }
     } catch {
-      setErrors({ general: '登録に失敗しました。再度お試しください。' })
+      setErrors({ general: t('auth.signupFailed') })
     } finally {
       setIsLoading(false)
     }
@@ -255,9 +251,9 @@ export function SignUpDialog({
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            <DialogTitle>アカウント作成</DialogTitle>
+            <DialogTitle>{t('auth.signupTitle')}</DialogTitle>
             <DialogDescription className="sr-only">
-              新しいアカウントを作成する
+              {t('auth.signupDescription')}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -273,7 +269,7 @@ export function SignUpDialog({
 
           {/* プロフィール画像 */}
           <div className="space-y-3">
-            <Label>プロフィール画像（任意）</Label>
+            <Label>{t('auth.profileImage')}</Label>
             <div className="flex items-center gap-4">
               <Avatar className="w-20 h-20">
                 <AvatarImage src={profileImage} />
@@ -285,7 +281,7 @@ export function SignUpDialog({
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
               >
-                画像を選択
+                {t('auth.selectImage')}
               </Button>
               <input
                 ref={fileInputRef}
@@ -299,7 +295,7 @@ export function SignUpDialog({
 
           {/* 表示名 */}
           <div className="space-y-2">
-            <Label htmlFor="displayName">表示名（必須）</Label>
+            <Label htmlFor="displayName">{t('auth.displayName')}</Label>
             {errors.displayName && (
               <p className="text-sm text-red-600">{errors.displayName}</p>
             )}
@@ -307,13 +303,13 @@ export function SignUpDialog({
               id="displayName"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="山田太郎"
+              placeholder={t('auth.displayNamePlaceholder')}
             />
           </div>
 
           {/* メールアドレス */}
           <div className="space-y-2">
-            <Label htmlFor="signup-email">メールアドレス（必須）</Label>
+            <Label htmlFor="signup-email">{t('auth.emailRequired')}</Label>
             {errors.email && (
               <p className="text-sm text-red-600">{errors.email}</p>
             )}
@@ -322,13 +318,13 @@ export function SignUpDialog({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="example@photlas.com"
+              placeholder={t('auth.emailPlaceholder')}
             />
           </div>
 
           {/* パスワード */}
           <div className="space-y-2">
-            <Label htmlFor="signup-password">パスワード（必須）</Label>
+            <Label htmlFor="signup-password">{t('auth.passwordRequired')}</Label>
             {errors.password && (
               <p className="text-sm text-red-600">{errors.password}</p>
             )}
@@ -338,7 +334,7 @@ export function SignUpDialog({
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="8-20文字、数字・小文字・大文字を含む"
+                placeholder={t('auth.passwordFormatHint')}
               />
               <Button
                 variant="ghost"
@@ -346,18 +342,18 @@ export function SignUpDialog({
                 className="absolute right-0 top-0 h-full"
                 onClick={() => setShowPassword(!showPassword)}
                 type="button"
-                aria-label={showPassword ? 'パスワードを非表示' : 'パスワードを表示'}
+                aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </Button>
             </div>
             {passwordStrength && (
               <div className="flex items-center gap-2">
-                <span className="text-sm">強度:</span>
+                <span className="text-sm">{t('auth.passwordStrength')}</span>
                 <div
                   className={`text-sm px-2 py-1 rounded ${getPasswordStrengthStyle(passwordStrength)}`}
                 >
-                  {getPasswordStrengthLabel(passwordStrength)}
+                  {passwordStrength === 'strong' ? t('auth.strengthStrong') : passwordStrength === 'medium' ? t('auth.strengthMedium') : t('auth.strengthWeak')}
                 </div>
               </div>
             )}
@@ -365,7 +361,7 @@ export function SignUpDialog({
 
           {/* パスワード（確認用） */}
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">パスワード（確認用・必須）</Label>
+            <Label htmlFor="confirmPassword">{t('auth.passwordConfirm')}</Label>
             {errors.confirmPassword && (
               <p className="text-sm text-red-600">{errors.confirmPassword}</p>
             )}
@@ -375,7 +371,7 @@ export function SignUpDialog({
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="パスワードを再入力"
+                placeholder={t('auth.passwordConfirmPlaceholder')}
               />
               <Button
                 variant="ghost"
@@ -383,7 +379,7 @@ export function SignUpDialog({
                 className="absolute right-0 top-0 h-full"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 type="button"
-                aria-label={showConfirmPassword ? 'パスワードを非表示' : 'パスワードを表示'}
+                aria-label={showConfirmPassword ? t('auth.hidePassword') : t('auth.showPassword')}
               >
                 {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </Button>
@@ -392,7 +388,7 @@ export function SignUpDialog({
 
           {/* SNSリンク */}
           <div className="space-y-3">
-            <Label>SNSリンク（任意）</Label>
+            <Label>{t('auth.snsLinks')}</Label>
             {snsLinks.length > 0 && (
               <p className="text-sm text-gray-600">
                 {snsLinks.map(l => l.url).join(', ')}
@@ -404,7 +400,7 @@ export function SignUpDialog({
               className="w-full"
               type="button"
             >
-              {snsLinks.length > 0 ? 'SNSリンクを編集' : 'SNSリンクを追加'}
+              {snsLinks.length > 0 ? t('auth.editSnsLinks') : t('auth.addSnsLinks')}
             </Button>
           </div>
 
@@ -431,22 +427,22 @@ export function SignUpDialog({
                     onShowTerms()
                   }}
                 >
-                  利用規約
+                  {t('auth.termsOfService')}
                 </a>
-                に同意する
+                {t('auth.agreeToTerms')}
               </label>
             </div>
           </div>
 
           {/* ログインリンク Issue#26: 追加実装 */}
           <div className="text-center text-sm text-gray-600">
-            すでにアカウントをお持ちの方は
+            {t('auth.hasAccount')}
             <Button
               variant="link"
               className="p-0 h-auto ml-1"
               onClick={handleLoginClick}
             >
-              ログイン
+              {t('common.login')}
             </Button>
           </div>
 
@@ -457,14 +453,14 @@ export function SignUpDialog({
               className="flex-1"
               onClick={handleCancelClick}
             >
-              キャンセル
+              {t('common.cancel')}
             </Button>
             <Button
               className="flex-1"
               onClick={handleSubmit}
               disabled={isLoading || !displayName.trim() || !email.trim() || !password || !confirmPassword || !agreedToTerms}
             >
-              登録する
+              {t('auth.register')}
             </Button>
           </div>
         </div>

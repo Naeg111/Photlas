@@ -6,6 +6,7 @@ import {
   DialogDescription,
 } from "./ui/dialog";
 import { Search, LocateFixed } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { CompassIcon } from "./CompassIcon";
 
 interface AboutDialogProps {
@@ -14,15 +15,17 @@ interface AboutDialogProps {
 }
 
 export function AboutDialog({ open, onOpenChange }: Readonly<AboutDialogProps>) {
+  const { t } = useTranslation();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[80vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '80dvh' }}>
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Photlasとは？</DialogTitle>
+            <DialogTitle className="text-2xl">{t('about.title')}</DialogTitle>
             <DialogDescription className="sr-only">
-              Photlasのサービス説明
+              {t('about.description')}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -31,93 +34,93 @@ export function AboutDialog({ open, onOpenChange }: Readonly<AboutDialogProps>) 
         <div className="overflow-y-auto flex-1 px-6 pb-6">
         <div className="space-y-6 text-sm leading-relaxed text-foreground mt-4">
           <section>
-            <h3 className="font-bold text-base mb-2">サービス概要</h3>
+            <h3 className="font-bold text-base mb-2">{t('about.overview')}</h3>
             <p>
-              Photlasは、地図から写真に出会えるサービスです。
+              {t('about.overviewText1')}
             </p>
             <p className="mt-2">
-              地図をスクロールするだけで、まだ知らない風景が次々と現れます。気になる場所を見つけたら、撮影地点をピンポイントで確認できるので、そのまま次の旅先にできます。
+              {t('about.overviewText2')}
             </p>
             <p className="mt-2">
-              地図を眺めているだけで、新しい行き先が見つかる。それがPhotlasです。
+              {t('about.overviewText3')}
             </p>
           </section>
 
           <section>
-            <h3 className="font-bold text-base mb-2">使い方</h3>
+            <h3 className="font-bold text-base mb-2">{t('about.howToUse')}</h3>
             <ol className="list-decimal list-inside space-y-3">
               <li>
-                <span className="font-semibold">スポットを探す</span>
+                <span className="font-semibold">{t('about.exploreSpots')}</span>
                 <p className="ml-5 mt-1">
-                  地図を動かして、気になるエリアのピンをタップしてみましょう。撮影された写真を、カメラの設定情報付きで確認できます。場所検索を使えば、地名や施設名で直接移動することもできます。撮影地点は、ミニマップをタップすると地図上に拡大表示され、周辺の地理関係をより確認しやすくなります。
+                  {t('about.exploreSpotsText')}
                 </p>
               </li>
               <li>
-                <span className="font-semibold">フィルターで絞り込む</span>
+                <span className="font-semibold">{t('about.filterPhotos')}</span>
                 <p className="ml-5 mt-1">
-                  左上のフィルターボタンから、ジャンル・撮影時期・時間帯・天候などの条件で絞り込めます。上級者向けフィルターでは、機材種別・焦点距離・ISO感度での絞り込みも可能です。
+                  {t('about.filterPhotosText')}
                 </p>
               </li>
               <li>
-                <span className="font-semibold">写真を投稿する</span>
+                <span className="font-semibold">{t('about.postPhotos')}</span>
                 <p className="ml-5 mt-1">
-                  アカウントを作成してログインすると、右下の「＋」ボタンから写真を投稿できます。写真にGPS情報が含まれていれば撮影地点が自動で設定され、含まれていなければ地図上で手動で指定できます。
+                  {t('about.postPhotosText')}
                 </p>
               </li>
               <li>
-                <span className="font-semibold">お気に入りに保存する</span>
+                <span className="font-semibold">{t('about.saveFavorites')}</span>
                 <p className="ml-5 mt-1">
-                  気になった写真はお気に入りに追加して、あとからまとめて見返すことができます。
+                  {t('about.saveFavoritesText')}
                 </p>
               </li>
               <li>
-                <span className="font-semibold">プロフィールを充実させる</span>
+                <span className="font-semibold">{t('about.enrichProfile')}</span>
                 <p className="ml-5 mt-1">
-                  プロフィール画像やSNSリンクを登録できます。あなたの写真に興味を持った人が、SNSを訪れてくれるかもしれません。
+                  {t('about.enrichProfileText')}
                 </p>
               </li>
               <li>
-                <span className="font-semibold">ホーム画面に追加する</span>
+                <span className="font-semibold">{t('about.addToHome')}</span>
                 <p className="ml-5 mt-1">
-                  ブラウザからPhotlasをホーム画面やデスクトップに追加すると、全画面で快適に利用できます。タブレットなら大画面で地図と写真を楽しめます。
+                  {t('about.addToHomeText')}
                 </p>
               </li>
             </ol>
           </section>
 
           <section>
-            <h3 className="font-bold text-base mb-2">地図の操作について</h3>
+            <h3 className="font-bold text-base mb-2">{t('about.mapControls')}</h3>
             <ul className="space-y-3">
               <li>
                 <p>
-                  地図は2本指で操作することで、向きや角度を変更できます。
+                  {t('about.mapControlsText')}
                 </p>
               </li>
               <li className="flex items-start gap-2">
                 <CompassIcon className="w-5 h-5 shrink-0 mt-0.5" />
                 <p>
-                  <span className="font-semibold">方位リセットボタン</span> — 地図の向きや角度を変更した場合に、北が上の状態にリセットします。
+                  <span className="font-semibold">{t('about.compassReset')}</span> — {t('about.compassResetText')}
                 </p>
               </li>
               <li className="flex items-start gap-2">
                 <Search className="w-5 h-5 shrink-0 mt-0.5" />
                 <p>
-                  <span className="font-semibold">場所検索ボタン</span> — 地名や施設名を入力して、地図をその場所に移動できます。
+                  <span className="font-semibold">{t('about.placeSearch')}</span> — {t('about.placeSearchText')}
                 </p>
               </li>
               <li className="flex items-start gap-2">
                 <LocateFixed className="w-5 h-5 shrink-0 mt-0.5" />
                 <p>
-                  <span className="font-semibold">現在位置ボタン</span> — 現在地を地図上に表示します。
+                  <span className="font-semibold">{t('about.currentLocation')}</span> — {t('about.currentLocationText')}
                 </p>
               </li>
             </ul>
           </section>
 
           <section>
-            <h3 className="font-bold text-base mb-2">お問い合わせ</h3>
+            <h3 className="font-bold text-base mb-2">{t('about.contact')}</h3>
             <p>
-              ご意見・ご要望・不具合のご報告などは、下記メールアドレスまでお気軽にご連絡ください。
+              {t('about.contactText')}
             </p>
             <p className="mt-2">
               <a

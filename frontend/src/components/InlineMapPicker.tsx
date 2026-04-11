@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import Map, { Marker } from 'react-map-gl'
 import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
 import type { Map as MapboxMap } from 'mapbox-gl'
@@ -8,6 +9,7 @@ import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { sortSuggestionsByRelevance } from '../utils/sortSuggestions'
+import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 
 /**
  * InlineMapPicker コンポーネント
@@ -118,6 +120,8 @@ const overlayStyles = {
 const DEFAULT_PIN_COLOR = '#ef4444'
 
 export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT_PIN_COLOR, markers, showLocationButton = true }: Readonly<InlineMapPickerProps>) {
+  const { i18n } = useTranslation()
+  const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const mapRef = useRef<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
@@ -180,10 +184,10 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         const [searchBoxResult, geocodingResult] = await Promise.allSettled([
           searchBox.suggest(value, {
             sessionToken: sessionTokenRef.current,
-            language: 'ja',
+            language: mapboxLang,
           }),
           geocoding.forward(value, {
-            language: 'ja',
+            language: mapboxLang,
             types: GEOCODING_TYPES,
           }),
         ])
@@ -233,7 +237,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         setIsDropdownOpen(false)
       }
     }, SEARCH_DEBOUNCE_MS)
-  }, [searchBox, geocoding])
+  }, [searchBox, geocoding, mapboxLang])
 
   // 長距離移動時にワープアニメーション、短距離はflyTo
   const moveMapTo = useCallback((lng: number, lat: number, zoom: number = DEFAULT_ZOOM) => {
@@ -382,7 +386,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         }}
         style={{ width: '100%', height: '100%' }}
         mapStyle={MAPBOX_STYLE}
-        language="ja"
+        language={mapboxLang}
         attributionControl={false}
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}

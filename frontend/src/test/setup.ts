@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
+import i18n from '../i18n'
+
+// Issue#93: テスト環境でi18nを日本語に設定
+i18n.changeLanguage('ja')
 
 // localStorage のモック
 const localStorageMock = {

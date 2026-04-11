@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -8,9 +9,6 @@ import { Eye, EyeOff } from 'lucide-react'
 import { API_V1_URL } from '../config/api'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
-
-/** メール未認証エラーメッセージのプレフィックス */
-const EMAIL_NOT_VERIFIED_PREFIX = 'メールアドレスが認証されていません'
 
 /**
  * LoginDialog コンポーネント
@@ -32,6 +30,7 @@ export function LoginDialog({
   onShowSignUp,
   onShowPasswordReset,
 }: Readonly<LoginDialogProps>) {
+  const { t } = useTranslation()
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -47,7 +46,7 @@ export function LoginDialog({
     setIsEmailNotVerified(false)
 
     if (!email.trim() || !password.trim()) {
-      setError('メールアドレスとパスワードを入力してください')
+      setError(t('auth.enterBothFields'))
       return
     }
 
@@ -66,32 +65,32 @@ export function LoginDialog({
           data.token,
           rememberMe
         )
-        toast('ログインしました')
+        toast(t('auth.loginSuccess'))
         onOpenChange(false)
       } else if (response.status === 403) {
         const data = await response.json()
-        if (data.message?.startsWith(EMAIL_NOT_VERIFIED_PREFIX)) {
+        if (data.code === 'EMAIL_NOT_VERIFIED') {
           setIsEmailNotVerified(true)
-          setError(data.message)
-        } else if (data.message === 'アカウントが停止されています') {
+          setError(t('errors.EMAIL_NOT_VERIFIED'))
+        } else if (data.code === 'ACCOUNT_SUSPENDED') {
           // Issue#54: 永久停止アカウント
-          setError('アカウントが停止されています。詳しくはお問い合わせください。')
+          setError(t('auth.accountSuspended'))
         } else {
-          setError('ログインに失敗しました')
+          setError(t('auth.loginFailed'))
         }
       } else if (response.status === 401) {
         // Issue#72: 退会済みアカウントの場合はバックエンドのメッセージを表示
         try {
           const data = await response.json()
-          setError(data.message || 'メールアドレスまたはパスワードが正しくありません')
+          setError(data.code ? t('errors.' + data.code) : t('errors.INVALID_CREDENTIALS'))
         } catch {
-          setError('メールアドレスまたはパスワードが正しくありません')
+          setError(t('errors.INVALID_CREDENTIALS'))
         }
       } else {
-        setError('メールアドレスまたはパスワードが正しくありません')
+        setError(t('errors.INVALID_CREDENTIALS'))
       }
     } catch {
-      setError('ログインに失敗しました')
+      setError(t('auth.loginFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -110,12 +109,12 @@ export function LoginDialog({
       })
 
       if (response.ok) {
-        toast('認証メールを再送信しました。メールをご確認ください。')
+        toast(t('auth.resendSuccess'))
       } else {
-        toast('認証メールの再送信に失敗しました')
+        toast(t('auth.resendFailed'))
       }
     } catch {
-      toast('認証メールの再送信に失敗しました')
+      toast(t('auth.resendFailed'))
     } finally {
       setIsResending(false)
     }
@@ -137,9 +136,9 @@ export function LoginDialog({
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            <DialogTitle>ログイン</DialogTitle>
+            <DialogTitle>{t('auth.loginTitle')}</DialogTitle>
             <DialogDescription className="sr-only">
-              アカウントにログインする
+              {t('auth.loginDescription')}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -157,7 +156,7 @@ export function LoginDialog({
                   onClick={handleResendVerification}
                   disabled={isResending}
                 >
-                  {isResending ? '送信中...' : '認証メールを再送信する'}
+                  {isResending ? t('auth.resendLoading') : t('auth.resendVerification')}
                 </Button>
               )}
             </div>
@@ -165,27 +164,27 @@ export function LoginDialog({
 
           {/* メールアドレス */}
           <div className="space-y-2">
-            <Label htmlFor="login-email">メールアドレス</Label>
+            <Label htmlFor="login-email">{t('auth.email')}</Label>
             <Input
               id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="example@photlas.com"
+              placeholder={t('auth.emailPlaceholder')}
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             />
           </div>
 
           {/* パスワード */}
           <div className="space-y-2">
-            <Label htmlFor="login-password">パスワード</Label>
+            <Label htmlFor="login-password">{t('auth.password')}</Label>
             <div className="relative">
               <Input
                 id="login-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="パスワードを入力"
+                placeholder={t('auth.passwordPlaceholder')}
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               />
               <Button
@@ -194,7 +193,7 @@ export function LoginDialog({
                 className="absolute right-0 top-0 h-full"
                 onClick={() => setShowPassword(!showPassword)}
                 type="button"
-                aria-label={showPassword ? 'パスワードを非表示' : 'パスワードを表示'}
+                aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </Button>
@@ -209,7 +208,7 @@ export function LoginDialog({
               onCheckedChange={(checked) => setRememberMe(checked as boolean)}
             />
             <Label htmlFor="remember" className="cursor-pointer">
-              ログイン状態を保持する
+              {t('auth.keepLoggedIn')}
             </Label>
           </div>
 
@@ -220,7 +219,7 @@ export function LoginDialog({
               className="p-0 h-auto"
               onClick={handlePasswordResetClick}
             >
-              パスワードをお忘れですか？
+              {t('auth.forgotPassword')}
             </Button>
           </div>
 
@@ -231,19 +230,19 @@ export function LoginDialog({
               onClick={handleSubmit}
               disabled={isLoading}
             >
-              ログイン
+              {t('common.login')}
             </Button>
           </div>
 
           {/* アカウント作成へ */}
           <div className="text-center text-sm text-gray-600">
-            アカウントをお持ちでない方は
+            {t('auth.noAccount')}
             <Button
               variant="link"
               className="p-0 h-auto ml-1"
               onClick={handleSignUpClick}
             >
-              新規登録
+              {t('common.signup')}
             </Button>
           </div>
         </div>

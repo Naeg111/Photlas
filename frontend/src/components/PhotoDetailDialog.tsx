@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
 import { X, ChevronLeft, ChevronRight, Star, Camera, Calendar, MapPin, Flag, Trash2, Share2, Pencil, User } from 'lucide-react'
@@ -34,6 +35,7 @@ import {
   MODERATION_STATUS_QUARANTINED,
   MODERATION_STATUS_PENDING_REVIEW,
 } from '../utils/codeConstants'
+import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 
 // API Endpoints
 const API_SPOTS_PHOTOS = `${API_V1_URL}/spots`
@@ -46,25 +48,7 @@ const TEST_ID_LOADING = 'loading-spinner'
 const TEST_ID_FAVORITE_BUTTON = 'favorite-button'
 const TEST_ID_FAVORITE_COUNT = 'favorite-count'
 
-// Labels
-const LABEL_CLOSE = '閉じる'
-const LABEL_PREV = '前の写真'
-const LABEL_NEXT = '次の写真'
-const LABEL_ADD_FAVORITE = 'お気に入りに追加'
-const LABEL_REMOVE_FAVORITE = 'お気に入りから削除'
-
-// Screen reader text
-const SR_TITLE = '写真詳細'
-const SR_DESCRIPTION = '写真の詳細情報と撮影コンテクスト'
-
-// Issue#65: 撮影場所の指摘メッセージ
-const MSG_LOCATION_SUGGESTION_SUCCESS = '指摘を送信しました'
-const MSG_LOCATION_SUGGESTION_ERROR = '指摘の送信に失敗しました'
-
 // Issue#87: 天気ラベルは codeConstants から取得
-
-// Error messages
-const ERROR_LOAD_FAILED = '読み込みに失敗しました'
 const ERROR_FETCH_IDS = 'Failed to fetch photo IDs'
 const ERROR_FETCH_DETAIL = 'Failed to fetch photo detail'
 
@@ -284,6 +268,8 @@ const DetailMiniMap = React.memo(function DetailMiniMap({
   longitude: number
   onClick?: () => void
 }>) {
+  const { i18n } = useTranslation()
+  const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [isAttributionOpen, setIsAttributionOpen] = useState(false)
 
   // ダイアログの開閉アニメーション完了を待ってからMapGLを描画する。
@@ -313,7 +299,7 @@ const DetailMiniMap = React.memo(function DetailMiniMap({
             }}
             style={{ width: '100%', height: '100%' }}
             mapStyle={MAPBOX_STYLE}
-            language="ja"
+            language={mapboxLang}
             interactive={false}
             attributionControl={false}
           >
@@ -378,6 +364,8 @@ const DetailMiniMap = React.memo(function DetailMiniMap({
 })
 
 export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted, singlePhotoId, filterMaxAgeDays }: Readonly<PhotoDetailDialogProps>) {
+  const { t, i18n } = useTranslation()
+  const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const { isAuthenticated, user } = useAuth()
   const [photoIds, setPhotoIds] = useState<number[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -506,7 +494,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
         setLoading(false)
       } catch {
-        setError(ERROR_LOAD_FAILED)
+        setError(t('photo.loadFailed'))
         setLoading(false)
       }
     }
@@ -718,17 +706,17 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       })
 
       if (response.ok) {
-        toast.success(MSG_LOCATION_SUGGESTION_SUCCESS)
+        toast.success(t('photo.suggestionSent'))
         setIsLocationSuggestionOpen(false)
       } else if (response.status === 400) {
         const data = await response.json()
-        toast.error(data.message || MSG_LOCATION_SUGGESTION_ERROR)
+        toast.error(data.message || t('photo.suggestionFailed'))
         setIsLocationSuggestionOpen(false)
       } else {
-        toast.error(MSG_LOCATION_SUGGESTION_ERROR)
+        toast.error(t('photo.suggestionFailed'))
       }
     } catch {
-      toast.error(MSG_LOCATION_SUGGESTION_ERROR)
+      toast.error(t('photo.suggestionFailed'))
     }
   }, [currentPhotoId])
 
@@ -744,7 +732,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       })
 
       if (response.ok) {
-        toast.success('削除しました')
+        toast.success(t('photo.deleteSuccess'))
         setIsDeleteDialogOpen(false)
         onPhotoDeleted?.()
         onClose()
@@ -824,7 +812,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const options: any = {
           sessionToken: placeNameSessionTokenRef.current,
-          language: 'ja',
+          language: mapboxLang,
           types: 'poi',
         }
 
@@ -929,8 +917,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         onInteractOutside={(e) => { if (isLightboxOpen || wasSlideDownRef.current) e.preventDefault() }}
         onEscapeKeyDown={(e) => { if (isLightboxOpen || wasSlideDownRef.current) e.preventDefault() }}
       >
-        <DialogTitle className="sr-only">{SR_TITLE}</DialogTitle>
-        <DialogDescription className="sr-only">{SR_DESCRIPTION}</DialogDescription>
+        <DialogTitle className="sr-only">{t('photo.detailTitle')}</DialogTitle>
+        <DialogDescription className="sr-only">{t('photo.detailDescription')}</DialogDescription>
         <div className="relative flex flex-col min-h-0 h-full">
           {/* 閉じるボタン */}
           <Button
@@ -938,7 +926,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
             size="icon"
             className="absolute top-4 right-4 z-10"
             onClick={onClose}
-            aria-label={LABEL_CLOSE}
+            aria-label={t('common.close')}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -1015,7 +1003,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         size="icon"
                         className="absolute left-4 top-1/2 -translate-y-1/2"
                         onClick={scrollPrev}
-                        aria-label={LABEL_PREV}
+                        aria-label={t('photo.prevPhoto')}
                       >
                         <ChevronLeft className="h-6 w-6" />
                       </Button>
@@ -1026,7 +1014,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         size="icon"
                         className="absolute right-4 top-1/2 -translate-y-1/2"
                         onClick={scrollNext}
-                        aria-label={LABEL_NEXT}
+                        aria-label={t('photo.nextPhoto')}
                       >
                         <ChevronRight className="h-6 w-6" />
                       </Button>
@@ -1045,7 +1033,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     <div className="space-y-3">
                       {/* カテゴリ選択 */}
                       <div>
-                        <label htmlFor="edit-categories" className="text-sm text-gray-500">カテゴリ</label>
+                        <label htmlFor="edit-categories" className="text-sm text-gray-500">{t('photo.categoryRequired')}</label>
                         <div id="edit-categories" className="grid grid-cols-2 gap-2 mt-1" onScroll={handleEditScrollDuringToggle} onTouchMove={handleEditScrollDuringToggle} onPointerUp={handleEditPointerUp}>
                           {PHOTO_CATEGORIES.map((category) => (
                             <div
@@ -1072,7 +1060,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
                       {/* 天気選択 */}
                       <div>
-                        <label htmlFor="edit-weather" className="text-sm text-gray-500">天気</label>
+                        <label htmlFor="edit-weather" className="text-sm text-gray-500">{t('photo.weatherLabel')}</label>
                         <select
                           id="edit-weather"
                           data-testid="edit-weather-select"
@@ -1089,7 +1077,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
                       {/* 場所名（Mapbox Search Box） */}
                       <div>
-                        <label htmlFor="edit-place-name" className="text-sm text-gray-500">場所の名前</label>
+                        <label htmlFor="edit-place-name" className="text-sm text-gray-500">{t('photo.locationName')}</label>
                         <div className="relative">
                           <input
                             id="edit-place-name"
@@ -1099,7 +1087,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                             onChange={(e) => handleEditPlaceNameSearch(e.target.value)}
                             className="w-full border rounded-md px-3 py-2 text-sm"
                             maxLength={100}
-                            placeholder="例：東京スカイツリー、富士山"
+                            placeholder={t('photo.locationNamePlaceholder')}
                           />
                           {isPlaceNameDropdownOpen && placeNameSuggestions.length > 0 && (
                             <ul className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -1129,7 +1117,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                           disabled={isSaving}
                           className="flex-1"
                         >
-                          保存
+                          {t('common.save')}
                         </Button>
                         <Button
                           variant="outline"
@@ -1137,7 +1125,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                           onClick={handleCancelEdit}
                           disabled={isSaving}
                         >
-                          キャンセル
+                          {t('common.cancel')}
                         </Button>
                       </div>
                     </div>
@@ -1149,7 +1137,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700"
                       data-testid="quarantined-banner"
                     >
-                      この投稿はコンテンツポリシーに違反している可能性があるため、現在非公開です。
+                      {t('photo.quarantined')}
                     </div>
                   )}
                   {displayedPhoto.moderationStatus === MODERATION_STATUS_PENDING_REVIEW && (
@@ -1157,7 +1145,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700"
                       data-testid="pending-review-banner"
                     >
-                      この投稿は審査中です。審査完了後に公開されます。
+                      {t('photo.pendingReview')}
                     </div>
                   )}
 
@@ -1212,7 +1200,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     {/* 天気情報 */}
                     {displayedPhoto.weather != null && (
                       <div className="text-sm text-gray-600">
-                        天気: {CODE_WEATHER_LABELS[displayedPhoto.weather] ?? displayedPhoto.weather}
+                        {t('photo.weatherLabel')}: {CODE_WEATHER_LABELS[displayedPhoto.weather] ?? displayedPhoto.weather}
                       </div>
                     )}
 
@@ -1223,49 +1211,49 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium flex items-center gap-2">
                         <Camera className="w-4 h-4" />
-                        撮影情報
+                        {t('photo.shootingInfo')}
                       </h3>
                       <div className="bg-gray-50 rounded-lg p-3">
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           {displayedPhoto.exif.cameraBody && (
                             <div>
-                              <span className="text-gray-500">カメラ</span>
+                              <span className="text-gray-500">{t('photo.camera')}</span>
                               <p className="font-medium">{displayedPhoto.exif.cameraBody}</p>
                             </div>
                           )}
                           {displayedPhoto.exif.cameraLens && (
                             <div>
-                              <span className="text-gray-500">レンズ</span>
+                              <span className="text-gray-500">{t('photo.lens')}</span>
                               <p className="font-medium">{displayedPhoto.exif.cameraLens}</p>
                             </div>
                           )}
                           {displayedPhoto.exif.focalLength35mm != null && (
                             <div>
-                              <span className="text-gray-500">焦点距離</span>
+                              <span className="text-gray-500">{t('photo.focalLength')}</span>
                               <p className="font-medium">{displayedPhoto.exif.focalLength35mm}mm</p>
                             </div>
                           )}
                           {displayedPhoto.exif.fValue && (
                             <div>
-                              <span className="text-gray-500">絞り</span>
+                              <span className="text-gray-500">{t('photo.aperture')}</span>
                               <p className="font-medium">{displayedPhoto.exif.fValue}</p>
                             </div>
                           )}
                           {displayedPhoto.exif.shutterSpeed && (
                             <div>
-                              <span className="text-gray-500">シャッタースピード</span>
+                              <span className="text-gray-500">{t('photo.shutterSpeed')}</span>
                               <p className="font-medium">{displayedPhoto.exif.shutterSpeed}</p>
                             </div>
                           )}
                           {displayedPhoto.exif.iso != null && (
                             <div>
-                              <span className="text-gray-500">ISO</span>
+                              <span className="text-gray-500">{t('photo.iso')}</span>
                               <p className="font-medium">ISO {displayedPhoto.exif.iso}</p>
                             </div>
                           )}
                           {displayedPhoto.exif.imageWidth != null && displayedPhoto.exif.imageHeight != null && (
                             <div>
-                              <span className="text-gray-500">解像度</span>
+                              <span className="text-gray-500">{t('photo.resolution')}</span>
                               <p className="font-medium">{displayedPhoto.exif.imageWidth} x {displayedPhoto.exif.imageHeight}</p>
                             </div>
                           )}
@@ -1301,14 +1289,14 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       data-testid={TEST_ID_FAVORITE_BUTTON}
                       onClick={handleToggleFavorite}
                       disabled={isFavoriteLoading || !isAuthenticated}
-                      aria-label={isFavorited ? LABEL_REMOVE_FAVORITE : LABEL_ADD_FAVORITE}
+                      aria-label={isFavorited ? t('photo.removeFavorite') : t('photo.addFavorite')}
                     >
                       <Star
                         className={`w-5 h-5 mr-2 ${
                           isFavorited ? 'fill-yellow-400 text-yellow-400' : ''
                         }`}
                       />
-                      お気に入り
+                      {t('photo.favorite')}
                       <span
                         data-testid={TEST_ID_FAVORITE_COUNT}
                         className="ml-1 text-sm text-gray-500"
@@ -1323,7 +1311,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         data-testid="delete-photo-button"
                         onClick={() => setIsDeleteDialogOpen(true)}
                         className="text-red-500 border-red-300 hover:bg-red-50"
-                        aria-label="この写真を削除"
+                        aria-label={t('photo.deletePhoto')}
                       >
                         <Trash2 className="w-5 h-5" />
                       </Button>
@@ -1334,7 +1322,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         variant="outline"
                         data-testid="edit-photo-button"
                         onClick={handleStartEdit}
-                        aria-label="写真情報を編集"
+                        aria-label={t('photo.editPhoto')}
                       >
                         <Pencil className="w-5 h-5" />
                       </Button>
@@ -1344,7 +1332,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       variant="outline"
                       data-testid="share-button"
                       onClick={handleShare}
-                      aria-label="この写真を共有"
+                      aria-label={t('photo.sharePhoto')}
                     >
                       <Share2 className="w-5 h-5" />
                     </Button>
@@ -1355,7 +1343,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         data-testid="location-suggestion-button"
                         onClick={() => setIsLocationSuggestionOpen(true)}
                         disabled={currentPhoto?.user?.userId === user?.userId}
-                        aria-label="撮影場所の指摘"
+                        aria-label={t('location.suggestLocation')}
                       >
                         <MapPin className="w-5 h-5" />
                       </Button>
@@ -1367,7 +1355,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         data-testid="report-button"
                         onClick={() => setIsReportOpen(true)}
                         disabled={currentPhoto?.user?.userId === user?.userId}
-                        aria-label="この写真を通報"
+                        aria-label={t('report.title')}
                       >
                         <Flag className="w-5 h-5" />
                       </Button>
@@ -1398,19 +1386,19 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                   <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>写真の削除</AlertDialogTitle>
+                        <AlertDialogTitle>{t('photo.deletePhoto')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          この写真を削除しますか？この操作は取り消せません。
+                          {t('photo.deleteConfirm')}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isDeleteLoading}>キャンセル</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isDeleteLoading}>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={handleDeletePhoto}
                           disabled={isDeleteLoading}
                           className="bg-red-600 hover:bg-red-700"
                         >
-                          {isDeleteLoading ? '削除中...' : '削除する'}
+                          {isDeleteLoading ? t('settings.deleting') : t('settings.deleteAction')}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
