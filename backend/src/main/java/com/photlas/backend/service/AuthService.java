@@ -31,6 +31,7 @@ public class AuthService {
 
     private static final int EMAIL_VERIFICATION_TOKEN_EXPIRATION_HOURS = 24;
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
+    private static final String ERROR_INVALID_CREDENTIALS = "メールアドレスまたはパスワードが正しくありません";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -112,23 +113,18 @@ public class AuthService {
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail().toLowerCase());
 
         if (userOptional.isEmpty()) {
-            throw new UnauthorizedException("メールアドレスまたはパスワードが正しくありません");
+            throw new UnauthorizedException(ERROR_INVALID_CREDENTIALS);
         }
 
         User user = userOptional.get();
 
-        // パスワード検証を先に実行（アカウント復旧判定のため）
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("メールアドレスまたはパスワードが正しくありません");
+            throw new UnauthorizedException(ERROR_INVALID_CREDENTIALS);
         }
 
         // Issue#92: ソフトデリート済みの場合、アカウントを復旧する
         if (user.getDeletedAt() != null) {
-            user.setDeletedAt(null);
-            user.setUsername(user.getOriginalUsername());
-            user.setOriginalUsername(null);
-            user.setDeletionHoldUntil(null);
-            userRepository.save(user);
+            restoreDeletedAccount(user);
         }
 
         if (!user.isEmailVerified()) {
@@ -214,6 +210,18 @@ public class AuthService {
         }
 
         sendVerificationEmail(user);
+    }
+
+    /**
+     * Issue#92: ソフトデリート済みアカウントを復旧する
+     * deletedAt, username, originalUsername, deletionHoldUntilをリストアする。
+     */
+    private void restoreDeletedAccount(User user) {
+        user.setDeletedAt(null);
+        user.setUsername(user.getOriginalUsername());
+        user.setOriginalUsername(null);
+        user.setDeletionHoldUntil(null);
+        userRepository.save(user);
     }
 
     /**
