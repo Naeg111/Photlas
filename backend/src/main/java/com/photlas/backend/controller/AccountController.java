@@ -4,10 +4,9 @@ import com.photlas.backend.dto.DeleteAccountRequest;
 import com.photlas.backend.dto.UpdateEmailRequest;
 import com.photlas.backend.dto.UpdateLanguageRequest;
 import com.photlas.backend.dto.UpdatePasswordRequest;
-import com.photlas.backend.entity.User;
-import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.AccountService;
 import com.photlas.backend.service.PasswordService;
+import com.photlas.backend.service.ProfileService;
 import com.photlas.backend.util.LanguageUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -26,13 +25,13 @@ public class AccountController {
 
     private final AccountService accountService;
     private final PasswordService passwordService;
-    private final UserRepository userRepository;
+    private final ProfileService profileService;
 
     public AccountController(AccountService accountService, PasswordService passwordService,
-                             UserRepository userRepository) {
+                             ProfileService profileService) {
         this.accountService = accountService;
         this.passwordService = passwordService;
-        this.userRepository = userRepository;
+        this.profileService = profileService;
     }
 
     /**
@@ -78,10 +77,7 @@ public class AccountController {
             throw new IllegalArgumentException("未対応の言語コードです: " + request.getLanguage());
         }
         String email = authentication.getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("ユーザーが見つかりません"));
-        user.setLanguage(request.getLanguage());
-        userRepository.save(user);
+        profileService.updateLanguage(email, request.getLanguage());
         return ResponseEntity.ok().build();
     }
 
