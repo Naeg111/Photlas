@@ -62,8 +62,9 @@ public class PasswordService {
 
         User user = userOptional.get();
 
-        // 退会済み・停止ユーザーにはリセットメールを送信しない（レスポンスは正常時と同一）
-        if (user.getDeletedAt() != null || Integer.valueOf(CodeConstants.ROLE_SUSPENDED).equals(user.getRole())) {
+        // Issue#92: 退会済みユーザーにはパスワードリセットを許可（アカウント復旧のため）
+        // 停止中かつアクティブなユーザーにはリセットメールを送信しない（レスポンスは正常時と同一）
+        if (user.getDeletedAt() == null && Integer.valueOf(CodeConstants.ROLE_SUSPENDED).equals(user.getRole())) {
             return;
         }
 
