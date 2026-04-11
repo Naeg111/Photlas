@@ -116,7 +116,7 @@ public class AuthControllerLoginTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message", is("メールアドレスまたはパスワードが正しくありません")));
+                .andExpect(jsonPath("$.code", is("INVALID_CREDENTIALS")));
     }
 
     @Test
@@ -226,12 +226,25 @@ public class AuthControllerLoginTest {
                 .andExpect(jsonPath("$.email", is("test@example.com")));
     }
 
-    // ===== Issue#91: ログイン時の言語設定更新 =====
+    // ===== Issue#93: ログインレスポンスのlanguage・Accept-Language自動更新削除 =====
 
     @Test
-    @DisplayName("Issue#91 - ログイン: Accept-Language が en の場合、language が en に更新される")
-    void testLogin_AcceptLanguageEn_UpdatesLanguageToEn() throws Exception {
-        // ユーザーの初期言語は ja
+    @DisplayName("Issue#93 - ログインレスポンスにlanguageフィールドが含まれる")
+    void testLogin_ResponseIncludesLanguageField() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@example.com");
+        request.setPassword("Password123");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.language", is("ja")));
+    }
+
+    @Test
+    @DisplayName("Issue#93 - ログイン時にAccept-Languageで言語が自動更新されない")
+    void testLogin_DoesNotUpdateLanguageFromAcceptLanguage() throws Exception {
         assertThat(testUser.getLanguage()).isEqualTo("ja");
 
         LoginRequest request = new LoginRequest();
@@ -244,8 +257,9 @@ public class AuthControllerLoginTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
+        // 言語設定が変更されていないことを確認
         User updatedUser = userRepository.findByEmail("test@example.com").orElseThrow();
-        assertThat(updatedUser.getLanguage()).isEqualTo("en");
+        assertThat(updatedUser.getLanguage()).isEqualTo("ja");
     }
 
     // ===== Issue#92: アカウント復旧機能 =====
