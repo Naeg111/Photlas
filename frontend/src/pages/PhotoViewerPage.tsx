@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getAuthHeaders } from '../utils/apiClient'
 import { API_V1_URL } from '../config/api'
@@ -20,6 +21,7 @@ const CARD_CLASS = 'max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8'
 export default function PhotoViewerPage() {
   const { photoId } = useParams<{ photoId: string }>()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
   const [placeName, setPlaceName] = useState('')
@@ -31,7 +33,7 @@ export default function PhotoViewerPage() {
   useEffect(() => {
     if (!photoId) {
       setStatus('error')
-      setErrorMessage('写真が見つかりません')
+      setErrorMessage(t('photo.notFound'))
       return
     }
 
@@ -47,11 +49,11 @@ export default function PhotoViewerPage() {
           setStatus('ready')
         } else {
           setStatus('error')
-          setErrorMessage('写真が見つかりません')
+          setErrorMessage(t('photo.notFound'))
         }
       } catch {
         setStatus('error')
-        setErrorMessage('読み込みに失敗しました')
+        setErrorMessage(t('photo.loadFailed'))
       }
     }
 
@@ -67,13 +69,13 @@ export default function PhotoViewerPage() {
       <div className={PAGE_LAYOUT_CLASS}>
         <div className={`${CARD_CLASS} text-center`}>
           <div className="text-red-500 text-5xl mb-4">&#10007;</div>
-          <h2 className="text-xl font-bold mb-2">エラー</h2>
+          <h2 className="text-xl font-bold mb-2">{t('pages.errorTitle')}</h2>
           <p className="text-gray-600 mb-4">{errorMessage}</p>
           <button
             onClick={() => navigate('/')}
             className="text-primary hover:underline"
           >
-            トップページへ
+            {t('common.home')}
           </button>
         </div>
       </div>

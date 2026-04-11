@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const CONSENT_KEY = 'cookie_consent'
 
@@ -20,6 +21,7 @@ interface CookieConsentBannerProps {
 }
 
 export function CookieConsentBanner({ onPrivacyPolicyClick }: Readonly<CookieConsentBannerProps>) {
+  const { t } = useTranslation()
   const [isVisible, setIsVisible] = useState(() => {
     const consent = localStorage.getItem(CONSENT_KEY)
     return consent === null
@@ -58,14 +60,14 @@ export function CookieConsentBanner({ onPrivacyPolicyClick }: Readonly<CookieCon
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-3 text-sm text-gray-700">
           <div className="text-center">
             <p>
-              このサイトでは、サービス改善のためにGoogle Analyticsを使用し、Cookieによるアクセス情報を収集しています。詳しくは
+              {t('cookie.message')}
               <button
                 onClick={onPrivacyPolicyClick}
                 className="text-blue-600 underline hover:text-blue-800 mx-1"
               >
-                プライバシーポリシー
+                {t('cookie.privacyLink')}
               </button>
-              をご覧ください。
+              {t('cookie.messageSuffix')}
             </p>
             <p className="mt-1 text-xs text-gray-500">
               This site uses Google Analytics and cookies to collect access information for service improvement.
@@ -77,13 +79,13 @@ export function CookieConsentBanner({ onPrivacyPolicyClick }: Readonly<CookieCon
               onClick={handleDecline}
               className="px-6 py-2 border border-black bg-white text-black rounded-lg hover:bg-black hover:text-white active:bg-black active:text-white transition-colors whitespace-nowrap"
             >
-              拒否する / Decline
+              {t('cookie.decline')}
             </button>
             <button
               onClick={handleAccept}
               className="px-6 py-2 border border-black bg-white text-black rounded-lg hover:bg-black hover:text-white active:bg-black active:text-white transition-colors whitespace-nowrap"
             >
-              同意する / Accept
+              {t('cookie.accept')}
             </button>
           </div>
         </div>

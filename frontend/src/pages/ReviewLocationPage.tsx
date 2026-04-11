@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Map, { Marker } from 'react-map-gl'
 import { MapPin, Calendar } from 'lucide-react'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
@@ -12,9 +13,6 @@ import { API_V1_URL } from '../config/api'
 /**
  * Issue#65, Issue#54: 位置情報修正のレビューページ（ダイアログスタイル）
  */
-
-const MSG_FETCH_ERROR = 'レビュー情報の取得に失敗しました'
-const MSG_ACTION_ERROR = '処理に失敗しました'
 
 interface ReviewData {
   suggestionId: number
@@ -36,6 +34,7 @@ interface ReviewData {
 export default function ReviewLocationPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const token = searchParams.get('token')
   const { user } = useAuth()
 
@@ -64,12 +63,12 @@ export default function ReviewLocationPage() {
         )
         if (!response.ok) {
           const data = await response.json().catch(() => null)
-          throw new Error(data?.message || MSG_FETCH_ERROR)
+          throw new Error(data?.message || t('reviewLocation.fetchFailed'))
         }
         const data = await response.json()
         setReviewData(data)
       } catch (e) {
-        setError(e instanceof Error ? e.message : MSG_FETCH_ERROR)
+        setError(e instanceof Error ? e.message : t('reviewLocation.fetchFailed'))
       } finally {
         setIsLoading(false)
       }
@@ -95,16 +94,16 @@ export default function ReviewLocationPage() {
       )
       if (!response.ok) {
         const data = await response.json().catch(() => null)
-        throw new Error(data?.message || MSG_ACTION_ERROR)
+        throw new Error(data?.message || t('reviewLocation.processFailed'))
       }
       setIsResolved(true)
       setResolvedMessage(
         action === 'accept'
-          ? '撮影場所の指摘を受け入れました。'
-          : '撮影場所の指摘を拒否しました。'
+          ? t('reviewLocation.accepted')
+          : t('reviewLocation.rejected')
       )
     } catch {
-      setError(MSG_ACTION_ERROR)
+      setError(t('reviewLocation.processFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -128,7 +127,7 @@ export default function ReviewLocationPage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black/50">
         <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
-          <p className="text-lg text-red-600">無効なリンクです</p>
+          <p className="text-lg text-red-600">{t('pages.invalidLink')}</p>
         </div>
       </div>
     )
@@ -138,13 +137,13 @@ export default function ReviewLocationPage() {
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-lg">ログインが必要です</p>
-        <p className="text-sm text-gray-600">レビューを行うにはログインしてください。</p>
+        <p className="text-lg">{t('auth.loginRequired')}</p>
+        <p className="text-sm text-gray-600">{t('reviewLocation.loginRequired')}</p>
         <button
           className="px-4 py-2 bg-black text-white rounded-full"
           onClick={() => setIsLoginDialogOpen(true)}
         >
-          ログイン
+          {t('common.login')}
         </button>
         <LoginDialog
           open={isLoginDialogOpen}
@@ -197,7 +196,7 @@ export default function ReviewLocationPage() {
             className="px-6 py-2 bg-white text-black border border-black rounded-full"
             onClick={handleClose}
           >
-            閉じる
+            {t('common.close')}
           </button>
         </div>
       </div>
@@ -214,7 +213,7 @@ export default function ReviewLocationPage() {
             className="px-6 py-2 bg-white text-black border border-black rounded-full"
             onClick={handleClose}
           >
-            閉じる
+            {t('common.close')}
           </button>
         </div>
       </div>
@@ -225,7 +224,7 @@ export default function ReviewLocationPage() {
   if (isLoading || !reviewData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg">読み込み中...</p>
+        <p className="text-lg">{t('common.loading')}</p>
       </div>
     )
   }
@@ -246,7 +245,7 @@ export default function ReviewLocationPage() {
         <div className="relative w-full aspect-[4/3] overflow-hidden flex-shrink-0">
           <img
             src={reviewData.imageUrl}
-            alt="レビュー対象の写真"
+            alt={t('reviewLocation.photoAlt')}
             className="w-full h-full object-cover"
             style={imageStyle}
             data-testid="review-photo"
@@ -309,14 +308,14 @@ export default function ReviewLocationPage() {
               onClick={() => handleAction('accept')}
               disabled={isLoading}
             >
-              受け入れる
+              {t('reviewLocation.accept')}
             </button>
             <button
               className="flex-1 py-2.5 bg-white text-black border border-black rounded-full text-sm font-medium disabled:opacity-50"
               onClick={() => handleAction('reject')}
               disabled={isLoading}
             >
-              拒否する
+              {t('reviewLocation.reject')}
             </button>
           </div>
         </div>

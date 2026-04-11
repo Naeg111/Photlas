@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TopMenuPanel } from './TopMenuPanel'
+import { AuthProvider } from '../contexts/AuthContext'
 
 /**
  * Issue#11: フロントエンドデザインのコード導入 - トップメニューパネル
@@ -11,6 +12,10 @@ import { TopMenuPanel } from './TopMenuPanel'
  * - ログイン状態でマイページ・行きたい場所リスト・アカウント設定・ログアウトを表示
  * - ログアウト状態でログイン・新規アカウント作成を表示
  */
+
+const renderWithProvider = (ui: JSX.Element) => {
+  return render(<AuthProvider>{ui}</AuthProvider>)
+}
 
 describe('TopMenuPanel', () => {
   const mockOnOpenChange = vi.fn()
@@ -45,7 +50,7 @@ describe('TopMenuPanel', () => {
 
   describe('UI Elements - ログイン状態', () => {
     it('renders logged-in menu items', () => {
-      render(<TopMenuPanel {...defaultProps} />)
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
 
       expect(screen.getByText(/Photlasとは？/)).toBeInTheDocument()
       expect(screen.getByText(/プロフィール/)).toBeInTheDocument()
@@ -57,7 +62,7 @@ describe('TopMenuPanel', () => {
     })
 
     it('does not render login/signup items when logged in', () => {
-      render(<TopMenuPanel {...defaultProps} />)
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
 
       expect(screen.queryByText(/^ログイン$/)).not.toBeInTheDocument()
       expect(screen.queryByText(/新規アカウント作成/)).not.toBeInTheDocument()
@@ -66,7 +71,7 @@ describe('TopMenuPanel', () => {
 
   describe('UI Elements - ログアウト状態', () => {
     it('renders logged-out menu items', () => {
-      render(<TopMenuPanel {...defaultProps} isLoggedIn={false} />)
+      renderWithProvider(<TopMenuPanel {...defaultProps} isLoggedIn={false} />)
 
       expect(screen.getByText(/Photlasとは？/)).toBeInTheDocument()
       expect(screen.getByText(/ログイン/)).toBeInTheDocument()
@@ -76,7 +81,7 @@ describe('TopMenuPanel', () => {
     })
 
     it('does not render logged-in only items when logged out', () => {
-      render(<TopMenuPanel {...defaultProps} isLoggedIn={false} />)
+      renderWithProvider(<TopMenuPanel {...defaultProps} isLoggedIn={false} />)
 
       expect(screen.queryByText(/マイページ/)).not.toBeInTheDocument()
       expect(screen.queryByText(/行きたい場所リスト/)).not.toBeInTheDocument()
@@ -87,7 +92,7 @@ describe('TopMenuPanel', () => {
 
   describe('Panel Behavior', () => {
     it('uses sheet component for slide-in animation', () => {
-      render(<TopMenuPanel {...defaultProps} />)
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
 
       // メニュー項目が表示されることでSheetコンポーネントが機能していることを確認
       expect(screen.getByText(/プロフィール/)).toBeInTheDocument()
@@ -96,7 +101,7 @@ describe('TopMenuPanel', () => {
 
   describe('行きたい場所リストの一時非表示', () => {
     it('ログイン時に「行きたい場所リスト」ボタンが表示されない', () => {
-      render(<TopMenuPanel {...defaultProps} />)
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
 
       expect(screen.queryByText(/行きたい場所リスト/)).not.toBeInTheDocument()
     })
@@ -104,7 +109,7 @@ describe('TopMenuPanel', () => {
 
   describe('ラベル変更', () => {
     it('「マイページ」ではなく「プロフィール」と表示される', () => {
-      render(<TopMenuPanel {...defaultProps} />)
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
 
       expect(screen.getByText(/プロフィール/)).toBeInTheDocument()
       expect(screen.queryByText(/マイページ/)).not.toBeInTheDocument()

@@ -184,6 +184,7 @@ public class ProfileService {
                 user.getId(),
                 user.getUsername(),
                 includeEmail ? user.getEmail() : null,
+                includeEmail ? user.getLanguage() : null,
                 profileImageUrl,
                 snsLinkDtos
         );

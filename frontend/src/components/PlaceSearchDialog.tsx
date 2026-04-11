@@ -1,7 +1,9 @@
 import { useState, useCallback, useRef, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input } from './ui/input'
 import { SearchBoxCore, GeocodingCore, SessionToken } from '@mapbox/search-js-core'
 import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
+import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 
 /**
  * Issue#69: 場所検索ダイアログ
@@ -102,6 +104,8 @@ export function PlaceSearchDialog({
   onOpenChange,
   onPlaceSelect,
 }: Readonly<PlaceSearchDialogProps>) {
+  const { i18n } = useTranslation()
+  const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [searchQuery, setSearchQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -138,11 +142,11 @@ export function PlaceSearchDialog({
         const [searchBoxResult, geocodingResult] = await Promise.allSettled([
           searchBox.suggest(value, {
             sessionToken: sessionTokenRef.current,
-            language: 'ja',
+            language: mapboxLang,
             types: SEARCHBOX_TYPES,
           }),
           geocoding.forward(value, {
-            language: 'ja',
+            language: mapboxLang,
             types: GEOCODING_TYPES,
           }),
         ])
@@ -157,7 +161,7 @@ export function PlaceSearchDialog({
         setResults([])
       }
     }, SEARCH_DEBOUNCE_MS)
-  }, [searchBox, geocoding])
+  }, [searchBox, geocoding, mapboxLang])
 
   const handleSelectResult = useCallback(async (result: SearchResult) => {
     if (result.source === 'geocoding' && result.coordinates) {

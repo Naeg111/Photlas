@@ -2,6 +2,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { User, Settings, FileText, Shield, LogOut, /* Heart, */ LogIn, UserPlus, CircleHelp, UserX } from "lucide-react";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useAuth } from "../contexts/AuthContext";
+import { type SupportedLanguage } from "../i18n";
 
 interface TopMenuPanelProps {
   open: boolean;
@@ -38,14 +42,21 @@ export function TopMenuPanel({
   onSignUpClick,
   onLogout,
 }: Readonly<TopMenuPanelProps>) {
+  const { t, i18n } = useTranslation();
+  const { changeLanguage } = useAuth();
+
+  const handleLanguageChange = (lang: SupportedLanguage) => {
+    changeLanguage(lang);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="top" className="w-full h-full md:w-[60%] md:left-[20%] md:overflow-hidden bg-transparent p-0 gap-0 border-none shadow-none">
         <div className="bg-background w-full px-16 pb-10 pt-[calc(2.5rem+var(--safe-area-top))] border-b shadow-lg md:rounded-b-lg md:overflow-y-auto md:max-h-[90vh]">
           <SheetHeader className="sr-only">
-            <SheetTitle>メニュー</SheetTitle>
+            <SheetTitle>{t('menu.title')}</SheetTitle>
             <SheetDescription>
-              アプリケーションのメインメニュー
+              {t('menu.description')}
             </SheetDescription>
           </SheetHeader>
           <div className="flex flex-col gap-2 mt-[25px]">
@@ -58,7 +69,7 @@ export function TopMenuPanel({
               }}
             >
               <CircleHelp className="w-5 h-5" />
-              Photlasとは？
+              {t('menu.about')}
             </Button>
             <Separator />
             {isLoggedIn ? (
@@ -72,7 +83,7 @@ export function TopMenuPanel({
                   }}
                 >
                   <User className="w-5 h-5" />
-                  プロフィール
+                  {t('menu.profile')}
                 </Button>
                 <Separator />
                 {/* 行きたい場所リスト（一時非表示）
@@ -98,7 +109,7 @@ export function TopMenuPanel({
                   }}
                 >
                   <Settings className="w-5 h-5" />
-                  アカウント設定
+                  {t('menu.accountSettings')}
                 </Button>
                 <Separator />
                 {isAdmin && onModerationClick && (
@@ -113,7 +124,7 @@ export function TopMenuPanel({
                       data-testid="moderation-menu-button"
                     >
                       <Shield className="w-5 h-5" />
-                      モデレーション管理
+                      {t('menu.moderation')}
                     </Button>
                     {onDeletedUsersClick && (
                       <Button
@@ -126,7 +137,7 @@ export function TopMenuPanel({
                         data-testid="deleted-users-menu-button"
                       >
                         <UserX className="w-5 h-5" />
-                        退会済みユーザー管理
+                        {t('menu.deletedUsers')}
                       </Button>
                     )}
                     <Separator />
@@ -144,7 +155,7 @@ export function TopMenuPanel({
                   }}
                 >
                   <LogIn className="w-5 h-5" />
-                  ログイン
+                  {t('common.login')}
                 </Button>
                 <Separator />
                 <Button
@@ -156,7 +167,7 @@ export function TopMenuPanel({
                   }}
                 >
                   <UserPlus className="w-5 h-5" />
-                  新規アカウント作成
+                  {t('auth.createAccount')}
                 </Button>
                 <Separator />
               </>
@@ -170,7 +181,7 @@ export function TopMenuPanel({
               }}
             >
               <FileText className="w-5 h-5" />
-              利用規約
+              {t('menu.terms')}
             </Button>
             <Separator />
             <Button
@@ -182,8 +193,16 @@ export function TopMenuPanel({
               }}
             >
               <Shield className="w-5 h-5" />
-              プライバシーポリシー
+              {t('menu.privacy')}
             </Button>
+            <Separator />
+            {/* Issue#93: 言語スイッチ */}
+            <div className="flex justify-center py-2">
+              <LanguageSwitcher
+                currentLanguage={i18n.language as SupportedLanguage}
+                onLanguageChange={handleLanguageChange}
+              />
+            </div>
             <Separator />
             {isLoggedIn && (
               <Button
@@ -192,7 +211,7 @@ export function TopMenuPanel({
                 onClick={onLogout}
               >
                 <LogOut className="w-5 h-5" />
-                ログアウト
+                {t('common.logout')}
               </Button>
             )}
           </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { API_V1_URL } from '../config/api'
 
 /**
@@ -11,6 +12,7 @@ import { API_V1_URL } from '../config/api'
 export default function EmailVerificationPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -19,7 +21,7 @@ export default function EmailVerificationPage() {
 
     if (!token) {
       setStatus('error')
-      setErrorMessage('認証トークンが見つかりません')
+      setErrorMessage(t('pages.invalidToken'))
       return
     }
 
@@ -35,16 +37,16 @@ export default function EmailVerificationPage() {
         } else {
           const data = await response.json()
           setStatus('error')
-          setErrorMessage(data.message || '認証に失敗しました')
+          setErrorMessage(data.message || t('auth.errorOccurred'))
         }
       } catch {
         setStatus('error')
-        setErrorMessage('認証に失敗しました。しばらく経ってからお試しください。')
+        setErrorMessage(t('auth.errorOccurred'))
       }
     }
 
     verifyEmail()
-  }, [searchParams, navigate])
+  }, [searchParams, navigate, t])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -52,25 +54,25 @@ export default function EmailVerificationPage() {
         {status === 'loading' && (
           <>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-            <p className="text-gray-600">メールアドレスを認証しています...</p>
+            <p className="text-gray-600">{t('pages.emailVerifying')}</p>
           </>
         )}
 
         {status === 'success' && (
           <>
             <div className="text-green-500 text-5xl mb-4">&#10003;</div>
-            <h2 className="text-xl font-bold mb-2">認証完了</h2>
+            <h2 className="text-xl font-bold mb-2">{t('pages.emailVerified')}</h2>
             <p className="text-gray-600 mb-4">
-              メールアドレスの認証が完了しました。
+              {t('pages.emailVerifiedMessage')}
             </p>
             <p className="text-sm text-gray-500">
-              3秒後にトップページへ移動します...
+              {t('pages.redirecting')}
             </p>
             <button
               onClick={() => navigate('/')}
               className="mt-4 text-primary hover:underline"
             >
-              今すぐトップページへ
+              {t('pages.goToHome')}
             </button>
           </>
         )}
@@ -78,13 +80,13 @@ export default function EmailVerificationPage() {
         {status === 'error' && (
           <>
             <div className="text-red-500 text-5xl mb-4">&#10007;</div>
-            <h2 className="text-xl font-bold mb-2">認証エラー</h2>
+            <h2 className="text-xl font-bold mb-2">{t('pages.verificationError')}</h2>
             <p className="text-gray-600 mb-4">{errorMessage}</p>
             <button
               onClick={() => navigate('/')}
               className="mt-4 text-primary hover:underline"
             >
-              トップページへ
+              {t('common.home')}
             </button>
           </>
         )}

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback'
 import Map, { Marker, AttributionControl } from 'react-map-gl'
 import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
@@ -6,6 +7,7 @@ import type { Map as MapboxMap, ExpressionSpecification } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
+import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 import { PinSvg } from './PinSvg'
 import { generatePinImage, getPinImageId, PIN_COLOR_MAP, BASE_PIN_SIZE, PIN_HEIGHT_RATIO, PIN_PIXEL_RATIO, SHADOW_PADDING } from '../utils/pinImageGenerator'
 
@@ -234,6 +236,8 @@ function handleClusterClick(mapInstance: MapboxMap, e: any, callbackRef: React.R
 }
 
 const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady }, ref) {
+  const { i18n } = useTranslation()
+  const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<MapboxMap | null>(null)
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
@@ -629,7 +633,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         }}
         style={{ width: '100%', height: '100%' }}
         mapStyle={MAPBOX_STYLE}
-        language="ja"
+        language={mapboxLang}
         fadeDuration={CLUSTER_FADE_DURATION_MS}
         renderWorldCopies={false}
         attributionControl={false}

@@ -1,5 +1,6 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react'
 import * as Sentry from '@sentry/react'
+import { Translation } from 'react-i18next'
 import { Button } from './ui/button'
 
 interface ErrorBoundaryProps {
@@ -38,19 +39,23 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-          <div className="text-center">
-            <h1 className="mb-2 text-2xl font-bold text-gray-900">
-              エラーが発生しました
-            </h1>
-            <p className="mb-6 text-gray-600">
-              予期しないエラーが発生しました。ページを再読み込みしてください。
-            </p>
-            <Button onClick={this.handleReload}>
-              ページを再読み込み
-            </Button>
-          </div>
-        </div>
+        <Translation>
+          {(t) => (
+            <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+              <div className="text-center">
+                <h1 className="mb-2 text-2xl font-bold text-gray-900">
+                  {t('errors.errorOccurred')}
+                </h1>
+                <p className="mb-6 text-gray-600">
+                  {t('errors.unexpected')}
+                </p>
+                <Button onClick={this.handleReload}>
+                  {t('common.reload')}
+                </Button>
+              </div>
+            </div>
+          )}
+        </Translation>
       )
     }
 

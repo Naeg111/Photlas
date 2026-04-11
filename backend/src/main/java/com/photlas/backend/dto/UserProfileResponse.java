@@ -8,6 +8,7 @@ public class UserProfileResponse {
     private Long userId;
     private String username;
     private String email; // GET /users/me のみ
+    private String language; // GET /users/me のみ
     private String profileImageUrl;
     private List<SnsLink> snsLinks;
 
@@ -31,10 +32,11 @@ public class UserProfileResponse {
 
     public UserProfileResponse() {}
 
-    public UserProfileResponse(Long userId, String username, String email, String profileImageUrl, List<SnsLink> snsLinks) {
+    public UserProfileResponse(Long userId, String username, String email, String language, String profileImageUrl, List<SnsLink> snsLinks) {
         this.userId = userId;
         this.username = username;
         this.email = email;
+        this.language = language;
         this.profileImageUrl = profileImageUrl;
         this.snsLinks = snsLinks;
     }
@@ -62,6 +64,14 @@ public class UserProfileResponse {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
     public String getProfileImageUrl() {

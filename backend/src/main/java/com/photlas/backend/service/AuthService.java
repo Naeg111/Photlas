@@ -135,12 +135,8 @@ public class AuthService {
             throw new AccountSuspendedException("アカウントが停止されています");
         }
 
-        // 言語設定を更新
-        String language = LanguageUtils.resolve(acceptLanguage);
-        if (!language.equals(user.getLanguage())) {
-            user.setLanguage(language);
-            userRepository.save(user);
-        }
+        // Issue#93: ログイン時のAccept-Languageによる言語自動更新を廃止
+        // 言語設定はユーザーが手動で変更する
 
         String token = jwtService.generateTokenWithRole(user.getEmail(), CodeConstants.roleToJwtString(user.getRole()));
 

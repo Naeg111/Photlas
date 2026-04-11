@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet"
 import { Button } from "./ui/button"
 import { CategoryIcon } from "./CategoryIcon"
@@ -11,53 +12,92 @@ const MONTHS_NEED_INVERT = new Set(["1月", "2月", "4月", "5月", "6月", "7�
 const TIMES_NEED_INVERT = new Set(["夕方"]);
 // OrientationIconsはfill="currentColor"のためinvert不要（テキスト色に追従）
 
+// カテゴリ名から翻訳キーへのマッピング
+const CATEGORY_TO_I18N_KEY: Record<string, string> = {
+  '自然風景': 'categories.nature',
+  '街並み': 'categories.cityscape',
+  '建造物': 'categories.architecture',
+  '夜景': 'categories.nightscape',
+  'グルメ': 'categories.gourmet',
+  '植物': 'categories.plants',
+  '動物': 'categories.animals',
+  '野鳥': 'categories.birds',
+  '自動車': 'categories.cars',
+  'バイク': 'categories.motorcycles',
+  '鉄道': 'categories.railways',
+  '飛行機': 'categories.aircraft',
+  '星空': 'categories.starrysky',
+  'その他': 'categories.other',
+}
+
 // Issue#63: 上級者向けフィルターの選択肢（機材種別・焦点距離・ISO感度のみ）
-const DEVICE_TYPE_OPTIONS = [
-  { label: "スマートフォン", value: "SMARTPHONE" },
-  { label: "ミラーレス", value: "MIRRORLESS" },
-  { label: "一眼レフ", value: "SLR" },
-  { label: "コンパクトデジカメ", value: "COMPACT" },
-  { label: "フィルム", value: "FILM" },
-  { label: "その他", value: "OTHER" },
+const DEVICE_TYPE_OPTION_VALUES = [
+  { key: "deviceType.smartphone", value: "SMARTPHONE" },
+  { key: "deviceType.mirrorless", value: "MIRRORLESS" },
+  { key: "deviceType.slr", value: "SLR" },
+  { key: "deviceType.compact", value: "COMPACT" },
+  { key: "deviceType.film", value: "FILM" },
+  { key: "deviceType.other", value: "OTHER" },
 ]
 
 // Issue#63: 投稿の新しさ（通常フィルターに移動、3ヶ月以内追加）
-const FRESHNESS_OPTIONS = [
-  { label: "1週間以内", value: 7 },
-  { label: "1ヶ月以内", value: 30 },
-  { label: "3ヶ月以内", value: 90 },
-  { label: "1年以内", value: 365 },
-  { label: "3年以内", value: 1095 },
+const FRESHNESS_OPTION_VALUES = [
+  { key: "filter.freshness1w", value: 7 },
+  { key: "filter.freshness1m", value: 30 },
+  { key: "filter.freshness3m", value: 90 },
+  { key: "filter.freshness1y", value: 365 },
+  { key: "filter.freshness3y", value: 1095 },
 ]
 
 // Issue#63: 撮影の向き（通常フィルターに移動、名称変更）
-const ASPECT_RATIO_OPTIONS = [
-  { label: "縦位置", value: "VERTICAL" },
-  { label: "横位置", value: "HORIZONTAL" },
+const ASPECT_RATIO_OPTION_VALUES = [
+  { key: "filter.vertical", value: "VERTICAL", iconKey: "縦位置" },
+  { key: "filter.horizontal", value: "HORIZONTAL", iconKey: "横位置" },
 ]
 
-const FOCAL_LENGTH_OPTIONS = [
-  { label: "広角（24mm未満）", value: "WIDE" },
-  { label: "標準（24-70mm）", value: "STANDARD" },
-  { label: "望遠（70-300mm）", value: "TELEPHOTO" },
-  { label: "超望遠（300mm超）", value: "SUPER_TELEPHOTO" },
+const FOCAL_LENGTH_OPTION_VALUES = [
+  { key: "filter.wideAngle", value: "WIDE" },
+  { key: "filter.standard", value: "STANDARD" },
+  { key: "filter.telephoto", value: "TELEPHOTO" },
+  { key: "filter.superTelephoto", value: "SUPER_TELEPHOTO" },
 ]
 
 // Issue#63: ISO感度の選択肢を4段階に拡張
-const ISO_OPTIONS = [
-  { label: "ISO 400以下", value: 400 },
-  { label: "ISO 1600以下", value: 1600 },
-  { label: "ISO 6400以下", value: 6400 },
-  { label: "ISO 12800以下", value: 12800 },
+const ISO_OPTION_VALUES = [
+  { key: "filter.iso400", value: 400 },
+  { key: "filter.iso1600", value: 1600 },
+  { key: "filter.iso6400", value: 6400 },
+  { key: "filter.iso12800", value: 12800 },
 ]
 
-const MONTHS = [
-  "1月", "2月", "3月", "4月", "5月", "6月",
-  "7月", "8月", "9月", "10月", "11月", "12月",
+const MONTH_KEYS = [
+  { key: "months.jan", label: "1月" },
+  { key: "months.feb", label: "2月" },
+  { key: "months.mar", label: "3月" },
+  { key: "months.apr", label: "4月" },
+  { key: "months.may", label: "5月" },
+  { key: "months.jun", label: "6月" },
+  { key: "months.jul", label: "7月" },
+  { key: "months.aug", label: "8月" },
+  { key: "months.sep", label: "9月" },
+  { key: "months.oct", label: "10月" },
+  { key: "months.nov", label: "11月" },
+  { key: "months.dec", label: "12月" },
 ]
 
-const TIME_OF_DAY = ["朝", "昼", "夕方", "夜"]
-const WEATHER = ["晴れ", "曇り", "雨", "雪"]
+const TIME_OF_DAY_KEYS = [
+  { key: "timeOfDay.morning", label: "朝" },
+  { key: "timeOfDay.afternoon", label: "昼" },
+  { key: "timeOfDay.evening", label: "夕方" },
+  { key: "timeOfDay.night", label: "夜" },
+]
+
+const WEATHER_KEYS = [
+  { key: "weather.sunny", label: "晴れ" },
+  { key: "weather.cloudy", label: "曇り" },
+  { key: "weather.rainy", label: "雨" },
+  { key: "weather.snowy", label: "雪" },
+]
 
 export interface FilterConditions {
   categories: string[]
@@ -103,6 +143,8 @@ function FilterButton({ selected, onPointerDown, className, children }: Readonly
 }
 
 export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPanelProps>) {
+  const { t } = useTranslation()
+
   // 基本フィルターの状態
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedMonths, setSelectedMonths] = useState<string[]>([])
@@ -239,9 +281,9 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="top" className="w-full h-full md:w-[70%] md:h-auto md:max-h-[90vh] md:left-[15%] md:rounded-b-lg md:overflow-hidden flex flex-col">
         <SheetHeader className="sr-only">
-          <SheetTitle>フィルター</SheetTitle>
+          <SheetTitle>{t('filter.title')}</SheetTitle>
           <SheetDescription>
-            ジャンル、時期、時間帯、天候でフィルタリング
+            {t('filter.description')}
           </SheetDescription>
         </SheetHeader>
 
@@ -249,7 +291,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
         <div className="space-y-[30px] pb-6 mt-[40px]">
           {/* Issue#63: 写真のジャンル */}
           <div>
-            <p className="text-sm font-medium mb-2 text-muted-foreground">写真のジャンル</p>
+            <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.genre')}</p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {PHOTO_CATEGORIES.map((category) => {
                 const isSelected = selectedCategories.includes(category);
@@ -260,24 +302,24 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                     onPointerDown={() => toggleSelection(category, selectedCategories, setSelectedCategories)}
                   >
                     <CategoryIcon category={category} className="w-5 h-5 shrink-0" />
-                    <span className="truncate">{category}</span>
+                    <span className="truncate">{t(CATEGORY_TO_I18N_KEY[category] ?? category)}</span>
                   </FilterButton>
                 );
               })}
             </div>
           </div>
 
-          {/* Issue#63: 投稿の新しさ（通常フィルターに移動） */}
+          {/* Issue#63: 投稿時期（通常フィルターに移動） */}
           <div>
-            <p className="text-sm font-medium mb-2 text-muted-foreground">投稿の新しさ</p>
+            <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.postDate')}</p>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              {FRESHNESS_OPTIONS.map((option) => (
+              {FRESHNESS_OPTION_VALUES.map((option) => (
                 <FilterButton
-                  key={option.label}
+                  key={option.key}
                   selected={selectedMaxAgeDays === option.value}
                   onPointerDown={() => toggleSingleSelection(option.value, selectedMaxAgeDays, setSelectedMaxAgeDays)}
                 >
-                  {option.label}
+                  {t(option.key)}
                 </FilterButton>
               ))}
             </div>
@@ -285,21 +327,21 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
 
           {/* 撮影時期 */}
           <div>
-            <p className="text-sm font-medium mb-2 text-muted-foreground">撮影時期</p>
+            <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.shootingPeriod')}</p>
             <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-              {MONTHS.map((month) => {
-                const Icon = MonthIcons[month];
-                const isSelected = selectedMonths.includes(month);
-                const needsInvert = MONTHS_NEED_INVERT.has(month);
+              {MONTH_KEYS.map(({ key, label }) => {
+                const Icon = MonthIcons[label];
+                const isSelected = selectedMonths.includes(label);
+                const needsInvert = MONTHS_NEED_INVERT.has(label);
                 return (
                   <FilterButton
-                    key={month}
+                    key={label}
                     selected={isSelected}
-                    onPointerDown={() => toggleSelection(month, selectedMonths, setSelectedMonths)}
+                    onPointerDown={() => toggleSelection(label, selectedMonths, setSelectedMonths)}
                     className={`gap-1.5 px-2 ${isSelected && needsInvert ? "[&_svg]:invert" : ""}`}
                   >
                     {Icon && <Icon className="w-5 h-5 shrink-0" />}
-                    <span className="text-sm">{month}</span>
+                    <span className="text-sm">{t(key)}</span>
                   </FilterButton>
                 );
               })}
@@ -308,21 +350,21 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
 
           {/* 撮影された時間帯 */}
           <div>
-            <p className="text-sm font-medium mb-2 text-muted-foreground">撮影された時間帯</p>
+            <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.timeOfDay')}</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {TIME_OF_DAY.map((time) => {
-                const Icon = TimeIcons[time];
-                const isSelected = selectedTimes.includes(time);
-                const needsInvert = TIMES_NEED_INVERT.has(time);
+              {TIME_OF_DAY_KEYS.map(({ key, label }) => {
+                const Icon = TimeIcons[label];
+                const isSelected = selectedTimes.includes(label);
+                const needsInvert = TIMES_NEED_INVERT.has(label);
                 return (
                   <FilterButton
-                    key={time}
+                    key={label}
                     selected={isSelected}
-                    onPointerDown={() => toggleSelection(time, selectedTimes, setSelectedTimes)}
+                    onPointerDown={() => toggleSelection(label, selectedTimes, setSelectedTimes)}
                     className={isSelected && needsInvert ? "[&_svg]:invert" : ""}
                   >
                     {Icon && <Icon className="w-6 h-6 shrink-0" />}
-                    <span>{time}</span>
+                    <span>{t(key)}</span>
                   </FilterButton>
                 );
               })}
@@ -331,19 +373,19 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
 
           {/* 撮影時の天候 */}
           <div>
-            <p className="text-sm font-medium mb-2 text-muted-foreground">撮影時の天候</p>
+            <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.weather')}</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {WEATHER.map((weather) => {
-                const Icon = WeatherIcons[weather];
-                const isSelected = selectedWeather.includes(weather);
+              {WEATHER_KEYS.map(({ key, label }) => {
+                const Icon = WeatherIcons[label];
+                const isSelected = selectedWeather.includes(label);
                 return (
                   <FilterButton
-                    key={weather}
+                    key={label}
                     selected={isSelected}
-                    onPointerDown={() => toggleSelection(weather, selectedWeather, setSelectedWeather)}
+                    onPointerDown={() => toggleSelection(label, selectedWeather, setSelectedWeather)}
                   >
                     {Icon && <Icon className="w-6 h-6 shrink-0" />}
-                    <span>{weather}</span>
+                    <span>{t(key)}</span>
                   </FilterButton>
                 );
               })}
@@ -352,20 +394,20 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
 
           {/* Issue#63: 撮影の向き（通常フィルターに移動） */}
           <div>
-            <p className="text-sm font-medium mb-2 text-muted-foreground">撮影の向き</p>
+            <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.orientation')}</p>
             <div className="grid grid-cols-2 gap-2">
-              {ASPECT_RATIO_OPTIONS.map((option) => {
-                const Icon = OrientationIcons[option.label];
+              {ASPECT_RATIO_OPTION_VALUES.map((option) => {
+                const Icon = OrientationIcons[option.iconKey];
                 const isSelected = selectedAspectRatios.includes(option.value);
                 return (
                 <FilterButton
-                  key={option.label}
+                  key={option.key}
                   selected={isSelected}
                   onPointerDown={() => toggleSelection(option.value, selectedAspectRatios, setSelectedAspectRatios)}
                   className="gap-1.5 px-2"
                 >
                   {Icon && <Icon className="w-5 h-5 shrink-0" />}
-                  <span>{option.label}</span>
+                  <span>{t(option.key)}</span>
                 </FilterButton>
                 );
               })}
@@ -379,7 +421,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
               className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground"
               onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
             >
-              上級者向け
+              {t('filter.advanced')}
               {isAdvancedOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </Button>
 
@@ -387,17 +429,17 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
               <div className="space-y-[30px] mt-4">
                 {/* 機材種別 */}
                 <div>
-                  <p className="text-sm font-medium mb-2 text-muted-foreground">機材種別</p>
+                  <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.deviceType')}</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {DEVICE_TYPE_OPTIONS.map((option) => {
+                    {DEVICE_TYPE_OPTION_VALUES.map((option) => {
                       const isSelected = selectedDeviceTypes.includes(option.value);
                       return (
                       <FilterButton
-                        key={option.label}
+                        key={option.key}
                         selected={isSelected}
                         onPointerDown={() => toggleSelection(option.value, selectedDeviceTypes, setSelectedDeviceTypes)}
                       >
-                        {option.label}
+                        {t(option.key)}
                       </FilterButton>
                       );
                     })}
@@ -406,18 +448,18 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
 
                 {/* 焦点距離 */}
                 <div>
-                  <p className="text-sm font-medium mb-2 text-muted-foreground">焦点距離（フルサイズ換算）</p>
+                  <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.focalLength')}</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {FOCAL_LENGTH_OPTIONS.map((option) => {
+                    {FOCAL_LENGTH_OPTION_VALUES.map((option) => {
                       const isSelected = selectedFocalLengthRanges.includes(option.value);
                       return (
                       <FilterButton
-                        key={option.label}
+                        key={option.key}
                         selected={isSelected}
                         onPointerDown={() => toggleSelection(option.value, selectedFocalLengthRanges, setSelectedFocalLengthRanges)}
                         className="whitespace-normal h-auto py-2"
                       >
-                        {option.label}
+                        {t(option.key)}
                       </FilterButton>
                       );
                     })}
@@ -426,16 +468,16 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
 
                 {/* ISO感度 */}
                 <div>
-                  <p className="text-sm font-medium mb-2 text-muted-foreground">ISO感度</p>
+                  <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.isoSensitivity')}</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {ISO_OPTIONS.map((option) => (
+                    {ISO_OPTION_VALUES.map((option) => (
                       <FilterButton
-                        key={option.label}
+                        key={option.key}
                         selected={selectedMaxIso === option.value}
                         onPointerDown={() => toggleSingleSelection(option.value, selectedMaxIso, setSelectedMaxIso)}
                         className="whitespace-normal h-auto py-2"
                       >
-                        {option.label}
+                        {t(option.key)}
                       </FilterButton>
                     ))}
                   </div>
@@ -450,10 +492,10 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
         {/* 適用・クリアボタン（スクロール外に固定） */}
         <div className="flex gap-2 px-6 py-4 border-t bg-background shrink-0">
           <Button variant="outline" className="flex-1" onClick={handleClear}>
-            クリア
+            {t('common.clear')}
           </Button>
           <Button className="flex-1" onClick={handleApply} disabled={!hasAnyFilter}>
-            適用
+            {t('common.apply')}
           </Button>
         </div>
       </SheetContent>

@@ -8,6 +8,7 @@ import java.util.List;
  * APIエラー発生時にクライアントに返却される情報を格納します。
  */
 public class ErrorResponse {
+    private String code;
     private String message;
     private List<FieldError> errors;
     private LocalDateTime timestamp;
@@ -21,6 +22,12 @@ public class ErrorResponse {
         this.timestamp = LocalDateTime.now();
     }
 
+    public ErrorResponse(String code, String message) {
+        this.code = code;
+        this.message = message;
+        this.timestamp = LocalDateTime.now();
+    }
+
     public ErrorResponse(String message, List<FieldError> errors) {
         this.message = message;
         this.errors = errors;
@@ -28,6 +35,14 @@ public class ErrorResponse {
     }
 
     // Getters and Setters
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
     public String getMessage() {
         return message;
     }

@@ -15,7 +15,7 @@ const TEXT_AUTO_REDIRECT = '3秒後にトップページへ移動します...'
 const TEXT_GO_TO_TOP = '今すぐトップページへ'
 const TEXT_ERROR_HEADING = '認証エラー'
 const TEXT_NO_TOKEN_ERROR = '認証トークンが見つかりません'
-const TEXT_GENERIC_ERROR = '認証に失敗しました。しばらく経ってからお試しください。'
+const TEXT_GENERIC_ERROR = 'エラーが発生しました'
 const TEXT_API_ERROR = 'トークンが無効または期限切れです'
 
 // fetchモック

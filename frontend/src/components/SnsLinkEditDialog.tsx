@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -27,6 +28,7 @@ function generateId(): string {
 }
 
 export function SnsLinkEditDialog({ open, onOpenChange, initialLinks, onSave }: Readonly<SnsLinkEditDialogProps>) {
+  const { t } = useTranslation()
   const [links, setLinks] = useState<SnsLinkInput[]>(() =>
     initialLinks.length > 0
       ? initialLinks.map(l => ({ id: generateId(), platform: l.platform || PLATFORM_TWITTER, url: l.url }))
@@ -72,8 +74,8 @@ export function SnsLinkEditDialog({ open, onOpenChange, initialLinks, onSave }: 
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            <DialogTitle>SNSリンクを編集</DialogTitle>
-            <DialogDescription className="sr-only">SNSリンクの追加・編集・削除</DialogDescription>
+            <DialogTitle>{t('snsEdit.title')}</DialogTitle>
+            <DialogDescription className="sr-only">{t('snsEdit.description')}</DialogDescription>
           </DialogHeader>
         </div>
 
@@ -118,17 +120,17 @@ export function SnsLinkEditDialog({ open, onOpenChange, initialLinks, onSave }: 
               onClick={handleAdd}
               className="w-full"
             >
-              リンクを追加
+              {t('snsEdit.add')}
             </Button>
           )}
         </div>
 
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            キャンセル
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSave}>
-            保存
+            {t('common.save')}
           </Button>
         </div>
         </div>

@@ -4,19 +4,22 @@
  *
  * 左上に配置されるフローティングボタン。クリック時にフィルターパネルを開く。
  */
+import { useTranslation } from "react-i18next";
+
 interface FilterButtonProps {
   onClick?: () => void;
 }
 
 function FilterButton({ onClick }: Readonly<FilterButtonProps>) {
+  const { t } = useTranslation();
   return (
     <button
       className="bg-white shadow-lg rounded-lg border px-4 py-2 text-sm font-medium"
-      aria-label="写真フィルター機能を開く"
-      title="写真の絞り込み条件を設定できます"
+      aria-label={t('filter.openFilter')}
+      title={t('filter.filterDescription')}
       onClick={onClick}
     >
-      フィルター
+      {t('filter.title')}
     </button>
   );
 }

@@ -38,6 +38,9 @@ describe('LanguageSwitcher', () => {
     const onLanguageChange = vi.fn()
     render(<LanguageSwitcher {...defaultProps} onLanguageChange={onLanguageChange} />)
 
+    fireEvent.click(screen.getByText('EN'))
+    expect(onLanguageChange).toHaveBeenCalledWith('en')
+
     fireEvent.click(screen.getByText('한'))
     expect(onLanguageChange).toHaveBeenCalledWith('ko')
 
@@ -46,8 +49,13 @@ describe('LanguageSwitcher', () => {
 
     fireEvent.click(screen.getByText('繁'))
     expect(onLanguageChange).toHaveBeenCalledWith('zh-TW')
+  })
+
+  it('should not call onLanguageChange when clicking already selected language', () => {
+    const onLanguageChange = vi.fn()
+    render(<LanguageSwitcher {...defaultProps} currentLanguage="ja" onLanguageChange={onLanguageChange} />)
 
     fireEvent.click(screen.getByText('日'))
-    expect(onLanguageChange).toHaveBeenCalledWith('ja')
+    expect(onLanguageChange).not.toHaveBeenCalled()
   })
 })

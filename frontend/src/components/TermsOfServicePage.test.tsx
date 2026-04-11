@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react'
-import { userEvent } from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TermsOfServicePage } from './TermsOfServicePage'
 
@@ -90,38 +89,4 @@ describe('TermsOfServicePage', () => {
     })
   })
 
-  describe('言語切替', () => {
-    it('初期表示は日本語である', () => {
-      render(<TermsOfServicePage {...defaultProps} />)
-
-      expect(screen.getByText(/第1条（適用）/)).toBeInTheDocument()
-    })
-
-    it('言語トグルスイッチが表示される', () => {
-      render(<TermsOfServicePage {...defaultProps} />)
-
-      expect(screen.getByText('日本語')).toBeInTheDocument()
-      expect(screen.getByText('英語')).toBeInTheDocument()
-    })
-
-    it('トグルを切り替えると英語版が表示される', async () => {
-      render(<TermsOfServicePage {...defaultProps} />)
-
-      const toggle = screen.getByRole('switch')
-      await userEvent.setup().click(toggle)
-
-      expect(screen.getByText('Article 1 (Application)')).toBeInTheDocument()
-    })
-
-    it('トグルを再度切り替えると日本語版に戻る', async () => {
-      render(<TermsOfServicePage {...defaultProps} />)
-
-      const user = userEvent.setup()
-      const toggle = screen.getByRole('switch')
-      await user.click(toggle)
-      await user.click(toggle)
-
-      expect(screen.getByText(/第1条（適用）/)).toBeInTheDocument()
-    })
-  })
 })

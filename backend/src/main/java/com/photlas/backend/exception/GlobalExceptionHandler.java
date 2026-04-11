@@ -53,7 +53,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("INVALID_CREDENTIALS", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
@@ -62,7 +62,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("CONFLICT", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
@@ -116,7 +116,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(AccountSuspendedException.class)
     public ResponseEntity<ErrorResponse> handleAccountSuspendedException(AccountSuspendedException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("ACCOUNT_SUSPENDED", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
@@ -135,7 +135,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(EmailNotVerifiedException.class)
     public ResponseEntity<ErrorResponse> handleEmailNotVerifiedException(EmailNotVerifiedException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("EMAIL_NOT_VERIFIED", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 

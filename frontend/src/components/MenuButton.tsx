@@ -9,6 +9,7 @@ import {
 } from "./ui/sheet";
 import { AccountSettingsDialog } from "./AccountSettingsDialog";
 import { useAuth } from "../contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 import { Settings } from "lucide-react";
 
 /**
@@ -21,6 +22,7 @@ import { Settings } from "lucide-react";
  */
 function MenuButton() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
 
@@ -28,19 +30,19 @@ function MenuButton() {
     <>
       <button
         className="bg-white shadow-lg rounded-lg border px-4 py-2 text-sm font-medium"
-        aria-label="ユーザーメニューを開く"
-        title="アカウント設定やその他の機能にアクセス"
+        aria-label={t('menu.openMenu')}
+        title={t('menu.menuDescription')}
         onClick={() => setIsMenuOpen(true)}
       >
-        メニュー
+        {t('menu.title')}
       </button>
 
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <SheetContent side="right" className="w-64 sm:max-w-xs">
           <SheetHeader>
-            <SheetTitle>メニュー</SheetTitle>
+            <SheetTitle>{t('menu.title')}</SheetTitle>
             <SheetDescription className="sr-only">
-              アカウント設定やその他の機能にアクセス
+              {t('menu.menuDescription')}
             </SheetDescription>
           </SheetHeader>
           <nav className="flex flex-col gap-1 px-4">
@@ -50,7 +52,7 @@ function MenuButton() {
                 onClick={() => setIsAccountSettingsOpen(true)}
               >
                 <Settings className="w-4 h-4" />
-                アカウント設定
+                {t('menu.accountSettings')}
               </button>
             </SheetClose>
           </nav>
