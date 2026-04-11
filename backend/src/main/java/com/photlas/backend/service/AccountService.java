@@ -244,6 +244,7 @@ public class AccountService {
                         "Hi " + username + ",\n\n" +
                         "Your account has been deleted.\n\n" +
                         "Your data will be retained for 90 days. After that, all data will be permanently deleted.\n\n" +
+                        "If you wish to restore your account, simply log in with your email and password within 90 days.\n\n" +
                         "If you did not perform this action, please contact us immediately at:\n" +
                         "support@photlas.jp\n\n" +
                         "Photlas Team\nsupport@photlas.jp");
@@ -254,6 +255,7 @@ public class AccountService {
                         username + " さん\n\n" +
                         "アカウントの削除が完了しました。\n\n" +
                         "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
+                        "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワードでログインしてください。\n\n" +
                         "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
                         "support@photlas.jp\n\n" +
                         "Photlas 運営\nsupport@photlas.jp");

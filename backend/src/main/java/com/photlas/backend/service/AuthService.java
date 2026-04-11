@@ -102,10 +102,12 @@ public class AuthService {
 
     /**
      * ログイン処理
+     * Issue#92: ソフトデリート済みユーザーが正しいパスワードでログインした場合、アカウントを復旧する。
      *
      * @param request ログインリクエスト
      * @return ログインレスポンス
      */
+    @Transactional
     public RegisterResponse loginUser(LoginRequest request, String acceptLanguage) {
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail().toLowerCase());
 
@@ -115,13 +117,18 @@ public class AuthService {
 
         User user = userOptional.get();
 
-        // 退会チェックをパスワード検証の前に実行（レスポンスの違いで退会状態を推測させない）
-        if (user.getDeletedAt() != null) {
+        // パスワード検証を先に実行（アカウント復旧判定のため）
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new UnauthorizedException("メールアドレスまたはパスワードが正しくありません");
         }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("メールアドレスまたはパスワードが正しくありません");
+        // Issue#92: ソフトデリート済みの場合、アカウントを復旧する
+        if (user.getDeletedAt() != null) {
+            user.setDeletedAt(null);
+            user.setUsername(user.getOriginalUsername());
+            user.setOriginalUsername(null);
+            user.setDeletionHoldUntil(null);
+            userRepository.save(user);
         }
 
         if (!user.isEmailVerified()) {

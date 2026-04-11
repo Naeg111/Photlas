@@ -402,12 +402,13 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#72 - ログイン: 退会済みユーザーは汎用エラーメッセージで拒否される（退会状態を漏洩しない）")
-    void testLoginUser_DeletedUser_ThrowsGenericError() {
+    @DisplayName("Issue#92 - ログイン: 退会済みユーザーが誤ったパスワードでログインすると汎用エラーで拒否される")
+    void testLoginUser_DeletedUser_WrongPassword_ThrowsGenericError() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         user.setEmailVerified(true);
         user.setDeletedAt(java.time.LocalDateTime.now());
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(false);
 
         LoginRequest request = new LoginRequest(TEST_EMAIL, CURRENT_PASSWORD);
 
@@ -415,8 +416,8 @@ public class UserServiceTest {
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessage("メールアドレスまたはパスワードが正しくありません");
 
-        // パスワード検証が呼ばれていないことを確認（退会チェックが先に行われる）
-        verify(passwordEncoder, never()).matches(any(), any());
+        // パスワード検証が呼ばれていることを確認（Issue#92: パスワード検証を先に実行）
+        verify(passwordEncoder).matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH);
     }
 
     @Test
