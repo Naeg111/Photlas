@@ -170,6 +170,20 @@ public class ProfileService {
     }
 
     /**
+     * Issue#93: 言語設定を更新する
+     *
+     * @param email ユーザーのメールアドレス
+     * @param language 言語コード
+     */
+    @Transactional
+    public void updateLanguage(String email, String language) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+        user.setLanguage(language);
+        userRepository.save(user);
+    }
+
+    /**
      * プロフィールレスポンスを構築（共通ロジック）
      */
     private UserProfileResponse buildProfileResponse(User user, boolean includeEmail) {
