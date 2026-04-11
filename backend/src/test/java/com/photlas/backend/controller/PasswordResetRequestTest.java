@@ -257,15 +257,15 @@ public class PasswordResetRequestTest {
     }
 
     @Test
-    @DisplayName("退会済みユーザーにはリセットトークンが生成されない（セキュリティ）")
-    void testPasswordResetRequest_DeletedUser_DoesNotGenerateToken() throws Exception {
+    @DisplayName("Issue#92 - 退会済みユーザーにもリセットトークンが生成される（アカウント復旧用）")
+    void testPasswordResetRequest_DeletedUser_GeneratesToken() throws Exception {
         User user = new User();
         user.setUsername("deleteduser");
         user.setEmail("deleted@example.com");
         user.setPasswordHash("hashed-password");
         user.setRole(CodeConstants.ROLE_USER);
         user.setDeletedAt(java.time.LocalDateTime.now().minusDays(5));
-        userRepository.save(user);
+        user = userRepository.save(user);
 
         PasswordResetRequest request = new PasswordResetRequest();
         request.setEmail("deleted@example.com");
@@ -276,9 +276,9 @@ public class PasswordResetRequestTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("パスワードリセット用のメールを送信しました。メールをご確認ください。")));
 
-        // トークンが生成されていないことを確認
-        assertTrue(passwordResetTokenRepository.findByUserId(user.getId()).isEmpty(),
-                "退会済みユーザーにはリセットトークンが生成されない");
+        // トークンが生成されていることを確認
+        assertFalse(passwordResetTokenRepository.findByUserId(user.getId()).isEmpty(),
+                "退会済みユーザーにもリセットトークンが生成される");
     }
 
     @Test
