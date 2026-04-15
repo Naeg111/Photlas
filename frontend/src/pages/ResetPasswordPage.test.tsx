@@ -270,7 +270,7 @@ describe('ResetPasswordPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('通信エラーが発生しました。しばらく経ってからお試しください。')).toBeInTheDocument()
+        expect(screen.getByText('エラーが発生しました')).toBeInTheDocument()
       })
     })
   })

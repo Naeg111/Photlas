@@ -2,9 +2,12 @@ package com.photlas.backend.controller;
 
 import com.photlas.backend.dto.DeleteAccountRequest;
 import com.photlas.backend.dto.UpdateEmailRequest;
+import com.photlas.backend.dto.UpdateLanguageRequest;
 import com.photlas.backend.dto.UpdatePasswordRequest;
 import com.photlas.backend.service.AccountService;
 import com.photlas.backend.service.PasswordService;
+import com.photlas.backend.service.ProfileService;
+import com.photlas.backend.util.LanguageUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -22,10 +25,13 @@ public class AccountController {
 
     private final AccountService accountService;
     private final PasswordService passwordService;
+    private final ProfileService profileService;
 
-    public AccountController(AccountService accountService, PasswordService passwordService) {
+    public AccountController(AccountService accountService, PasswordService passwordService,
+                             ProfileService profileService) {
         this.accountService = accountService;
         this.passwordService = passwordService;
+        this.profileService = profileService;
     }
 
     /**
@@ -56,6 +62,22 @@ public class AccountController {
                 request.getCurrentPassword(),
                 request.getNewPassword()
         );
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Issue#93: 言語設定変更
+     * PUT /api/v1/users/me/language
+     */
+    @PutMapping("/language")
+    public ResponseEntity<Void> updateLanguage(
+            @Valid @RequestBody UpdateLanguageRequest request,
+            Authentication authentication) {
+        if (!LanguageUtils.isSupported(request.getLanguage())) {
+            throw new IllegalArgumentException("未対応の言語コードです: " + request.getLanguage());
+        }
+        String email = authentication.getName();
+        profileService.updateLanguage(email, request.getLanguage());
         return ResponseEntity.ok().build();
     }
 

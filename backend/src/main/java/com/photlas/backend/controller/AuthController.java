@@ -42,8 +42,10 @@ public class AuthController {
      * ユーザー登録エンドポイント
      */
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
-        RegisterResponse response = authService.registerUser(request);
+    public ResponseEntity<RegisterResponse> register(
+            @Valid @RequestBody RegisterRequest request,
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        RegisterResponse response = authService.registerUser(request, acceptLanguage);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -51,8 +53,10 @@ public class AuthController {
      * ログインエンドポイント
      */
     @PostMapping("/login")
-    public ResponseEntity<RegisterResponse> login(@Valid @RequestBody LoginRequest request) {
-        RegisterResponse response = authService.loginUser(request);
+    public ResponseEntity<RegisterResponse> login(
+            @Valid @RequestBody LoginRequest request,
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        RegisterResponse response = authService.loginUser(request, acceptLanguage);
         return ResponseEntity.ok(response);
     }
 

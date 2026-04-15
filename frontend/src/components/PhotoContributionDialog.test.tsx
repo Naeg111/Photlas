@@ -684,7 +684,7 @@ describe('PhotoContributionDialog', () => {
       if (categoryDiv) await user.click(categoryDiv)
 
       // 機材種別を選択
-      const deviceTypeDiv = screen.getByText('コンパクト').closest('div[class*="cursor-pointer"]')
+      const deviceTypeDiv = screen.getByText('コンパクトデジカメ').closest('div[class*="cursor-pointer"]')
       if (deviceTypeDiv) await user.click(deviceTypeDiv)
 
       // 投稿ボタンが有効になるのを待ってクリック

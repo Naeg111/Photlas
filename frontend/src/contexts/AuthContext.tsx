@@ -4,12 +4,15 @@
  * Issue#36: ユーザー情報更新機能追加
  */
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
+import i18n from '../i18n'
+import { type SupportedLanguage, SUPPORTED_LANGUAGES } from '../i18n'
 
 interface User {
   userId: number
   username: string
   email: string
   role: number
+  language?: string
 }
 
 interface AuthContextType {
@@ -19,6 +22,7 @@ interface AuthContextType {
   logout: () => void
   getAuthToken: () => string | null
   updateUser: (updatedUser: Partial<User>) => void
+  changeLanguage: (language: SupportedLanguage) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -68,6 +72,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     storage.setItem('auth_token', token)
     storage.setItem('auth_user', JSON.stringify(userData))
 
+    // Issue#93: ログイン時にDBの言語設定をi18nとlocalStorageに反映
+    if (userData.language && SUPPORTED_LANGUAGES.includes(userData.language as SupportedLanguage)) {
+      i18n.changeLanguage(userData.language)
+      localStorage.setItem('photlas-language', userData.language)
+    }
+
     setUser(userData)
     setIsAuthenticated(true)
   }, [])
@@ -101,14 +111,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     })
   }, [])
 
+  /**
+   * Issue#93: 言語設定を変更する
+   * i18n、localStorage、ログイン中はAPIも更新する
+   */
+  const changeLanguage = useCallback(async (language: SupportedLanguage) => {
+    i18n.changeLanguage(language)
+    localStorage.setItem('photlas-language', language)
+
+    if (isAuthenticated) {
+      const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+      if (token) {
+        try {
+          const { API_V1_URL } = await import('../config/api')
+          await fetch(`${API_V1_URL}/users/me/language`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ language }),
+          })
+          updateUser({ language })
+        } catch {
+          // API failure is non-critical; local change already applied
+        }
+      }
+    }
+  }, [isAuthenticated, updateUser])
+
   const value = useMemo<AuthContextType>(() => ({
     user,
     isAuthenticated,
     login,
     logout,
     getAuthToken,
-    updateUser
-  }), [user, isAuthenticated, login, logout, getAuthToken, updateUser])
+    updateUser,
+    changeLanguage
+  }), [user, isAuthenticated, login, logout, getAuthToken, updateUser, changeLanguage])
 
   return (
     <AuthContext.Provider value={value}>

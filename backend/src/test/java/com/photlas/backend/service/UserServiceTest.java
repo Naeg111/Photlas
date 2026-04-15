@@ -402,12 +402,13 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#72 - ログイン: 退会済みユーザーは汎用エラーメッセージで拒否される（退会状態を漏洩しない）")
-    void testLoginUser_DeletedUser_ThrowsGenericError() {
+    @DisplayName("Issue#92 - ログイン: 退会済みユーザーが誤ったパスワードでログインすると汎用エラーで拒否される")
+    void testLoginUser_DeletedUser_WrongPassword_ThrowsGenericError() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         user.setEmailVerified(true);
         user.setDeletedAt(java.time.LocalDateTime.now());
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(false);
 
         LoginRequest request = new LoginRequest(TEST_EMAIL, CURRENT_PASSWORD);
 
@@ -415,8 +416,8 @@ public class UserServiceTest {
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessage("メールアドレスまたはパスワードが正しくありません");
 
-        // パスワード検証が呼ばれていないことを確認（退会チェックが先に行われる）
-        verify(passwordEncoder, never()).matches(any(), any());
+        // パスワード検証が呼ばれていることを確認（Issue#92: パスワード検証を先に実行）
+        verify(passwordEncoder).matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH);
     }
 
     @Test
@@ -456,6 +457,90 @@ public class UserServiceTest {
         accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
 
         assertThat(spot.getCreatedByUserId()).isEqualTo(2L);
+    }
+
+    // ===== Issue#90: アカウント削除確認メール =====
+
+    @Test
+    @DisplayName("Issue#90 - アカウント削除: 確認メールが送信される（元のユーザー名で宛名が記載される）")
+    void testDeleteAccount_SendsConfirmationEmail() {
+        // Arrange
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+
+        // Assert: 元のユーザー名と90日間保持の案内を含むメールが送信されること
+        verify(emailService).send(
+                eq(TEST_EMAIL),
+                contains("アカウント削除"),
+                argThat(body -> body.contains(TEST_USERNAME) && body.contains("90日間"))
+        );
+    }
+
+    @Test
+    @DisplayName("Issue#90 - アカウント削除: メール送信失敗時も削除処理は成功する")
+    void testDeleteAccount_EmailFailure_DoesNotAffectDeletion() {
+        // Arrange
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        doThrow(new RuntimeException("SMTP error")).when(emailService).send(anyString(), anyString(), anyString());
+
+        // Act - 例外がスローされないこと
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+
+        // Assert: 削除処理は完了していること
+        verify(userRepository).save(argThat(u -> u.getDeletedAt() != null));
+    }
+
+    // ===== Issue#91: メールの英語対応 =====
+
+    @Test
+    @DisplayName("Issue#91 - アカウント削除: 英語ユーザーには英語の確認メールが送信される")
+    void testDeleteAccount_EnglishUser_SendsEnglishEmail() {
+        // Arrange
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        user.setLanguage("en");
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+
+        // Assert: 英語のメールが送信されること
+        verify(emailService).send(
+                eq(TEST_EMAIL),
+                contains("Account Deletion"),
+                argThat(body -> body.contains("Your account has been deleted")
+                        && body.contains("90 days"))
+        );
+    }
+
+    @Test
+    @DisplayName("Issue#91 - パスワード変更通知: 英語ユーザーには英語の通知メールが送信される")
+    void testPasswordChanged_EnglishUser_SendsEnglishEmail() {
+        // Arrange
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        user.setLanguage("en");
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        passwordService.updatePassword(TEST_EMAIL, CURRENT_PASSWORD, NEW_PASSWORD);
+
+        // Assert: 英語の通知メールが送信されること
+        verify(emailService).send(
+                eq(TEST_EMAIL),
+                contains("Password Changed"),
+                argThat(body -> body.contains("Your account password has been changed"))
+        );
     }
 
     // ===== updateProfileのSNSリンク非更新 (ProfileService.updateProfile) =====

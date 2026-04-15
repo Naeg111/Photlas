@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -17,6 +18,7 @@ interface PasswordResetRequestModalProps {
  * Issue#6: パスワードリセット機能
  */
 export default function PasswordResetRequestModal({ open, onClose, onShowLogin }: Readonly<PasswordResetRequestModalProps>) {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -41,7 +43,7 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      toast.error('メールアドレスの形式が正しくありません')
+      toast.error(t('auth.invalidEmailFormat'))
       return
     }
 
@@ -58,10 +60,10 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
         setIsSuccess(true)
       } else {
         const data = await response.json()
-        setError(data.message || 'エラーが発生しました')
+        setError(data.message || t('auth.errorOccurred'))
       }
     } catch {
-      setError('ネットワークエラーが発生しました')
+      setError(t('errors.unexpected'))
     } finally {
       setIsSubmitting(false)
     }
@@ -73,8 +75,8 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            <DialogTitle>パスワードリセット</DialogTitle>
-            <DialogDescription className="sr-only">パスワードリセットリクエスト</DialogDescription>
+            <DialogTitle>{t('auth.passwordResetTitle')}</DialogTitle>
+            <DialogDescription className="sr-only">{t('auth.passwordResetDescription')}</DialogDescription>
           </DialogHeader>
         </div>
 
@@ -82,18 +84,18 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
         <div className="overflow-y-auto flex-1 px-6 pb-6">
         {isSuccess ? (
           <div className="text-green-600 mt-4">
-            パスワード再設定用のメールを送信しました。受信トレイをご確認ください。
+            {t('auth.passwordResetSent')}
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate className="mt-4">
-            <p className="mb-4 text-black">登録メールアドレスを入力してください。</p>
+            <p className="mb-4 text-black">{t('auth.passwordResetInstruction')}</p>
 
             {error && (
               <div className="mb-4 text-red-600 text-sm">{error}</div>
             )}
 
             <div className="mb-4">
-              <Label htmlFor="reset-email">メールアドレス</Label>
+              <Label htmlFor="reset-email">{t('auth.email')}</Label>
               <Input
                 id="reset-email"
                 name="email"
@@ -112,7 +114,7 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
               disabled={!email || isSubmitting}
               className="w-full"
             >
-              {isSubmitting ? '送信中...' : '送信'}
+              {isSubmitting ? t('pages.submitting') : t('common.submit')}
             </Button>
 
             {onShowLogin && (
@@ -125,7 +127,7 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
                   onShowLogin()
                 }}
               >
-                ログインに戻る
+                {t('pages.goToLogin')}
               </Button>
             )}
           </form>

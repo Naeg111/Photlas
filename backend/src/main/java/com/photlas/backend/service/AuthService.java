@@ -12,6 +12,7 @@ import com.photlas.backend.exception.EmailNotVerifiedException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.util.LanguageUtils;
 import com.photlas.backend.util.TokenGenerator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,6 +31,7 @@ public class AuthService {
 
     private static final int EMAIL_VERIFICATION_TOKEN_EXPIRATION_HOURS = 24;
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
+    private static final String ERROR_INVALID_CREDENTIALS = "メールアドレスまたはパスワードが正しくありません";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -61,7 +63,7 @@ public class AuthService {
      * @return 登録レスポンス
      */
     @Transactional
-    public RegisterResponse registerUser(RegisterRequest request) {
+    public RegisterResponse registerUser(RegisterRequest request, String acceptLanguage) {
         String normalizedEmail = request.getEmail().toLowerCase();
         if (userRepository.existsByEmail(normalizedEmail)) {
             Optional<User> existingUser = userRepository.findByEmail(normalizedEmail);
@@ -79,6 +81,7 @@ public class AuthService {
             hashedPassword,
             CodeConstants.ROLE_USER
         );
+        user.setLanguage(LanguageUtils.resolve(acceptLanguage));
 
         user = userRepository.save(user);
 
@@ -91,27 +94,37 @@ public class AuthService {
     }
 
     /**
+     * 後方互換性のためのオーバーロード
+     */
+    @Transactional
+    public RegisterResponse registerUser(RegisterRequest request) {
+        return registerUser(request, null);
+    }
+
+    /**
      * ログイン処理
+     * Issue#92: ソフトデリート済みユーザーが正しいパスワードでログインした場合、アカウントを復旧する。
      *
      * @param request ログインリクエスト
      * @return ログインレスポンス
      */
-    public RegisterResponse loginUser(LoginRequest request) {
+    @Transactional
+    public RegisterResponse loginUser(LoginRequest request, String acceptLanguage) {
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail().toLowerCase());
 
         if (userOptional.isEmpty()) {
-            throw new UnauthorizedException("メールアドレスまたはパスワードが正しくありません");
+            throw new UnauthorizedException(ERROR_INVALID_CREDENTIALS);
         }
 
         User user = userOptional.get();
 
-        // 退会チェックをパスワード検証の前に実行（レスポンスの違いで退会状態を推測させない）
-        if (user.getDeletedAt() != null) {
-            throw new UnauthorizedException("メールアドレスまたはパスワードが正しくありません");
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException(ERROR_INVALID_CREDENTIALS);
         }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("メールアドレスまたはパスワードが正しくありません");
+        // Issue#92: ソフトデリート済みの場合、アカウントを復旧する
+        if (user.getDeletedAt() != null) {
+            restoreDeletedAccount(user);
         }
 
         if (!user.isEmailVerified()) {
@@ -122,12 +135,22 @@ public class AuthService {
             throw new AccountSuspendedException("アカウントが停止されています");
         }
 
+        // Issue#93: ログイン時のAccept-Languageによる言語自動更新を廃止
+        // 言語設定はユーザーが手動で変更する
+
         String token = jwtService.generateTokenWithRole(user.getEmail(), CodeConstants.roleToJwtString(user.getRole()));
 
         return new RegisterResponse(
             new RegisterResponse.UserResponse(user),
             token
         );
+    }
+
+    /**
+     * 後方互換性のためのオーバーロード
+     */
+    public RegisterResponse loginUser(LoginRequest request) {
+        return loginUser(request, null);
     }
 
     /**
@@ -186,6 +209,18 @@ public class AuthService {
     }
 
     /**
+     * Issue#92: ソフトデリート済みアカウントを復旧する
+     * deletedAt, username, originalUsername, deletionHoldUntilをリストアする。
+     */
+    private void restoreDeletedAccount(User user) {
+        user.setDeletedAt(null);
+        user.setUsername(user.getOriginalUsername());
+        user.setOriginalUsername(null);
+        user.setDeletionHoldUntil(null);
+        userRepository.save(user);
+    }
+
+    /**
      * メール認証トークンを生成して認証メールを送信
      */
     private void sendVerificationEmail(User user) {
@@ -201,15 +236,31 @@ public class AuthService {
                 user.getId(), token, expiryDate);
         emailVerificationTokenRepository.save(verificationToken);
 
-        emailService.send(
-                user.getEmail(),
-                "【Photlas】メールアドレスの確認",
-                user.getUsername() + " さん\n\n" +
-                "Photlasへのご登録ありがとうございます！\n" +
-                "以下のリンクをクリックして、メールアドレスを確認してください：\n\n" +
-                frontendUrl + "/verify-email?token=" + token + "\n\n" +
-                "このリンクの有効期限は24時間です。\n\n" +
-                "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                "Photlas チーム");
+        String link = frontendUrl + "/verify-email?token=" + token;
+
+        if ("en".equals(user.getLanguage())) {
+            emailService.send(
+                    user.getEmail(),
+                    "【Photlas】Email Verification",
+                    "Hi " + user.getUsername() + ",\n\n" +
+                    "Thank you for registering with Photlas!\n" +
+                    "Please click the link below to verify your email address:\n\n" +
+                    link + "\n\n" +
+                    "This link will expire in 24 hours.\n\n" +
+                    "If you did not create an account, please ignore this email.\n\n" +
+                    "Photlas Team");
+        } else {
+            emailService.send(
+                    user.getEmail(),
+                    "【Photlas】メールアドレスの確認",
+                    user.getUsername() + " さん\n\n" +
+                    "Photlasへのご登録ありがとうございます！\n" +
+                    "以下のリンクをクリックして、メールアドレスを確認してください：\n\n" +
+                    link + "\n\n" +
+                    "このリンクの有効期限は24時間です。\n\n" +
+                    "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
+                    "Photlas 運営");
+        }
     }
+
 }

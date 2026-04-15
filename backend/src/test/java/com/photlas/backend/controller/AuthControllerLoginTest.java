@@ -20,6 +20,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -113,7 +116,7 @@ public class AuthControllerLoginTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message", is("メールアドレスまたはパスワードが正しくありません")));
+                .andExpect(jsonPath("$.code", is("INVALID_CREDENTIALS")));
     }
 
     @Test
@@ -221,6 +224,170 @@ public class AuthControllerLoginTest {
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email", is("test@example.com")));
+    }
+
+    // ===== Issue#93: ログインレスポンスのlanguage・Accept-Language自動更新削除 =====
+
+    @Test
+    @DisplayName("Issue#93 - ログインレスポンスにlanguageフィールドが含まれる")
+    void testLogin_ResponseIncludesLanguageField() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@example.com");
+        request.setPassword("Password123");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.language", is("ja")));
+    }
+
+    @Test
+    @DisplayName("Issue#93 - ログイン時にAccept-Languageで言語が自動更新されない")
+    void testLogin_DoesNotUpdateLanguageFromAcceptLanguage() throws Exception {
+        assertThat(testUser.getLanguage()).isEqualTo("ja");
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@example.com");
+        request.setPassword("Password123");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .header("Accept-Language", "en-US,en;q=0.9")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        // 言語設定が変更されていないことを確認
+        User updatedUser = userRepository.findByEmail("test@example.com").orElseThrow();
+        assertThat(updatedUser.getLanguage()).isEqualTo("ja");
+    }
+
+    // ===== Issue#92: アカウント復旧機能 =====
+
+    @Test
+    @DisplayName("Issue#92 - ソフトデリート済みユーザーが正しいパスワードでログイン → アカウント復旧、200 OK")
+    void testLogin_SoftDeletedUser_CorrectPassword_RestoresAccountAndReturnsOk() throws Exception {
+        // Given: ソフトデリート済みユーザー
+        User deletedUser = new User();
+        deletedUser.setUsername("d_abcdef1234");
+        deletedUser.setEmail("deleted@example.com");
+        deletedUser.setPasswordHash(passwordEncoder.encode("Password123"));
+        deletedUser.setRole(CodeConstants.ROLE_USER);
+        deletedUser.setEmailVerified(true);
+        deletedUser.setDeletedAt(LocalDateTime.now().minusDays(5));
+        deletedUser.setOriginalUsername("deleteduser");
+        userRepository.save(deletedUser);
+
+        // When: 正しいパスワードでログイン
+        LoginRequest request = new LoginRequest();
+        request.setEmail("deleted@example.com");
+        request.setPassword("Password123");
+
+        // Then: 200 OK、ユーザー名が復元され、JWTトークンが返る
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.username", is("deleteduser")))
+                .andExpect(jsonPath("$.token").exists());
+    }
+
+    @Test
+    @DisplayName("Issue#92 - ソフトデリート済みユーザーの復旧後、全フィールドが正しくリストアされる")
+    void testLogin_SoftDeletedUser_CorrectPassword_RestoresUserFields() throws Exception {
+        // Given: ソフトデリート済みユーザー（deletionHoldUntil設定あり）
+        User deletedUser = new User();
+        deletedUser.setUsername("d_abcdef1234");
+        deletedUser.setEmail("deleted@example.com");
+        deletedUser.setPasswordHash(passwordEncoder.encode("Password123"));
+        deletedUser.setRole(CodeConstants.ROLE_USER);
+        deletedUser.setEmailVerified(true);
+        deletedUser.setDeletedAt(LocalDateTime.now().minusDays(5));
+        deletedUser.setOriginalUsername("myoriginal");
+        deletedUser.setDeletionHoldUntil(LocalDateTime.now().plusDays(120));
+        userRepository.save(deletedUser);
+
+        // When: 正しいパスワードでログイン
+        LoginRequest request = new LoginRequest();
+        request.setEmail("deleted@example.com");
+        request.setPassword("Password123");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        // Then: フィールドが正しく復元されている
+        User restored = userRepository.findByEmail("deleted@example.com").orElseThrow();
+        assertThat(restored.getDeletedAt()).isNull();
+        assertThat(restored.getUsername()).isEqualTo("myoriginal");
+        assertThat(restored.getOriginalUsername()).isNull();
+        assertThat(restored.getDeletionHoldUntil()).isNull();
+    }
+
+    @Test
+    @DisplayName("Issue#92 - ソフトデリート済みユーザーが誤ったパスワードでログイン → 復旧されず認証エラー")
+    void testLogin_SoftDeletedUser_WrongPassword_DoesNotRestoreAccount() throws Exception {
+        // Given: ソフトデリート済みユーザー
+        User deletedUser = new User();
+        deletedUser.setUsername("d_abcdef1234");
+        deletedUser.setEmail("deleted@example.com");
+        deletedUser.setPasswordHash(passwordEncoder.encode("Password123"));
+        deletedUser.setRole(CodeConstants.ROLE_USER);
+        deletedUser.setEmailVerified(true);
+        deletedUser.setDeletedAt(LocalDateTime.now().minusDays(5));
+        deletedUser.setOriginalUsername("deleteduser");
+        userRepository.save(deletedUser);
+
+        // When: 誤ったパスワードでログイン
+        LoginRequest request = new LoginRequest();
+        request.setEmail("deleted@example.com");
+        request.setPassword("WrongPassword1");
+
+        // Then: 401 Unauthorized
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", is("メールアドレスまたはパスワードが正しくありません")));
+
+        // ユーザーは復旧されていない
+        User stillDeleted = userRepository.findByEmail("deleted@example.com").orElseThrow();
+        assertThat(stillDeleted.getDeletedAt()).isNotNull();
+        assertThat(stillDeleted.getOriginalUsername()).isEqualTo("deleteduser");
+    }
+
+    @Test
+    @DisplayName("Issue#92 - 停止済み＋ソフトデリート済みユーザーが正しいパスワードでログイン → 復旧されるが停止エラー")
+    void testLogin_SuspendedAndSoftDeletedUser_CorrectPassword_RestoresButReturnsSuspended() throws Exception {
+        // Given: 停止済み＋ソフトデリート済みユーザー
+        User deletedUser = new User();
+        deletedUser.setUsername("d_abcdef1234");
+        deletedUser.setEmail("suspended-deleted@example.com");
+        deletedUser.setPasswordHash(passwordEncoder.encode("Password123"));
+        deletedUser.setRole(CodeConstants.ROLE_SUSPENDED);
+        deletedUser.setEmailVerified(true);
+        deletedUser.setDeletedAt(LocalDateTime.now().minusDays(5));
+        deletedUser.setOriginalUsername("suspuser");
+        userRepository.save(deletedUser);
+
+        // When: 正しいパスワードでログイン
+        LoginRequest request = new LoginRequest();
+        request.setEmail("suspended-deleted@example.com");
+        request.setPassword("Password123");
+
+        // Then: 403 停止エラー
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", is("アカウントが停止されています")));
+
+        // アカウントは復旧されている
+        User restored = userRepository.findByEmail("suspended-deleted@example.com").orElseThrow();
+        assertThat(restored.getDeletedAt()).isNull();
+        assertThat(restored.getUsername()).isEqualTo("suspuser");
+        assertThat(restored.getOriginalUsername()).isNull();
     }
 
     @Test

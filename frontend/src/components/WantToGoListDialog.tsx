@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { MapPin } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 /**
  * WantToGoListDialog コンポーネント
@@ -14,15 +15,17 @@ interface WantToGoListDialogProps {
 }
 
 export function WantToGoListDialog({ open, onOpenChange }: Readonly<WantToGoListDialogProps>) {
+  const { t } = useTranslation()
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}>
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            <DialogTitle>行きたい場所リスト</DialogTitle>
+            <DialogTitle>{t('wantToGo.title')}</DialogTitle>
             <DialogDescription className="sr-only">
-              行きたい場所として保存した撮影スポットのリスト
+              {t('wantToGo.description')}
             </DialogDescription>
           </DialogHeader>
         </div>

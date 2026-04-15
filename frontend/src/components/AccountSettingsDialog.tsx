@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Button } from "./ui/button";
@@ -26,6 +27,7 @@ export function AccountSettingsDialog({
   onOpenChange,
   currentEmail,
 }: Readonly<AccountSettingsDialogProps>) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { getAuthToken, logout } = useAuth();
 
@@ -49,7 +51,7 @@ export function AccountSettingsDialog({
   // メールアドレス変更処理
   const handleEmailChange = async () => {
     if (!newEmail || !emailPassword) {
-      toast.error("全てのフィールドを入力してください");
+      toast.error(t('settings.fillAllFields'));
       return;
     }
 
@@ -58,7 +60,7 @@ export function AccountSettingsDialog({
       // Issue#38: AuthContextからトークンを取得
       const token = getAuthToken();
       if (!token) {
-        toast.error("ログインが必要です");
+        toast.error(t('settings.loginRequired'));
         return;
       }
 
@@ -78,20 +80,20 @@ export function AccountSettingsDialog({
       );
 
       if (response.ok) {
-        toast.success("確認メールを送信しました。新しいメールアドレスに届いたリンクをクリックして変更を完了してください。", { duration: 8000 });
+        toast.success(t('settings.emailConfirmSent'), { duration: 8000 });
         setNewEmail("");
         setEmailPassword("");
       } else if (response.status === 401) {
-        toast.error("パスワードが正しくありません");
+        toast.error(t('settings.wrongPassword'));
       } else if (response.status === 409) {
-        toast.error("このメールアドレスはすでに使用されています");
+        toast.error(t('settings.emailAlreadyUsed'));
       } else if (response.status === 400) {
-        toast.error("メールアドレスの形式が正しくありません");
+        toast.error(t('settings.invalidEmailFormat'));
       } else {
-        toast.error("メールアドレスの変更に失敗しました");
+        toast.error(t('settings.emailChangeFailed'));
       }
     } catch {
-      toast.error("メールアドレスの変更に失敗しました");
+      toast.error(t('settings.emailChangeFailed'));
     } finally {
       setIsEmailLoading(false);
     }
@@ -100,18 +102,18 @@ export function AccountSettingsDialog({
   // パスワード変更処理
   const handlePasswordChange = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error("全てのフィールドを入力してください");
+      toast.error(t('settings.fillAllFields'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("新しいパスワードが一致しません");
+      toast.error(t('settings.passwordMismatch'));
       return;
     }
 
     // Issue#21: パスワードバリデーション統一
     if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z0-9]{8,20}$/.test(newPassword)) {
-      toast.error("パスワードは8〜20文字で、数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません");
+      toast.error(t('settings.passwordFormatError'));
       return;
     }
 
@@ -120,7 +122,7 @@ export function AccountSettingsDialog({
       // Issue#38: AuthContextからトークンを取得
       const token = getAuthToken();
       if (!token) {
-        toast.error("ログインが必要です");
+        toast.error(t('settings.loginRequired'));
         return;
       }
 
@@ -141,20 +143,20 @@ export function AccountSettingsDialog({
       );
 
       if (response.ok) {
-        toast.success("パスワードを変更しました");
+        toast.success(t('settings.passwordChanged'));
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
       } else if (response.status === 401) {
-        toast.error("現在のパスワードが正しくありません");
+        toast.error(t('settings.currentPasswordWrong'));
       } else if (response.status === 400) {
         const errorData = await response.json();
-        toast.error(errorData.message || "パスワードの形式が正しくありません");
+        toast.error(errorData.message || t('settings.passwordInvalidFormat'));
       } else {
-        toast.error("パスワードの変更に失敗しました");
+        toast.error(t('settings.passwordChangeFailed'));
       }
     } catch {
-      toast.error("パスワードの変更に失敗しました");
+      toast.error(t('settings.passwordChangeFailed'));
     } finally {
       setIsPasswordLoading(false);
     }
@@ -163,7 +165,7 @@ export function AccountSettingsDialog({
   // アカウント削除処理
   const handleAccountDelete = async () => {
     if (!deletePassword) {
-      toast.error("パスワードを入力してください");
+      toast.error(t('settings.enterPassword'));
       return;
     }
 
@@ -172,7 +174,7 @@ export function AccountSettingsDialog({
       // Issue#38: AuthContextからトークンを取得
       const token = getAuthToken();
       if (!token) {
-        toast.error("ログインが必要です");
+        toast.error(t('settings.loginRequired'));
         return;
       }
 
@@ -194,14 +196,14 @@ export function AccountSettingsDialog({
         // Issue#72: 退会完了メッセージを表示
         setIsDeletionComplete(true);
       } else if (response.status === 401) {
-        toast.error("パスワードが正しくありません");
+        toast.error(t('settings.wrongPassword'));
         setIsAlertOpen(false);
       } else {
-        toast.error("アカウントの削除に失敗しました");
+        toast.error(t('settings.deleteFailed'));
         setIsAlertOpen(false);
       }
     } catch {
-      toast.error("アカウントの削除に失敗しました");
+      toast.error(t('settings.deleteFailed'));
       setIsAlertOpen(false);
     } finally {
       setIsDeleteLoading(false);
@@ -216,9 +218,9 @@ export function AccountSettingsDialog({
             {/* Fixed header */}
             <div className="px-6 pt-6 pb-2 shrink-0">
               <DialogHeader>
-                <DialogTitle>退会手続き完了</DialogTitle>
+                <DialogTitle>{t('settings.deleteCompleteTitle')}</DialogTitle>
                 <DialogDescription className="sr-only">
-                  退会手続きが完了しました
+                  {t('settings.deleteCompleteDescription')}
                 </DialogDescription>
               </DialogHeader>
             </div>
@@ -226,10 +228,10 @@ export function AccountSettingsDialog({
             <div className="overflow-y-auto flex-1 px-6 pb-6">
             <div className="space-y-4 mt-4 text-center">
               <p className="text-sm text-gray-700">
-                アカウントの削除を受け付けました。
+                {t('settings.deleteCompleteMessage1')}
               </p>
               <p className="text-sm text-gray-700">
-                90日後にすべてのデータが完全に削除されます。
+                {t('settings.deleteCompleteMessage2')}
               </p>
               <Button
                 className="w-full mt-4"
@@ -239,7 +241,7 @@ export function AccountSettingsDialog({
                   onOpenChange(false);
                 }}
               >
-                閉じる
+                {t('common.close')}
               </Button>
             </div>
             </div>
@@ -249,9 +251,9 @@ export function AccountSettingsDialog({
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            <DialogTitle>アカウント設定</DialogTitle>
+            <DialogTitle>{t('settings.title')}</DialogTitle>
             <DialogDescription className="sr-only">
-              アカウント情報とセキュリティ設定
+              {t('settings.description')}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -261,10 +263,10 @@ export function AccountSettingsDialog({
         <div className="space-y-6 mt-4">
           {/* メールアドレス変更 */}
           <div className="space-y-4">
-            <h3 className="font-medium">メールアドレスの変更</h3>
+            <h3 className="font-medium">{t('settings.changeEmail')}</h3>
             <div className="space-y-4 mt-5">
               <div>
-                <Label htmlFor="current-email">現在のメールアドレス</Label>
+                <Label htmlFor="current-email">{t('settings.currentEmail')}</Label>
                 <Input
                   id="current-email"
                   type="email"
@@ -274,22 +276,22 @@ export function AccountSettingsDialog({
                 />
               </div>
               <div>
-                <Label htmlFor="new-email">新しいメールアドレス</Label>
+                <Label htmlFor="new-email">{t('settings.newEmail')}</Label>
                 <Input
                   id="new-email"
                   type="email"
-                  placeholder="new@example.com"
+                  placeholder={t('settings.newEmailPlaceholder')}
                   className="mt-2"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                 />
               </div>
               <div>
-                <Label htmlFor="email-password">パスワード</Label>
+                <Label htmlFor="email-password">{t('settings.passwordLabel')}</Label>
                 <Input
                   id="email-password"
                   type="password"
-                  placeholder="現在のパスワードを入力"
+                  placeholder={t('settings.currentPasswordPlaceholder')}
                   className="mt-2"
                   value={emailPassword}
                   onChange={(e) => setEmailPassword(e.target.value)}
@@ -300,7 +302,7 @@ export function AccountSettingsDialog({
                 onClick={handleEmailChange}
                 disabled={isEmailLoading || !newEmail || !emailPassword}
               >
-                {isEmailLoading ? "変更中..." : "メールアドレスを変更"}
+                {isEmailLoading ? t('settings.changing') : t('settings.changeEmailButton')}
               </Button>
             </div>
           </div>
@@ -309,10 +311,10 @@ export function AccountSettingsDialog({
 
           {/* パスワード変更 */}
           <div className="space-y-4">
-            <h3 className="font-medium">パスワードの変更</h3>
+            <h3 className="font-medium">{t('settings.changePassword')}</h3>
             <div className="space-y-4 mt-5">
               <div>
-                <Label htmlFor="current-password">現在のパスワード</Label>
+                <Label htmlFor="current-password">{t('settings.currentPassword')}</Label>
                 <Input
                   id="current-password"
                   type="password"
@@ -322,7 +324,7 @@ export function AccountSettingsDialog({
                 />
               </div>
               <div>
-                <Label htmlFor="new-password">新しいパスワード</Label>
+                <Label htmlFor="new-password">{t('settings.newPassword')}</Label>
                 <Input
                   id="new-password"
                   type="password"
@@ -332,7 +334,7 @@ export function AccountSettingsDialog({
                 />
               </div>
               <div>
-                <Label htmlFor="confirm-password">新しいパスワード（確認）</Label>
+                <Label htmlFor="confirm-password">{t('settings.newPasswordConfirm')}</Label>
                 <Input
                   id="confirm-password"
                   type="password"
@@ -346,7 +348,7 @@ export function AccountSettingsDialog({
                 onClick={handlePasswordChange}
                 disabled={isPasswordLoading || !currentPassword || !newPassword || !confirmPassword}
               >
-                {isPasswordLoading ? "変更中..." : "パスワードを変更"}
+                {isPasswordLoading ? t('settings.changing') : t('settings.changePasswordButton')}
               </Button>
             </div>
           </div>
@@ -355,13 +357,13 @@ export function AccountSettingsDialog({
 
           {/* プラン確認 */}
           <div className="space-y-3">
-            <h3>プラン</h3>
+            <h3>{t('settings.plan')}</h3>
             <div className="p-4 border rounded-lg">
-              <p className="text-sm text-gray-500">現在のプラン</p>
-              <p>無料プラン</p>
+              <p className="text-sm text-gray-500">{t('settings.currentPlan')}</p>
+              <p>{t('settings.freePlan')}</p>
             </div>
             <Button variant="outline" className="w-full" disabled>
-              プランをアップグレード（準備中）
+              {t('settings.upgradePlan')}
             </Button>
           </div>
 
@@ -369,29 +371,29 @@ export function AccountSettingsDialog({
 
           {/* アカウント削除 */}
           <div className="space-y-3 pt-2.5">
-            <h3 className="text-red-600">アカウント削除</h3>
+            <h3 className="text-red-600">{t('settings.deleteAccount')}</h3>
             <p className="text-sm text-gray-500">
-              アカウントを削除すると、すべてのデータが完全に削除されます。この操作は取り消せません。
+              {t('settings.deleteWarning')}
             </p>
             <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="w-full">
-                  アカウントを削除
+                  {t('settings.deleteButton')}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
+                  <AlertDialogTitle>{t('settings.deleteConfirmTitle')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    この操作は取り消せません。アカウントとすべてのデータが完全に削除されます。
+                    {t('settings.deleteConfirmDescription')}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="my-4">
-                  <Label htmlFor="delete-password">パスワードを入力して確認</Label>
+                  <Label htmlFor="delete-password">{t('settings.enterPasswordConfirm')}</Label>
                   <Input
                     id="delete-password"
                     type="password"
-                    placeholder="パスワードを入力"
+                    placeholder={t('settings.enterPassword')}
                     className="mt-2"
                     value={deletePassword}
                     onChange={(e) => setDeletePassword(e.target.value)}
@@ -399,14 +401,14 @@ export function AccountSettingsDialog({
                 </div>
                 <AlertDialogFooter>
                   <AlertDialogCancel onClick={() => setDeletePassword("")}>
-                    キャンセル
+                    {t('common.cancel')}
                   </AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-red-600 hover:bg-red-700"
                     onClick={handleAccountDelete}
                     disabled={isDeleteLoading}
                   >
-                    {isDeleteLoading ? "削除中..." : "削除する"}
+                    {isDeleteLoading ? t('settings.deleting') : t('settings.deleteAction')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

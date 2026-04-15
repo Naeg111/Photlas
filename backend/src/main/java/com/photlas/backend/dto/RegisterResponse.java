@@ -36,6 +36,7 @@ public class RegisterResponse {
         private String username;
         private String email;
         private Integer role;
+        private String language;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -46,6 +47,7 @@ public class RegisterResponse {
             this.username = user.getUsername();
             this.email = user.getEmail();
             this.role = user.getRole();
+            this.language = user.getLanguage();
             this.createdAt = user.getCreatedAt();
             this.updatedAt = user.getUpdatedAt();
         }
@@ -89,6 +91,14 @@ public class RegisterResponse {
 
         public void setCreatedAt(LocalDateTime createdAt) {
             this.createdAt = createdAt;
+        }
+
+        public String getLanguage() {
+            return language;
+        }
+
+        public void setLanguage(String language) {
+            this.language = language;
         }
 
         public LocalDateTime getUpdatedAt() {

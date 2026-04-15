@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import { Button } from './ui/button'
@@ -43,10 +44,6 @@ const TEST_ID_FAVORITES_PAGINATION = 'favorites-pagination'
 const TEST_ID_FAVORITE_PHOTO_PREFIX = 'favorite-photo-item-'
 const TEST_ID_POSTS_LOADING = 'posts-loading'
 const TEST_ID_POSTS_PHOTO_PREFIX = 'post-photo-item-'
-
-// Messages
-const MSG_NO_FAVORITES = 'お気に入りはまだありません'
-const MSG_NO_POSTS = 'まだ投稿がありません'
 
 // ページネーション定数
 const PHOTOS_PER_PAGE = 20
@@ -208,6 +205,8 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   isBackgrounded = false,
   refreshPhotosKey,
 }) => {
+  const { t } = useTranslation()
+
   // プロフィール画像とSNSリンクのローカルステート（即時反映用）
   const [localProfileImageUrl, setLocalProfileImageUrl] = useState<string | null>(null)
   const [localSnsLinks, setLocalSnsLinks] = useState<SnsLink[] | null>(null)
@@ -467,9 +466,9 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
   // 保存ボタンクリック時のラッパー（トースト通知付き）
   const handleSave = useCallback(async () => {
-    toast('保存中...')
+    toast(t('common.loading'))
     await handleSaveAllChanges()
-  }, [handleSaveAllChanges])
+  }, [handleSaveAllChanges, t])
 
   return (
     <Dialog open={open} onOpenChange={isBackgrounded ? () => {} : onClose} modal={false}>
@@ -489,7 +488,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            <DialogTitle>プロフィール</DialogTitle>
+            <DialogTitle>{t('menu.profile')}</DialogTitle>
             <DialogDescription className="sr-only">ユーザープロフィール情報</DialogDescription>
           </DialogHeader>
         </div>
@@ -535,7 +534,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  画像を選択
+                  {t('auth.selectImage')}
                 </Button>
                 {displayProfileImageUrl && (
                   <Button
@@ -545,7 +544,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                     data-testid="delete-profile-image-button"
                     onClick={handleDeleteProfileImage}
                   >
-                    画像を削除
+                    {t('common.delete')}
                   </Button>
                 )}
               </div>
@@ -570,7 +569,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                   <h2 className="text-2xl font-bold">{userProfile.username}</h2>
                   {isOwnProfile && (
                     <Button size="sm" variant="outline" onClick={handleUsernameEditClick}>
-                      変更
+                      {t('photo.change')}
                     </Button>
                   )}
                   {/* Issue#54: プロフィール通報ボタン（他人のプロフィールのみ） */}
@@ -636,7 +635,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                 data-testid="edit-sns-links-button"
                 onClick={() => setIsSnsEditDialogOpen(true)}
               >
-                SNSリンクを編集
+                {t('profile.editSnsLinks')}
               </Button>
             </div>
           )}
@@ -649,14 +648,14 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                 onClick={handleCancelAllChanges}
                 disabled={isSaving}
               >
-                キャンセル
+                {t('common.cancel')}
               </Button>
               <Button
                 data-testid="save-all-changes-button"
                 onClick={handleSave}
                 disabled={isSaving}
               >
-                {isSaving ? '保存中...' : '保存'}
+                {isSaving ? t('common.loading') : t('common.save')}
               </Button>
             </div>
           )}
@@ -667,10 +666,10 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           {isOwnProfile && (
             <TabsList className="w-full">
               <TabsTrigger value="posts" className="flex-1 data-[state=active]:!bg-black data-[state=active]:!text-white data-[state=active]:rounded-lg">
-                投稿
+                {t('profile.posts')}
               </TabsTrigger>
               <TabsTrigger value="favorites" className="flex-1 data-[state=active]:!bg-black data-[state=active]:!text-white data-[state=active]:rounded-lg">
-                お気に入り
+                {t('profile.favorites')}
               </TabsTrigger>
             </TabsList>
           )}
@@ -689,7 +688,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             {/* 投稿なしメッセージ */}
             {!photosLoading && photosFetched && userPhotos.length === 0 && (
               <div className="text-center py-8 text-gray-500">
-                {MSG_NO_POSTS}
+                {t('profile.noPosts')}
               </div>
             )}
 
@@ -785,7 +784,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
               {!favoritesLoading && favoritesFetched && favorites.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  {MSG_NO_FAVORITES}
+                  {t('profile.noFavorites')}
                 </div>
               )}
 

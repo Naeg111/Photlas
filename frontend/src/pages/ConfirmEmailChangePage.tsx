@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { API_V1_URL } from '../config/api'
 
@@ -13,6 +14,7 @@ import { API_V1_URL } from '../config/api'
 export default function ConfirmEmailChangePage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { updateUser, login, user } = useAuth()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
@@ -22,7 +24,7 @@ export default function ConfirmEmailChangePage() {
 
     if (!token) {
       setStatus('error')
-      setErrorMessage('確認トークンが見つかりません')
+      setErrorMessage(t('pages.confirmTokenNotFound'))
       return
     }
 
@@ -48,20 +50,20 @@ export default function ConfirmEmailChangePage() {
           setTimeout(() => navigate('/'), 3000)
         } else if (response.status === 409) {
           setStatus('error')
-          setErrorMessage('このメールアドレスはすでに他のアカウントで使用されています')
+          setErrorMessage(t('pages.emailAlreadyUsedByOther'))
         } else {
           const data = await response.json().catch(() => null)
           setStatus('error')
-          setErrorMessage(data?.message || '確認に失敗しました')
+          setErrorMessage(data?.message || t('auth.errorOccurred'))
         }
       } catch {
         setStatus('error')
-        setErrorMessage('確認に失敗しました。しばらく経ってからお試しください。')
+        setErrorMessage(t('auth.errorOccurred'))
       }
     }
 
     confirmEmailChange()
-  }, [searchParams, navigate, user, login, updateUser])
+  }, [searchParams, navigate, user, login, updateUser, t])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -69,25 +71,25 @@ export default function ConfirmEmailChangePage() {
         {status === 'loading' && (
           <>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-            <p className="text-gray-600">メールアドレスの変更を確認しています...</p>
+            <p className="text-gray-600">{t('pages.emailChangeVerifying')}</p>
           </>
         )}
 
         {status === 'success' && (
           <>
             <div className="text-green-500 text-5xl mb-4">&#10003;</div>
-            <h2 className="text-xl font-bold mb-2">変更完了</h2>
+            <h2 className="text-xl font-bold mb-2">{t('pages.emailChangeComplete')}</h2>
             <p className="text-gray-600 mb-4">
-              メールアドレスの変更が完了しました。
+              {t('pages.emailChangeCompleteMessage')}
             </p>
             <p className="text-sm text-gray-500">
-              3秒後にトップページへ移動します...
+              {t('pages.redirecting')}
             </p>
             <button
               onClick={() => navigate('/')}
               className="mt-4 text-primary hover:underline"
             >
-              今すぐトップページへ
+              {t('pages.goToHome')}
             </button>
           </>
         )}
@@ -95,13 +97,13 @@ export default function ConfirmEmailChangePage() {
         {status === 'error' && (
           <>
             <div className="text-red-500 text-5xl mb-4">&#10007;</div>
-            <h2 className="text-xl font-bold mb-2">確認エラー</h2>
+            <h2 className="text-xl font-bold mb-2">{t('pages.confirmError')}</h2>
             <p className="text-gray-600 mb-4">{errorMessage}</p>
             <button
               onClick={() => navigate('/')}
               className="mt-4 text-primary hover:underline"
             >
-              トップページへ
+              {t('common.home')}
             </button>
           </>
         )}

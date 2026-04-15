@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Button } from './ui/button'
 import { LogIn, UserPlus } from 'lucide-react'
@@ -22,21 +23,22 @@ export function LoginRequiredDialog({
   onShowLogin,
   onShowSignUp,
 }: Readonly<LoginRequiredDialogProps>) {
+  const { t } = useTranslation()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[398px] max-h-[90vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}>
         {/* Fixed header */}
         <div className="px-6 pt-6 shrink-0">
           <DialogHeader>
-            <DialogTitle>ログインが必要です</DialogTitle>
-            <DialogDescription className="sr-only">ログインまたはアカウント作成が必要です</DialogDescription>
+            <DialogTitle>{t('auth.loginRequired')}</DialogTitle>
+            <DialogDescription className="sr-only">{t('auth.loginRequiredDescription')}</DialogDescription>
           </DialogHeader>
         </div>
 
         {/* Content */}
         <div className="px-6 pb-6">
         <p className="text-sm text-muted-foreground w-fit mx-auto mt-1.5">
-          この機能を利用するには、ログインまたはアカウント作成が必要です。
+          {t('auth.loginRequiredMessage')}
         </p>
         <div className="space-y-3 mt-4">
           <Button
@@ -47,7 +49,7 @@ export function LoginRequiredDialog({
             }}
           >
             <LogIn className="w-4 h-4" />
-            ログイン
+            {t('common.login')}
           </Button>
           <Button
             variant="outline"
@@ -58,7 +60,7 @@ export function LoginRequiredDialog({
             }}
           >
             <UserPlus className="w-4 h-4" />
-            新規アカウント作成
+            {t('auth.createAccount')}
           </Button>
         </div>
         </div>

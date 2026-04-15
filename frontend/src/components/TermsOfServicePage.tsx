@@ -1,7 +1,6 @@
-import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { ScrollArea } from './ui/scroll-area'
-import { Switch } from './ui/switch'
 import { TermsContentJa } from './TermsContentJa'
 import { TermsContentEn } from './TermsContentEn'
 
@@ -9,7 +8,7 @@ import { TermsContentEn } from './TermsContentEn'
  * TermsOfServicePage コンポーネント
  * Issue#51: 利用規約の文面改訂
  *
- * 利用規約を表示するダイアログ（日本語/英語切替対応）
+ * 利用規約を表示するダイアログ（言語設定に応じて日本語/英語を自動切替）
  */
 
 interface TermsOfServicePageProps {
@@ -21,7 +20,7 @@ export function TermsOfServicePage({
   open,
   onOpenChange,
 }: Readonly<TermsOfServicePageProps>) {
-  const [isEnglish, setIsEnglish] = useState(false)
+  const { i18n } = useTranslation()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -36,23 +35,10 @@ export function TermsOfServicePage({
           </DialogHeader>
         </div>
 
-        {/* Fixed language toggle */}
-        <div className="px-6 pb-2 shrink-0">
-          <div className="flex items-center justify-end gap-2 text-sm">
-            <span className={isEnglish ? 'text-gray-400' : 'text-gray-700 font-medium'}>日本語</span>
-            <Switch
-              checked={isEnglish}
-              onCheckedChange={setIsEnglish}
-              aria-label="言語切替"
-            />
-            <span className={isEnglish ? 'text-gray-700 font-medium' : 'text-gray-400'}>英語</span>
-          </div>
-        </div>
-
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-6 pb-6">
           <ScrollArea className="h-full pr-4 select-text">
-            {isEnglish ? <TermsContentEn /> : <TermsContentJa />}
+            {i18n.language === 'ja' ? <TermsContentJa /> : <TermsContentEn />}
           </ScrollArea>
         </div>
       </DialogContent>

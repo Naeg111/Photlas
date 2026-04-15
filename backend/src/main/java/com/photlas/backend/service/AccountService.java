@@ -107,26 +107,50 @@ public class AccountService {
         emailChangeTokenRepository.save(changeToken);
 
         // 新メールアドレスに確認リンクを送信
-        emailService.send(
-                normalizedNewEmail,
-                "【Photlas】メールアドレス変更の確認",
-                user.getUsername() + " さん\n\n" +
-                "メールアドレスの変更リクエストを受け付けました。\n" +
-                "以下のリンクをクリックして、変更を確定してください：\n\n" +
-                frontendUrl + "/confirm-email-change?token=" + token + "\n\n" +
-                "このリンクの有効期限は30分です。\n\n" +
-                "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                "Photlas チーム");
+        String link = frontendUrl + "/confirm-email-change?token=" + token;
+        if ("en".equals(user.getLanguage())) {
+            emailService.send(
+                    normalizedNewEmail,
+                    "【Photlas】Email Change Confirmation",
+                    "Hi " + user.getUsername() + ",\n\n" +
+                    "We received a request to change your email address.\n" +
+                    "Please click the link below to confirm the change:\n\n" +
+                    link + "\n\n" +
+                    "This link will expire in 30 minutes.\n\n" +
+                    "If you did not request this, please ignore this email.\n\n" +
+                    "Photlas Team");
+        } else {
+            emailService.send(
+                    normalizedNewEmail,
+                    "【Photlas】メールアドレス変更の確認",
+                    user.getUsername() + " さん\n\n" +
+                    "メールアドレスの変更リクエストを受け付けました。\n" +
+                    "以下のリンクをクリックして、変更を確定してください：\n\n" +
+                    link + "\n\n" +
+                    "このリンクの有効期限は30分です。\n\n" +
+                    "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
+                    "Photlas 運営");
+        }
 
         // 旧メールアドレスに通知
         try {
-            emailService.send(
-                    email,
-                    "【Photlas】メールアドレスの変更がリクエストされました",
-                    user.getUsername() + " さん\n\n" +
-                    "お客様のアカウントでメールアドレスの変更がリクエストされました。\n\n" +
-                    "心当たりがない場合は、ただちにパスワードを変更してください。\n\n" +
-                    "Photlas チーム");
+            if ("en".equals(user.getLanguage())) {
+                emailService.send(
+                        email,
+                        "【Photlas】Email Change Requested",
+                        "Hi " + user.getUsername() + ",\n\n" +
+                        "An email address change has been requested for your account.\n\n" +
+                        "If you did not make this request, please change your password immediately.\n\n" +
+                        "Photlas Team");
+            } else {
+                emailService.send(
+                        email,
+                        "【Photlas】メールアドレスの変更がリクエストされました",
+                        user.getUsername() + " さん\n\n" +
+                        "お客様のアカウントでメールアドレスの変更がリクエストされました。\n\n" +
+                        "心当たりがない場合は、ただちにパスワードを変更してください。\n\n" +
+                        "Photlas 運営");
+            }
         } catch (Exception e) {
             logger.error("Failed to send email change notification to old address: {}", e.getMessage());
         }
@@ -198,11 +222,47 @@ public class AccountService {
         emailChangeTokenRepository.findByUserId(user.getId()).ifPresent(
                 t -> emailChangeTokenRepository.delete(t));
 
-        user.setOriginalUsername(user.getUsername());
+        String originalUsername = user.getUsername();
+        user.setOriginalUsername(originalUsername);
         user.setUsername("d_" + UUID.randomUUID().toString().substring(0, 10));
 
         user.setDeletedAt(java.time.LocalDateTime.now());
         userRepository.save(user);
+
+        sendAccountDeletionConfirmation(email, originalUsername, user.getLanguage());
+    }
+
+    /**
+     * アカウント削除確認メールを送信する
+     */
+    private void sendAccountDeletionConfirmation(String email, String username, String language) {
+        try {
+            if ("en".equals(language)) {
+                emailService.send(
+                        email,
+                        "【Photlas】Account Deletion Confirmation",
+                        "Hi " + username + ",\n\n" +
+                        "Your account has been deleted.\n\n" +
+                        "Your data will be retained for 90 days. After that, all data will be permanently deleted.\n\n" +
+                        "If you wish to restore your account, simply log in with your email and password within 90 days.\n\n" +
+                        "If you did not perform this action, please contact us immediately at:\n" +
+                        "support@photlas.jp\n\n" +
+                        "Photlas Team\nsupport@photlas.jp");
+            } else {
+                emailService.send(
+                        email,
+                        "【Photlas】アカウント削除のご確認",
+                        username + " さん\n\n" +
+                        "アカウントの削除が完了しました。\n\n" +
+                        "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
+                        "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワードでログインしてください。\n\n" +
+                        "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
+                        "support@photlas.jp\n\n" +
+                        "Photlas 運営\nsupport@photlas.jp");
+            }
+        } catch (Exception e) {
+            logger.error("アカウント削除確認メールの送信に失敗しました: {}", e.getMessage());
+        }
     }
 
     private void transferSpotOwnership(User deletingUser) {

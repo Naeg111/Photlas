@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Button } from './ui/button'
@@ -18,6 +19,10 @@ import { InlineMapPicker } from './InlineMapPicker'
 import {
   WEATHER_OPTIONS as CODE_WEATHER_OPTIONS,
   WEATHER_LABELS,
+  WEATHER_SUNNY,
+  WEATHER_CLOUDY,
+  WEATHER_RAIN,
+  WEATHER_SNOW,
   DEVICE_TYPE_LABELS,
   DEVICE_TYPE_SMARTPHONE,
   DEVICE_TYPE_MIRRORLESS,
@@ -30,6 +35,7 @@ import { extractExif, type ExifData } from '../utils/extractExif'
 import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
 import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
 import { sortSuggestionsByRelevance } from '../utils/sortSuggestions'
+import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 
 /**
  * PhotoContributionDialog コンポーネント
@@ -53,6 +59,22 @@ const DEVICE_TYPE_OPTIONS = [
   { value: DEVICE_TYPE_FILM, label: DEVICE_TYPE_LABELS[DEVICE_TYPE_FILM] },
   { value: DEVICE_TYPE_OTHER, label: DEVICE_TYPE_LABELS[DEVICE_TYPE_OTHER] },
 ] as const
+
+const DEVICE_TYPE_I18N_KEYS: Record<number, string> = {
+  [DEVICE_TYPE_SMARTPHONE]: 'deviceType.smartphone',
+  [DEVICE_TYPE_MIRRORLESS]: 'deviceType.mirrorless',
+  [DEVICE_TYPE_SLR]: 'deviceType.slr',
+  [DEVICE_TYPE_COMPACT]: 'deviceType.compact',
+  [DEVICE_TYPE_FILM]: 'deviceType.film',
+  [DEVICE_TYPE_OTHER]: 'deviceType.other',
+}
+
+const WEATHER_I18N_KEYS: Record<number, string> = {
+  [WEATHER_SUNNY]: 'weather.sunny',
+  [WEATHER_CLOUDY]: 'weather.cloudy',
+  [WEATHER_RAIN]: 'weather.rainy',
+  [WEATHER_SNOW]: 'weather.snowy',
+}
 
 // 施設名・店名の検索候補型
 interface PlaceNameSuggestion {
@@ -105,6 +127,8 @@ export function PhotoContributionDialog({
   onOpenChange,
   onSubmit,
 }: Readonly<PhotoContributionDialogProps>) {
+  const { t, i18n } = useTranslation()
+  const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string>('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
@@ -205,13 +229,13 @@ export function PhotoContributionDialog({
     if (file) {
       // ファイルサイズチェック
       if (file.size > PHOTO_UPLOAD.MAX_FILE_SIZE) {
-        toast.error(`ファイルサイズは${PHOTO_UPLOAD.MAX_FILE_SIZE_DISPLAY}以下にしてください。`)
+        toast.error(t('photo.fileSizeError'))
         return
       }
 
       // ファイル形式チェック
       if (!PHOTO_UPLOAD.ALLOWED_FILE_TYPES.includes(file.type as typeof PHOTO_UPLOAD.ALLOWED_FILE_TYPES[number])) {
-        toast.error(`${PHOTO_UPLOAD.ALLOWED_FILE_TYPES_DISPLAY}形式のファイルのみ対応しています。`)
+        toast.error(t('photo.fileFormatError'))
         return
       }
 
@@ -267,7 +291,7 @@ export function PhotoContributionDialog({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const options: any = {
           sessionToken: placeNameSessionTokenRef.current,
-          language: 'ja',
+          language: mapboxLang,
           types: 'poi',
         }
 
@@ -305,11 +329,11 @@ export function PhotoContributionDialog({
   const handleSubmit = async () => {
     // バリデーション
     if (!selectedFile) {
-      toast.error('写真を選択してください。')
+      toast.error(t('photo.photoRequiredError'))
       return
     }
     if (!pinPosition) {
-      toast.error('位置情報を設定してください。')
+      toast.error(t('photo.locationError'))
       return
     }
 
@@ -435,9 +459,9 @@ export function PhotoContributionDialog({
         {/* 固定ヘッダー（常時表示・スクロールしない） */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            <DialogTitle>写真を投稿</DialogTitle>
+            <DialogTitle>{t('photo.contributeTitle')}</DialogTitle>
             <DialogDescription className="sr-only">
-              写真とコンテクスト情報を投稿する
+              {t('photo.contributeDescription')}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -454,7 +478,7 @@ export function PhotoContributionDialog({
           <div className="space-y-6 mt-4">
             {/* 写真選択 */}
             <div className="space-y-3">
-              <Label className="text-base">写真（必須）</Label>
+              <Label className="text-base">{t('photo.photoRequired')}</Label>
               <div
                 className={`border-2 border-dashed rounded-lg p-6 ${
                   !previewUrl ? 'cursor-pointer hover:border-gray-400 transition-colors' : ''
@@ -485,7 +509,7 @@ export function PhotoContributionDialog({
                       />
                     </div>
                     <div className="mt-2 flex items-center gap-2">
-                      <span className="text-sm text-gray-500">ズーム</span>
+                      <span className="text-sm text-gray-500">{t('photo.zoom')}</span>
                       <input
                         type="range"
                         data-testid="crop-zoom-slider"
@@ -502,7 +526,7 @@ export function PhotoContributionDialog({
                       size="icon"
                       className="absolute top-2 right-2 z-10"
                       onClick={handleRemovePhoto}
-                      aria-label="削除"
+                      aria-label={t('common.delete')}
                     >
                       <X className="w-4 h-4" />
                     </Button>
@@ -517,7 +541,7 @@ export function PhotoContributionDialog({
                         fileInputRef.current?.click()
                       }}
                     >
-                      写真を選択
+                      {t('photo.selectPhoto')}
                     </Button>
                     <p className="text-sm text-gray-500 mt-2">
                       {PHOTO_UPLOAD.ALLOWED_FILE_TYPES_DISPLAY}（最大{PHOTO_UPLOAD.MAX_FILE_SIZE_DISPLAY}）
@@ -539,49 +563,49 @@ export function PhotoContributionDialog({
               <div className="space-y-3">
                 <Label className="text-base flex items-center gap-2">
                   <Camera className="w-4 h-4" />
-                  カメラ情報
+                  {t('photo.cameraInfo')}
                 </Label>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                     {exifData.cameraBody && (
                       <div>
-                        <span className="text-gray-500">カメラ</span>
+                        <span className="text-gray-500">{t('photo.camera')}</span>
                         <p className="font-medium">{exifData.cameraBody}</p>
                       </div>
                     )}
                     {exifData.cameraLens && (
                       <div>
-                        <span className="text-gray-500">レンズ</span>
+                        <span className="text-gray-500">{t('photo.lens')}</span>
                         <p className="font-medium">{exifData.cameraLens}</p>
                       </div>
                     )}
                     {exifData.focalLength35mm != null && (
                       <div>
-                        <span className="text-gray-500">焦点距離</span>
+                        <span className="text-gray-500">{t('photo.focalLength')}</span>
                         <p className="font-medium">{exifData.focalLength35mm}mm</p>
                       </div>
                     )}
                     {exifData.fValue && (
                       <div>
-                        <span className="text-gray-500">絞り</span>
+                        <span className="text-gray-500">{t('photo.aperture')}</span>
                         <p className="font-medium">{exifData.fValue}</p>
                       </div>
                     )}
                     {exifData.shutterSpeed && (
                       <div>
-                        <span className="text-gray-500">シャッタースピード</span>
+                        <span className="text-gray-500">{t('photo.shutterSpeed')}</span>
                         <p className="font-medium">{exifData.shutterSpeed}</p>
                       </div>
                     )}
                     {exifData.iso != null && (
                       <div>
-                        <span className="text-gray-500">ISO</span>
+                        <span className="text-gray-500">{t('photo.iso')}</span>
                         <p className="font-medium">ISO {exifData.iso}</p>
                       </div>
                     )}
                     {exifData.imageWidth != null && exifData.imageHeight != null && (
                       <div>
-                        <span className="text-gray-500">解像度</span>
+                        <span className="text-gray-500">{t('photo.resolution')}</span>
                         <p className="font-medium">{exifData.imageWidth} x {exifData.imageHeight}</p>
                       </div>
                     )}
@@ -592,13 +616,13 @@ export function PhotoContributionDialog({
 
             {/* 位置情報 */}
             <div className="space-y-3">
-              <Label className="text-base">撮影場所（必須）</Label>
+              <Label className="text-base">{t('photo.locationRequired')}</Label>
               <div className="space-y-1">
                 <p className="text-sm text-gray-500">
-                  地図をドラッグして撮影場所にピンを合わせてください
+                  {t('photo.locationInstruction')}
                 </p>
                 <p className="text-sm text-gray-500">
-                  写真に位置情報が登録されている場合は自動で設定されます
+                  {t('photo.locationAutoHint')}
                 </p>
               </div>
               <div className="border rounded-lg overflow-hidden h-[333px]">
@@ -613,14 +637,14 @@ export function PhotoContributionDialog({
             <div className="space-y-3">
               <Label htmlFor="placeName" className="text-base flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                場所の名前
+                {t('photo.locationName')}
               </Label>
               <div className="relative">
                 <Input
                   id="placeName"
                   value={placeName}
                   onChange={(e) => handlePlaceNameSearch(e.target.value)}
-                  placeholder="例：東京スカイツリー、富士山"
+                  placeholder={t('photo.locationNamePlaceholder')}
                   maxLength={PHOTO_UPLOAD.PLACE_NAME_MAX_LENGTH}
                 />
                 {isPlaceNameDropdownOpen && placeNameSuggestions.length > 0 && (
@@ -641,12 +665,12 @@ export function PhotoContributionDialog({
                   </ul>
                 )}
               </div>
-              <p className="text-sm text-gray-500">{placeName.length}/{PHOTO_UPLOAD.PLACE_NAME_MAX_LENGTH}文字</p>
+              <p className="text-sm text-gray-500">{placeName.length}/{PHOTO_UPLOAD.PLACE_NAME_MAX_LENGTH}{t('common.characters')}</p>
             </div>
 
             {/* カテゴリ選択 */}
             <div className="space-y-3">
-              <Label className="text-base">カテゴリ（必須・1つ以上選択）</Label>
+              <Label className="text-base">{t('photo.categoryRequired')}</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {PHOTO_CATEGORIES.map((category) => (
                   <div
@@ -677,7 +701,7 @@ export function PhotoContributionDialog({
             <div className="space-y-3">
               <Label className="text-base flex items-center gap-2">
                 <CameraIcon className="w-4 h-4" />
-                機材種別（必須）
+                {t('photo.deviceTypeRequired')}
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {DEVICE_TYPE_OPTIONS.map((option) => (
@@ -691,7 +715,7 @@ export function PhotoContributionDialog({
                     role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") setSelectedDeviceType(option.value) }} onPointerDown={(e) => { e.preventDefault(); const prev = selectedDeviceType; setSelectedDeviceType(option.value); lastToggleRef.current = () => setSelectedDeviceType(prev) }}
                   >
                     <Label className="cursor-pointer">
-                      {option.label}
+                      {t(DEVICE_TYPE_I18N_KEYS[option.value] ?? option.label)}
                     </Label>
                   </div>
                 ))}
@@ -700,7 +724,7 @@ export function PhotoContributionDialog({
 
             {/* 天気選択 */}
             <div className="space-y-3">
-              <Label className="text-base">天気</Label>
+              <Label className="text-base">{t('photo.weatherLabel')}</Label>
               <div className="grid grid-cols-4 gap-3">
                 {CODE_WEATHER_OPTIONS.map((option) => {
                   const label = WEATHER_LABELS[option.value] ?? ''
@@ -717,7 +741,7 @@ export function PhotoContributionDialog({
                     >
                       {Icon && <Icon className="w-5 h-5 shrink-0" />}
                       <Label className="cursor-pointer">
-                        {label}
+                        {t(WEATHER_I18N_KEYS[option.value] ?? label)}
                       </Label>
                     </div>
                   )
@@ -733,14 +757,14 @@ export function PhotoContributionDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={uploadStatus === 'uploading'}
               >
-                キャンセル
+                {t('common.cancel')}
               </Button>
               <Button
                 className="flex-1"
                 onClick={handleSubmit}
                 disabled={!canSubmit || uploadStatus === 'uploading'}
               >
-                投稿する
+                {t('photo.post')}
               </Button>
             </div>
           </div>
@@ -766,10 +790,10 @@ export function PhotoContributionDialog({
                         : 'text-gray-900'
                     }`}
                   >
-                    {uploadStatus === 'uploading' && '送信しています'}
-                    {uploadStatus === 'success' && '完了しました'}
-                    {uploadStatus === 'auth_error' && 'ログインの有効期限が切れました。再度ログインしてください'}
-                    {uploadStatus === 'error' && 'エラー 時間をおいて再度お試しください'}
+                    {uploadStatus === 'uploading' && t('photo.uploading')}
+                    {uploadStatus === 'success' && t('photo.uploadComplete')}
+                    {uploadStatus === 'auth_error' && t('photo.sessionExpired')}
+                    {uploadStatus === 'error' && t('photo.uploadError')}
                   </p>
                   {uploadStatus === 'uploading' && (
                     <Progress value={uploadProgress} className="h-2" />

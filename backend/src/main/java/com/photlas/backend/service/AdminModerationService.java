@@ -153,6 +153,7 @@ public class AdminModerationService {
         User user = userRepository.findById(userId).orElse(null);
         String email = user != null ? user.getEmail() : null;
         String username = user != null ? user.getUsername() : null;
+        String language = user != null ? user.getLanguage() : "ja";
 
         if (violationCount >= 3) {
             // 3回目以降: 永久停止
@@ -160,7 +161,7 @@ public class AdminModerationService {
             accountSanctionRepository.save(sanction);
             applyPermanentSuspension(userId);
             if (email != null) {
-                notificationService.sendPermanentSuspensionNotification(email, username, reason);
+                notificationService.sendPermanentSuspensionNotification(email, username, reason, language);
             }
         } else if (violationCount == 2) {
             // 2回目: 60日間投稿停止
@@ -169,7 +170,7 @@ public class AdminModerationService {
             accountSanctionRepository.save(sanction);
             if (email != null) {
                 notificationService.sendTemporarySuspensionNotification(
-                        email, username, reason, sanction.getSuspendedUntil().toLocalDate());
+                        email, username, reason, sanction.getSuspendedUntil().toLocalDate(), language);
             }
             logger.info("一時停止を適用: userId={}, until={}", userId, sanction.getSuspendedUntil());
         } else {
@@ -177,7 +178,7 @@ public class AdminModerationService {
             sanction.setSanctionType(CodeConstants.SANCTION_WARNING);
             accountSanctionRepository.save(sanction);
             if (email != null) {
-                notificationService.sendWarningNotification(email, username, reason);
+                notificationService.sendWarningNotification(email, username, reason, language);
             }
             logger.info("警告を適用: userId={}", userId);
         }

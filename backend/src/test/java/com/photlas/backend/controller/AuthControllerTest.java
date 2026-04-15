@@ -319,6 +319,52 @@ public class AuthControllerTest {
                 .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_PASSWORD)));
     }
 
+    // ===== Issue#91: Accept-Languageによる言語設定 =====
+
+    @Test
+    @DisplayName("Issue#91 - 登録: Accept-Language が en-US の場合、language に en が保存される")
+    void testRegister_AcceptLanguageEn_SetsLanguageEn() throws Exception {
+        RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .header("Accept-Language", "en-US,en;q=0.9")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        User savedUser = userRepository.findByEmail(TEST_EMAIL).orElseThrow();
+        assertThat(savedUser.getLanguage()).isEqualTo("en");
+    }
+
+    @Test
+    @DisplayName("Issue#91 - 登録: Accept-Language が ja の場合、language に ja が保存される")
+    void testRegister_AcceptLanguageJa_SetsLanguageJa() throws Exception {
+        RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .header("Accept-Language", "ja,en-US;q=0.9")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        User savedUser = userRepository.findByEmail(TEST_EMAIL).orElseThrow();
+        assertThat(savedUser.getLanguage()).isEqualTo("ja");
+    }
+
+    @Test
+    @DisplayName("Issue#91 - 登録: Accept-Language ヘッダーなしの場合、language に ja がデフォルト設定される")
+    void testRegister_NoAcceptLanguage_DefaultsToJa() throws Exception {
+        RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        User savedUser = userRepository.findByEmail(TEST_EMAIL).orElseThrow();
+        assertThat(savedUser.getLanguage()).isEqualTo("ja");
+    }
+
     // ===== Issue#54: アカウント停止テスト =====
 
     @Test
