@@ -98,10 +98,42 @@ jobs:
         name: backend-test-results
         path: backend/build/reports/tests/test/
 
+  shell-tests:
+    name: Shell Script Tests (TDD)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install shellcheck and bats
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck bats
+
+    - name: Run shellcheck on scripts/
+      run: |
+        shopt -s nullglob
+        files=(scripts/*.sh)
+        if [ ${#files[@]} -eq 0 ]; then
+          echo "No shell scripts to check."
+          exit 0
+        fi
+        shellcheck "${files[@]}"
+
+    - name: Run bats tests
+      run: |
+        if [ -d tests/scripts ]; then
+          bats tests/scripts/
+        else
+          echo "No bats tests to run."
+        fi
+
   tdd-status:
     name: TDD Status Check
     runs-on: ubuntu-latest
-    needs: [frontend-tests, backend-tests]
+    needs: [frontend-tests, backend-tests, shell-tests]
     if: always()
 
     steps:
@@ -113,3 +145,4 @@ jobs:
         echo ""
         echo "Frontend Tests: ${{ needs.frontend-tests.result }}"
         echo "Backend Tests: ${{ needs.backend-tests.result }}"
+        echo "Shell Tests: ${{ needs.shell-tests.result }}"
