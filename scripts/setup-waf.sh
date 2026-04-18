@@ -50,11 +50,11 @@ WEBACL_NAME="photlas-waf-main"
 # 適用するリソースタグ:
 #   Project=Photlas
 #   Environment=production   (StagingLooseLimit 系リソースは Environment=staging)
-#   ManagedBy=Issue#94
+#   ManagedBy=Issue-94       (AWS タグ値に '#' は使えないためハイフン表記)
 #   CostCenter=waf
 TAG_PROJECT="Photlas"
 TAG_ENVIRONMENT="production"
-TAG_MANAGED_BY="Issue#94"
+TAG_MANAGED_BY="Issue-94"
 TAG_COST_CENTER="waf"
 
 TMP_DIR="$(mktemp -d)"
