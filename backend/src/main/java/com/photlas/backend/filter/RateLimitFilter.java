@@ -201,17 +201,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
      * ここから SecurityContext 経由で認証情報を参照できる。
      */
     private String getUserIdentifier(HttpServletRequest request) {
-        if (isAuthenticatedUser()) {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (isAuthenticated(authentication)) {
             return USER_PREFIX + authentication.getName();
         }
-
-        String clientIp = extractClientIp(request);
-        return IP_PREFIX + clientIp;
+        return IP_PREFIX + extractClientIp(request);
     }
 
-    private boolean isAuthenticatedUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    private boolean isAuthenticated(Authentication authentication) {
         return authentication != null
                 && authentication.isAuthenticated()
                 && !ANONYMOUS_USER.equals(authentication.getPrincipal());
