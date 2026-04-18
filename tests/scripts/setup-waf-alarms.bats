@@ -111,8 +111,9 @@ SCRIPT="$SCRIPTS_DIR/setup-waf-alarms.sh"
   assert_contains "$SCRIPT" 'Project=Photlas'
 }
 
-@test "setup-waf-alarms.sh: tags resources with ManagedBy=Issue#94" {
-  assert_contains "$SCRIPT" 'ManagedBy=Issue#94'
+@test "setup-waf-alarms.sh: tags resources with ManagedBy=Issue-94" {
+  # AWS タグ値には '#' が使えないためハイフン表記
+  assert_contains "$SCRIPT" 'ManagedBy=Issue-94'
 }
 
 @test "setup-waf-alarms.sh: tags resources with CostCenter=waf" {
