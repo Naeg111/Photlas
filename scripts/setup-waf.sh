@@ -274,6 +274,13 @@ log "Firehose ARN: $FIREHOSE_ARN"
 section "Step 4: WAFv2 WebACL"
 
 # ルール定義
+#
+# ByteMatchStatement.SearchString は WAFv2 API では blob 型のため、
+# AWS CLI v2 に JSON で渡す際は Base64 エンコードが必須。
+# 生文字列 → Base64 対応表:
+#   api.photlas.jp       → YXBpLnBob3RsYXMuanA=
+#   /api/v1/auth/        → L2FwaS92MS9hdXRoLw==
+#   test-api.photlas.jp  → dGVzdC1hcGkucGhvdGxhcy5qcA==
 cat > "$TMP_DIR/webacl-rules.json" <<'EOF'
 [
   {
@@ -294,7 +301,7 @@ cat > "$TMP_DIR/webacl-rules.json" <<'EOF'
             "Statements": [
               {
                 "ByteMatchStatement": {
-                  "SearchString": "api.photlas.jp",
+                  "SearchString": "YXBpLnBob3RsYXMuanA=",
                   "FieldToMatch": {"SingleHeader": {"Name": "host"}},
                   "TextTransformations": [{"Priority": 0, "Type": "LOWERCASE"}],
                   "PositionalConstraint": "EXACTLY"
@@ -302,7 +309,7 @@ cat > "$TMP_DIR/webacl-rules.json" <<'EOF'
               },
               {
                 "ByteMatchStatement": {
-                  "SearchString": "/api/v1/auth/",
+                  "SearchString": "L2FwaS92MS9hdXRoLw==",
                   "FieldToMatch": {"UriPath": {}},
                   "TextTransformations": [{"Priority": 0, "Type": "LOWERCASE"}],
                   "PositionalConstraint": "STARTS_WITH"
@@ -334,7 +341,7 @@ cat > "$TMP_DIR/webacl-rules.json" <<'EOF'
         },
         "ScopeDownStatement": {
           "ByteMatchStatement": {
-            "SearchString": "api.photlas.jp",
+            "SearchString": "YXBpLnBob3RsYXMuanA=",
             "FieldToMatch": {"SingleHeader": {"Name": "host"}},
             "TextTransformations": [{"Priority": 0, "Type": "LOWERCASE"}],
             "PositionalConstraint": "EXACTLY"
@@ -363,7 +370,7 @@ cat > "$TMP_DIR/webacl-rules.json" <<'EOF'
         },
         "ScopeDownStatement": {
           "ByteMatchStatement": {
-            "SearchString": "test-api.photlas.jp",
+            "SearchString": "dGVzdC1hcGkucGhvdGxhcy5qcA==",
             "FieldToMatch": {"SingleHeader": {"Name": "host"}},
             "TextTransformations": [{"Priority": 0, "Type": "LOWERCASE"}],
             "PositionalConstraint": "EXACTLY"
