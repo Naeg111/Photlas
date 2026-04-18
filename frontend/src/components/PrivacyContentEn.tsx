@@ -85,7 +85,11 @@ export function PrivacyContentEn() {
 
         <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">(7) Technical Information</h3>
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-          <li>IP address (temporarily collected for rate limiting purposes; not stored permanently)</li>
+          <li>
+            WAF logs (IP address, request URL, User-Agent, and access time collected by AWS WAF).
+            Purpose: Rate limiting and detection and investigation of unauthorized access.
+            Retention: Up to 90 days; automatically deleted after the retention period.
+          </li>
           <li>Error information (collected through the external service &quot;Sentry&quot;; only a portion of all errors are transmitted)</li>
         </ul>
       </section>
