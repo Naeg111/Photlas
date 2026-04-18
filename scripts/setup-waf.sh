@@ -173,7 +173,7 @@ EOF
   aws iam create-role \
     --role-name "$FIREHOSE_ROLE_NAME" \
     --assume-role-policy-document "file://$TMP_DIR/firehose-trust-policy.json" \
-    --description "Firehose role for AWS WAF logs delivery to S3 (Issue#94)" \
+    --description "Firehose role for AWS WAF logs delivery to S3 - Issue#94" \
     --tags \
       "Key=Project,Value=${TAG_PROJECT}" \
       "Key=Environment,Value=${TAG_ENVIRONMENT}" \
@@ -445,7 +445,7 @@ else
       "CloudWatchMetricsEnabled": true,
       "MetricName": "photlas-waf-main"
     }' \
-    --description "Photlas main WAF with rate limiting rules (Issue#94)" \
+    --description "Photlas main WAF with rate limiting rules - Issue#94" \
     --tags \
       "Key=Project,Value=${TAG_PROJECT}" \
       "Key=Environment,Value=${TAG_ENVIRONMENT}" \
