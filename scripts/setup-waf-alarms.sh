@@ -32,11 +32,11 @@ SNS_TOPIC_NAME="photlas-waf-alerts"
 # 適用するリソースタグ:
 #   Project=Photlas
 #   Environment=production   (StagingLooseLimit アラームは Environment=staging)
-#   ManagedBy=Issue#94
+#   ManagedBy=Issue-94       (AWS タグ値に '#' は使えないためハイフン表記)
 #   CostCenter=waf
 TAG_PROJECT="Photlas"
 TAG_ENVIRONMENT="production"
-TAG_MANAGED_BY="Issue#94"
+TAG_MANAGED_BY="Issue-94"
 TAG_COST_CENTER="waf"
 
 if [ -z "${ALERT_EMAIL:-}" ]; then
