@@ -107,11 +107,19 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
     }
 
+    /** 多重エンコード防御時のデコード反復上限 */
+    private static final int URL_DECODE_MAX_ITERATIONS = 3;
+
     /**
      * リクエストパスを解決する。
      * Issue#95: /api/v1/auth/password%2Dreset%2Drequest のような URL エンコードでの
-     * SENSITIVE_PATHS 回避攻撃を防ぐため、getServletPath()（通常はデコード済み）を優先し、
-     * さらに明示的に URL デコードを 1 回かけて正規化する。
+     * SENSITIVE_PATHS 回避攻撃を防ぐため、getServletPath()（本番では通常デコード済み）を優先し、
+     * さらに明示的に URL デコードを最大 3 回まで反復して正規化する。
+     *
+     * 多重エンコード（例: "-" → "%2D" → "%252D"）されたケースにも対応するため、
+     * パスが変化しなくなるまで、または 3 回に達するまで繰り返しデコードする。
+     * （MockMvc が URL テンプレートを再エンコードすることによる % の二重化や、
+     *   リバースプロキシの設定違いを吸収するための防御的処理。）
      */
     private String resolveRequestPath(HttpServletRequest request) {
         String rawPath = request.getServletPath();
@@ -121,14 +129,23 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (rawPath == null) {
             return "";
         }
-        if (rawPath.indexOf('%') < 0) {
-            return rawPath;
+        String current = rawPath;
+        for (int i = 0; i < URL_DECODE_MAX_ITERATIONS; i++) {
+            if (current.indexOf('%') < 0) {
+                return current;
+            }
+            String decoded;
+            try {
+                decoded = URLDecoder.decode(current, StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException malformed) {
+                return current;
+            }
+            if (decoded.equals(current)) {
+                return current;
+            }
+            current = decoded;
         }
-        try {
-            return URLDecoder.decode(rawPath, StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException malformed) {
-            return rawPath;
-        }
+        return current;
     }
 
     private void handleRateLimitExceeded(HttpServletResponse response, String userIdentifier,
