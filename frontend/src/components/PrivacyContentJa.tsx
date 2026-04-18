@@ -73,7 +73,11 @@ export function PrivacyContentJa() {
 
         <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（7）技術情報</h3>
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-          <li>IPアドレス（レートリミット制御目的で一時的に取得。永続的な保存は行いません）</li>
+          <li>
+            WAF ログ（AWS WAF が収集する IPアドレス・リクエスト URL・User-Agent・アクセス時刻。
+            利用目的はレートリミット制御および不正アクセスの検知および調査。
+            保管期間は最大 90 日間で、保管期間経過後は自動的に削除されます）
+          </li>
           <li>エラー情報（外部サービス「Sentry」を通じて収集。全エラーの一部のみが送信されます）</li>
         </ul>
       </section>
