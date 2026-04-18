@@ -141,10 +141,16 @@ public class SecurityConfig {
                     .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                 )
             )
-            // Issue#22: レート制限フィルターを追加
-            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-            // JWT認証フィルターを追加
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            // フィルタ順序（Issue#95）:
+            //   JwtAuthenticationFilter → RateLimitFilter → UsernamePasswordAuthenticationFilter
+            // 理由:
+            //   RateLimitFilter は SecurityContext から認証済みユーザーの email を取得して
+            //   user:{email} 単位で独立したバケットを持つ必要があるため、JWT 検証後に動く必要がある。
+            // 実装: Spring Security は addFilterBefore() で同じ reference を指定すると
+            //   登録順に並ぶ（ArrayList.sort の安定性）ため、下記の順で追加すれば
+            //   Jwt → RateLimit の順に実行される。
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
