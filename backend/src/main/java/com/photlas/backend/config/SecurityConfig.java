@@ -1,6 +1,7 @@
 package com.photlas.backend.config;
 
 import com.photlas.backend.filter.RateLimitFilter;
+import com.photlas.backend.filter.TraceIdFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,10 +50,14 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
+    private final TraceIdFilter traceIdFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, RateLimitFilter rateLimitFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          RateLimitFilter rateLimitFilter,
+                          TraceIdFilter traceIdFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.rateLimitFilter = rateLimitFilter;
+        this.traceIdFilter = traceIdFilter;
     }
 
     @Bean
@@ -141,10 +146,18 @@ public class SecurityConfig {
                     .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                 )
             )
-            // Issue#22: レート制限フィルターを追加
-            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-            // JWT認証フィルターを追加
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            // フィルタ順序（Issue#95）:
+            //   TraceIdFilter → JwtAuthenticationFilter → RateLimitFilter → UsernamePasswordAuthenticationFilter
+            // 理由:
+            //   - TraceIdFilter は最前段で MDC に traceId を格納し、以降のログを相関可能にする
+            //   - RateLimitFilter は SecurityContext から認証済みユーザーの email を取得して
+            //     user:{email} 単位で独立したバケットを持つため、JWT 検証後に動く必要がある
+            // 実装: Spring Security は addFilterBefore() で同じ reference を指定すると
+            //   登録順に並ぶ（ArrayList.sort の安定性）ため、下記の順で追加すれば
+            //   TraceId → Jwt → RateLimit の順に実行される。
+            .addFilterBefore(traceIdFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

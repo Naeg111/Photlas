@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -311,10 +313,14 @@ public class RateLimitFilterTest {
     void testRateLimitFilter_UrlEncodedSensitivePath_TreatedAsSensitive() throws Exception {
         // "-" を %2D にエンコードしたパスで SENSITIVE_PATHS の完全一致をすり抜けようとする攻撃。
         // Spring が内部でデコードするため、getServletPath() 使用で sensitive として判定される。
-        String url = "/api/v1/auth/password%2Dreset%2Drequest";
+        //
+        // MockMvc の post(String) は URI テンプレート扱いで "%2D" を "%252D" に二重エンコードし、
+        // Spring Security の StrictHttpFirewall に弾かれて 400 になるため、URI.create() で
+        // 生のエンコード済みパスをそのまま渡す。
+        URI uri = URI.create("/api/v1/auth/password%2Dreset%2Drequest");
 
         for (int i = 0; i < 3; i++) {
-            mockMvc.perform(post(url)
+            mockMvc.perform(post(uri)
                     .with(csrf())
                     .contentType("application/json")
                     .content("{}"))
@@ -322,7 +328,7 @@ public class RateLimitFilterTest {
         }
 
         // 4回目は sensitive 制限で 429（general=80, auth=10 ではなく sensitive=3）
-        mockMvc.perform(post(url)
+        mockMvc.perform(post(uri)
                 .with(csrf())
                 .contentType("application/json")
                 .content("{}"))
