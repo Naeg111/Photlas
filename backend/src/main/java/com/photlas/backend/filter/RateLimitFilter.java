@@ -80,6 +80,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /** キャッシュの TTL: 最終アクセスから 10 分 */
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
 
+    /** 多重エンコード防御時のデコード反復上限 */
+    private static final int URL_DECODE_MAX_ITERATIONS = 3;
+
     /**
      * ユーザー／IP ごとの Bucket を管理するキャッシュ（TTL 付き）。
      * 最終アクセスから 10 分経過したエントリは自動的に削除される。
@@ -106,9 +109,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
             handleRateLimitExceeded(response, userIdentifier, requestPath, rateLimit);
         }
     }
-
-    /** 多重エンコード防御時のデコード反復上限 */
-    private static final int URL_DECODE_MAX_ITERATIONS = 3;
 
     /**
      * リクエストパスを解決する。
