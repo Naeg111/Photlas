@@ -64,7 +64,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
     // HTTP ヘッダー
     private static final String X_FORWARDED_FOR_HEADER = "X-Forwarded-For";
     private static final String RETRY_AFTER_HEADER = "Retry-After";
-    private static final String RETRY_AFTER_SECONDS = "60";
+
+    /** 429 応答の Retry-After 秒数（ヘッダ値と JSON の retryAfter で共用） */
+    private static final int RETRY_AFTER_SECONDS = 60;
 
     /**
      * 429 レスポンスの JSON ボディ。
@@ -75,7 +77,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             "{\"error\":\"Too Many Requests\","
             + "\"code\":\"RATE_LIMIT_EXCEEDED\","
             + "\"message\":\"Too many requests. Please retry after some time.\","
-            + "\"retryAfter\":60}";
+            + "\"retryAfter\":" + RETRY_AFTER_SECONDS + "}";
 
     /** キャッシュの TTL: 最終アクセスから 10 分 */
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
@@ -152,7 +154,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                           String requestPath, int rateLimit) throws IOException {
         logger.warn("レート制限超過: user={}, path={}, limit={}/min", userIdentifier, requestPath, rateLimit);
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-        response.setHeader(RETRY_AFTER_HEADER, RETRY_AFTER_SECONDS);
+        response.setHeader(RETRY_AFTER_HEADER, String.valueOf(RETRY_AFTER_SECONDS));
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(RATE_LIMIT_EXCEEDED_JSON_BODY);
     }
