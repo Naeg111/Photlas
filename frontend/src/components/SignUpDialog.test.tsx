@@ -324,13 +324,15 @@ describe('SignUpDialog', () => {
   describe('API Integration - API連携', () => {
     it('calls register API with form data on submit', async () => {
       const user = userEvent.setup()
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
-          token: 'test-jwt-token',
-        }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
+            token: 'test-jwt-token',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
 
       render(<SignUpDialog {...defaultProps} />)
 
@@ -346,7 +348,6 @@ describe('SignUpDialog', () => {
           expect.stringContaining('/auth/register'),
           expect.objectContaining({
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               username: 'テストユーザー',
               email: 'test@example.com',
@@ -360,13 +361,12 @@ describe('SignUpDialog', () => {
     it('shows toast and closes dialog on successful registration', async () => {
       const { toast } = await import('sonner')
       const user = userEvent.setup()
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          user: { id: 1 },
-          token: 'test-jwt-token',
-        }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ user: { id: 1 }, token: 'test-jwt-token' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
 
       render(<SignUpDialog {...defaultProps} />)
 
@@ -386,13 +386,15 @@ describe('SignUpDialog', () => {
     it('uploads profile image after successful registration', async () => {
       const user = userEvent.setup()
       // 1) Registration API response
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
-          token: 'test-jwt-token',
-        }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
+            token: 'test-jwt-token',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
       // 2) Presigned URL response
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -459,13 +461,15 @@ describe('SignUpDialog', () => {
       const { toast } = await import('sonner')
       const user = userEvent.setup()
       // 1) Registration API response
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
-          token: 'test-jwt-token',
-        }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
+            token: 'test-jwt-token',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
       // 2) Presigned URL request fails
       mockFetch.mockResolvedValueOnce({ ok: false, status: 500 })
 
@@ -500,10 +504,9 @@ describe('SignUpDialog', () => {
 
     it('shows error when email is already in use (409)', async () => {
       const user = userEvent.setup()
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 409,
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response('', { status: 409 })
+      )
 
       render(<SignUpDialog {...defaultProps} />)
 
@@ -633,13 +636,15 @@ describe('SignUpDialog', () => {
     it('sends SNS links to server after successful registration', async () => {
       const user = userEvent.setup()
       // 1) Registration API response
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
-          token: 'test-jwt-token',
-        }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
+            token: 'test-jwt-token',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
       // 2) SNS links API response
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -695,13 +700,15 @@ describe('SignUpDialog', () => {
     it('does not send empty SNS links to server', async () => {
       const { toast } = await import('sonner')
       const user = userEvent.setup()
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
-          token: 'test-jwt-token',
-        }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
+            token: 'test-jwt-token',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
 
       render(<SignUpDialog {...defaultProps} />)
 
