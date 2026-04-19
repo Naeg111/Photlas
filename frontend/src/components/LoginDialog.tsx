@@ -9,6 +9,9 @@ import { Eye, EyeOff } from 'lucide-react'
 import { API_V1_URL } from '../config/api'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
+import { ApiError } from '../utils/apiClient'
+import { fetchJson } from '../utils/fetchJson'
+import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
 
 /**
  * LoginDialog コンポーネント
@@ -40,6 +43,15 @@ export function LoginDialog({
   const [isEmailNotVerified, setIsEmailNotVerified] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isResending, setIsResending] = useState(false)
+  const [loginRateLimitError, setLoginRateLimitError] = useState<ApiError | null>(null)
+  const [resendRateLimitError, setResendRateLimitError] = useState<ApiError | null>(null)
+  const loginCooldown = useRateLimitCooldown(loginRateLimitError)
+  const resendCooldown = useRateLimitCooldown(resendRateLimitError)
+
+  interface LoginResponse {
+    user: { id: number; email: string; username: string; role?: string }
+    token: string
+  }
 
   const handleSubmit = async () => {
     setError('')
@@ -52,45 +64,43 @@ export function LoginDialog({
 
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_V1_URL}/auth/login`, {
+      const data = await fetchJson<LoginResponse>(`${API_V1_URL}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: { email, password },
       })
-
-      if (response.ok) {
-        const data = await response.json()
-        login(
-          { userId: data.user.id, email: data.user.email, username: data.user.username, role: data.user.role || 'user' },
-          data.token,
-          rememberMe
-        )
-        toast(t('auth.loginSuccess'))
-        onOpenChange(false)
-      } else if (response.status === 403) {
-        const data = await response.json()
-        if (data.code === 'EMAIL_NOT_VERIFIED') {
-          setIsEmailNotVerified(true)
-          setError(t('errors.EMAIL_NOT_VERIFIED'))
-        } else if (data.code === 'ACCOUNT_SUSPENDED') {
-          // Issue#54: 永久停止アカウント
-          setError(t('auth.accountSuspended'))
+      login(
+        { userId: data.user.id, email: data.user.email, username: data.user.username, role: data.user.role || 'user' },
+        data.token,
+        rememberMe
+      )
+      toast(t('auth.loginSuccess'))
+      onOpenChange(false)
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.isRateLimited) {
+          setLoginRateLimitError(err)
+          setError(t('errors.RATE_LIMIT_EXCEEDED', { seconds: err.retryAfterSeconds ?? 60 }))
+        } else if (err.status === 403) {
+          const code = (err.responseData as { code?: string } | undefined)?.code
+          if (code === 'EMAIL_NOT_VERIFIED') {
+            setIsEmailNotVerified(true)
+            setError(t('errors.EMAIL_NOT_VERIFIED'))
+          } else if (code === 'ACCOUNT_SUSPENDED') {
+            // Issue#54: 永久停止アカウント
+            setError(t('auth.accountSuspended'))
+          } else {
+            setError(t('auth.loginFailed'))
+          }
+        } else if (err.status === 401) {
+          // Issue#72: 退会済みアカウントの場合はバックエンドのメッセージを表示
+          const code = (err.responseData as { code?: string } | undefined)?.code
+          setError(code ? t('errors.' + code) : t('errors.INVALID_CREDENTIALS'))
         } else {
-          setError(t('auth.loginFailed'))
-        }
-      } else if (response.status === 401) {
-        // Issue#72: 退会済みアカウントの場合はバックエンドのメッセージを表示
-        try {
-          const data = await response.json()
-          setError(data.code ? t('errors.' + data.code) : t('errors.INVALID_CREDENTIALS'))
-        } catch {
           setError(t('errors.INVALID_CREDENTIALS'))
         }
       } else {
-        setError(t('errors.INVALID_CREDENTIALS'))
+        setError(t('auth.loginFailed'))
       }
-    } catch {
-      setError(t('auth.loginFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -102,19 +112,18 @@ export function LoginDialog({
   const handleResendVerification = async () => {
     setIsResending(true)
     try {
-      const response = await fetch(`${API_V1_URL}/auth/resend-verification`, {
+      await fetchJson(`${API_V1_URL}/auth/resend-verification`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: { email },
       })
-
-      if (response.ok) {
-        toast(t('auth.resendSuccess'))
+      toast(t('auth.resendSuccess'))
+    } catch (err) {
+      if (err instanceof ApiError && err.isRateLimited) {
+        setResendRateLimitError(err)
+        toast(t('errors.RATE_LIMIT_EXCEEDED_SHORT', { seconds: err.retryAfterSeconds ?? 60 }))
       } else {
         toast(t('auth.resendFailed'))
       }
-    } catch {
-      toast(t('auth.resendFailed'))
     } finally {
       setIsResending(false)
     }
@@ -147,16 +156,21 @@ export function LoginDialog({
         <div className="overflow-y-auto flex-1 px-6 pb-6">
         <div className="space-y-5 mt-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+            <div role="alert" className="bg-red-50 border border-red-200 rounded-md p-3">
               <p className="text-sm text-red-600">{error}</p>
               {isEmailNotVerified && (
                 <Button
                   variant="link"
                   className="p-0 h-auto text-sm mt-1"
                   onClick={handleResendVerification}
-                  disabled={isResending}
+                  disabled={isResending || resendCooldown.isOnCooldown}
+                  aria-live="polite"
                 >
-                  {isResending ? t('auth.resendLoading') : t('auth.resendVerification')}
+                  {resendCooldown.isOnCooldown
+                    ? t('common.submitWithCooldown', { seconds: resendCooldown.remainingSeconds })
+                    : isResending
+                      ? t('auth.resendLoading')
+                      : t('auth.resendVerification')}
                 </Button>
               )}
             </div>
@@ -228,9 +242,12 @@ export function LoginDialog({
             <Button
               className="w-full"
               onClick={handleSubmit}
-              disabled={isLoading}
+              disabled={isLoading || loginCooldown.isOnCooldown}
+              aria-live="polite"
             >
-              {t('common.login')}
+              {loginCooldown.isOnCooldown
+                ? t('common.submitWithCooldown', { seconds: loginCooldown.remainingSeconds })
+                : t('common.login')}
             </Button>
           </div>
 
