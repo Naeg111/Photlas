@@ -746,4 +746,74 @@ describe('SignUpDialog', () => {
       expect(screen.getByRole('link', { name: '利用規約' })).toBeInTheDocument()
     })
   })
+
+  // Issue#96 PR2a: 429 レート制限ハンドリング（パターンA: フォーム送信系）
+  describe('Rate Limit (429) - レート制限', () => {
+    const fillRequiredFields = async (user: ReturnType<typeof userEvent.setup>) => {
+      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+      await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
+    }
+
+    it('登録で429を受信したらレート制限メッセージをインライン表示する', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+          statusText: 'Too Many Requests',
+          headers: { 'Retry-After': '60' },
+        })
+      )
+
+      render(<SignUpDialog {...defaultProps} />)
+      await fillRequiredFields(user)
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+        ).toBeInTheDocument()
+      })
+    })
+
+    it('登録で429を受信したら登録ボタンがクールダウン表示で無効化される', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+          headers: { 'Retry-After': '60' },
+        })
+      )
+
+      render(<SignUpDialog {...defaultProps} />)
+      await fillRequiredFields(user)
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      await waitFor(() => {
+        const button = screen.getByRole('button', { name: /送信（あと 60 秒）/ })
+        expect(button).toBeDisabled()
+      })
+    })
+
+    it('Retry-Afterヘッダが欠落していてもデフォルト60秒でクールダウンする', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+        })
+      )
+
+      render(<SignUpDialog {...defaultProps} />)
+      await fillRequiredFields(user)
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+        ).toBeInTheDocument()
+      })
+    })
+  })
 })
