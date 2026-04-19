@@ -11,18 +11,34 @@ const API_BASE_URL = API_V1_URL;
 /**
  * API通信エラー
  * HTTPステータスコードを保持し、呼び出し元での分岐処理を可能にする
+ *
+ * Issue#96: retryAfterSeconds / responseData / isRateLimited を追加。
+ * 既存の 2 引数呼び出し (message, status) はそのまま動作する（後方互換）。
  */
 export class ApiError extends Error {
   readonly status: number
+  readonly retryAfterSeconds?: number
+  readonly responseData?: unknown
 
-  constructor(message: string, status: number) {
+  constructor(
+    message: string,
+    status: number,
+    retryAfterSeconds?: number,
+    responseData?: unknown
+  ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.retryAfterSeconds = retryAfterSeconds
+    this.responseData = responseData
   }
 
   get isUnauthorized(): boolean {
     return this.status === 401
+  }
+
+  get isRateLimited(): boolean {
+    return this.status === 429
   }
 }
 
