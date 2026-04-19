@@ -143,10 +143,12 @@ describe('LoginDialog', () => {
   describe('API Integration - API連携', () => {
     it('calls login API with email and password on submit', async () => {
       const user = userEvent.setup()
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ user: { email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ user: { id: 1, email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
 
       render(<LoginDialog {...defaultProps} />)
 
@@ -159,7 +161,6 @@ describe('LoginDialog', () => {
           expect.stringContaining('/auth/login'),
           expect.objectContaining({
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: 'test@example.com', password: 'Password123' }),
           })
         )
@@ -169,10 +170,12 @@ describe('LoginDialog', () => {
     it('calls AuthContext login and shows toast on successful login', async () => {
       const { toast } = await import('sonner')
       const user = userEvent.setup()
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ user: { id: 1, email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ user: { id: 1, email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
 
       render(<LoginDialog {...defaultProps} />)
 
@@ -193,10 +196,12 @@ describe('LoginDialog', () => {
 
     it('passes rememberMe=false when checkbox is unchecked', async () => {
       const user = userEvent.setup()
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ user: { id: 1, email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ user: { id: 1, email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
 
       render(<LoginDialog {...defaultProps} />)
 
@@ -217,10 +222,9 @@ describe('LoginDialog', () => {
 
     it('shows error message when login fails with 401', async () => {
       const user = userEvent.setup()
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response('', { status: 401 })
+      )
 
       render(<LoginDialog {...defaultProps} />)
 
@@ -235,14 +239,15 @@ describe('LoginDialog', () => {
 
     it('shows email not verified error and resend button when 403', async () => {
       const user = userEvent.setup()
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        json: () => Promise.resolve({
-          code: 'EMAIL_NOT_VERIFIED',
-          message: 'メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。',
-        }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            code: 'EMAIL_NOT_VERIFIED',
+            message: 'メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。',
+          }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
 
       render(<LoginDialog {...defaultProps} />)
 
@@ -260,14 +265,15 @@ describe('LoginDialog', () => {
       const { toast } = await import('sonner')
       const user = userEvent.setup()
       // 1) Login response: email not verified
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        json: () => Promise.resolve({
-          code: 'EMAIL_NOT_VERIFIED',
-          message: 'メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。',
-        }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            code: 'EMAIL_NOT_VERIFIED',
+            message: 'メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。',
+          }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
 
       render(<LoginDialog {...defaultProps} />)
 
@@ -280,7 +286,7 @@ describe('LoginDialog', () => {
       })
 
       // 2) Resend verification response
-      mockFetch.mockResolvedValueOnce({ ok: true })
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }))
 
       await user.click(screen.getByText('認証メールを再送信する'))
 
@@ -292,6 +298,8 @@ describe('LoginDialog', () => {
             body: JSON.stringify({ email: 'test@example.com' }),
           })
         )
+      })
+      await waitFor(() => {
         expect(toast).toHaveBeenCalledWith('認証メールを再送信しました。メールをご確認ください。')
       })
     })
@@ -313,9 +321,9 @@ describe('LoginDialog', () => {
 
     it('shows loading state during API call', async () => {
       const user = userEvent.setup()
-      let resolvePromise: (value: any) => void
+      let resolvePromise: (value: Response) => void
       mockFetch.mockReturnValueOnce(
-        new Promise((resolve) => {
+        new Promise<Response>((resolve) => {
           resolvePromise = resolve
         })
       )
@@ -330,10 +338,12 @@ describe('LoginDialog', () => {
       expect(screen.getByRole('button', { name: 'ログイン' })).toBeDisabled()
 
       // API完了
-      resolvePromise!({
-        ok: true,
-        json: () => Promise.resolve({ token: 'test-token' }),
-      })
+      resolvePromise!(
+        new Response(
+          JSON.stringify({ user: { id: 1, email: 'test@example.com', username: 'testuser' }, token: 'test-token' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
     })
   })
 
@@ -362,11 +372,12 @@ describe('LoginDialog', () => {
   // Issue#54: アカウント停止テスト
   describe('アカウント停止', () => {
     it('永久停止アカウントのログイン時にエラーメッセージが表示される', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        json: async () => ({ code: 'ACCOUNT_SUSPENDED', message: 'アカウントが停止されています' }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ code: 'ACCOUNT_SUSPENDED', message: 'アカウントが停止されています' }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
 
       const user = userEvent.setup()
       render(<LoginDialog {...defaultProps} />)
