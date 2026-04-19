@@ -49,7 +49,7 @@ export function LoginDialog({
   const resendCooldown = useRateLimitCooldown(resendRateLimitError)
 
   interface LoginResponse {
-    user: { id: number; email: string; username: string; role?: string }
+    user: { id: number; email: string; username: string; role?: unknown }
     token: string
   }
 
@@ -69,7 +69,7 @@ export function LoginDialog({
         body: { email, password },
       })
       login(
-        { userId: data.user.id, email: data.user.email, username: data.user.username, role: data.user.role || 'user' },
+        { userId: data.user.id, email: data.user.email, username: data.user.username, role: (data.user.role || 'user') as unknown as number },
         data.token,
         rememberMe
       )
