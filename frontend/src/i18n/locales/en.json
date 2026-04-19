@@ -15,7 +15,10 @@
     "signup": "Sign Up",
     "characters": "chars",
     "home": "Go to Home",
-    "reload": "Reload Page"
+    "reload": "Reload Page",
+    "retry": "Retry",
+    "retryWithCooldown": "Retry ({{seconds}}s)",
+    "submitWithCooldown": "Submit ({{seconds}}s)"
   },
   "auth": {
     "loginTitle": "Log In",
@@ -291,7 +294,10 @@
     "EMAIL_NOT_VERIFIED": "Email not verified. Please click the link in the verification email.",
     "CONFLICT": "A conflict occurred",
     "unexpected": "An unexpected error occurred. Please reload the page.",
-    "errorOccurred": "An error occurred"
+    "errorOccurred": "An error occurred",
+    "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again in {{seconds}} seconds.",
+    "RATE_LIMIT_EXCEEDED_SHORT": "Rate limited (retry in {{seconds}}s)",
+    "NETWORK_ERROR": "Network connection failed. Please check your connection."
   },
   "pages": {
     "emailVerifying": "Verifying your email...",
