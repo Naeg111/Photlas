@@ -163,4 +163,42 @@ describe('EmailVerificationPage', () => {
       })
     })
   })
+
+  // Issue#96 PR2b: 429 レート制限ハンドリング（パターンA: ページロード時のAPI呼び出し）
+  describe('Rate Limit (429) - レート制限', () => {
+    it('メール認証で429を受信したらレート制限メッセージがエラー画面に表示される', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+          statusText: 'Too Many Requests',
+          headers: { 'Retry-After': '60' },
+        })
+      )
+
+      renderWithToken(VALID_TOKEN)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEXT_ERROR_HEADING)).toBeInTheDocument()
+        expect(
+          screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+        ).toBeInTheDocument()
+      })
+    })
+
+    it('Retry-Afterヘッダが欠落していてもデフォルト60秒のメッセージを表示する', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+        })
+      )
+
+      renderWithToken(VALID_TOKEN)
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+        ).toBeInTheDocument()
+      })
+    })
+  })
 })

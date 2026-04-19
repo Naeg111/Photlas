@@ -303,4 +303,72 @@ describe('PasswordResetRequestModal', () => {
       expect(text2.className).toContain('text-black')
     })
   })
+
+  // Issue#96 PR2b: 429 レート制限ハンドリング（パターンA: フォーム送信系）
+  describe('Rate Limit (429) - レート制限', () => {
+    it('パスワードリセット要求で429を受信したらレート制限メッセージをインライン表示する', async () => {
+      const mockFetch = vi.mocked(fetch)
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+          statusText: 'Too Many Requests',
+          headers: { 'Retry-After': '60' },
+        })
+      )
+
+      render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
+
+      const emailInput = screen.getByLabelText('メールアドレス')
+      fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+      fireEvent.click(screen.getByRole('button', { name: '送信' }))
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+        ).toBeInTheDocument()
+      })
+    })
+
+    it('パスワードリセット要求で429を受信したら送信ボタンがクールダウン表示で無効化される', async () => {
+      const mockFetch = vi.mocked(fetch)
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+          headers: { 'Retry-After': '60' },
+        })
+      )
+
+      render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
+
+      const emailInput = screen.getByLabelText('メールアドレス')
+      fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+      fireEvent.click(screen.getByRole('button', { name: '送信' }))
+
+      await waitFor(() => {
+        const button = screen.getByRole('button', { name: /送信（あと 60 秒）/ })
+        expect(button).toBeDisabled()
+      })
+    })
+
+    it('Retry-Afterヘッダが欠落していてもデフォルト60秒でクールダウンする', async () => {
+      const mockFetch = vi.mocked(fetch)
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+        })
+      )
+
+      render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
+
+      const emailInput = screen.getByLabelText('メールアドレス')
+      fireEvent.change(emailInput, { target: { value: 'test@example.com' } })
+      fireEvent.click(screen.getByRole('button', { name: '送信' }))
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+        ).toBeInTheDocument()
+      })
+    })
+  })
 })
