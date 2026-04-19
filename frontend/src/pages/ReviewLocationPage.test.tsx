@@ -216,4 +216,49 @@ describe('ReviewLocationPage', () => {
       expect(mockFetch).not.toHaveBeenCalled()
     })
   })
+
+  // Issue#96 PR2c: 429 レート制限ハンドリング（パターンA: インラインメッセージ + ボタンcooldown）
+  describe('Rate Limit (429) - レート制限', () => {
+    it('handleAction で 429 を受信したらインライン rate-limit メッセージが表示される', async () => {
+      mockFetch
+        // 初回 fetchReviewData（プレーンオブジェクトのまま）
+        .mockResolvedValueOnce({ ok: true, json: async () => mockReviewData })
+        // handleAction: fetchJson 経由で Response が必要
+        .mockResolvedValueOnce(
+          new Response('Too many requests', {
+            status: 429,
+            statusText: 'Too Many Requests',
+            headers: { 'Retry-After': '60' },
+          })
+        )
+
+      renderWithToken('valid-token')
+
+      const user = userEvent.setup()
+      const acceptButton = await screen.findByRole('button', { name: '受け入れる' })
+      await user.click(acceptButton)
+
+      expect(
+        await screen.findByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+      ).toBeInTheDocument()
+    })
+
+    it('Retry-Afterヘッダ欠落時もデフォルト60秒のメッセージを表示する', async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => mockReviewData })
+        .mockResolvedValueOnce(
+          new Response('Too many requests', { status: 429 })
+        )
+
+      renderWithToken('valid-token')
+
+      const user = userEvent.setup()
+      const rejectButton = await screen.findByRole('button', { name: '拒否する' })
+      await user.click(rejectButton)
+
+      expect(
+        await screen.findByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+      ).toBeInTheDocument()
+    })
+  })
 })

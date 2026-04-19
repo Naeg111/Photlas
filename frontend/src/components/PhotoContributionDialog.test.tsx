@@ -1,8 +1,19 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { toast } from 'sonner'
 import { PhotoContributionDialog } from './PhotoContributionDialog'
 import type { ExifData } from '../utils/extractExif'
+import { ApiError } from '../utils/apiClient'
+import { _resetRateLimitNotifyDebounce } from '../utils/notifyIfRateLimited'
+
+// sonner (toast) のモック
+vi.mock('sonner', () => ({
+  toast: Object.assign(vi.fn(), {
+    error: vi.fn(),
+    success: vi.fn(),
+  }),
+}))
 
 /**
  * PhotoContributionDialog コンポーネントのテスト
@@ -96,6 +107,7 @@ describe('PhotoContributionDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockExtractExif.mockResolvedValue(null)
+    _resetRateLimitNotifyDebounce()
   })
 
   describe('UI Elements - UI要素', () => {
@@ -800,6 +812,68 @@ describe('PhotoContributionDialog', () => {
       const container = mapPicker.parentElement!
 
       expect(container.className).toContain('h-[333px]')
+    })
+  })
+
+  // Issue#96 PR2c: 429 レート制限ハンドリング（notifyIfRateLimited 経由のトースト）
+  describe('Rate Limit (429) - レート制限', () => {
+    it('onSubmit が ApiError(429) を throw したらレート制限トーストが表示される', async () => {
+      const user = userEvent.setup()
+      const rateLimitSubmit = vi.fn().mockRejectedValue(
+        new ApiError('Rate limited', 429, 45)
+      )
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={rateLimitSubmit} />)
+
+      // 必須項目を入力
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      const categoryDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
+
+      const deviceTypeDiv = screen.getByText('ミラーレス').closest('div[class*="cursor-pointer"]')
+      if (deviceTypeDiv) await user.click(deviceTypeDiv)
+
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: '投稿する' })
+        expect(submitButton).not.toBeDisabled()
+      })
+
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('混雑しています（45 秒後に再取得）')
+      })
+    })
+
+    it('retryAfterSeconds 欠落時はデフォルト60秒のトーストメッセージを表示する', async () => {
+      const user = userEvent.setup()
+      const rateLimitSubmit = vi.fn().mockRejectedValue(
+        new ApiError('Rate limited', 429)
+      )
+      render(<PhotoContributionDialog {...defaultProps} onSubmit={rateLimitSubmit} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      const categoryDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')
+      if (categoryDiv) await user.click(categoryDiv)
+
+      const deviceTypeDiv = screen.getByText('ミラーレス').closest('div[class*="cursor-pointer"]')
+      if (deviceTypeDiv) await user.click(deviceTypeDiv)
+
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: '投稿する' })
+        expect(submitButton).not.toBeDisabled()
+      })
+
+      await user.click(screen.getByRole('button', { name: '投稿する' }))
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('混雑しています（60 秒後に再取得）')
+      })
     })
   })
 })
