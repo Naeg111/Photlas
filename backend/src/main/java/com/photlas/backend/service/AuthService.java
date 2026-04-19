@@ -124,7 +124,7 @@ public class AuthService {
 
         // Issue#92: ソフトデリート済みの場合、アカウントを復旧する
         if (user.getDeletedAt() != null) {
-            restoreDeletedAccount(user);
+            recoverSoftDeletedUser(user);
         }
 
         if (!user.isEmailVerified()) {
@@ -211,8 +211,11 @@ public class AuthService {
     /**
      * Issue#92: ソフトデリート済みアカウントを復旧する
      * deletedAt, username, originalUsername, deletionHoldUntilをリストアする。
+     *
+     * Issue#81 Phase 3b: 可視性を private → package-private に変更し、
+     * 同パッケージの OAuth2UserServiceHelper から呼び出せるようにする。
      */
-    private void restoreDeletedAccount(User user) {
+    void recoverSoftDeletedUser(User user) {
         user.setDeletedAt(null);
         user.setUsername(user.getOriginalUsername());
         user.setOriginalUsername(null);
