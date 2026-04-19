@@ -15,7 +15,10 @@
     "signup": "註冊",
     "characters": "字",
     "home": "回首頁",
-    "reload": "重新載入"
+    "reload": "重新載入",
+    "retry": "重試",
+    "retryWithCooldown": "重試（{{seconds}} 秒後）",
+    "submitWithCooldown": "送出（{{seconds}} 秒後）"
   },
   "auth": {
     "loginTitle": "登入",
@@ -291,7 +294,10 @@
     "EMAIL_NOT_VERIFIED": "電子郵件尚未驗證。請點擊驗證信中的連結。",
     "CONFLICT": "發生衝突",
     "unexpected": "發生意外錯誤，請重新載入頁面。",
-    "errorOccurred": "發生錯誤"
+    "errorOccurred": "發生錯誤",
+    "RATE_LIMIT_EXCEEDED": "請求過多，請在 {{seconds}} 秒後再試。",
+    "RATE_LIMIT_EXCEEDED_SHORT": "目前擁擠（{{seconds}} 秒後重試）",
+    "NETWORK_ERROR": "網路連線失敗，請檢查您的網路連線。"
   },
   "pages": {
     "emailVerifying": "正在驗證電子郵件...",

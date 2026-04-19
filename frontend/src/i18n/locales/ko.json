@@ -15,7 +15,10 @@
     "signup": "회원가입",
     "characters": "자",
     "home": "홈으로",
-    "reload": "페이지 새로고침"
+    "reload": "페이지 새로고침",
+    "retry": "다시 시도",
+    "retryWithCooldown": "다시 시도 ({{seconds}}초 후)",
+    "submitWithCooldown": "제출 ({{seconds}}초 후)"
   },
   "auth": {
     "loginTitle": "로그인",
@@ -291,7 +294,10 @@
     "EMAIL_NOT_VERIFIED": "이메일 인증이 완료되지 않았습니다. 인증 이메일의 링크를 클릭해 주세요.",
     "CONFLICT": "충돌이 발생했습니다",
     "unexpected": "예기치 않은 오류가 발생했습니다. 페이지를 새로고침해 주세요.",
-    "errorOccurred": "오류가 발생했습니다"
+    "errorOccurred": "오류가 발생했습니다",
+    "RATE_LIMIT_EXCEEDED": "요청이 너무 많습니다. {{seconds}}초 후에 다시 시도해 주세요.",
+    "RATE_LIMIT_EXCEEDED_SHORT": "혼잡합니다 ({{seconds}}초 후 재시도)",
+    "NETWORK_ERROR": "네트워크 연결에 실패했습니다. 연결 상태를 확인해 주세요."
   },
   "pages": {
     "emailVerifying": "이메일 인증 중...",

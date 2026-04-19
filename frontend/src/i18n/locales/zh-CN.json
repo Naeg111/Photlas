@@ -15,7 +15,10 @@
     "signup": "注册",
     "characters": "字",
     "home": "前往首页",
-    "reload": "刷新页面"
+    "reload": "刷新页面",
+    "retry": "重试",
+    "retryWithCooldown": "重试（{{seconds}} 秒后）",
+    "submitWithCooldown": "提交（{{seconds}} 秒后）"
   },
   "auth": {
     "loginTitle": "登录",
@@ -291,7 +294,10 @@
     "EMAIL_NOT_VERIFIED": "邮箱未验证，请点击验证邮件中的链接。",
     "CONFLICT": "发生冲突",
     "unexpected": "发生意外错误，请刷新页面。",
-    "errorOccurred": "发生错误"
+    "errorOccurred": "发生错误",
+    "RATE_LIMIT_EXCEEDED": "请求过多，请在 {{seconds}} 秒后重试。",
+    "RATE_LIMIT_EXCEEDED_SHORT": "访问拥挤（{{seconds}} 秒后重试）",
+    "NETWORK_ERROR": "网络连接失败，请检查您的网络连接。"
   },
   "pages": {
     "emailVerifying": "正在验证邮箱...",
