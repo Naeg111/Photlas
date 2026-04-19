@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { API_V1_URL } from '../config/api'
-import { getAuthHeaders } from '../utils/apiClient'
+import { ApiError, getAuthHeaders } from '../utils/apiClient'
+import { fetchJson } from '../utils/fetchJson'
+import { notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { Button } from '../components/ui/button'
 import { ArrowLeft, Check, X, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
@@ -37,6 +40,7 @@ const PAGE_SIZE = 20
 export default function AdminModerationPage() {
   const { user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [items, setItems] = useState<ModerationQueueItem[]>([])
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -82,16 +86,19 @@ export default function AdminModerationPage() {
   const handleApprove = async (photoId: number) => {
     setProcessingIds(prev => new Set(prev).add(photoId))
     try {
-      const response = await fetch(
+      await fetchJson(
         `${API_V1_URL}/admin/moderation/photos/${photoId}/approve`,
-        { method: 'POST', headers: getAuthHeaders() }
+        { method: 'POST', headers: getAuthHeaders() as Record<string, string> }
       )
-      if (!response.ok) throw new Error('Request failed')
       toast.success('写真を承認しました')
       setItems(prev => prev.filter(item => item.photo_id !== photoId))
       setTotalElements(prev => prev - 1)
-    } catch {
-      toast.error('承認に失敗しました')
+    } catch (e) {
+      if (e instanceof ApiError && e.isRateLimited) {
+        notifyIfRateLimited(e, t)
+      } else {
+        toast.error('承認に失敗しました')
+      }
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev)
@@ -104,20 +111,23 @@ export default function AdminModerationPage() {
   const handleReject = async (photoId: number) => {
     setProcessingIds(prev => new Set(prev).add(photoId))
     try {
-      const response = await fetch(
+      await fetchJson(
         `${API_V1_URL}/admin/moderation/photos/${photoId}/reject`,
         {
           method: 'POST',
-          headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reason: '利用規約違反' }),
+          headers: getAuthHeaders() as Record<string, string>,
+          body: { reason: '利用規約違反' },
         }
       )
-      if (!response.ok) throw new Error('Request failed')
       toast.success('写真を拒否しました')
       setItems(prev => prev.filter(item => item.photo_id !== photoId))
       setTotalElements(prev => prev - 1)
-    } catch {
-      toast.error('拒否に失敗しました')
+    } catch (e) {
+      if (e instanceof ApiError && e.isRateLimited) {
+        notifyIfRateLimited(e, t)
+      } else {
+        toast.error('拒否に失敗しました')
+      }
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev)

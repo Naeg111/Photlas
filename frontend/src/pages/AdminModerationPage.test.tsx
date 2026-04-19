@@ -338,10 +338,12 @@ describe('AdminModerationPage', () => {
           total_pages: 1,
         }),
       })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ message: '写真を承認しました' }),
-      })
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: '写真を承認しました' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
 
     renderPage()
 
@@ -374,10 +376,12 @@ describe('AdminModerationPage', () => {
           total_pages: 1,
         }),
       })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ message: '写真を拒否しました' }),
-      })
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: '写真を拒否しました' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
 
     renderPage()
 

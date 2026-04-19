@@ -7,7 +7,9 @@ import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { PinSvg } from '../components/PinSvg'
 import { LoginDialog } from '../components/LoginDialog'
 import { useAuth } from '../contexts/AuthContext'
-import { getAuthHeaders } from '../utils/apiClient'
+import { ApiError, getAuthHeaders } from '../utils/apiClient'
+import { fetchJson } from '../utils/fetchJson'
+import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { API_V1_URL } from '../config/api'
 
 /**
@@ -82,28 +84,25 @@ export default function ReviewLocationPage() {
     if (!token) return
     setIsLoading(true)
     try {
-      const response = await fetch(
+      await fetchJson(
         `${API_V1_URL}/location-suggestions/review/${action}?token=${token}`,
         {
           method: 'POST',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json',
-          },
+          headers: getAuthHeaders() as Record<string, string>,
         }
       )
-      if (!response.ok) {
-        const data = await response.json().catch(() => null)
-        throw new Error(data?.message || t('reviewLocation.processFailed'))
-      }
       setIsResolved(true)
       setResolvedMessage(
         action === 'accept'
           ? t('reviewLocation.accepted')
           : t('reviewLocation.rejected')
       )
-    } catch {
-      setError(t('reviewLocation.processFailed'))
+    } catch (e) {
+      if (e instanceof ApiError && e.isRateLimited) {
+        setError(getRateLimitInlineMessage(e, t))
+      } else {
+        setError(t('reviewLocation.processFailed'))
+      }
     } finally {
       setIsLoading(false)
     }

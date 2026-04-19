@@ -24,7 +24,9 @@ import {
 import { toast } from 'sonner'
 import { useProfileEdit } from '../hooks/useProfileEdit'
 import { useAuth } from '../contexts/AuthContext'
-import { getAuthHeaders } from '../utils/apiClient'
+import { ApiError, getAuthHeaders } from '../utils/apiClient'
+import { fetchJson } from '../utils/fetchJson'
+import { notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import ProfileImageCropper from './ProfileImageCropper'
 import { ReportDialog } from './ReportDialog'
 import { SnsLinkEditDialog } from './SnsLinkEditDialog'
@@ -367,24 +369,22 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   const handleProfileReport = useCallback(async (data: { reason: number; details?: string }) => {
     setIsReportLoading(true)
     try {
-      const response = await fetch(`/api/v1/users/${userProfile.userId}/report`, {
+      await fetchJson(`/api/v1/users/${userProfile.userId}/report`, {
         method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reason: data.reason, details: data.details }),
+        headers: getAuthHeaders() as Record<string, string>,
+        body: { reason: data.reason, details: data.details },
       })
-
-      if (response.ok || response.status === 409 || response.status === 400) {
+      setIsReportOpen(false)
+    } catch (e) {
+      if (e instanceof ApiError && (e.status === 409 || e.status === 400)) {
         setIsReportOpen(false)
+      } else {
+        notifyIfRateLimited(e, t)
       }
-    } catch {
-      // エラー時は何もしない
     } finally {
       setIsReportLoading(false)
     }
-  }, [userProfile.userId])
+  }, [userProfile.userId, t])
 
   // 写真クリックハンドラー（spotIdを渡してPhotoDetailDialogを開く）
   const handlePhotoClick = useCallback((photoId: number) => {
@@ -394,22 +394,16 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   // SNSリンク保存ハンドラー（ダイアログから呼び出される）
   const handleSaveSnsLinksFromDialog = useCallback(async (newLinks: Array<{ platform: number; url: string }>) => {
     try {
-      const response = await fetch('/api/v1/users/me/sns-links', {
+      await fetchJson('/api/v1/users/me/sns-links', {
         method: 'PUT',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ snsLinks: newLinks }),
+        headers: getAuthHeaders() as Record<string, string>,
+        body: { snsLinks: newLinks },
       })
-
-      if (response.ok) {
-        setLocalSnsLinks(newLinks.map(l => ({ url: l.url, platform: l.platform })))
-      }
-    } catch {
-      // エラー時は何もしない
+      setLocalSnsLinks(newLinks.map(l => ({ url: l.url, platform: l.platform })))
+    } catch (e) {
+      notifyIfRateLimited(e, t)
     }
-  }, [])
+  }, [t])
 
   // カスタムフックを使用してプロフィール編集機能を取得
   // Issue#36: AuthContextからupdateUserを取得
