@@ -274,4 +274,81 @@ describe('ResetPasswordPage', () => {
       })
     })
   })
+
+  // Issue#96 PR2b: 429 レート制限ハンドリング（パターンA: フォーム送信系）
+  describe('Rate Limit (429) - レート制限', () => {
+    it('パスワードリセットで429を受信したらレート制限メッセージをインライン表示する', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+          statusText: 'Too Many Requests',
+          headers: { 'Retry-After': '60' },
+        })
+      )
+
+      renderWithToken(VALID_TOKEN)
+
+      const newPasswordInput = screen.getByLabelText(LABEL_NEW_PASSWORD)
+      const confirmPasswordInput = screen.getByLabelText(LABEL_CONFIRM_PASSWORD)
+      const submitButton = screen.getByRole('button', { name: BUTTON_SUBMIT })
+
+      fireEvent.change(newPasswordInput, { target: { value: VALID_PASSWORD } })
+      fireEvent.change(confirmPasswordInput, { target: { value: VALID_PASSWORD } })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+        ).toBeInTheDocument()
+      })
+    })
+
+    it('パスワードリセットで429を受信したら送信ボタンがクールダウン表示で無効化される', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+          headers: { 'Retry-After': '60' },
+        })
+      )
+
+      renderWithToken(VALID_TOKEN)
+
+      const newPasswordInput = screen.getByLabelText(LABEL_NEW_PASSWORD)
+      const confirmPasswordInput = screen.getByLabelText(LABEL_CONFIRM_PASSWORD)
+      const submitButton = screen.getByRole('button', { name: BUTTON_SUBMIT })
+
+      fireEvent.change(newPasswordInput, { target: { value: VALID_PASSWORD } })
+      fireEvent.change(confirmPasswordInput, { target: { value: VALID_PASSWORD } })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        const button = screen.getByRole('button', { name: /送信（あと 60 秒）/ })
+        expect(button).toBeDisabled()
+      })
+    })
+
+    it('Retry-Afterヘッダが欠落していてもデフォルト60秒でクールダウンする', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+        })
+      )
+
+      renderWithToken(VALID_TOKEN)
+
+      const newPasswordInput = screen.getByLabelText(LABEL_NEW_PASSWORD)
+      const confirmPasswordInput = screen.getByLabelText(LABEL_CONFIRM_PASSWORD)
+      const submitButton = screen.getByRole('button', { name: BUTTON_SUBMIT })
+
+      fireEvent.change(newPasswordInput, { target: { value: VALID_PASSWORD } })
+      fireEvent.change(confirmPasswordInput, { target: { value: VALID_PASSWORD } })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+        ).toBeInTheDocument()
+      })
+    })
+  })
 })
