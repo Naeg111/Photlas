@@ -6,6 +6,10 @@
  *   ＊ `PhotoDetailDialog` が prev/current/next を並行 prefetch する際、
  *     3 連続で 429 を受け取って 3 回トーストが重なるのを防ぐ
  * - 429 以外や ApiError でないエラーは何もしない（各画面側で個別処理）
+ *
+ * 戻り値: 429 を検出したかどうか。呼び出し側は `if (!notifyIfRateLimited(e, t)) toast.error(fallback)`
+ * のように書くことで、429 時にフォールバックトーストを出さない分岐を簡潔に書ける。
+ * デバウンス抑制時も `true` を返す（ユーザーへはすでに別の呼び出しで通知済みのため）。
  */
 
 import { toast } from 'sonner'
@@ -20,19 +24,20 @@ type TranslateFn = (key: string, options?: Record<string, unknown>) => string
 
 let lastNotifiedAt = 0
 
-export function notifyIfRateLimited(error: unknown, t: TranslateFn): void {
+export function notifyIfRateLimited(error: unknown, t: TranslateFn): boolean {
   if (!(error instanceof ApiError) || !error.isRateLimited) {
-    return
+    return false
   }
 
   const now = Date.now()
   if (now - lastNotifiedAt < NOTIFY_DEBOUNCE_MS) {
-    return
+    return true
   }
   lastNotifiedAt = now
 
   const seconds = error.retryAfterSeconds ?? DEFAULT_RETRY_AFTER_SECONDS
   toast.error(t('errors.RATE_LIMIT_EXCEEDED_SHORT', { seconds }))
+  return true
 }
 
 /**
