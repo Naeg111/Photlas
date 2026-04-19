@@ -42,6 +42,10 @@
 
 set -euo pipefail
 
+# shellcheck source=scripts/lib/waf-managed-rules-common.sh
+# shellcheck disable=SC1091
+source "$(dirname "$0")/lib/waf-managed-rules-common.sh"
+
 # -----------------------------------------------------------------------------
 # 引数パース
 # -----------------------------------------------------------------------------
@@ -82,19 +86,15 @@ case "$MODE" in
     ;;
 esac
 
-# rule-name to alarm short-name mapping
-# setup-waf.sh の MetricName (= WebACL 内ルール Name) と
-# setup-waf-managed-rules-alarm.sh のアラーム名規則を突き合わせる。
-case "$RULE_NAME" in
-  CommonRuleSet)           ALARM_SHORT_NAME="CommonRuleSet";   THRESHOLD=50  ;;
-  KnownBadInputsRuleSet)   ALARM_SHORT_NAME="KnownBadInputs";  THRESHOLD=20  ;;
-  SQLiRuleSet)             ALARM_SHORT_NAME="SQLi";            THRESHOLD=5   ;;
-  AmazonIpReputationList)  ALARM_SHORT_NAME="IpReputation";    THRESHOLD=100 ;;
-  *)
-    echo "unknown rule-name: $RULE_NAME" >&2
-    usage
-    ;;
-esac
+# rule-name -> (short-name, threshold) マッピングは lib/waf-managed-rules-common.sh
+# に集約。未知のルール名は lib 側が stderr に "unknown rule" を出して非ゼロ終了する
+# ため、その失敗を捕捉して usage にフォールバックする (bats テスト:
+# "rejects invalid mode or rule-name" は "unknown" 文字列を許容)。
+if ! ALARM_SHORT_NAME="$(waf_managed_alarm_short_name "$RULE_NAME" 2>&1)"; then
+  echo "$ALARM_SHORT_NAME" >&2
+  usage
+fi
+THRESHOLD="$(waf_managed_alarm_threshold "$RULE_NAME")"
 
 # -----------------------------------------------------------------------------
 # 設定
@@ -306,8 +306,8 @@ else
   OLD_SUFFIX="Blocked"
 fi
 
-NEW_ALARM_NAME="photlas-waf-${ALARM_SHORT_NAME}-${NEW_SUFFIX}"
-OLD_ALARM_NAME="photlas-waf-${ALARM_SHORT_NAME}-${OLD_SUFFIX}"
+NEW_ALARM_NAME="$(waf_managed_alarm_name "$RULE_NAME" "$NEW_SUFFIX")"
+OLD_ALARM_NAME="$(waf_managed_alarm_name "$RULE_NAME" "$OLD_SUFFIX")"
 
 create_managed_rule_alarm \
   "$NEW_ALARM_NAME" \
