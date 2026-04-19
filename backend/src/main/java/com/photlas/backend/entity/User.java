@@ -29,8 +29,8 @@ public class User {
     @Email
     private String email;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
-    @NotNull
+    // Issue#81: OAuth のみユーザーは password_hash が null になる（V22 で NULLABLE 化）
+    @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
     @Column(nullable = false)
@@ -62,6 +62,14 @@ public class User {
 
     @Column(name = "language", nullable = false, length = 5)
     private String language = "ja";
+
+    // Issue#81: OAuth 初回ログイン時に仮ユーザー名を設定し、確定画面でフラグを false にする
+    @Column(name = "username_temporary", nullable = false)
+    private boolean usernameTemporary = false;
+
+    // Issue#81 / Q8: パスワード推奨バナーを却下した時刻（7 日間非表示用）
+    @Column(name = "password_recommendation_dismissed_at")
+    private LocalDateTime passwordRecommendationDismissedAt;
 
     public User() {}
 
@@ -175,6 +183,22 @@ public class User {
 
     public void setLanguage(String language) {
         this.language = language;
+    }
+
+    public boolean isUsernameTemporary() {
+        return usernameTemporary;
+    }
+
+    public void setUsernameTemporary(boolean usernameTemporary) {
+        this.usernameTemporary = usernameTemporary;
+    }
+
+    public LocalDateTime getPasswordRecommendationDismissedAt() {
+        return passwordRecommendationDismissedAt;
+    }
+
+    public void setPasswordRecommendationDismissedAt(LocalDateTime passwordRecommendationDismissedAt) {
+        this.passwordRecommendationDismissedAt = passwordRecommendationDismissedAt;
     }
 
     @Override
