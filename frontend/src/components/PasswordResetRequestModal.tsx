@@ -6,6 +6,10 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { API_V1_URL } from '../config/api'
 import { toast } from 'sonner'
+import { ApiError } from '../utils/apiClient'
+import { fetchJson } from '../utils/fetchJson'
+import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
+import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
 
 interface PasswordResetRequestModalProps {
   open: boolean
@@ -23,6 +27,8 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [rateLimitError, setRateLimitError] = useState<ApiError | null>(null)
+  const cooldown = useRateLimitCooldown(rateLimitError)
 
   useEffect(() => {
     if (open) {
@@ -30,6 +36,7 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
       setError('')
       setIsSuccess(false)
       setIsSubmitting(false)
+      setRateLimitError(null)
     }
   }, [open])
 
@@ -50,20 +57,23 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
     setIsSubmitting(true)
 
     try {
-      const response = await fetch(`${API_V1_URL}/auth/password-reset-request`, {
+      await fetchJson(`${API_V1_URL}/auth/password-reset-request`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: { email },
       })
-
-      if (response.ok) {
-        setIsSuccess(true)
+      setIsSuccess(true)
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.isRateLimited) {
+          setRateLimitError(err)
+          setError(getRateLimitInlineMessage(err, t))
+        } else {
+          const message = (err.responseData as { message?: string } | undefined)?.message
+          setError(message || t('auth.errorOccurred'))
+        }
       } else {
-        const data = await response.json()
-        setError(data.message || t('auth.errorOccurred'))
+        setError(t('errors.unexpected'))
       }
-    } catch {
-      setError(t('errors.unexpected'))
     } finally {
       setIsSubmitting(false)
     }
@@ -111,10 +121,15 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
 
             <Button
               type="submit"
-              disabled={!email || isSubmitting}
+              disabled={!email || isSubmitting || cooldown.isOnCooldown}
               className="w-full"
+              aria-live="polite"
             >
-              {isSubmitting ? t('pages.submitting') : t('common.submit')}
+              {cooldown.isOnCooldown
+                ? t('common.submitWithCooldown', { seconds: cooldown.remainingSeconds })
+                : isSubmitting
+                  ? t('pages.submitting')
+                  : t('common.submit')}
             </Button>
 
             {onShowLogin && (

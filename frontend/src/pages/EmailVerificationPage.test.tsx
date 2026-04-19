@@ -80,7 +80,7 @@ describe('EmailVerificationPage', () => {
 
   describe('認証成功', () => {
     it('API 200レスポンスで成功メッセージが表示される', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: true })
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
       renderWithToken(VALID_TOKEN)
 
@@ -91,7 +91,7 @@ describe('EmailVerificationPage', () => {
     })
 
     it('成功時に「今すぐトップページへ」リンクが表示される', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: true })
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
       renderWithToken(VALID_TOKEN)
 
@@ -103,7 +103,7 @@ describe('EmailVerificationPage', () => {
 
     it('成功後3秒でトップページへ自動遷移する', async () => {
       vi.useFakeTimers()
-      mockFetch.mockResolvedValueOnce({ ok: true })
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
       renderWithToken(VALID_TOKEN)
 
@@ -125,10 +125,12 @@ describe('EmailVerificationPage', () => {
 
   describe('認証失敗', () => {
     it('API非200レスポンスでAPIからのエラーメッセージが表示される', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ message: TEXT_API_ERROR }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: TEXT_API_ERROR }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
 
       renderWithToken(VALID_TOKEN)
 
@@ -152,15 +154,17 @@ describe('EmailVerificationPage', () => {
 
   describe('API呼び出し', () => {
     it('tokenを含むURLでverify-email APIが呼び出される', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: true })
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
       renderWithToken(VALID_TOKEN)
 
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`${VERIFY_EMAIL_ENDPOINT}?token=${VALID_TOKEN}`)
-        )
+        expect(mockFetch).toHaveBeenCalled()
       })
+      const [calledUrl] = mockFetch.mock.calls[0]
+      expect(calledUrl).toEqual(
+        expect.stringContaining(`${VERIFY_EMAIL_ENDPOINT}?token=${VALID_TOKEN}`)
+      )
     })
   })
 

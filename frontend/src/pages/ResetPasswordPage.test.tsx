@@ -185,10 +185,12 @@ describe('ResetPasswordPage', () => {
 
   describe('成功時の動線', () => {
     it('リセット成功後、完了メッセージとログインボタンが表示される', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ message: 'パスワードが正常に再設定されました' }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'パスワードが正常に再設定されました' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
 
       renderWithToken(VALID_TOKEN)
 
@@ -209,10 +211,12 @@ describe('ResetPasswordPage', () => {
     })
 
     it('ログインボタンを押すとトップページに遷移する', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ message: 'パスワードが正常に再設定されました' }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'パスワードが正常に再設定されました' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
 
       renderWithToken(VALID_TOKEN)
 
@@ -236,10 +240,12 @@ describe('ResetPasswordPage', () => {
 
   describe('エラーハンドリング', () => {
     it('トークンが無効な場合、エラーメッセージが表示される', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ message: 'トークンが無効または期限切れです' }),
-      })
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'トークンが無効または期限切れです' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
 
       renderWithToken(VALID_TOKEN)
 
