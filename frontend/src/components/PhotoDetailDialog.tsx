@@ -8,9 +8,8 @@ import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PinSvg } from './PinSvg'
 import { ProtectedImage } from './figma/ProtectedImage'
-import { getAuthHeaders, ApiError } from '../utils/apiClient'
-import { DEFAULT_RETRY_AFTER_SECONDS } from '../utils/fetchJson'
-import { notifyIfRateLimited } from '../utils/notifyIfRateLimited'
+import { getAuthHeaders } from '../utils/apiClient'
+import { buildRateLimitApiError, notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { useAuth } from '../contexts/AuthContext'
@@ -251,11 +250,7 @@ async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
 
   if (!response.ok) {
     if (response.status === 429) {
-      const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
-      const seconds = Number.isFinite(retryAfter) && retryAfter > 0
-        ? retryAfter
-        : DEFAULT_RETRY_AFTER_SECONDS
-      throw new ApiError(ERROR_FETCH_DETAIL, 429, seconds)
+      throw buildRateLimitApiError(response, ERROR_FETCH_DETAIL)
     }
     throw new Error(ERROR_FETCH_DETAIL)
   }
@@ -657,11 +652,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         setIsFavorited(prevFavorited)
         setFavoriteCount(prevCount)
         if (response.status === 429) {
-          const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
-          const seconds = Number.isFinite(retryAfter) && retryAfter > 0
-            ? retryAfter
-            : DEFAULT_RETRY_AFTER_SECONDS
-          notifyIfRateLimited(new ApiError('rate limited', 429, seconds), t)
+          notifyIfRateLimited(buildRateLimitApiError(response), t)
         }
       }
     } catch {

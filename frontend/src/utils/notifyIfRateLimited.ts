@@ -16,6 +16,23 @@ import { toast } from 'sonner'
 import { ApiError } from './apiClient'
 import { DEFAULT_RETRY_AFTER_SECONDS } from './fetchJson'
 
+/**
+ * 生の fetch を使うコールサイトで、429 レスポンスから ApiError を構築するヘルパー。
+ *
+ * `fetchJson` を使えない・使っていないコード（PhotoDetailDialog の prefetch や
+ * MapView の fetchSpots など）で、Retry-After の解析と ApiError 生成を
+ * 重複させないためのユーティリティ。
+ */
+export function buildRateLimitApiError(
+  response: Response,
+  message: string = 'rate limited'
+): ApiError {
+  const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
+  const seconds =
+    Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : DEFAULT_RETRY_AFTER_SECONDS
+  return new ApiError(message, 429, seconds)
+}
+
 /** デバウンス窓（ms） */
 const NOTIFY_DEBOUNCE_MS = 1000
 

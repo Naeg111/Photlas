@@ -8,9 +8,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
-import { ApiError } from '../utils/apiClient'
-import { DEFAULT_RETRY_AFTER_SECONDS } from '../utils/fetchJson'
-import { notifyIfRateLimitedBurst } from '../utils/notifyIfRateLimited'
+import { buildRateLimitApiError, notifyIfRateLimitedBurst } from '../utils/notifyIfRateLimited'
 import { PinSvg } from './PinSvg'
 import { generatePinImage, getPinImageId, PIN_COLOR_MAP, BASE_PIN_SIZE, PIN_HEIGHT_RATIO, PIN_PIXEL_RATIO, SHADOW_PADDING } from '../utils/pinImageGenerator'
 
@@ -442,11 +440,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
       if (!response.ok) {
         if (response.status === 429) {
-          const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
-          const seconds = Number.isFinite(retryAfter) && retryAfter > 0
-            ? retryAfter
-            : DEFAULT_RETRY_AFTER_SECONDS
-          notifyIfRateLimitedBurst(new ApiError('rate limited', 429, seconds), t)
+          notifyIfRateLimitedBurst(buildRateLimitApiError(response), t)
           return
         }
         throw new Error('API request failed')
