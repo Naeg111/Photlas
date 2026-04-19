@@ -12,6 +12,9 @@ import { Upload, Eye, EyeOff } from 'lucide-react'
 import { SnsLinkEditDialog } from './SnsLinkEditDialog'
 import { API_V1_URL } from '../config/api'
 import { toast } from 'sonner'
+import { ApiError } from '../utils/apiClient'
+import { fetchJson } from '../utils/fetchJson'
+import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
 import {
   getPasswordStrength,
   validatePassword,
@@ -61,6 +64,8 @@ export function SignUpDialog({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [registerRateLimitError, setRegisterRateLimitError] = useState<ApiError | null>(null)
+  const registerCooldown = useRateLimitCooldown(registerRateLimitError)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isCropperOpen, setIsCropperOpen] = useState(false)
   const [cropperImageSrc, setCropperImageSrc] = useState('')
@@ -151,42 +156,42 @@ export function SignUpDialog({
 
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_V1_URL}/auth/register`, {
+      const data = await fetchJson<{ token?: string }>(`${API_V1_URL}/auth/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           username: displayName,
           email,
           password,
-        }),
+        },
       })
+      const token = data.token
 
-      if (response.ok) {
-        const data = await response.json()
-        const token = data.token
+      if (profileImageFile && token) {
+        await uploadProfileImage(token, profileImageFile)
+      }
 
-        // プロフィール画像が選択されていればアップロード
-        if (profileImageFile && token) {
-          await uploadProfileImage(token, profileImageFile)
+      const filledSnsLinks = snsLinks.filter(link => link.url.trim() !== '')
+      if (filledSnsLinks.length > 0 && token) {
+        await uploadSnsLinks(token, filledSnsLinks)
+      }
+
+      toast(t('auth.signupSuccess'), {
+        duration: 8000,
+      })
+      onOpenChange(false)
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.isRateLimited) {
+          setRegisterRateLimitError(err)
+          setErrors({ general: t('errors.RATE_LIMIT_EXCEEDED', { seconds: err.retryAfterSeconds ?? 60 }) })
+        } else if (err.status === 409) {
+          setErrors({ email: t('auth.emailAlreadyUsed') })
+        } else {
+          setErrors({ general: t('auth.signupFailed') })
         }
-
-        // SNSリンクが入力されていれば送信
-        const filledSnsLinks = snsLinks.filter(link => link.url.trim() !== '')
-        if (filledSnsLinks.length > 0 && token) {
-          await uploadSnsLinks(token, filledSnsLinks)
-        }
-
-        toast(t('auth.signupSuccess'), {
-          duration: 8000,
-        })
-        onOpenChange(false)
-      } else if (response.status === 409) {
-        setErrors({ email: t('auth.emailAlreadyUsed') })
       } else {
         setErrors({ general: t('auth.signupFailed') })
       }
-    } catch {
-      setErrors({ general: t('auth.signupFailed') })
     } finally {
       setIsLoading(false)
     }
@@ -458,9 +463,12 @@ export function SignUpDialog({
             <Button
               className="flex-1"
               onClick={handleSubmit}
-              disabled={isLoading || !displayName.trim() || !email.trim() || !password || !confirmPassword || !agreedToTerms}
+              disabled={isLoading || registerCooldown.isOnCooldown || !displayName.trim() || !email.trim() || !password || !confirmPassword || !agreedToTerms}
+              aria-live="polite"
             >
-              {t('auth.register')}
+              {registerCooldown.isOnCooldown
+                ? t('common.submitWithCooldown', { seconds: registerCooldown.remainingSeconds })
+                : t('auth.register')}
             </Button>
           </div>
         </div>
