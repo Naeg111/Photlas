@@ -1,6 +1,8 @@
 package com.photlas.backend.security;
 
+import com.photlas.backend.validation.LanguageValidator;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
@@ -15,13 +17,12 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
  *
  * <p>未サポート言語（ホワイトリスト外）・lang 欠落・delegate が null を返す場合は
  * セッションへの書き込みをスキップする。
- *
- * <p>Phase 3d Red 段階ではスケルトンのみで、resolve() は
- * {@link UnsupportedOperationException} を投げる。
  */
 public class CustomOAuth2AuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
 
-    @SuppressWarnings("unused") // Phase 3d Green で参照
+    /** フロントから送られてくる言語指定クエリパラメータ名 */
+    private static final String LANG_PARAM = "lang";
+
     private final OAuth2AuthorizationRequestResolver delegate;
 
     public CustomOAuth2AuthorizationRequestResolver(OAuth2AuthorizationRequestResolver delegate) {
@@ -30,11 +31,32 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
 
     @Override
     public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
-        throw new UnsupportedOperationException("CustomOAuth2AuthorizationRequestResolver.resolve(request) は未実装です（Phase 3d Green）");
+        OAuth2AuthorizationRequest authorizationRequest = delegate.resolve(request);
+        if (authorizationRequest != null) {
+            storeLangInSession(request);
+        }
+        return authorizationRequest;
     }
 
     @Override
     public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String clientRegistrationId) {
-        throw new UnsupportedOperationException("CustomOAuth2AuthorizationRequestResolver.resolve(request, id) は未実装です（Phase 3d Green）");
+        OAuth2AuthorizationRequest authorizationRequest = delegate.resolve(request, clientRegistrationId);
+        if (authorizationRequest != null) {
+            storeLangInSession(request);
+        }
+        return authorizationRequest;
+    }
+
+    /**
+     * リクエストから {@code lang} パラメータを取り出し、ホワイトリスト一致時のみ HttpSession に保存する。
+     * 未サポート言語・null・空文字は保存しない（Accept-Language 等でフォールバックさせるため）。
+     */
+    private void storeLangInSession(HttpServletRequest request) {
+        String lang = request.getParameter(LANG_PARAM);
+        if (!LanguageValidator.isValid(lang)) {
+            return;
+        }
+        HttpSession session = request.getSession(true);
+        session.setAttribute(CustomOAuth2UserService.SESSION_ATTRIBUTE_LANG, lang);
     }
 }
