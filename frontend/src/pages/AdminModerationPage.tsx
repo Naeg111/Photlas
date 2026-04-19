@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { API_V1_URL } from '../config/api'
-import { ApiError, getAuthHeaders } from '../utils/apiClient'
+import { getAuthHeaders } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
 import { notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { Button } from '../components/ui/button'
@@ -94,9 +94,7 @@ export default function AdminModerationPage() {
       setItems(prev => prev.filter(item => item.photo_id !== photoId))
       setTotalElements(prev => prev - 1)
     } catch (e) {
-      if (e instanceof ApiError && e.isRateLimited) {
-        notifyIfRateLimited(e, t)
-      } else {
+      if (!notifyIfRateLimited(e, t)) {
         toast.error('承認に失敗しました')
       }
     } finally {
@@ -123,9 +121,7 @@ export default function AdminModerationPage() {
       setItems(prev => prev.filter(item => item.photo_id !== photoId))
       setTotalElements(prev => prev - 1)
     } catch (e) {
-      if (e instanceof ApiError && e.isRateLimited) {
-        notifyIfRateLimited(e, t)
-      } else {
+      if (!notifyIfRateLimited(e, t)) {
         toast.error('拒否に失敗しました')
       }
     } finally {
