@@ -26,19 +26,14 @@ export function useRateLimitCooldown(
   apiError: ApiError | null | undefined
 ): UseRateLimitCooldownResult {
   const [remainingSeconds, setRemainingSeconds] = useState<number>(() =>
-    apiError ? apiError.retryAfterSeconds ?? DEFAULT_RETRY_AFTER_SECONDS : 0
+    initialSecondsFrom(apiError)
   )
   const lastErrorRef = useRef<ApiError | null | undefined>(apiError)
 
   useEffect(() => {
-    if (apiError !== lastErrorRef.current) {
-      lastErrorRef.current = apiError
-      if (!apiError) {
-        setRemainingSeconds(0)
-        return
-      }
-      setRemainingSeconds(apiError.retryAfterSeconds ?? DEFAULT_RETRY_AFTER_SECONDS)
-    }
+    if (apiError === lastErrorRef.current) return
+    lastErrorRef.current = apiError
+    setRemainingSeconds(initialSecondsFrom(apiError))
   }, [apiError])
 
   useEffect(() => {
@@ -53,4 +48,9 @@ export function useRateLimitCooldown(
     isOnCooldown: remainingSeconds > 0,
     remainingSeconds,
   }
+}
+
+function initialSecondsFrom(apiError: ApiError | null | undefined): number {
+  if (!apiError) return 0
+  return apiError.retryAfterSeconds ?? DEFAULT_RETRY_AFTER_SECONDS
 }
