@@ -14,6 +14,7 @@ import { Progress } from './ui/progress'
 import { motion, AnimatePresence } from 'motion/react'
 import { PHOTO_CATEGORIES, PHOTO_UPLOAD, UPLOAD_STATUS } from '../utils/constants'
 import { ApiError } from '../utils/apiClient'
+import { notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { WeatherIcons } from './FilterIcons'
 import { InlineMapPicker } from './InlineMapPicker'
 import {
@@ -399,6 +400,7 @@ export function PhotoContributionDialog({
         return
       }
 
+      notifyIfRateLimited(error, t)
       setUploadStatus('error')
 
       // エラー後にリセット
