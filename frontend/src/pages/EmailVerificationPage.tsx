@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { API_V1_URL } from '../config/api'
+import { ApiError } from '../utils/apiClient'
+import { fetchJson } from '../utils/fetchJson'
+import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 
 /**
  * EmailVerificationPage コンポーネント
@@ -27,21 +30,23 @@ export default function EmailVerificationPage() {
 
     const verifyEmail = async () => {
       try {
-        const response = await fetch(
+        await fetchJson(
           `${API_V1_URL}/auth/verify-email?token=${encodeURIComponent(token)}`
         )
-
-        if (response.ok) {
-          setStatus('success')
-          setTimeout(() => navigate('/'), 3000)
-        } else {
-          const data = await response.json()
-          setStatus('error')
-          setErrorMessage(data.message || t('auth.errorOccurred'))
-        }
-      } catch {
+        setStatus('success')
+        setTimeout(() => navigate('/'), 3000)
+      } catch (err) {
         setStatus('error')
-        setErrorMessage(t('auth.errorOccurred'))
+        if (err instanceof ApiError) {
+          if (err.isRateLimited) {
+            setErrorMessage(getRateLimitInlineMessage(err, t))
+          } else {
+            const message = (err.responseData as { message?: string } | undefined)?.message
+            setErrorMessage(message || t('auth.errorOccurred'))
+          }
+        } else {
+          setErrorMessage(t('auth.errorOccurred'))
+        }
       }
     }
 
