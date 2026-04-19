@@ -99,4 +99,9 @@ documents/
 
 # Design assets backup
 design-backup/
-CLAUDE.md
+
+# Claude Code local/per-user state (project-wide .claude/settings.json is tracked)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/projects/
+.claude/worktrees/
