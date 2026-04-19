@@ -31,21 +31,33 @@ export async function fetchJson<T = unknown>(
 ): Promise<T> {
   const { method = 'GET', body, headers = {}, requireAuth = false, signal } = options
 
-  const finalHeaders = new Headers(headers)
-  let finalBody: BodyInit | undefined
+  const finalHeaders = buildHeaders(headers, body, requireAuth)
+  const finalBody = buildBody(body)
 
-  if (body instanceof FormData) {
-    finalBody = body
-  } else if (typeof body === 'string') {
-    finalBody = body
-    if (!finalHeaders.has('Content-Type')) {
-      finalHeaders.set('Content-Type', 'application/json')
-    }
-  } else if (body !== undefined && body !== null) {
-    finalBody = JSON.stringify(body)
-    if (!finalHeaders.has('Content-Type')) {
-      finalHeaders.set('Content-Type', 'application/json')
-    }
+  const response = await fetch(url, { method, headers: finalHeaders, body: finalBody, signal })
+
+  if (!response.ok) {
+    throw await buildApiError(response)
+  }
+
+  return await parseSuccessBody<T>(response)
+}
+
+/**
+ * リクエストヘッダを組み立てる。
+ * - FormData 以外のボディには Content-Type: application/json を既定で付与（明示指定があれば上書きしない）
+ * - requireAuth=true なら getAuthHeaders() の内容を追加
+ */
+function buildHeaders(
+  headers: Record<string, string>,
+  body: unknown,
+  requireAuth: boolean
+): Headers {
+  const finalHeaders = new Headers(headers)
+
+  const needsJsonContentType = body !== undefined && body !== null && !(body instanceof FormData)
+  if (needsJsonContentType && !finalHeaders.has('Content-Type')) {
+    finalHeaders.set('Content-Type', 'application/json')
   }
 
   if (requireAuth) {
@@ -55,29 +67,46 @@ export async function fetchJson<T = unknown>(
     }
   }
 
-  const response = await fetch(url, {
-    method,
-    headers: finalHeaders,
-    body: finalBody,
-    signal,
-  })
+  return finalHeaders
+}
 
-  if (!response.ok) {
-    const responseData = await parseErrorBody(response)
-    const retryAfterSeconds =
-      response.status === 429 ? parseRetryAfter(response.headers.get('Retry-After')) : undefined
-    throw new ApiError(
-      `Request failed: ${response.status} ${response.statusText}`,
-      response.status,
-      retryAfterSeconds,
-      responseData
-    )
-  }
+/**
+ * リクエストボディを BodyInit に変換する。
+ * - undefined / null → undefined（ボディなし）
+ * - FormData / string → そのまま（FormData は Content-Type を自動付与させない）
+ * - それ以外 → JSON.stringify
+ */
+function buildBody(body: unknown): BodyInit | undefined {
+  if (body === undefined || body === null) return undefined
+  if (body instanceof FormData) return body
+  if (typeof body === 'string') return body
+  return JSON.stringify(body)
+}
 
-  if (response.status === 204) {
-    return undefined as T
-  }
+/**
+ * non-OK レスポンスから ApiError を生成する。
+ * 429 のときは Retry-After ヘッダを解析（欠落時は DEFAULT_RETRY_AFTER_SECONDS）。
+ */
+async function buildApiError(response: Response): Promise<ApiError> {
+  const responseData = await parseErrorBody(response)
+  const retryAfterSeconds =
+    response.status === 429 ? parseRetryAfter(response.headers.get('Retry-After')) : undefined
+  return new ApiError(
+    `Request failed: ${response.status} ${response.statusText}`,
+    response.status,
+    retryAfterSeconds,
+    responseData
+  )
+}
 
+/**
+ * 成功レスポンスのボディを解析する。
+ * - 204 → undefined
+ * - Content-Type application/json → JSON.parse 結果
+ * - それ以外 → undefined（本体は呼び出し側で扱わない前提）
+ */
+async function parseSuccessBody<T>(response: Response): Promise<T> {
+  if (response.status === 204) return undefined as T
   const contentType = response.headers.get('Content-Type') ?? ''
   if (contentType.includes('application/json')) {
     return (await response.json()) as T
