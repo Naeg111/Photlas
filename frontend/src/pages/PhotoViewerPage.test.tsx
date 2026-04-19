@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import PhotoViewerPage from './PhotoViewerPage'
 import { MODERATION_STATUS_PUBLISHED } from '../utils/codeConstants'
+import { _resetRateLimitNotifyDebounce } from '../utils/notifyIfRateLimited'
 
 // Mapbox GL JS のモック
 vi.mock('react-map-gl', () => ({
@@ -15,6 +16,17 @@ vi.mock('react-map-gl', () => ({
 const mockUseAuth = vi.fn()
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
+}))
+
+// Issue#96 PR3: sonner のモック（429 トースト検証用）
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}))
+vi.mock('sonner', () => ({
+  toast: mockToast,
 }))
 
 // navigateモック
@@ -83,6 +95,7 @@ describe('PhotoViewerPage', () => {
 
   beforeEach(() => {
     vi.resetAllMocks()
+    _resetRateLimitNotifyDebounce()
     global.fetch = mockFetch
     mockUseAuth.mockReturnValue({
       isAuthenticated: false,
@@ -148,6 +161,27 @@ describe('PhotoViewerPage', () => {
 
     await waitFor(() => {
       expect(document.title).toContain(TEST_PLACE_NAME)
+    })
+  })
+
+  // Issue#96 PR3: 429 レート制限ハンドリング（パターンB: トースト通知）
+  describe('Rate Limit (429) - レート制限', () => {
+    it('429 受信時に rate-limit トースト通知を表示する', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+          statusText: 'Too Many Requests',
+          headers: { 'Retry-After': '60' },
+        })
+      )
+
+      renderWithRoute(TEST_PHOTO_ID)
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith(
+          expect.stringContaining('混雑しています')
+        )
+      })
     })
   })
 })

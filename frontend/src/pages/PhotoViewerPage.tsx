@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getAuthHeaders } from '../utils/apiClient'
+import { buildRateLimitApiError, notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { API_V1_URL } from '../config/api'
 import PhotoDetailDialog from '../components/PhotoDetailDialog'
 
@@ -48,6 +49,9 @@ export default function PhotoViewerPage() {
           setPlaceName(data.placeName || '')
           setStatus('ready')
         } else {
+          if (response.status === 429) {
+            notifyIfRateLimited(buildRateLimitApiError(response), t)
+          }
           setStatus('error')
           setErrorMessage(t('photo.notFound'))
         }
@@ -58,7 +62,7 @@ export default function PhotoViewerPage() {
     }
 
     fetchPhoto()
-  }, [photoId])
+  }, [photoId, t])
 
   const handleClose = () => {
     navigate('/', { replace: true })

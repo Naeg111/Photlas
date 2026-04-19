@@ -16,6 +16,23 @@ import { toast } from 'sonner'
 import { ApiError } from './apiClient'
 import { DEFAULT_RETRY_AFTER_SECONDS } from './fetchJson'
 
+/**
+ * 生の fetch を使うコールサイトで、429 レスポンスから ApiError を構築するヘルパー。
+ *
+ * `fetchJson` を使えない・使っていないコード（PhotoDetailDialog の prefetch や
+ * MapView の fetchSpots など）で、Retry-After の解析と ApiError 生成を
+ * 重複させないためのユーティリティ。
+ */
+export function buildRateLimitApiError(
+  response: Response,
+  message: string = 'rate limited'
+): ApiError {
+  const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
+  const seconds =
+    Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : DEFAULT_RETRY_AFTER_SECONDS
+  return new ApiError(message, 429, seconds)
+}
+
 /** デバウンス窓（ms） */
 const NOTIFY_DEBOUNCE_MS = 1000
 
@@ -57,4 +74,52 @@ export function _resetRateLimitNotifyDebounce(): void {
 export function getRateLimitInlineMessage(error: ApiError, t: TranslateFn): string {
   const seconds = error.retryAfterSeconds ?? DEFAULT_RETRY_AFTER_SECONDS
   return t('errors.RATE_LIMIT_EXCEEDED', { seconds })
+}
+
+/**
+ * Issue#96 パターンC: バックグラウンド系（地図タイル等）の 429 頻度制御通知。
+ *
+ * - 初回の 429 は **サイレント**（トーストすら出さない）
+ * - 一定時間内（既定 1 分）に閾値（既定 3 回）以上 429 が連続した場合のみ 1 回トースト表示
+ * - 同一ウインドウ内で通知済みなら再通知しない
+ * - ウインドウ経過後にカウンタがリセットされ、再び閾値到達で通知可能になる
+ * - 429 以外 / 非 ApiError はカウンタに影響しない
+ *
+ * 戻り値: 429 を検出したら true（サイレント時も true）。非 429 / 非 ApiError は false。
+ */
+
+/** バースト検知ウインドウ（ms） */
+const BURST_WINDOW_MS = 60_000
+/** バースト閾値（回） */
+const BURST_THRESHOLD = 3
+
+let burstTimestamps: number[] = []
+let burstNotifiedInWindow = false
+
+export function notifyIfRateLimitedBurst(error: unknown, t: TranslateFn): boolean {
+  if (!(error instanceof ApiError) || !error.isRateLimited) {
+    return false
+  }
+
+  const now = Date.now()
+  burstTimestamps = burstTimestamps.filter((ts) => now - ts < BURST_WINDOW_MS)
+  if (burstTimestamps.length === 0) {
+    burstNotifiedInWindow = false
+  }
+  burstTimestamps.push(now)
+
+  if (burstTimestamps.length >= BURST_THRESHOLD && !burstNotifiedInWindow) {
+    toast.error(t('errors.RATE_LIMIT_BURST'))
+    burstNotifiedInWindow = true
+  }
+
+  return true
+}
+
+/**
+ * テスト専用: バースト検知状態をリセットする。
+ */
+export function _resetRateLimitBurstTracker(): void {
+  burstTimestamps = []
+  burstNotifiedInWindow = false
 }

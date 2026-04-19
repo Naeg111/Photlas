@@ -20,7 +20,13 @@ vi.mock('sonner', () => ({
 }))
 
 import { toast } from 'sonner'
-import { notifyIfRateLimited, _resetRateLimitNotifyDebounce, getRateLimitInlineMessage } from './notifyIfRateLimited'
+import {
+  notifyIfRateLimited,
+  _resetRateLimitNotifyDebounce,
+  getRateLimitInlineMessage,
+  notifyIfRateLimitedBurst,
+  _resetRateLimitBurstTracker,
+} from './notifyIfRateLimited'
 
 const t = vi.fn((key: string, opts?: Record<string, unknown>) => {
   if (opts && typeof opts.seconds !== 'undefined') {
@@ -94,6 +100,105 @@ describe('notifyIfRateLimited', () => {
     vi.advanceTimersByTime(500) // 合計 1000ms
     notifyIfRateLimited(err, t)
     expect(toast.error).toHaveBeenCalledTimes(2)
+  })
+})
+
+/**
+ * Issue#96 PR3: notifyIfRateLimitedBurst（パターンC バックグラウンド系）
+ *
+ * 仕様（Issue#96 3.4 パターンC）:
+ *   - 初回の 429 は **サイレント**（トーストすら出さない）
+ *   - 一定時間内（デフォルト 1 分）に閾値回数（デフォルト 3 回）以上 429 が連続した場合のみトースト表示
+ *   - 同一ウインドウ内で通知済みなら再通知しない
+ *   - ウインドウ経過後にカウンタがリセットされ、再び閾値到達で通知可能になる
+ *   - 429 以外や ApiError でないエラーはカウンタに影響しない
+ *   - 戻り値: 429 を検出したら true（サイレント時も true）。非 429 / 非 ApiError は false
+ */
+describe('notifyIfRateLimitedBurst', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    ;(toast.error as any).mockClear()
+    t.mockClear()
+    _resetRateLimitBurstTracker()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('初回の 429 はサイレント（トーストを表示しない）', () => {
+    const err = new ApiError('rate limited', 429, 60)
+    const detected = notifyIfRateLimitedBurst(err, t)
+    expect(toast.error).not.toHaveBeenCalled()
+    expect(detected).toBe(true)
+  })
+
+  it('2 回目の 429 もサイレント', () => {
+    const err = new ApiError('rate limited', 429, 60)
+    notifyIfRateLimitedBurst(err, t)
+    notifyIfRateLimitedBurst(err, t)
+    expect(toast.error).not.toHaveBeenCalled()
+  })
+
+  it('1 分以内に 3 回目の 429 でトーストが 1 回だけ表示される', () => {
+    const err = new ApiError('rate limited', 429, 60)
+    notifyIfRateLimitedBurst(err, t)
+    notifyIfRateLimitedBurst(err, t)
+    notifyIfRateLimitedBurst(err, t)
+    expect(toast.error).toHaveBeenCalledTimes(1)
+    expect(t).toHaveBeenCalledWith('errors.RATE_LIMIT_BURST')
+  })
+
+  it('同一ウインドウ内で 4 回目以降は再通知しない', () => {
+    const err = new ApiError('rate limited', 429, 60)
+    notifyIfRateLimitedBurst(err, t)
+    notifyIfRateLimitedBurst(err, t)
+    notifyIfRateLimitedBurst(err, t)
+    notifyIfRateLimitedBurst(err, t)
+    notifyIfRateLimitedBurst(err, t)
+    expect(toast.error).toHaveBeenCalledTimes(1)
+  })
+
+  it('1 分経過後にカウンタがリセットされ、新たに閾値到達で再通知される', () => {
+    const err = new ApiError('rate limited', 429, 60)
+    notifyIfRateLimitedBurst(err, t)
+    notifyIfRateLimitedBurst(err, t)
+    notifyIfRateLimitedBurst(err, t)
+    expect(toast.error).toHaveBeenCalledTimes(1)
+
+    // 1 分経過（ウインドウ外）
+    vi.advanceTimersByTime(60_001)
+
+    // カウンタがリセットされるので 1〜2 回目は再びサイレント
+    notifyIfRateLimitedBurst(err, t)
+    expect(toast.error).toHaveBeenCalledTimes(1)
+    notifyIfRateLimitedBurst(err, t)
+    expect(toast.error).toHaveBeenCalledTimes(1)
+    // 3 回目で再通知
+    notifyIfRateLimitedBurst(err, t)
+    expect(toast.error).toHaveBeenCalledTimes(2)
+  })
+
+  it('429 以外の ApiError ではカウンタに加算せず false を返す', () => {
+    const err429 = new ApiError('rate limited', 429, 60)
+    notifyIfRateLimitedBurst(err429, t)
+    notifyIfRateLimitedBurst(new ApiError('not found', 404), t)
+    notifyIfRateLimitedBurst(new ApiError('server error', 500), t)
+    // 3 回呼んだが 429 は 1 回のみなので通知されない
+    expect(toast.error).not.toHaveBeenCalled()
+    expect(notifyIfRateLimitedBurst(new ApiError('not found', 404), t)).toBe(false)
+  })
+
+  it('ApiError でないエラーは false を返しカウンタに影響しない', () => {
+    const err = new ApiError('rate limited', 429, 60)
+    notifyIfRateLimitedBurst(err, t)
+    notifyIfRateLimitedBurst(err, t)
+    const detected = notifyIfRateLimitedBurst(new Error('generic') as unknown as ApiError, t)
+    expect(detected).toBe(false)
+    expect(toast.error).not.toHaveBeenCalled()
+    // 3 回目の 429 でやっと通知
+    notifyIfRateLimitedBurst(err, t)
+    expect(toast.error).toHaveBeenCalledTimes(1)
   })
 })
 

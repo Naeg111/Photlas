@@ -297,6 +297,7 @@
     "errorOccurred": "エラーが発生しました",
     "RATE_LIMIT_EXCEEDED": "リクエストが多すぎます。{{seconds}} 秒後に再度お試しください。",
     "RATE_LIMIT_EXCEEDED_SHORT": "混雑しています（{{seconds}} 秒後に再取得）",
+    "RATE_LIMIT_BURST": "通信が混み合っています。しばらく操作を控えてください。",
     "NETWORK_ERROR": "ネットワーク接続に失敗しました。接続を確認してください。"
   },
   "pages": {
