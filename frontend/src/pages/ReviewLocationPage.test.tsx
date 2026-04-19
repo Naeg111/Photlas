@@ -150,7 +150,12 @@ describe('ReviewLocationPage', () => {
   it('should show result message and close button after accepting', async () => {
     mockFetch
       .mockResolvedValueOnce({ ok: true, json: async () => mockReviewData })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ message: 'ok' }) })
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'ok' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
 
     renderWithToken('valid-token')
 
@@ -165,7 +170,12 @@ describe('ReviewLocationPage', () => {
   it('should show result message and close button after rejecting', async () => {
     mockFetch
       .mockResolvedValueOnce({ ok: true, json: async () => mockReviewData })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ message: 'ok' }) })
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'ok' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
 
     renderWithToken('valid-token')
 

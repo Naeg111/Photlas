@@ -1727,7 +1727,12 @@ describe('ProfileDialog', () => {
       const user = userEvent.setup()
 
       global.fetch = vi.fn()
-        // 初回: 写真一覧API（空レスポンス）
+        // プロフィールAPI（他ユーザー: 認証ヘッダなし）
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ profileImageUrl: null, snsLinks: [] }),
+        })
+        // 写真一覧API（空レスポンス）
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(mockEmptyPhotosResponse),
@@ -1755,8 +1760,8 @@ describe('ProfileDialog', () => {
       const reportButton = await screen.findByLabelText('このプロフィールを通報')
       await user.click(reportButton)
 
-      // ReportDialog内の最初の理由を選択
-      const reasonRadio = await screen.findByLabelText('reportReasons.adult')
+      // ReportDialog内の最初の理由を選択（i18n適用後の日本語ラベル）
+      const reasonRadio = await screen.findByLabelText('成人向けコンテンツ')
       await user.click(reasonRadio)
 
       // 通報実行
