@@ -179,7 +179,7 @@ describe('PhotoViewerPage', () => {
 
       await waitFor(() => {
         expect(mockToast.error).toHaveBeenCalledWith(
-          expect.stringContaining('リクエストが多すぎます')
+          expect.stringContaining('混雑しています')
         )
       })
     })

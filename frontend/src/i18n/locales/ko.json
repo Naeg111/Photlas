@@ -297,6 +297,7 @@
     "errorOccurred": "오류가 발생했습니다",
     "RATE_LIMIT_EXCEEDED": "요청이 너무 많습니다. {{seconds}}초 후에 다시 시도해 주세요.",
     "RATE_LIMIT_EXCEEDED_SHORT": "혼잡합니다 ({{seconds}}초 후 재시도)",
+    "RATE_LIMIT_BURST": "통신이 혼잡합니다. 잠시 후 다시 시도해 주세요.",
     "NETWORK_ERROR": "네트워크 연결에 실패했습니다. 연결 상태를 확인해 주세요."
   },
   "pages": {

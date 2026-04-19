@@ -8,6 +8,9 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
+import { ApiError } from '../utils/apiClient'
+import { DEFAULT_RETRY_AFTER_SECONDS } from '../utils/fetchJson'
+import { notifyIfRateLimitedBurst } from '../utils/notifyIfRateLimited'
 import { PinSvg } from './PinSvg'
 import { generatePinImage, getPinImageId, PIN_COLOR_MAP, BASE_PIN_SIZE, PIN_HEIGHT_RATIO, PIN_PIXEL_RATIO, SHADOW_PADDING } from '../utils/pinImageGenerator'
 
@@ -236,7 +239,7 @@ function handleClusterClick(mapInstance: MapboxMap, e: any, callbackRef: React.R
 }
 
 const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady }, ref) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<MapboxMap | null>(null)
@@ -438,16 +441,24 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       })
 
       if (!response.ok) {
+        if (response.status === 429) {
+          const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
+          const seconds = Number.isFinite(retryAfter) && retryAfter > 0
+            ? retryAfter
+            : DEFAULT_RETRY_AFTER_SECONDS
+          notifyIfRateLimitedBurst(new ApiError('rate limited', 429, seconds), t)
+          return
+        }
         throw new Error('API request failed')
       }
 
       const data = await response.json()
       setSpots(data)
-    } catch (error) {
+    } catch {
       setShowToast(true)
       setTimeout(() => setShowToast(false), TOAST_DURATION_MS)
     }
-  }, [filterParams])
+  }, [filterParams, t])
 
   // 現在位置に移動するメソッドとスポット再取得メソッドを公開
   useImperativeHandle(ref, () => ({

@@ -297,6 +297,7 @@
     "errorOccurred": "An error occurred",
     "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again in {{seconds}} seconds.",
     "RATE_LIMIT_EXCEEDED_SHORT": "Rate limited (retry in {{seconds}}s)",
+    "RATE_LIMIT_BURST": "The network is congested. Please pause briefly before retrying.",
     "NETWORK_ERROR": "Network connection failed. Please check your connection."
   },
   "pages": {

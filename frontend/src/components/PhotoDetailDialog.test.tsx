@@ -2017,7 +2017,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       await waitFor(() => {
         expect(mockToast.error).toHaveBeenCalledWith(
-          expect.stringContaining('リクエストが多すぎます')
+          expect.stringContaining('混雑しています')
         )
       })
     })
@@ -2061,7 +2061,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       await waitFor(() => {
         expect(mockToast.error).toHaveBeenCalledWith(
-          expect.stringContaining('リクエストが多すぎます')
+          expect.stringContaining('混雑しています')
         )
       })
     })

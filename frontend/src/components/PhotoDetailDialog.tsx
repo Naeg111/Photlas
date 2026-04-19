@@ -8,7 +8,9 @@ import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PinSvg } from './PinSvg'
 import { ProtectedImage } from './figma/ProtectedImage'
-import { getAuthHeaders } from '../utils/apiClient'
+import { getAuthHeaders, ApiError } from '../utils/apiClient'
+import { DEFAULT_RETRY_AFTER_SECONDS } from '../utils/fetchJson'
+import { notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { useAuth } from '../contexts/AuthContext'
@@ -248,6 +250,13 @@ async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
   })
 
   if (!response.ok) {
+    if (response.status === 429) {
+      const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
+      const seconds = Number.isFinite(retryAfter) && retryAfter > 0
+        ? retryAfter
+        : DEFAULT_RETRY_AFTER_SECONDS
+      throw new ApiError(ERROR_FETCH_DETAIL, 429, seconds)
+    }
     throw new Error(ERROR_FETCH_DETAIL)
   }
 
@@ -503,7 +512,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, JSON.stringify(spotIds), singlePhotoId])
 
-  // 写真詳細を取得（refで依存配列ループを回避、429時にエラー表示しない）
+  // 写真詳細を取得（refで依存配列ループを回避、429時はトーストのみ表示してエラー表示しない）
   const fetchPhotoDetail = useCallback(async (photoId: number) => {
     if (photoDetailsRef.current.has(photoId)) return
     if (fetchingIdsRef.current.has(photoId)) return
@@ -513,12 +522,13 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     try {
       const detail = await fetchPhotoDetailById(photoId)
       setPhotoDetails(prev => new Map(prev).set(photoId, detail))
-    } catch {
-      // 429等のエラーは無視（ダイアログ全体をエラーにしない）
+    } catch (e) {
+      // 429 のみトースト通知。それ以外のエラーは無視（ダイアログ全体をエラーにしない）
+      notifyIfRateLimited(e, t)
     } finally {
       fetchingIdsRef.current.delete(photoId)
     }
-  }, [])
+  }, [t])
 
   // カルーセル操作
   const scrollPrev = useCallback(() => {
@@ -646,6 +656,13 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         // APIエラー時はリバート
         setIsFavorited(prevFavorited)
         setFavoriteCount(prevCount)
+        if (response.status === 429) {
+          const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
+          const seconds = Number.isFinite(retryAfter) && retryAfter > 0
+            ? retryAfter
+            : DEFAULT_RETRY_AFTER_SECONDS
+          notifyIfRateLimited(new ApiError('rate limited', 429, seconds), t)
+        }
       }
     } catch {
       // ネットワークエラー時もリバート
@@ -654,7 +671,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     } finally {
       setIsFavoriteLoading(false)
     }
-  }, [currentPhotoId, isFavorited, favoriteCount, isFavoriteLoading])
+  }, [currentPhotoId, isFavorited, favoriteCount, isFavoriteLoading, t])
 
   // Issue#54: 通報送信処理
   const handleReport = useCallback(async (data: { reason: number; details?: string }) => {

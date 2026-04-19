@@ -297,6 +297,7 @@
     "errorOccurred": "發生錯誤",
     "RATE_LIMIT_EXCEEDED": "請求過多，請在 {{seconds}} 秒後再試。",
     "RATE_LIMIT_EXCEEDED_SHORT": "目前擁擠（{{seconds}} 秒後重試）",
+    "RATE_LIMIT_BURST": "網路繁忙，請稍候再試。",
     "NETWORK_ERROR": "網路連線失敗，請檢查您的網路連線。"
   },
   "pages": {
