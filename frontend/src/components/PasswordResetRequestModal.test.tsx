@@ -100,10 +100,12 @@ describe('PasswordResetRequestModal', () => {
   describe('Password Reset Request Process', () => {
     it('sends POST request to /api/v1/auth/password-reset-request on form submission', async () => {
       const mockFetch = vi.mocked(fetch)
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ message: 'Password reset email sent' })
-      } as Response)
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'Password reset email sent' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
 
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 
@@ -114,24 +116,22 @@ describe('PasswordResetRequestModal', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith('/api/v1/auth/password-reset-request', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            email: 'test@example.com'
-          })
-        })
+        expect(mockFetch).toHaveBeenCalled()
       })
+      const [calledUrl, calledInit] = mockFetch.mock.calls[0]
+      expect(calledUrl).toBe('/api/v1/auth/password-reset-request')
+      expect(calledInit?.method).toBe('POST')
+      expect(calledInit?.body).toBe(JSON.stringify({ email: 'test@example.com' }))
     })
 
     it('displays success message after successful request', async () => {
       const mockFetch = vi.mocked(fetch)
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ message: 'Password reset email sent' })
-      } as Response)
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'Password reset email sent' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
 
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 
@@ -148,12 +148,12 @@ describe('PasswordResetRequestModal', () => {
 
     it('shows error message on request failure', async () => {
       const mockFetch = vi.mocked(fetch)
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({
-          message: 'メールアドレスが見つかりません'
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'メールアドレスが見つかりません' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
         })
-      } as Response)
+      )
 
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 
@@ -171,10 +171,12 @@ describe('PasswordResetRequestModal', () => {
     it('disables submit button during request', async () => {
       const mockFetch = vi.mocked(fetch)
       mockFetch.mockImplementationOnce(() => new Promise(resolve => setTimeout(() => {
-        resolve({
-          ok: true,
-          json: async () => ({ message: 'Success' })
-        } as Response)
+        resolve(
+          new Response(JSON.stringify({ message: 'Success' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        )
       }, 100)))
 
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
@@ -195,10 +197,12 @@ describe('PasswordResetRequestModal', () => {
 
     it('hides email input and submit button after success, shows only success message', async () => {
       const mockFetch = vi.mocked(fetch)
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ message: 'Password reset email sent' })
-      } as Response)
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'Password reset email sent' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
 
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 

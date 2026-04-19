@@ -4,6 +4,10 @@ import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { validatePassword } from '../utils/validation'
 import { API_V1_URL } from '../config/api'
+import { ApiError } from '../utils/apiClient'
+import { fetchJson } from '../utils/fetchJson'
+import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
+import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
 
 /** ページ共通のレイアウトクラス */
 const PAGE_LAYOUT_CLASS = 'min-h-screen flex items-center justify-center bg-gray-50'
@@ -32,6 +36,8 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [rateLimitError, setRateLimitError] = useState<ApiError | null>(null)
+  const cooldown = useRateLimitCooldown(rateLimitError)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,24 +57,23 @@ export default function ResetPasswordPage() {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch(`${API_V1_URL}/auth/reset-password`, {
+      await fetchJson(`${API_V1_URL}/auth/reset-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          newPassword,
-          confirmPassword,
-        }),
+        body: { token, newPassword, confirmPassword },
       })
-
-      if (response.ok) {
-        setIsSuccess(true)
+      setIsSuccess(true)
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.isRateLimited) {
+          setRateLimitError(err)
+          setError(getRateLimitInlineMessage(err, t))
+        } else {
+          const message = (err.responseData as { message?: string } | undefined)?.message
+          setError(message || t('auth.errorOccurred'))
+        }
       } else {
-        const data = await response.json()
-        setError(data.message || t('auth.errorOccurred'))
+        setError(t('auth.errorOccurred'))
       }
-    } catch {
-      setError(t('auth.errorOccurred'))
     } finally {
       setIsSubmitting(false)
     }
@@ -178,10 +183,15 @@ export default function ResetPasswordPage() {
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || cooldown.isOnCooldown}
             className="w-full py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-live="polite"
           >
-            {isSubmitting ? t('pages.submitting') : t('pages.resetPasswordButton')}
+            {cooldown.isOnCooldown
+              ? t('common.submitWithCooldown', { seconds: cooldown.remainingSeconds })
+              : isSubmitting
+                ? t('pages.submitting')
+                : t('pages.resetPasswordButton')}
           </button>
         </form>
       </div>
