@@ -1,8 +1,18 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { toast } from 'sonner'
 import ProfileDialog from './ProfileDialog'
 import { PLATFORM_TWITTER, PLATFORM_INSTAGRAM } from '../utils/codeConstants'
+import { _resetRateLimitNotifyDebounce } from '../utils/notifyIfRateLimited'
+
+// sonner (toast) のモック
+vi.mock('sonner', () => ({
+  toast: Object.assign(vi.fn(), {
+    error: vi.fn(),
+    success: vi.fn(),
+  }),
+}))
 
 /**
  * Issue#18: マイページ機能 (UI + API)
@@ -118,6 +128,7 @@ describe('ProfileDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    _resetRateLimitNotifyDebounce()
     // デフォルトではAPIが空レスポンスを返す
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -1707,6 +1718,103 @@ describe('ProfileDialog', () => {
       const dialogContent = document.querySelector('[data-slot="dialog-content"]') as HTMLElement
       expect(dialogContent).not.toBeNull()
       expect(dialogContent.style.top).toContain('100')
+    })
+  })
+
+  // Issue#96 PR2c: 429 レート制限ハンドリング（notifyIfRateLimited 経由のトースト）
+  describe('Rate Limit (429) - レート制限', () => {
+    it('プロフィール通報 API で 429 を受信したらレート制限トーストが表示される', async () => {
+      const user = userEvent.setup()
+
+      global.fetch = vi.fn()
+        // 初回: 写真一覧API（空レスポンス）
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+        // 通報API: 429 を返す（fetchJson 経由で呼ばれるので Response 必須）
+        .mockResolvedValueOnce(
+          new Response('Too many requests', {
+            status: 429,
+            statusText: 'Too Many Requests',
+            headers: { 'Retry-After': '30' },
+          })
+        )
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockOtherUserProfile}
+          isOwnProfile={false}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // 通報ボタンをクリック
+      const reportButton = await screen.findByLabelText('このプロフィールを通報')
+      await user.click(reportButton)
+
+      // ReportDialog内の最初の理由を選択
+      const reasonRadio = await screen.findByLabelText('reportReasons.adult')
+      await user.click(reasonRadio)
+
+      // 通報実行
+      const submitButton = screen.getByRole('button', { name: '通報する' })
+      await user.click(submitButton)
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('混雑しています（30 秒後に再取得）')
+      })
+    })
+
+    it('SNSリンク保存 API で 429 を受信したらレート制限トーストが表示される', async () => {
+      const user = userEvent.setup()
+
+      global.fetch = vi.fn()
+        // プロフィールAPI（snsLinksが空なのでフェッチされる）
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ profileImageUrl: null, snsLinks: [] }),
+        })
+        // 写真一覧API
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+        // SNSリンク保存API: 429
+        .mockResolvedValueOnce(
+          new Response('Too many requests', { status: 429 })
+        )
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={{ ...mockUserProfile, snsLinks: [] }}
+          isOwnProfile={true}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      // SNSリンク編集ダイアログを開く
+      const editButton = screen.getByTestId('edit-sns-links-button')
+      await user.click(editButton)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
+      })
+
+      // URLを入力して保存
+      const urlInput = screen.getByTestId('sns-url-input-0')
+      await user.type(urlInput, 'https://x.com/testuser')
+
+      const saveButton = screen.getByRole('button', { name: '保存' })
+      await user.click(saveButton)
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('混雑しています（60 秒後に再取得）')
+      })
     })
   })
 })
