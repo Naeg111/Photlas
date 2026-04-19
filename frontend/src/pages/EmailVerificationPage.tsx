@@ -41,8 +41,7 @@ export default function EmailVerificationPage() {
           if (err.isRateLimited) {
             setErrorMessage(getRateLimitInlineMessage(err, t))
           } else {
-            const message = (err.responseData as { message?: string } | undefined)?.message
-            setErrorMessage(message || t('auth.errorOccurred'))
+            setErrorMessage(err.responseMessage || t('auth.errorOccurred'))
           }
         } else {
           setErrorMessage(t('auth.errorOccurred'))
