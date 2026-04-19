@@ -391,4 +391,111 @@ describe('LoginDialog', () => {
       expect(dialogContent).toHaveStyle({ display: 'flex', flexDirection: 'column', padding: '0px' })
     })
   })
+
+  // Issue#96 PR2a: 429 レート制限ハンドリング（パターンA: フォーム送信系）
+  describe('Rate Limit (429) - レート制限', () => {
+    it('ログインで429を受信したらレート制限メッセージをインラインで表示する', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+          statusText: 'Too Many Requests',
+          headers: { 'Retry-After': '60' },
+        })
+      )
+
+      render(<LoginDialog {...defaultProps} />)
+      await user.type(screen.getByLabelText('メールアドレス'), 'test@example.com')
+      await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+        ).toBeInTheDocument()
+      })
+    })
+
+    it('ログインで429を受信したらログインボタンがクールダウン表示で無効化される', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+          headers: { 'Retry-After': '60' },
+        })
+      )
+
+      render(<LoginDialog {...defaultProps} />)
+      await user.type(screen.getByLabelText('メールアドレス'), 'test@example.com')
+      await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      await waitFor(() => {
+        const button = screen.getByRole('button', { name: /送信（あと 60 秒）/ })
+        expect(button).toBeDisabled()
+      })
+    })
+
+    it('Retry-Afterヘッダが欠落していてもデフォルト60秒でクールダウンする', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+        })
+      )
+
+      render(<LoginDialog {...defaultProps} />)
+      await user.type(screen.getByLabelText('メールアドレス'), 'test@example.com')
+      await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
+        ).toBeInTheDocument()
+      })
+    })
+
+    it('認証メール再送で429を受信したら再送ボタンがクールダウン表示で無効化される', async () => {
+      const user = userEvent.setup()
+      // 1) 403 EMAIL_NOT_VERIFIED で再送リンクを出す
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            code: 'EMAIL_NOT_VERIFIED',
+            message: 'メールアドレスが認証されていません。',
+          }),
+          {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      )
+
+      render(<LoginDialog {...defaultProps} />)
+      await user.type(screen.getByLabelText('メールアドレス'), 'test@example.com')
+      await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      await waitFor(() => {
+        expect(screen.getByText('認証メールを再送信する')).toBeInTheDocument()
+      })
+
+      // 2) 再送で 429 を返す
+      mockFetch.mockResolvedValueOnce(
+        new Response('Too many requests', {
+          status: 429,
+          headers: { 'Retry-After': '60' },
+        })
+      )
+
+      await user.click(screen.getByText('認証メールを再送信する'))
+
+      await waitFor(() => {
+        // 再送ボタンは cooldown 表示になる（「あと 60 秒」を含む）
+        const resendButton = screen.getByRole('button', { name: /あと 60 秒/ })
+        expect(resendButton).toBeDisabled()
+      })
+    })
+  })
 })
