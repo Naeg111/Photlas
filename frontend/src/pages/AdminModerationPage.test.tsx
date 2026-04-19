@@ -2,8 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
+import { toast } from 'sonner'
 import AdminModerationPage from './AdminModerationPage'
 import { ROLE_ADMIN, REASON_ADULT_CONTENT, REASON_VIOLENCE } from '../utils/codeConstants'
+import { _resetRateLimitNotifyDebounce } from '../utils/notifyIfRateLimited'
 
 /**
  * Issue#54: 管理者モデレーションページのテスト
@@ -71,6 +73,7 @@ function renderPage() {
 describe('AdminModerationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    _resetRateLimitNotifyDebounce()
     Object.defineProperty(globalThis, 'fetch', {
       value: mockFetch,
       writable: true,
@@ -390,5 +393,83 @@ describe('AdminModerationPage', () => {
     })
 
     expect(screen.getByTestId('moderation-item-1')).toBeInTheDocument()
+  })
+
+  // Issue#96 PR2c: 429 レート制限ハンドリング（notifyIfRateLimited 経由のトースト）
+  describe('Rate Limit (429) - レート制限', () => {
+    it('承認 API で 429 を受信したらレート制限トーストが表示される', async () => {
+      mockUseAuth.mockReturnValue({
+        user: { userId: 1, role: ROLE_ADMIN },
+        isAuthenticated: true,
+      })
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            content: MOCK_QUEUE_ITEMS,
+            total_elements: 2,
+            total_pages: 1,
+          }),
+        })
+        .mockResolvedValueOnce(
+          new Response('Too many requests', {
+            status: 429,
+            statusText: 'Too Many Requests',
+            headers: { 'Retry-After': '45' },
+          })
+        )
+
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByTestId('approve-btn-1')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('approve-btn-1'))
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('混雑しています（45 秒後に再取得）')
+      })
+
+      // 429 のときは項目が残る（削除されない）
+      expect(screen.getByTestId('moderation-item-1')).toBeInTheDocument()
+    })
+
+    it('拒否 API で 429 を受信したらレート制限トーストが表示される', async () => {
+      mockUseAuth.mockReturnValue({
+        user: { userId: 1, role: ROLE_ADMIN },
+        isAuthenticated: true,
+      })
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            content: MOCK_QUEUE_ITEMS,
+            total_elements: 2,
+            total_pages: 1,
+          }),
+        })
+        .mockResolvedValueOnce(
+          new Response('Too many requests', { status: 429 })
+        )
+
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByTestId('reject-btn-2')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('reject-btn-2'))
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('混雑しています（60 秒後に再取得）')
+      })
+
+      expect(screen.getByTestId('moderation-item-2')).toBeInTheDocument()
+    })
   })
 })
