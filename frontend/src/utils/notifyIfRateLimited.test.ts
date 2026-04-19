@@ -20,7 +20,7 @@ vi.mock('sonner', () => ({
 }))
 
 import { toast } from 'sonner'
-import { notifyIfRateLimited, _resetRateLimitNotifyDebounce } from './notifyIfRateLimited'
+import { notifyIfRateLimited, _resetRateLimitNotifyDebounce, getRateLimitInlineMessage } from './notifyIfRateLimited'
 
 const t = vi.fn((key: string, opts?: Record<string, unknown>) => {
   if (opts && typeof opts.seconds !== 'undefined') {
@@ -94,5 +94,24 @@ describe('notifyIfRateLimited', () => {
     vi.advanceTimersByTime(500) // 合計 1000ms
     notifyIfRateLimited(err, t)
     expect(toast.error).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('getRateLimitInlineMessage', () => {
+  beforeEach(() => {
+    t.mockClear()
+  })
+
+  it('retryAfterSeconds を使って RATE_LIMIT_EXCEEDED キーを返す', () => {
+    const err = new ApiError('rate limited', 429, 45)
+    const message = getRateLimitInlineMessage(err, t)
+    expect(t).toHaveBeenCalledWith('errors.RATE_LIMIT_EXCEEDED', { seconds: 45 })
+    expect(message).toBe('errors.RATE_LIMIT_EXCEEDED:45')
+  })
+
+  it('retryAfterSeconds 欠落時は既定 60 秒で補間する', () => {
+    const err = new ApiError('rate limited', 429)
+    getRateLimitInlineMessage(err, t)
+    expect(t).toHaveBeenCalledWith('errors.RATE_LIMIT_EXCEEDED', { seconds: 60 })
   })
 })

@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { toast } from 'sonner'
 import { ApiError } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
+import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
 
 /**
@@ -79,7 +80,7 @@ export function LoginDialog({
       if (err instanceof ApiError) {
         if (err.isRateLimited) {
           setLoginRateLimitError(err)
-          setError(t('errors.RATE_LIMIT_EXCEEDED', { seconds: err.retryAfterSeconds ?? 60 }))
+          setError(getRateLimitInlineMessage(err, t))
         } else if (err.status === 403) {
           const code = (err.responseData as { code?: string } | undefined)?.code
           if (code === 'EMAIL_NOT_VERIFIED') {
