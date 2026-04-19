@@ -1,13 +1,18 @@
 #!/bin/bash
 #
-# AWS WAF セットアップスクリプト (Issue#94)
-# 既存 ALB (photlas-alb) に Regional WAF をアタッチし、レート制限ルールを投入する
+# AWS WAF セットアップスクリプト (Issue#94 + Issue#97 マスタースクリプト)
+# 既存 ALB (photlas-alb) に Regional WAF をアタッチし、全ルールを投入する
 #
 # 実行内容:
 #   1. WAF ログ保管用 S3 バケット作成（暗号化・PublicBlock・ライフサイクル 90 日）
 #   2. Firehose 用 IAM ロール作成
 #   3. Kinesis Data Firehose 配信ストリーム作成
-#   4. WAFv2 WebACL 作成（3 ルール: AuthRateLimit / GeneralRateLimit / StagingLooseLimit、Count モード）
+#   4. WAFv2 WebACL 作成（全ルール、Count モードで導入）
+#        Section 1: Rate Limit Rules (Issue#94)
+#          - AuthRateLimit, GeneralRateLimit, StagingLooseLimit
+#        Section 2: Managed Rules (Issue#97)
+#          - AmazonIpReputationList, KnownBadInputsRuleSet,
+#            SQLiRuleSet, CommonRuleSet
 #   5. WAF ロギング設定（Authorization ヘッダリダクション）
 #   6. WebACL を既存 ALB にアタッチ
 #
@@ -22,13 +27,16 @@
 #
 # 再実行時の注意:
 #   本スクリプトは WebACL の全ルールを Count モードで書き込むため、
-#   ./scripts/switch-waf-block-mode.sh で Block モードに切替後に本スクリプトを再実行すると
-#   WebACL は Count モードに差し戻される。これは意図的な動作（緊急時の簡易ロールバック
-#   として機能する）。ただし CloudWatch アラーム側は BlockedRequests 用のまま残るため、
-#   完全にロールバックする場合は続けて ./scripts/setup-waf-alarms.sh も再実行すること。
+#   ./scripts/switch-waf-block-mode.sh や ./scripts/waf-block-switch.sh で
+#   Block モードに切替後に本スクリプトを再実行すると、WebACL は Count モードに
+#   差し戻される。これは意図的な動作（緊急時の簡易ロールバックとして機能する）。
+#   ただし CloudWatch アラーム側は BlockedRequests 用のまま残るため、
+#   完全にロールバックする場合は setup-waf-alarms.sh / setup-waf-managed-rules-alarm.sh も
+#   再実行すること。
 #
 # 関連ドキュメント:
 #   documents/04_Issues/Issue#94_フェーズ1_手順書.md
+#   documents/04_Issues/Issue#97.md
 #
 
 set -euo pipefail
@@ -273,7 +281,9 @@ log "Firehose ARN: $FIREHOSE_ARN"
 
 section "Step 4: WAFv2 WebACL"
 
-# ルール定義
+# ============================================================
+# Section 1: Rate Limit Rules (Issue#94)
+# ============================================================
 #
 # ByteMatchStatement.SearchString は WAFv2 API では blob 型のため、
 # AWS CLI v2 に JSON で渡す際は Base64 エンコードが必須。
@@ -281,7 +291,7 @@ section "Step 4: WAFv2 WebACL"
 #   api.photlas.jp       → YXBpLnBob3RsYXMuanA=
 #   /api/v1/auth/        → L2FwaS92MS9hdXRoLw==
 #   test-api.photlas.jp  → dGVzdC1hcGkucGhvdGxhcy5qcA==
-cat > "$TMP_DIR/webacl-rules.json" <<'EOF'
+cat > "$TMP_DIR/rate-limit-rules.json" <<'EOF'
 [
   {
     "Name": "AuthRateLimit",
@@ -387,8 +397,182 @@ cat > "$TMP_DIR/webacl-rules.json" <<'EOF'
 ]
 EOF
 
+# ============================================================
+# Section 2: Managed Rules (Issue#97)
+# ============================================================
+#
+# 4 AWS マネージドルール（優先度 §3.2: cheap -> heavy）:
+#
+#   1. AmazonIpReputationList, "Priority": 100 (25 WCU)
+#      既知の悪性 IP を低コストで遮断
+#   2. KnownBadInputsRuleSet, "Priority": 110 (200 WCU)
+#      既知の攻撃パターン / スキャナー検知
+#   3. SQLiRuleSet, "Priority": 120 (200 WCU)
+#      SQL インジェクション専用検知
+#   4. CommonRuleSet, "Priority": 130 (700 WCU)
+#      OWASP Top 10 汎用防御
+#
+# 各マネージドルールは:
+#   - OverrideAction: Count (初期状態 §3.3 - Count モード中は全サブルール Count 動作)
+#   - ScopeDownStatement で Host=api.photlas.jp に限定 (§3.8 Plan H)
+#   - 全サブルール(計 42)を RuleActionOverrides で
+#     Block + HTTP 429 + RateLimitExceeded body + Retry-After: 60 に統一 (§3.7)
+#     (Count モード中は待機、OverrideAction 削除時にアクティベート)
+#   - バージョンは describe-managed-rule-group で動的取得 (§3.9, §3.11)
+
+section "Section 2: Building managed rules (Issue#97)"
+
+# マネージドルールグループの CurrentDefaultVersion を取得する。
+# 一部のルールグループでは CurrentDefaultVersion が null の場合があるため、
+# その際は list-available-managed-rule-group-versions の最新を採用する。
+fetch_managed_rule_version() {
+  local group_name="$1"
+  local version
+  version="$(aws wafv2 describe-managed-rule-group \
+    --vendor-name AWS \
+    --name "$group_name" \
+    --scope REGIONAL \
+    --region "$AWS_REGION" \
+    --query 'CurrentDefaultVersion' --output text 2>/dev/null || true)"
+  if [ -z "$version" ] || [ "$version" = "None" ]; then
+    version="$(aws wafv2 list-available-managed-rule-group-versions \
+      --vendor-name AWS \
+      --name "$group_name" \
+      --scope REGIONAL \
+      --region "$AWS_REGION" \
+      --query 'Versions[0].Name' --output text)"
+  fi
+  echo "$version"
+}
+
+# サブルール名一覧を JSON 配列で返す (describe-managed-rule-group)
+fetch_managed_rule_subrules() {
+  local group_name="$1"
+  local version="$2"
+  if [ -n "$version" ] && [ "$version" != "None" ]; then
+    aws wafv2 describe-managed-rule-group \
+      --vendor-name AWS \
+      --name "$group_name" \
+      --version-name "$version" \
+      --scope REGIONAL \
+      --region "$AWS_REGION" \
+      --query 'Rules[].Name' --output json
+  else
+    aws wafv2 describe-managed-rule-group \
+      --vendor-name AWS \
+      --name "$group_name" \
+      --scope REGIONAL \
+      --region "$AWS_REGION" \
+      --query 'Rules[].Name' --output json
+  fi
+}
+
+# サブルール名配列から RuleActionOverrides JSON 配列を生成。
+# 各サブルールに対して Block + HTTP 429 + RateLimitExceeded body +
+# "Retry-After": 60 を統一適用する (§3.7)。
+build_rule_action_overrides() {
+  local subrules_json="$1"
+  echo "$subrules_json" | jq '[ .[] | {
+    "Name": .,
+    "ActionToUse": {
+      "Block": {
+        "CustomResponse": {
+          "ResponseCode": 429,
+          "CustomResponseBodyKey": "RateLimitExceeded",
+          "ResponseHeaders": [ { "Name": "Retry-After", "Value": "60" } ]
+        }
+      }
+    }
+  } ]'
+}
+
+# マネージドルール 1 件を JSON オブジェクトとして出力。
+#   $1 rule_name     WebACL 内の表示名（CloudWatch Rule dim 値と一致）
+#   $2 group_name    AWS マネージドルールグループ名
+#   $3 priority      優先度（整数）
+build_managed_rule() {
+  local rule_name="$1"
+  local group_name="$2"
+  local priority="$3"
+  local version
+  local subrules
+  local overrides
+  version="$(fetch_managed_rule_version "$group_name")"
+  subrules="$(fetch_managed_rule_subrules "$group_name" "$version")"
+  overrides="$(build_rule_action_overrides "$subrules")"
+  log "  $rule_name (priority $priority): version=$version, sub-rules=$(echo "$subrules" | jq 'length')"
+  jq -n \
+    --arg rule_name "$rule_name" \
+    --arg group_name "$group_name" \
+    --argjson priority "$priority" \
+    --arg version "$version" \
+    --argjson overrides "$overrides" '{
+      "Name": $rule_name,
+      "Priority": $priority,
+      "OverrideAction": { "Count": {} },
+      "Statement": {
+        "ManagedRuleGroupStatement": {
+          "VendorName": "AWS",
+          "Name": $group_name,
+          "Version": $version,
+          "RuleActionOverrides": $overrides,
+          "ScopeDownStatement": {
+            "ByteMatchStatement": {
+              "SearchString": "YXBpLnBob3RsYXMuanA=",
+              "FieldToMatch": { "SingleHeader": { "Name": "host" } },
+              "TextTransformations": [ { "Priority": 0, "Type": "LOWERCASE" } ],
+              "PositionalConstraint": "EXACTLY"
+            }
+          }
+        }
+      },
+      "VisibilityConfig": {
+        "SampledRequestsEnabled": true,
+        "CloudWatchMetricsEnabled": true,
+        "MetricName": $rule_name
+      }
+    }'
+}
+
+log "Building managed rules (describe-managed-rule-group for each)..."
+
+IP_REP_RULE_JSON="$(build_managed_rule \
+  "AmazonIpReputationList" \
+  "AWSManagedRulesAmazonIpReputationList" \
+  100)"
+
+KBI_RULE_JSON="$(build_managed_rule \
+  "KnownBadInputsRuleSet" \
+  "AWSManagedRulesKnownBadInputsRuleSet" \
+  110)"
+
+SQLI_RULE_JSON="$(build_managed_rule \
+  "SQLiRuleSet" \
+  "AWSManagedRulesSQLiRuleSet" \
+  120)"
+
+COMMON_RULE_JSON="$(build_managed_rule \
+  "CommonRuleSet" \
+  "AWSManagedRulesCommonRuleSet" \
+  130)"
+
+# Section 1 + Section 2 を 1 つのルール配列にマージ
+# 先頭が Section 1 (Priority 10-30)、続いて Section 2 (Priority 100-130)
+jq -n \
+  --slurpfile section1 "$TMP_DIR/rate-limit-rules.json" \
+  --argjson ip_rep  "$IP_REP_RULE_JSON" \
+  --argjson kbi     "$KBI_RULE_JSON" \
+  --argjson sqli    "$SQLI_RULE_JSON" \
+  --argjson common  "$COMMON_RULE_JSON" \
+  '$section1[0] + [$ip_rep, $kbi, $sqli, $common]' \
+  > "$TMP_DIR/webacl-rules.json"
+
+log "Combined rule set written: $(jq 'length' "$TMP_DIR/webacl-rules.json") rules total"
+
 # WebACL の CustomResponseBodies（Block モード切替後に使用）
-# Key "RateLimitExceeded" を switch-waf-block-mode.sh から CustomResponseBodyKey として参照する
+# Key "RateLimitExceeded" を switch-waf-block-mode.sh / waf-block-switch.sh から
+# および Section 2 マネージドルールの RuleActionOverrides から
+# CustomResponseBodyKey として参照する。
 #
 # 生の JSON ボディ (下の heredoc では JSON 文字列内に埋め込むためクォートがエスケープされる):
 #   {"error":"Too Many Requests","code":"RATE_LIMIT_EXCEEDED","message":"Too many requests. Please retry after some time.","retryAfter":60}
