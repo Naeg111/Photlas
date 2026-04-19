@@ -68,8 +68,7 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
           setRateLimitError(err)
           setError(getRateLimitInlineMessage(err, t))
         } else {
-          const message = (err.responseData as { message?: string } | undefined)?.message
-          setError(message || t('auth.errorOccurred'))
+          setError(err.responseMessage || t('auth.errorOccurred'))
         }
       } else {
         setError(t('errors.unexpected'))

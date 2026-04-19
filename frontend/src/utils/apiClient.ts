@@ -40,6 +40,15 @@ export class ApiError extends Error {
   get isRateLimited(): boolean {
     return this.status === 429
   }
+
+  /**
+   * バックエンドが返す `{ message: string }` 形式のエラー本文から message を取り出す。
+   * 本文がオブジェクトでない（生テキスト等）、または message フィールドが無い場合は undefined。
+   * 呼び出し側で `err.responseMessage || t('fallback')` のように既定メッセージと併用する。
+   */
+  get responseMessage(): string | undefined {
+    return (this.responseData as { message?: string } | undefined)?.message
+  }
 }
 
 /**
