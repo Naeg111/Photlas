@@ -500,7 +500,18 @@ build_managed_rule() {
   version="$(fetch_managed_rule_version "$group_name")"
   subrules="$(fetch_managed_rule_subrules "$group_name" "$version")"
   overrides="$(build_rule_action_overrides "$subrules")"
-  log "  $rule_name (priority $priority): version=$version, sub-rules=$(echo "$subrules" | jq 'length')"
+  # NOTE: この関数は "$(build_managed_rule ...)" で stdout 全体を JSON として
+  # 捕捉する呼び出し規約のため、進捗ログは stderr に出す必要がある (stdout に
+  # log 行が混ざると後段の jq --argjson が "invalid JSON" エラーになる)。
+  log "  $rule_name (priority $priority): version=$version, sub-rules=$(echo "$subrules" | jq 'length')" >&2
+  # Version フィールドは、バージョン管理されているルールグループのみに付与する。
+  # AmazonIpReputationList のようにバージョン概念を持たないグループでは
+  # Version を付けると UpdateWebACL が WAFNonexistentItemException を返す。
+  # fetch_managed_rule_version は未バージョンのとき "None" 文字列を返すため、
+  # ここで空文字に正規化し、jq 側で非空時のみ Version を埋め込む。
+  if [ "$version" = "None" ] || [ -z "$version" ]; then
+    version=""
+  fi
   jq -n \
     --arg rule_name "$rule_name" \
     --arg group_name "$group_name" \
@@ -511,20 +522,22 @@ build_managed_rule() {
       "Priority": $priority,
       "OverrideAction": { "Count": {} },
       "Statement": {
-        "ManagedRuleGroupStatement": {
-          "VendorName": "AWS",
-          "Name": $group_name,
-          "Version": $version,
-          "RuleActionOverrides": $overrides,
-          "ScopeDownStatement": {
-            "ByteMatchStatement": {
-              "SearchString": "YXBpLnBob3RsYXMuanA=",
-              "FieldToMatch": { "SingleHeader": { "Name": "host" } },
-              "TextTransformations": [ { "Priority": 0, "Type": "LOWERCASE" } ],
-              "PositionalConstraint": "EXACTLY"
+        "ManagedRuleGroupStatement": (
+          {
+            "VendorName": "AWS",
+            "Name": $group_name,
+            "RuleActionOverrides": $overrides,
+            "ScopeDownStatement": {
+              "ByteMatchStatement": {
+                "SearchString": "YXBpLnBob3RsYXMuanA=",
+                "FieldToMatch": { "SingleHeader": { "Name": "host" } },
+                "TextTransformations": [ { "Priority": 0, "Type": "LOWERCASE" } ],
+                "PositionalConstraint": "EXACTLY"
+              }
             }
           }
-        }
+          + (if $version == "" then {} else { "Version": $version } end)
+        )
       },
       "VisibilityConfig": {
         "SampledRequestsEnabled": true,
