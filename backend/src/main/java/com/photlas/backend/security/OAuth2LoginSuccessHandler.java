@@ -1,13 +1,18 @@
 package com.photlas.backend.security;
 
+import com.photlas.backend.entity.CodeConstants;
+import com.photlas.backend.entity.User;
 import com.photlas.backend.service.JwtService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Issue#81 Phase 3e - OAuth ログイン成功時のハンドラ。
@@ -21,15 +26,16 @@ import java.io.IOException;
  *   <li>仮ユーザー名: 上記に {@code &requires_username_setup=true} 付与</li>
  * </ul>
  *
- * <p>Phase 3e Red 段階ではスケルトンのみで、onAuthenticationSuccess は
- * {@link UnsupportedOperationException} を投げる。
+ * <p>成功時は HttpSession の {@link CustomOAuth2UserService#SESSION_ATTRIBUTE_LANG}
+ * を明示的にクリアし、次回認可フローまでリークさせない。
  */
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    @SuppressWarnings("unused") // Phase 3e Green で参照
-    private final JwtService jwtService;
+    private static final String CALLBACK_PATH = "/oauth/callback";
+    private static final String QUERY_KEY_ACCESS_TOKEN = "access_token";
+    private static final String QUERY_KEY_REQUIRES_USERNAME_SETUP = "requires_username_setup";
 
-    @SuppressWarnings("unused") // Phase 3e Green で参照
+    private final JwtService jwtService;
     private final String frontendUrl;
 
     public OAuth2LoginSuccessHandler(JwtService jwtService, String frontendUrl) {
@@ -40,6 +46,40 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
-        throw new UnsupportedOperationException("OAuth2LoginSuccessHandler は未実装です（Phase 3e Green で実装予定）");
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof PhotlasOAuth2User photlasUser)) {
+            throw new IllegalStateException(
+                    "認証 Principal が PhotlasOAuth2User ではありません: "
+                            + (principal == null ? "null" : principal.getClass().getName()));
+        }
+
+        User user = photlasUser.getUser();
+        String jwt = jwtService.generateTokenWithRole(
+                user.getEmail(),
+                CodeConstants.roleToJwtString(user.getRole())
+        );
+
+        clearSessionLang(request);
+
+        String target = buildRedirectUrl(jwt, user.isUsernameTemporary());
+        getRedirectStrategy().sendRedirect(request, response, target);
+    }
+
+    private String buildRedirectUrl(String jwt, boolean usernameTemporary) {
+        StringBuilder sb = new StringBuilder(frontendUrl);
+        sb.append(CALLBACK_PATH).append('#');
+        sb.append(QUERY_KEY_ACCESS_TOKEN).append('=')
+                .append(URLEncoder.encode(jwt, StandardCharsets.UTF_8));
+        if (usernameTemporary) {
+            sb.append('&').append(QUERY_KEY_REQUIRES_USERNAME_SETUP).append("=true");
+        }
+        return sb.toString();
+    }
+
+    private static void clearSessionLang(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.removeAttribute(CustomOAuth2UserService.SESSION_ATTRIBUTE_LANG);
+        }
     }
 }
