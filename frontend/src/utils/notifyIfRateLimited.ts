@@ -42,3 +42,14 @@ export function notifyIfRateLimited(error: unknown, t: TranslateFn): void {
 export function _resetRateLimitNotifyDebounce(): void {
   lastNotifiedAt = 0
 }
+
+/**
+ * 429 インラインエラー（パターンA）用の i18n メッセージ生成ヘルパー。
+ *
+ * `errors.RATE_LIMIT_EXCEEDED` キーを `retryAfterSeconds`（欠落時は既定値）で補間する。
+ * 呼び出し側ではこの戻り値を `setError()` / `setErrors({ general: ... })` 等に渡す。
+ */
+export function getRateLimitInlineMessage(error: ApiError, t: TranslateFn): string {
+  const seconds = error.retryAfterSeconds ?? DEFAULT_RETRY_AFTER_SECONDS
+  return t('errors.RATE_LIMIT_EXCEEDED', { seconds })
+}

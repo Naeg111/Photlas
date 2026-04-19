@@ -14,6 +14,7 @@ import { API_V1_URL } from '../config/api'
 import { toast } from 'sonner'
 import { ApiError } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
+import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
 import {
   getPasswordStrength,
@@ -183,7 +184,7 @@ export function SignUpDialog({
       if (err instanceof ApiError) {
         if (err.isRateLimited) {
           setRegisterRateLimitError(err)
-          setErrors({ general: t('errors.RATE_LIMIT_EXCEEDED', { seconds: err.retryAfterSeconds ?? 60 }) })
+          setErrors({ general: getRateLimitInlineMessage(err, t) })
         } else if (err.status === 409) {
           setErrors({ email: t('auth.emailAlreadyUsed') })
         } else {
