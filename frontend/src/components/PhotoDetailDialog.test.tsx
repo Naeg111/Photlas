@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import PhotoDetailDialog from './PhotoDetailDialog'
 import { MODERATION_STATUS_QUARANTINED, MODERATION_STATUS_PENDING_REVIEW, MODERATION_STATUS_PUBLISHED } from '../utils/codeConstants'
+import { _resetRateLimitNotifyDebounce } from '../utils/notifyIfRateLimited'
 
 // Mapbox GL JS (react-map-gl) のモック
 const { MapMock } = vi.hoisted(() => {
@@ -229,6 +230,7 @@ function renderPhotoDetailDialog({
 describe('PhotoDetailDialog Component - Issue#14', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    _resetRateLimitNotifyDebounce()
     // デフォルトはログイン済み状態
     mockUseAuth.mockReturnValue({
       isAuthenticated: true,
@@ -1979,6 +1981,88 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '帰属情報' })).toBeInTheDocument()
+      })
+    })
+  })
+
+  // Issue#96 PR3: 429 レート制限ハンドリング（パターンB: トースト通知 + デバウンス）
+  describe('Rate Limit (429) - レート制限', () => {
+    it('写真詳細の 429 プリフェッチでトースト通知が表示される', async () => {
+      const photoIds = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
+      const photoDetail1 = createMockPhotoDetail({ photoId: TEST_PHOTO_ID_1 })
+
+      const mockFetch = vi.fn()
+        // 1. photo IDs 取得
+        .mockResolvedValueOnce({ ok: true, json: async () => photoIds })
+        // 2. photo 0 詳細取得（成功）
+        .mockResolvedValueOnce({ ok: true, json: async () => photoDetail1 })
+        // 3. プリフェッチ対象の photo 1 詳細取得（429）
+        .mockResolvedValueOnce(
+          new Response('Too many requests', {
+            status: 429,
+            statusText: 'Too Many Requests',
+            headers: { 'Retry-After': '60' },
+          })
+        )
+        // Issue#65: 以降のステータスAPI等にはデフォルトで空オブジェクトを返す
+        .mockResolvedValue({ ok: true, json: async () => ({}) })
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      renderPhotoDetailDialog()
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith(
+          expect.stringContaining('リクエストが多すぎます')
+        )
+      })
+    })
+
+    it('お気に入りトグルで 429 を受信した場合、トースト通知が表示され楽観的UIがリバートされる', async () => {
+      const photoDetail = createMockPhotoDetail({
+        photoId: TEST_PHOTO_ID_1,
+        isFavorited: false,
+        favoriteCount: 5,
+      })
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
+        .mockResolvedValueOnce(
+          new Response('Too many requests', {
+            status: 429,
+            statusText: 'Too Many Requests',
+            headers: { 'Retry-After': '60' },
+          })
+        )
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      const user = userEvent.setup()
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByTestId('favorite-button'))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith(
+          expect.stringContaining('リクエストが多すぎます')
+        )
       })
     })
   })

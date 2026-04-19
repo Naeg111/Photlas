@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, act } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import MapView from './MapView'
+import { _resetRateLimitBurstTracker } from '../utils/notifyIfRateLimited'
 
 /**
  * Issue#53: Google Maps API から Mapbox API への移行
@@ -11,6 +12,17 @@ import MapView from './MapView'
 // API設定のモック
 vi.mock('../config/api', () => ({
   API_V1_URL: 'http://localhost:3000/api/v1',
+}))
+
+// Issue#96 PR3: sonner のモック（429 バーストトースト検証用）
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}))
+vi.mock('sonner', () => ({
+  toast: mockToast,
 }))
 
 // pinImageGeneratorのモック
@@ -586,6 +598,41 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         const toast = screen.getByText(/データの取得に失敗しました/i)
         expect(toast.closest('[role="alert"]')).toHaveClass('bg-red-500')
       })
+    })
+  })
+
+  // Issue#96 PR3: 429 レート制限ハンドリング（パターンC: サイレント + 頻度制御通知）
+  describe('Rate Limit (429) - レート制限（パターンC）', () => {
+    beforeEach(() => {
+      _resetRateLimitBurstTracker()
+    })
+
+    function setupRateLimitFetch() {
+      global.fetch = vi.fn().mockResolvedValue(
+        new Response('Too many requests', {
+          status: 429,
+          statusText: 'Too Many Requests',
+          headers: { 'Retry-After': '60' },
+        })
+      )
+    }
+
+    it('単発の 429 受信ではトースト通知が表示されない（サイレント）', async () => {
+      setupRateLimitFetch()
+      render(<MapView />)
+
+      // fetch が呼ばれるまで待つ
+      await waitFor(
+        () => {
+          expect(global.fetch).toHaveBeenCalled()
+        },
+        { timeout: 1500 }
+      )
+
+      // sonner のトーストが呼ばれていない
+      expect(mockToast.error).not.toHaveBeenCalled()
+      // 旧ジェネリックエラートーストも表示されない（429 は別経路で処理）
+      expect(screen.queryByText(/データの取得に失敗しました/)).not.toBeInTheDocument()
     })
   })
 
