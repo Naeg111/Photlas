@@ -35,6 +35,10 @@
 
 set -euo pipefail
 
+# shellcheck source=scripts/lib/waf-managed-rules-common.sh
+# shellcheck disable=SC1091
+source "$(dirname "$0")/lib/waf-managed-rules-common.sh"
+
 # -----------------------------------------------------------------------------
 # 設定
 # -----------------------------------------------------------------------------
@@ -152,7 +156,7 @@ log "SNS topic: $SNS_TOPIC_ARN"
 
 section "Step 2: CloudWatch alarms (Count mode, 4 alarms)"
 
-# §3.5 の閾値と対象マネージドルール対応:
+# §3.5 の閾値と対象マネージドルール対応 (lib/waf-managed-rules-common.sh 参照):
 #   IpReputation    : 100 per 5 min (AWS 脅威インテリジェンス IP リスト)
 #   KnownBadInputs  :  20 per 5 min (既知の不正リクエスト)
 #   SQLi            :   5 per 5 min (SQL インジェクション特化)
@@ -161,29 +165,15 @@ section "Step 2: CloudWatch alarms (Count mode, 4 alarms)"
 # アラーム名の RuleShortName は CloudWatch 指標次元 "Rule" の値
 # (setup-waf.sh で各マネージドルールの WebACL Name / MetricName として指定した値) と一致させる。
 
-create_managed_rule_alarm \
-  "photlas-waf-IpReputation-Counted" \
-  "AmazonIpReputationList" \
-  100 \
-  "Issue#97: WAF AmazonIpReputationList counted requests (Count mode)"
-
-create_managed_rule_alarm \
-  "photlas-waf-KnownBadInputs-Counted" \
-  "KnownBadInputsRuleSet" \
-  20 \
-  "Issue#97: WAF KnownBadInputsRuleSet counted requests (Count mode)"
-
-create_managed_rule_alarm \
-  "photlas-waf-SQLi-Counted" \
-  "SQLiRuleSet" \
-  5 \
-  "Issue#97: WAF SQLiRuleSet counted requests (Count mode)"
-
-create_managed_rule_alarm \
-  "photlas-waf-CommonRuleSet-Counted" \
-  "CommonRuleSet" \
-  50 \
-  "Issue#97: WAF CommonRuleSet counted requests (Count mode)"
+while IFS= read -r RULE; do
+  ALARM_NAME="$(waf_managed_alarm_name "$RULE" Counted)"
+  THRESHOLD="$(waf_managed_alarm_threshold "$RULE")"
+  create_managed_rule_alarm \
+    "$ALARM_NAME" \
+    "$RULE" \
+    "$THRESHOLD" \
+    "Issue#97: WAF $RULE counted requests (Count mode)"
+done < <(waf_managed_rule_names)
 
 # -----------------------------------------------------------------------------
 # 完了
