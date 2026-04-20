@@ -3,7 +3,9 @@ package com.photlas.backend.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -31,6 +33,10 @@ public class UserOAuthConnection {
     @NotNull
     private Long userId;
 
+    // Hotfix: V23 migration は provider_code を SMALLINT で作成しているが、
+    // Integer のデフォルト JDBC 型は INTEGER（int4）で不一致になるため、
+    // @JdbcTypeCode で明示的に SMALLINT (int2) として扱わせる。
+    @JdbcTypeCode(SqlTypes.SMALLINT)
     @Column(name = "provider_code", nullable = false)
     @NotNull
     private Integer providerCode;
