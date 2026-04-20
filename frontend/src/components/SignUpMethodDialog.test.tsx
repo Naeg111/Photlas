@@ -21,7 +21,7 @@ function renderDialog(overrides?: {
 describe('SignUpMethodDialog', () => {
   it('タイトルと説明文を表示する', () => {
     renderDialog()
-    expect(screen.getByText('アカウント作成方法を選択')).toBeInTheDocument()
+    expect(screen.getByText('アカウント登録方法を選択')).toBeInTheDocument()
     // 説明文は sr-only な DialogDescription と可視の <p> の 2 箇所に現れる（PasswordResetRequestModal と同じ構造）
     expect(screen.getAllByText('新規登録方法を選んでください。').length).toBeGreaterThan(0)
   })
@@ -63,7 +63,7 @@ describe('SignUpMethodDialog', () => {
         onChooseEmail={vi.fn()}
       />
     )
-    expect(screen.queryByText('アカウント作成方法を選択')).not.toBeInTheDocument()
+    expect(screen.queryByText('アカウント登録方法を選択')).not.toBeInTheDocument()
   })
 
   it('閉じる操作で onOpenChange(false) が呼ばれる（shadcn Dialog の標準挙動）', async () => {

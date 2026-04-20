@@ -302,7 +302,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
       // Q1 改訂後: OAuth 有無に関わらず SignUpMethodDialog が最初に表示される
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント作成方法を選択' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウント登録方法を選択' })).toBeInTheDocument()
       })
     })
 
@@ -348,7 +348,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
       // Q1 改訂後: SignUpMethodDialog が最初に表示される
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント作成方法を選択' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウント登録方法を選択' })).toBeInTheDocument()
       })
     })
 
@@ -407,7 +407,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       await user.click(signUpLink)
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント作成方法を選択' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウント登録方法を選択' })).toBeInTheDocument()
       })
     })
 
@@ -428,7 +428,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       await user.click(signUpButton)
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント作成方法を選択' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウント登録方法を選択' })).toBeInTheDocument()
       })
 
       // 「メールアドレスで登録」を押して SignUpDialog へ遷移
@@ -469,7 +469,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
       // [Phase 8r-3] SignUpMethodDialog が最初に表示される → 「メールアドレスで登録」で SignUpDialog へ
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント作成方法を選択' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウント登録方法を選択' })).toBeInTheDocument()
       })
       const emailBtn = screen.getByRole('button', { name: 'メールアドレスで登録' })
       await user.click(emailBtn)

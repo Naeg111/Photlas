@@ -150,7 +150,7 @@ export const CATEGORY_LABELS: Record<number, string> = {
 
 /** SNSプラットフォームコード → 表示名 */
 export const PLATFORM_LABELS: Record<number, string> = {
-  [PLATFORM_TWITTER]: 'X (Twitter)',
+  [PLATFORM_TWITTER]: 'X',
   [PLATFORM_INSTAGRAM]: 'Instagram',
   [PLATFORM_YOUTUBE]: 'YouTube',
   [PLATFORM_TIKTOK]: 'TikTok',
@@ -158,7 +158,7 @@ export const PLATFORM_LABELS: Record<number, string> = {
 
 /** SNSプラットフォームの選択肢 */
 export const PLATFORM_OPTIONS = [
-  { value: PLATFORM_TWITTER, label: 'X (Twitter)' },
+  { value: PLATFORM_TWITTER, label: 'X' },
   { value: PLATFORM_INSTAGRAM, label: 'Instagram' },
   { value: PLATFORM_YOUTUBE, label: 'YouTube' },
   { value: PLATFORM_TIKTOK, label: 'TikTok' },
