@@ -87,14 +87,14 @@ export default function OAuthSignUpDialog({
             </Button>
           </div>
 
-          {/* キャンセル（Q2: w-full = SignUpDialog のキャンセル+登録 合計幅） */}
+          {/* 戻る（Q2 / Phase 8r-2: w-full = SignUpDialog の戻る+登録 合計幅） */}
           <Button
             type="button"
             variant="outline"
             className="w-full"
             onClick={onBack}
           >
-            {t('common.cancel')}
+            {t('common.back')}
           </Button>
         </div>
       </DialogContent>

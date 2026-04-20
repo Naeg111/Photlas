@@ -463,14 +463,14 @@ export function SignUpDialog({
             </Button>
           </div>
 
-          {/* ボタン */}
+          {/* ボタン（Issue#81 Phase 8r-2: 「キャンセル」→「戻る」、handleCancelClick → handleBackClick 相当） */}
           <div className="flex gap-3 pt-6">
             <Button
               variant="outline"
               className="flex-1"
               onClick={handleCancelClick}
             >
-              {t('common.cancel')}
+              {t('common.back')}
             </Button>
             <Button
               className="flex-1"
