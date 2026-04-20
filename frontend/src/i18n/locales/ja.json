@@ -18,7 +18,8 @@
     "reload": "ページを再読み込み",
     "retry": "再試行",
     "retryWithCooldown": "再試行（あと {{seconds}} 秒）",
-    "submitWithCooldown": "送信（あと {{seconds}} 秒）"
+    "submitWithCooldown": "送信（あと {{seconds}} 秒）",
+    "back": "戻る"
   },
   "auth": {
     "loginTitle": "ログイン",
@@ -116,7 +117,7 @@
       "chooseMethod": {
         "title": "アカウント作成方法を選択",
         "description": "新規登録方法を選んでください。",
-        "sns": "SNSログインで登録",
+        "sns": "SNSで登録",
         "email": "メールアドレスで登録"
       },
       "snsSignUp": {

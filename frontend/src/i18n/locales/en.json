@@ -18,7 +18,8 @@
     "reload": "Reload Page",
     "retry": "Retry",
     "retryWithCooldown": "Retry ({{seconds}}s)",
-    "submitWithCooldown": "Submit ({{seconds}}s)"
+    "submitWithCooldown": "Submit ({{seconds}}s)",
+    "back": "Back"
   },
   "auth": {
     "loginTitle": "Log In",

@@ -21,9 +21,8 @@ import { TopMenuPanel } from './components/TopMenuPanel'
 import { LoginRequiredDialog } from './components/LoginRequiredDialog'
 import { LoginDialog } from './components/LoginDialog'
 import { SignUpDialog } from './components/SignUpDialog'
-import SignUpMethodChooseDialog from './components/SignUpMethodChooseDialog'
-import SignUpSnsLoginDialog from './components/SignUpSnsLoginDialog'
-import { isOAuthEnabled } from './utils/oauthEnabled'
+import SignUpMethodDialog from './components/SignUpMethodDialog'
+import OAuthSignUpDialog from './components/OAuthSignUpDialog'
 import { TermsOfServicePage } from './components/TermsOfServicePage'
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage'
 import PasswordResetRequestModal from './components/PasswordResetRequestModal'
@@ -352,17 +351,14 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
   }
 
   /**
-   * Issue#81 Phase 8g: 新規登録ボタン共通ハンドラ。
+   * Issue#81 Phase 8r-3 (Q1 改訂): 新規登録ボタン共通ハンドラ。
    *
-   * OAuth 有効時 → SignUpMethodChooseDialog（SNS / メールの選択画面）
-   * OAuth 無効時 → 従来通り SignUpDialog（メール登録フォーム）を直接開く
+   * OAuth 有無に関わらず常に {@link SignUpMethodDialog} を開く（方法選択）。
+   * - 「SNSで登録」→ OAuthSignUpDialog（中の Google/LINE は OAuth 無効時 disabled）
+   * - 「メールアドレスで登録」→ SignUpDialog
    */
   const handleSignUpClick = () => {
-    if (isOAuthEnabled()) {
-      dialog.open('signUpMethodChoose')
-    } else {
-      dialog.open('signUp')
-    }
+    dialog.open('signUpMethod')
   }
 
   // マイページハンドラー
@@ -618,27 +614,27 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
       />
 
       {/* Issue#81 Phase 8g: 新規登録方法選択（OAuth 有効時のみ実質開く） */}
-      <SignUpMethodChooseDialog
-        {...dialog.getProps('signUpMethodChoose')}
+      <SignUpMethodDialog
+        {...dialog.getProps('signUpMethod')}
         onChooseSns={() => {
-          dialog.close('signUpMethodChoose')
-          dialog.open('signUpSnsLogin')
+          dialog.close('signUpMethod')
+          dialog.open('oauthSignUp')
         }}
         onChooseEmail={() => {
-          dialog.close('signUpMethodChoose')
+          dialog.close('signUpMethod')
           dialog.open('signUp')
         }}
       />
 
       {/* Issue#81 Phase 8g: SNS 新規登録 */}
-      <SignUpSnsLoginDialog
-        {...dialog.getProps('signUpSnsLogin')}
+      <OAuthSignUpDialog
+        {...dialog.getProps('oauthSignUp')}
         onBack={() => {
-          dialog.close('signUpSnsLogin')
-          dialog.open('signUpMethodChoose')
+          dialog.close('oauthSignUp')
+          dialog.open('signUpMethod')
         }}
         onShowLogin={() => {
-          dialog.close('signUpSnsLogin')
+          dialog.close('oauthSignUp')
           dialog.open('login')
         }}
         onShowTerms={() => dialog.open('terms')}
@@ -649,13 +645,11 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         onShowTerms={() => dialog.open('terms')}
         onShowLogin={() => dialog.open('login')}
         onBack={
-          // Issue#81 Phase 8e/8g: OAuth 有効時は「キャンセル」で Method Choose に戻る
-          isOAuthEnabled()
-            ? () => {
-                dialog.close('signUp')
-                dialog.open('signUpMethodChoose')
-              }
-            : undefined
+          // Issue#81 Phase 8e/8r-3 (Q1 改訂): OAuth 有無に関わらず常に Method に戻る
+          () => {
+            dialog.close('signUp')
+            dialog.open('signUpMethod')
+          }
         }
       />
 
