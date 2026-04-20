@@ -2,8 +2,10 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.EmailChangeToken;
+import com.photlas.backend.entity.OAuthProvider;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.entity.UserOAuthConnection;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.EmailChangeTokenRepository;
@@ -11,6 +13,7 @@ import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
+import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.util.TokenGenerator;
 import org.slf4j.Logger;
@@ -24,6 +27,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * アカウントサービス
@@ -45,6 +49,8 @@ public class AccountService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
     private final JwtService jwtService;
+    private final UserOAuthConnectionRepository userOAuthConnectionRepository;
+    private final OAuthTokenRevokeService oauthTokenRevokeService;
 
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
@@ -58,7 +64,9 @@ public class AccountService {
             EmailVerificationTokenRepository emailVerificationTokenRepository,
             PasswordResetTokenRepository passwordResetTokenRepository,
             EmailService emailService,
-            JwtService jwtService) {
+            JwtService jwtService,
+            UserOAuthConnectionRepository userOAuthConnectionRepository,
+            OAuthTokenRevokeService oauthTokenRevokeService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.spotRepository = spotRepository;
@@ -68,6 +76,8 @@ public class AccountService {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailService = emailService;
         this.jwtService = jwtService;
+        this.userOAuthConnectionRepository = userOAuthConnectionRepository;
+        this.oauthTokenRevokeService = oauthTokenRevokeService;
     }
 
     /**
@@ -250,40 +260,158 @@ public class AccountService {
         user.setDeletedAt(java.time.LocalDateTime.now());
         userRepository.save(user);
 
-        sendAccountDeletionConfirmation(email, originalUsername, user.getLanguage());
+        // Issue#81 Phase 4d: 退会後に OAuth access_token の revoke を非同期で試みる（best-effort）
+        oauthTokenRevokeService.revokeForUser(user.getId());
+
+        sendAccountDeletionConfirmation(user, originalUsername);
     }
 
     /**
-     * アカウント削除確認メールを送信する
+     * Issue#81 Phase 4d: アカウント削除確認メール送信のオーケストレータ（3 段階リファクタ）。
+     *
+     * <p>(1) ユーザー区分を解決 → (2) プロバイダ名を解決 → (3) 本文組み立て → (4) 送信。
      */
-    private void sendAccountDeletionConfirmation(String email, String username, String language) {
+    private void sendAccountDeletionConfirmation(User user, String originalUsername) {
+        DeletionTemplate template = resolveDeletionTemplate(user);
+        String providerName = template == DeletionTemplate.NORMAL ? null : resolveProviderName(user);
+        String language = user.getLanguage();
+
+        String subject = "en".equals(language)
+                ? "【Photlas】Account Deletion Confirmation"
+                : "【Photlas】アカウント削除のご確認";
+        String body = buildDeletionEmailBody(template, language, originalUsername, providerName);
+
         try {
-            if ("en".equals(language)) {
-                emailService.send(
-                        email,
-                        "【Photlas】Account Deletion Confirmation",
-                        "Hi " + username + ",\n\n" +
-                        "Your account has been deleted.\n\n" +
-                        "Your data will be retained for 90 days. After that, all data will be permanently deleted.\n\n" +
-                        "If you wish to restore your account, simply log in with your email and password within 90 days.\n\n" +
-                        "If you did not perform this action, please contact us immediately at:\n" +
-                        "support@photlas.jp\n\n" +
-                        "Photlas Team\nsupport@photlas.jp");
-            } else {
-                emailService.send(
-                        email,
-                        "【Photlas】アカウント削除のご確認",
-                        username + " さん\n\n" +
-                        "アカウントの削除が完了しました。\n\n" +
-                        "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
-                        "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワードでログインしてください。\n\n" +
-                        "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
-                        "support@photlas.jp\n\n" +
-                        "Photlas 運営\nsupport@photlas.jp");
-            }
+            emailService.send(user.getEmail(), subject, body);
         } catch (Exception e) {
             logger.error("アカウント削除確認メールの送信に失敗しました: {}", e.getMessage());
         }
+    }
+
+    /**
+     * ユーザーのアカウント構成からテンプレート区分を決定する。
+     *
+     * <p>password_hash と {@link UserOAuthConnectionRepository} の組み合わせで分岐:
+     * <ul>
+     *   <li>password_hash == null  → OAUTH_ONLY</li>
+     *   <li>password_hash != null かつ OAuth 連携あり → HYBRID</li>
+     *   <li>それ以外（password_hash != null かつ OAuth 連携なし） → NORMAL</li>
+     * </ul>
+     */
+    private DeletionTemplate resolveDeletionTemplate(User user) {
+        if (user.getPasswordHash() == null) {
+            return DeletionTemplate.OAUTH_ONLY;
+        }
+        List<UserOAuthConnection> connections = userOAuthConnectionRepository.findByUserId(user.getId());
+        return connections.isEmpty() ? DeletionTemplate.NORMAL : DeletionTemplate.HYBRID;
+    }
+
+    /**
+     * ユーザーに紐づく OAuth プロバイダ名を決定する。
+     * <p>1 連携なら "Google" / "LINE"、複数連携なら "Google / LINE"。
+     * NORMAL ユーザー向けには呼び出されない前提。
+     */
+    private String resolveProviderName(User user) {
+        List<UserOAuthConnection> connections = userOAuthConnectionRepository.findByUserId(user.getId());
+        return connections.stream()
+                .map(c -> displayNameOf(c.getProviderCode()))
+                .distinct()
+                .collect(Collectors.joining(" / "));
+    }
+
+    private static String displayNameOf(Integer providerCode) {
+        if (providerCode == null) {
+            return "";
+        }
+        OAuthProvider p = OAuthProvider.fromCode(providerCode);
+        return switch (p) {
+            case GOOGLE -> "Google";
+            case LINE -> "LINE";
+        };
+    }
+
+    /**
+     * 純関数: テンプレート区分 × 言語で本文を組み立てる。DB アクセス・SecurityContext 参照を行わない。
+     *
+     * @param template     ユーザー区分
+     * @param language     "en" 以外は ja 扱い
+     * @param username     元のユーザー名（宛名に使用）
+     * @param providerName プロバイダ名（OAUTH_ONLY / HYBRID 時のみ使用、NORMAL では null 可）
+     */
+    private static String buildDeletionEmailBody(
+            DeletionTemplate template, String language, String username, String providerName) {
+        boolean en = "en".equals(language);
+        return switch (template) {
+            case NORMAL -> en ? normalBodyEn(username) : normalBodyJa(username);
+            case HYBRID -> en ? hybridBodyEn(username, providerName) : hybridBodyJa(username, providerName);
+            case OAUTH_ONLY -> en ? oauthOnlyBodyEn(username, providerName) : oauthOnlyBodyJa(username, providerName);
+        };
+    }
+
+    // ---- NORMAL: 既存文面を一字一句保持（ゴールデンテストで検証）----
+
+    private static String normalBodyJa(String username) {
+        return username + " さん\n\n" +
+                "アカウントの削除が完了しました。\n\n" +
+                "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
+                "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワードでログインしてください。\n\n" +
+                "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
+                "support@photlas.jp\n\n" +
+                "Photlas 運営\nsupport@photlas.jp";
+    }
+
+    private static String normalBodyEn(String username) {
+        return "Hi " + username + ",\n\n" +
+                "Your account has been deleted.\n\n" +
+                "Your data will be retained for 90 days. After that, all data will be permanently deleted.\n\n" +
+                "If you wish to restore your account, simply log in with your email and password within 90 days.\n\n" +
+                "If you did not perform this action, please contact us immediately at:\n" +
+                "support@photlas.jp\n\n" +
+                "Photlas Team\nsupport@photlas.jp";
+    }
+
+    // ---- HYBRID: 「メールアドレスとパスワード」+「または {provider}」 ----
+
+    private static String hybridBodyJa(String username, String providerName) {
+        return username + " さん\n\n" +
+                "アカウントの削除が完了しました。\n\n" +
+                "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
+                "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワード、または " + providerName + " で再度サインインしてください。\n\n" +
+                "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
+                "support@photlas.jp\n\n" +
+                "Photlas 運営\nsupport@photlas.jp";
+    }
+
+    private static String hybridBodyEn(String username, String providerName) {
+        return "Hi " + username + ",\n\n" +
+                "Your account has been deleted.\n\n" +
+                "Your data will be retained for 90 days. After that, all data will be permanently deleted.\n\n" +
+                "If you wish to restore your account, sign in with your email and password, or sign in with " + providerName + " within 90 days.\n\n" +
+                "If you did not perform this action, please contact us immediately at:\n" +
+                "support@photlas.jp\n\n" +
+                "Photlas Team\nsupport@photlas.jp";
+    }
+
+    // ---- OAUTH_ONLY: プロバイダ再サインインのみ ----
+
+    private static String oauthOnlyBodyJa(String username, String providerName) {
+        return username + " さん\n\n" +
+                "アカウントの削除が完了しました。\n\n" +
+                "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
+                "アカウントを復旧したい場合は、90日以内に " + providerName + " で再度サインインしてください。\n\n" +
+                "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
+                "support@photlas.jp\n\n" +
+                "Photlas 運営\nsupport@photlas.jp";
+    }
+
+    private static String oauthOnlyBodyEn(String username, String providerName) {
+        return "Hi " + username + ",\n\n" +
+                "Your account has been deleted.\n\n" +
+                "Your data will be retained for 90 days. After that, all data will be permanently deleted.\n\n" +
+                "If you wish to restore your account, sign in with " + providerName + " within 90 days.\n\n" +
+                "If you did not perform this action, please contact us immediately at:\n" +
+                "support@photlas.jp\n\n" +
+                "Photlas Team\nsupport@photlas.jp";
     }
 
     private void transferSpotOwnership(User deletingUser) {
