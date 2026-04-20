@@ -117,7 +117,7 @@
       "chooseMethod": {
         "title": "アカウント作成方法を選択",
         "description": "新規登録方法を選んでください。",
-        "sns": "SNSログインで登録",
+        "sns": "SNSで登録",
         "email": "メールアドレスで登録"
       },
       "snsSignUp": {
