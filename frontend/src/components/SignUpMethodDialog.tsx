@@ -3,28 +3,29 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from './ui/button'
 
 /**
- * Issue#81 Phase 8b - 新規登録方法の選択ダイアログ。
+ * Issue#81 Phase 8b / Phase 8r-1 - 新規登録方法の選択ダイアログ。
  *
- * <p>「新規登録」ボタン押下時、OAuth が有効（{@code VITE_OAUTH_ENABLED === 'true'}）の場合に最初に開く。
- * ユーザーが SNS ログイン / メールアドレスのどちらで登録するかを選ばせる。
+ * <p>「新規登録」ボタン押下時、OAuth 有効 / 無効に関わらず常に最初に開く（Q1 改訂）。
+ * ユーザーが SNS / メールアドレスのどちらで登録するかを選ばせる。
  *
- * <p>OAuth 無効時は呼び出し側（App.tsx）がこのダイアログをスキップして直接 {@code SignUpDialog} を開く。
+ * <p>Q7 仕様: 「SNSで登録」ボタンは OAuth 有効 / 無効に関わらず常に活性。
+ * OAuth 無効時でも OAuthSignUpDialog に遷移でき、遷移先で SNS ボタンが disabled になる。
  */
-interface SignUpMethodChooseDialogProps {
+interface SignUpMethodDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** 「SNSログインで登録」クリック時。親で本ダイアログを閉じ SignUpSnsLoginDialog を開く。 */
+  /** 「SNSで登録」クリック時。親で本ダイアログを閉じ OAuthSignUpDialog を開く。 */
   onChooseSns: () => void
   /** 「メールアドレスで登録」クリック時。親で本ダイアログを閉じ SignUpDialog を開く。 */
   onChooseEmail: () => void
 }
 
-export default function SignUpMethodChooseDialog({
+export default function SignUpMethodDialog({
   open,
   onOpenChange,
   onChooseSns,
   onChooseEmail,
-}: SignUpMethodChooseDialogProps) {
+}: SignUpMethodDialogProps) {
   const { t } = useTranslation()
 
   return (

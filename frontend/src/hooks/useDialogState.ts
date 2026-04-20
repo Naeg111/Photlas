@@ -10,8 +10,8 @@ export type DialogName =
   | 'loginRequired'
   | 'login'
   | 'signUp'
-  | 'signUpMethodChoose'  // Issue#81 Phase 8g: 新規登録方法選択（SNS / メール）
-  | 'signUpSnsLogin'      // Issue#81 Phase 8g: SNS 新規登録
+  | 'signUpMethod'   // Issue#81 Phase 8g / 8r-1: 新規登録方法選択（SNS / メール）
+  | 'oauthSignUp'    // Issue#81 Phase 8g / 8r-1: SNS 新規登録
   | 'terms'
   | 'privacy'
   | 'passwordReset'
@@ -59,8 +59,8 @@ const INITIAL_STATE: DialogState = {
   loginRequired: false,
   login: false,
   signUp: false,
-  signUpMethodChoose: false,
-  signUpSnsLogin: false,
+  signUpMethod: false,
+  oauthSignUp: false,
   terms: false,
   privacy: false,
   passwordReset: false,

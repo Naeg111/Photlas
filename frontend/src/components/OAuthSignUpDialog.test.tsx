@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import SignUpSnsLoginDialog from './SignUpSnsLoginDialog'
+import OAuthSignUpDialog from './OAuthSignUpDialog'
 
 function renderDialog(overrides?: {
   onOpenChange?: (open: boolean) => void
@@ -10,7 +10,7 @@ function renderDialog(overrides?: {
   onShowTerms?: () => void
 }) {
   return render(
-    <SignUpSnsLoginDialog
+    <OAuthSignUpDialog
       open={true}
       onOpenChange={overrides?.onOpenChange ?? vi.fn()}
       onBack={overrides?.onBack ?? vi.fn()}
@@ -20,7 +20,7 @@ function renderDialog(overrides?: {
   )
 }
 
-describe('SignUpSnsLoginDialog', () => {
+describe('OAuthSignUpDialog', () => {
   // 本ダイアログは OAuth 有効時にしか開かれない前提。
   // テスト環境ではデフォルトで VITE_OAUTH_ENABLED 未設定のため、'true' をスタブする。
   beforeEach(() => {
@@ -76,7 +76,7 @@ describe('SignUpSnsLoginDialog', () => {
     expect(onShowLogin).toHaveBeenCalled()
   })
 
-  it('「キャンセル」ボタンで onBack が呼ばれる（SignUpMethodChooseDialog に戻る）', async () => {
+  it('「キャンセル」ボタンで onBack が呼ばれる（SignUpMethodDialog に戻る）', async () => {
     const onBack = vi.fn()
     renderDialog({ onBack })
 
@@ -93,7 +93,7 @@ describe('SignUpSnsLoginDialog', () => {
 
   it('open=false で内容が表示されない', () => {
     render(
-      <SignUpSnsLoginDialog
+      <OAuthSignUpDialog
         open={false}
         onOpenChange={vi.fn()}
         onBack={vi.fn()}
