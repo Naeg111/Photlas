@@ -203,14 +203,35 @@ public class AccountService {
 
     /**
      * アカウント削除 - ソフトデリート
+     *
+     * <p>Issue#81 Phase 4b で 3 引数化。通常 / ハイブリッドユーザー (password_hash != null) は
+     * {@code password} の照合、OAuth のみユーザー (password_hash == null) は
+     * {@code confirmationChecked == true} の確認のみで削除する。
+     *
+     * <p>クラスレベルの整合性（OAuth のみユーザーは password=null かつ confirmationChecked=true
+     * である等）は {@code @ValidDeleteAccountRequest} が事前に検証するため、ここでは
+     * password_hash の有無だけで分岐する。
+     *
+     * @param email              削除対象ユーザーのメールアドレス
+     * @param password           通常 / ハイブリッドユーザーのパスワード（OAuth のみユーザーは null）
+     * @param confirmationChecked OAuth のみユーザーの退会チェックボックス状態
      */
     @Transactional
-    public void deleteAccount(String email, String password) {
+    public void deleteAccount(String email, String password, boolean confirmationChecked) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
-        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new UnauthorizedException("パスワードが正しくありません");
+        if (user.getPasswordHash() != null) {
+            // 通常 / ハイブリッドユーザー: パスワード検証必須
+            if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+                throw new UnauthorizedException("パスワードが正しくありません");
+            }
+        } else {
+            // OAuth のみユーザー: confirmationChecked=true 必須
+            // （通常は Validator で弾かれているが、サービス層の契約として明示的に検査）
+            if (!confirmationChecked) {
+                throw new UnauthorizedException("退会確認がされていません");
+            }
         }
 
         transferSpotOwnership(user);

@@ -234,7 +234,26 @@ public class UserControllerTest {
     }
 
     private String buildDeleteAccountRequestBody(String password) {
-        return String.format("{\"%s\":\"%s\"}", FIELD_PASSWORD, password);
+        return buildDeleteAccountRequestBody(password, null);
+    }
+
+    /**
+     * Issue#81 Phase 4b: OAuth のみユーザー用に confirmationChecked を送るための拡張版。
+     * @param password          通常ユーザーのパスワード (null 可 - OAuth のみユーザー)
+     * @param confirmationChecked 退会確認チェックボックスの状態 (null 可)
+     */
+    private String buildDeleteAccountRequestBody(String password, Boolean confirmationChecked) {
+        StringBuilder sb = new StringBuilder("{");
+        if (password != null) {
+            sb.append(String.format("\"%s\":\"%s\"", FIELD_PASSWORD, password));
+        } else {
+            sb.append(String.format("\"%s\":null", FIELD_PASSWORD));
+        }
+        if (confirmationChecked != null) {
+            sb.append(",\"confirmationChecked\":").append(confirmationChecked);
+        }
+        sb.append("}");
+        return sb.toString();
     }
 
     private String getUserByIdEndpoint(Long userId) {
