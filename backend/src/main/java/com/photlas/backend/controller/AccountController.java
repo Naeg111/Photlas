@@ -84,13 +84,22 @@ public class AccountController {
     /**
      * アカウント削除
      * DELETE /api/v1/users/me
+     *
+     * <p>Issue#81 Phase 4b: confirmationChecked を含む 3 引数シグネチャに移行。
+     * OAuth のみユーザー（password_hash == null）は password を送らず
+     * {@code confirmationChecked == true} で削除する。クラスレベル
+     * {@code @ValidDeleteAccountRequest} が事前にユーザー区分と整合性を検証。
      */
     @DeleteMapping
     public ResponseEntity<Void> deleteAccount(
             @Valid @RequestBody DeleteAccountRequest request,
             Authentication authentication) {
         String email = authentication.getName();
-        accountService.deleteAccount(email, request.getPassword());
+        accountService.deleteAccount(
+                email,
+                request.getPassword(),
+                Boolean.TRUE.equals(request.getConfirmationChecked())
+        );
         return ResponseEntity.noContent().build();
     }
 }

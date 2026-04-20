@@ -203,7 +203,27 @@ public class AccountService {
 
     /**
      * アカウント削除 - ソフトデリート
+     *
+     * <p>Issue#81 Phase 4b で 3 引数化。通常 / ハイブリッドユーザー (password_hash != null) は
+     * {@code password} の照合、OAuth のみユーザー (password_hash == null) は
+     * {@code confirmationChecked == true} の確認のみで削除する。
+     *
+     * @param email              削除対象ユーザーのメールアドレス
+     * @param password           通常 / ハイブリッドユーザーのパスワード（OAuth のみユーザーは null）
+     * @param confirmationChecked OAuth のみユーザーの退会チェックボックス状態
      */
+    @Transactional
+    public void deleteAccount(String email, String password, boolean confirmationChecked) {
+        throw new UnsupportedOperationException("Phase 4b Green で実装する");
+    }
+
+    /**
+     * 旧 2 引数シグネチャ（Phase 4b Green でこのメソッドは削除予定）。
+     * Red 段階では既存呼び出し箇所が未更新のためコンパイルを通すために残す。
+     *
+     * @deprecated Phase 4b Green で削除、呼び出し元は 3 引数版へ移行
+     */
+    @Deprecated
     @Transactional
     public void deleteAccount(String email, String password) {
         User user = userRepository.findByEmail(email)
