@@ -48,7 +48,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
      */
     private static final Set<String> SENSITIVE_PATHS = Set.of(
             "/api/v1/auth/password-reset-request",
-            "/api/v1/auth/resend-verification"
+            "/api/v1/auth/resend-verification",
+            // Issue#81 Phase 4h: OAuth 初回パスワード設定とバナー dismiss は短時間連打を抑止
+            "/api/v1/auth/oauth2/set-password",
+            "/api/v1/users/me/password-recommendation/dismiss"
     );
 
     // エンドポイントパス定数
