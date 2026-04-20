@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
+import PasswordRecommendationBanner from './components/PasswordRecommendationBanner'
 import NotFoundPage from './pages/NotFoundPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
 import AdminModerationPage from './pages/AdminModerationPage'
@@ -10,6 +11,7 @@ import AdminDeletedUserDetailPage from './pages/AdminDeletedUserDetailPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import ReviewLocationPage from './pages/ReviewLocationPage'
 import ConfirmEmailChangePage from './pages/ConfirmEmailChangePage'
+import OAuthCallbackPage from './pages/OAuthCallbackPage'
 import { CookieConsentBanner } from './components/CookieConsentBanner'
 import { formatLocalDateTime } from './utils/extractExif'
 import { FilterPanel } from './components/FilterPanel'
@@ -756,6 +758,8 @@ function MainApp() {
       <AnimatePresence>
         {isLoading && <SplashScreen />}
       </AnimatePresence>
+      {/* Issue#81 Phase 5e: OAuth のみユーザー向けパスワード設定推奨バナー */}
+      <PasswordRecommendationBanner />
       <MainContent onMapReady={handleMapReady} />
       <Toaster />
     </>
@@ -775,6 +779,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/review-location" element={<ReviewLocationPage />} />
         <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
+        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         <Route path="/photo-viewer/:photoId" element={<MainApp />} />
         <Route path="/manage/moderation" element={<AdminModerationPage />} />
         <Route path="/manage/deleted-users" element={<AdminDeletedUsersPage />} />
