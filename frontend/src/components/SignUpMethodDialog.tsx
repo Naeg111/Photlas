@@ -31,35 +31,42 @@ export default function SignUpMethodDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}
+        className="max-h-[90vh]"
+        style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}
       >
+        {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
-          <DialogHeader className="gap-4">
+          <DialogHeader>
             <DialogTitle>{t('auth.oauth.chooseMethod.title')}</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="sr-only">
               {t('auth.oauth.chooseMethod.description')}
             </DialogDescription>
           </DialogHeader>
         </div>
-        <div className="px-6 pb-6">
-          {/* Q1: 両方同じスタイル（優先なし） */}
-          <div className="flex flex-col gap-3 mt-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={onChooseSns}
-            >
-              {t('auth.oauth.chooseMethod.sns')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={onChooseEmail}
-            >
-              {t('auth.oauth.chooseMethod.email')}
-            </Button>
+
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
+          <div className="mt-4">
+            <p className="mb-4 text-black">{t('auth.oauth.chooseMethod.description')}</p>
+            {/* Q1: 両方同じスタイル（優先なし） */}
+            <div className="flex flex-col gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={onChooseSns}
+              >
+                {t('auth.oauth.chooseMethod.sns')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={onChooseEmail}
+              >
+                {t('auth.oauth.chooseMethod.email')}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

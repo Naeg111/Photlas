@@ -22,7 +22,8 @@ describe('SignUpMethodDialog', () => {
   it('タイトルと説明文を表示する', () => {
     renderDialog()
     expect(screen.getByText('アカウント作成方法を選択')).toBeInTheDocument()
-    expect(screen.getByText('新規登録方法を選んでください。')).toBeInTheDocument()
+    // 説明文は sr-only な DialogDescription と可視の <p> の 2 箇所に現れる（PasswordResetRequestModal と同じ構造）
+    expect(screen.getAllByText('新規登録方法を選んでください。').length).toBeGreaterThan(0)
   })
 
   it('[Phase 8r-4 Q6] 「SNSで登録」と「メールアドレスで登録」の 2 つのボタンを表示する', () => {

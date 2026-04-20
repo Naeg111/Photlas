@@ -34,7 +34,8 @@ describe('OAuthSignUpDialog', () => {
   it('タイトルと説明文を表示する', () => {
     renderDialog()
     expect(screen.getByText('SNSで新規登録')).toBeInTheDocument()
-    expect(screen.getByText('SNSアカウントで Photlas に新規登録します。')).toBeInTheDocument()
+    // 説明文は sr-only な DialogDescription と可視の <p> の 2 箇所に現れる（PasswordResetRequestModal と同じ構造）
+    expect(screen.getAllByText('SNSアカウントで Photlas に新規登録します。').length).toBeGreaterThan(0)
   })
 
   it('Google / LINE ボタンが表示される（variant signUp）', () => {

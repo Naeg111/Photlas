@@ -37,65 +37,77 @@ export default function OAuthSignUpDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader className="gap-4">
-          <DialogTitle>{t('auth.oauth.snsSignUp.title')}</DialogTitle>
-          <DialogDescription>
-            {t('auth.oauth.snsSignUp.description')}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        className="max-h-[90vh]"
+        style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}
+      >
+        {/* Fixed header */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogHeader>
+            <DialogTitle>{t('auth.oauth.snsSignUp.title')}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {t('auth.oauth.snsSignUp.description')}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-4 mt-4">
-          {/* SNS ボタン: 利用規約未同意または OAuth 無効時は disabled */}
-          <OAuthButtons
-            variant="signUp"
-            disabled={!agreedToTerms}
-            hideDivider={true}
-          />
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
+          <div className="mt-4">
+            <p className="mb-4 text-black">{t('auth.oauth.snsSignUp.description')}</p>
+            <div className="space-y-4">
+              {/* SNS ボタン: 利用規約未同意または OAuth 無効時は disabled */}
+              <OAuthButtons
+                variant="signUp"
+                disabled={!agreedToTerms}
+                hideDivider={true}
+              />
 
-          {/* 利用規約同意（既存 SignUpDialog と同じフォーマット、Q3） */}
-          <div className="flex items-center justify-center space-x-2">
-            <Checkbox
-              id="sns-signup-terms"
-              checked={agreedToTerms}
-              onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-            />
-            <label htmlFor="sns-signup-terms" className="text-sm">
-              <a
-                href="#"
-                role="link"
-                className="text-blue-600 underline hover:text-blue-800"
-                onClick={(e) => {
-                  e.preventDefault()
-                  onShowTerms()
-                }}
+              {/* 利用規約同意（既存 SignUpDialog と同じフォーマット、Q3） */}
+              <div className="flex items-center justify-center space-x-2">
+                <Checkbox
+                  id="sns-signup-terms"
+                  checked={agreedToTerms}
+                  onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                />
+                <label htmlFor="sns-signup-terms" className="text-sm">
+                  <a
+                    href="#"
+                    role="link"
+                    className="text-blue-600 underline hover:text-blue-800"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      onShowTerms()
+                    }}
+                  >
+                    {t('auth.termsOfService')}
+                  </a>
+                  {t('auth.agreeToTerms')}
+                </label>
+              </div>
+
+              {/* ログインリンク */}
+              <div className="text-center text-sm text-gray-600">
+                <Button
+                  variant="link"
+                  className="p-0 h-auto"
+                  onClick={onShowLogin}
+                >
+                  {t('auth.oauth.snsSignUp.hasAccount')}
+                </Button>
+              </div>
+
+              {/* 戻る（Q2 / Phase 8r-2: w-full = SignUpDialog の戻る+登録 合計幅） */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={onBack}
               >
-                {t('auth.termsOfService')}
-              </a>
-              {t('auth.agreeToTerms')}
-            </label>
+                {t('common.back')}
+              </Button>
+            </div>
           </div>
-
-          {/* ログインリンク */}
-          <div className="text-center text-sm text-gray-600">
-            <Button
-              variant="link"
-              className="p-0 h-auto"
-              onClick={onShowLogin}
-            >
-              {t('auth.oauth.snsSignUp.hasAccount')}
-            </Button>
-          </div>
-
-          {/* 戻る（Q2 / Phase 8r-2: w-full = SignUpDialog の戻る+登録 合計幅） */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={onBack}
-          >
-            {t('common.back')}
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
