@@ -52,6 +52,7 @@
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "비밀번호 (필수)",
     "passwordFormatHint": "반각 영숫자 8-20자 (영대문자·영소문자·숫자 각 1자 이상 포함)",
+    "passwordExample": "예: Abcde123",
     "passwordStrength": "강도:",
     "strengthStrong": "강함",
     "strengthMedium": "보통",
