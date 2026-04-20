@@ -40,6 +40,12 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - MODERATION_API_KEY=${MODERATION_API_KEY}
       - APP_FRONTEND_URL=https://test.photlas.jp
+      # Issue#81: OAuth 2.0 Client credentials (Google / LINE) + access_token 暗号化鍵
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - LINE_CLIENT_ID=${LINE_CLIENT_ID:-}
+      - LINE_CLIENT_SECRET=${LINE_CLIENT_SECRET:-}
+      - OAUTH_ENCRYPTION_KEY_BASE64=${OAUTH_ENCRYPTION_KEY_BASE64:-}
     networks:
       - photlas-network
     healthcheck:
