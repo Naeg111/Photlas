@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import SignUpMethodChooseDialog from './SignUpMethodChooseDialog'
+import SignUpMethodDialog from './SignUpMethodDialog'
 
 function renderDialog(overrides?: {
   onOpenChange?: (open: boolean) => void
@@ -9,7 +9,7 @@ function renderDialog(overrides?: {
   onChooseEmail?: () => void
 }) {
   return render(
-    <SignUpMethodChooseDialog
+    <SignUpMethodDialog
       open={true}
       onOpenChange={overrides?.onOpenChange ?? vi.fn()}
       onChooseSns={overrides?.onChooseSns ?? vi.fn()}
@@ -18,7 +18,7 @@ function renderDialog(overrides?: {
   )
 }
 
-describe('SignUpMethodChooseDialog', () => {
+describe('SignUpMethodDialog', () => {
   it('タイトルと説明文を表示する', () => {
     renderDialog()
     expect(screen.getByText('アカウント作成方法を選択')).toBeInTheDocument()
@@ -55,7 +55,7 @@ describe('SignUpMethodChooseDialog', () => {
 
   it('open=false の場合はダイアログ内容が表示されない', () => {
     render(
-      <SignUpMethodChooseDialog
+      <SignUpMethodDialog
         open={false}
         onOpenChange={vi.fn()}
         onChooseSns={vi.fn()}

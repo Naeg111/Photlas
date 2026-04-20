@@ -44,7 +44,7 @@ interface SignUpDialogProps {
   onShowTerms: () => void
   onShowLogin: () => void
   /**
-   * Issue#81 Phase 8e: キャンセルクリック時のコールバック（SignUpMethodChooseDialog に戻る等）。
+   * Issue#81 Phase 8e: キャンセルクリック時のコールバック（SignUpMethodDialog に戻る等）。
    * 省略時は従来通り onOpenChange(false) で単純に閉じる。
    */
   onBack?: () => void
@@ -484,7 +484,7 @@ export function SignUpDialog({
             </Button>
           </div>
 
-          {/* Issue#81 Phase 8e: OAuth 新規登録ボタンは SignUpSnsLoginDialog に分離したため削除 */}
+          {/* Issue#81 Phase 8e: OAuth 新規登録ボタンは OAuthSignUpDialog に分離したため削除 */}
         </div>
 
         {/* プロフィール画像トリミングモーダル */}

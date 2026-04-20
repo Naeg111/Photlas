@@ -8,16 +8,16 @@ import OAuthButtons from './OAuthButtons'
 /**
  * Issue#81 Phase 8c - SNS 新規登録ダイアログ。
  *
- * <p>{@code SignUpMethodChooseDialog} で「SNSログインで登録」を選んだ際に開く。
+ * <p>{@code SignUpMethodDialog} で「SNSログインで登録」を選んだ際に開く。
  * 利用規約に同意しないと Google / LINE ボタンは非活性（Q4 仕様）。
  *
- * <p>「キャンセル」は {@code SignUpMethodChooseDialog} に戻るための onBack コールバックで、
+ * <p>「キャンセル」は {@code SignUpMethodDialog} に戻るための onBack コールバックで、
  * SignUpDialog の (キャンセル + 登録) 合計幅と同じ {@code w-full} 幅（Q2 仕様）。
  */
-interface SignUpSnsLoginDialogProps {
+interface OAuthSignUpDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** 「キャンセル」クリック: SignUpMethodChooseDialog に戻る */
+  /** 「キャンセル」クリック: SignUpMethodDialog に戻る */
   onBack: () => void
   /** 「すでにアカウントをお持ちの方はログイン」クリック: LoginDialog へ切り替え */
   onShowLogin: () => void
@@ -25,13 +25,13 @@ interface SignUpSnsLoginDialogProps {
   onShowTerms: () => void
 }
 
-export default function SignUpSnsLoginDialog({
+export default function OAuthSignUpDialog({
   open,
   onOpenChange,
   onBack,
   onShowLogin,
   onShowTerms,
-}: SignUpSnsLoginDialogProps) {
+}: OAuthSignUpDialogProps) {
   const { t } = useTranslation()
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
