@@ -47,12 +47,12 @@
     "profileImage": "プロフィール画像（任意）",
     "selectImage": "画像を選択",
     "displayName": "表示名（必須）",
-    "displayNamePlaceholder": "山田太郎",
+    "displayNamePlaceholder": "山田太郎、半角・全角12文字以内",
     "displayNameRequired": "表示名を入力してください",
     "emailRequired": "メールアドレス（必須）",
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "パスワード（必須）",
-    "passwordFormatHint": "8-20文字、数字・小文字・大文字を含む",
+    "passwordFormatHint": "半角英数字8-20文字（英大文字・英小文字・数字を各1字以上含む）",
     "passwordStrength": "強度:",
     "strengthStrong": "強",
     "strengthMedium": "中",
@@ -115,14 +115,14 @@
         "dismiss": "閉じる"
       },
       "chooseMethod": {
-        "title": "アカウント作成方法を選択",
+        "title": "アカウント登録方法を選択",
         "description": "新規登録方法を選んでください。",
         "sns": "SNSアカウントで登録",
         "email": "メールアドレスで登録"
       },
       "snsSignUp": {
         "title": "SNSアカウントで新規登録",
-        "description": "SNSアカウントで Photlas に新規登録します。",
+        "description": "SNSアカウントでPhotlasに新規登録します。",
         "agreeToTerms": "利用規約に同意する",
         "agreeToTermsRequired": "利用規約に同意すると SNS 登録ボタンが有効になります。"
       }

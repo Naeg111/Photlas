@@ -46,12 +46,12 @@
     "profileImage": "個人頭像（選填）",
     "selectImage": "選擇圖片",
     "displayName": "顯示名稱（必填）",
-    "displayNamePlaceholder": "王小明",
+    "displayNamePlaceholder": "王小明 — 半形/全形 12 字以內",
     "displayNameRequired": "請輸入顯示名稱",
     "emailRequired": "電子郵件（必填）",
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "密碼（必填）",
-    "passwordFormatHint": "8-20字元，需含數字、大小寫英文",
+    "passwordFormatHint": "半形英數字 8-20 字（含大寫英字·小寫英字·數字各 1 字以上）",
     "passwordStrength": "強度：",
     "strengthStrong": "強",
     "strengthMedium": "中",
@@ -94,7 +94,7 @@
       },
       "snsSignUp": {
         "title": "使用社群帳號註冊",
-        "description": "使用社群帳號註冊 Photlas 帳號。",
+        "description": "使用社群帳號註冊Photlas帳號。",
         "agreeToTerms": "同意服務條款",
         "agreeToTermsRequired": "同意服務條款後，社群帳號註冊按鈕將啟用。"
       }
