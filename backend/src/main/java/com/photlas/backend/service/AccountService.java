@@ -11,6 +11,7 @@ import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
+import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.util.TokenGenerator;
 import org.slf4j.Logger;
@@ -45,6 +46,8 @@ public class AccountService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
     private final JwtService jwtService;
+    private final UserOAuthConnectionRepository userOAuthConnectionRepository;
+    private final OAuthTokenRevokeService oauthTokenRevokeService;
 
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
@@ -58,7 +61,9 @@ public class AccountService {
             EmailVerificationTokenRepository emailVerificationTokenRepository,
             PasswordResetTokenRepository passwordResetTokenRepository,
             EmailService emailService,
-            JwtService jwtService) {
+            JwtService jwtService,
+            UserOAuthConnectionRepository userOAuthConnectionRepository,
+            OAuthTokenRevokeService oauthTokenRevokeService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.spotRepository = spotRepository;
@@ -68,6 +73,8 @@ public class AccountService {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailService = emailService;
         this.jwtService = jwtService;
+        this.userOAuthConnectionRepository = userOAuthConnectionRepository;
+        this.oauthTokenRevokeService = oauthTokenRevokeService;
     }
 
     /**

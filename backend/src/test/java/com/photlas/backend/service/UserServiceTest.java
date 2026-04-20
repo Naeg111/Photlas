@@ -23,6 +23,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -40,6 +42,7 @@ import static org.mockito.Mockito.*;
  * AuthService, PasswordService, ProfileService, AccountServiceのビジネスロジックを検証する。
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class UserServiceTest {
 
     // ===== AuthService用モック =====
@@ -64,6 +67,9 @@ public class UserServiceTest {
     @Mock private PhotoRepository photoRepository;
     @Mock private com.photlas.backend.repository.EmailChangeTokenRepository emailChangeTokenRepository;
     @Mock private EmailService emailService;
+    // Issue#81 Phase 4d: 退会時 OAuth 連携検出 + revoke 用
+    @Mock private com.photlas.backend.repository.UserOAuthConnectionRepository userOAuthConnectionRepository;
+    @Mock private OAuthTokenRevokeService oauthTokenRevokeService;
     @InjectMocks private AccountService accountService;
 
     // テスト用定数
@@ -562,6 +568,184 @@ public class UserServiceTest {
         //   - deleted_at が設定されて save される
         verify(passwordEncoder, never()).matches(anyString(), anyString());
         verify(userRepository).save(argThat(u -> u.getDeletedAt() != null));
+    }
+
+    // ===== Issue#81 Phase 4d: 退会メール 3 パターン × 2 言語 + revoke 統合 =====
+
+    /**
+     * NORMAL ja ゴールデンテスト用の既存文面（Round 12 / Q15 / [4-B]）。
+     * <p>リリース前の退会メール文面を一字一句変えないことを担保する。
+     * リファクタ後も本文字列と完全一致するよう実装する。
+     */
+    private static final String EXPECTED_NORMAL_JA_BODY_TEMPLATE =
+            "%s さん\n\n" +
+            "アカウントの削除が完了しました。\n\n" +
+            "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
+            "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワードでログインしてください。\n\n" +
+            "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
+            "support@photlas.jp\n\n" +
+            "Photlas 運営\nsupport@photlas.jp";
+
+    @Test
+    @DisplayName("[Issue#81 4-B NORMAL ja Golden] 通常ユーザー ja: 退会メール本文は既存文面と完全一致")
+    void testDeleteAccount_NormalUser_Ja_BodyMatchesExistingVerbatim() {
+        User user = normalUserJa();
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userOAuthConnectionRepository.findByUserId(1L)).thenReturn(List.of());
+
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
+
+        String expected = String.format(EXPECTED_NORMAL_JA_BODY_TEMPLATE, TEST_USERNAME);
+        verify(emailService).send(eq(TEST_EMAIL), contains("アカウント削除"), eq(expected));
+    }
+
+    @Test
+    @DisplayName("[Issue#81 4-B NORMAL en] 通常ユーザー en: 既存英文面のキーワードを含む")
+    void testDeleteAccount_NormalUser_En_ContainsExistingKeywords() {
+        User user = normalUserJa();
+        user.setLanguage("en");
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userOAuthConnectionRepository.findByUserId(1L)).thenReturn(List.of());
+
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
+
+        verify(emailService).send(
+                eq(TEST_EMAIL),
+                contains("Account Deletion"),
+                argThat(body -> body.contains("Your account has been deleted")
+                        && body.contains("90 days")
+                        && body.contains("email and password"))
+        );
+    }
+
+    @Test
+    @DisplayName("[Issue#81 4-B HYBRID ja] パスワード + Google 連携ユーザー ja: 両方の復旧経路を案内")
+    void testDeleteAccount_HybridUser_Ja_ContainsBothRouteWording() {
+        User user = normalUserJa();
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userOAuthConnectionRepository.findByUserId(1L))
+                .thenReturn(List.of(connection(com.photlas.backend.entity.OAuthProvider.GOOGLE)));
+
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
+
+        verify(emailService).send(
+                eq(TEST_EMAIL),
+                contains("アカウント削除"),
+                argThat(body -> body.contains("メールアドレスとパスワード")
+                        && body.contains("Google")
+                        && body.contains("90日")
+                        && body.contains(TEST_USERNAME))
+        );
+    }
+
+    @Test
+    @DisplayName("[Issue#81 4-B HYBRID en] パスワード + LINE 連携ユーザー en: 両方の復旧経路を案内")
+    void testDeleteAccount_HybridUser_En_ContainsBothRouteWording() {
+        User user = normalUserJa();
+        user.setLanguage("en");
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userOAuthConnectionRepository.findByUserId(1L))
+                .thenReturn(List.of(connection(com.photlas.backend.entity.OAuthProvider.LINE)));
+
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
+
+        verify(emailService).send(
+                eq(TEST_EMAIL),
+                contains("Account Deletion"),
+                argThat(body -> body.contains("email and password")
+                        && body.contains("LINE")
+                        && body.contains("90 days"))
+        );
+    }
+
+    @Test
+    @DisplayName("[Issue#81 4-B OAUTH_ONLY ja] OAuth のみ (Google) ユーザー ja: プロバイダ再サインインのみ案内")
+    void testDeleteAccount_OAuthOnlyUser_Ja_ContainsOnlyOAuthRoute() {
+        User user = oauthOnlyUserJa();
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userOAuthConnectionRepository.findByUserId(1L))
+                .thenReturn(List.of(connection(com.photlas.backend.entity.OAuthProvider.GOOGLE)));
+
+        accountService.deleteAccount(TEST_EMAIL, null, true);
+
+        verify(emailService).send(
+                eq(TEST_EMAIL),
+                contains("アカウント削除"),
+                argThat(body -> body.contains("Google")
+                        && body.contains("90日")
+                        && body.contains("サインイン")
+                        && !body.contains("パスワードでログイン"))
+        );
+    }
+
+    @Test
+    @DisplayName("[Issue#81 4-B OAUTH_ONLY en] OAuth のみ (LINE) ユーザー en: プロバイダ再サインインのみ案内")
+    void testDeleteAccount_OAuthOnlyUser_En_ContainsOnlyOAuthRoute() {
+        User user = oauthOnlyUserJa();
+        user.setLanguage("en");
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userOAuthConnectionRepository.findByUserId(1L))
+                .thenReturn(List.of(connection(com.photlas.backend.entity.OAuthProvider.LINE)));
+
+        accountService.deleteAccount(TEST_EMAIL, null, true);
+
+        verify(emailService).send(
+                eq(TEST_EMAIL),
+                contains("Account Deletion"),
+                argThat(body -> body.contains("LINE")
+                        && body.contains("90 days")
+                        && body.contains("sign in")
+                        && !body.contains("email and password"))
+        );
+    }
+
+    @Test
+    @DisplayName("[Issue#81 Q9] 退会成功時は OAuthTokenRevokeService.revokeForUser(userId) が呼ばれる")
+    void testDeleteAccount_InvokesTokenRevokeService() {
+        User user = normalUserJa();
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userOAuthConnectionRepository.findByUserId(1L)).thenReturn(List.of());
+
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
+
+        verify(oauthTokenRevokeService).revokeForUser(1L);
+    }
+
+    // Phase 4d 用テストヘルパー
+
+    private User normalUserJa() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        user.setLanguage("ja");
+        return user;
+    }
+
+    private User oauthOnlyUserJa() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        user.setPasswordHash(null);
+        user.setLanguage("ja");
+        return user;
+    }
+
+    private com.photlas.backend.entity.UserOAuthConnection connection(
+            com.photlas.backend.entity.OAuthProvider provider) {
+        com.photlas.backend.entity.UserOAuthConnection conn =
+                new com.photlas.backend.entity.UserOAuthConnection();
+        conn.setUserId(1L);
+        conn.setProviderCode(provider.getCode());
+        conn.setProviderUserId("provider-user-" + provider.name());
+        return conn;
     }
 
     // ===== updateProfileのSNSリンク非更新 (ProfileService.updateProfile) =====
