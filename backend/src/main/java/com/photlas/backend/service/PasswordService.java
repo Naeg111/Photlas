@@ -3,6 +3,7 @@ package com.photlas.backend.service;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
@@ -115,6 +116,23 @@ public class PasswordService {
         passwordResetTokenRepository.delete(resetToken);
 
         sendPasswordChangedNotification(user.getEmail(), user.getUsername(), user.getLanguage());
+    }
+
+    /**
+     * Issue#81 Phase 4e: OAuth のみユーザー向けの初回パスワード設定。
+     *
+     * <p>password_hash が null のユーザーが任意でパスワードを追加するときに使う。
+     * 成功時は {@code password_recommendation_dismissed_at} を NULL に明示リセット
+     * （Round 12 / Q8、将来の条件変更に備えて明示クリア）。
+     *
+     * @param email       対象ユーザーのメールアドレス
+     * @param newPassword 新しく設定するパスワード
+     * @throws UnauthorizedException ユーザーが存在しない場合
+     * @throws ConflictException     既に password_hash が設定されている場合
+     */
+    @Transactional
+    public void setInitialPassword(String email, String newPassword) {
+        throw new UnsupportedOperationException("Phase 4e Green で実装する");
     }
 
     /**
