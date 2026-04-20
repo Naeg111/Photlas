@@ -6,27 +6,38 @@ import i18n from '../i18n'
 /**
  * Issue#81 Phase 5b - Google / LINE サインインボタン。
  *
- * VITE_OAUTH_ENABLED !== 'true' の場合は何もレンダリングしない（ローカル開発で OAuth OFF）。
- * クリック時は `/api/v1/auth/oauth2/authorization/<provider>?lang=<current_lang>` に遷移し、
- * Spring Security OAuth2 の認可フローを開始する。
+ * <p>Phase 8a (Q4) 以降の仕様:
+ * - {@code enabled=false}（OAuth 環境無効）でもボタンは表示し、{@code disabled} 状態にする。
+ * - {@code disabled=true} でも両ボタンを非活性にし、クリック時の遷移を抑止する。
+ * - {@code hideDivider=true} で「または」区切り線を描画しない（LoginDialog 等、
+ *   外側で {@code <hr>} 等を使う場合用）。
+ *
+ * <p>最終的な非活性判定: {@code disabled || !(enabled ?? isOAuthEnabled())}。
  */
 type Variant = 'signIn' | 'signUp'
 
 interface OAuthButtonsProps {
   variant?: Variant
-  /** テスト・上書き用。省略時は import.meta.env.VITE_OAUTH_ENABLED を参照 */
+  /** テスト・上書き用。省略時は {@code import.meta.env.VITE_OAUTH_ENABLED} を参照 */
   enabled?: boolean
+  /** クリック不可にするが表示は維持（利用規約未チェック等）。 */
+  disabled?: boolean
+  /** true で「または」区切り線を描画しない。LoginDialog は外側で {@code <hr>} を使う。 */
+  hideDivider?: boolean
 }
 
-export default function OAuthButtons({ variant = 'signIn', enabled }: OAuthButtonsProps) {
+export default function OAuthButtons({
+  variant = 'signIn',
+  enabled,
+  disabled = false,
+  hideDivider = false,
+}: OAuthButtonsProps) {
   const { t } = useTranslation()
   const oauthEnabled = enabled ?? isOAuthEnabled()
-
-  if (!oauthEnabled) {
-    return null
-  }
+  const effectiveDisabled = disabled || !oauthEnabled
 
   const handleClick = (provider: 'google' | 'line') => {
+    if (effectiveDisabled) return
     const lang = i18n.language || 'ja'
     const base = API_BASE_URL || ''
     window.location.href = `${base}/api/v1/auth/oauth2/authorization/${provider}?lang=${encodeURIComponent(lang)}`
@@ -41,16 +52,19 @@ export default function OAuthButtons({ variant = 'signIn', enabled }: OAuthButto
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-3 my-2">
-        <div className="flex-1 h-px bg-gray-200" />
-        <span className="text-xs text-gray-500">{t('auth.oauth.dividerOr')}</span>
-        <div className="flex-1 h-px bg-gray-200" />
-      </div>
+      {!hideDivider && (
+        <div className="flex items-center gap-3 my-2">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-500">{t('auth.oauth.dividerOr')}</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+      )}
       <Button
         type="button"
         variant="outline"
         className="w-full"
         onClick={() => handleClick('google')}
+        disabled={effectiveDisabled}
         aria-label={googleLabel}
       >
         {googleLabel}
@@ -58,8 +72,9 @@ export default function OAuthButtons({ variant = 'signIn', enabled }: OAuthButto
       <Button
         type="button"
         variant="outline"
-        className="w-full bg-[#06C755] hover:bg-[#05b34b] text-white border-transparent"
+        className="w-full bg-[#06C755] hover:bg-[#05b34b] text-white border-transparent disabled:bg-gray-200 disabled:text-gray-500"
         onClick={() => handleClick('line')}
+        disabled={effectiveDisabled}
         aria-label={lineLabel}
       >
         {lineLabel}
