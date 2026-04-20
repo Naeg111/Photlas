@@ -2,6 +2,8 @@ package com.photlas.backend.entity;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -20,13 +22,19 @@ public class OAuthLinkConfirmation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Hotfix: V25 migration は token_hash を CHAR(64) で作成しているため、
+    // String のデフォルト (VARCHAR) ではなく CHAR として扱わせる。
     /** 生トークンの SHA-256 ハッシュ（hex 64 文字）。 */
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     private String tokenHash;
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    // Hotfix: V25 migration は provider_code を SMALLINT で作成しているため、
+    // Integer のデフォルト (INTEGER) ではなく SMALLINT として扱わせる。
+    @JdbcTypeCode(SqlTypes.SMALLINT)
     @Column(name = "provider_code", nullable = false)
     private Integer providerCode;
 
