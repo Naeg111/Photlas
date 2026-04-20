@@ -41,7 +41,7 @@
     "resendLoading": "전송 중...",
     "resendSuccess": "인증 이메일을 재발송했습니다. 받은 편지함을 확인해 주세요.",
     "resendFailed": "인증 이메일 재발송에 실패했습니다",
-    "signupTitle": "회원가입",
+    "signupTitle": "새 계정 등록",
     "signupDescription": "새 계정을 만드세요",
     "profileImage": "프로필 이미지 (선택)",
     "selectImage": "이미지 선택",
@@ -79,7 +79,26 @@
     "loginRequiredDescription": "로그인 또는 계정 생성이 필요합니다",
     "loginRequiredMessage": "이 기능을 사용하려면 로그인하거나 계정을 만들어 주세요.",
     "createAccount": "계정 만들기",
-    "accountSuspended": "계정이 정지되었습니다. 고객센터에 문의해 주세요."
+    "accountSuspended": "계정이 정지되었습니다. 고객센터에 문의해 주세요.",
+    "oauth": {
+      "signInWithGoogle": "Google로 로그인",
+      "signInWithLine": "LINE으로 로그인",
+      "signUpWithGoogle": "Google로 회원가입",
+      "signUpWithLine": "LINE으로 회원가입",
+      "dividerOr": "또는",
+      "chooseMethod": {
+        "title": "가입 방법 선택",
+        "description": "회원가입 방법을 선택해 주세요.",
+        "sns": "SNS 계정으로 가입",
+        "email": "이메일로 가입"
+      },
+      "snsSignUp": {
+        "title": "SNS 계정으로 회원가입",
+        "description": "SNS 계정으로 Photlas에 회원가입합니다.",
+        "agreeToTerms": "이용약관에 동의합니다",
+        "agreeToTermsRequired": "이용약관에 동의하면 SNS 가입 버튼이 활성화됩니다."
+      }
+    }
   },
   "menu": {
     "title": "메뉴",
