@@ -509,4 +509,48 @@ describe('LoginDialog', () => {
       })
     })
   })
+
+  // ---------- Phase 8d: SNS ボタンを通常ログインフォームの上部に移動 ----------
+
+  describe('Phase 8d - SNS ボタン上部移動 + <hr> 区切り', () => {
+    it('SNS ボタン (Google / LINE) がメール入力欄より前（上）に表示される', () => {
+      render(<LoginDialog {...defaultProps} />)
+      const googleBtn = screen.getByRole('button', { name: 'Google でサインイン' })
+      const lineBtn = screen.getByRole('button', { name: 'LINE でサインイン' })
+      const emailInput = screen.getByLabelText('メールアドレス')
+
+      // DOM 上の表示順序: Google → LINE → メール入力欄
+      const positions = [
+        googleBtn.compareDocumentPosition(lineBtn),
+        lineBtn.compareDocumentPosition(emailInput),
+      ]
+      // DOCUMENT_POSITION_FOLLOWING = 4 が含まれていれば順序 OK
+      positions.forEach((pos) => {
+        expect(pos & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      })
+    })
+
+    it('SNS ボタンとメール入力欄の間に <hr>（border-t border-gray-200）が存在する', () => {
+      const { baseElement } = render(<LoginDialog {...defaultProps} />)
+      const hr = baseElement.querySelector('hr')
+      expect(hr).not.toBeNull()
+      // クラス名の期待（border-t border-gray-200）
+      expect(hr?.className).toMatch(/border-t/)
+    })
+
+    it('[Q4] OAuth 無効（env 未設定）でも SNS ボタンは表示され disabled 状態になる', () => {
+      render(<LoginDialog {...defaultProps} />)
+      const googleBtn = screen.getByRole('button', { name: 'Google でサインイン' })
+      const lineBtn = screen.getByRole('button', { name: 'LINE でサインイン' })
+      expect(googleBtn).toBeInTheDocument()
+      expect(lineBtn).toBeInTheDocument()
+      expect(googleBtn).toBeDisabled()
+      expect(lineBtn).toBeDisabled()
+    })
+
+    it('OAuth の「または」区切り線は LoginDialog では表示されない（hideDivider）', () => {
+      render(<LoginDialog {...defaultProps} />)
+      expect(screen.queryByText('または')).not.toBeInTheDocument()
+    })
+  })
 })
