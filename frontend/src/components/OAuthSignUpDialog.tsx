@@ -61,11 +61,11 @@ export default function OAuthSignUpDialog({
                 variant="signUp"
                 disabled={!agreedToTerms}
                 hideDivider={true}
-                className="mb-8"
+                className="mb-7"
               />
 
               {/* 利用規約同意（既存 SignUpDialog と同じフォーマット、Q3） */}
-              <div className="flex items-center justify-center space-x-2 mb-8">
+              <div className="flex items-center justify-center space-x-2 mb-7">
                 <Checkbox
                   id="sns-signup-terms"
                   checked={agreedToTerms}
@@ -88,7 +88,7 @@ export default function OAuthSignUpDialog({
               </div>
 
               {/* ログインリンク */}
-              <div className="text-center text-sm text-gray-600 mb-8">
+              <div className="text-center text-sm text-gray-600 mb-7">
                 <Button
                   variant="link"
                   className="p-0 h-auto"
