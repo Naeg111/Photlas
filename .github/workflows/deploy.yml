@@ -155,6 +155,12 @@ jobs:
         DEPLOY_SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
         DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         DEPLOY_MODERATION_API_KEY: ${{ secrets.STAGING_MODERATION_API_KEY }}
+        # Issue#81: OAuth 2.0 クライアント資格情報（ステージング用）
+        DEPLOY_GOOGLE_CLIENT_ID: ${{ secrets.STAGING_GOOGLE_CLIENT_ID }}
+        DEPLOY_GOOGLE_CLIENT_SECRET: ${{ secrets.STAGING_GOOGLE_CLIENT_SECRET }}
+        DEPLOY_LINE_CLIENT_ID: ${{ secrets.STAGING_LINE_CLIENT_ID }}
+        DEPLOY_LINE_CLIENT_SECRET: ${{ secrets.STAGING_LINE_CLIENT_SECRET }}
+        DEPLOY_OAUTH_ENCRYPTION_KEY_BASE64: ${{ secrets.STAGING_OAUTH_ENCRYPTION_KEY_BASE64 }}
         DEPLOY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # デプロイスクリプトを生成してbase64エンコード
@@ -178,6 +184,12 @@ jobs:
         export SMTP_USERNAME='__SMTP_USERNAME__'
         export SMTP_PASSWORD='__SMTP_PASSWORD__'
         export MODERATION_API_KEY='__MODERATION_API_KEY__'
+        # Issue#81: OAuth 2.0 クライアント資格情報 + access_token 暗号化鍵
+        export GOOGLE_CLIENT_ID='__GOOGLE_CLIENT_ID__'
+        export GOOGLE_CLIENT_SECRET='__GOOGLE_CLIENT_SECRET__'
+        export LINE_CLIENT_ID='__LINE_CLIENT_ID__'
+        export LINE_CLIENT_SECRET='__LINE_CLIENT_SECRET__'
+        export OAUTH_ENCRYPTION_KEY_BASE64='__OAUTH_ENCRYPTION_KEY_BASE64__'
 
         echo '=== Environment variables set ==='
         echo "IMAGE_TAG: $IMAGE_TAG"
@@ -267,6 +279,12 @@ jobs:
         sed -i "s|__SMTP_USERNAME__|${DEPLOY_SMTP_USERNAME}|g" /tmp/deploy_script.sh
         sed -i "s|__SMTP_PASSWORD__|${DEPLOY_SMTP_PASSWORD}|g" /tmp/deploy_script.sh
         sed -i "s|__MODERATION_API_KEY__|${DEPLOY_MODERATION_API_KEY}|g" /tmp/deploy_script.sh
+        # Issue#81: OAuth 2.0 関連 sed 置換
+        sed -i "s|__GOOGLE_CLIENT_ID__|${DEPLOY_GOOGLE_CLIENT_ID}|g" /tmp/deploy_script.sh
+        sed -i "s|__GOOGLE_CLIENT_SECRET__|${DEPLOY_GOOGLE_CLIENT_SECRET}|g" /tmp/deploy_script.sh
+        sed -i "s|__LINE_CLIENT_ID__|${DEPLOY_LINE_CLIENT_ID}|g" /tmp/deploy_script.sh
+        sed -i "s|__LINE_CLIENT_SECRET__|${DEPLOY_LINE_CLIENT_SECRET}|g" /tmp/deploy_script.sh
+        sed -i "s|__OAUTH_ENCRYPTION_KEY_BASE64__|${DEPLOY_OAUTH_ENCRYPTION_KEY_BASE64}|g" /tmp/deploy_script.sh
         sed -i "s|__GITHUB_TOKEN__|${DEPLOY_GITHUB_TOKEN}|g" /tmp/deploy_script.sh
 
         # base64エンコード
@@ -393,6 +411,12 @@ jobs:
         DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         DEPLOY_MODERATION_API_KEY: ${{ secrets.PRODUCTION_MODERATION_API_KEY }}
         DEPLOY_AWS_CLOUDFRONT_DOMAIN: ${{ secrets.PRODUCTION_CLOUDFRONT_DOMAIN }}
+        # Issue#81: OAuth 2.0 クライアント資格情報（本番用）
+        DEPLOY_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+        DEPLOY_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        DEPLOY_LINE_CLIENT_ID: ${{ secrets.LINE_CLIENT_ID }}
+        DEPLOY_LINE_CLIENT_SECRET: ${{ secrets.LINE_CLIENT_SECRET }}
+        DEPLOY_OAUTH_ENCRYPTION_KEY_BASE64: ${{ secrets.OAUTH_ENCRYPTION_KEY_BASE64 }}
         DEPLOY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # デプロイスクリプトを生成してbase64エンコード
@@ -417,6 +441,12 @@ jobs:
         export SMTP_PASSWORD='__SMTP_PASSWORD__'
         export MODERATION_API_KEY='__MODERATION_API_KEY__'
         export AWS_CLOUDFRONT_DOMAIN='__AWS_CLOUDFRONT_DOMAIN__'
+        # Issue#81: OAuth 2.0 クライアント資格情報 + access_token 暗号化鍵
+        export GOOGLE_CLIENT_ID='__GOOGLE_CLIENT_ID__'
+        export GOOGLE_CLIENT_SECRET='__GOOGLE_CLIENT_SECRET__'
+        export LINE_CLIENT_ID='__LINE_CLIENT_ID__'
+        export LINE_CLIENT_SECRET='__LINE_CLIENT_SECRET__'
+        export OAUTH_ENCRYPTION_KEY_BASE64='__OAUTH_ENCRYPTION_KEY_BASE64__'
 
         echo '=== Environment variables set ==='
         echo "IMAGE_TAG: $IMAGE_TAG"
@@ -495,6 +525,12 @@ jobs:
         sed -i "s|__SMTP_PASSWORD__|${DEPLOY_SMTP_PASSWORD}|g" /tmp/deploy_script.sh
         sed -i "s|__MODERATION_API_KEY__|${DEPLOY_MODERATION_API_KEY}|g" /tmp/deploy_script.sh
         sed -i "s|__AWS_CLOUDFRONT_DOMAIN__|${DEPLOY_AWS_CLOUDFRONT_DOMAIN}|g" /tmp/deploy_script.sh
+        # Issue#81: OAuth 2.0 関連 sed 置換
+        sed -i "s|__GOOGLE_CLIENT_ID__|${DEPLOY_GOOGLE_CLIENT_ID}|g" /tmp/deploy_script.sh
+        sed -i "s|__GOOGLE_CLIENT_SECRET__|${DEPLOY_GOOGLE_CLIENT_SECRET}|g" /tmp/deploy_script.sh
+        sed -i "s|__LINE_CLIENT_ID__|${DEPLOY_LINE_CLIENT_ID}|g" /tmp/deploy_script.sh
+        sed -i "s|__LINE_CLIENT_SECRET__|${DEPLOY_LINE_CLIENT_SECRET}|g" /tmp/deploy_script.sh
+        sed -i "s|__OAUTH_ENCRYPTION_KEY_BASE64__|${DEPLOY_OAUTH_ENCRYPTION_KEY_BASE64}|g" /tmp/deploy_script.sh
         sed -i "s|__GITHUB_TOKEN__|${DEPLOY_GITHUB_TOKEN}|g" /tmp/deploy_script.sh
 
         # base64エンコード
