@@ -28,7 +28,7 @@ describe('SignUpMethodDialog', () => {
 
   it('[Phase 8r-4 Q6] 「SNSで登録」と「メールアドレスで登録」の 2 つのボタンを表示する', () => {
     renderDialog()
-    expect(screen.getByRole('button', { name: 'SNSで登録' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'SNSアカウントで登録' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'メールアドレスで登録' })).toBeInTheDocument()
   })
 
@@ -37,7 +37,7 @@ describe('SignUpMethodDialog', () => {
     const onChooseEmail = vi.fn()
     renderDialog({ onChooseSns, onChooseEmail })
 
-    await userEvent.click(screen.getByRole('button', { name: 'SNSで登録' }))
+    await userEvent.click(screen.getByRole('button', { name: 'SNSアカウントで登録' }))
 
     expect(onChooseSns).toHaveBeenCalledOnce()
     expect(onChooseEmail).not.toHaveBeenCalled()
@@ -85,7 +85,7 @@ describe('SignUpMethodDialog', () => {
 
     it('OAuth 無効時でも「SNSで登録」ボタンは disabled にならない（遷移先 OAuthSignUpDialog で disabled になる）', () => {
       renderDialog()
-      const snsBtn = screen.getByRole('button', { name: 'SNSで登録' })
+      const snsBtn = screen.getByRole('button', { name: 'SNSアカウントで登録' })
       expect(snsBtn).toBeEnabled()
       expect(snsBtn).not.toHaveAttribute('aria-disabled', 'true')
     })
@@ -93,7 +93,7 @@ describe('SignUpMethodDialog', () => {
     it('OAuth 無効時でも「SNSで登録」クリックで onChooseSns が呼ばれる', async () => {
       const onChooseSns = vi.fn()
       renderDialog({ onChooseSns })
-      await userEvent.click(screen.getByRole('button', { name: 'SNSで登録' }))
+      await userEvent.click(screen.getByRole('button', { name: 'SNSアカウントで登録' }))
       expect(onChooseSns).toHaveBeenCalledOnce()
     })
   })
