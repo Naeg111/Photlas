@@ -40,8 +40,9 @@ class OAuth2SecurityConfigDisabledTest {
     @Test
     @DisplayName("OAuth 無効時は OAuth2SecurityConfig Bean が存在しない")
     void oauthDisabled_configBeanNotLoaded() {
-        // @Configuration クラスは Spring 規約でクラス名の先頭を lowerCamel にした名前で登録される
-        assertThat(ctx.containsBean("oAuth2SecurityConfig")).isFalse();
+        // Spring の Bean 名生成規則: 先頭 2 文字が連続で大文字の場合は decapitalize されないため
+        // "OAuth2SecurityConfig" はそのままの名前で登録される（無効時は不在）
+        assertThat(ctx.containsBean("OAuth2SecurityConfig")).isFalse();
     }
 
     @Test
