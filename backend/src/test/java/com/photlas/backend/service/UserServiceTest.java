@@ -302,7 +302,7 @@ public class UserServiceTest {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(WRONG_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(false);
 
-        assertThatThrownBy(() -> accountService.deleteAccount(TEST_EMAIL, WRONG_PASSWORD))
+        assertThatThrownBy(() -> accountService.deleteAccount(TEST_EMAIL, WRONG_PASSWORD, false))
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessageContaining("パスワードが正しくありません");
     }
@@ -378,7 +378,7 @@ public class UserServiceTest {
         when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
 
         verify(userRepository, never()).delete(any(User.class));
         verify(userRepository).save(argThat(u -> u.getDeletedAt() != null));
@@ -392,7 +392,7 @@ public class UserServiceTest {
         when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
 
         verify(userRepository).save(argThat(u ->
                 TEST_USERNAME.equals(u.getOriginalUsername()) &&
@@ -454,7 +454,7 @@ public class UserServiceTest {
         when(spotRepository.findByCreatedByUserId(1L)).thenReturn(java.util.List.of(spot));
         when(photoRepository.findOldestActiveUserBySpotExcluding(100L, 1L)).thenReturn(Optional.of(otherUser));
 
-        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
 
         assertThat(spot.getCreatedByUserId()).isEqualTo(2L);
     }
@@ -471,7 +471,7 @@ public class UserServiceTest {
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
 
         // Assert: 元のユーザー名と90日間保持の案内を含むメールが送信されること
         verify(emailService).send(
@@ -492,7 +492,7 @@ public class UserServiceTest {
         doThrow(new RuntimeException("SMTP error")).when(emailService).send(anyString(), anyString(), anyString());
 
         // Act - 例外がスローされないこと
-        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
 
         // Assert: 削除処理は完了していること
         verify(userRepository).save(argThat(u -> u.getDeletedAt() != null));
@@ -511,7 +511,7 @@ public class UserServiceTest {
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD);
+        accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
 
         // Assert: 英語のメールが送信されること
         verify(emailService).send(
@@ -541,6 +541,27 @@ public class UserServiceTest {
                 contains("Password Changed"),
                 argThat(body -> body.contains("Your account password has been changed"))
         );
+    }
+
+    // ===== Issue#81 Phase 4b: OAuth のみユーザーの退会（password_hash == null） =====
+
+    @Test
+    @DisplayName("[Issue#81 4-A-T4] OAuth のみユーザーの退会: passwordEncoder.matches() は呼ばれず confirmationChecked=true で削除成功")
+    void testDeleteAccount_OAuthOnlyUser_SkipsPasswordValidation() {
+        // Arrange: password_hash == null の OAuth のみユーザー
+        User oauthOnlyUser = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        oauthOnlyUser.setPasswordHash(null);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(oauthOnlyUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act: password=null, confirmationChecked=true で退会
+        accountService.deleteAccount(TEST_EMAIL, null, true);
+
+        // Assert:
+        //   - passwordEncoder.matches() は一度も呼ばれていない（password=null のため）
+        //   - deleted_at が設定されて save される
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
+        verify(userRepository).save(argThat(u -> u.getDeletedAt() != null));
     }
 
     // ===== updateProfileのSNSリンク非更新 (ProfileService.updateProfile) =====
