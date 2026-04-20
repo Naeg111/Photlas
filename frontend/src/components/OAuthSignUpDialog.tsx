@@ -87,14 +87,15 @@ export default function OAuthSignUpDialog({
                 </label>
               </div>
 
-              {/* ログインリンク */}
+              {/* ログインリンク（SignUpDialog と同じパターン: テキスト + link Button） */}
               <div className="text-center text-sm text-gray-600 mb-7">
+                {t('auth.hasAccount')}
                 <Button
                   variant="link"
-                  className="p-0 h-auto"
+                  className="p-0 h-auto ml-1"
                   onClick={onShowLogin}
                 >
-                  {t('auth.oauth.snsSignUp.hasAccount')}
+                  {t('common.login')}
                 </Button>
               </div>
 

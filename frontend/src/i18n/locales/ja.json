@@ -117,15 +117,14 @@
       "chooseMethod": {
         "title": "アカウント作成方法を選択",
         "description": "新規登録方法を選んでください。",
-        "sns": "SNSで登録",
+        "sns": "SNSアカウントで登録",
         "email": "メールアドレスで登録"
       },
       "snsSignUp": {
-        "title": "SNSで新規登録",
+        "title": "SNSアカウントで新規登録",
         "description": "SNSアカウントで Photlas に新規登録します。",
         "agreeToTerms": "利用規約に同意する",
-        "agreeToTermsRequired": "利用規約に同意すると SNS 登録ボタンが有効になります。",
-        "hasAccount": "すでにアカウントをお持ちの方はログイン"
+        "agreeToTermsRequired": "利用規約に同意すると SNS 登録ボタンが有効になります。"
       }
     }
   },

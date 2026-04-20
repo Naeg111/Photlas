@@ -33,7 +33,7 @@ describe('OAuthSignUpDialog', () => {
 
   it('タイトルと説明文を表示する', () => {
     renderDialog()
-    expect(screen.getByText('SNSで新規登録')).toBeInTheDocument()
+    expect(screen.getByText('SNSアカウントで新規登録')).toBeInTheDocument()
     // 説明文は sr-only な DialogDescription と可視の <p> の 2 箇所に現れる（PasswordResetRequestModal と同じ構造）
     expect(screen.getAllByText('SNSアカウントで Photlas に新規登録します。').length).toBeGreaterThan(0)
   })
@@ -67,13 +67,14 @@ describe('OAuthSignUpDialog', () => {
     expect(onShowTerms).toHaveBeenCalled()
   })
 
-  it('「すでにアカウントをお持ちの方はログイン」リンクで onShowLogin が呼ばれる', async () => {
+  it('「ログイン」リンクで onShowLogin が呼ばれる（SignUpDialog と同じ文字列/構造）', async () => {
     const onShowLogin = vi.fn()
     renderDialog({ onShowLogin })
 
-    await userEvent.click(
-      screen.getByRole('button', { name: 'すでにアカウントをお持ちの方はログイン' })
-    )
+    // 前置きテキスト "すでにアカウントをお持ちの方は" と分離し、
+    // リンク／ホバー下線はボタンの "ログイン" 部分のみに適用される（SignUpDialog と統一）
+    expect(screen.getByText('すでにアカウントをお持ちの方は')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'ログイン' }))
     expect(onShowLogin).toHaveBeenCalled()
   })
 
@@ -102,6 +103,6 @@ describe('OAuthSignUpDialog', () => {
         onShowTerms={vi.fn()}
       />
     )
-    expect(screen.queryByText('SNSで新規登録')).not.toBeInTheDocument()
+    expect(screen.queryByText('SNSアカウントで新規登録')).not.toBeInTheDocument()
   })
 })

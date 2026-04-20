@@ -124,8 +124,7 @@
         "title": "Sign up with SNS",
         "description": "Create a Photlas account using your SNS account.",
         "agreeToTerms": "I agree to the Terms of Service",
-        "agreeToTermsRequired": "Agree to the Terms of Service to enable SNS sign-up.",
-        "hasAccount": "Already have an account? Log in"
+        "agreeToTermsRequired": "Agree to the Terms of Service to enable SNS sign-up."
       }
     }
   },
