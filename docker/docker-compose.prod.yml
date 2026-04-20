@@ -41,10 +41,13 @@ services:
       - MODERATION_API_KEY=${MODERATION_API_KEY}
       - APP_FRONTEND_URL=https://photlas.jp
       # Issue#81: OAuth 2.0 Client credentials (Google / LINE) + access_token 暗号化鍵
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - LINE_CLIENT_ID=${LINE_CLIENT_ID:-}
-      - LINE_CLIENT_SECRET=${LINE_CLIENT_SECRET:-}
+      # Hotfix: Spring Boot の ${VAR:default} は VAR が空文字だと default を使わないため、
+      # docker-compose 側で非空プレースホルダーをデフォルトに設定する。
+      # 実 OAuth 利用時はホスト env var で上書き。
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-placeholder-google-id}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-placeholder-google-secret}
+      - LINE_CLIENT_ID=${LINE_CLIENT_ID:-placeholder-line-id}
+      - LINE_CLIENT_SECRET=${LINE_CLIENT_SECRET:-placeholder-line-secret}
       - OAUTH_ENCRYPTION_KEY_BASE64=${OAUTH_ENCRYPTION_KEY_BASE64:-}
     networks:
       - photlas-network
