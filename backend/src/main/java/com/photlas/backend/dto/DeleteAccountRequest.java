@@ -1,19 +1,25 @@
 package com.photlas.backend.dto;
 
-import jakarta.validation.constraints.*;
+import com.photlas.backend.validation.ValidDeleteAccountRequest;
 
 /**
  * Issue#20: アカウント設定機能 - アカウント削除リクエスト
- * Issue#81 Phase 4a: OAuth のみユーザー対応のため {@code confirmationChecked} を追加。
- * クラスレベルの妥当性は {@code @ValidDeleteAccountRequest}（Green 段階で付与）に委ねる。
+ * Issue#81 Phase 4a: OAuth のみユーザー対応のため {@code confirmationChecked} を追加、
+ * {@code password} の {@code @NotNull} を除去。クラスレベル複合バリデーションは
+ * {@link ValidDeleteAccountRequest} が current user の {@code password_hash} 有無に応じて分岐する。
  */
+@ValidDeleteAccountRequest
 public class DeleteAccountRequest {
-    @NotNull(message = "パスワードは必須です")
+
+    /**
+     * 通常 / ハイブリッドユーザーの退会パスワード。OAuth のみユーザーでは null 必須。
+     * バリデーションは {@code @ValidDeleteAccountRequest} が行う。
+     */
     private String password;
 
     /**
      * OAuth のみユーザー（password_hash == null）向けの退会確認チェックボックス。
-     * 通常/ハイブリッドユーザーでは使用しない。
+     * 通常 / ハイブリッドユーザーでは使用しない。
      */
     private Boolean confirmationChecked;
 
