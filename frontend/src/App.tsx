@@ -21,6 +21,9 @@ import { TopMenuPanel } from './components/TopMenuPanel'
 import { LoginRequiredDialog } from './components/LoginRequiredDialog'
 import { LoginDialog } from './components/LoginDialog'
 import { SignUpDialog } from './components/SignUpDialog'
+import SignUpMethodChooseDialog from './components/SignUpMethodChooseDialog'
+import SignUpSnsLoginDialog from './components/SignUpSnsLoginDialog'
+import { isOAuthEnabled } from './utils/oauthEnabled'
 import { TermsOfServicePage } from './components/TermsOfServicePage'
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage'
 import PasswordResetRequestModal from './components/PasswordResetRequestModal'
@@ -348,6 +351,20 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     toast('ログアウトしました')
   }
 
+  /**
+   * Issue#81 Phase 8g: 新規登録ボタン共通ハンドラ。
+   *
+   * OAuth 有効時 → SignUpMethodChooseDialog（SNS / メールの選択画面）
+   * OAuth 無効時 → 従来通り SignUpDialog（メール登録フォーム）を直接開く
+   */
+  const handleSignUpClick = () => {
+    if (isOAuthEnabled()) {
+      dialog.open('signUpMethodChoose')
+    } else {
+      dialog.open('signUp')
+    }
+  }
+
   // マイページハンドラー
   const handleShowProfile = () => {
     setViewingUser(null)
@@ -582,7 +599,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         onTermsClick={() => dialog.open('terms')}
         onPrivacyClick={() => dialog.open('privacy')}
         onLoginClick={() => dialog.open('login')}
-        onSignUpClick={() => dialog.open('signUp')}
+        onSignUpClick={handleSignUpClick}
         onLogout={handleLogout}
       />
 
@@ -591,19 +608,55 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
       <LoginRequiredDialog
         {...dialog.getProps('loginRequired')}
         onShowLogin={() => dialog.open('login')}
-        onShowSignUp={() => dialog.open('signUp')}
+        onShowSignUp={handleSignUpClick}
       />
 
       <LoginDialog
         {...dialog.getProps('login')}
-        onShowSignUp={() => dialog.open('signUp')}
+        onShowSignUp={handleSignUpClick}
         onShowPasswordReset={() => dialog.open('passwordReset')}
+      />
+
+      {/* Issue#81 Phase 8g: 新規登録方法選択（OAuth 有効時のみ実質開く） */}
+      <SignUpMethodChooseDialog
+        {...dialog.getProps('signUpMethodChoose')}
+        onChooseSns={() => {
+          dialog.close('signUpMethodChoose')
+          dialog.open('signUpSnsLogin')
+        }}
+        onChooseEmail={() => {
+          dialog.close('signUpMethodChoose')
+          dialog.open('signUp')
+        }}
+      />
+
+      {/* Issue#81 Phase 8g: SNS 新規登録 */}
+      <SignUpSnsLoginDialog
+        {...dialog.getProps('signUpSnsLogin')}
+        onBack={() => {
+          dialog.close('signUpSnsLogin')
+          dialog.open('signUpMethodChoose')
+        }}
+        onShowLogin={() => {
+          dialog.close('signUpSnsLogin')
+          dialog.open('login')
+        }}
+        onShowTerms={() => dialog.open('terms')}
       />
 
       <SignUpDialog
         {...dialog.getProps('signUp')}
         onShowTerms={() => dialog.open('terms')}
         onShowLogin={() => dialog.open('login')}
+        onBack={
+          // Issue#81 Phase 8e/8g: OAuth 有効時は「キャンセル」で Method Choose に戻る
+          isOAuthEnabled()
+            ? () => {
+                dialog.close('signUp')
+                dialog.open('signUpMethodChoose')
+              }
+            : undefined
+        }
       />
 
       <TermsOfServicePage {...dialog.getProps('terms')} />

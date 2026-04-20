@@ -112,6 +112,19 @@
         "description": "We recommend setting a password so you can sign in even if {{provider}} becomes unavailable.",
         "cta": "Set password",
         "dismiss": "Dismiss"
+      },
+      "chooseMethod": {
+        "title": "Choose sign-up method",
+        "description": "Please choose how you'd like to sign up.",
+        "sns": "Sign up with SNS",
+        "email": "Sign up with email"
+      },
+      "snsSignUp": {
+        "title": "Sign up with SNS",
+        "description": "Create a Photlas account using your SNS account.",
+        "agreeToTerms": "I agree to the Terms of Service",
+        "agreeToTermsRequired": "Agree to the Terms of Service to enable SNS sign-up.",
+        "hasAccount": "Already have an account? Log in"
       }
     }
   },
