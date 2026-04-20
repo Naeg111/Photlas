@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.dto.OAuthConnectionResponse;
 import com.photlas.backend.dto.UpdateProfileRequest;
 import com.photlas.backend.dto.UpdateProfileImageRequest;
 import com.photlas.backend.dto.UpdateProfileImageResponse;
@@ -10,9 +11,12 @@ import com.photlas.backend.dto.UpdateUsernameResponse;
 import com.photlas.backend.dto.UploadUrlRequest;
 import com.photlas.backend.dto.UploadUrlResponse;
 import com.photlas.backend.dto.UserProfileResponse;
+import com.photlas.backend.entity.OAuthProvider;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.entity.UserOAuthConnection;
 import com.photlas.backend.entity.UserSnsLink;
 import com.photlas.backend.exception.UnauthorizedException;
+import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.PhotoService;
 import com.photlas.backend.service.ProfileService;
@@ -43,16 +47,19 @@ public class ProfileController {
     private final PhotoService photoService;
     private final S3Service s3Service;
     private final UserRepository userRepository;
+    private final UserOAuthConnectionRepository userOAuthConnectionRepository;
 
     public ProfileController(
             ProfileService profileService,
             PhotoService photoService,
             S3Service s3Service,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            UserOAuthConnectionRepository userOAuthConnectionRepository) {
         this.profileService = profileService;
         this.photoService = photoService;
         this.s3Service = s3Service;
         this.userRepository = userRepository;
+        this.userOAuthConnectionRepository = userOAuthConnectionRepository;
     }
 
     /**
@@ -164,6 +171,29 @@ public class ProfileController {
         String email = authentication.getName();
         String username = profileService.updateUsername(email, request.getUsername());
         return ResponseEntity.ok(new UpdateUsernameResponse(username));
+    }
+
+    /**
+     * Issue#81 Phase 4h: OAuth 連携一覧取得
+     * GET /api/v1/users/me/oauth-connections
+     *
+     * <p>ログイン中ユーザーの OAuth 連携情報を返す（認証必須）。
+     * email / providerUserId 等 PII はレスポンスに含めず、プロバイダ名と作成日時のみ。
+     */
+    @GetMapping("/me/oauth-connections")
+    public ResponseEntity<OAuthConnectionResponse> getOAuthConnections(Authentication authentication) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        List<UserOAuthConnection> connections = userOAuthConnectionRepository.findByUserId(user.getId());
+        List<OAuthConnectionResponse.Connection> items = connections.stream()
+                .map(c -> OAuthConnectionResponse.Connection.of(
+                        OAuthProvider.fromCode(c.getProviderCode()),
+                        c.getCreatedAt()))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new OAuthConnectionResponse(items));
     }
 
     /**

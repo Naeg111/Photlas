@@ -631,6 +631,38 @@ public class UserServiceTest {
         verify(userRepository).save(argThat(u -> u.getDeletedAt() != null));
     }
 
+    // ===== Issue#81 Phase 4h: changeEmail / updateUsername の OAuth 対応 =====
+
+    @Test
+    @DisplayName("[Issue#81 4h] requestEmailChange: OAuth のみユーザー (password_hash == null) は OAUTH_USER_EMAIL_CHANGE_FORBIDDEN で拒否")
+    void testRequestEmailChange_OAuthOnlyUser_Rejected() {
+        User oauthOnly = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        oauthOnly.setPasswordHash(null);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(oauthOnly));
+
+        assertThatThrownBy(() ->
+                accountService.requestEmailChange(TEST_EMAIL, "new@example.com", null))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessageContaining("メールアドレスを変更できません");
+
+        verify(passwordEncoder, never()).matches(anyString(), isNull());
+        verify(emailService, never()).send(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("[Issue#81 4h] updateUsername: 成功時に usernameTemporary が false に更新される")
+    void testUpdateUsername_ClearsUsernameTemporary() {
+        User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        user.setUsernameTemporary(true);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        profileService.updateUsername(TEST_EMAIL, "confirmed_name");
+
+        verify(userRepository).save(argThat(u ->
+                "confirmed_name".equals(u.getUsername()) && !u.isUsernameTemporary()));
+    }
+
     // ===== Issue#81 Phase 4d: 退会メール 3 パターン × 2 言語 + revoke 統合 =====
 
     /**
