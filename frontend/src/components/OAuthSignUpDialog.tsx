@@ -53,8 +53,8 @@ export default function OAuthSignUpDialog({
 
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-6 pb-6">
-          <div className="mt-4">
-            <p className="mb-4 text-black">{t('auth.oauth.snsSignUp.description')}</p>
+          <div className="mt-2">
+            <p className="mb-6 text-black">{t('auth.oauth.snsSignUp.description')}</p>
             <div className="space-y-4">
               {/* SNS ボタン: 利用規約未同意または OAuth 無効時は disabled */}
               <OAuthButtons

@@ -46,8 +46,8 @@ export default function SignUpMethodDialog({
 
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-6 pb-6">
-          <div className="mt-4">
-            <p className="mb-4 text-black">{t('auth.oauth.chooseMethod.description')}</p>
+          <div className="mt-2">
+            <p className="mb-6 text-black">{t('auth.oauth.chooseMethod.description')}</p>
             {/* Q1: 両方同じスタイル（優先なし） */}
             <div className="flex flex-col gap-3">
               <Button
