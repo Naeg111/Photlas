@@ -26,6 +26,8 @@ interface OAuthButtonsProps {
   disabled?: boolean
   /** true で「または」区切り線を描画しない。LoginDialog は外側で {@code <hr>} を使う。 */
   hideDivider?: boolean
+  /** 外側コンテナに追加するクラス（呼び出し側で下マージン等を調整する用） */
+  className?: string
 }
 
 export default function OAuthButtons({
@@ -33,6 +35,7 @@ export default function OAuthButtons({
   enabled,
   disabled = false,
   hideDivider = false,
+  className,
 }: OAuthButtonsProps) {
   const { t } = useTranslation()
   const oauthEnabled = enabled ?? isOAuthEnabled()
@@ -53,7 +56,7 @@ export default function OAuthButtons({
     : t('auth.oauth.signInWithLine')
 
   return (
-    <div className="space-y-2">
+    <div className={className ? `space-y-2 ${className}` : 'space-y-2'}>
       {!hideDivider && (
         <div className="flex items-center gap-3 my-2">
           <div className="flex-1 h-px bg-gray-200" />
