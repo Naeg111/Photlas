@@ -5,6 +5,7 @@ import com.photlas.backend.entity.UserOAuthConnection;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.util.OAuthTokenEncryptor;
 import com.photlas.backend.util.SecurityAuditLogger;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
  * 非同期実行（{@code @Async("taskExecutor")}）でレスポンスをブロックしない。
  */
 @Service
+@ConditionalOnProperty(name = "photlas.oauth.enabled", havingValue = "true")
 public class OAuthTokenRevokeService {
 
     private final UserOAuthConnectionRepository userOAuthConnectionRepository;

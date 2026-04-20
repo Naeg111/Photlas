@@ -2,6 +2,7 @@ package com.photlas.backend.service;
 
 import com.photlas.backend.entity.OAuthProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,7 @@ import java.time.Duration;
  * </ul>
  */
 @Component
+@ConditionalOnProperty(name = "photlas.oauth.enabled", havingValue = "true")
 public class HttpOAuthProviderRevokeClient implements OAuthProviderRevokeClient {
 
     private static final String GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke";

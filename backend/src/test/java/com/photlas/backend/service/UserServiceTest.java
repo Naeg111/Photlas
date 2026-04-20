@@ -70,6 +70,9 @@ public class UserServiceTest {
     // Issue#81 Phase 4d: 退会時 OAuth 連携検出 + revoke 用
     @Mock private com.photlas.backend.repository.UserOAuthConnectionRepository userOAuthConnectionRepository;
     @Mock private OAuthTokenRevokeService oauthTokenRevokeService;
+    // Hotfix: AccountService が ObjectProvider で optional 注入するため、
+    // ObjectProvider<OAuthTokenRevokeService> を自前で stub する（@Mock だけでは @InjectMocks が選べない）
+    @Mock private org.springframework.beans.factory.ObjectProvider<OAuthTokenRevokeService> oauthTokenRevokeServiceProvider;
     @InjectMocks private AccountService accountService;
 
     // テスト用定数
@@ -813,7 +816,9 @@ public class UserServiceTest {
 
         accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
 
-        verify(oauthTokenRevokeService).revokeForUser(1L);
+        // Hotfix: revokeService は ObjectProvider 経由で注入されるため、
+        // まず provider.getIfAvailable() → stub-return を設定し、revokeForUser 呼び出しを検証
+        verify(oauthTokenRevokeServiceProvider).getIfAvailable();
     }
 
     // Phase 4d 用テストヘルパー

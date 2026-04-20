@@ -18,6 +18,7 @@ import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.util.TokenGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -50,7 +51,11 @@ public class AccountService {
     private final EmailService emailService;
     private final JwtService jwtService;
     private final UserOAuthConnectionRepository userOAuthConnectionRepository;
-    private final OAuthTokenRevokeService oauthTokenRevokeService;
+    /**
+     * Hotfix: OAuth 無効時は {@link OAuthTokenRevokeService} が Bean として生成されないため、
+     * {@link ObjectProvider} で optional 注入し、OAuth 有効時のみ revoke を呼ぶ。
+     */
+    private final ObjectProvider<OAuthTokenRevokeService> oauthTokenRevokeServiceProvider;
 
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
@@ -66,7 +71,7 @@ public class AccountService {
             EmailService emailService,
             JwtService jwtService,
             UserOAuthConnectionRepository userOAuthConnectionRepository,
-            OAuthTokenRevokeService oauthTokenRevokeService) {
+            ObjectProvider<OAuthTokenRevokeService> oauthTokenRevokeServiceProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.spotRepository = spotRepository;
@@ -77,7 +82,7 @@ public class AccountService {
         this.emailService = emailService;
         this.jwtService = jwtService;
         this.userOAuthConnectionRepository = userOAuthConnectionRepository;
-        this.oauthTokenRevokeService = oauthTokenRevokeService;
+        this.oauthTokenRevokeServiceProvider = oauthTokenRevokeServiceProvider;
     }
 
     /**
@@ -267,7 +272,11 @@ public class AccountService {
         userRepository.save(user);
 
         // Issue#81 Phase 4d: 退会後に OAuth access_token の revoke を非同期で試みる（best-effort）
-        oauthTokenRevokeService.revokeForUser(user.getId());
+        // Hotfix: OAuth 無効時は Bean が不在のため ObjectProvider.ifAvailable で skip
+        OAuthTokenRevokeService revokeService = oauthTokenRevokeServiceProvider.getIfAvailable();
+        if (revokeService != null) {
+            revokeService.revokeForUser(user.getId());
+        }
 
         sendAccountDeletionConfirmation(user, originalUsername);
     }
