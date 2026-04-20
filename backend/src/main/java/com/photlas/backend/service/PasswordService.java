@@ -3,6 +3,7 @@ package com.photlas.backend.service;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
@@ -118,6 +119,36 @@ public class PasswordService {
     }
 
     /**
+     * Issue#81 Phase 4e: OAuth のみユーザー向けの初回パスワード設定。
+     *
+     * <p>password_hash が null のユーザーが任意でパスワードを追加するときに使う。
+     * 成功時は {@code password_recommendation_dismissed_at} を NULL に明示リセット
+     * （Round 12 / Q8、将来の条件変更に備えて明示クリア）。
+     *
+     * @param email       対象ユーザーのメールアドレス
+     * @param newPassword 新しく設定するパスワード
+     * @throws UnauthorizedException ユーザーが存在しない場合
+     * @throws ConflictException     既に password_hash が設定されている場合
+     */
+    @Transactional
+    public void setInitialPassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        if (user.getPasswordHash() != null) {
+            throw new ConflictException("パスワードは既に設定されています。変更するには updatePassword を使用してください。");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        // Round 12 / Q8: password_hash != null となりバナー表示条件を満たさなくなるが、
+        // 将来の条件変更に備えて dismissed_at を明示クリア
+        user.setPasswordRecommendationDismissedAt(null);
+        userRepository.save(user);
+
+        sendPasswordChangedNotification(email, user.getUsername(), user.getLanguage());
+    }
+
+    /**
      * パスワード変更
      *
      * @param email ログイン中ユーザーのメールアドレス
@@ -128,6 +159,12 @@ public class PasswordService {
     public void updatePassword(String email, String currentPassword, String newPassword) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        // Issue#81 Phase 4e: OAuth のみユーザー (password_hash == null) は updatePassword 不可。
+        // setInitialPassword を使うよう案内する専用エラー。
+        if (user.getPasswordHash() == null) {
+            throw new UnauthorizedException("パスワード未設定のアカウントです。初回パスワード設定を使用してください。");
+        }
 
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
             throw new UnauthorizedException("現在のパスワードが正しくありません");
