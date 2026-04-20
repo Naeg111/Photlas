@@ -345,13 +345,14 @@ export function SignUpDialog({
             {errors.password && (
               <p className="text-sm text-red-600">{errors.password}</p>
             )}
+            <p className="text-xs text-gray-500">{t('auth.passwordFormatHint')}</p>
             <div className="relative">
               <Input
                 id="signup-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={t('auth.passwordFormatHint')}
+                placeholder={t('auth.passwordExample')}
               />
               <Button
                 variant="ghost"

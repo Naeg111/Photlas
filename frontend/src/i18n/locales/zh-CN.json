@@ -52,6 +52,7 @@
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "密码（必填）",
     "passwordFormatHint": "半角字母数字 8-20 位（含大写字母·小写字母·数字各 1 位以上）",
+    "passwordExample": "例：Abcde123",
     "passwordStrength": "强度：",
     "strengthStrong": "强",
     "strengthMedium": "中",

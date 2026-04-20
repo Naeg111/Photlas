@@ -53,6 +53,7 @@
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "Password (required)",
     "passwordFormatHint": "8-20 ASCII chars; include a digit, a lowercase and an uppercase letter",
+    "passwordExample": "e.g. Abcde123",
     "passwordStrength": "Strength:",
     "strengthStrong": "Strong",
     "strengthMedium": "Medium",
