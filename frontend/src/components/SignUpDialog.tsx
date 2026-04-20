@@ -8,7 +8,6 @@ import { Checkbox } from './ui/checkbox'
 import { Separator } from './ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import ProfileImageCropper from './ProfileImageCropper'
-import OAuthButtons from './OAuthButtons'
 import { Upload, Eye, EyeOff } from 'lucide-react'
 import { SnsLinkEditDialog } from './SnsLinkEditDialog'
 import { API_V1_URL } from '../config/api'
@@ -44,6 +43,11 @@ interface SignUpDialogProps {
   onOpenChange: (open: boolean) => void
   onShowTerms: () => void
   onShowLogin: () => void
+  /**
+   * Issue#81 Phase 8e: キャンセルクリック時のコールバック（SignUpMethodChooseDialog に戻る等）。
+   * 省略時は従来通り onOpenChange(false) で単純に閉じる。
+   */
+  onBack?: () => void
 }
 
 export function SignUpDialog({
@@ -51,6 +55,7 @@ export function SignUpDialog({
   onOpenChange,
   onShowTerms,
   onShowLogin,
+  onBack,
 }: Readonly<SignUpDialogProps>) {
   const { t } = useTranslation()
   const [profileImage, setProfileImage] = useState<string>('')
@@ -230,6 +235,11 @@ export function SignUpDialog({
   }
 
   const handleCancelClick = () => {
+    // Issue#81 Phase 8e: onBack 指定時は親のダイアログ切替に委ね、onOpenChange(false) は呼ばない
+    if (onBack) {
+      onBack()
+      return
+    }
     onOpenChange(false)
   }
 
@@ -474,8 +484,7 @@ export function SignUpDialog({
             </Button>
           </div>
 
-          {/* Issue#81 Phase 5b: OAuth 新規登録ボタン */}
-          <OAuthButtons variant="signUp" />
+          {/* Issue#81 Phase 8e: OAuth 新規登録ボタンは SignUpSnsLoginDialog に分離したため削除 */}
         </div>
 
         {/* プロフィール画像トリミングモーダル */}

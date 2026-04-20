@@ -823,4 +823,40 @@ describe('SignUpDialog', () => {
       })
     })
   })
+
+  // ---------- Phase 8e: OAuth ボタン削除 + onBack props ----------
+
+  describe('Phase 8e - OAuth ボタン削除 + キャンセルで Method Choose に戻る', () => {
+    it('OAuthButtons（SNS登録ボタン）が表示されない', () => {
+      render(<SignUpDialog {...defaultProps} />)
+      expect(screen.queryByRole('button', { name: 'Google で新規登録' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'LINE で新規登録' })).not.toBeInTheDocument()
+    })
+
+    it('OAuth の「または」区切り線も表示されない', () => {
+      render(<SignUpDialog {...defaultProps} />)
+      expect(screen.queryByText('または')).not.toBeInTheDocument()
+    })
+
+    it('onBack prop があるとき、キャンセルボタンクリックで onBack が呼ばれる', async () => {
+      const user = userEvent.setup()
+      const onBack = vi.fn()
+      render(<SignUpDialog {...defaultProps} onBack={onBack} />)
+
+      await user.click(screen.getByRole('button', { name: 'キャンセル' }))
+
+      expect(onBack).toHaveBeenCalled()
+      // onBack 優先時は onOpenChange(false) は呼ばない（親で dialog 切替を制御）
+      expect(defaultProps.onOpenChange).not.toHaveBeenCalledWith(false)
+    })
+
+    it('onBack prop が無いとき（既存挙動）は従来通り onOpenChange(false) が呼ばれる', async () => {
+      const user = userEvent.setup()
+      render(<SignUpDialog {...defaultProps} />)
+
+      await user.click(screen.getByRole('button', { name: 'キャンセル' }))
+
+      expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
+    })
+  })
 })
