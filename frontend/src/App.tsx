@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
+import PasswordRecommendationBanner from './components/PasswordRecommendationBanner'
 import NotFoundPage from './pages/NotFoundPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
 import AdminModerationPage from './pages/AdminModerationPage'
@@ -757,6 +758,8 @@ function MainApp() {
       <AnimatePresence>
         {isLoading && <SplashScreen />}
       </AnimatePresence>
+      {/* Issue#81 Phase 5e: OAuth のみユーザー向けパスワード設定推奨バナー */}
+      <PasswordRecommendationBanner />
       <MainContent onMapReady={handleMapReady} />
       <Toaster />
     </>

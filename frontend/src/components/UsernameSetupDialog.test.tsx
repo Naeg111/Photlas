@@ -27,9 +27,11 @@ describe('UsernameSetupDialog', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     global.fetch = mockFetch
-    // 認証済み状態をシミュレート（AuthProvider の useEffect 用）
+    // 認証済み状態をシミュレート（JWT の exp は 2033 年、AuthProvider の期限チェックを通過）
+    const validJwt =
+      'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhQGIuY29tIiwiZXhwIjoyMDAwMDAwMDAwfQ.jwt.test.value'
     ;(localStorage.getItem as ReturnType<typeof vi.fn>).mockImplementation((key: string) => {
-      if (key === 'auth_token') return 'jwt.test.value'
+      if (key === 'auth_token') return validJwt
       if (key === 'auth_user')
         return JSON.stringify({
           userId: 1,
@@ -74,7 +76,7 @@ describe('UsernameSetupDialog', () => {
     expect(url).toContain('/users/me/username')
     expect(options.method).toBe('PUT')
     // fetchJson は Headers オブジェクトを使う
-    expect((options.headers as Headers).get('Authorization')).toBe('Bearer jwt.test.value')
+    expect((options.headers as Headers).get('Authorization')).toMatch(/^Bearer /)
     expect(JSON.parse(options.body)).toEqual({ username: 'alice' })
 
     await waitFor(() => {
