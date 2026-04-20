@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SignUpMethodDialog from './SignUpMethodDialog'
@@ -25,18 +25,18 @@ describe('SignUpMethodDialog', () => {
     expect(screen.getByText('新規登録方法を選んでください。')).toBeInTheDocument()
   })
 
-  it('「SNSログインで登録」と「メールアドレスで登録」の 2 つのボタンを表示する', () => {
+  it('[Phase 8r-4 Q6] 「SNSで登録」と「メールアドレスで登録」の 2 つのボタンを表示する', () => {
     renderDialog()
-    expect(screen.getByRole('button', { name: 'SNSログインで登録' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'SNSで登録' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'メールアドレスで登録' })).toBeInTheDocument()
   })
 
-  it('「SNSログインで登録」クリックで onChooseSns が呼ばれる', async () => {
+  it('[Phase 8r-4 Q6] 「SNSで登録」クリックで onChooseSns が呼ばれる', async () => {
     const onChooseSns = vi.fn()
     const onChooseEmail = vi.fn()
     renderDialog({ onChooseSns, onChooseEmail })
 
-    await userEvent.click(screen.getByRole('button', { name: 'SNSログインで登録' }))
+    await userEvent.click(screen.getByRole('button', { name: 'SNSで登録' }))
 
     expect(onChooseSns).toHaveBeenCalledOnce()
     expect(onChooseEmail).not.toHaveBeenCalled()
@@ -72,5 +72,28 @@ describe('SignUpMethodDialog', () => {
     const closeBtn = screen.getByRole('button', { name: /close/i })
     await userEvent.click(closeBtn)
     expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  describe('[Phase 8r-4 Q7] OAuth 無効環境でも SNS ボタンは活性', () => {
+    beforeEach(() => {
+      vi.stubEnv('VITE_OAUTH_ENABLED', 'false')
+    })
+    afterEach(() => {
+      vi.unstubAllEnvs()
+    })
+
+    it('OAuth 無効時でも「SNSで登録」ボタンは disabled にならない（遷移先 OAuthSignUpDialog で disabled になる）', () => {
+      renderDialog()
+      const snsBtn = screen.getByRole('button', { name: 'SNSで登録' })
+      expect(snsBtn).toBeEnabled()
+      expect(snsBtn).not.toHaveAttribute('aria-disabled', 'true')
+    })
+
+    it('OAuth 無効時でも「SNSで登録」クリックで onChooseSns が呼ばれる', async () => {
+      const onChooseSns = vi.fn()
+      renderDialog({ onChooseSns })
+      await userEvent.click(screen.getByRole('button', { name: 'SNSで登録' }))
+      expect(onChooseSns).toHaveBeenCalledOnce()
+    })
   })
 })
