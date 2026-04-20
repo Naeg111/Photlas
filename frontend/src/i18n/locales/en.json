@@ -42,7 +42,7 @@
     "resendLoading": "Sending...",
     "resendSuccess": "Verification email resent. Please check your inbox.",
     "resendFailed": "Failed to resend verification email",
-    "signupTitle": "Create Account",
+    "signupTitle": "Register a new account",
     "signupDescription": "Create a new account",
     "profileImage": "Profile Image (optional)",
     "selectImage": "Select Image",
@@ -117,14 +117,14 @@
       "chooseMethod": {
         "title": "Choose sign-up method",
         "description": "Please choose how you'd like to sign up.",
-        "sns": "Sign up with SNS",
+        "sns": "Sign up with a social account",
         "email": "Sign up with email"
       },
       "snsSignUp": {
-        "title": "Sign up with SNS",
-        "description": "Create a Photlas account using your SNS account.",
+        "title": "Sign up with a social account",
+        "description": "Register a new Photlas account using your social account.",
         "agreeToTerms": "I agree to the Terms of Service",
-        "agreeToTermsRequired": "Agree to the Terms of Service to enable SNS sign-up."
+        "agreeToTermsRequired": "Agree to the Terms of Service to enable the social sign-up buttons."
       }
     }
   },

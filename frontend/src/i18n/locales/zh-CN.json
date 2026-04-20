@@ -41,7 +41,7 @@
     "resendLoading": "发送中...",
     "resendSuccess": "验证邮件已重新发送，请查收邮箱。",
     "resendFailed": "验证邮件发送失败",
-    "signupTitle": "创建账户",
+    "signupTitle": "注册新账户",
     "signupDescription": "注册新账户",
     "profileImage": "头像（可选）",
     "selectImage": "选择图片",
@@ -79,7 +79,26 @@
     "loginRequiredDescription": "需要登录或注册账户",
     "loginRequiredMessage": "请登录或注册账户后使用此功能。",
     "createAccount": "创建账户",
-    "accountSuspended": "您的账户已被暂停，请联系客服。"
+    "accountSuspended": "您的账户已被暂停，请联系客服。",
+    "oauth": {
+      "signInWithGoogle": "使用 Google 登录",
+      "signInWithLine": "使用 LINE 登录",
+      "signUpWithGoogle": "使用 Google 注册",
+      "signUpWithLine": "使用 LINE 注册",
+      "dividerOr": "或",
+      "chooseMethod": {
+        "title": "选择注册方式",
+        "description": "请选择注册方式。",
+        "sns": "使用社交账号注册",
+        "email": "使用邮箱注册"
+      },
+      "snsSignUp": {
+        "title": "使用社交账号注册",
+        "description": "使用社交账号注册 Photlas 账户。",
+        "agreeToTerms": "同意服务条款",
+        "agreeToTermsRequired": "同意服务条款后，社交账号注册按钮将启用。"
+      }
+    }
   },
   "menu": {
     "title": "菜单",

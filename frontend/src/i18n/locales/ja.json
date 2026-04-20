@@ -42,7 +42,7 @@
     "resendLoading": "送信中...",
     "resendSuccess": "認証メールを再送信しました。メールをご確認ください。",
     "resendFailed": "認証メールの再送信に失敗しました",
-    "signupTitle": "アカウント作成",
+    "signupTitle": "アカウントを新規登録",
     "signupDescription": "新しいアカウントを作成する",
     "profileImage": "プロフィール画像（任意）",
     "selectImage": "画像を選択",

@@ -41,7 +41,7 @@
     "resendLoading": "寄送中...",
     "resendSuccess": "已重新寄送驗證信，請確認收件匣。",
     "resendFailed": "重新寄送驗證信失敗",
-    "signupTitle": "建立帳號",
+    "signupTitle": "註冊新帳號",
     "signupDescription": "建立新帳號",
     "profileImage": "個人頭像（選填）",
     "selectImage": "選擇圖片",
@@ -79,7 +79,26 @@
     "loginRequiredDescription": "需要登入或建立帳號",
     "loginRequiredMessage": "使用此功能需要先登入或建立帳號。",
     "createAccount": "建立帳號",
-    "accountSuspended": "您的帳號已被停用。請聯絡客服。"
+    "accountSuspended": "您的帳號已被停用。請聯絡客服。",
+    "oauth": {
+      "signInWithGoogle": "使用 Google 登入",
+      "signInWithLine": "使用 LINE 登入",
+      "signUpWithGoogle": "使用 Google 註冊",
+      "signUpWithLine": "使用 LINE 註冊",
+      "dividerOr": "或",
+      "chooseMethod": {
+        "title": "選擇註冊方式",
+        "description": "請選擇註冊方式。",
+        "sns": "使用社群帳號註冊",
+        "email": "使用電子郵件註冊"
+      },
+      "snsSignUp": {
+        "title": "使用社群帳號註冊",
+        "description": "使用社群帳號註冊 Photlas 帳號。",
+        "agreeToTerms": "同意服務條款",
+        "agreeToTermsRequired": "同意服務條款後，社群帳號註冊按鈕將啟用。"
+      }
+    }
   },
   "menu": {
     "title": "選單",

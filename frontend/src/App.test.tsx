@@ -436,7 +436,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       await user.click(emailBtn)
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント作成' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウントを新規登録' })).toBeInTheDocument()
       })
 
       // SignUpDialog 内のログインリンクをクリック
@@ -475,7 +475,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       await user.click(emailBtn)
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント作成' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウントを新規登録' })).toBeInTheDocument()
       })
 
       // 利用規約リンクをクリック

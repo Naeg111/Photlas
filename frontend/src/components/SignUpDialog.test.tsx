@@ -50,7 +50,7 @@ describe('SignUpDialog', () => {
       render(<SignUpDialog {...defaultProps} />)
 
       expect(screen.getByRole('dialog')).toBeInTheDocument()
-      expect(screen.getByText('アカウント作成')).toBeInTheDocument()
+      expect(screen.getByText('アカウントを新規登録')).toBeInTheDocument()
     })
 
     it('does not render dialog when open prop is false', () => {
