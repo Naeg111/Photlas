@@ -80,6 +80,18 @@ export function PrivacyContentJa() {
           </li>
           <li>エラー情報（外部サービス「Sentry」を通じて収集。全エラーの一部のみが送信されます）</li>
         </ul>
+
+        <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">（8）SNSログイン認証情報</h3>
+        <p className="text-sm text-gray-700 mb-1">
+          ユーザーが Google または LINE のアカウントで本サービスにログインした場合、各プロバイダから以下の情報を取得します。
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+          <li>Google：メールアドレス、氏名、Google ユーザーID（<code>sub</code> クレーム）</li>
+          <li>LINE：メールアドレス、表示名、LINE ユーザーID</li>
+        </ul>
+        <p className="text-sm text-gray-700 mt-1">
+          なお、Google または LINE 側で管理されている認証情報（パスワード等）は本サービスでは一切保持しません。
+        </p>
       </section>
 
       <section>
@@ -188,6 +200,27 @@ export function PrivacyContentJa() {
       </section>
 
       <section>
+        <h2 className="mb-3">第7条の2（SNSログインに関する情報の取得と取扱い）</h2>
+        <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+          <li>
+            本サービスでは、Google および LINE のアカウントによるログイン（以下「SNSログイン」）を提供しています。SNSログインを利用する場合、ユーザーは各プロバイダの認証画面においてメールアドレス等の情報を本サービスに提供することへ同意する必要があります。
+          </li>
+          <li>
+            取得した情報は、本サービスのアカウント作成および既存アカウントとの紐付けの目的にのみ使用します。Google 広告や LINE 広告等、プロバイダの広告目的には利用しません。
+          </li>
+          <li>
+            SNSログインに伴ってプロバイダから発行されるアクセストークンは、退会時にプロバイダ側のアクセス権を取り消す（revoke）目的でのみ短期間保持し、AES-256-GCM で暗号化した上で保存します。revoke 完了後は速やかに削除します。
+          </li>
+          <li>
+            ユーザーが退会した場合、SNSログインによって取得した情報および本サービス側で保持する OAuth 連携情報は、第11条に定めるアカウント削除時のデータ取り扱いに従って削除されます。退会処理の一環としてプロバイダ側のアクセス権を取り消す revoke リクエストを送信します。
+          </li>
+          <li>
+            SNSログインの利用にあたっては、各プロバイダのプライバシーポリシーも併せて適用されます。詳細は Google および LINE の公式プライバシーポリシーをご参照ください。
+          </li>
+        </ol>
+      </section>
+
+      <section>
         <h2 className="mb-3">第8条（コンテンツの自動審査）</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
           <li>
@@ -214,6 +247,9 @@ export function PrivacyContentJa() {
               <li>ログイン時に「ログインを記憶する」を選択した場合：localStorage（ブラウザを閉じても保持され、24時間有効）</li>
               <li>選択しない場合：sessionStorage（ブラウザを閉じると削除されます）</li>
             </ul>
+          </li>
+          <li>
+            SNSログインのフロー中に限り、OAuth 2.0 の state パラメータ管理および CSRF 対策のため、サーバーが必須Cookie（<code>JSESSIONID</code>）を発行します。このCookieは SameSite=Lax、Secure 属性付きで発行され、SNSログインフローの完了後またはセッション満了時に無効化されます。
           </li>
           <li>
             本サービスでは、Google Analytics 4を利用しており、Googleがアクセス情報の収集のためにCookieを使用する場合があります。収集されるデータは匿名化されており、個人を特定するものではありません。初回訪問時にCookie同意バナーが表示され、ユーザーは同意または拒否を選択できます。同意した場合はCookieを使用したフル計測が行われ、拒否した場合はCookieを使用しない匿名の基本計測のみが行われます。
@@ -254,7 +290,11 @@ export function PrivacyContentJa() {
               <li>プロフィール情報（プロフィール画像、SNSアカウントリンク）</li>
               <li>投稿データ（写真ファイル、メタデータ等）</li>
               <li>お気に入り・通報情報</li>
+              <li>SNSログイン連携情報（OAuth プロバイダ連携レコード、暗号化済みアクセストークン）</li>
             </ul>
+          </li>
+          <li>
+            SNSログイン連携情報については、退会処理の一環として該当プロバイダ（Google / LINE）のアクセストークン取り消し（revoke）を非同期で試みます。これにより、本サービスが取得していた Google / LINE アカウントへのアクセス権限は速やかに取り消されます。
           </li>
           <li>
             削除後のデータの復旧はできません。
@@ -347,7 +387,7 @@ export function PrivacyContentJa() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           制定日：2026年2月16日<br />
-          最終改定日：2026年3月25日
+          最終改定日：2026年4月20日（SNSログイン機能に関する記載を追加）
         </p>
       </section>
     </div>

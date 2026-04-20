@@ -92,6 +92,18 @@ export function PrivacyContentEn() {
           </li>
           <li>Error information (collected through the external service &quot;Sentry&quot;; only a portion of all errors are transmitted)</li>
         </ul>
+
+        <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">(8) Social Sign-In Credentials</h3>
+        <p className="text-sm text-gray-700 mb-1">
+          When you sign in with your Google or LINE account, we receive the following information from the provider.
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+          <li>Google: email address, name, Google user ID (<code>sub</code> claim)</li>
+          <li>LINE: email address, display name, LINE user ID</li>
+        </ul>
+        <p className="text-sm text-gray-700 mt-1">
+          Authentication credentials managed by Google or LINE (such as passwords) are never stored on our Service.
+        </p>
       </section>
 
       <section>
@@ -225,6 +237,27 @@ export function PrivacyContentEn() {
       </section>
 
       <section>
+        <h2 className="mb-3">Article 7.2 (Handling of Social Sign-In Information)</h2>
+        <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+          <li>
+            The Service offers sign-in with Google and LINE accounts (&quot;Social Sign-In&quot;). When using Social Sign-In, users must consent on the provider&apos;s authentication screen to share information (such as email) with the Service.
+          </li>
+          <li>
+            The information obtained is used solely to create a Service account or to link an existing Service account with the provider. It is not used for any provider advertising or unrelated purposes.
+          </li>
+          <li>
+            Provider-issued access tokens are retained only for the short period necessary to revoke provider access at account deletion. They are stored encrypted with AES-256-GCM and deleted promptly after the revoke attempt.
+          </li>
+          <li>
+            When a user deletes their account, Social Sign-In information and linked OAuth connection records maintained by the Service are deleted in accordance with Article 11. A revoke request is asynchronously sent to the provider as part of the deletion workflow.
+          </li>
+          <li>
+            Use of Social Sign-In is also subject to the privacy policies of the respective providers. Please refer to the official privacy policies of Google and LINE for details.
+          </li>
+        </ol>
+      </section>
+
+      <section>
         <h2 className="mb-3">Article 8 (Automated Content Review)</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
           <li>
@@ -261,6 +294,9 @@ export function PrivacyContentEn() {
               <li>When &quot;Remember me&quot; is selected at login: localStorage (persists after closing the browser, valid for 24 hours)</li>
               <li>When not selected: sessionStorage (deleted when the browser is closed)</li>
             </ul>
+          </li>
+          <li>
+            During the Social Sign-In flow only, the server issues a required cookie (<code>JSESSIONID</code>) to manage the OAuth 2.0 state parameter and to protect against CSRF. This cookie is issued with the SameSite=Lax and Secure attributes, and is invalidated when the Social Sign-In flow completes or the session expires.
           </li>
           <li>
             The Service uses Google Analytics 4, and Google may use cookies to
@@ -315,7 +351,11 @@ export function PrivacyContentEn() {
               <li>Profile information (profile image, SNS account links)</li>
               <li>Posted data (photo files, metadata, etc.)</li>
               <li>Favorites and report information</li>
+              <li>Social Sign-In linkage records (OAuth provider connection records, encrypted access tokens)</li>
             </ul>
+          </li>
+          <li>
+            For Social Sign-In linkage information, as part of the deletion workflow, the Service asynchronously sends an access-token revoke request to the relevant provider (Google / LINE), promptly withdrawing the access authorization the Service previously held.
           </li>
           <li>
             Data cannot be recovered after deletion.
@@ -416,7 +456,7 @@ export function PrivacyContentEn() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           Enacted: February 16, 2026<br />
-          Last revised: March 25, 2026
+          Last revised: April 20, 2026 (Added provisions on Social Sign-In)
         </p>
       </section>
     </div>
