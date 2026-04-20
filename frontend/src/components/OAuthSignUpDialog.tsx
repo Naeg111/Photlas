@@ -38,14 +38,14 @@ export default function OAuthSignUpDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader>
+        <DialogHeader className="gap-4">
           <DialogTitle>{t('auth.oauth.snsSignUp.title')}</DialogTitle>
           <DialogDescription>
             {t('auth.oauth.snsSignUp.description')}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 mt-2">
+        <div className="space-y-4 mt-4">
           {/* SNS ボタン: 利用規約未同意または OAuth 無効時は disabled */}
           <OAuthButtons
             variant="signUp"

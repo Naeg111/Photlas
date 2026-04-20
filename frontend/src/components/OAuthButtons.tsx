@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 import { API_BASE_URL } from '../config/api'
 import i18n from '../i18n'
+import { GoogleIcon } from './icons/GoogleIcon'
+import { LineIcon } from './icons/LineIcon'
 
 /**
  * Issue#81 Phase 5b - Google / LINE サインインボタン。
@@ -62,21 +64,23 @@ export default function OAuthButtons({
       <Button
         type="button"
         variant="outline"
-        className="w-full"
+        className="w-full h-11 gap-3"
         onClick={() => handleClick('google')}
         disabled={effectiveDisabled}
         aria-label={googleLabel}
       >
+        <GoogleIcon className="size-5 shrink-0" />
         {googleLabel}
       </Button>
       <Button
         type="button"
         variant="outline"
-        className="w-full bg-[#06C755] hover:bg-[#05b34b] text-white border-transparent disabled:bg-gray-200 disabled:text-gray-500"
+        className="w-full h-11 gap-3 bg-[#06C755] hover:bg-[#05b34b] text-white border-transparent disabled:bg-gray-200 disabled:text-gray-500"
         onClick={() => handleClick('line')}
         disabled={effectiveDisabled}
         aria-label={lineLabel}
       >
+        <LineIcon className="size-5 shrink-0" />
         {lineLabel}
       </Button>
     </div>
