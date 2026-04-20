@@ -8,6 +8,7 @@ import { Checkbox } from './ui/checkbox'
 import { Separator } from './ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import ProfileImageCropper from './ProfileImageCropper'
+import OAuthButtons from './OAuthButtons'
 import { Upload, Eye, EyeOff } from 'lucide-react'
 import { SnsLinkEditDialog } from './SnsLinkEditDialog'
 import { API_V1_URL } from '../config/api'
@@ -472,6 +473,9 @@ export function SignUpDialog({
                 : t('auth.register')}
             </Button>
           </div>
+
+          {/* Issue#81 Phase 5b: OAuth 新規登録ボタン */}
+          <OAuthButtons variant="signUp" />
         </div>
 
         {/* プロフィール画像トリミングモーダル */}
