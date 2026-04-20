@@ -10,6 +10,7 @@ import AdminDeletedUserDetailPage from './pages/AdminDeletedUserDetailPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import ReviewLocationPage from './pages/ReviewLocationPage'
 import ConfirmEmailChangePage from './pages/ConfirmEmailChangePage'
+import OAuthCallbackPage from './pages/OAuthCallbackPage'
 import { CookieConsentBanner } from './components/CookieConsentBanner'
 import { formatLocalDateTime } from './utils/extractExif'
 import { FilterPanel } from './components/FilterPanel'
@@ -775,6 +776,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/review-location" element={<ReviewLocationPage />} />
         <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
+        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         <Route path="/photo-viewer/:photoId" element={<MainApp />} />
         <Route path="/manage/moderation" element={<AdminModerationPage />} />
         <Route path="/manage/deleted-users" element={<AdminDeletedUsersPage />} />
