@@ -157,6 +157,10 @@ export function LoginDialog({
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-6 pb-6">
         <div className="space-y-5 mt-4">
+          {/* Issue#81 Phase 8d: SNS ログインボタンを最上部に配置、次に <hr> 区切り線 */}
+          <OAuthButtons variant="signIn" hideDivider={true} />
+          <hr className="border-t border-gray-200 my-4" />
+
           {error && (
             <div role="alert" className="bg-red-50 border border-red-200 rounded-md p-3">
               <p className="text-sm text-red-600">{error}</p>
@@ -252,9 +256,6 @@ export function LoginDialog({
                 : t('common.login')}
             </Button>
           </div>
-
-          {/* Issue#81 Phase 5b: OAuth ログインボタン */}
-          <OAuthButtons variant="signIn" />
 
           {/* アカウント作成へ */}
           <div className="text-center text-sm text-gray-600">
