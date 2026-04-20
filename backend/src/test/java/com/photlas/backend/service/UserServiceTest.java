@@ -280,6 +280,67 @@ public class UserServiceTest {
         verify(emailService).send(eq(TEST_EMAIL), contains("パスワード"), anyString());
     }
 
+    // ===== Issue#81 Phase 4e: setInitialPassword / OAuth のみユーザーの updatePassword 拒否 =====
+
+    @Test
+    @DisplayName("[Issue#81 4e] OAuth のみユーザーの updatePassword は OAUTH_USER_NO_PASSWORD で拒否")
+    void testUpdatePassword_OAuthOnlyUser_Rejected() {
+        User oauthOnly = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        oauthOnly.setPasswordHash(null);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(oauthOnly));
+
+        assertThatThrownBy(() ->
+                passwordService.updatePassword(TEST_EMAIL, "anything", NEW_PASSWORD))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessageContaining("パスワード未設定");
+
+        // password_hash == null なら passwordEncoder.matches は呼ばれない（早期 return）
+        verify(passwordEncoder, never()).matches(anyString(), isNull());
+    }
+
+    @Test
+    @DisplayName("[Issue#81 4e] setInitialPassword: OAuth のみユーザー向け、ハッシュ化して保存 + dismissed_at を NULL リセット + 通知メール")
+    void testSetInitialPassword_OAuthOnlyUser_HashesAndResetsDismissedAt() {
+        User oauthOnly = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        oauthOnly.setPasswordHash(null);
+        oauthOnly.setPasswordRecommendationDismissedAt(java.time.LocalDateTime.now().minusDays(1));
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(oauthOnly));
+        when(passwordEncoder.encode(NEW_PASSWORD)).thenReturn("$2a$10$freshhash");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        passwordService.setInitialPassword(TEST_EMAIL, NEW_PASSWORD);
+
+        verify(userRepository).save(argThat(u ->
+                "$2a$10$freshhash".equals(u.getPasswordHash())
+                        && u.getPasswordRecommendationDismissedAt() == null
+        ));
+        verify(emailService).send(eq(TEST_EMAIL), contains("パスワード"), anyString());
+    }
+
+    @Test
+    @DisplayName("[Issue#81 4e] setInitialPassword: password_hash が既に設定済みのユーザーは拒否")
+    void testSetInitialPassword_UserAlreadyHasPassword_Rejected() {
+        User normal = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
+        // password_hash != null がデフォルト
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(normal));
+
+        assertThatThrownBy(() -> passwordService.setInitialPassword(TEST_EMAIL, NEW_PASSWORD))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("既に設定");
+
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("[Issue#81 4e] setInitialPassword: ユーザーが見つからない場合 UnauthorizedException")
+    void testSetInitialPassword_UserNotFound_ThrowsUnauthorized() {
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> passwordService.setInitialPassword(TEST_EMAIL, NEW_PASSWORD))
+                .isInstanceOf(UnauthorizedException.class);
+    }
+
     // ===== パスワードリセット (PasswordService.resetPassword) =====
 
     @Test
