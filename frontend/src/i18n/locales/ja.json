@@ -79,7 +79,41 @@
     "loginRequiredDescription": "ログインまたはアカウント作成が必要です",
     "loginRequiredMessage": "この機能を利用するには、ログインまたはアカウント作成が必要です。",
     "createAccount": "新規アカウント作成",
-    "accountSuspended": "アカウントが停止されています。詳しくはお問い合わせください。"
+    "accountSuspended": "アカウントが停止されています。詳しくはお問い合わせください。",
+    "oauth": {
+      "signInWithGoogle": "Google でサインイン",
+      "signInWithLine": "LINE でサインイン",
+      "signUpWithGoogle": "Google で新規登録",
+      "signUpWithLine": "LINE で新規登録",
+      "dividerOr": "または",
+      "errors": {
+        "OAUTH_EMAIL_REQUIRED": "メールアドレスが取得できませんでした。プロバイダのメール共有を許可してください。",
+        "OAUTH_EMAIL_NOT_VERIFIED": "プロバイダでメールアドレスが未認証です。先に認証を済ませてください。",
+        "USER_SUSPENDED": "アカウントが停止されています。",
+        "OAUTH_PROVIDER_ERROR": "プロバイダとの通信に失敗しました。時間をおいて再度お試しください。",
+        "OAUTH_UNKNOWN_ERROR": "OAuth ログイン中に予期しないエラーが発生しました。"
+      },
+      "usernameSetup": {
+        "title": "ユーザー名を設定",
+        "description": "仮のユーザー名が割り当てられています。このまま使用するか、任意の名前に変更してください。",
+        "usernameLabel": "ユーザー名",
+        "save": "確定する",
+        "keepTemporary": "あとで設定する",
+        "logout": "ログアウト"
+      },
+      "linkConfirm": {
+        "title": "既存アカウントとの連携確認",
+        "description": "このメールアドレスで登録された Photlas アカウントが既に存在します。{{provider}} と連携してログインしますか？",
+        "link": "連携する",
+        "cancel": "キャンセル"
+      },
+      "passwordRecommend": {
+        "title": "パスワードを設定しませんか？",
+        "description": "{{provider}} アカウントが利用できなくなった場合でもログインできるよう、パスワードを設定することをおすすめします。",
+        "cta": "パスワードを設定する",
+        "dismiss": "閉じる"
+      }
+    }
   },
   "menu": {
     "title": "メニュー",
@@ -304,6 +338,8 @@
     "emailVerifying": "メールアドレスを認証しています...",
     "emailVerified": "認証完了",
     "emailVerifiedMessage": "メールアドレスの認証が完了しました。",
+    "oauthCallbackProcessing": "OAuth ログインを処理しています...",
+    "oauthCallbackError": "OAuth ログインエラー",
     "redirecting": "3秒後にトップページへ移動します...",
     "goToHome": "今すぐトップページへ",
     "invalidToken": "認証トークンが見つかりません",

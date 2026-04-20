@@ -79,7 +79,41 @@
     "loginRequiredDescription": "Login or account creation required",
     "loginRequiredMessage": "Please log in or create an account to use this feature.",
     "createAccount": "Create Account",
-    "accountSuspended": "Your account has been suspended. Please contact support."
+    "accountSuspended": "Your account has been suspended. Please contact support.",
+    "oauth": {
+      "signInWithGoogle": "Sign in with Google",
+      "signInWithLine": "Sign in with LINE",
+      "signUpWithGoogle": "Sign up with Google",
+      "signUpWithLine": "Sign up with LINE",
+      "dividerOr": "or",
+      "errors": {
+        "OAUTH_EMAIL_REQUIRED": "Email address could not be retrieved. Please allow email sharing on the provider.",
+        "OAUTH_EMAIL_NOT_VERIFIED": "The email address is not verified by the provider. Please verify it first.",
+        "USER_SUSPENDED": "Your account has been suspended.",
+        "OAUTH_PROVIDER_ERROR": "Failed to communicate with the provider. Please try again later.",
+        "OAUTH_UNKNOWN_ERROR": "An unexpected error occurred during OAuth sign-in."
+      },
+      "usernameSetup": {
+        "title": "Set your username",
+        "description": "A temporary username has been assigned. Keep it or change to any name you like.",
+        "usernameLabel": "Username",
+        "save": "Confirm",
+        "keepTemporary": "Set later",
+        "logout": "Log out"
+      },
+      "linkConfirm": {
+        "title": "Link with existing account",
+        "description": "A Photlas account already exists with this email. Would you like to link {{provider}} and sign in?",
+        "link": "Link",
+        "cancel": "Cancel"
+      },
+      "passwordRecommend": {
+        "title": "Would you like to set a password?",
+        "description": "We recommend setting a password so you can sign in even if {{provider}} becomes unavailable.",
+        "cta": "Set password",
+        "dismiss": "Dismiss"
+      }
+    }
   },
   "menu": {
     "title": "Menu",
@@ -304,6 +338,8 @@
     "emailVerifying": "Verifying your email...",
     "emailVerified": "Verified",
     "emailVerifiedMessage": "Your email has been verified.",
+    "oauthCallbackProcessing": "Processing OAuth sign-in...",
+    "oauthCallbackError": "OAuth sign-in error",
     "redirecting": "Redirecting to home in 3 seconds...",
     "goToHome": "Go to Home Now",
     "invalidToken": "Verification token not found",
