@@ -76,7 +76,9 @@ class OAuth2SecurityConfigEnabledTest {
     @Test
     @DisplayName("OAuth 有効時は OAuth2SecurityConfig Bean が登録される")
     void oauthEnabled_configBeanLoaded() {
-        assertThat(ctx.containsBean("oAuth2SecurityConfig")).isTrue();
+        // Spring の Bean 名生成規則: 先頭 2 文字が連続で大文字の場合は decapitalize されないため
+        // "OAuth2SecurityConfig" はそのままの名前で登録される
+        assertThat(ctx.containsBean("OAuth2SecurityConfig")).isTrue();
     }
 
     @Test
