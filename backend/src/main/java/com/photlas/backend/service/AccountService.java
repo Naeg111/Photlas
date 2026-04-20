@@ -89,6 +89,12 @@ public class AccountService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
+        // Issue#81 Phase 4h: OAuth のみユーザー (password_hash == null) はメールアドレス変更不可
+        // （email はプロバイダとの紐付けに使われるため、Photlas 側だけで変更すると不整合を起こす）
+        if (user.getPasswordHash() == null) {
+            throw new UnauthorizedException("OAuth 連携アカウントはメールアドレスを変更できません");
+        }
+
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
             throw new UnauthorizedException("パスワードが正しくありません");
         }

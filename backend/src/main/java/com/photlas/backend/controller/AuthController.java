@@ -7,6 +7,9 @@ import com.photlas.backend.dto.PasswordResetRequest;
 import com.photlas.backend.dto.RegisterRequest;
 import com.photlas.backend.dto.RegisterResponse;
 import com.photlas.backend.dto.ResetPasswordRequest;
+import com.photlas.backend.dto.SetInitialPasswordRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.service.AccountService;
@@ -157,6 +160,26 @@ public class AuthController {
         Map<String, String> response = new HashMap<>();
         response.put("token", jwt);
         response.put(FIELD_EMAIL, user.getEmail());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Issue#81 Phase 4h: OAuth のみユーザー向け初回パスワード設定エンドポイント。
+     *
+     * <p>認証済み OAuth のみユーザー (password_hash == null) が任意でパスワードを設定する。
+     * 内部的には {@link PasswordService#setInitialPassword} を呼び、成功時は
+     * password_recommendation_dismissed_at が NULL リセットされる。
+     */
+    @PostMapping("/oauth2/set-password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> setInitialPassword(
+            @Valid @RequestBody SetInitialPasswordRequest request,
+            Authentication authentication) {
+        String email = authentication.getName();
+        passwordService.setInitialPassword(email, request.getPassword());
+
+        Map<String, String> response = new HashMap<>();
+        response.put(KEY_MESSAGE, "パスワードを設定しました");
         return ResponseEntity.ok(response);
     }
 }

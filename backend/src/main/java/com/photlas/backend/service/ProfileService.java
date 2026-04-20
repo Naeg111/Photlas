@@ -157,6 +157,9 @@ public class ProfileService {
 
     /**
      * ユーザー名を更新
+     *
+     * <p>Issue#81 Phase 4h: 仮ユーザー名 (OAuth 新規登録時の {@code user_xxxxxxx}) からの
+     * 確定にも使えるよう、更新後に {@code usernameTemporary = false} を明示セットする。
      */
     @Transactional
     public String updateUsername(String email, String username) {
@@ -164,6 +167,7 @@ public class ProfileService {
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         user.setUsername(username);
+        user.setUsernameTemporary(false);
         userRepository.save(user);
 
         return user.getUsername();
