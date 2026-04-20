@@ -1,0 +1,76 @@
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import SignUpMethodChooseDialog from './SignUpMethodChooseDialog'
+
+function renderDialog(overrides?: {
+  onOpenChange?: (open: boolean) => void
+  onChooseSns?: () => void
+  onChooseEmail?: () => void
+}) {
+  return render(
+    <SignUpMethodChooseDialog
+      open={true}
+      onOpenChange={overrides?.onOpenChange ?? vi.fn()}
+      onChooseSns={overrides?.onChooseSns ?? vi.fn()}
+      onChooseEmail={overrides?.onChooseEmail ?? vi.fn()}
+    />
+  )
+}
+
+describe('SignUpMethodChooseDialog', () => {
+  it('タイトルと説明文を表示する', () => {
+    renderDialog()
+    expect(screen.getByText('アカウント作成方法を選択')).toBeInTheDocument()
+    expect(screen.getByText('新規登録方法を選んでください。')).toBeInTheDocument()
+  })
+
+  it('「SNSログインで登録」と「メールアドレスで登録」の 2 つのボタンを表示する', () => {
+    renderDialog()
+    expect(screen.getByRole('button', { name: 'SNSログインで登録' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'メールアドレスで登録' })).toBeInTheDocument()
+  })
+
+  it('「SNSログインで登録」クリックで onChooseSns が呼ばれる', async () => {
+    const onChooseSns = vi.fn()
+    const onChooseEmail = vi.fn()
+    renderDialog({ onChooseSns, onChooseEmail })
+
+    await userEvent.click(screen.getByRole('button', { name: 'SNSログインで登録' }))
+
+    expect(onChooseSns).toHaveBeenCalledOnce()
+    expect(onChooseEmail).not.toHaveBeenCalled()
+  })
+
+  it('「メールアドレスで登録」クリックで onChooseEmail が呼ばれる', async () => {
+    const onChooseSns = vi.fn()
+    const onChooseEmail = vi.fn()
+    renderDialog({ onChooseSns, onChooseEmail })
+
+    await userEvent.click(screen.getByRole('button', { name: 'メールアドレスで登録' }))
+
+    expect(onChooseEmail).toHaveBeenCalledOnce()
+    expect(onChooseSns).not.toHaveBeenCalled()
+  })
+
+  it('open=false の場合はダイアログ内容が表示されない', () => {
+    render(
+      <SignUpMethodChooseDialog
+        open={false}
+        onOpenChange={vi.fn()}
+        onChooseSns={vi.fn()}
+        onChooseEmail={vi.fn()}
+      />
+    )
+    expect(screen.queryByText('アカウント作成方法を選択')).not.toBeInTheDocument()
+  })
+
+  it('閉じる操作で onOpenChange(false) が呼ばれる（shadcn Dialog の標準挙動）', async () => {
+    const onOpenChange = vi.fn()
+    renderDialog({ onOpenChange })
+    // Radix の DialogContent にある close (X) ボタンは aria-label="Close"
+    const closeBtn = screen.getByRole('button', { name: /close/i })
+    await userEvent.click(closeBtn)
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+})
