@@ -13,6 +13,7 @@ import { ApiError } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
 import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
+import OAuthButtons from './OAuthButtons'
 
 /**
  * LoginDialog コンポーネント
@@ -251,6 +252,9 @@ export function LoginDialog({
                 : t('common.login')}
             </Button>
           </div>
+
+          {/* Issue#81 Phase 5b: OAuth ログインボタン */}
+          <OAuthButtons variant="signIn" />
 
           {/* アカウント作成へ */}
           <div className="text-center text-sm text-gray-600">
