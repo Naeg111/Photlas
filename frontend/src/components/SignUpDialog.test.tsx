@@ -106,7 +106,7 @@ describe('SignUpDialog', () => {
     it('renders cancel button', () => {
       render(<SignUpDialog {...defaultProps} />)
 
-      expect(screen.getByRole('button', { name: 'キャンセル' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '戻る' })).toBeInTheDocument()
     })
 
     it('renders register button', () => {
@@ -565,7 +565,7 @@ describe('SignUpDialog', () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
-      await user.click(screen.getByRole('button', { name: 'キャンセル' }))
+      await user.click(screen.getByRole('button', { name: '戻る' }))
 
       expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
     })
@@ -826,7 +826,7 @@ describe('SignUpDialog', () => {
 
   // ---------- Phase 8e: OAuth ボタン削除 + onBack props ----------
 
-  describe('Phase 8e - OAuth ボタン削除 + キャンセルで Method Choose に戻る', () => {
+  describe('Phase 8e/8r-2 - OAuth ボタン削除 + 「戻る」で Method Dialog に戻る', () => {
     it('OAuthButtons（SNS登録ボタン）が表示されない', () => {
       render(<SignUpDialog {...defaultProps} />)
       expect(screen.queryByRole('button', { name: 'Google で新規登録' })).not.toBeInTheDocument()
@@ -838,12 +838,12 @@ describe('SignUpDialog', () => {
       expect(screen.queryByText('または')).not.toBeInTheDocument()
     })
 
-    it('onBack prop があるとき、キャンセルボタンクリックで onBack が呼ばれる', async () => {
+    it('onBack prop があるとき、戻るボタンクリックで onBack が呼ばれる', async () => {
       const user = userEvent.setup()
       const onBack = vi.fn()
       render(<SignUpDialog {...defaultProps} onBack={onBack} />)
 
-      await user.click(screen.getByRole('button', { name: 'キャンセル' }))
+      await user.click(screen.getByRole('button', { name: '戻る' }))
 
       expect(onBack).toHaveBeenCalled()
       // onBack 優先時は onOpenChange(false) は呼ばない（親で dialog 切替を制御）
@@ -854,7 +854,7 @@ describe('SignUpDialog', () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
-      await user.click(screen.getByRole('button', { name: 'キャンセル' }))
+      await user.click(screen.getByRole('button', { name: '戻る' }))
 
       expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
     })
