@@ -115,6 +115,12 @@ export function TermsContentEn() {
           <li>
             A single user is prohibited from creating multiple accounts.
           </li>
+          <li>
+            When using Social Sign-In via Google or LINE, users agree to comply with the respective provider&apos;s terms of service and privacy policy in addition to these Terms. If a provider suspends or restricts a user&apos;s provider account due to a violation of the provider&apos;s terms, corresponding measures (such as suspension) may also be applied to the Service account.
+          </li>
+          <li>
+            When using Social Sign-In, users consent to the Service obtaining information such as email address and name from the provider, and using such information to create a Service account or to link an existing Service account with the provider. See Privacy Policy Articles 2 and 7.2 for details.
+          </li>
         </ol>
       </section>
 
@@ -578,7 +584,7 @@ export function TermsContentEn() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           Enacted: February 16, 2026<br />
-          Last revised: March 25, 2026
+          Last revised: April 20, 2026 (Added provisions on Social Sign-In)
         </p>
       </section>
     </div>
