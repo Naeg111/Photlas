@@ -283,7 +283,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('transitions from LoginRequiredDialog to SignUpDialog when signup button is clicked', async () => {
+    it('[Phase 8r-3] transitions from LoginRequiredDialog to SignUpMethodDialog when signup button is clicked', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
@@ -300,9 +300,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
       await user.click(signUpButton)
 
-      // SignUpDialogが表示される
+      // Q1 改訂後: OAuth 有無に関わらず SignUpMethodDialog が最初に表示される
       await waitFor(() => {
-        expect(screen.getByText(/表示名/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウント作成方法を選択' })).toBeInTheDocument()
       })
     })
 
@@ -329,7 +329,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('transitions from TopMenuPanel to SignUpDialog when signup is clicked', async () => {
+    it('[Phase 8r-3] transitions from TopMenuPanel to SignUpMethodDialog when signup is clicked', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
@@ -346,9 +346,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
       await user.click(signUpButton)
 
-      // SignUpDialogが表示される
+      // Q1 改訂後: SignUpMethodDialog が最初に表示される
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント作成' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウント作成方法を選択' })).toBeInTheDocument()
       })
     })
 
@@ -382,7 +382,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('transitions from LoginDialog to SignUpDialog', async () => {
+    it('[Phase 8r-3] transitions from LoginDialog to SignUpMethodDialog（Q1 改訂）', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
@@ -402,22 +402,21 @@ describe('App - Issue#28: App.tsx再構築', () => {
         expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
       })
 
-      // 新規登録リンクをクリック
+      // 「新規登録」リンクをクリック → SignUpMethodDialog が開く（旧: SignUpDialog）
       const signUpLink = screen.getByText(/新規登録/i)
       await user.click(signUpLink)
 
-      // SignUpDialogが表示される
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント作成' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウント作成方法を選択' })).toBeInTheDocument()
       })
     })
 
-    it('transitions from SignUpDialog to LoginDialog', async () => {
+    it('[Phase 8r-3] transitions from SignUpDialog to LoginDialog（Method → メール → SignUp → ログイン）', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
 
-      // メニュー → 新規アカウント作成ダイアログを開く
+      // メニュー → 新規アカウント作成ボタン → SignUpMethodDialog が開く
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
       await user.click(menuButton)
 
@@ -429,14 +428,22 @@ describe('App - Issue#28: App.tsx再構築', () => {
       await user.click(signUpButton)
 
       await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'アカウント作成方法を選択' })).toBeInTheDocument()
+      })
+
+      // 「メールアドレスで登録」を押して SignUpDialog へ遷移
+      const emailBtn = screen.getByRole('button', { name: 'メールアドレスで登録' })
+      await user.click(emailBtn)
+
+      await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'アカウント作成' })).toBeInTheDocument()
       })
 
-      // ログインリンクをクリック
+      // SignUpDialog 内のログインリンクをクリック
       const loginLink = screen.getByText(/ログイン$/i)
       await user.click(loginLink)
 
-      // LoginDialogが表示される
+      // LoginDialog が表示される
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
       })
@@ -460,7 +467,13 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
       await user.click(signUpButton)
 
-      // SignUpDialogが表示される
+      // [Phase 8r-3] SignUpMethodDialog が最初に表示される → 「メールアドレスで登録」で SignUpDialog へ
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'アカウント作成方法を選択' })).toBeInTheDocument()
+      })
+      const emailBtn = screen.getByRole('button', { name: 'メールアドレスで登録' })
+      await user.click(emailBtn)
+
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'アカウント作成' })).toBeInTheDocument()
       })
