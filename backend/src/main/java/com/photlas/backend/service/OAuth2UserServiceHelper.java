@@ -11,6 +11,7 @@ import com.photlas.backend.util.OAuthTokenEncryptor;
 import com.photlas.backend.util.SecurityAuditLogger;
 import com.photlas.backend.util.TemporaryUsernameGenerator;
 import com.photlas.backend.validation.LanguageValidator;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
@@ -48,6 +49,7 @@ import java.util.Optional;
  * 現状の Phase 3b 段階では、リンク確認が必要な場合 {@code OAUTH_LINK_CONFIRMATION_REQUIRED} 例外を投げるに留める。
  */
 @Service
+@ConditionalOnProperty(name = "photlas.oauth.enabled", havingValue = "true")
 public class OAuth2UserServiceHelper {
 
     private final UserRepository userRepository;
