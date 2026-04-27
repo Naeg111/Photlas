@@ -49,6 +49,24 @@ export class ApiError extends Error {
   get responseMessage(): string | undefined {
     return (this.responseData as { message?: string } | undefined)?.message
   }
+
+  /**
+   * Issue#98: バックエンドが返す `{ errors: [{ field, message, ... }] }` 形式の
+   * field-level エラー本文から、指定フィールドのメッセージを取り出す。
+   *
+   * バリデーションエラー (400 Bad Request, MethodArgumentNotValidException 起源) の
+   * フィールド別エラー取得用。username 用 i18n キー（例: `errors.USERNAME_RESERVED`）
+   * を取り出すために使う。
+   *
+   * 既存の `responseMessage` は top-level の固定文言（"入力内容が無効です。"）を返すため、
+   * フィールド別の i18n キーが欲しい場合は本メソッドを使うこと。
+   *
+   * Red 段階のスケルトン: 常に undefined を返してテストを失敗させる。
+   * Green 段階で本実装する。
+   */
+  getFieldErrorMessage(_fieldName: string): string | undefined {
+    return undefined
+  }
 }
 
 /**
