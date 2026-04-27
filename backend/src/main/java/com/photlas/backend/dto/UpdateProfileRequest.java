@@ -1,11 +1,12 @@
 package com.photlas.backend.dto;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import com.photlas.backend.validation.ValidUsername;
 
+/**
+ * Issue#98: username バリデーション強化 - @ValidUsername で統一（@NotNull/@Size を削除）
+ */
 public class UpdateProfileRequest {
-    @NotNull(message = "ユーザー名は必須です")
-    @Size(min = 2, max = 12, message = "ユーザー名は2〜12文字で入力してください")
+    @ValidUsername
     private String username;
 
     private String profileImageS3Key;

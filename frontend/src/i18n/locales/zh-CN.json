@@ -48,6 +48,7 @@
     "displayName": "昵称（必填）",
     "displayNamePlaceholder": "张三 — 半角/全角 12 字以内",
     "displayNameRequired": "请输入昵称",
+    "displayNameFormatHint": "可使用字母、数字、日文、下划线（_）、连字符（-）。不能以数字或符号开头。不支持扩展汉字（CJK 扩展 A 及以后）。",
     "emailRequired": "邮箱（必填）",
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "密码（必填）",
@@ -318,7 +319,17 @@
     "RATE_LIMIT_EXCEEDED": "请求过多，请在 {{seconds}} 秒后重试。",
     "RATE_LIMIT_EXCEEDED_SHORT": "访问拥挤（{{seconds}} 秒后重试）",
     "RATE_LIMIT_BURST": "网络繁忙，请稍候再试。",
-    "NETWORK_ERROR": "网络连接失败，请检查您的网络连接。"
+    "NETWORK_ERROR": "网络连接失败，请检查您的网络连接。",
+    "USERNAME_REQUIRED": "请输入用户名。",
+    "USERNAME_LENGTH_INVALID": "用户名长度需在 2 到 12 个字符之间。",
+    "USERNAME_INVALID_CHARACTER_SYMBOL": "用户名不能包含符号。",
+    "USERNAME_INVALID_CHARACTER_EMOJI": "用户名不能包含表情符号。",
+    "USERNAME_INVALID_CHARACTER_FULLWIDTH": "用户名不能包含全角英数字，请使用半角字符。",
+    "USERNAME_INVALID_CHARACTER_HALFWIDTH_KATAKANA": "用户名不能包含半角片假名，请使用全角片假名。",
+    "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "用户名中包含不可见的特殊字符。",
+    "USERNAME_INVALID_CHARACTER_OTHER": "用户名包含不允许的字符，仅允许字母、数字、日文（平假名、全角片假名、基础汉字）、下划线和连字符。",
+    "USERNAME_INVALID_FIRST_CHARACTER": "用户名必须以字母或日文开头（数字、下划线、连字符不能作为首字符）。",
+    "USERNAME_RESERVED": "该用户名为系统保留字，无法使用。"
   },
   "pages": {
     "emailVerifying": "正在验证邮箱...",

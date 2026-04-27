@@ -48,6 +48,7 @@
     "displayName": "顯示名稱（必填）",
     "displayNamePlaceholder": "王小明 — 半形/全形 12 字以內",
     "displayNameRequired": "請輸入顯示名稱",
+    "displayNameFormatHint": "可使用字母、數字、日文、底線（_）、連字號（-）。不能以數字或符號開頭。不支援擴展漢字（CJK 擴展 A 及以後）。",
     "emailRequired": "電子郵件（必填）",
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "密碼（必填）",
@@ -318,7 +319,17 @@
     "RATE_LIMIT_EXCEEDED": "請求過多，請在 {{seconds}} 秒後再試。",
     "RATE_LIMIT_EXCEEDED_SHORT": "目前擁擠（{{seconds}} 秒後重試）",
     "RATE_LIMIT_BURST": "網路繁忙，請稍候再試。",
-    "NETWORK_ERROR": "網路連線失敗，請檢查您的網路連線。"
+    "NETWORK_ERROR": "網路連線失敗，請檢查您的網路連線。",
+    "USERNAME_REQUIRED": "請輸入使用者名稱。",
+    "USERNAME_LENGTH_INVALID": "使用者名稱長度需在 2 到 12 個字元之間。",
+    "USERNAME_INVALID_CHARACTER_SYMBOL": "使用者名稱不可包含符號。",
+    "USERNAME_INVALID_CHARACTER_EMOJI": "使用者名稱不可包含表情符號。",
+    "USERNAME_INVALID_CHARACTER_FULLWIDTH": "使用者名稱不可包含全形英數字，請改用半形字元。",
+    "USERNAME_INVALID_CHARACTER_HALFWIDTH_KATAKANA": "使用者名稱不可包含半形片假名，請改用全形片假名。",
+    "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "使用者名稱中包含看不見的特殊字元。",
+    "USERNAME_INVALID_CHARACTER_OTHER": "使用者名稱包含不允許的字元，僅允許字母、數字、日文（平假名、全形片假名、基礎漢字）、底線和連字號。",
+    "USERNAME_INVALID_FIRST_CHARACTER": "使用者名稱必須以字母或日文開頭（數字、底線、連字號不能作為首字元）。",
+    "USERNAME_RESERVED": "此使用者名稱為系統保留字，無法使用。"
   },
   "pages": {
     "emailVerifying": "正在驗證電子郵件...",

@@ -60,12 +60,12 @@ export class ApiError extends Error {
    *
    * 既存の `responseMessage` は top-level の固定文言（"入力内容が無効です。"）を返すため、
    * フィールド別の i18n キーが欲しい場合は本メソッドを使うこと。
-   *
-   * Red 段階のスケルトン: 常に undefined を返してテストを失敗させる。
-   * Green 段階で本実装する。
    */
-  getFieldErrorMessage(_fieldName: string): string | undefined {
-    return undefined
+  getFieldErrorMessage(fieldName: string): string | undefined {
+    const errors = (this.responseData as
+      | { errors?: Array<{ field?: string; message?: string }> }
+      | undefined)?.errors
+    return errors?.find(e => e.field === fieldName)?.message
   }
 }
 

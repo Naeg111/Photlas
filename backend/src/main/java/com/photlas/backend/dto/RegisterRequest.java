@@ -1,14 +1,15 @@
 package com.photlas.backend.dto;
 
+import com.photlas.backend.validation.ValidUsername;
 import jakarta.validation.constraints.*;
 
 /**
  * ユーザー登録リクエストDTO
  * Issue#21: パスワードバリデーション統一
+ * Issue#98: username バリデーション強化 - @ValidUsername で統一（@NotNull/@Size を削除）
  */
 public class RegisterRequest {
-    @NotNull(message = "ユーザー名は必須です")
-    @Size(min = 2, max = 12, message = "ユーザー名は2文字以上12文字以内で入力してください")
+    @ValidUsername
     private String username;
 
     @NotBlank(message = "メールアドレスは必須です")

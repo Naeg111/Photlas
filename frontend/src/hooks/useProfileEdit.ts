@@ -1,7 +1,10 @@
 import { useState, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { PLATFORM_TWITTER } from '../utils/codeConstants'
+import { validateUsername as validateUsernameLite } from '../utils/validation/username'
+import { localizeFieldError } from '../utils/validation/localizeFieldError'
 
 // APIエンドポイント定数
 const API_ENDPOINTS = {
@@ -28,6 +31,7 @@ const VALIDATION = {
 
 // HTTPステータスコード定数
 const HTTP_STATUS = {
+  BAD_REQUEST: 400,
   CONFLICT: 409,
 } as const
 
@@ -111,6 +115,7 @@ export const useProfileEdit = ({
   onSnsLinksUpdated,
 }: UseProfileEditProps): UseProfileEditReturn => {
   const { getAuthToken } = useAuth()
+  const { t } = useTranslation()
   // ユーザー名編集の状態
   const [isEditingUsername, setIsEditingUsername] = useState(false)
   const [editingUsername, setEditingUsername] = useState(initialUsername)
@@ -153,13 +158,13 @@ export const useProfileEdit = ({
 
   /**
    * ユーザー名のバリデーション
+   * Issue#98: 軽量バリデーション（utils/validation/username.ts）に委譲し、
+   *          エラーキーを i18n フックで翻訳する
    */
   const validateUsername = (username: string): string | null => {
-    if (!username || username.trim() === '') {
-      return ERROR_MESSAGES.USERNAME_REQUIRED
-    }
-    if (username.length > VALIDATION.MAX_USERNAME_LENGTH) {
-      return ERROR_MESSAGES.USERNAME_TOO_LONG
+    const errorKey = validateUsernameLite(username)
+    if (errorKey) {
+      return t(`errors.${errorKey}`)
     }
     return null
   }
@@ -196,6 +201,17 @@ export const useProfileEdit = ({
           setUsernameError(data.message)
           return
         }
+        if (response.status === HTTP_STATUS.BAD_REQUEST) {
+          // Issue#98: 400 Bad Request の field-level エラー（i18n キー）を取得
+          const data = await response.json().catch(() => null) as
+            | { errors?: Array<{ field?: string; message?: string }> }
+            | null
+          const usernameErr = data?.errors?.find(e => e.field === 'username')?.message
+          if (usernameErr) {
+            setUsernameError(localizeFieldError(usernameErr, t))
+            return
+          }
+        }
         throw new Error(ERROR_MESSAGES.FAILED_TO_UPDATE_USERNAME)
       }
 
@@ -205,7 +221,7 @@ export const useProfileEdit = ({
     } catch {
       // エラー時の処理
     }
-  }, [editingUsername, getAuthToken, onUsernameUpdated])
+  }, [editingUsername, getAuthToken, onUsernameUpdated, t])
 
   /**
    * Issue#35: プロフィール画像を選択してトリミングモーダルを開く
@@ -375,6 +391,18 @@ export const useProfileEdit = ({
             setUsernameError(data.message)
             setIsSaving(false)
             return
+          }
+          if (usernameResponse.status === HTTP_STATUS.BAD_REQUEST) {
+            // Issue#98: 400 Bad Request の field-level エラーを取得
+            const data = await usernameResponse.json().catch(() => null) as
+              | { errors?: Array<{ field?: string; message?: string }> }
+              | null
+            const usernameErr = data?.errors?.find(e => e.field === 'username')?.message
+            if (usernameErr) {
+              setUsernameError(localizeFieldError(usernameErr, t))
+              setIsSaving(false)
+              return
+            }
           }
           throw new Error(ERROR_MESSAGES.FAILED_TO_UPDATE_USERNAME)
         }

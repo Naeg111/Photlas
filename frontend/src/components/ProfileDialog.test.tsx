@@ -1120,7 +1120,7 @@ describe('ProfileDialog', () => {
       })
     })
 
-    it('ユーザー名が30文字を超える場合はエラーが表示される', async () => {
+    it('Issue#98 - ユーザー名が12文字を超える場合はエラーが表示される', async () => {
       const user = userEvent.setup()
 
       render(
@@ -1138,13 +1138,14 @@ describe('ProfileDialog', () => {
 
       const input = screen.getByTestId('username-input')
       await user.clear(input)
-      await user.type(input, 'a'.repeat(31))
+      // Issue#98 で長さ上限が 30 → 12 に変更された
+      await user.type(input, 'a'.repeat(13))
 
       const saveButton = screen.getByTestId('save-all-changes-button')
       await user.click(saveButton)
 
       await waitFor(() => {
-        expect(screen.getByText(/30文字以内で入力してください/i)).toBeInTheDocument()
+        expect(screen.getByText(/2文字以上12文字以内で入力してください/i)).toBeInTheDocument()
       })
     })
 

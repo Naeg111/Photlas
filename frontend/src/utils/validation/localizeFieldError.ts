@@ -13,9 +13,12 @@ import type { TFunction } from 'i18next'
 /**
  * フィールド別エラーメッセージを i18n フックで翻訳する。
  *
- * Red 段階のスケルトン: 常に Error を投げてすべてのテストを失敗させる。
- * Green 段階で本実装する。
+ * - `errors.` プレフィックス付き: `t(message)` で 5 言語翻訳
+ * - それ以外: 既存の固定メッセージとしてそのまま返す
  */
 export function localizeFieldError(message: string, t: TFunction): string {
-  throw new Error('Issue#98 Red phase: not yet implemented')
+  if (message.startsWith('errors.')) {
+    return t(message)
+  }
+  return message
 }

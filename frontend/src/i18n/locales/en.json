@@ -49,6 +49,7 @@
     "displayName": "Display Name (required)",
     "displayNamePlaceholder": "John Doe — up to 12 characters (half/full-width)",
     "displayNameRequired": "Please enter a display name",
+    "displayNameFormatHint": "Letters, digits, Japanese, underscore (_), and hyphen (-) are allowed. Cannot start with digits or symbols. Extended kanji (CJK Extension A and later) are not supported.",
     "emailRequired": "Email (required)",
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "Password (required)",
@@ -346,7 +347,17 @@
     "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again in {{seconds}} seconds.",
     "RATE_LIMIT_EXCEEDED_SHORT": "Rate limited (retry in {{seconds}}s)",
     "RATE_LIMIT_BURST": "The network is congested. Please pause briefly before retrying.",
-    "NETWORK_ERROR": "Network connection failed. Please check your connection."
+    "NETWORK_ERROR": "Network connection failed. Please check your connection.",
+    "USERNAME_REQUIRED": "Please enter a username.",
+    "USERNAME_LENGTH_INVALID": "Username must be between 2 and 12 characters.",
+    "USERNAME_INVALID_CHARACTER_SYMBOL": "Username cannot contain symbols.",
+    "USERNAME_INVALID_CHARACTER_EMOJI": "Username cannot contain emoji.",
+    "USERNAME_INVALID_CHARACTER_FULLWIDTH": "Username cannot contain full-width alphanumerics. Please use half-width characters.",
+    "USERNAME_INVALID_CHARACTER_HALFWIDTH_KATAKANA": "Username cannot contain half-width katakana. Please use full-width katakana.",
+    "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "Username contains invisible special characters.",
+    "USERNAME_INVALID_CHARACTER_OTHER": "Username contains invalid characters. Only letters, digits, Japanese (hiragana, full-width katakana, basic kanji), underscore, and hyphen are allowed.",
+    "USERNAME_INVALID_FIRST_CHARACTER": "Username must start with a letter or Japanese character (digits, underscore, and hyphen cannot be used as the first character).",
+    "USERNAME_RESERVED": "This username is reserved and cannot be used."
   },
   "pages": {
     "emailVerifying": "Verifying your email...",

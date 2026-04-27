@@ -22,6 +22,8 @@ import {
   validateEmail,
   type PasswordStrength,
 } from '../utils/validation'
+import { validateUsername } from '../utils/validation/username'
+import { localizeFieldError } from '../utils/validation/localizeFieldError'
 
 /**
  * SignUpDialog コンポーネント
@@ -82,9 +84,10 @@ export function SignUpDialog({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    // 表示名
-    if (!displayName.trim()) {
-      newErrors.displayName = t('auth.displayNameRequired')
+    // 表示名 (Issue#98: 軽量バリデーション)
+    const usernameErrorKey = validateUsername(displayName)
+    if (usernameErrorKey) {
+      newErrors.displayName = t(`errors.${usernameErrorKey}`)
     }
 
     // メールアドレス
@@ -193,6 +196,14 @@ export function SignUpDialog({
           setErrors({ general: getRateLimitInlineMessage(err, t) })
         } else if (err.status === 409) {
           setErrors({ email: t('auth.emailAlreadyUsed') })
+        } else if (err.status === 400) {
+          // Issue#98: バリデーションエラーの field-level メッセージを取得
+          const usernameErr = err.getFieldErrorMessage('username')
+          if (usernameErr) {
+            setErrors({ displayName: localizeFieldError(usernameErr, t) })
+          } else {
+            setErrors({ general: t('auth.signupFailed') })
+          }
         } else {
           setErrors({ general: t('auth.signupFailed') })
         }
@@ -313,6 +324,7 @@ export function SignUpDialog({
           {/* 表示名 */}
           <div className="space-y-2">
             <Label htmlFor="displayName">{t('auth.displayName')}</Label>
+            <p className="text-xs text-gray-500">{t('auth.displayNameFormatHint')}</p>
             {errors.displayName && (
               <p className="text-sm text-red-600">{errors.displayName}</p>
             )}

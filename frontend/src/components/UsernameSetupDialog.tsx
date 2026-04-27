@@ -8,6 +8,8 @@ import { API_V1_URL } from '../config/api'
 import { useAuth } from '../contexts/AuthContext'
 import { ApiError } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
+import { validateUsername } from '../utils/validation/username'
+import { localizeFieldError } from '../utils/validation/localizeFieldError'
 
 interface UsernameSetupDialogProps {
   open: boolean
@@ -41,6 +43,13 @@ export default function UsernameSetupDialog({
 
   const handleSave = async () => {
     if (!username.trim()) return
+    // Issue#98: 軽量バリデーション
+    const errorKey = validateUsername(username.trim())
+    if (errorKey) {
+      setErrorMessage(t(`errors.${errorKey}`))
+      return
+    }
+
     setErrorMessage('')
     setIsLoading(true)
     try {
@@ -57,7 +66,13 @@ export default function UsernameSetupDialog({
       onClose()
     } catch (err) {
       if (err instanceof ApiError) {
-        setErrorMessage(err.responseMessage || t('auth.errorOccurred'))
+        // Issue#98: 400 Bad Request の field-level エラー（i18n キー）を優先表示
+        const usernameErr = err.getFieldErrorMessage('username')
+        if (usernameErr) {
+          setErrorMessage(localizeFieldError(usernameErr, t))
+        } else {
+          setErrorMessage(err.responseMessage || t('auth.errorOccurred'))
+        }
       } else {
         setErrorMessage(t('auth.errorOccurred'))
       }
@@ -79,6 +94,7 @@ export default function UsernameSetupDialog({
           <Label htmlFor="oauth-username-input">
             {t('auth.oauth.usernameSetup.usernameLabel')}
           </Label>
+          <p className="text-xs text-gray-500">{t('auth.displayNameFormatHint')}</p>
           <Input
             id="oauth-username-input"
             value={username}
