@@ -85,11 +85,11 @@ describe('useProfileEdit', () => {
         await result.current.handleSaveUsername()
       })
 
-      expect(result.current.usernameError).toBe('ユーザー名を入力してください')
+      expect(result.current.usernameError).toBe('ユーザー名を入力してください。')
       expect(mockFetch).not.toHaveBeenCalled()
     })
 
-    it('handleSaveUsernameで30文字を超えるユーザー名の場合にエラーがセットされる', async () => {
+    it('Issue#98 - handleSaveUsernameで12文字を超えるユーザー名の場合にエラーがセットされる', async () => {
       const { result } = renderHook(() => useProfileEdit(defaultProps))
 
       act(() => {
@@ -97,14 +97,15 @@ describe('useProfileEdit', () => {
       })
 
       act(() => {
-        result.current.handleUsernameChange('a'.repeat(31))
+        // Issue#98 で長さ上限が 30 → 12 に変更された
+        result.current.handleUsernameChange('a'.repeat(13))
       })
 
       await act(async () => {
         await result.current.handleSaveUsername()
       })
 
-      expect(result.current.usernameError).toBe('30文字以内で入力してください')
+      expect(result.current.usernameError).toBe('ユーザー名は2文字以上12文字以内で入力してください。')
       expect(mockFetch).not.toHaveBeenCalled()
     })
 
@@ -147,7 +148,8 @@ describe('useProfileEdit', () => {
       })
 
       act(() => {
-        result.current.handleUsernameChange('duplicatename')
+        // Issue#98: 12文字以内に収める（duplicatename → duplicate に短縮）
+        result.current.handleUsernameChange('duplicate')
       })
 
       await act(async () => {

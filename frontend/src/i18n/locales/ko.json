@@ -48,6 +48,7 @@
     "displayName": "표시 이름 (필수)",
     "displayNamePlaceholder": "홍길동 — 반각·전각 12자 이내",
     "displayNameRequired": "표시 이름을 입력해 주세요",
+    "displayNameFormatHint": "영숫자, 일본어, 밑줄(_), 하이픈(-)을 사용할 수 있습니다. 숫자나 기호로 시작할 수 없습니다. 확장 한자(CJK 확장 A 이후)는 사용할 수 없습니다.",
     "emailRequired": "이메일 (필수)",
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "비밀번호 (필수)",
@@ -318,7 +319,17 @@
     "RATE_LIMIT_EXCEEDED": "요청이 너무 많습니다. {{seconds}}초 후에 다시 시도해 주세요.",
     "RATE_LIMIT_EXCEEDED_SHORT": "혼잡합니다 ({{seconds}}초 후 재시도)",
     "RATE_LIMIT_BURST": "통신이 혼잡합니다. 잠시 후 다시 시도해 주세요.",
-    "NETWORK_ERROR": "네트워크 연결에 실패했습니다. 연결 상태를 확인해 주세요."
+    "NETWORK_ERROR": "네트워크 연결에 실패했습니다. 연결 상태를 확인해 주세요.",
+    "USERNAME_REQUIRED": "사용자 이름을 입력해 주세요.",
+    "USERNAME_LENGTH_INVALID": "사용자 이름은 2자 이상 12자 이하로 입력해 주세요.",
+    "USERNAME_INVALID_CHARACTER_SYMBOL": "사용자 이름에는 기호를 사용할 수 없습니다.",
+    "USERNAME_INVALID_CHARACTER_EMOJI": "사용자 이름에는 이모티콘을 사용할 수 없습니다.",
+    "USERNAME_INVALID_CHARACTER_FULLWIDTH": "사용자 이름에는 전각 영숫자를 사용할 수 없습니다. 반각 문자를 사용해 주세요.",
+    "USERNAME_INVALID_CHARACTER_HALFWIDTH_KATAKANA": "사용자 이름에는 반각 가타카나를 사용할 수 없습니다. 전각 가타카나를 사용해 주세요.",
+    "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "사용자 이름에 보이지 않는 특수 문자가 포함되어 있습니다.",
+    "USERNAME_INVALID_CHARACTER_OTHER": "사용자 이름에 사용할 수 없는 문자가 포함되어 있습니다. 영숫자, 일본어(히라가나, 전각 가타카나, 기본 한자), 밑줄, 하이픈만 사용할 수 있습니다.",
+    "USERNAME_INVALID_FIRST_CHARACTER": "사용자 이름의 첫 글자는 영문자 또는 일본어여야 합니다(숫자, 밑줄, 하이픈은 첫 글자로 사용할 수 없습니다).",
+    "USERNAME_RESERVED": "이 사용자 이름은 예약어이므로 사용할 수 없습니다."
   },
   "pages": {
     "emailVerifying": "이메일 인증 중...",
