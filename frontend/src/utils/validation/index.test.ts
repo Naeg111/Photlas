@@ -9,7 +9,7 @@ import {
   PASSWORD_REGEX,
   EMAIL_REGEX,
   MAX_SNS_LINKS,
-} from './validation'
+} from './index'
 
 /**
  * validation.ts ユニットテスト

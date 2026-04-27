@@ -64,4 +64,48 @@ describe('ApiError (Issue#96 拡張)', () => {
       }).toThrow(ApiError)
     })
   })
+
+  describe('getFieldErrorMessage (Issue#98)', () => {
+    it('responseData に errors 配列があり指定フィールドが存在する場合、そのメッセージを返す', () => {
+      const body = {
+        message: '入力内容が無効です。',
+        errors: [
+          { field: 'username', rejectedValue: 'admin', message: 'errors.USERNAME_RESERVED' },
+          { field: 'email', rejectedValue: 'foo', message: 'メールアドレスの形式が不正です' },
+        ],
+      }
+      const err = new ApiError('Bad Request', 400, undefined, body)
+      expect(err.getFieldErrorMessage('username')).toBe('errors.USERNAME_RESERVED')
+    })
+
+    it('email フィールドの固定日本語メッセージも取り出せる', () => {
+      const body = {
+        message: '入力内容が無効です。',
+        errors: [
+          { field: 'email', rejectedValue: 'foo', message: 'メールアドレスの形式が不正です' },
+        ],
+      }
+      const err = new ApiError('Bad Request', 400, undefined, body)
+      expect(err.getFieldErrorMessage('email')).toBe('メールアドレスの形式が不正です')
+    })
+
+    it('指定フィールドが errors 配列に存在しない場合は undefined', () => {
+      const body = {
+        message: '入力内容が無効です。',
+        errors: [{ field: 'email', message: '...' }],
+      }
+      const err = new ApiError('Bad Request', 400, undefined, body)
+      expect(err.getFieldErrorMessage('username')).toBeUndefined()
+    })
+
+    it('responseData が undefined の場合は undefined', () => {
+      const err = new ApiError('Bad Request', 400)
+      expect(err.getFieldErrorMessage('username')).toBeUndefined()
+    })
+
+    it('responseData に errors フィールドが無い場合は undefined', () => {
+      const err = new ApiError('Bad Request', 400, undefined, { message: 'foo' })
+      expect(err.getFieldErrorMessage('username')).toBeUndefined()
+    })
+  })
 })
