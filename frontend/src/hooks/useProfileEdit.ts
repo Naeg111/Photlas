@@ -15,17 +15,17 @@ const API_ENDPOINTS = {
 } as const
 
 // バリデーションエラーメッセージ定数
+// Issue#98: USERNAME_REQUIRED / USERNAME_TOO_LONG は i18n キー方式
+// （errors.USERNAME_*）に置換されたため削除
 const ERROR_MESSAGES = {
-  USERNAME_REQUIRED: 'ユーザー名を入力してください',
-  USERNAME_TOO_LONG: '30文字以内で入力してください',
   FAILED_TO_GET_PRESIGNED_URL: 'Failed to get presigned URL',
   FAILED_TO_UPDATE_USERNAME: 'Failed to update username',
   FAILED_TO_REGISTER_PROFILE_IMAGE: 'プロフィール画像の登録に失敗しました',
 } as const
 
 // バリデーション定数
+// Issue#98: MAX_USERNAME_LENGTH は utils/validation/username.ts に集約されたため削除
 const VALIDATION = {
-  MAX_USERNAME_LENGTH: 30,
   MAX_SNS_LINKS: 3,
 } as const
 
