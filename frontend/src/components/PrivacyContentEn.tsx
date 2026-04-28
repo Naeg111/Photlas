@@ -98,7 +98,7 @@ export function PrivacyContentEn() {
           When you sign in with your Google or LINE account, we receive the following information from the provider.
         </p>
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-          <li>Google: email address, name, Google user ID (<code>sub</code> claim)</li>
+          <li>Google: email address, Google user ID (<code>sub</code> claim)</li>
           <li>LINE: email address, display name, LINE user ID</li>
         </ul>
         <p className="text-sm text-gray-700 mt-1">
