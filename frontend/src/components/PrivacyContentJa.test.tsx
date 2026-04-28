@@ -44,3 +44,28 @@ describe('PrivacyContentJa - Issue#94 WAF log disclosure', () => {
     expect(container.textContent).not.toContain('永続的な保存は行いません')
   })
 })
+
+/**
+ * Issue#99: Google OAuth scope を email のみに変更したことに伴い、
+ * プライバシーポリシーの Google 取得情報から「氏名」を削除する。
+ * profile スコープを取得しないため、氏名は実際に取得されない。
+ */
+describe('PrivacyContentJa - Issue#99 Google scope minimization', () => {
+  it('第2条(8)の Google 取得情報は「メールアドレス、Google ユーザーID」のみ', () => {
+    const { container } = render(<PrivacyContentJa />)
+    const text = container.textContent ?? ''
+    expect(text).toContain('Google：メールアドレス、Google ユーザーID')
+  })
+
+  it('第2条(8)の Google 取得情報に「氏名」が含まれない', () => {
+    const { container } = render(<PrivacyContentJa />)
+    const text = container.textContent ?? ''
+    expect(text).not.toContain('Google：メールアドレス、氏名')
+  })
+
+  it('第2条(8)の LINE 取得情報は変更されていない（表示名は引き続き取得）', () => {
+    const { container } = render(<PrivacyContentJa />)
+    const text = container.textContent ?? ''
+    expect(text).toContain('LINE：メールアドレス、表示名、LINE ユーザーID')
+  })
+})
