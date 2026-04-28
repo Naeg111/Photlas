@@ -161,7 +161,7 @@ public class ProfileController {
     }
 
     /**
-     * ユーザー名変更
+     * 表示名変更
      * PUT /api/v1/users/me/username
      */
     @PutMapping("/me/username")

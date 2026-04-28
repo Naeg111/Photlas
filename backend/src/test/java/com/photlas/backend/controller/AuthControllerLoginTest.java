@@ -283,7 +283,7 @@ public class AuthControllerLoginTest {
         request.setEmail("deleted@example.com");
         request.setPassword("Password123");
 
-        // Then: 200 OK、ユーザー名が復元され、JWTトークンが返る
+        // Then: 200 OK、表示名が復元され、JWTトークンが返る
         mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))

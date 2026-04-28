@@ -7,7 +7,7 @@ import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * {@link ValidUsername} の検証実装。
- * Issue#98: ユーザー名バリデーション強化。
+ * Issue#98: 表示名バリデーション強化。
  *
  * <p>{@link UsernameValidator} に処理を委譲し、{@link InvalidUsernameException} を
  * 捕捉してそのエラーキー（例: {@code USERNAME_RESERVED}）を i18n フォーマット

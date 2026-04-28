@@ -67,13 +67,13 @@ class UsernameReservedWordsTest {
     }
 
     @Test
-    @DisplayName("Issue#98 - tanaka は予約語ではない（通常のユーザー名）")
+    @DisplayName("Issue#98 - tanaka は予約語ではない（通常の表示名）")
     void tanaka_notReserved() {
         assertFalse(UsernameReservedWords.isReserved("tanaka"));
     }
 
     @Test
-    @DisplayName("Issue#98 - user_a3f8b2c は予約語ではない（Issue#81 OAuth 仮ユーザー名形式）")
+    @DisplayName("Issue#98 - user_a3f8b2c は予約語ではない（Issue#81 OAuth 仮表示名形式）")
     void oauth_temp_username_notReserved() {
         assertFalse(UsernameReservedWords.isReserved("user_a3f8b2c"));
     }

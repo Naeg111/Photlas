@@ -49,7 +49,7 @@ export function ProfileDialog({
             )}
           </div>
 
-          {/* ユーザー名エリア */}
+          {/* 表示名エリア */}
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <span>{username}</span>
             {isOwnProfile && (

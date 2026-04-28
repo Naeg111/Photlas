@@ -253,7 +253,7 @@ export default function ReviewLocationPage() {
 
         {/* スクロール可能コンテンツ */}
         <div className="overflow-y-auto px-6 pt-4 pb-6 flex-1">
-          {/* ユーザー名 */}
+          {/* 表示名 */}
           <p className="text-sm font-medium mb-2" data-testid="review-username">
             {reviewData.username}
           </p>

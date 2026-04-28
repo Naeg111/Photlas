@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next'
  *
  * フラグメント形式:
  *   - 成功:          #access_token=<jwt>
- *   - 仮ユーザー名:  #access_token=<jwt>&requires_username_setup=true
+ *   - 仮表示名:  #access_token=<jwt>&requires_username_setup=true
  *   - 失敗:          #error=<code>
  *   - 既存紐付け確認: #link_confirmation_token=<token>&provider=<GOOGLE|LINE>
  *
@@ -152,7 +152,7 @@ async function completeLogin(
     language: userData.language,
   }))
 
-  // 遷移: 仮ユーザー名なら ?requires_username_setup=1 付きでホームへ（App 側でダイアログを開く）
+  // 遷移: 仮表示名なら ?requires_username_setup=1 付きでホームへ（App 側でダイアログを開く）
   navigate(requiresUsernameSetup ? '/?requires_username_setup=1' : '/', { replace: true })
   // ページ全体をリロードして AuthProvider の useEffect を再走させる
   // Strict Mode 対策として window.location.reload を使わず、App 再マウントを避けるためだけに

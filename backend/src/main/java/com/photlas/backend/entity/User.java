@@ -63,7 +63,7 @@ public class User {
     @Column(name = "language", nullable = false, length = 5)
     private String language = "ja";
 
-    // Issue#81: OAuth 初回ログイン時に仮ユーザー名を設定し、確定画面でフラグを false にする
+    // Issue#81: OAuth 初回ログイン時に仮表示名を設定し、確定画面でフラグを false にする
     @Column(name = "username_temporary", nullable = false)
     private boolean usernameTemporary = false;
 

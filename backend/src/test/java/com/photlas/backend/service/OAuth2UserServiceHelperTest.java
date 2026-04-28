@@ -87,7 +87,7 @@ class OAuth2UserServiceHelperTest {
     class NewUserCreation {
 
         @Test
-        @DisplayName("Issue#81 - OAuth接続・メールどちらも未登録なら仮ユーザー名で新規作成し User を返す")
+        @DisplayName("Issue#81 - OAuth接続・メールどちらも未登録なら仮表示名で新規作成し User を返す")
         void createsNewUserWithTemporaryUsername() {
             OAuth2UserInfo info = new OAuth2UserInfo(
                     OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL, "access-token-xyz", null, "ja");

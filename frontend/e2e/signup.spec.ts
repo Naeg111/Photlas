@@ -149,7 +149,7 @@ test.describe('アカウント作成フロー E2Eテスト', () => {
       })
     })
 
-    test('ユーザー名が2文字でアカウントが作成できる（最小境界値）', async ({ page }) => {
+    test('表示名が2文字でアカウントが作成できる（最小境界値）', async ({ page }) => {
       await openSignUpDialog(page)
 
       const uniqueEmail = generateUniqueEmail('signup-minname')
@@ -165,7 +165,7 @@ test.describe('アカウント作成フロー E2Eテスト', () => {
       })
     })
 
-    test('ユーザー名が12文字でアカウントが作成できる（最大境界値）', async ({ page }) => {
+    test('表示名が12文字でアカウントが作成できる（最大境界値）', async ({ page }) => {
       await openSignUpDialog(page)
 
       const uniqueEmail = generateUniqueEmail('signup-maxname')

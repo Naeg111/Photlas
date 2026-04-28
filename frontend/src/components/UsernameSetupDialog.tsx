@@ -19,15 +19,15 @@ interface UsernameSetupDialogProps {
 }
 
 /**
- * Issue#81 Phase 5c - 仮ユーザー名の確定ダイアログ。
+ * Issue#81 Phase 5c - 仮表示名の確定ダイアログ。
  *
- * OAuth 新規登録時は user_<7桁英数字> の仮ユーザー名が割り当てられ、
+ * OAuth 新規登録時は user_<7桁英数字> の仮表示名が割り当てられ、
  * 初回ログイン後にこのダイアログで確定させる。
  *
  * - 「あとで設定する」で閉じる（usernameTemporary=true のまま）
  * - 「確定する」で PUT /api/v1/users/me/username 呼び出し、成功時に
  *   AuthContext を更新して onUpdated を呼ぶ
- * - 「ログアウト」でセッション破棄して閉じる（ユーザー名設定を放棄するケース）
+ * - 「ログアウト」でセッション破棄して閉じる（表示名設定を放棄するケース）
  */
 export default function UsernameSetupDialog({
   open,

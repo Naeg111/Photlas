@@ -382,7 +382,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PUT /api/v1/users/me/profile - 他ユーザーと同じユーザー名でも更新成功する（重複許可）")
+    @DisplayName("PUT /api/v1/users/me/profile - 他ユーザーと同じ表示名でも更新成功する（重複許可）")
     void testUpdateProfile_DuplicateUsername_ReturnsOk() throws Exception {
         // 別のユーザーを作成
         createTestUser(EXISTING_USERNAME, OTHER_EMAIL);
@@ -394,7 +394,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PUT /api/v1/users/me/profile - バリデーションエラー（ユーザー名が短すぎる）")
+    @DisplayName("PUT /api/v1/users/me/profile - バリデーションエラー（表示名が短すぎる）")
     void testUpdateProfile_UsernameTooShort_ReturnsBadRequest() throws Exception {
         UpdateProfileRequest request = createUpdateProfileRequest(INVALID_USERNAME_SHORT);
 
@@ -908,9 +908,9 @@ public class UserControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // --- ユーザー名変更 ---
+    // --- 表示名変更 ---
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - ユーザー名変更成功")
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 表示名変更成功")
     void testUpdateUsername_ValidRequest_ReturnsOk() throws Exception {
         String requestBody = "{\"username\":\"newusername\"}";
 
@@ -924,7 +924,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - ユーザー名が空の場合は400を返す")
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 表示名が空の場合は400を返す")
     void testUpdateUsername_EmptyUsername_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"username\":\"\"}";
 
@@ -937,7 +937,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - ユーザー名が30文字を超える場合は400を返す")
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 表示名が30文字を超える場合は400を返す")
     void testUpdateUsername_TooLongUsername_ReturnsBadRequest() throws Exception {
         String longUsername = "a".repeat(31);
         String requestBody = "{\"username\":\"" + longUsername + "\"}";
@@ -951,7 +951,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 他ユーザーと同じユーザー名でも更新成功する（重複許可）")
+    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 他ユーザーと同じ表示名でも更新成功する（重複許可）")
     void testUpdateUsername_DuplicateUsername_ReturnsOk() throws Exception {
         // 別のユーザーを作成
         createTestUser("existingname", "existing@example.com");

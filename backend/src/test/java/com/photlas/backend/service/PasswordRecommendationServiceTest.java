@@ -76,7 +76,7 @@ class PasswordRecommendationServiceTest {
     }
 
     @Test
-    @DisplayName("OAuth のみユーザー (password_hash == null, 確定済みユーザー名, dismissed_at=null): shouldRecommend=true + provider 返却")
+    @DisplayName("OAuth のみユーザー (password_hash == null, 確定済み表示名, dismissed_at=null): shouldRecommend=true + provider 返却")
     void oauthOnlyUser_allConditionsMet_recommends() {
         User user = newUser(USER_ID, /*passwordHash*/ null, /*usernameTemporary*/ false, /*dismissedAt*/ null);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
@@ -90,7 +90,7 @@ class PasswordRecommendationServiceTest {
     }
 
     @Test
-    @DisplayName("OAuth のみユーザー + username_temporary=true: shouldRecommend=false（ユーザー名確定前はバナーを出さない）")
+    @DisplayName("OAuth のみユーザー + username_temporary=true: shouldRecommend=false（表示名確定前はバナーを出さない）")
     void oauthOnlyUser_usernameTemporary_doesNotRecommend() {
         User user = newUser(USER_ID, null, /*usernameTemporary*/ true, null);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));

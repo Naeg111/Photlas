@@ -10,8 +10,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * ユーザー名バリデーション用のカスタム Bean Validation アノテーション。
- * Issue#98: ユーザー名バリデーション強化。
+ * 表示名バリデーション用のカスタム Bean Validation アノテーション。
+ * Issue#98: 表示名バリデーション強化。
  *
  * <p>使用例:
  * <pre>

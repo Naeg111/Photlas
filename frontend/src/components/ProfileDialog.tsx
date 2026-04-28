@@ -431,7 +431,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   } = useProfileEdit({
     initialUsername: userProfile.username,
     snsLinks: userProfile.snsLinks,
-    // Issue#36: ユーザー名更新成功時にAuthContextを更新
+    // Issue#36: 表示名更新成功時にAuthContextを更新
     onUsernameUpdated: (newUsername) => {
       updateUser({ username: newUsername })
     },
@@ -545,7 +545,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             )}
           </div>
 
-          {/* ユーザー名 */}
+          {/* 表示名 */}
           <div className="flex flex-col gap-2 mb-[14px]">
             <label htmlFor="profile-username" className="text-sm font-medium text-gray-700">アカウント名</label>
             {isEditingUsername && (

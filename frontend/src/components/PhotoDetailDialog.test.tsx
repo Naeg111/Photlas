@@ -289,7 +289,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
-      // ユーザー名が表示される
+      // 表示名が表示される
       await waitFor(() => {
         expect(screen.getByText(TEST_USERNAME)).toBeInTheDocument()
       })

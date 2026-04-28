@@ -32,9 +32,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     /**
-     * ユーザー名でユーザーを検索
+     * 表示名でユーザーを検索
      *
-     * @param username ユーザー名
+     * @param username 表示名
      * @return ユーザー（存在しない場合はOptional.empty()）
      */
     Optional<User> findByUsername(String username);
@@ -59,7 +59,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             org.springframework.data.domain.Pageable pageable);
 
     /**
-     * Issue#73: 退会済みユーザーをメールアドレスまたは元ユーザー名で検索
+     * Issue#73: 退会済みユーザーをメールアドレスまたは元表示名で検索
      */
     @org.springframework.data.jpa.repository.Query(
             "SELECT u FROM User u WHERE u.deletedAt IS NOT NULL AND " +

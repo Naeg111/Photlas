@@ -11,7 +11,7 @@ import {
  *
  * テスト対象:
  * 1. プロフィールダイアログの表示
- * 2. ユーザー名の変更
+ * 2. 表示名の変更
  * 3. 投稿タブ・お気に入りタブの表示
  * 4. SNSリンクの編集
  * 5. プロフィール画像の操作
@@ -56,7 +56,7 @@ test.describe('プロフィール管理・表示', () => {
 
       await openProfileDialog(page)
 
-      // ユーザー名が表示される
+      // 表示名が表示される
       await expect(page.getByText('アカウント名')).toBeVisible()
 
       // 登録時の表示名が表示されていることを確認
@@ -94,16 +94,16 @@ test.describe('プロフィール管理・表示', () => {
   })
 
   // ============================================================
-  // ユーザー名変更
+  // 表示名変更
   // ============================================================
 
-  test.describe('ユーザー名変更', () => {
-    test('ユーザー名の変更ボタンが表示される', async ({ page }) => {
+  test.describe('表示名変更', () => {
+    test('表示名の変更ボタンが表示される', async ({ page }) => {
       await createAccountAndLogin(page, 'profile-edit-name')
 
       await openProfileDialog(page)
 
-      // ユーザー名の「変更」ボタンが表示される
+      // 表示名の「変更」ボタンが表示される
       await expect(page.getByRole('button', { name: '変更' })).toBeVisible({ timeout: 5000 })
     })
   })
@@ -209,7 +209,7 @@ test.describe('プロフィール管理・表示', () => {
   // ============================================================
 
   test.describe('プロフィール編集', () => {
-    test('ユーザー名を変更できる', async ({ page }) => {
+    test('表示名を変更できる', async ({ page }) => {
       await createAccountAndLogin(page, 'profile-rename')
 
       await openProfileDialog(page)
@@ -217,11 +217,11 @@ test.describe('プロフィール管理・表示', () => {
       // 変更ボタンをクリック
       await page.getByRole('button', { name: '変更' }).click()
 
-      // ユーザー名入力欄が表示される
+      // 表示名入力欄が表示される
       const usernameInput = page.getByTestId('username-input')
       await expect(usernameInput).toBeVisible({ timeout: 5000 })
 
-      // 新しいユーザー名を入力
+      // 新しい表示名を入力
       const newName = `テスト${Date.now().toString().slice(-4)}`
       await usernameInput.clear()
       await usernameInput.fill(newName)

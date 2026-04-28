@@ -44,7 +44,7 @@ describe('UsernameSetupDialog', () => {
     })
   })
 
-  it('ダイアログタイトルと初期ユーザー名が表示される', () => {
+  it('ダイアログタイトルと初期表示名が表示される', () => {
     renderDialog({ initialUsername: 'user_abc1234' })
     expect(screen.getByText('表示名を設定')).toBeInTheDocument()
     const input = screen.getByLabelText('表示名') as HTMLInputElement

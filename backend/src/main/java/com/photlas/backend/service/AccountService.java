@@ -350,7 +350,7 @@ public class AccountService {
      *
      * @param template     ユーザー区分
      * @param language     "en" 以外は ja 扱い
-     * @param username     元のユーザー名（宛名に使用）
+     * @param username     元の表示名（宛名に使用）
      * @param providerName プロバイダ名（OAUTH_ONLY / HYBRID 時のみ使用、NORMAL では null 可）
      */
     private static String buildDeletionEmailBody(
