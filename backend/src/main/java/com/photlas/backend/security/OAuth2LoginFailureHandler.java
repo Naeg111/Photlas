@@ -14,13 +14,19 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Issue#81 Phase 3e - OAuth ログイン失敗時のハンドラ。
+ * Issue#81 Phase 3e / Issue#99 - OAuth ログイン失敗時のハンドラ。
  *
- * <p>{@link OAuth2AuthenticationException} のエラーコードを
+ * <p>通常の {@link OAuth2AuthenticationException} はエラーコードを
  * フラグメント {@code #error=<code>} に詰めて
  * {@code <frontendUrl>/oauth/callback} へリダイレクトする。
  * それ以外の {@link AuthenticationException} は汎用コード
  * {@code OAUTH_UNKNOWN_ERROR} にフォールバックする。
+ *
+ * <p>Issue#99 - 例外が {@link OAuth2LinkConfirmationException} の場合は
+ * エラー扱いではなくリンク確認フロー扱いとし、
+ * {@code #link_confirmation_token=<token>&provider=<PROVIDER>} 形式で
+ * リダイレクトする。フロントエンドはこれを検出して
+ * {@code LinkAccountConfirmDialog} を開く。
  *
  * <p>失敗時もセッションの {@link CustomOAuth2UserService#SESSION_ATTRIBUTE_LANG}
  * をクリアして、次回認可フローまで残さない。
@@ -29,6 +35,8 @@ public class OAuth2LoginFailureHandler extends SimpleUrlAuthenticationFailureHan
 
     private static final String CALLBACK_PATH = "/oauth/callback";
     private static final String QUERY_KEY_ERROR = "error";
+    private static final String QUERY_KEY_LINK_CONFIRMATION_TOKEN = "link_confirmation_token";
+    private static final String QUERY_KEY_PROVIDER = "provider";
     static final String FALLBACK_ERROR_CODE = "OAUTH_UNKNOWN_ERROR";
 
     private final String frontendUrl;
@@ -41,9 +49,10 @@ public class OAuth2LoginFailureHandler extends SimpleUrlAuthenticationFailureHan
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
                                         AuthenticationException exception)
             throws IOException, ServletException {
-        String errorCode = resolveErrorCode(exception);
         clearSessionLang(request);
-        String target = buildRedirectUrl(errorCode);
+        String target = (exception instanceof OAuth2LinkConfirmationException linkEx)
+                ? buildLinkConfirmationUrl(linkEx)
+                : buildErrorUrl(resolveErrorCode(exception));
         getRedirectStrategy().sendRedirect(request, response, target);
     }
 
@@ -57,9 +66,17 @@ public class OAuth2LoginFailureHandler extends SimpleUrlAuthenticationFailureHan
         return FALLBACK_ERROR_CODE;
     }
 
-    private String buildRedirectUrl(String errorCode) {
+    private String buildErrorUrl(String errorCode) {
         return frontendUrl + CALLBACK_PATH + '#' + QUERY_KEY_ERROR + '='
                 + URLEncoder.encode(errorCode, StandardCharsets.UTF_8);
+    }
+
+    private String buildLinkConfirmationUrl(OAuth2LinkConfirmationException ex) {
+        String token = URLEncoder.encode(ex.getLinkConfirmationToken(), StandardCharsets.UTF_8);
+        String provider = URLEncoder.encode(ex.getProvider().name(), StandardCharsets.UTF_8);
+        return frontendUrl + CALLBACK_PATH + '#'
+                + QUERY_KEY_LINK_CONFIRMATION_TOKEN + '=' + token
+                + '&' + QUERY_KEY_PROVIDER + '=' + provider;
     }
 
     private static void clearSessionLang(HttpServletRequest request) {

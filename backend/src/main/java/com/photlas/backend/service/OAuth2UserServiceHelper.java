@@ -7,6 +7,7 @@ import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserOAuthConnection;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.security.OAuth2LinkConfirmationException;
 import com.photlas.backend.util.OAuthTokenEncryptor;
 import com.photlas.backend.util.SecurityAuditLogger;
 import com.photlas.backend.util.TemporaryUsernameGenerator;
@@ -105,7 +106,7 @@ public class OAuth2UserServiceHelper {
         // 2. email で既存ユーザーを検索（リンク確認フロー or 拒否）
         Optional<User> existingByEmail = userRepository.findByEmail(email);
         if (existingByEmail.isPresent()) {
-            return handleExistingEmailMatch(existingByEmail.get(), provider, email);
+            return handleExistingEmailMatch(existingByEmail.get(), info, email);
         }
 
         // 3. 新規ユーザー作成
@@ -151,7 +152,8 @@ public class OAuth2UserServiceHelper {
 
     // ---------- メール一致の分岐 ----------
 
-    private User handleExistingEmailMatch(User user, OAuthProvider provider, String email) {
+    private User handleExistingEmailMatch(User user, OAuth2UserInfo info, String email) {
+        OAuthProvider provider = info.provider();
         if (!user.isEmailVerified()) {
             securityAuditLogger.logWarn(SecurityAuditLogger.Event.OAUTH_LOGIN_FAILED,
                     auditFields(user.getId(), provider, "reason", "OAUTH_EMAIL_VERIFICATION_REQUIRED"));
@@ -164,12 +166,15 @@ public class OAuth2UserServiceHelper {
             throw authException("OAUTH_ADMIN_NOT_ALLOWED",
                     "管理者アカウントは SNS ログインで利用できません");
         }
-        // Phase 4 で OAuthLinkConfirmationService を統合予定。
-        // 現時点では即時リンクせず OAUTH_LINK_CONFIRMATION_REQUIRED を返す。
+        // Issue#99: OAuthLinkConfirmationService で短命トークンを発行し、
+        // 失敗ハンドラ経由でフロントエンドにトークンを渡す。フロントエンドは
+        // 確認ダイアログでユーザーの同意を得てから confirm-link API を呼んで
+        // UserOAuthConnection を作成する（consume() 側で INSERT）。
+        String token = oauthLinkConfirmationService.issue(
+                user.getId(), provider, info.providerUserId(), email);
         securityAuditLogger.log(SecurityAuditLogger.Event.OAUTH_LINK_REJECTED,
                 auditFields(user.getId(), provider, "reason", "LINK_CONFIRMATION_REQUIRED"));
-        throw authException("OAUTH_LINK_CONFIRMATION_REQUIRED",
-                "既存アカウントが検出されました。リンク確認が必要です");
+        throw new OAuth2LinkConfirmationException(token, provider);
     }
 
     // ---------- 新規ユーザー作成（+ レース条件対応） ----------
