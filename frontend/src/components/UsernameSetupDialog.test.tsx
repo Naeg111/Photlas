@@ -46,8 +46,8 @@ describe('UsernameSetupDialog', () => {
 
   it('ダイアログタイトルと初期ユーザー名が表示される', () => {
     renderDialog({ initialUsername: 'user_abc1234' })
-    expect(screen.getByText('ユーザー名を設定')).toBeInTheDocument()
-    const input = screen.getByLabelText('ユーザー名') as HTMLInputElement
+    expect(screen.getByText('表示名を設定')).toBeInTheDocument()
+    const input = screen.getByLabelText('表示名') as HTMLInputElement
     expect(input.value).toBe('user_abc1234')
   })
 
@@ -103,11 +103,11 @@ describe('UsernameSetupDialog', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  it('「あとで設定する」クリックで onClose のみ呼ばれる', async () => {
+  it('「後で設定する」クリックで onClose のみ呼ばれる', async () => {
     const onClose = vi.fn()
     renderDialog({ onClose })
 
-    await userEvent.click(screen.getByRole('button', { name: 'あとで設定する' }))
+    await userEvent.click(screen.getByRole('button', { name: '後で設定する' }))
 
     expect(onClose).toHaveBeenCalled()
     expect(mockFetch).not.toHaveBeenCalled()

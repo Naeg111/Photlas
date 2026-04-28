@@ -86,13 +86,13 @@ export default function UsernameSetupDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('auth.oauth.usernameSetup.title')}</DialogTitle>
-          <DialogDescription>
-            {t('auth.oauth.usernameSetup.description1')}
-            <br />
-            {t('auth.oauth.usernameSetup.description2')}
-          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 mt-4">
+        <DialogDescription>
+          {t('auth.oauth.usernameSetup.description1')}
+          <br />
+          {t('auth.oauth.usernameSetup.description2')}
+        </DialogDescription>
+        <div className="space-y-2">
           <Label htmlFor="oauth-username-input">
             {t('auth.oauth.usernameSetup.usernameLabel')}
           </Label>
@@ -114,6 +114,7 @@ export default function UsernameSetupDialog({
           <Button
             type="button"
             variant="ghost"
+            className="py-4 sm:py-2"
             onClick={() => {
               logout()
               onClose()
@@ -121,7 +122,7 @@ export default function UsernameSetupDialog({
           >
             {t('auth.oauth.usernameSetup.cancelSignUp')}
           </Button>
-          <div className="flex gap-2">
+          <div className="flex gap-2 [&>*]:flex-1 sm:[&>*]:flex-none">
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               {t('auth.oauth.usernameSetup.keepTemporary')}
             </Button>

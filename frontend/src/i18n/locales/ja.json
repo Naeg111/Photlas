@@ -97,12 +97,12 @@
         "OAUTH_UNKNOWN_ERROR": "OAuth ログイン中に予期しないエラーが発生しました。"
       },
       "usernameSetup": {
-        "title": "ユーザー名を設定",
-        "description1": "仮のユーザー名が割り当てられています。",
+        "title": "表示名を設定",
+        "description1": "仮の表示名が割り当てられています。",
         "description2": "このまま使用するか、任意の名前に変更してください。",
-        "usernameLabel": "ユーザー名",
+        "usernameLabel": "表示名",
         "save": "確定する",
-        "keepTemporary": "あとで設定する",
+        "keepTemporary": "後で設定する",
         "cancelSignUp": "登録を中止"
       },
       "linkConfirm": {
@@ -237,7 +237,7 @@
     "noPosts": "まだ投稿がありません",
     "noFavorites": "お気に入りはまだありません",
     "editSnsLinks": "SNSリンクを編集",
-    "duplicateUsername": "このユーザー名はすでに使用されています"
+    "duplicateUsername": "この表示名はすでに使用されています"
   },
   "settings": {
     "title": "アカウント設定",
@@ -349,16 +349,16 @@
     "RATE_LIMIT_EXCEEDED_SHORT": "混雑しています（{{seconds}} 秒後に再取得）",
     "RATE_LIMIT_BURST": "通信が混み合っています。しばらく操作を控えてください。",
     "NETWORK_ERROR": "ネットワーク接続に失敗しました。接続を確認してください。",
-    "USERNAME_REQUIRED": "ユーザー名を入力してください。",
-    "USERNAME_LENGTH_INVALID": "ユーザー名は2文字以上12文字以内で入力してください。",
-    "USERNAME_INVALID_CHARACTER_SYMBOL": "ユーザー名に記号は使用できません。",
-    "USERNAME_INVALID_CHARACTER_EMOJI": "ユーザー名に絵文字は使用できません。",
-    "USERNAME_INVALID_CHARACTER_FULLWIDTH": "ユーザー名に全角英数字は使用できません。半角英数字を使用してください。",
-    "USERNAME_INVALID_CHARACTER_HALFWIDTH_KATAKANA": "ユーザー名に半角カタカナは使用できません。全角カタカナを使用してください。",
-    "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "ユーザー名に表示されない特殊文字が含まれています。",
-    "USERNAME_INVALID_CHARACTER_OTHER": "ユーザー名に使用できない文字が含まれています。英数字・日本語（ひらがな・全角カタカナ・基本漢字）・アンダースコア・ハイフンのみ使用できます。",
-    "USERNAME_INVALID_FIRST_CHARACTER": "ユーザー名の先頭は英字または日本語にしてください（数字・アンダースコア・ハイフンは先頭に使えません）。",
-    "USERNAME_RESERVED": "このユーザー名は予約語のため使用できません。"
+    "USERNAME_REQUIRED": "表示名を入力してください。",
+    "USERNAME_LENGTH_INVALID": "表示名は2文字以上12文字以内で入力してください。",
+    "USERNAME_INVALID_CHARACTER_SYMBOL": "表示名に記号は使用できません。",
+    "USERNAME_INVALID_CHARACTER_EMOJI": "表示名に絵文字は使用できません。",
+    "USERNAME_INVALID_CHARACTER_FULLWIDTH": "表示名に全角英数字は使用できません。半角英数字を使用してください。",
+    "USERNAME_INVALID_CHARACTER_HALFWIDTH_KATAKANA": "表示名に半角カタカナは使用できません。全角カタカナを使用してください。",
+    "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "表示名に表示されない特殊文字が含まれています。",
+    "USERNAME_INVALID_CHARACTER_OTHER": "表示名に使用できない文字が含まれています。英数字・日本語（ひらがな・全角カタカナ・基本漢字）・アンダースコア・ハイフンのみ使用できます。",
+    "USERNAME_INVALID_FIRST_CHARACTER": "表示名の先頭は英字または日本語にしてください（数字・アンダースコア・ハイフンは先頭に使えません）。",
+    "USERNAME_RESERVED": "この表示名は予約語のため使用できません。"
   },
   "pages": {
     "emailVerifying": "メールアドレスを認証しています...",
