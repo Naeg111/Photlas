@@ -23,6 +23,7 @@ import { LoginDialog } from './components/LoginDialog'
 import { SignUpDialog } from './components/SignUpDialog'
 import SignUpMethodDialog from './components/SignUpMethodDialog'
 import OAuthSignUpDialog from './components/OAuthSignUpDialog'
+import LinkAccountConfirmDialog from './components/LinkAccountConfirmDialog'
 import { TermsOfServicePage } from './components/TermsOfServicePage'
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage'
 import PasswordResetRequestModal from './components/PasswordResetRequestModal'
@@ -75,11 +76,19 @@ interface MainContentProps {
  * useAuthを使用するためAuthProvider内で使用
  */
 function MainContent({ onMapReady }: Readonly<MainContentProps>) {
-  const { user, logout } = useAuth()
+  const { user, login, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const dialog = useDialogState()
   const mapRef = useRef<MapViewHandle>(null)
+
+  // Issue#99: アカウントリンク確認フロー用の state
+  // OAuthCallbackPage が `/` に linkConfirmationToken / provider 付き state で
+  // 遷移してきた場合に LinkAccountConfirmDialog を開く。
+  const [linkConfirmation, setLinkConfirmation] = useState<{
+    token: string
+    provider: string
+  } | null>(null)
 
   // フィルター関連の状態
   const [mapFilterParams, setMapFilterParams] = useState<MapViewFilterParams | undefined>(undefined)
@@ -200,6 +209,44 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
       globalThis.history.replaceState({}, '')
     }
   }, [location.state])
+
+  // Issue#99: OAuthCallbackPage 経由で linkConfirmationToken が渡された場合に
+  // リンク確認ダイアログを開く。再オープン防止のため state は読み取り後にクリアする。
+  useEffect(() => {
+    const token = location.state?.linkConfirmationToken
+    const provider = location.state?.provider
+    if (typeof token === 'string' && token.length > 0 && typeof provider === 'string') {
+      setLinkConfirmation({ token, provider })
+      // 履歴 state をクリア（リロード・戻る等で再オープンされないように）
+      globalThis.history.replaceState({}, '')
+    }
+  }, [location.state])
+
+  // Issue#99: リンク確認成功時のハンドラ。
+  // ダイアログから受け取った token + email で /users/me を取得し、auth.login で認証状態を反映する。
+  const handleLinked = useCallback(async (token: string, email: string) => {
+    try {
+      const response = await fetch(`${API_V1_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) {
+        throw new Error(`failed to fetch user profile: ${response.status}`)
+      }
+      const userData = await response.json()
+      login({
+        userId: userData.userId,
+        username: userData.username,
+        email: userData.email ?? email,
+        role: userData.role,
+        language: userData.language,
+      }, token, true)
+      toast.success('アカウントを連携しました')
+    } catch {
+      toast.error('連携後のユーザー情報取得に失敗しました')
+    } finally {
+      setLinkConfirmation(null)
+    }
+  }, [login])
 
   // Issue#58: ディープリンクでPhotoDetailDialogを自動表示
   useEffect(() => {
@@ -652,6 +699,17 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
           }
         }
       />
+
+      {/* Issue#99: 既存メールアカウントとの OAuth リンク確認ダイアログ */}
+      {linkConfirmation && (
+        <LinkAccountConfirmDialog
+          open={true}
+          linkConfirmationToken={linkConfirmation.token}
+          provider={linkConfirmation.provider}
+          onClose={() => setLinkConfirmation(null)}
+          onLinked={handleLinked}
+        />
+      )}
 
       <TermsOfServicePage {...dialog.getProps('terms')} />
 
