@@ -30,12 +30,13 @@ describe('LinkAccountConfirmDialog', () => {
   it('タイトルと provider を含む説明文を表示する（Google）', () => {
     renderDialog({ provider: 'GOOGLE' })
     expect(screen.getByText('既存アカウントとの連携確認')).toBeInTheDocument()
-    expect(screen.getByText(/Google/)).toBeInTheDocument()
+    // sr-only DialogDescription と可視の <p> に同じ文言が含まれるため複数マッチを許容
+    expect(screen.getAllByText(/Google/).length).toBeGreaterThan(0)
   })
 
   it('provider=LINE は説明文に LINE と表示', () => {
     renderDialog({ provider: 'LINE' })
-    expect(screen.getByText(/LINE/)).toBeInTheDocument()
+    expect(screen.getAllByText(/LINE/).length).toBeGreaterThan(0)
   })
 
   it('「連携する」クリックで POST /auth/oauth2/confirm-link を呼び token を送信', async () => {

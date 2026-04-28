@@ -8,6 +8,7 @@ import com.photlas.backend.repository.OAuthLinkConfirmationRepository;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.MessageDigest;
@@ -45,8 +46,14 @@ public class OAuthLinkConfirmationService {
 
     /**
      * リンク確認トークンを発行する。生トークンのみ呼び出し元に返し、DB には SHA-256 ハッシュを保存する。
+     *
+     * <p>Issue#99: 呼び出し元 ({@link OAuth2UserServiceHelper#processOAuthUser}) は
+     * 直後に {@link com.photlas.backend.security.OAuth2LinkConfirmationException} を投げるため、
+     * 外側のトランザクションは必ずロールバックされる。本メソッドの save() を保護するために
+     * {@link Propagation#REQUIRES_NEW} で独立トランザクションとして実行し、
+     * 外側のロールバックの影響を受けないようにする。
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String issue(Long userId, OAuthProvider provider, String providerUserId, String providerEmail) {
         String rawToken = generateRawToken();
         String hashed = sha256Hex(rawToken);

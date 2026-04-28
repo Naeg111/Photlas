@@ -63,26 +63,41 @@ export default function LinkAccountConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('auth.oauth.linkConfirm.title')}</DialogTitle>
-        </DialogHeader>
-        <DialogDescription>
-          {t('auth.oauth.linkConfirm.description', { provider: formatProvider(provider) })}
-        </DialogDescription>
-        {errorMessage && (
-          <p role="alert" className="text-sm text-red-600">
-            {errorMessage}
-          </p>
-        )}
-        <DialogFooter className="flex gap-2 justify-end">
-          <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-            {t('auth.oauth.linkConfirm.cancel')}
-          </Button>
-          <Button type="button" onClick={handleLink} disabled={isLoading}>
-            {t('auth.oauth.linkConfirm.link')}
-          </Button>
-        </DialogFooter>
+      <DialogContent
+        className="max-h-[90vh]"
+        style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '90dvh' }}
+      >
+        {/* Fixed header */}
+        <div className="px-6 pt-6 pb-2 shrink-0">
+          <DialogHeader>
+            <DialogTitle>{t('auth.oauth.linkConfirm.title')}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {t('auth.oauth.linkConfirm.description', { provider: formatProvider(provider) })}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-6 pb-6">
+          <div className="mt-2">
+            <p className="mb-6 text-black">
+              {t('auth.oauth.linkConfirm.description', { provider: formatProvider(provider) })}
+            </p>
+            {errorMessage && (
+              <p role="alert" className="text-sm text-red-600 mb-4">
+                {errorMessage}
+              </p>
+            )}
+            <DialogFooter className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+                {t('auth.oauth.linkConfirm.cancel')}
+              </Button>
+              <Button type="button" onClick={handleLink} disabled={isLoading}>
+                {t('auth.oauth.linkConfirm.link')}
+              </Button>
+            </DialogFooter>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )
