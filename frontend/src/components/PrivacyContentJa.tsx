@@ -86,7 +86,7 @@ export function PrivacyContentJa() {
           ユーザーが Google または LINE のアカウントで本サービスにログインした場合、各プロバイダから以下の情報を取得します。
         </p>
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-          <li>Google：メールアドレス、氏名、Google ユーザーID（<code>sub</code> クレーム）</li>
+          <li>Google：メールアドレス、Google ユーザーID（<code>sub</code> クレーム）</li>
           <li>LINE：メールアドレス、表示名、LINE ユーザーID</li>
         </ul>
         <p className="text-sm text-gray-700 mt-1">
