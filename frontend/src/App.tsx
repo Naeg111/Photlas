@@ -24,6 +24,7 @@ import { SignUpDialog } from './components/SignUpDialog'
 import SignUpMethodDialog from './components/SignUpMethodDialog'
 import OAuthSignUpDialog from './components/OAuthSignUpDialog'
 import LinkAccountConfirmDialog from './components/LinkAccountConfirmDialog'
+import UsernameSetupDialog from './components/UsernameSetupDialog'
 import { TermsOfServicePage } from './components/TermsOfServicePage'
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage'
 import PasswordResetRequestModal from './components/PasswordResetRequestModal'
@@ -89,6 +90,10 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     token: string
     provider: string
   } | null>(null)
+
+  // Issue#99: OAuth 新規登録時の仮ユーザー名設定ダイアログ表示制御。
+  // OAuthCallbackPage が `/?requires_username_setup=1` に遷移してきた場合に開く。
+  const [usernameSetupOpen, setUsernameSetupOpen] = useState(false)
 
   // フィルター関連の状態
   const [mapFilterParams, setMapFilterParams] = useState<MapViewFilterParams | undefined>(undefined)
@@ -221,6 +226,19 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
       globalThis.history.replaceState({}, '')
     }
   }, [location.state])
+
+  // Issue#99: OAuth 新規登録直後の仮ユーザー名設定ダイアログを開く。
+  // OAuthCallbackPage が `/?requires_username_setup=1` に遷移してきた場合に検出する。
+  // 再オープン防止のため、検出後はクエリパラメータを除去する。
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('requires_username_setup') === '1') {
+      setUsernameSetupOpen(true)
+      params.delete('requires_username_setup')
+      const newSearch = params.toString()
+      navigate(newSearch ? `${location.pathname}?${newSearch}` : location.pathname, { replace: true })
+    }
+  }, [location.search, location.pathname, navigate])
 
   // Issue#99: リンク確認成功時のハンドラ。
   // ダイアログから受け取った token + email で /users/me を取得し、auth.login で認証状態を反映する。
@@ -708,6 +726,15 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
           provider={linkConfirmation.provider}
           onClose={() => setLinkConfirmation(null)}
           onLinked={handleLinked}
+        />
+      )}
+
+      {/* Issue#99: OAuth 新規登録直後の仮ユーザー名設定ダイアログ */}
+      {user && (
+        <UsernameSetupDialog
+          open={usernameSetupOpen}
+          initialUsername={user.username}
+          onClose={() => setUsernameSetupOpen(false)}
         />
       )}
 
