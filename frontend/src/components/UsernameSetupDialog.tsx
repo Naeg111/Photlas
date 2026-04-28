@@ -87,7 +87,9 @@ export default function UsernameSetupDialog({
         <DialogHeader>
           <DialogTitle>{t('auth.oauth.usernameSetup.title')}</DialogTitle>
           <DialogDescription>
-            {t('auth.oauth.usernameSetup.description')}
+            {t('auth.oauth.usernameSetup.description1')}
+            <br />
+            {t('auth.oauth.usernameSetup.description2')}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
