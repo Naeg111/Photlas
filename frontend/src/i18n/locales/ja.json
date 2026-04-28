@@ -102,8 +102,7 @@
         "description2": "このまま使用するか、任意の名前に変更してください。",
         "usernameLabel": "表示名",
         "save": "確定する",
-        "keepTemporary": "後で設定する",
-        "cancelSignUp": "登録を中止"
+        "keepTemporary": "後で設定する"
       },
       "linkConfirm": {
         "title": "既存アカウントとの連携確認",

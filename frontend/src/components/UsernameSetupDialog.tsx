@@ -24,10 +24,9 @@ interface UsernameSetupDialogProps {
  * OAuth 新規登録時は user_<7桁英数字> の仮表示名が割り当てられ、
  * 初回ログイン後にこのダイアログで確定させる。
  *
- * - 「あとで設定する」で閉じる（usernameTemporary=true のまま）
+ * - 「後で設定する」で閉じる（usernameTemporary=true のまま）
  * - 「確定する」で PUT /api/v1/users/me/username 呼び出し、成功時に
  *   AuthContext を更新して onUpdated を呼ぶ
- * - 「ログアウト」でセッション破棄して閉じる（表示名設定を放棄するケース）
  */
 export default function UsernameSetupDialog({
   open,
@@ -36,7 +35,7 @@ export default function UsernameSetupDialog({
   onUpdated,
 }: UsernameSetupDialogProps) {
   const { t } = useTranslation()
-  const { updateUser, logout } = useAuth()
+  const { updateUser } = useAuth()
   const [username, setUsername] = useState(initialUsername)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -110,30 +109,24 @@ export default function UsernameSetupDialog({
             </p>
           )}
         </div>
-        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-between">
+        <DialogFooter className="flex flex-row gap-2 sm:justify-between">
           <Button
             type="button"
-            variant="ghost"
-            className="py-4 sm:py-2"
-            onClick={() => {
-              logout()
-              onClose()
-            }}
+            variant="outline"
+            className="flex-1 sm:flex-none"
+            onClick={onClose}
+            disabled={isLoading}
           >
-            {t('auth.oauth.usernameSetup.cancelSignUp')}
+            {t('auth.oauth.usernameSetup.keepTemporary')}
           </Button>
-          <div className="flex gap-2 [&>*]:flex-1 sm:[&>*]:flex-none">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-              {t('auth.oauth.usernameSetup.keepTemporary')}
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={isLoading || !username.trim()}
-            >
-              {t('auth.oauth.usernameSetup.save')}
-            </Button>
-          </div>
+          <Button
+            type="button"
+            className="flex-1 sm:flex-none"
+            onClick={handleSave}
+            disabled={isLoading || !username.trim()}
+          >
+            {t('auth.oauth.usernameSetup.save')}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

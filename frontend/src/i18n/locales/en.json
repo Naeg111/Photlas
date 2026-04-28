@@ -102,8 +102,7 @@
         "description2": "Keep it or change to any name you like.",
         "usernameLabel": "Display name",
         "save": "Confirm",
-        "keepTemporary": "Set later",
-        "cancelSignUp": "Cancel registration"
+        "keepTemporary": "Set later"
       },
       "linkConfirm": {
         "title": "Link with existing account",
