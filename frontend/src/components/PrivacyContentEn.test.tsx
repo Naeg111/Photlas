@@ -44,3 +44,28 @@ describe('PrivacyContentEn - Issue#94 WAF log disclosure', () => {
     expect(container.textContent).not.toContain('not stored permanently')
   })
 })
+
+/**
+ * Issue#99: With Google OAuth scope reduced to email only,
+ * the privacy policy must remove "name" from the Google data list.
+ * The profile scope is no longer requested, so name is not actually obtained.
+ */
+describe('PrivacyContentEn - Issue#99 Google scope minimization', () => {
+  it('Article 2(8) Google data is "email address, Google user ID" only', () => {
+    const { container } = render(<PrivacyContentEn />)
+    const text = container.textContent ?? ''
+    expect(text).toContain('Google: email address, Google user ID')
+  })
+
+  it('Article 2(8) Google data does not include "name"', () => {
+    const { container } = render(<PrivacyContentEn />)
+    const text = container.textContent ?? ''
+    expect(text).not.toContain('email address, name')
+  })
+
+  it('Article 2(8) LINE data is unchanged (display name is still collected)', () => {
+    const { container } = render(<PrivacyContentEn />)
+    const text = container.textContent ?? ''
+    expect(text).toContain('LINE: email address, display name, LINE user ID')
+  })
+})
