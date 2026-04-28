@@ -97,10 +97,10 @@
         "OAUTH_UNKNOWN_ERROR": "An unexpected error occurred during OAuth sign-in."
       },
       "usernameSetup": {
-        "title": "Set your username",
-        "description1": "A temporary username has been assigned.",
+        "title": "Set your display name",
+        "description1": "A temporary display name has been assigned.",
         "description2": "Keep it or change to any name you like.",
-        "usernameLabel": "Username",
+        "usernameLabel": "Display name",
         "save": "Confirm",
         "keepTemporary": "Set later",
         "cancelSignUp": "Cancel registration"
@@ -237,7 +237,7 @@
     "noPosts": "No posts yet",
     "noFavorites": "No favorites yet",
     "editSnsLinks": "Edit SNS Links",
-    "duplicateUsername": "This username is already taken"
+    "duplicateUsername": "This display name is already taken"
   },
   "settings": {
     "title": "Account Settings",
@@ -349,16 +349,16 @@
     "RATE_LIMIT_EXCEEDED_SHORT": "Rate limited (retry in {{seconds}}s)",
     "RATE_LIMIT_BURST": "The network is congested. Please pause briefly before retrying.",
     "NETWORK_ERROR": "Network connection failed. Please check your connection.",
-    "USERNAME_REQUIRED": "Please enter a username.",
-    "USERNAME_LENGTH_INVALID": "Username must be between 2 and 12 characters.",
-    "USERNAME_INVALID_CHARACTER_SYMBOL": "Username cannot contain symbols.",
-    "USERNAME_INVALID_CHARACTER_EMOJI": "Username cannot contain emoji.",
-    "USERNAME_INVALID_CHARACTER_FULLWIDTH": "Username cannot contain full-width alphanumerics. Please use half-width characters.",
-    "USERNAME_INVALID_CHARACTER_HALFWIDTH_KATAKANA": "Username cannot contain half-width katakana. Please use full-width katakana.",
-    "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "Username contains invisible special characters.",
-    "USERNAME_INVALID_CHARACTER_OTHER": "Username contains invalid characters. Only letters, digits, Japanese (hiragana, full-width katakana, basic kanji), underscore, and hyphen are allowed.",
-    "USERNAME_INVALID_FIRST_CHARACTER": "Username must start with a letter or Japanese character (digits, underscore, and hyphen cannot be used as the first character).",
-    "USERNAME_RESERVED": "This username is reserved and cannot be used."
+    "USERNAME_REQUIRED": "Please enter a display name.",
+    "USERNAME_LENGTH_INVALID": "Display name must be between 2 and 12 characters.",
+    "USERNAME_INVALID_CHARACTER_SYMBOL": "Display name cannot contain symbols.",
+    "USERNAME_INVALID_CHARACTER_EMOJI": "Display name cannot contain emoji.",
+    "USERNAME_INVALID_CHARACTER_FULLWIDTH": "Display name cannot contain full-width alphanumerics. Please use half-width characters.",
+    "USERNAME_INVALID_CHARACTER_HALFWIDTH_KATAKANA": "Display name cannot contain half-width katakana. Please use full-width katakana.",
+    "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "Display name contains invisible special characters.",
+    "USERNAME_INVALID_CHARACTER_OTHER": "Display name contains invalid characters. Only letters, digits, Japanese (hiragana, full-width katakana, basic kanji), underscore, and hyphen are allowed.",
+    "USERNAME_INVALID_FIRST_CHARACTER": "Display name must start with a letter or Japanese character (digits, underscore, and hyphen cannot be used as the first character).",
+    "USERNAME_RESERVED": "This display name is reserved and cannot be used."
   },
   "pages": {
     "emailVerifying": "Verifying your email...",
