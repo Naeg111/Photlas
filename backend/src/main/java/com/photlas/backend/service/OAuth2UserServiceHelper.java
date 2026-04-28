@@ -57,18 +57,21 @@ public class OAuth2UserServiceHelper {
     private final AuthService authService;
     private final OAuthTokenEncryptor oauthTokenEncryptor;
     private final SecurityAuditLogger securityAuditLogger;
+    private final OAuthLinkConfirmationService oauthLinkConfirmationService;
 
     public OAuth2UserServiceHelper(
             UserRepository userRepository,
             UserOAuthConnectionRepository userOAuthConnectionRepository,
             AuthService authService,
             OAuthTokenEncryptor oauthTokenEncryptor,
-            SecurityAuditLogger securityAuditLogger) {
+            SecurityAuditLogger securityAuditLogger,
+            OAuthLinkConfirmationService oauthLinkConfirmationService) {
         this.userRepository = userRepository;
         this.userOAuthConnectionRepository = userOAuthConnectionRepository;
         this.authService = authService;
         this.oauthTokenEncryptor = oauthTokenEncryptor;
         this.securityAuditLogger = securityAuditLogger;
+        this.oauthLinkConfirmationService = oauthLinkConfirmationService;
     }
 
     /**

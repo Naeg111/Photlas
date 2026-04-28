@@ -7,6 +7,7 @@ import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserOAuthConnection;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.security.OAuth2LinkConfirmationException;
 import com.photlas.backend.util.OAuthTokenEncryptor;
 import com.photlas.backend.util.SecurityAuditLogger;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +60,7 @@ class OAuth2UserServiceHelperTest {
     @Mock private AuthService authService;
     @Mock private OAuthTokenEncryptor oauthTokenEncryptor;
     @Mock private SecurityAuditLogger securityAuditLogger;
+    @Mock private OAuthLinkConfirmationService oauthLinkConfirmationService;
 
     private OAuth2UserServiceHelper helper;
 
@@ -72,7 +74,8 @@ class OAuth2UserServiceHelperTest {
                 userOAuthConnectionRepository,
                 authService,
                 oauthTokenEncryptor,
-                securityAuditLogger
+                securityAuditLogger,
+                oauthLinkConfirmationService
         );
     }
 
@@ -324,7 +327,7 @@ class OAuth2UserServiceHelperTest {
     /* 7. 認証済み非管理者メール一致 → リンク確認フロー                 */
     /* -------------------------------------------------------------- */
     @Test
-    @DisplayName("Issue#81 - メール一致・email_verified=true・非管理者 なら OAUTH_LINK_CONFIRMATION_REQUIRED")
+    @DisplayName("Issue#99 - メール一致・email_verified=true・非管理者 なら OAuth2LinkConfirmationException を投げトークンを発行する")
     void verifiedEmailMatchTriggersLinkConfirmation() {
         OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL);
 
@@ -335,12 +338,22 @@ class OAuth2UserServiceHelperTest {
         when(userOAuthConnectionRepository.findByProviderCodeAndProviderUserId(anyInt(), anyString()))
                 .thenReturn(Optional.empty());
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(existing));
+        when(oauthLinkConfirmationService.issue(eq(20L), eq(OAuthProvider.GOOGLE), eq(GOOGLE_SUB), eq(EMAIL)))
+                .thenReturn("link-token-xyz");
 
         assertThatThrownBy(() -> helper.processOAuthUser(info))
-                .isInstanceOf(OAuth2AuthenticationException.class)
-                .hasMessageContaining("OAUTH_LINK_CONFIRMATION_REQUIRED");
+                .isInstanceOf(OAuth2LinkConfirmationException.class)
+                .satisfies(e -> {
+                    OAuth2LinkConfirmationException ex = (OAuth2LinkConfirmationException) e;
+                    assertThat(ex.getLinkConfirmationToken()).isEqualTo("link-token-xyz");
+                    assertThat(ex.getProvider()).isEqualTo(OAuthProvider.GOOGLE);
+                });
 
-        // この時点では OAuth 接続は INSERT しない（リンク確認後に Phase 4 で INSERT）
+        // OAuthLinkConfirmationService.issue が呼ばれてトークンが発行される
+        verify(oauthLinkConfirmationService, times(1))
+                .issue(20L, OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL);
+
+        // OAuth 接続はまだ INSERT しない（confirm-link API 呼び出し時に consume() が INSERT する）
         verify(userOAuthConnectionRepository, never()).save(any(UserOAuthConnection.class));
     }
 

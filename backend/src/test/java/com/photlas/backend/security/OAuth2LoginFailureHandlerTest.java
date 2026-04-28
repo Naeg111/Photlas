@@ -1,5 +1,6 @@
 package com.photlas.backend.security;
 
+import com.photlas.backend.entity.OAuthProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -97,6 +98,68 @@ class OAuth2LoginFailureHandlerTest {
 
         OAuth2Error error = new OAuth2Error("ANY_ERROR", "d", null);
         OAuth2AuthenticationException ex = new OAuth2AuthenticationException(error, "ANY_ERROR");
+
+        handler.onAuthenticationFailure(request, response, ex);
+
+        assertThat(request.getSession().getAttribute(CustomOAuth2UserService.SESSION_ATTRIBUTE_LANG))
+                .isNull();
+    }
+
+    /* ============================================================== */
+    /* Issue#99 - OAuth2LinkConfirmationException 専用ハンドリング     */
+    /* ============================================================== */
+
+    @Test
+    @DisplayName("Issue#99 - OAuth2LinkConfirmationException は #link_confirmation_token=... にリダイレクト（#error= ではない）")
+    void redirectsWithLinkConfirmationTokenForLinkException() throws Exception {
+        OAuth2LinkConfirmationException ex = new OAuth2LinkConfirmationException(
+                "link-token-xyz", OAuthProvider.GOOGLE);
+
+        handler.onAuthenticationFailure(request, response, ex);
+
+        String redirect = response.getRedirectedUrl();
+        assertThat(redirect).isNotNull();
+        assertThat(redirect).startsWith(FRONTEND_URL + "/oauth/callback#");
+        assertThat(redirect).contains("link_confirmation_token=link-token-xyz");
+        assertThat(redirect).contains("provider=GOOGLE");
+        // #error= フラグメントは含めない（ダイアログ表示フローのため）
+        assertThat(redirect).doesNotContain("error=");
+    }
+
+    @Test
+    @DisplayName("Issue#99 - LINE プロバイダの場合、provider=LINE がフラグメントに含まれる")
+    void includesLineProviderInLinkConfirmationFragment() throws Exception {
+        OAuth2LinkConfirmationException ex = new OAuth2LinkConfirmationException(
+                "line-link-token-abc", OAuthProvider.LINE);
+
+        handler.onAuthenticationFailure(request, response, ex);
+
+        String redirect = response.getRedirectedUrl();
+        assertThat(redirect).contains("link_confirmation_token=line-link-token-abc");
+        assertThat(redirect).contains("provider=LINE");
+    }
+
+    @Test
+    @DisplayName("Issue#99 - リンクトークン中の特殊文字は URL エンコードされる")
+    void urlEncodesLinkConfirmationToken() throws Exception {
+        // 通常 hex 64 文字なので発生しないが、防御的に URL エンコードを検証
+        OAuth2LinkConfirmationException ex = new OAuth2LinkConfirmationException(
+                "token with space&=", OAuthProvider.GOOGLE);
+
+        handler.onAuthenticationFailure(request, response, ex);
+
+        String redirect = response.getRedirectedUrl();
+        assertThat(redirect).doesNotContain(" ");
+        // & 単体は URL エンコードされて %26 になっているはず（リダイレクト URL の構造を壊さない）
+        assertThat(redirect).contains("%26");
+    }
+
+    @Test
+    @DisplayName("Issue#99 - OAuth2LinkConfirmationException でもセッションの lang 属性はクリアされる")
+    void clearsSessionLangAttributeForLinkException() throws Exception {
+        request.getSession().setAttribute(CustomOAuth2UserService.SESSION_ATTRIBUTE_LANG, "ja");
+        OAuth2LinkConfirmationException ex = new OAuth2LinkConfirmationException(
+                "tok", OAuthProvider.GOOGLE);
 
         handler.onAuthenticationFailure(request, response, ex);
 
