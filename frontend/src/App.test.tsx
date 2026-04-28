@@ -564,4 +564,65 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
   })
+
+  /**
+   * Issue#99: アカウントリンク確認フロー統合テスト
+   *
+   * OAuthCallbackPage が `/` に linkConfirmationToken / provider 付き state で
+   * 遷移してきた場合、App.tsx は LinkAccountConfirmDialog を開く。
+   * これは Issue#81 で実装漏れていたフローで、Issue#99 で修正対象。
+   */
+  describe('Issue#99: アカウントリンク確認フロー', () => {
+    function renderAppWithLinkState(state: {
+      linkConfirmationToken: string
+      provider: string
+    }) {
+      return render(
+        <MemoryRouter
+          initialEntries={[{ pathname: '/', state }]}
+        >
+          <App />
+        </MemoryRouter>
+      )
+    }
+
+    it('location.state.linkConfirmationToken があると LinkAccountConfirmDialog が開く（Google）', async () => {
+      renderAppWithLinkState({
+        linkConfirmationToken: 'link-token-xyz',
+        provider: 'GOOGLE',
+      })
+      skipSplashScreen()
+
+      await waitFor(() => {
+        expect(screen.getByText('既存アカウントとの連携確認')).toBeInTheDocument()
+      })
+      // 説明文に Google が含まれる
+      expect(screen.getByText(/Google/)).toBeInTheDocument()
+    })
+
+    it('location.state.linkConfirmationToken があると LinkAccountConfirmDialog が開く（LINE）', async () => {
+      renderAppWithLinkState({
+        linkConfirmationToken: 'link-token-abc',
+        provider: 'LINE',
+      })
+      skipSplashScreen()
+
+      await waitFor(() => {
+        expect(screen.getByText('既存アカウントとの連携確認')).toBeInTheDocument()
+      })
+      // 説明文に LINE が含まれる
+      const description = screen.getAllByText(/LINE/)
+      expect(description.length).toBeGreaterThan(0)
+    })
+
+    it('location.state.linkConfirmationToken がない場合、LinkAccountConfirmDialog は開かない', async () => {
+      renderApp() // 通常の '/' マウント
+      skipSplashScreen()
+
+      // 初期表示完了まで待つ（マップが表示される）
+      await waitFor(() => {
+        expect(screen.queryByText('既存アカウントとの連携確認')).not.toBeInTheDocument()
+      })
+    })
+  })
 })
