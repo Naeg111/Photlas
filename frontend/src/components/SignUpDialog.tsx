@@ -324,7 +324,7 @@ export function SignUpDialog({
           {/* 表示名 */}
           <div className="space-y-2">
             <Label htmlFor="displayName">{t('auth.displayName')}</Label>
-            <p className="text-xs text-gray-500">{t('auth.displayNameFormatHint')}</p>
+            <p className="text-xs text-gray-500 whitespace-pre-line">{t('auth.displayNameFormatHint')}</p>
             {errors.displayName && (
               <p className="text-sm text-red-600">{errors.displayName}</p>
             )}

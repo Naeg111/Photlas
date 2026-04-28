@@ -113,13 +113,13 @@ describe('UsernameSetupDialog', () => {
     expect(mockFetch).not.toHaveBeenCalled()
   })
 
-  it('「ログアウト」クリックで auth_token が削除される', async () => {
+  it('「登録を中止」クリックで auth_token が削除される', async () => {
     const mockRemove = vi.fn()
     ;(localStorage.removeItem as ReturnType<typeof vi.fn>).mockImplementation(mockRemove)
     const onClose = vi.fn()
     renderDialog({ onClose })
 
-    await userEvent.click(screen.getByRole('button', { name: 'ログアウト' }))
+    await userEvent.click(screen.getByRole('button', { name: '登録を中止' }))
 
     expect(mockRemove).toHaveBeenCalledWith('auth_token')
     expect(mockRemove).toHaveBeenCalledWith('auth_user')

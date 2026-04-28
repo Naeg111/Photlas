@@ -549,7 +549,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           <div className="flex flex-col gap-2 mb-[14px]">
             <label htmlFor="profile-username" className="text-sm font-medium text-gray-700">アカウント名</label>
             {isEditingUsername && (
-              <p className="text-xs text-gray-500">{t('auth.displayNameFormatHint')}</p>
+              <p className="text-xs text-gray-500 whitespace-pre-line">{t('auth.displayNameFormatHint')}</p>
             )}
             <div className="flex items-center justify-between gap-2">
               {isEditingUsername ? (

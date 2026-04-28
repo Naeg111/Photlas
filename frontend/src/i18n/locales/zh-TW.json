@@ -48,7 +48,7 @@
     "displayName": "顯示名稱（必填）",
     "displayNamePlaceholder": "王小明 — 半形/全形 12 字以內",
     "displayNameRequired": "請輸入顯示名稱",
-    "displayNameFormatHint": "可使用字母、數字、日文、底線（_）、連字號（-）。不能以數字或符號開頭。不支援擴展漢字（CJK 擴展 A 及以後）。",
+    "displayNameFormatHint": "可使用字母、數字、日文、底線（_）、連字號（-）。\n不能以數字或符號開頭。\n不支援擴展漢字（CJK 擴展 A 及以後）。",
     "emailRequired": "電子郵件（必填）",
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "密碼（必填）",

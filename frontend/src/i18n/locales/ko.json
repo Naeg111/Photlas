@@ -48,7 +48,7 @@
     "displayName": "표시 이름 (필수)",
     "displayNamePlaceholder": "홍길동 — 반각·전각 12자 이내",
     "displayNameRequired": "표시 이름을 입력해 주세요",
-    "displayNameFormatHint": "영숫자, 일본어, 밑줄(_), 하이픈(-)을 사용할 수 있습니다. 숫자나 기호로 시작할 수 없습니다. 확장 한자(CJK 확장 A 이후)는 사용할 수 없습니다.",
+    "displayNameFormatHint": "영숫자, 일본어, 밑줄(_), 하이픈(-)을 사용할 수 있습니다.\n숫자나 기호로 시작할 수 없습니다.\n확장 한자(CJK 확장 A 이후)는 사용할 수 없습니다.",
     "emailRequired": "이메일 (필수)",
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "비밀번호 (필수)",

@@ -92,11 +92,11 @@ export default function UsernameSetupDialog({
             {t('auth.oauth.usernameSetup.description2')}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-y-3 mt-4">
           <Label htmlFor="oauth-username-input">
             {t('auth.oauth.usernameSetup.usernameLabel')}
           </Label>
-          <p className="text-xs text-gray-500">{t('auth.displayNameFormatHint')}</p>
+          <p className="text-xs text-gray-500 whitespace-pre-line">{t('auth.displayNameFormatHint')}</p>
           <Input
             id="oauth-username-input"
             value={username}
@@ -119,7 +119,7 @@ export default function UsernameSetupDialog({
               onClose()
             }}
           >
-            {t('auth.oauth.usernameSetup.logout')}
+            {t('auth.oauth.usernameSetup.cancelSignUp')}
           </Button>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
