@@ -30,7 +30,7 @@ export function PrivacyContentEn() {
           In this Policy, &quot;personal information&quot; refers to &quot;personal
           information&quot; as defined by the APPI, meaning information relating to a
           living individual that can identify a specific individual by email address,
-          username, or other descriptions contained in the information.
+          display name, or other descriptions contained in the information.
         </p>
       </section>
 
@@ -44,7 +44,7 @@ export function PrivacyContentEn() {
         <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1">(1) Account Information</h3>
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
           <li>Email address</li>
-          <li>Username</li>
+          <li>Display name</li>
           <li>Password (stored in encrypted form)</li>
         </ul>
 
@@ -331,7 +331,7 @@ export function PrivacyContentEn() {
             requester&apos;s identity.
           </li>
           <li>
-            Certain profile information (username, profile image, SNS account links)
+            Certain profile information (display name, profile image, SNS account links)
             can be changed or deleted by the user directly through the Service.
           </li>
         </ol>
@@ -347,7 +347,7 @@ export function PrivacyContentEn() {
             backups. However, this does not apply to posted data that has already
             been made public for promotional purposes under the Terms of Service.
             <ul className="list-disc list-inside ml-5 mt-1 space-y-1">
-              <li>Account information (email address, username, etc.)</li>
+              <li>Account information (email address, display name, etc.)</li>
               <li>Profile information (profile image, SNS account links)</li>
               <li>Posted data (photo files, metadata, etc.)</li>
               <li>Favorites and report information</li>

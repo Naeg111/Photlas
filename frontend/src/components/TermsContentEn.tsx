@@ -81,7 +81,7 @@ export function TermsContentEn() {
             Persons wishing to use certain features of the Service shall agree
             to comply with these Terms and apply for user registration through
             the method prescribed by the Operator. Registration requires the
-            entry of an email address, username, and password.
+            entry of an email address, display name, and password.
           </li>
           <li>
             Users shall maintain accurate and up-to-date registration
