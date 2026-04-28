@@ -627,4 +627,68 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
   })
+
+  /**
+   * Issue#99: OAuth 新規登録直後の仮ユーザー名設定ダイアログ表示。
+   * OAuthCallbackPage が `/?requires_username_setup=1` に遷移してきた場合、
+   * App.tsx で {@link UsernameSetupDialog} を開くべき（Issue#81 の実装漏れ）。
+   *
+   * テスト前提: 認証済みユーザーが localStorage に存在することをモックする。
+   */
+  describe('Issue#99: OAuth 新規登録の仮ユーザー名設定ダイアログ', () => {
+    function renderAppAtPath(path: string) {
+      return render(
+        <MemoryRouter initialEntries={[path]}>
+          <App />
+        </MemoryRouter>
+      )
+    }
+
+    function setAuthenticatedUser() {
+      localStorageMock.getItem.mockImplementation((key: string) => {
+        if (key === 'auth_token') return 'test-jwt-token'
+        if (key === 'auth_user') {
+          return JSON.stringify({
+            userId: 1,
+            username: 'user_abc1234',
+            email: 'oauth@example.com',
+            role: 'USER',
+            language: 'ja',
+          })
+        }
+        return null
+      })
+    }
+
+    it('?requires_username_setup=1 があると UsernameSetupDialog が開く', async () => {
+      setAuthenticatedUser()
+      renderAppAtPath('/?requires_username_setup=1')
+      skipSplashScreen()
+
+      await waitFor(() => {
+        expect(screen.getByText('ユーザー名を設定')).toBeInTheDocument()
+      })
+    })
+
+    it('?requires_username_setup=1 がない場合、UsernameSetupDialog は開かない', async () => {
+      setAuthenticatedUser()
+      renderAppAtPath('/')
+      skipSplashScreen()
+
+      // 初期表示完了まで待つ
+      await waitFor(() => {
+        expect(screen.queryByText('ユーザー名を設定')).not.toBeInTheDocument()
+      })
+    })
+
+    it('未認証時は ?requires_username_setup=1 でも UsernameSetupDialog は開かない', async () => {
+      // localStorage は空（setAuthenticatedUser を呼ばない）
+      renderAppAtPath('/?requires_username_setup=1')
+      skipSplashScreen()
+
+      await waitFor(() => {
+        expect(screen.queryByText('ユーザー名を設定')).not.toBeInTheDocument()
+      })
+    })
+  })
 })
