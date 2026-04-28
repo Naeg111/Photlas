@@ -49,7 +49,7 @@
     "displayName": "表示名（必須）",
     "displayNamePlaceholder": "山田太郎、半角・全角12文字以内",
     "displayNameRequired": "表示名を入力してください",
-    "displayNameFormatHint": "英数字・日本語・アンダースコア（_）・ハイフン（-）が使用可。先頭は数字・記号以外。拡張漢字（CJK 拡張 A 以降）は使用できません。",
+    "displayNameFormatHint": "英数字・日本語・アンダースコア（_）・ハイフン（-）が使用可。\n先頭は数字・記号以外。\n拡張漢字（CJK 拡張 A 以降）は使用できません。",
     "emailRequired": "メールアドレス（必須）",
     "emailPlaceholder": "example@photlas.com",
     "passwordRequired": "パスワード（必須）",
@@ -103,7 +103,7 @@
         "usernameLabel": "ユーザー名",
         "save": "確定する",
         "keepTemporary": "あとで設定する",
-        "logout": "ログアウト"
+        "cancelSignUp": "登録を中止"
       },
       "linkConfirm": {
         "title": "既存アカウントとの連携確認",
