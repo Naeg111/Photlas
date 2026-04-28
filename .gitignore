@@ -105,3 +105,7 @@ design-backup/
 .claude/scheduled_tasks.lock
 .claude/projects/
 .claude/worktrees/
+
+# CLAUDE.md (project / system level) は Git 管理対象外
+CLAUDE.md
+**/CLAUDE.md
