@@ -14,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenDecoderFactory;
@@ -178,6 +179,10 @@ public class OAuth2SecurityConfig {
     ) throws Exception {
         http
                 .securityMatcher(SECURITY_MATCHER)
+                // Issue#99: CORS 設定（既存 SecurityConfig で定義された corsConfigurationSource Bean を使う）。
+                // これがないと /api/v1/auth/oauth2/confirm-link への POST がブラウザの CORS preflight 段階で
+                // 失敗して送信されない。
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())

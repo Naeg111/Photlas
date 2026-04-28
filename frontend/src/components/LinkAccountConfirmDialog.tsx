@@ -66,10 +66,10 @@ export default function LinkAccountConfirmDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('auth.oauth.linkConfirm.title')}</DialogTitle>
-          <DialogDescription>
-            {t('auth.oauth.linkConfirm.description', { provider: formatProvider(provider) })}
-          </DialogDescription>
         </DialogHeader>
+        <DialogDescription>
+          {t('auth.oauth.linkConfirm.description', { provider: formatProvider(provider) })}
+        </DialogDescription>
         {errorMessage && (
           <p role="alert" className="text-sm text-red-600">
             {errorMessage}
