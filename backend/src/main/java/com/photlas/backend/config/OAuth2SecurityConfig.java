@@ -2,6 +2,7 @@ package com.photlas.backend.config;
 
 import com.photlas.backend.security.CustomOAuth2AuthorizationRequestResolver;
 import com.photlas.backend.security.CustomOAuth2UserService;
+import com.photlas.backend.security.CustomOidcUserService;
 import com.photlas.backend.security.OAuth2LoginFailureHandler;
 import com.photlas.backend.security.OAuth2LoginSuccessHandler;
 import com.photlas.backend.service.JwtService;
@@ -13,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
@@ -96,6 +98,11 @@ public class OAuth2SecurityConfig {
     }
 
     @Bean
+    public CustomOidcUserService customOidcUserService() {
+        return new CustomOidcUserService(new OidcUserService(), oAuth2UserServiceHelper);
+    }
+
+    @Bean
     public CustomOAuth2AuthorizationRequestResolver customOAuth2AuthorizationRequestResolver(
             ClientRegistrationRepository clientRegistrationRepository) {
         DefaultOAuth2AuthorizationRequestResolver defaultResolver =
@@ -127,6 +134,7 @@ public class OAuth2SecurityConfig {
     public SecurityFilterChain oauth2SecurityFilterChain(
             HttpSecurity http,
             CustomOAuth2UserService customOAuth2UserService,
+            CustomOidcUserService customOidcUserService,
             CustomOAuth2AuthorizationRequestResolver resolver,
             OAuth2LoginSuccessHandler successHandler,
             OAuth2LoginFailureHandler failureHandler
@@ -143,7 +151,8 @@ public class OAuth2SecurityConfig {
                         .redirectionEndpoint(endpoint -> endpoint
                                 .baseUri(CALLBACK_BASE_URI))
                         .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService))
+                                .userService(customOAuth2UserService)
+                                .oidcUserService(customOidcUserService))
                         .successHandler(successHandler)
                         .failureHandler(failureHandler)
                 );
