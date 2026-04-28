@@ -17,7 +17,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenDecoderFactory;
-import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -109,7 +108,7 @@ public class OAuth2SecurityConfig {
 
     @Bean
     public CustomOidcUserService customOidcUserService() {
-        return new CustomOidcUserService(new OidcUserService(), oAuth2UserServiceHelper);
+        return new CustomOidcUserService(oAuth2UserServiceHelper);
     }
 
     /**
