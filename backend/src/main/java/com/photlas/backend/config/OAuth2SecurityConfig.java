@@ -22,6 +22,8 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.jose.jws.JwsAlgorithm;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoderFactory;
 import org.springframework.security.web.SecurityFilterChain;
@@ -114,20 +116,23 @@ public class OAuth2SecurityConfig {
      * Issue#99 - OIDC ID トークン署名検証用のデコーダファクトリ。
      *
      * <p>Spring Security のデフォルトは ID トークンを RS256（RSA + SHA-256）で署名されている前提で
-     * 検証するが、LINE は ES256（ECDSA + SHA-256）で署名している。デフォルトのままだと
-     * {@code Signed JWT rejected: Another algorithm expected} エラーで認証失敗する。
+     * 検証する。プロバイダごとに署名方式が異なるため、resolver で切り替える:
      *
-     * <p>本 Bean では LINE 用に ES256 を使うようアルゴリズム解決を上書きする。
-     * 他プロバイダ（将来 OIDC 化する Apple Sign In 等）はデフォルトの RS256 のまま。
+     * <ul>
+     *   <li>LINE: <strong>HS256</strong>（HMAC + SHA-256、共通鍵 = チャネルシークレット）。
+     *       LINE Login v2.1 のデフォルト。Spring は MacAlgorithm を返すと
+     *       自動で {@code clientRegistration.getClientSecret()} を HMAC 鍵として使う。</li>
+     *   <li>その他: デフォルトの RS256（将来 OIDC 化する Apple Sign In 等を想定）。</li>
+     * </ul>
      */
     @Bean
     public JwtDecoderFactory<ClientRegistration> idTokenDecoderFactory() {
-        log.info("Issue#99: Creating custom idTokenDecoderFactory bean (ES256 for LINE)");
+        log.info("Issue#99: Creating custom idTokenDecoderFactory bean (HS256 for LINE)");
         OidcIdTokenDecoderFactory factory = new OidcIdTokenDecoderFactory();
         factory.setJwsAlgorithmResolver(clientRegistration -> {
             String regId = clientRegistration.getRegistrationId();
-            SignatureAlgorithm alg = "line".equals(regId)
-                    ? SignatureAlgorithm.ES256
+            JwsAlgorithm alg = "line".equals(regId)
+                    ? MacAlgorithm.HS256
                     : SignatureAlgorithm.RS256;
             log.info("Issue#99: jwsAlgorithmResolver registrationId={} alg={}", regId, alg);
             return alg;
