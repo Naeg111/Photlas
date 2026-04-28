@@ -49,6 +49,7 @@ services:
       - LINE_CLIENT_ID=${LINE_CLIENT_ID:-placeholder-line-id}
       - LINE_CLIENT_SECRET=${LINE_CLIENT_SECRET:-placeholder-line-secret}
       - OAUTH_ENCRYPTION_KEY_BASE64=${OAUTH_ENCRYPTION_KEY_BASE64:-}
+      - PHOTLAS_OAUTH_ENABLED=${PHOTLAS_OAUTH_ENABLED:-false}
     networks:
       - photlas-network
     healthcheck:
