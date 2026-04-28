@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Issue#81 Phase 3b - OAuth コアロジック（プロバイダーをモック可能な単体テスト対象）。
+ * Issue#81 Phase 3b / Issue#99 - OAuth コアロジック（プロバイダーをモック可能な単体テスト対象）。
  *
  * {@code CustomOAuth2UserService}（Spring Security の認証チェーンから呼ばれる）から委譲される。
  * 技術設計書 3.3 / 3.28 / 3.29 / 3.31 / 3.40 を参照。
@@ -36,7 +36,9 @@ import java.util.Optional;
  *     <ul>
  *       <li>{@code email_verified=false} → {@code OAUTH_EMAIL_VERIFICATION_REQUIRED}</li>
  *       <li>role=ADMIN → {@code OAUTH_ADMIN_NOT_ALLOWED}</li>
- *       <li>{@code email_verified=true} かつ非管理者 → {@code OAUTH_LINK_CONFIRMATION_REQUIRED}</li>
+ *       <li>{@code email_verified=true} かつ非管理者 → {@link OAuthLinkConfirmationService#issue}
+ *           で短命トークンを発行し {@link com.photlas.backend.security.OAuth2LinkConfirmationException}
+ *           を投げる（リンク確認フロー）</li>
  *     </ul>
  *   </li>
  *   <li>どちらも見つからない場合: 新規ユーザー作成（仮ユーザー名、{@code usernameTemporary=true}, {@code passwordHash=null}）</li>
@@ -46,8 +48,12 @@ import java.util.Optional;
  * レース条件: {@code DataIntegrityViolationException} をキャッチして {@code findByEmail} 再検索。
  * 全体は {@code @Transactional(rollbackFor = Exception.class)} でラップ。
  *
- * <p>Phase 4 で {@code OAuthLinkConfirmationService} を統合し、リンク確認フロー時に短命トークンを発行する。
- * 現状の Phase 3b 段階では、リンク確認が必要な場合 {@code OAUTH_LINK_CONFIRMATION_REQUIRED} 例外を投げるに留める。
+ * <p>Issue#99 で {@link OAuthLinkConfirmationService} を統合済み。リンク確認が必要な場合は短命トークンを
+ * 発行し {@link com.photlas.backend.security.OAuth2LinkConfirmationException} を投げる。
+ * {@link com.photlas.backend.security.OAuth2LoginFailureHandler} がこの例外型を検出して
+ * {@code #link_confirmation_token=...} 形式でフロントエンドにリダイレクトする。
+ * 実際の {@code UserOAuthConnection} 作成は、ユーザーが確認ダイアログで「連携する」を押した後の
+ * {@code POST /api/v1/auth/oauth2/confirm-link}（{@code OAuthLinkConfirmationService.consume}）で行われる。
  */
 @Service
 @ConditionalOnProperty(name = "photlas.oauth.enabled", havingValue = "true")
