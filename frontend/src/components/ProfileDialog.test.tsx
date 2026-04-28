@@ -1116,7 +1116,7 @@ describe('ProfileDialog', () => {
       await user.click(saveButton)
 
       await waitFor(() => {
-        expect(screen.getByText(/ユーザー名を入力してください/i)).toBeInTheDocument()
+        expect(screen.getByText(/表示名を入力してください/i)).toBeInTheDocument()
       })
     })
 

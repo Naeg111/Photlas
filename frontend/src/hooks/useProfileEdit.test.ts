@@ -85,7 +85,7 @@ describe('useProfileEdit', () => {
         await result.current.handleSaveUsername()
       })
 
-      expect(result.current.usernameError).toBe('ユーザー名を入力してください。')
+      expect(result.current.usernameError).toBe('表示名を入力してください。')
       expect(mockFetch).not.toHaveBeenCalled()
     })
 
@@ -105,7 +105,7 @@ describe('useProfileEdit', () => {
         await result.current.handleSaveUsername()
       })
 
-      expect(result.current.usernameError).toBe('ユーザー名は2文字以上12文字以内で入力してください。')
+      expect(result.current.usernameError).toBe('表示名は2文字以上12文字以内で入力してください。')
       expect(mockFetch).not.toHaveBeenCalled()
     })
 

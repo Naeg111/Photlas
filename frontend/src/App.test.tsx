@@ -666,7 +666,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       skipSplashScreen()
 
       await waitFor(() => {
-        expect(screen.getByText('ユーザー名を設定')).toBeInTheDocument()
+        expect(screen.getByText('表示名を設定')).toBeInTheDocument()
       })
     })
 
@@ -677,7 +677,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
 
       // 初期表示完了まで待つ
       await waitFor(() => {
-        expect(screen.queryByText('ユーザー名を設定')).not.toBeInTheDocument()
+        expect(screen.queryByText('表示名を設定')).not.toBeInTheDocument()
       })
     })
 
@@ -687,7 +687,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       skipSplashScreen()
 
       await waitFor(() => {
-        expect(screen.queryByText('ユーザー名を設定')).not.toBeInTheDocument()
+        expect(screen.queryByText('表示名を設定')).not.toBeInTheDocument()
       })
     })
   })

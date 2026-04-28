@@ -173,7 +173,7 @@ export default function AdminDeletedUserDetailPage() {
           <div className="grid grid-cols-2 gap-2 text-sm">
             <p className="text-gray-500">メールアドレス</p>
             <p>{detail.email}</p>
-            <p className="text-gray-500">元のユーザー名</p>
+            <p className="text-gray-500">元の表示名</p>
             <p>{detail.original_username}</p>
             <p className="text-gray-500">退会日</p>
             <p>{new Date(detail.deleted_at).toLocaleDateString('ja-JP')}</p>

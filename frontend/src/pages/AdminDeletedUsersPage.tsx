@@ -67,7 +67,7 @@ export default function AdminDeletedUsersPage() {
       <div className="p-4">
         <div className="flex gap-2 mb-4">
           <Input
-            placeholder="メールアドレスまたはユーザー名で検索"
+            placeholder="メールアドレスまたは表示名で検索"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
