@@ -23,7 +23,7 @@ import java.nio.charset.StandardCharsets;
  *
  * <ul>
  *   <li>通常: {@code <frontendUrl>/oauth/callback#access_token=<jwt>}</li>
- *   <li>仮ユーザー名: 上記に {@code &requires_username_setup=true} 付与</li>
+ *   <li>仮表示名: 上記に {@code &requires_username_setup=true} 付与</li>
  * </ul>
  *
  * <p>成功時は HttpSession の {@link CustomOAuth2UserService#SESSION_ATTRIBUTE_LANG}

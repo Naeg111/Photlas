@@ -69,10 +69,10 @@ public class AccountSettingsFixTest {
         jwtToken = jwtService.generateTokenWithRole(TEST_EMAIL, "USER");
     }
 
-    // ===== #3: ユーザー名バリデーション統一 =====
+    // ===== #3: 表示名バリデーション統一 =====
 
     @Test
-    @DisplayName("#3 - ユーザー名13文字はバリデーションエラーになる（DB制約12文字に統一）")
+    @DisplayName("#3 - 表示名13文字はバリデーションエラーになる（DB制約12文字に統一）")
     void testUpdateUsername_TooLong_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"username\":\"1234567890abc\"}"; // 13文字
 
@@ -85,7 +85,7 @@ public class AccountSettingsFixTest {
     }
 
     @Test
-    @DisplayName("#3 - ユーザー名1文字はバリデーションエラーになる（最低2文字に統一）")
+    @DisplayName("#3 - 表示名1文字はバリデーションエラーになる（最低2文字に統一）")
     void testUpdateUsername_TooShort_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"username\":\"a\"}"; // 1文字
 

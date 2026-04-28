@@ -41,7 +41,7 @@ import java.util.Optional;
  *           を投げる（リンク確認フロー）</li>
  *     </ul>
  *   </li>
- *   <li>どちらも見つからない場合: 新規ユーザー作成（仮ユーザー名、{@code usernameTemporary=true}, {@code passwordHash=null}）</li>
+ *   <li>どちらも見つからない場合: 新規ユーザー作成（仮表示名、{@code usernameTemporary=true}, {@code passwordHash=null}）</li>
  * </ol>
  *
  * <p>ステータスチェック: SUSPENDED は拒否、ソフトデリート済みは {@code AuthService#recoverSoftDeletedUser} で復旧。

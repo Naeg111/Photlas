@@ -1,5 +1,5 @@
 /**
- * ユーザー名軽量バリデーション
+ * 表示名軽量バリデーション
  * Issue#98: フロント側で「明らかに NG」な入力ミスのみ即時フィードバック
  *
  * サーバー側 (UsernameValidator.java) と同じ優先順位で最初に該当した
@@ -26,7 +26,7 @@ const MIN_LENGTH = 2
 const MAX_LENGTH = 12
 
 /**
- * ユーザー名を軽量検証する。問題なければ null を返す。
+ * 表示名を軽量検証する。問題なければ null を返す。
  */
 export function validateUsername(
   username: string | null | undefined

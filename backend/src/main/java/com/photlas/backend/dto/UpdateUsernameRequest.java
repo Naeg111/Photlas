@@ -3,7 +3,7 @@ package com.photlas.backend.dto;
 import com.photlas.backend.validation.ValidUsername;
 
 /**
- * ユーザー名更新リクエストDTO
+ * 表示名更新リクエストDTO
  * Issue#29: プロフィール機能強化
  * Issue#98: username バリデーション強化 - @ValidUsername で統一（@NotBlank/@Size を削除）
  */

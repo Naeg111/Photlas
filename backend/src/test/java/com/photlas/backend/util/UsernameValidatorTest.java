@@ -358,7 +358,7 @@ class UsernameValidatorTest {
         }
 
         @Test
-        @DisplayName("Issue#98 T50 - user_a3f8b2c（Issue#81 仮ユーザー名形式）は通過する")
+        @DisplayName("Issue#98 T50 - user_a3f8b2c（Issue#81 仮表示名形式）は通過する")
         void t50_oauth_temp_username() {
             assertDoesNotThrow(() -> UsernameValidator.validate("user_a3f8b2c"));
         }

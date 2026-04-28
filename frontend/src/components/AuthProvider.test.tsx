@@ -443,7 +443,7 @@ describe('AuthProvider', () => {
         expect(screen.getByTestId('username')).toHaveTextContent('testuser')
       })
 
-      // ユーザー名を更新
+      // 表示名を更新
       const updateButton = screen.getByTestId('update-username-button')
       fireEvent.click(updateButton)
 
@@ -470,7 +470,7 @@ describe('AuthProvider', () => {
         expect(screen.getByTestId('auth-status')).toHaveTextContent('Authenticated')
       })
 
-      // ユーザー名を更新
+      // 表示名を更新
       const updateButton = screen.getByTestId('update-username-button')
       fireEvent.click(updateButton)
 

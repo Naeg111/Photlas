@@ -57,7 +57,7 @@ public class PasswordRecommendationService {
             return new PasswordRecommendationResponse(false, null);
         }
 
-        // ユーザー名が仮のうちは表示しない（ユーザー名確定導線を優先）
+        // 表示名が仮のうちは表示しない（表示名確定導線を優先）
         if (user.isUsernameTemporary()) {
             return new PasswordRecommendationResponse(false, null);
         }

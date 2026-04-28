@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>本番公開申請に向けて Google OAuth のスコープを最小権限の {@code email} のみに
  * 限定する（{@code profile} を削除）。実装上 {@code CustomOAuth2UserService} は
- * {@code email} と {@code sub} のみを使用しており、ユーザー名は
+ * {@code email} と {@code sub} のみを使用しており、表示名は
  * {@code TemporaryUsernameGenerator} で生成するため {@code profile} スコープは不要。
  *
  * <p>{@code openid} を含めると Spring Security が OIDC フローに切り替わり、

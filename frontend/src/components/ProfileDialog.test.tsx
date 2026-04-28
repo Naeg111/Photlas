@@ -16,12 +16,12 @@ vi.mock('sonner', () => ({
 
 /**
  * Issue#18: マイページ機能 (UI + API)
- * Issue#36: ユーザー名更新機能
+ * Issue#36: 表示名更新機能
  * TDD Red段階: ProfileDialogコンポーネントのテストケース定義
  *
  * UI要件:
  * - プロフィール画像の表示（円形）
- * - ユーザー名の表示
+ * - 表示名の表示
  * - SNSリンクの表示
  * - タブUI（「投稿」と「お気に入り」）
  * - 写真グリッド表示（APIから取得）
@@ -421,7 +421,7 @@ describe('ProfileDialog', () => {
       expect(screen.getByRole('button', { name: /画像を選択/i })).toBeInTheDocument()
     })
 
-    it('自分のプロフィールの場合、ユーザー名の「変更」ボタンが表示される', () => {
+    it('自分のプロフィールの場合、表示名の「変更」ボタンが表示される', () => {
       render(
         <ProfileDialog
           open={true}
@@ -450,7 +450,7 @@ describe('ProfileDialog', () => {
       expect(screen.queryByRole('button', { name: /変更/i })).not.toBeInTheDocument()
     })
 
-    it('ユーザー名変更ボタンをクリックすると入力フォームが表示される', async () => {
+    it('表示名変更ボタンをクリックすると入力フォームが表示される', async () => {
       render(
         <ProfileDialog
           open={true}
@@ -1051,8 +1051,8 @@ describe('ProfileDialog', () => {
     })
   })
 
-  describe('Issue#29: ユーザー名変更機能', () => {
-    it('ユーザー名を変更して保存するとAPIが呼び出される', async () => {
+  describe('Issue#29: 表示名変更機能', () => {
+    it('表示名を変更して保存するとAPIが呼び出される', async () => {
       const user = userEvent.setup()
 
       global.fetch = vi.fn()
@@ -1093,7 +1093,7 @@ describe('ProfileDialog', () => {
       })
     })
 
-    it('ユーザー名が空の場合はエラーが表示される', async () => {
+    it('表示名が空の場合はエラーが表示される', async () => {
       const user = userEvent.setup()
 
       render(
@@ -1120,7 +1120,7 @@ describe('ProfileDialog', () => {
       })
     })
 
-    it('Issue#98 - ユーザー名が12文字を超える場合はエラーが表示される', async () => {
+    it('Issue#98 - 表示名が12文字を超える場合はエラーが表示される', async () => {
       const user = userEvent.setup()
 
       render(
@@ -1149,7 +1149,7 @@ describe('ProfileDialog', () => {
       })
     })
 
-    it('ユーザー名が重複している場合はエラーが表示される', async () => {
+    it('表示名が重複している場合はエラーが表示される', async () => {
       const user = userEvent.setup()
 
       global.fetch = vi.fn()
@@ -1160,7 +1160,7 @@ describe('ProfileDialog', () => {
         .mockResolvedValueOnce({
           ok: false,
           status: 409,
-          json: () => Promise.resolve({ message: 'このユーザー名はすでに使用されています' })
+          json: () => Promise.resolve({ message: 'この表示名はすでに使用されています' })
         })
 
       render(
@@ -1184,7 +1184,7 @@ describe('ProfileDialog', () => {
       await user.click(saveButton)
 
       await waitFor(() => {
-        expect(screen.getByText(/このユーザー名はすでに使用されています/i)).toBeInTheDocument()
+        expect(screen.getByText(/この表示名はすでに使用されています/i)).toBeInTheDocument()
       })
     })
   })

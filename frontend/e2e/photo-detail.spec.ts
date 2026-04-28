@@ -249,7 +249,7 @@ test.describe('写真詳細・お気に入り機能', () => {
   // ============================================================
 
   test.describe('投稿者情報表示', () => {
-    test('投稿者のユーザー名が表示される', async ({ page }) => {
+    test('投稿者の表示名が表示される', async ({ page }) => {
       await zoomInToShowPins(page)
 
       if (await openPhotoDetailFromPin(page)) {

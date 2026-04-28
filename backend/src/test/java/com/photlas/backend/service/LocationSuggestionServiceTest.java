@@ -484,7 +484,7 @@ public class LocationSuggestionServiceTest {
     // ========================================
 
     @Test
-    @DisplayName("Issue#54 - getReviewResponse: 画像URL・ユーザー名・場所名・撮影日時が含まれる")
+    @DisplayName("Issue#54 - getReviewResponse: 画像URL・表示名・場所名・撮影日時が含まれる")
     void testGetReviewResponse_IncludesPhotoDetails() {
         LocationSuggestion suggestion = createMockSuggestion();
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);

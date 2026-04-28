@@ -42,8 +42,8 @@ describe('useProfileEdit', () => {
     mockFetch.mockReset()
   })
 
-  describe('ユーザー名編集', () => {
-    it('handleUsernameEditClickで編集モードになり初期ユーザー名がセットされる', () => {
+  describe('表示名編集', () => {
+    it('handleUsernameEditClickで編集モードになり初期表示名がセットされる', () => {
       const { result } = renderHook(() => useProfileEdit(defaultProps))
 
       expect(result.current.isEditingUsername).toBe(false)
@@ -56,7 +56,7 @@ describe('useProfileEdit', () => {
       expect(result.current.editingUsername).toBe('testuser')
     })
 
-    it('handleUsernameChangeで編集中のユーザー名が更新される', () => {
+    it('handleUsernameChangeで編集中の表示名が更新される', () => {
       const { result } = renderHook(() => useProfileEdit(defaultProps))
 
       act(() => {
@@ -70,7 +70,7 @@ describe('useProfileEdit', () => {
       expect(result.current.editingUsername).toBe('newname')
     })
 
-    it('handleSaveUsernameで空のユーザー名の場合にエラーがセットされる', async () => {
+    it('handleSaveUsernameで空の表示名の場合にエラーがセットされる', async () => {
       const { result } = renderHook(() => useProfileEdit(defaultProps))
 
       act(() => {
@@ -89,7 +89,7 @@ describe('useProfileEdit', () => {
       expect(mockFetch).not.toHaveBeenCalled()
     })
 
-    it('Issue#98 - handleSaveUsernameで12文字を超えるユーザー名の場合にエラーがセットされる', async () => {
+    it('Issue#98 - handleSaveUsernameで12文字を超える表示名の場合にエラーがセットされる', async () => {
       const { result } = renderHook(() => useProfileEdit(defaultProps))
 
       act(() => {
@@ -139,7 +139,7 @@ describe('useProfileEdit', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 409,
-        json: () => Promise.resolve({ message: 'このユーザー名は既に使用されています' }),
+        json: () => Promise.resolve({ message: 'この表示名は既に使用されています' }),
       })
       const { result } = renderHook(() => useProfileEdit(defaultProps))
 
@@ -156,7 +156,7 @@ describe('useProfileEdit', () => {
         await result.current.handleSaveUsername()
       })
 
-      expect(result.current.usernameError).toBe('このユーザー名は既に使用されています')
+      expect(result.current.usernameError).toBe('この表示名は既に使用されています')
     })
 
     it('handleSaveUsername成功時にonUsernameUpdatedコールバックが呼ばれる', async () => {
@@ -389,7 +389,7 @@ describe('useProfileEdit', () => {
       expect(result.current.hasUnsavedChanges).toBe(true)
     })
 
-    it('レポート#5-3 - 画像アップロード失敗時もユーザー名やSNSリンクの保存は続行される', async () => {
+    it('レポート#5-3 - 画像アップロード失敗時も表示名やSNSリンクの保存は続行される', async () => {
       mockFetch
         // 署名付きURL取得: 成功
         .mockResolvedValueOnce({
@@ -633,8 +633,8 @@ describe('useProfileEdit', () => {
   })
 
   describe('統一保存機能', () => {
-    it('handleSaveAllChangesでユーザー名とSNSリンクが一括保存される', async () => {
-      // ユーザー名保存のレスポンス
+    it('handleSaveAllChangesで表示名とSNSリンクが一括保存される', async () => {
+      // 表示名保存のレスポンス
       mockFetch
         .mockResolvedValueOnce({ ok: true })
         // SNSリンク保存のレスポンス
@@ -654,7 +654,7 @@ describe('useProfileEdit', () => {
         })
       )
 
-      // ユーザー名編集を開始
+      // 表示名編集を開始
       act(() => {
         result.current.handleUsernameEditClick()
       })
@@ -673,7 +673,7 @@ describe('useProfileEdit', () => {
         await result.current.handleSaveAllChanges()
       })
 
-      // ユーザー名のPUTリクエスト
+      // 表示名のPUTリクエスト
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/v1/users/me/username',
         expect.objectContaining({ method: 'PUT' })
@@ -698,7 +698,7 @@ describe('useProfileEdit', () => {
         })
       )
 
-      // ユーザー名編集を開始
+      // 表示名編集を開始
       act(() => {
         result.current.handleUsernameEditClick()
       })

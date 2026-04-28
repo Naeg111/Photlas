@@ -9,7 +9,7 @@ package com.photlas.backend.dto;
  *
  * <p>推奨条件（Round 12 / Q8 / [2-G]）:
  * <ul>
- *   <li>{@code usernameTemporary == false}（ユーザー名確定済み）</li>
+ *   <li>{@code usernameTemporary == false}（表示名確定済み）</li>
  *   <li>{@code password_hash IS NULL}（OAuth のみユーザー）</li>
  *   <li>{@code password_recommendation_dismissed_at IS NULL}
  *       OR {@code dismissed_at + 7 days < NOW()}</li>

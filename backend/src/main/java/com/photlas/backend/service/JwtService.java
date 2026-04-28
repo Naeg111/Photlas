@@ -34,10 +34,10 @@ public class JwtService {
     private int jwtExpiration;
 
     /**
-     * トークンからユーザー名（email）を抽出
+     * トークンから表示名（email）を抽出
      *
      * @param token JWTトークン
-     * @return ユーザー名（email）
+     * @return 表示名（email）
      */
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -57,9 +57,9 @@ public class JwtService {
     }
 
     /**
-     * ユーザー名からJWTトークンを生成
+     * 表示名からJWTトークンを生成
      *
-     * @param username ユーザー名（email）
+     * @param username 表示名（email）
      * @return 生成されたJWTトークン
      */
     public String generateToken(String username) {
@@ -67,9 +67,9 @@ public class JwtService {
     }
 
     /**
-     * Issue#54: ユーザー名とロール情報からJWTトークンを生成
+     * Issue#54: 表示名とロール情報からJWTトークンを生成
      *
-     * @param username ユーザー名（email）
+     * @param username 表示名（email）
      * @param role ユーザーロール（USER, ADMIN）
      * @return 生成されたJWTトークン
      */
@@ -94,10 +94,10 @@ public class JwtService {
     }
 
     /**
-     * ユーザー名と追加クレームからJWTトークンを生成
+     * 表示名と追加クレームからJWTトークンを生成
      *
      * @param extraClaims 追加クレーム
-     * @param username ユーザー名（email）
+     * @param username 表示名（email）
      * @return 生成されたJWTトークン
      */
     public String generateToken(Map<String, Object> extraClaims, String username) {
@@ -132,8 +132,8 @@ public class JwtService {
      * トークンの有効性を検証
      *
      * @param token JWTトークン
-     * @param username ユーザー名（email）
-     * @return トークンが有効でユーザー名が一致する場合true
+     * @param username 表示名（email）
+     * @return トークンが有効で表示名が一致する場合true
      */
     public boolean isTokenValid(String token, String username) {
         final String tokenUsername = extractUsername(token);

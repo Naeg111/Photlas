@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
  * <p>リダイレクト先フォーマット:
  * <ul>
  *   <li>通常ログイン: {@code <frontendUrl>/oauth/callback#access_token=<jwt>}</li>
- *   <li>仮ユーザー名: {@code <frontendUrl>/oauth/callback#access_token=<jwt>&requires_username_setup=true}</li>
+ *   <li>仮表示名: {@code <frontendUrl>/oauth/callback#access_token=<jwt>&requires_username_setup=true}</li>
  * </ul>
  */
 @ExtendWith(MockitoExtension.class)
@@ -76,7 +76,7 @@ class OAuth2LoginSuccessHandlerTest {
     }
 
     @Test
-    @DisplayName("仮ユーザー名: requires_username_setup=true も付与する")
+    @DisplayName("仮表示名: requires_username_setup=true も付与する")
     void redirectsWithRequiresUsernameSetupForTemporaryUser() throws Exception {
         User user = newUser(2L, "bob@example.com", true);
         PhotlasOAuth2User principal = new PhotlasOAuth2User(user, Map.of("email", user.getEmail()));

@@ -410,10 +410,10 @@ public class UserServiceTest {
                 .hasMessageContaining("アカウントが停止されています");
     }
 
-    // ===== ユーザー名更新 (ProfileService.updateUsername) =====
+    // ===== 表示名更新 (ProfileService.updateUsername) =====
 
     @Test
-    @DisplayName("Issue#29 - ユーザー名更新: 他ユーザーと同じユーザー名でも更新成功する（重複許可）")
+    @DisplayName("Issue#29 - 表示名更新: 他ユーザーと同じ表示名でも更新成功する（重複許可）")
     void testUpdateUsername_DuplicateUsername_Succeeds() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -426,7 +426,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - ユーザー名更新: 新しいユーザー名が正常に更新される")
+    @DisplayName("Issue#29 - 表示名更新: 新しい表示名が正常に更新される")
     void testUpdateUsername_NewUsername_Succeeds() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -455,7 +455,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#72 - アカウント削除: ユーザー名がランダム文字列に書き換わり、original_usernameに元の値が保存される")
+    @DisplayName("Issue#72 - アカウント削除: 表示名がランダム文字列に書き換わり、original_usernameに元の値が保存される")
     void testDeleteAccount_RandomizesUsername_PreservesOriginal() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -532,7 +532,7 @@ public class UserServiceTest {
     // ===== Issue#90: アカウント削除確認メール =====
 
     @Test
-    @DisplayName("Issue#90 - アカウント削除: 確認メールが送信される（元のユーザー名で宛名が記載される）")
+    @DisplayName("Issue#90 - アカウント削除: 確認メールが送信される（元の表示名で宛名が記載される）")
     void testDeleteAccount_SendsConfirmationEmail() {
         // Arrange
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
@@ -543,7 +543,7 @@ public class UserServiceTest {
         // Act
         accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
 
-        // Assert: 元のユーザー名と90日間保持の案内を含むメールが送信されること
+        // Assert: 元の表示名と90日間保持の案内を含むメールが送信されること
         verify(emailService).send(
                 eq(TEST_EMAIL),
                 contains("アカウント削除"),

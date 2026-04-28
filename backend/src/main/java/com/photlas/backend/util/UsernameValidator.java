@@ -5,8 +5,8 @@ import com.photlas.backend.exception.InvalidUsernameException;
 import java.util.regex.Pattern;
 
 /**
- * ユーザー名バリデーター。
- * Issue#98: ユーザー名バリデーション強化。
+ * 表示名バリデーター。
+ * Issue#98: 表示名バリデーション強化。
  *
  * <p>優先順位（Issue#98 4.4 参照）:
  * <ol>
@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  * <ul>
  *   <li>予約語チェック: <strong>大文字小文字無視 + NFKC 正規化後の比較</strong>
  *       （`Admin` `ADMIN` `aDmIn` 等の大文字混在は予約語 `admin` としてヒット）</li>
- *   <li>通常のユーザー名同士の衝突判定: <strong>大文字小文字を区別する</strong>
+ *   <li>通常の表示名同士の衝突判定: <strong>大文字小文字を区別する</strong>
  *       （`Tanaka` と `tanaka` は別ユーザーとして許容）</li>
  * </ul>
  */
@@ -60,7 +60,7 @@ public final class UsernameValidator {
     }
 
     /**
-     * ユーザー名を検証する。違反があれば {@link InvalidUsernameException} を投げる。
+     * 表示名を検証する。違反があれば {@link InvalidUsernameException} を投げる。
      *
      * <p>優先順位順に検査し、最初に該当したエラーキーで例外を投げる。
      */

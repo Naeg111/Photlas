@@ -629,13 +629,13 @@ describe('App - Issue#28: App.tsx再構築', () => {
   })
 
   /**
-   * Issue#99: OAuth 新規登録直後の仮ユーザー名設定ダイアログ表示。
+   * Issue#99: OAuth 新規登録直後の仮表示名設定ダイアログ表示。
    * OAuthCallbackPage が `/?requires_username_setup=1` に遷移してきた場合、
    * App.tsx で {@link UsernameSetupDialog} を開くべき（Issue#81 の実装漏れ）。
    *
    * テスト前提: 認証済みユーザーが localStorage に存在することをモックする。
    */
-  describe('Issue#99: OAuth 新規登録の仮ユーザー名設定ダイアログ', () => {
+  describe('Issue#99: OAuth 新規登録の仮表示名設定ダイアログ', () => {
     function renderAppAtPath(path: string) {
       return render(
         <MemoryRouter initialEntries={[path]}>

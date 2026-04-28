@@ -5,8 +5,8 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * ユーザー名の予約語リスト。
- * Issue#98: ユーザー名バリデーション強化。
+ * 表示名の予約語リスト。
+ * Issue#98: 表示名バリデーション強化。
  *
  * <p>管理者詐称・URL パス衝突・サービス名衝突等を防ぐための予約語をまとめる。
  */
@@ -65,7 +65,7 @@ public final class UsernameReservedWords {
      * 将来 priority 1-8 の検査に漏れが生じた場合の二重防御のため。コストはごく軽微（µ秒オーダー）。
      * 削除して {@code username.toLowerCase(Locale.ROOT)} だけにしても現状の挙動は変わらない。
      *
-     * <p><strong>注意:</strong> 通常のユーザー名同士の衝突判定は <strong>大文字小文字を区別する</strong>
+     * <p><strong>注意:</strong> 通常の表示名同士の衝突判定は <strong>大文字小文字を区別する</strong>
      * （{@code Tanaka} と {@code tanaka} は別ユーザーとして許容）。
      * 予約語チェックの大文字小文字無視ポリシーとは挙動が異なるので留意すること。
      */

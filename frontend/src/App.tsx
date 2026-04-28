@@ -91,7 +91,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     provider: string
   } | null>(null)
 
-  // Issue#99: OAuth 新規登録時の仮ユーザー名設定ダイアログ表示制御。
+  // Issue#99: OAuth 新規登録時の仮表示名設定ダイアログ表示制御。
   // OAuthCallbackPage が `/?requires_username_setup=1` に遷移してきた場合に開く。
   const [usernameSetupOpen, setUsernameSetupOpen] = useState(false)
 
@@ -227,7 +227,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     }
   }, [location.state])
 
-  // Issue#99: OAuth 新規登録直後の仮ユーザー名設定ダイアログを開く。
+  // Issue#99: OAuth 新規登録直後の仮表示名設定ダイアログを開く。
   // OAuthCallbackPage が `/?requires_username_setup=1` に遷移してきた場合に検出する。
   // 再オープン防止のため、検出後はクエリパラメータを除去する。
   useEffect(() => {
@@ -729,7 +729,7 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         />
       )}
 
-      {/* Issue#99: OAuth 新規登録直後の仮ユーザー名設定ダイアログ */}
+      {/* Issue#99: OAuth 新規登録直後の仮表示名設定ダイアログ */}
       {user && (
         <UsernameSetupDialog
           open={usernameSetupOpen}

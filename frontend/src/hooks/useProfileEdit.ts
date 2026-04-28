@@ -66,7 +66,7 @@ interface UseProfileEditProps {
 }
 
 interface UseProfileEditReturn {
-  // ユーザー名編集
+  // 表示名編集
   isEditingUsername: boolean
   editingUsername: string
   usernameError: string
@@ -105,7 +105,7 @@ interface UseProfileEditReturn {
 /**
  * プロフィール編集機能を提供するカスタムフック
  * Issue#29: プロフィール機能強化
- * Issue#36: ユーザー名更新時のコールバック追加
+ * Issue#36: 表示名更新時のコールバック追加
  */
 export const useProfileEdit = ({
   initialUsername,
@@ -116,7 +116,7 @@ export const useProfileEdit = ({
 }: UseProfileEditProps): UseProfileEditReturn => {
   const { getAuthToken } = useAuth()
   const { t } = useTranslation()
-  // ユーザー名編集の状態
+  // 表示名編集の状態
   const [isEditingUsername, setIsEditingUsername] = useState(false)
   const [editingUsername, setEditingUsername] = useState(initialUsername)
   const [usernameError, setUsernameError] = useState('')
@@ -141,7 +141,7 @@ export const useProfileEdit = ({
   const [isSaving, setIsSaving] = useState(false)
 
   /**
-   * ユーザー名編集を開始
+   * 表示名編集を開始
    */
   const handleUsernameEditClick = useCallback(() => {
     setIsEditingUsername(true)
@@ -150,14 +150,14 @@ export const useProfileEdit = ({
   }, [initialUsername])
 
   /**
-   * ユーザー名の変更
+   * 表示名の変更
    */
   const handleUsernameChange = useCallback((value: string) => {
     setEditingUsername(value)
   }, [])
 
   /**
-   * ユーザー名のバリデーション
+   * 表示名のバリデーション
    * Issue#98: 軽量バリデーション（utils/validation/username.ts）に委譲し、
    *          エラーキーを i18n フックで翻訳する
    */
@@ -170,7 +170,7 @@ export const useProfileEdit = ({
   }
 
   /**
-   * ユーザー名を保存
+   * 表示名を保存
    * Issue#36: 成功時にonUsernameUpdatedコールバックを呼び出す
    */
   const handleSaveUsername = useCallback(async () => {
@@ -370,7 +370,7 @@ export const useProfileEdit = ({
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      // ユーザー名を保存（編集中の場合のみ）
+      // 表示名を保存（編集中の場合のみ）
       if (isEditingUsername) {
         const validationError = validateUsername(editingUsername)
         if (validationError) {
@@ -513,7 +513,7 @@ export const useProfileEdit = ({
   }, [isEditingUsername, isEditingSnsLinks, initialUsername, pendingImageBlob, pendingImageDelete])
 
   return {
-    // ユーザー名編集
+    // 表示名編集
     isEditingUsername,
     editingUsername,
     usernameError,

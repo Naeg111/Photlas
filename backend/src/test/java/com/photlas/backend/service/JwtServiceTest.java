@@ -30,7 +30,7 @@ public class JwtServiceTest {
     }
 
     @Test
-    @DisplayName("generateToken - ユーザー名からトークンを生成できる")
+    @DisplayName("generateToken - 表示名からトークンを生成できる")
     void generateToken_returnsNonNullToken() {
         String token = jwtService.generateToken(TEST_USERNAME);
 
@@ -39,7 +39,7 @@ public class JwtServiceTest {
     }
 
     @Test
-    @DisplayName("extractUsername - トークンからユーザー名を正しく抽出できる")
+    @DisplayName("extractUsername - トークンから表示名を正しく抽出できる")
     void extractUsername_returnsCorrectUsername() {
         String token = jwtService.generateToken(TEST_USERNAME);
 
@@ -69,7 +69,7 @@ public class JwtServiceTest {
     }
 
     @Test
-    @DisplayName("isTokenValid - 有効なトークンとユーザー名でtrueを返す")
+    @DisplayName("isTokenValid - 有効なトークンと表示名でtrueを返す")
     void isTokenValid_validTokenAndUsername_returnsTrue() {
         String token = jwtService.generateToken(TEST_USERNAME);
 
@@ -77,7 +77,7 @@ public class JwtServiceTest {
     }
 
     @Test
-    @DisplayName("isTokenValid - ユーザー名不一致でfalseを返す")
+    @DisplayName("isTokenValid - 表示名不一致でfalseを返す")
     void isTokenValid_wrongUsername_returnsFalse() {
         String token = jwtService.generateToken(TEST_USERNAME);
 
