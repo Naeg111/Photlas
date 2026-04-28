@@ -97,7 +97,7 @@ describe('PasswordRecommendationBanner', () => {
     expect(onOpen).toHaveBeenCalled()
   })
 
-  it('× ボタンで dismiss API を呼びバナーが消える', async () => {
+  it('「閉じる」ボタンで dismiss API を呼びダイアログが消える', async () => {
     mockFetch
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ shouldRecommend: true, provider: 'GOOGLE' }), {
@@ -110,10 +110,10 @@ describe('PasswordRecommendationBanner', () => {
     renderBanner()
 
     await waitFor(() => {
-      expect(screen.getByLabelText('閉じる')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '閉じる' })).toBeInTheDocument()
     })
 
-    await userEvent.click(screen.getByLabelText('閉じる'))
+    await userEvent.click(screen.getByRole('button', { name: '閉じる' }))
 
     // dismiss API が呼ばれた
     await waitFor(() => {
@@ -123,7 +123,7 @@ describe('PasswordRecommendationBanner', () => {
     expect(dismissUrl).toContain('/password-recommendation/dismiss')
     expect(dismissOptions.method).toBe('POST')
 
-    // バナーが非表示になる
+    // ダイアログが非表示になる
     expect(screen.queryByText('パスワードを設定しませんか？')).not.toBeInTheDocument()
   })
 })

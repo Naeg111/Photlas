@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ShieldCheck, X } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog'
+import { Button } from './ui/button'
 import { API_V1_URL } from '../config/api'
 import { fetchJson } from '../utils/fetchJson'
 import { useAuth } from '../contexts/AuthContext'
@@ -11,12 +12,12 @@ interface PasswordRecommendationBannerProps {
 }
 
 /**
- * Issue#81 Phase 5e - OAuth のみユーザー向けパスワード設定推奨バナー（Round 12 / Q8）。
+ * Issue#81 Phase 5e - OAuth のみユーザー向けパスワード設定推奨ダイアログ。
  *
  * ログイン中のみ GET /api/v1/users/me/password-recommendation で表示要否を取得。
- * - shouldRecommend=true のときのみレンダリング
+ * - shouldRecommend=true のときのみダイアログを開く
  * - 「パスワードを設定する」: 親の onOpenPasswordSection で AccountSettingsDialog を開く
- * - 「×」: POST /api/v1/users/me/password-recommendation/dismiss で 7 日間抑止して非表示
+ * - 「閉じる」 / オーバーレイクリック: POST /api/v1/users/me/password-recommendation/dismiss で 7 日間抑止
  */
 export default function PasswordRecommendationBanner({ onOpenPasswordSection }: PasswordRecommendationBannerProps) {
   const { t } = useTranslation()
@@ -42,7 +43,7 @@ export default function PasswordRecommendationBanner({ onOpenPasswordSection }: 
           setProvider(data.provider)
         }
       } catch {
-        // フェイルセーフ: 取得失敗時はバナーを出さない
+        // フェイルセーフ: 取得失敗時はダイアログを出さない
         if (!cancelled) setShouldRecommend(false)
       }
     }
@@ -65,44 +66,33 @@ export default function PasswordRecommendationBanner({ onOpenPasswordSection }: 
     }
   }
 
-  if (!shouldRecommend) return null
+  const handleCta = () => {
+    setShouldRecommend(false)
+    onOpenPasswordSection?.()
+  }
 
   const providerDisplay = provider === 'GOOGLE' ? 'Google' : provider === 'LINE' ? 'LINE' : ''
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-3"
-    >
-      <div className="max-w-6xl mx-auto flex items-start gap-3">
-        <ShieldCheck className="flex-shrink-0 mt-0.5" size={20} />
-        <div className="flex-1">
-          <p className="font-semibold text-sm">
-            {t('auth.oauth.passwordRecommend.title')}
-          </p>
-          <p className="text-sm">
-            {t('auth.oauth.passwordRecommend.description', { provider: providerDisplay })}
-          </p>
+    <Dialog open={shouldRecommend} onOpenChange={(o) => !o && handleDismiss()}>
+      <DialogContent className="bg-white">
+        <DialogHeader>
+          <DialogTitle>{t('auth.oauth.passwordRecommend.title')}</DialogTitle>
+        </DialogHeader>
+        <DialogDescription>
+          {t('auth.oauth.passwordRecommend.description', { provider: providerDisplay })}
+        </DialogDescription>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" onClick={handleDismiss}>
+            {t('auth.oauth.passwordRecommend.dismiss')}
+          </Button>
           {onOpenPasswordSection && (
-            <button
-              type="button"
-              onClick={onOpenPasswordSection}
-              className="mt-1 text-sm underline hover:no-underline font-medium"
-            >
+            <Button type="button" onClick={handleCta}>
               {t('auth.oauth.passwordRecommend.cta')}
-            </button>
+            </Button>
           )}
-        </div>
-        <button
-          type="button"
-          onClick={handleDismiss}
-          aria-label={t('auth.oauth.passwordRecommend.dismiss')}
-          className="flex-shrink-0 p-1 hover:bg-amber-100 rounded"
-        >
-          <X size={18} />
-        </button>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
