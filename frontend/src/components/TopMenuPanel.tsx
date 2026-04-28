@@ -196,6 +196,19 @@ export function TopMenuPanel({
               {t('menu.privacy')}
             </Button>
             <Separator />
+            {isLoggedIn && (
+              <>
+                <Button
+                  variant="ghost"
+                  className="justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={onLogout}
+                >
+                  <LogOut className="w-5 h-5" />
+                  {t('common.logout')}
+                </Button>
+                <Separator />
+              </>
+            )}
             {/* Issue#93: 言語スイッチ */}
             <div className="flex justify-center py-2">
               <LanguageSwitcher
@@ -203,17 +216,6 @@ export function TopMenuPanel({
                 onLanguageChange={handleLanguageChange}
               />
             </div>
-            <Separator />
-            {isLoggedIn && (
-              <Button
-                variant="ghost"
-                className="justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={onLogout}
-              >
-                <LogOut className="w-5 h-5" />
-                {t('common.logout')}
-              </Button>
-            )}
           </div>
         </div>
       </SheetContent>

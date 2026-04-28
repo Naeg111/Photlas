@@ -98,7 +98,8 @@
       },
       "usernameSetup": {
         "title": "ユーザー名を設定",
-        "description": "仮のユーザー名が割り当てられています。このまま使用するか、任意の名前に変更してください。",
+        "description1": "仮のユーザー名が割り当てられています。",
+        "description2": "このまま使用するか、任意の名前に変更してください。",
         "usernameLabel": "ユーザー名",
         "save": "確定する",
         "keepTemporary": "あとで設定する",

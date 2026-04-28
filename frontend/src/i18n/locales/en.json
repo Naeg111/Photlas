@@ -98,7 +98,8 @@
       },
       "usernameSetup": {
         "title": "Set your username",
-        "description": "A temporary username has been assigned. Keep it or change to any name you like.",
+        "description1": "A temporary username has been assigned.",
+        "description2": "Keep it or change to any name you like.",
         "usernameLabel": "Username",
         "save": "Confirm",
         "keepTemporary": "Set later",
