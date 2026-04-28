@@ -48,7 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "photlas.oauth.enabled=true",
         "spring.security.oauth2.client.registration.google.client-id=dummy-google-id",
         "spring.security.oauth2.client.registration.google.client-secret=dummy-google-secret",
-        "spring.security.oauth2.client.registration.google.scope=email,profile",
+        "spring.security.oauth2.client.registration.google.scope=email",
         "spring.security.oauth2.client.registration.google.redirect-uri={baseUrl}/api/v1/auth/oauth2/callback/google",
         "spring.security.oauth2.client.registration.line.client-id=dummy-line-id",
         "spring.security.oauth2.client.registration.line.client-secret=dummy-line-secret",

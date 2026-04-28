@@ -45,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         // Google OAuth2 クライアント（ダミー値、テストでは実プロバイダーを叩かない）
         "spring.security.oauth2.client.registration.google.client-id=dummy-google-id",
         "spring.security.oauth2.client.registration.google.client-secret=dummy-google-secret",
-        "spring.security.oauth2.client.registration.google.scope=email,profile",
+        "spring.security.oauth2.client.registration.google.scope=email",
         "spring.security.oauth2.client.registration.google.redirect-uri={baseUrl}/api/v1/auth/oauth2/callback/google",
         // LINE OAuth2 クライアント（ダミー値）
         "spring.security.oauth2.client.registration.line.client-id=dummy-line-id",
