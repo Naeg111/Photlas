@@ -248,54 +248,49 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(callCount).toBeLessThanOrEqual(4)
     })
 
-    it('パン操作（ズーム変化なし）でズームメッセージの表示状態が変わらない', async () => {
-      setupFetchMock()
-      mockMap.getZoom.mockReturnValue(11)
-
-      render(<MapView />)
-
-      await waitFor(
-        () => { expect(screen.queryByText(/投稿を表示するには地図を拡大してください/)).not.toBeInTheDocument() },
-        { timeout: 1500 }
-      )
-
-      // ズームが変わらないmoveEnd後もメッセージが表示されない（不要な再レンダリングでUIが変わらない）
-      expect(screen.queryByText(/投稿を表示するには地図を拡大してください/)).not.toBeInTheDocument()
-    })
   })
 
   describe('ズームレベルによる表示制御と誘導UI', () => {
-    it('Issue#68 - Zoom 10未満の場合、拡大を促す静的メッセージが表示される', async () => {
-      mockMap.getZoom.mockReturnValue(9)
+    it('Issue#103 - ズームレベル5でクラスタレイヤーが表示される（minzoom 制約なし）', async () => {
+      setupFetchMock([TEST_SPOT])
+      mockMap.getZoom.mockReturnValue(5)
 
       render(<MapView />)
 
       await waitFor(() => {
-        expect(screen.getByText(/投稿を表示するには地図を拡大してください/)).toBeInTheDocument()
+        // クラスタレイヤーが minzoom なしで追加されていること
+        const clusterLayerCall = mockMap.addLayer.mock.calls.find(
+          (call: any[]) => call[0]?.id === 'clusters'
+        )
+        expect(clusterLayerCall).toBeDefined()
+        expect(clusterLayerCall![0].minzoom).toBeUndefined()
       })
     })
 
-    it('Issue#68 - メッセージはクリック不可である（cursor-pointerなし）', async () => {
-      mockMap.getZoom.mockReturnValue(9)
+    it('Issue#103 - 個別ピンレイヤーも minzoom 制約なしで追加される', async () => {
+      setupFetchMock([TEST_SPOT])
 
       render(<MapView />)
 
       await waitFor(() => {
-        const message = screen.getByText(/投稿を表示するには地図を拡大してください/)
-        expect(message.closest('div[class*="cursor-pointer"]')).toBeNull()
+        const unclusteredLayerCall = mockMap.addLayer.mock.calls.find(
+          (call: any[]) => call[0]?.id === 'unclustered-point'
+        )
+        expect(unclusteredLayerCall).toBeDefined()
+        expect(unclusteredLayerCall![0].minzoom).toBeUndefined()
       })
     })
 
-    it('Issue#70 - ズームメッセージがsafe-area-inset-topを考慮した位置にある', async () => {
-      mockMap.getZoom.mockReturnValue(9)
+    it('Issue#103 - 「投稿を表示するには地図を拡大してください」バナーが存在しない', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(5)
 
       render(<MapView />)
 
       await waitFor(() => {
-        const message = screen.getByText(/投稿を表示するには地図を拡大してください/)
-        const container = message.closest('div[class*="absolute"]')
-        expect(container?.className).toContain('safe-area-inset-top')
+        expect(mockMap.addSource).toHaveBeenCalled()
       })
+      expect(screen.queryByText(/投稿を表示するには地図を拡大してください/)).not.toBeInTheDocument()
     })
 
     it('Issue#70 - エラートーストがsafe-area-inset-topを考慮した位置にある', async () => {

@@ -118,11 +118,12 @@ public class SpotControllerTest {
     private static final String PIN_COLOR_ORANGE = "Orange";
     private static final String PIN_COLOR_RED = "Red";
 
-    // Test Data Constants - Photo Counts
+    // Test Data Constants - Photo Counts (Issue#103: 新閾値)
     private static final int PHOTO_COUNT_ONE = 1;
     private static final int PHOTO_COUNT_FIVE = 5;
     private static final int PHOTO_COUNT_TEN = 10;
-    private static final int PHOTO_COUNT_THIRTY = 30;
+    private static final int PHOTO_COUNT_FIFTY = 50;
+    private static final int PHOTO_COUNT_HUNDRED = 100;
 
     // Test Data Constants - Limits
     private static final int MAX_SPOTS_LIMIT = 50;
@@ -313,10 +314,10 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("正常ケース - ピンの色が条件合致数に基づいて決定される（5件以上=Yellow）")
-    void testGetSpots_PinColor_FivePhotos_ReturnsYellow() throws Exception {
+    @DisplayName("Issue#103 - ピンの色が条件合致数に基づいて決定される（10件以上=Yellow）")
+    void testGetSpots_PinColor_TenPhotos_ReturnsYellow() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-        for (int i = 0; i < PHOTO_COUNT_FIVE; i++) {
+        for (int i = 0; i < PHOTO_COUNT_TEN; i++) {
             createPhoto(spot, LocalDateTime.now().minusHours(i + 1), WEATHER_SUNNY);
         }
 
@@ -330,11 +331,11 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("正常ケース - ピンの色が条件合致数に基づいて決定される（10件以上=Orange）")
-    void testGetSpots_PinColor_TenPhotos_ReturnsOrange() throws Exception {
+    @DisplayName("Issue#103 - ピンの色が条件合致数に基づいて決定される（50件以上=Orange）")
+    void testGetSpots_PinColor_FiftyPhotos_ReturnsOrange() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-        for (int i = 0; i < PHOTO_COUNT_TEN; i++) {
-            createPhoto(spot, LocalDateTime.now().minusHours(i + 1), WEATHER_SUNNY);
+        for (int i = 0; i < PHOTO_COUNT_FIFTY; i++) {
+            createPhoto(spot, LocalDateTime.now().minusMinutes(i + 1), WEATHER_SUNNY);
         }
 
         mockMvc.perform(get(SPOTS_ENDPOINT)
@@ -347,10 +348,10 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("正常ケース - ピンの色が条件合致数に基づいて決定される（30件以上=Red）")
-    void testGetSpots_PinColor_ThirtyPhotos_ReturnsRed() throws Exception {
+    @DisplayName("Issue#103 - ピンの色が条件合致数に基づいて決定される（100件以上=Red）")
+    void testGetSpots_PinColor_HundredPhotos_ReturnsRed() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-        for (int i = 0; i < PHOTO_COUNT_THIRTY; i++) {
+        for (int i = 0; i < PHOTO_COUNT_HUNDRED; i++) {
             createPhoto(spot, LocalDateTime.now().minusMinutes(i + 1), WEATHER_SUNNY);
         }
 
@@ -405,19 +406,19 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("正常ケース - photoCountは全期間のトータル件数、pinColorも全写真数で決定")
+    @DisplayName("Issue#103 - photoCountは全期間のトータル件数、pinColorも全写真数で決定（10件→Yellow）")
     void testGetSpots_MixedPeriodPhotos_PhotoCountAndPinColorBasedOnTotal() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
 
         // 期間内の写真1枚
         createPhoto(spot, LocalDateTime.now().minusHours(1), WEATHER_SUNNY);
 
-        // 期間外の写真4枚
-        for (int i = 0; i < 4; i++) {
+        // 期間外の写真9枚（合計10枚で新閾値の Yellow ぴったり）
+        for (int i = 0; i < 9; i++) {
             createPhoto(spot, TEST_SHOT_AT_OUTSIDE_PERIOD.minusHours(i), WEATHER_SUNNY);
         }
 
-        // photoCountは全期間のトータル5枚、pinColorも全5枚ベースでYellow
+        // photoCount は全期間のトータル10枚、pinColor も全10枚ベースで Yellow
         mockMvc.perform(get(SPOTS_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
                         .param(PARAM_SOUTH, BOUND_SOUTH)
@@ -426,7 +427,7 @@ public class SpotControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath(JSON_PATH_PIN_COLOR, is(PIN_COLOR_YELLOW)))
-                .andExpect(jsonPath(JSON_PATH_PHOTO_COUNT, is(5)));
+                .andExpect(jsonPath(JSON_PATH_PHOTO_COUNT, is(10)));
     }
 
     @Test
