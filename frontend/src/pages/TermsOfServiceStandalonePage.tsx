@@ -17,7 +17,9 @@ export default function TermsOfServiceStandalonePage() {
   const isEnglish = i18n.language?.startsWith('en')
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col">
+    // index.css の html/body overflow:hidden を回避するため、
+    // ラッパー自身を h-screen + overflow-y-auto で内部スクロール可能にする。
+    <div className="h-screen overflow-y-auto bg-white text-gray-900 flex flex-col">
       {/* ヘッダー */}
       <header className="border-b border-gray-200">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-3">
