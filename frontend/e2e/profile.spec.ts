@@ -161,7 +161,7 @@ test.describe('プロフィール管理・表示', () => {
       await expect(page.getByTestId('edit-sns-links-button')).toBeVisible()
     })
 
-    test('SNSリンク編集ボタンをクリックすると編集フォームが表示される', async ({ page }) => {
+    test('Issue#102 - 編集ボタンを押すと固定3行UI（Instagram/Threads/X）が表示される', async ({ page }) => {
       await createAccountAndLogin(page, 'profile-sns-form')
 
       await openProfileDialog(page)
@@ -169,11 +169,13 @@ test.describe('プロフィール管理・表示', () => {
       // 編集ボタンをクリック
       await page.getByTestId('edit-sns-links-button').click()
 
-      // リンク追加ボタンが表示される
-      await expect(page.getByTestId('add-sns-link-button')).toBeVisible()
+      // 固定3行の入力欄が表示される
+      await expect(page.getByTestId('sns-url-input-instagram')).toBeVisible()
+      await expect(page.getByTestId('sns-url-input-threads')).toBeVisible()
+      await expect(page.getByTestId('sns-url-input-x')).toBeVisible()
     })
 
-    test('SNSリンクを追加できる', async ({ page }) => {
+    test('Issue#102 - X 入力欄に URL を入力して保存できる', async ({ page }) => {
       await createAccountAndLogin(page, 'profile-sns-add')
 
       await openProfileDialog(page)
@@ -181,11 +183,11 @@ test.describe('プロフィール管理・表示', () => {
       // 編集モードに入る
       await page.getByTestId('edit-sns-links-button').click()
 
-      // リンクを追加
-      await page.getByTestId('add-sns-link-button').click()
+      // X 入力欄に URL を入力
+      await page.getByTestId('sns-url-input-x').fill('https://x.com/testuser')
 
-      // URL入力欄が表示される
-      await expect(page.getByTestId('sns-url-input-0')).toBeVisible()
+      // 保存ボタンが有効化されていること
+      await expect(page.getByRole('button', { name: '保存' })).toBeEnabled()
     })
   })
 
