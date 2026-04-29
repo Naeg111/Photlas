@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Button } from '../components/ui/button'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 /**
@@ -35,11 +36,16 @@ export default function AboutPage() {
       <main className="flex-1">
         <section className="max-w-3xl mx-auto px-6 py-16">
           <h1 className="text-4xl font-bold mb-4">Photlas</h1>
-          <p className="text-lg text-gray-700 leading-relaxed">
+          <p className="text-lg text-gray-700 leading-relaxed mb-8">
             写真から行ってみたい場所が見つかる Web サービスです。
             ユーザーが投稿した写真とその撮影場所を地図上から自由に探索でき、
             新たな旅のきっかけを生み出します。
           </p>
+          <div className="flex justify-center">
+            <Button asChild size="lg" className="bg-black hover:bg-gray-800 text-white">
+              <Link to="/">Photlas を使ってみる</Link>
+            </Button>
+          </div>
         </section>
 
         {/* 特徴 */}

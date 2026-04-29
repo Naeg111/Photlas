@@ -42,4 +42,10 @@ describe('AboutPage', () => {
     const link = screen.getByRole('link', { name: /利用規約/ })
     expect(link).toHaveAttribute('href', '/terms-of-service')
   })
+
+  it('「Photlas を使ってみる」CTA リンクがあり / に遷移する', () => {
+    renderPage()
+    const cta = screen.getByRole('link', { name: 'Photlas を使ってみる' })
+    expect(cta).toHaveAttribute('href', '/')
+  })
 })
