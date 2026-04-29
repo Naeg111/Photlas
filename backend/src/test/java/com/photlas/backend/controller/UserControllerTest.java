@@ -832,13 +832,12 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - 4種類のSNSを登録可能")
-    void testUpdateSnsLinks_AllPlatforms_ReturnsOk() throws Exception {
+    @DisplayName("Issue#102 - PUT /api/v1/users/me/sns-links - 許可された3種類のSNS（X/Instagram/Threads）を登録可能")
+    void testUpdateSnsLinks_AllowedPlatforms_ReturnsOk() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
                 "{\"platform\":" + CodeConstants.PLATFORM_TWITTER + ",\"url\":\"https://x.com/testuser\"}," +
                 "{\"platform\":" + CodeConstants.PLATFORM_INSTAGRAM + ",\"url\":\"https://instagram.com/testuser\"}," +
-                "{\"platform\":" + CodeConstants.PLATFORM_YOUTUBE + ",\"url\":\"https://youtube.com/@testuser\"}," +
-                "{\"platform\":" + CodeConstants.PLATFORM_TIKTOK + ",\"url\":\"https://tiktok.com/@testuser\"}" +
+                "{\"platform\":" + CodeConstants.PLATFORM_THREADS + ",\"url\":\"https://www.threads.com/@testuser\"}" +
                 "]}";
 
         mockMvc.perform(put(SNS_LINKS_ENDPOINT)
@@ -847,7 +846,53 @@ public class UserControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.snsLinks", hasSize(4)));
+                .andExpect(jsonPath("$.snsLinks", hasSize(3)));
+    }
+
+    @Test
+    @DisplayName("Issue#102 - PUT /api/v1/users/me/sns-links - YouTube は ALLOWED_PLATFORMS から除外されているため拒否")
+    void testUpdateSnsLinks_YouTube_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"snsLinks\":[" +
+                "{\"platform\":" + CodeConstants.PLATFORM_YOUTUBE + ",\"url\":\"https://youtube.com/@testuser\"}" +
+                "]}";
+
+        mockMvc.perform(put(SNS_LINKS_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#102 - PUT /api/v1/users/me/sns-links - TikTok は ALLOWED_PLATFORMS から除外されているため拒否")
+    void testUpdateSnsLinks_TikTok_ReturnsBadRequest() throws Exception {
+        String requestBody = "{\"snsLinks\":[" +
+                "{\"platform\":" + CodeConstants.PLATFORM_TIKTOK + ",\"url\":\"https://tiktok.com/@testuser\"}" +
+                "]}";
+
+        mockMvc.perform(put(SNS_LINKS_ENDPOINT)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#102 - GET /api/v1/users/me - SNSリンクのレスポンスに platform フィールドが含まれる")
+    void testGetMyProfile_SnsLinkIncludesPlatform() throws Exception {
+        UserSnsLink link = new UserSnsLink(testUser.getId(),
+                CodeConstants.PLATFORM_THREADS,
+                "https://www.threads.com/@testuser");
+        userSnsLinkRepository.save(link);
+
+        mockMvc.perform(get("/api/v1/users/me")
+                .header(HEADER_AUTHORIZATION, getBearerToken(jwtToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.snsLinks", hasSize(1)))
+                .andExpect(jsonPath("$.snsLinks[0].platform").value(CodeConstants.PLATFORM_THREADS))
+                .andExpect(jsonPath("$.snsLinks[0].url").value("https://www.threads.com/@testuser"));
     }
 
     @Test

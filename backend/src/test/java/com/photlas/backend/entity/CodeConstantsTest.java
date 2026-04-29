@@ -46,6 +46,8 @@ class CodeConstantsTest {
             // 600番台: platform
             assertThat(CodeConstants.PLATFORM_TWITTER).isBetween(600, 699);
             assertThat(CodeConstants.PLATFORM_TIKTOK).isBetween(600, 699);
+            // Issue#102: Threads(605) を追加
+            assertThat(CodeConstants.PLATFORM_THREADS).isBetween(600, 699);
 
             // 700番台: sanction_type
             assertThat(CodeConstants.SANCTION_WARNING).isBetween(700, 799);
