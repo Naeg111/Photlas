@@ -427,8 +427,8 @@ describe('App - Issue#28: App.tsx再構築', () => {
         expect(screen.getByRole('heading', { name: 'アカウントを新規登録' })).toBeInTheDocument()
       })
 
-      // SignUpDialog 内のログインリンクをクリック
-      const loginLink = screen.getByText(/ログイン$/i)
+      // SignUpDialog 内の「Google、LINEアカウントで登録される方は こちら」リンクをクリック
+      const loginLink = screen.getByRole('button', { name: 'こちら' })
       await user.click(loginLink)
 
       // LoginDialog が表示される
