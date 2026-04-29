@@ -83,26 +83,10 @@
     "createAccount": "建立帳號",
     "accountSuspended": "您的帳號已被停用。請聯絡客服。",
     "oauth": {
-      "signInWithGoogle": "使用 Google 登入",
-      "signInWithLine": "使用 LINE 登入",
-      "signUpWithGoogle": "使用 Google 註冊",
-      "signUpWithLine": "使用 LINE 註冊",
       "continueWithGoogle": "使用 Google 繼續",
       "continueWithLine": "使用 LINE 繼續",
       "consentNotice": "選擇即表示您同意服務條款和隱私政策",
-      "dividerOr": "或",
-      "chooseMethod": {
-        "title": "選擇註冊方式",
-        "description": "請選擇註冊方式。",
-        "sns": "使用社群帳號註冊",
-        "email": "使用電子郵件註冊"
-      },
-      "snsSignUp": {
-        "title": "使用社群帳號註冊",
-        "description": "使用社群帳號註冊Photlas帳號。",
-        "agreeToTerms": "同意服務條款",
-        "agreeToTermsRequired": "同意服務條款後，社群帳號註冊按鈕將啟用。"
-      }
+      "dividerOr": "或"
     },
     "privacyPolicy": "隱私政策",
     "termsAgreement": {
