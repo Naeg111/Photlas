@@ -183,39 +183,20 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
   // ============================================================
 
   test.describe('ピン表示の基本', () => {
-    test('ズームレベル11以上でピンまたはクラスタが表示される', async ({ page }) => {
-      await zoomIn(page, 2)
-      await page.waitForTimeout(2000)
-
-      // ズームバナーが表示されていないことを確認
-      const zoomBanner = page.getByText('投稿を表示するには')
-      await expect(zoomBanner).not.toBeVisible()
-    })
-
-    test('ズームレベル10以下で「投稿を表示するには」バナーが表示される', async ({ page }) => {
-      // 大幅にズームアウト
-      await zoomOut(page, 8)
-      await page.waitForTimeout(3000)
-
-      const banner = page.getByText('投稿を表示するには')
-      await expect(banner).toBeVisible({ timeout: 15000 })
-    })
-
-    test('ズームインするとバナーが消えピンが再表示される', async ({ page }) => {
-      // ズームアウトしてバナーを表示
+    test('Issue#103 - 低ズームレベル（5）でピンまたはクラスタが表示される', async ({ page }) => {
       await zoomOut(page, 5)
-      await page.waitForTimeout(1000)
-
-      const banner = page.getByText('投稿を表示するには')
-      await expect(banner).toBeVisible({ timeout: 10000 })
-
-      // Issue#68: バナーは静的メッセージ（pointer-events-none）のためクリック不可
-      // ズームインして復帰
-      await zoomIn(page, 5)
       await page.waitForTimeout(3000)
 
-      // バナーが消える
-      await expect(banner).not.toBeVisible({ timeout: 10000 })
+      const { pinCount, clusterCount } = await findPinsAndClusters(page)
+      expect(pinCount + clusterCount).toBeGreaterThan(0)
+    })
+
+    test('Issue#103 - ズームレベル0（世界全体）でもクラスタピンが表示される', async ({ page }) => {
+      await zoomOut(page, 12)
+      await page.waitForTimeout(3000)
+
+      const { clusterCount } = await findPinsAndClusters(page)
+      expect(clusterCount).toBeGreaterThan(0)
     })
   })
 
@@ -278,7 +259,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
         return
       }
 
-      // ズームアウトしてクラスタリングを促す（バナーが出ない範囲で）
+      // ズームアウトしてクラスタリングを促す
       await zoomOut(page, 1)
       await page.waitForTimeout(5000)
 
