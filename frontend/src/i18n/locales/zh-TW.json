@@ -87,6 +87,9 @@
       "signInWithLine": "使用 LINE 登入",
       "signUpWithGoogle": "使用 Google 註冊",
       "signUpWithLine": "使用 LINE 註冊",
+      "continueWithGoogle": "使用 Google 繼續",
+      "continueWithLine": "使用 LINE 繼續",
+      "consentNotice": "選擇即表示您同意服務條款和隱私政策",
       "dividerOr": "或",
       "chooseMethod": {
         "title": "選擇註冊方式",
@@ -100,6 +103,14 @@
         "agreeToTerms": "同意服務條款",
         "agreeToTermsRequired": "同意服務條款後，社群帳號註冊按鈕將啟用。"
       }
+    },
+    "privacyPolicy": "隱私政策",
+    "termsAgreement": {
+      "title": "使用前須知",
+      "start": "開始使用",
+      "cancel": "取消",
+      "cancelledToast": "帳號註冊已取消",
+      "agreeToPrivacyPolicySuffix": "我同意"
     }
   },
   "menu": {
@@ -310,6 +321,7 @@
     "accept": "接受"
   },
   "errors": {
+    "userInfoFetchFailed": "取得使用者資訊失敗",
     "INVALID_CREDENTIALS": "電子郵件或密碼錯誤",
     "ACCOUNT_SUSPENDED": "您的帳號已被停用",
     "EMAIL_NOT_VERIFIED": "電子郵件尚未驗證。請點擊驗證信中的連結。",

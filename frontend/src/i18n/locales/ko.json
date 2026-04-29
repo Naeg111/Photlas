@@ -87,6 +87,9 @@
       "signInWithLine": "LINE으로 로그인",
       "signUpWithGoogle": "Google로 회원가입",
       "signUpWithLine": "LINE으로 회원가입",
+      "continueWithGoogle": "Google로 계속하기",
+      "continueWithLine": "LINE으로 계속하기",
+      "consentNotice": "선택하면 이용약관 및 개인정보처리방침에 동의한 것으로 간주됩니다",
       "dividerOr": "또는",
       "chooseMethod": {
         "title": "가입 방법 선택",
@@ -100,6 +103,14 @@
         "agreeToTerms": "이용약관에 동의합니다",
         "agreeToTermsRequired": "이용약관에 동의하면 SNS 가입 버튼이 활성화됩니다."
       }
+    },
+    "privacyPolicy": "개인정보처리방침",
+    "termsAgreement": {
+      "title": "이용 시작 전",
+      "start": "시작하기",
+      "cancel": "취소",
+      "cancelledToast": "계정 등록이 취소되었습니다",
+      "agreeToPrivacyPolicySuffix": "에 동의합니다"
     }
   },
   "menu": {
@@ -310,6 +321,7 @@
     "accept": "동의"
   },
   "errors": {
+    "userInfoFetchFailed": "사용자 정보를 가져오지 못했습니다",
     "INVALID_CREDENTIALS": "이메일 또는 비밀번호가 올바르지 않습니다",
     "ACCOUNT_SUSPENDED": "계정이 정지되었습니다",
     "EMAIL_NOT_VERIFIED": "이메일 인증이 완료되지 않았습니다. 인증 이메일의 링크를 클릭해 주세요.",

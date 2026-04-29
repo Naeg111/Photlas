@@ -204,7 +204,7 @@ public class ProfileService {
 
         String profileImageUrl = s3Service.generateCdnUrl(user.getProfileImageS3Key());
 
-        return new UserProfileResponse(
+        UserProfileResponse response = new UserProfileResponse(
                 user.getId(),
                 user.getUsername(),
                 includeEmail ? user.getEmail() : null,
@@ -212,6 +212,35 @@ public class ProfileService {
                 profileImageUrl,
                 snsLinkDtos
         );
+
+        // Issue#104: GET /users/me のみで返す追加フィールド
+        if (includeEmail) {
+            boolean requiresAgreement = user.getTermsAgreedAt() == null
+                    || user.getPrivacyPolicyAgreedAt() == null;
+            response.setRequiresTermsAgreement(requiresAgreement);
+            response.setUsernameTemporary(user.isUsernameTemporary());
+        }
+
+        return response;
+    }
+
+    /**
+     * Issue#104: 利用規約・プライバシーポリシーへの同意を記録する。
+     *
+     * <p>常に現在時刻で上書きする（冪等性を優先するシンプルな実装）。
+     * 既に同意済みの場合でも再記録される（実害なし）。
+     *
+     * @param email ユーザーのメールアドレス
+     */
+    @Transactional
+    public void agreeToTerms(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        user.setTermsAgreedAt(now);
+        user.setPrivacyPolicyAgreedAt(now);
+        userRepository.save(user);
     }
 
     /**

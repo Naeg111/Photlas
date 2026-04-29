@@ -26,7 +26,7 @@ describe('TopMenuPanel', () => {
   const mockOnTermsClick = vi.fn()
   const mockOnPrivacyClick = vi.fn()
   const mockOnLoginClick = vi.fn()
-  const mockOnSignUpClick = vi.fn()
+  // Issue#104: onSignUpClick を削除
   const mockOnLogout = vi.fn()
 
   const defaultProps = {
@@ -40,7 +40,6 @@ describe('TopMenuPanel', () => {
     onTermsClick: mockOnTermsClick,
     onPrivacyClick: mockOnPrivacyClick,
     onLoginClick: mockOnLoginClick,
-    onSignUpClick: mockOnSignUpClick,
     onLogout: mockOnLogout,
   }
 
@@ -75,7 +74,8 @@ describe('TopMenuPanel', () => {
 
       expect(screen.getByText(/Photlasとは？/)).toBeInTheDocument()
       expect(screen.getByText(/ログイン/)).toBeInTheDocument()
-      expect(screen.getByText(/新規アカウント作成/)).toBeInTheDocument()
+      // Issue#104: 「新規アカウント作成」ボタンを削除
+      expect(screen.queryByText(/新規アカウント作成/)).not.toBeInTheDocument()
       expect(screen.getByText(/利用規約/)).toBeInTheDocument()
       expect(screen.getByText(/プライバシーポリシー/)).toBeInTheDocument()
     })

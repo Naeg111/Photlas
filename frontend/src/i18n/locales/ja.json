@@ -88,6 +88,9 @@
       "signInWithLine": "LINE でサインイン",
       "signUpWithGoogle": "Google で新規登録",
       "signUpWithLine": "LINE で新規登録",
+      "continueWithGoogle": "Google で続ける",
+      "continueWithLine": "LINE で続ける",
+      "consentNotice": "選択することで、利用規約とプライバシーポリシーに同意したものとみなします",
       "dividerOr": "または",
       "errors": {
         "OAUTH_EMAIL_REQUIRED": "メールアドレスが取得できませんでした。プロバイダのメール共有を許可してください。",
@@ -128,6 +131,14 @@
         "agreeToTerms": "利用規約に同意する",
         "agreeToTermsRequired": "利用規約に同意すると SNS 登録ボタンが有効になります。"
       }
+    },
+    "privacyPolicy": "プライバシーポリシー",
+    "termsAgreement": {
+      "title": "ご利用にあたって",
+      "start": "利用を開始する",
+      "cancel": "キャンセル",
+      "cancelledToast": "アカウント登録をキャンセルしました",
+      "agreeToPrivacyPolicySuffix": "に同意する"
     }
   },
   "menu": {
@@ -338,6 +349,7 @@
     "accept": "同意する / Accept"
   },
   "errors": {
+    "userInfoFetchFailed": "ユーザー情報の取得に失敗しました",
     "INVALID_CREDENTIALS": "メールアドレスまたはパスワードが正しくありません",
     "ACCOUNT_SUSPENDED": "アカウントが停止されています",
     "EMAIL_NOT_VERIFIED": "メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。",

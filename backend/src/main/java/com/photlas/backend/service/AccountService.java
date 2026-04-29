@@ -13,8 +13,10 @@ import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
+import com.photlas.backend.exception.ForbiddenException;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.util.SecurityAuditLogger;
 import com.photlas.backend.util.TokenGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +58,8 @@ public class AccountService {
      * {@link ObjectProvider} で optional 注入し、OAuth 有効時のみ revoke を呼ぶ。
      */
     private final ObjectProvider<OAuthTokenRevokeService> oauthTokenRevokeServiceProvider;
+    /** Issue#104: cancel-registration の監査ログ記録用 */
+    private final SecurityAuditLogger securityAuditLogger;
 
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
@@ -71,7 +75,8 @@ public class AccountService {
             EmailService emailService,
             JwtService jwtService,
             UserOAuthConnectionRepository userOAuthConnectionRepository,
-            ObjectProvider<OAuthTokenRevokeService> oauthTokenRevokeServiceProvider) {
+            ObjectProvider<OAuthTokenRevokeService> oauthTokenRevokeServiceProvider,
+            SecurityAuditLogger securityAuditLogger) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.spotRepository = spotRepository;
@@ -83,6 +88,7 @@ public class AccountService {
         this.jwtService = jwtService;
         this.userOAuthConnectionRepository = userOAuthConnectionRepository;
         this.oauthTokenRevokeServiceProvider = oauthTokenRevokeServiceProvider;
+        this.securityAuditLogger = securityAuditLogger;
     }
 
     /**
@@ -279,6 +285,51 @@ public class AccountService {
         }
 
         sendAccountDeletionConfirmation(user, originalUsername);
+    }
+
+    /**
+     * Issue#104: 同意ダイアログでキャンセルされた未同意 OAuth アカウントを物理削除する。
+     *
+     * <p>処理順序：
+     * <ol>
+     *   <li>{@code terms_agreed_at IS NULL} チェック → 違反なら 403 例外</li>
+     *   <li>OAuth トークン revoke を best-effort で実行（user_oauth_connections を参照するため、削除前に行う）</li>
+     *   <li>users レコードを物理削除（user_oauth_connections は CASCADE で自動削除：V23 マイグレーション）</li>
+     *   <li>SecurityAuditLogger に OAUTH_ACCOUNT_CANCELLED イベントを記録</li>
+     * </ol>
+     *
+     * @param email キャンセル対象ユーザーのメールアドレス
+     */
+    @Transactional
+    public void cancelRegistration(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
+
+        // 安全策: 同意済みユーザーは削除しない（誤呼び出し防止）
+        if (user.getTermsAgreedAt() != null || user.getPrivacyPolicyAgreedAt() != null) {
+            throw new ForbiddenException("同意済みのユーザーは登録キャンセル操作を実行できません");
+        }
+
+        Long userId = user.getId();
+
+        // OAuth トークン revoke を先に実行（user_oauth_connections を参照するため、削除前）
+        OAuthTokenRevokeService revokeService = oauthTokenRevokeServiceProvider.getIfAvailable();
+        if (revokeService != null) {
+            revokeService.revokeForUser(userId);
+        }
+
+        // user_oauth_connections を明示的に削除（DB の ON DELETE CASCADE もあるが、
+        // @Transactional テスト等では CASCADE がトランザクションコミット前に効かないため明示削除する）
+        userOAuthConnectionRepository.deleteByUserId(userId);
+
+        // users を物理削除（テスト等のトランザクション内検証で確実に反映するため flush する）
+        userRepository.delete(user);
+        userRepository.flush();
+
+        // 監査ログ
+        java.util.LinkedHashMap<String, Object> fields = new java.util.LinkedHashMap<>();
+        fields.put("user_id", userId);
+        securityAuditLogger.log(SecurityAuditLogger.Event.OAUTH_ACCOUNT_CANCELLED, fields);
     }
 
     /**

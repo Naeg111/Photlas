@@ -52,8 +52,8 @@ export default function OAuthCallbackPage() {
     // 成功: access_token
     const accessToken = params.get('access_token')
     if (accessToken) {
-      const requiresUsernameSetup = params.get('requires_username_setup') === 'true'
-      completeLogin(accessToken, requiresUsernameSetup, navigate).catch(() => {
+      // Issue#104: requires_username_setup の URL パラメータは廃止（/users/me のサーバー応答を真実の情報源とする）
+      completeLogin(accessToken, navigate).catch(() => {
         setStatus('error')
         setErrorMessage(t('auth.errorOccurred'))
       })
@@ -124,7 +124,6 @@ function resolveErrorMessage(code: string, t: (key: string) => string): string {
  */
 async function completeLogin(
   accessToken: string,
-  requiresUsernameSetup: boolean,
   navigate: (path: string, opts?: { replace?: boolean; state?: unknown }) => void
 ): Promise<void> {
   const { API_V1_URL } = await import('../config/api')
@@ -152,10 +151,9 @@ async function completeLogin(
     language: userData.language,
   }))
 
-  // 遷移: 仮表示名なら ?requires_username_setup=1 付きでホームへ（App 側でダイアログを開く）
-  navigate(requiresUsernameSetup ? '/?requires_username_setup=1' : '/', { replace: true })
+  // Issue#104: URL パラメータ方式は廃止し、ホームに統一リダイレクト
+  // 仮表示名／同意未済の判定は App.tsx のマウント時 /users/me チェックで行う（§4.18 / §4.14）
+  navigate('/', { replace: true })
   // ページ全体をリロードして AuthProvider の useEffect を再走させる
-  // Strict Mode 対策として window.location.reload を使わず、App 再マウントを避けるためだけに
-  // ここでは replace 遷移のみ。ログイン状態の反映はホーム側の責務。
   window.location.reload()
 }

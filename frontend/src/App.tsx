@@ -24,10 +24,10 @@ import { TopMenuPanel } from './components/TopMenuPanel'
 import { LoginRequiredDialog } from './components/LoginRequiredDialog'
 import { LoginDialog } from './components/LoginDialog'
 import { SignUpDialog } from './components/SignUpDialog'
-import SignUpMethodDialog from './components/SignUpMethodDialog'
-import OAuthSignUpDialog from './components/OAuthSignUpDialog'
+// Issue#104: SignUpMethodDialog / OAuthSignUpDialog を削除（新規登録フロー簡素化）
 import LinkAccountConfirmDialog from './components/LinkAccountConfirmDialog'
 import UsernameSetupDialog from './components/UsernameSetupDialog'
+import TermsAgreementDialog from './components/TermsAgreementDialog'
 import { TermsOfServicePage } from './components/TermsOfServicePage'
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage'
 import PasswordResetRequestModal from './components/PasswordResetRequestModal'
@@ -52,6 +52,7 @@ import { CompassIcon } from './components/CompassIcon'
 import { Button } from './components/ui/button'
 import { Toaster } from './components/ui/sonner'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { API_V1_URL } from './config/api'
 
 /**
@@ -80,7 +81,8 @@ interface MainContentProps {
  * useAuthを使用するためAuthProvider内で使用
  */
 function MainContent({ onMapReady }: Readonly<MainContentProps>) {
-  const { user, login, logout } = useAuth()
+  const { user, login, logout, isAuthenticated, getAuthToken } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const dialog = useDialogState()
@@ -95,8 +97,11 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
   } | null>(null)
 
   // Issue#99: OAuth 新規登録時の仮表示名設定ダイアログ表示制御。
-  // OAuthCallbackPage が `/?requires_username_setup=1` に遷移してきた場合に開く。
-  const [usernameSetupOpen, setUsernameSetupOpen] = useState(false)
+  // Issue#104: マウント時 /users/me チェックで usernameTemporary=true なら表示。
+  const [showUsernameDialog, setShowUsernameDialog] = useState(false)
+
+  // Issue#104: 利用規約同意ダイアログ表示制御（マウント時 /users/me チェックで requiresTermsAgreement=true なら表示）
+  const [showTermsDialog, setShowTermsDialog] = useState(false)
 
   // フィルター関連の状態
   const [mapFilterParams, setMapFilterParams] = useState<MapViewFilterParams | undefined>(undefined)
@@ -230,18 +235,64 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
     }
   }, [location.state])
 
-  // Issue#99: OAuth 新規登録直後の仮表示名設定ダイアログを開く。
-  // OAuthCallbackPage が `/?requires_username_setup=1` に遷移してきた場合に検出する。
-  // 再オープン防止のため、検出後はクエリパラメータを除去する。
+  // Issue#104: マウント時 /users/me チェック（メインメカニズム、§4.14）
+  // ログイン済みユーザーに対して /users/me を 1 回呼び、以下を判定：
+  // - requiresTermsAgreement=true → 利用規約同意ダイアログを表示（§4.14）+ ホームに強制リダイレクト（§4.16）
+  // - usernameTemporary=true → 仮表示名設定ダイアログを表示（§4.18）
+  // 失敗時の挙動は §4.17 を参照（401: 自動ログアウト、5xx/ネットワーク: エラートースト+再試行）
+  // 重複実行防止のため、useRef で 1 度だけ実行する。
+  const usersMeCheckedRef = useRef(false)
   useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    if (params.get('requires_username_setup') === '1') {
-      setUsernameSetupOpen(true)
-      params.delete('requires_username_setup')
-      const newSearch = params.toString()
-      navigate(newSearch ? `${location.pathname}?${newSearch}` : location.pathname, { replace: true })
+    if (!isAuthenticated) return
+    if (usersMeCheckedRef.current) return
+    usersMeCheckedRef.current = true
+    const token = getAuthToken()
+    if (!token) return
+
+    const checkUserStatus = async () => {
+      try {
+        const response = await fetch(`${API_V1_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!response.ok) {
+          if (response.status === 401) {
+            // §4.17: 401 はセッション切れ → 自動ログアウト
+            toast(t('auth.sessionExpired'))
+            logout()
+            return
+          }
+          // §4.17: 5xx 等は再試行可能
+          toast.error(t('errors.userInfoFetchFailed'), {
+            action: {
+              label: t('common.retry'),
+              onClick: () => checkUserStatus(),
+            },
+          })
+          return
+        }
+        const userData = await response.json()
+        if (userData.requiresTermsAgreement) {
+          setShowTermsDialog(true)
+          // §4.16: 同意ダイアログ表示時はホームに強制リダイレクト
+          navigate('/', { replace: true })
+        }
+        if (userData.usernameTemporary) {
+          setShowUsernameDialog(true)
+        }
+      } catch {
+        // ネットワークエラー: 再試行可能
+        toast.error(t('errors.userInfoFetchFailed'), {
+          action: {
+            label: t('common.retry'),
+            onClick: () => checkUserStatus(),
+          },
+        })
+      }
     }
-  }, [location.search, location.pathname, navigate])
+
+    checkUserStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated])  // 認証状態が確定したら 1 度だけ実行（usersMeCheckedRef で多重実行防止）
 
   // Issue#99: リンク確認成功時のハンドラ。
   // ダイアログから受け取った token + email で /users/me を取得し、auth.login で認証状態を反映する。
@@ -419,14 +470,13 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
   }
 
   /**
-   * Issue#81 Phase 8r-3 (Q1 改訂): 新規登録ボタン共通ハンドラ。
+   * Issue#104: 新規登録ボタン共通ハンドラ。
    *
-   * OAuth 有無に関わらず常に {@link SignUpMethodDialog} を開く（方法選択）。
-   * - 「SNSで登録」→ OAuthSignUpDialog（中の Google/LINE は OAuth 無効時 disabled）
-   * - 「メールアドレスで登録」→ SignUpDialog
+   * SignUpMethodDialog / OAuthSignUpDialog を削除し、SignUpDialog を直接開く。
+   * OAuth 経由の新規登録は LoginDialog の OAuth ボタンから行う。
    */
   const handleSignUpClick = () => {
-    dialog.open('signUpMethod')
+    dialog.open('signUp')
   }
 
   // マイページハンドラー
@@ -663,7 +713,6 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         onTermsClick={() => dialog.open('terms')}
         onPrivacyClick={() => dialog.open('privacy')}
         onLoginClick={() => dialog.open('login')}
-        onSignUpClick={handleSignUpClick}
         onLogout={handleLogout}
       />
 
@@ -681,42 +730,17 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         onShowPasswordReset={() => dialog.open('passwordReset')}
       />
 
-      {/* Issue#81 Phase 8g: 新規登録方法選択（OAuth 有効時のみ実質開く） */}
-      <SignUpMethodDialog
-        {...dialog.getProps('signUpMethod')}
-        onChooseSns={() => {
-          dialog.close('signUpMethod')
-          dialog.open('oauthSignUp')
-        }}
-        onChooseEmail={() => {
-          dialog.close('signUpMethod')
-          dialog.open('signUp')
-        }}
-      />
-
-      {/* Issue#81 Phase 8g: SNS 新規登録 */}
-      <OAuthSignUpDialog
-        {...dialog.getProps('oauthSignUp')}
-        onBack={() => {
-          dialog.close('oauthSignUp')
-          dialog.open('signUpMethod')
-        }}
-        onShowLogin={() => {
-          dialog.close('oauthSignUp')
-          dialog.open('login')
-        }}
-        onShowTerms={() => dialog.open('terms')}
-      />
-
+      {/* Issue#104: SignUpMethodDialog / OAuthSignUpDialog を削除（新規登録フロー簡素化） */}
       <SignUpDialog
         {...dialog.getProps('signUp')}
         onShowTerms={() => dialog.open('terms')}
+        onShowPrivacyPolicy={() => dialog.open('privacy')}
         onShowLogin={() => dialog.open('login')}
         onBack={
-          // Issue#81 Phase 8e/8r-3 (Q1 改訂): OAuth 有無に関わらず常に Method に戻る
+          // Issue#104: SignUpMethodDialog 削除に伴い、戻る先を LoginDialog に変更
           () => {
             dialog.close('signUp')
-            dialog.open('signUpMethod')
+            dialog.open('login')
           }
         }
       />
@@ -732,14 +756,25 @@ function MainContent({ onMapReady }: Readonly<MainContentProps>) {
         />
       )}
 
-      {/* Issue#99: OAuth 新規登録直後の仮表示名設定ダイアログ */}
-      {user && (
+      {/* Issue#99 / Issue#104: OAuth 新規登録直後の仮表示名設定ダイアログ */}
+      {/* Issue#104 §4.9: 利用規約同意ダイアログ表示中は UsernameSetupDialog を抑制（同意完了後に開く） */}
+      {user && !showTermsDialog && (
         <UsernameSetupDialog
-          open={usernameSetupOpen}
+          open={showUsernameDialog}
           initialUsername={user.username}
-          onClose={() => setUsernameSetupOpen(false)}
+          onClose={() => setShowUsernameDialog(false)}
         />
       )}
+
+      {/* Issue#104: 利用規約同意ダイアログ */}
+      <TermsAgreementDialog
+        open={showTermsDialog}
+        onAgreed={() => setShowTermsDialog(false)}
+        onCancelled={() => setShowTermsDialog(false)}
+        onShowTerms={() => dialog.open('terms')}
+        onShowPrivacyPolicy={() => dialog.open('privacy')}
+      />
+
 
       <TermsOfServicePage {...dialog.getProps('terms')} />
 

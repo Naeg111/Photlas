@@ -25,30 +25,24 @@ describe('OAuthButtons', () => {
     })
   })
 
-  // ---------- 基本レンダリング（Phase 5b 継承） ----------
+  // ---------- 基本レンダリング（Issue#104 でラベル「〇〇で続ける」に統一） ----------
 
-  it('enabled=true の場合、Google と LINE ボタンをレンダリングする（signIn variant）', () => {
-    render(<OAuthButtons enabled={true} variant="signIn" />)
-    expect(screen.getByRole('button', { name: 'Google でサインイン' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'LINE でサインイン' })).toBeInTheDocument()
-  })
-
-  it('signUp variant では「新規登録」の文言になる', () => {
-    render(<OAuthButtons enabled={true} variant="signUp" />)
-    expect(screen.getByRole('button', { name: 'Google で新規登録' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'LINE で新規登録' })).toBeInTheDocument()
+  it('enabled=true の場合、Google と LINE ボタンをレンダリングする（「続ける」文言）', () => {
+    render(<OAuthButtons enabled={true} />)
+    expect(screen.getByRole('button', { name: 'Google で続ける' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'LINE で続ける' })).toBeInTheDocument()
   })
 
   it('Google ボタンクリックで /api/v1/auth/oauth2/authorization/google に遷移（lang パラメータ付き）', async () => {
     render(<OAuthButtons enabled={true} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Google でサインイン' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Google で続ける' }))
     expect(window.location.href).toContain('/api/v1/auth/oauth2/authorization/google')
     expect(window.location.href).toContain('lang=')
   })
 
   it('LINE ボタンクリックで /api/v1/auth/oauth2/authorization/line に遷移', async () => {
     render(<OAuthButtons enabled={true} />)
-    await userEvent.click(screen.getByRole('button', { name: 'LINE でサインイン' }))
+    await userEvent.click(screen.getByRole('button', { name: 'LINE で続ける' }))
     expect(window.location.href).toContain('/api/v1/auth/oauth2/authorization/line')
   })
 
@@ -61,8 +55,8 @@ describe('OAuthButtons', () => {
 
   it('[Phase 8a] enabled=false の場合でもボタンは表示され、両方とも disabled 状態になる', () => {
     render(<OAuthButtons enabled={false} />)
-    const googleBtn = screen.getByRole('button', { name: 'Google でサインイン' })
-    const lineBtn = screen.getByRole('button', { name: 'LINE でサインイン' })
+    const googleBtn = screen.getByRole('button', { name: 'Google で続ける' })
+    const lineBtn = screen.getByRole('button', { name: 'LINE で続ける' })
     expect(googleBtn).toBeInTheDocument()
     expect(lineBtn).toBeInTheDocument()
     expect(googleBtn).toBeDisabled()
@@ -71,7 +65,7 @@ describe('OAuthButtons', () => {
 
   it('[Phase 8a] enabled=false のボタンをクリックしても window.location.href は変化しない', async () => {
     render(<OAuthButtons enabled={false} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Google でサインイン' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Google で続ける' }))
     expect(window.location.href).toBe('')
   })
 
@@ -79,21 +73,21 @@ describe('OAuthButtons', () => {
 
   it('[Phase 8a] disabled=true のとき、enabled=true でも両ボタンが disabled', () => {
     render(<OAuthButtons enabled={true} disabled={true} />)
-    const googleBtn = screen.getByRole('button', { name: 'Google でサインイン' })
-    const lineBtn = screen.getByRole('button', { name: 'LINE でサインイン' })
+    const googleBtn = screen.getByRole('button', { name: 'Google で続ける' })
+    const lineBtn = screen.getByRole('button', { name: 'LINE で続ける' })
     expect(googleBtn).toBeDisabled()
     expect(lineBtn).toBeDisabled()
   })
 
   it('[Phase 8a] disabled=true のボタンをクリックしても遷移しない', async () => {
     render(<OAuthButtons enabled={true} disabled={true} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Google でサインイン' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Google で続ける' }))
     expect(window.location.href).toBe('')
   })
 
   it('[Phase 8a] enabled=true かつ disabled=false（省略含む）はクリック可能（既存挙動）', async () => {
     render(<OAuthButtons enabled={true} disabled={false} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Google でサインイン' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Google で続ける' }))
     expect(window.location.href).toContain('/api/v1/auth/oauth2/authorization/google')
   })
 
@@ -103,8 +97,8 @@ describe('OAuthButtons', () => {
     render(<OAuthButtons enabled={true} hideDivider={true} />)
     expect(screen.queryByText('または')).not.toBeInTheDocument()
     // ボタン自体は表示される
-    expect(screen.getByRole('button', { name: 'Google でサインイン' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'LINE でサインイン' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Google で続ける' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'LINE で続ける' })).toBeInTheDocument()
   })
 
   it('[Phase 8a] hideDivider=false（省略含む）では「または」を表示する', () => {

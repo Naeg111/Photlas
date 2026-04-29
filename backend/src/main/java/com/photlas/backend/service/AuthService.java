@@ -83,6 +83,11 @@ public class AuthService {
         );
         user.setLanguage(LanguageUtils.resolve(acceptLanguage));
 
+        // Issue#104: メール+パスワード登録時は利用規約・プライバシーポリシー同意済みとして記録
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        user.setTermsAgreedAt(now);
+        user.setPrivacyPolicyAgreedAt(now);
+
         user = userRepository.save(user);
 
         sendVerificationEmail(user);

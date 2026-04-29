@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
-import { User, Settings, FileText, Shield, LogOut, /* Heart, */ LogIn, UserPlus, CircleHelp, UserX } from "lucide-react";
+import { User, Settings, FileText, Shield, LogOut, /* Heart, */ LogIn, CircleHelp, UserX } from "lucide-react";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { useTranslation } from "react-i18next";
@@ -21,7 +21,7 @@ interface TopMenuPanelProps {
   onPrivacyClick: () => void;
   onAboutClick: () => void;
   onLoginClick: () => void;
-  onSignUpClick: () => void;
+  // Issue#104: onSignUpClick を削除（メニューから「新規アカウント作成」ボタンを削除）
   onLogout: () => void;
 }
 
@@ -39,7 +39,6 @@ export function TopMenuPanel({
   onTermsClick,
   onPrivacyClick,
   onLoginClick,
-  onSignUpClick,
   onLogout,
 }: Readonly<TopMenuPanelProps>) {
   const { t, i18n } = useTranslation();
@@ -156,18 +155,6 @@ export function TopMenuPanel({
                 >
                   <LogIn className="w-5 h-5" />
                   {t('common.login')}
-                </Button>
-                <Separator />
-                <Button
-                  variant="ghost"
-                  className="justify-start gap-3"
-                  onClick={() => {
-                    onSignUpClick();
-                    onOpenChange(false);
-                  }}
-                >
-                  <UserPlus className="w-5 h-5" />
-                  {t('auth.createAccount')}
                 </Button>
                 <Separator />
               </>
