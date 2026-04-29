@@ -73,9 +73,6 @@ export default function AboutPage() {
         <div className="max-w-3xl mx-auto px-6 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-gray-600">
           <div>&copy; Photlas</div>
           <nav className="flex gap-4">
-            <Link to="/" className="underline hover:text-gray-900">
-              トップページ
-            </Link>
             <a href="/privacy-policy" className="underline hover:text-gray-900">
               プライバシーポリシー
             </a>
