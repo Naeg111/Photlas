@@ -7,8 +7,6 @@ import com.photlas.backend.security.OAuth2LoginFailureHandler;
 import com.photlas.backend.security.OAuth2LoginSuccessHandler;
 import com.photlas.backend.service.JwtService;
 import com.photlas.backend.service.OAuth2UserServiceHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +20,6 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
-import org.springframework.security.oauth2.jose.jws.JwsAlgorithm;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoderFactory;
@@ -76,8 +73,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @ConditionalOnProperty(name = "photlas.oauth.enabled", havingValue = "true")
 public class OAuth2SecurityConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(OAuth2SecurityConfig.class);
-
     /** 認可エンドポイントのカスタム base URI（Spring デフォルト /oauth2/authorization を上書き）。 */
     static final String AUTHORIZATION_BASE_URI = "/api/v1/auth/oauth2/authorization";
 
@@ -127,16 +122,12 @@ public class OAuth2SecurityConfig {
      */
     @Bean
     public JwtDecoderFactory<ClientRegistration> idTokenDecoderFactory() {
-        log.info("Issue#99: Creating custom idTokenDecoderFactory bean (HS256 for LINE)");
         OidcIdTokenDecoderFactory factory = new OidcIdTokenDecoderFactory();
-        factory.setJwsAlgorithmResolver(clientRegistration -> {
-            String regId = clientRegistration.getRegistrationId();
-            JwsAlgorithm alg = "line".equals(regId)
-                    ? MacAlgorithm.HS256
-                    : SignatureAlgorithm.RS256;
-            log.info("Issue#99: jwsAlgorithmResolver registrationId={} alg={}", regId, alg);
-            return alg;
-        });
+        factory.setJwsAlgorithmResolver(clientRegistration ->
+                "line".equals(clientRegistration.getRegistrationId())
+                        ? MacAlgorithm.HS256
+                        : SignatureAlgorithm.RS256
+        );
         return factory;
     }
 
