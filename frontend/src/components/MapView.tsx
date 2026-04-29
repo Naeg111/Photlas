@@ -127,22 +127,13 @@ const PIN_IMAGE_SCALE = 1.4
 const PIN_IMAGE_LOGICAL_WIDTH = Math.round(BASE_PIN_SIZE * PIN_IMAGE_SCALE) + SHADOW_PADDING
 const PIN_SIZE_CORRECTION = BASE_PIN_SIZE / PIN_IMAGE_LOGICAL_WIDTH
 
-/**
- * Issue#103: zoom >= 16 で 1.4 倍に拡大するが、1,000 件以上の Purple ピンは
- * テキストがないため拡大せず通常サイズで表示する（地図上のバランスを揃える）。
- * @param countProperty - 件数を取得するプロパティ名（クラスタは totalPhotoCount、個別ピンは photoCount）
- */
-function buildIconSizeExpression(countProperty: string): ExpressionSpecification {
-  return [
-    'step', ['zoom'],
-    PIN_SIZE_CORRECTION, // zoom < 16: 通常サイズ
-    16, [
-      'case',
-      ['>=', ['get', countProperty], 1000], PIN_SIZE_CORRECTION,
-      PIN_SIZE_CORRECTION * PIN_IMAGE_SCALE,
-    ],
-  ]
-}
+// Symbol Layer 共通: ズームレベルに応じたアイコンサイズ
+// 全ピン（紫ピン含む）共通で、zoom >= 16 から 1.4 倍に拡大する
+const ICON_SIZE_EXPRESSION: ExpressionSpecification = [
+  'step', ['zoom'],
+  PIN_SIZE_CORRECTION,                          // zoom < 16: 通常サイズ
+  16, PIN_SIZE_CORRECTION * PIN_IMAGE_SCALE,    // zoom >= 16: 1.4 倍
+]
 
 /**
  * 投稿件数プロパティからピン色HEXを決定するMapbox Expression
@@ -342,7 +333,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         ],
         'icon-allow-overlap': true,
         'icon-anchor': 'bottom',
-        'icon-size': buildIconSizeExpression('totalPhotoCount'),
+        'icon-size': ICON_SIZE_EXPRESSION,
       },
     })
 
@@ -369,7 +360,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         ],
         'icon-allow-overlap': true,
         'icon-anchor': 'bottom',
-        'icon-size': buildIconSizeExpression('photoCount'),
+        'icon-size': ICON_SIZE_EXPRESSION,
       },
     })
 
