@@ -10,6 +10,8 @@ import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.JwtService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -60,6 +62,7 @@ public class Issue104TermsAgreementTest {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JwtService jwtService;
     @Autowired private RateLimitFilter rateLimitFilter;
+    @PersistenceContext private EntityManager entityManager;
 
     private static final String REGISTER_ENDPOINT = "/api/v1/auth/register";
     private static final String USERS_ME_ENDPOINT = "/api/v1/users/me";
@@ -215,13 +218,16 @@ public class Issue104TermsAgreementTest {
                         .header("Authorization", "Bearer " + jwtToken))
                 .andExpect(status().isNoContent());
 
+        // 永続化コンテキストをクリアして、L1 キャッシュではなく DB から最新状態を取得する
+        entityManager.clear();
+
         // users レコードが物理削除されている
         assertThat(userRepository.findById(userId))
                 .as("cancel-registration 後に users レコードは物理削除される")
                 .isEmpty();
-        // user_oauth_connections レコードも CASCADE で削除される
+        // user_oauth_connections レコードも CASCADE / 明示削除で削除される
         assertThat(userOAuthConnectionRepository.findById(connId))
-                .as("cancel-registration 後に user_oauth_connections も CASCADE 削除される")
+                .as("cancel-registration 後に user_oauth_connections も削除される")
                 .isEmpty();
     }
 

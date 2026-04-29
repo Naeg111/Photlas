@@ -88,6 +88,9 @@
       "signInWithLine": "Sign in with LINE",
       "signUpWithGoogle": "Sign up with Google",
       "signUpWithLine": "Sign up with LINE",
+      "continueWithGoogle": "Continue with Google",
+      "continueWithLine": "Continue with LINE",
+      "consentNotice": "By selecting, you agree to the Terms of Service and Privacy Policy",
       "dividerOr": "or",
       "errors": {
         "OAUTH_EMAIL_REQUIRED": "Email address could not be retrieved. Please allow email sharing on the provider.",
@@ -128,6 +131,14 @@
         "agreeToTerms": "I agree to the Terms of Service",
         "agreeToTermsRequired": "Agree to the Terms of Service to enable the social sign-up buttons."
       }
+    },
+    "privacyPolicy": "Privacy Policy",
+    "termsAgreement": {
+      "title": "Before you begin",
+      "start": "Get started",
+      "cancel": "Cancel",
+      "cancelledToast": "Account registration was cancelled",
+      "agreeToPrivacyPolicySuffix": " I agree"
     }
   },
   "menu": {
@@ -338,6 +349,7 @@
     "accept": "Accept"
   },
   "errors": {
+    "userInfoFetchFailed": "Failed to retrieve user information",
     "INVALID_CREDENTIALS": "Invalid email or password",
     "ACCOUNT_SUSPENDED": "Your account has been suspended",
     "EMAIL_NOT_VERIFIED": "Email not verified. Please click the link in the verification email.",

@@ -44,6 +44,8 @@ interface SignUpDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onShowTerms: () => void
+  /** Issue#104: プライバシーポリシー画面を表示する */
+  onShowPrivacyPolicy: () => void
   onShowLogin: () => void
   /**
    * Issue#81 Phase 8e: キャンセルクリック時のコールバック（SignUpMethodDialog に戻る等）。
@@ -56,6 +58,7 @@ export function SignUpDialog({
   open,
   onOpenChange,
   onShowTerms,
+  onShowPrivacyPolicy,
   onShowLogin,
   onBack,
 }: Readonly<SignUpDialogProps>) {
@@ -69,6 +72,8 @@ export function SignUpDialog({
   const [snsLinks, setSnsLinks] = useState<Array<{ platform: number; url: string }>>([])
   const [isSnsEditDialogOpen, setIsSnsEditDialogOpen] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  // Issue#104: プライバシーポリシー同意チェックボックス追加
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -436,7 +441,7 @@ export function SignUpDialog({
 
           <Separator />
 
-          {/* 利用規約 */}
+          {/* 利用規約・プライバシーポリシー（Issue#104 でプライバシーポリシー追加） */}
           <div className="space-y-3 my-[50px]">
             {errors.terms && (
               <p className="text-sm text-red-600">{errors.terms}</p>
@@ -460,6 +465,27 @@ export function SignUpDialog({
                   {t('auth.termsOfService')}
                 </a>
                 {t('auth.agreeToTerms')}
+              </label>
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <Checkbox
+                id="privacy"
+                checked={agreedToPrivacy}
+                onCheckedChange={(checked) => setAgreedToPrivacy(checked === true)}
+              />
+              <label htmlFor="privacy" className="text-sm">
+                <a
+                  href="#"
+                  role="link"
+                  className="text-blue-600 underline hover:text-blue-800"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    onShowPrivacyPolicy()
+                  }}
+                >
+                  {t('auth.privacyPolicy')}
+                </a>
+                {t('auth.termsAgreement.agreeToPrivacyPolicySuffix')}
               </label>
             </div>
           </div>
@@ -488,7 +514,7 @@ export function SignUpDialog({
             <Button
               className="flex-1"
               onClick={handleSubmit}
-              disabled={isLoading || registerCooldown.isOnCooldown || !displayName.trim() || !email.trim() || !password || !confirmPassword || !agreedToTerms}
+              disabled={isLoading || registerCooldown.isOnCooldown || !displayName.trim() || !email.trim() || !password || !confirmPassword || !agreedToTerms || !agreedToPrivacy}
               aria-live="polite"
             >
               {registerCooldown.isOnCooldown

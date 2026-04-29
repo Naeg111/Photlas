@@ -16,14 +16,25 @@ import TermsAgreementDialog from './TermsAgreementDialog'
 // AuthContext のモック
 const mockLogin = vi.fn()
 const mockLogout = vi.fn()
+const mockGetAuthToken = vi.fn(() => 'mock-token')
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
     login: mockLogin,
     logout: mockLogout,
+    getAuthToken: mockGetAuthToken,
     isAuthenticated: false,
   }),
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
+
+// fetch のモック（agree-terms / cancel-registration 用）
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    status: 204,
+    json: () => Promise.resolve({}),
+  } as Response)
+)
 
 // sonner (toast) のモック
 vi.mock('sonner', () => ({

@@ -87,6 +87,9 @@
       "signInWithLine": "使用 LINE 登录",
       "signUpWithGoogle": "使用 Google 注册",
       "signUpWithLine": "使用 LINE 注册",
+      "continueWithGoogle": "使用 Google 继续",
+      "continueWithLine": "使用 LINE 继续",
+      "consentNotice": "选择即表示您同意服务条款和隐私政策",
       "dividerOr": "或",
       "chooseMethod": {
         "title": "选择注册方式",
@@ -100,6 +103,14 @@
         "agreeToTerms": "同意服务条款",
         "agreeToTermsRequired": "同意服务条款后，社交账号注册按钮将启用。"
       }
+    },
+    "privacyPolicy": "隐私政策",
+    "termsAgreement": {
+      "title": "使用前须知",
+      "start": "开始使用",
+      "cancel": "取消",
+      "cancelledToast": "账户注册已取消",
+      "agreeToPrivacyPolicySuffix": "我同意"
     }
   },
   "menu": {
@@ -310,6 +321,7 @@
     "accept": "接受"
   },
   "errors": {
+    "userInfoFetchFailed": "获取用户信息失败",
     "INVALID_CREDENTIALS": "邮箱或密码错误",
     "ACCOUNT_SUSPENDED": "您的账户已被暂停",
     "EMAIL_NOT_VERIFIED": "邮箱未验证，请点击验证邮件中的链接。",

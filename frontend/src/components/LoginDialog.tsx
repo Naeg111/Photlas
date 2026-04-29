@@ -158,7 +158,12 @@ export function LoginDialog({
         <div className="overflow-y-auto flex-1 px-6 pb-6">
         <div className="space-y-5 mt-4">
           {/* Issue#81 Phase 8d: SNS ログインボタンを最上部に配置、次に <hr> 区切り線 */}
-          <OAuthButtons variant="signIn" hideDivider={true} />
+          {/* Issue#104: variant プロパティを削除（ラベル「〇〇で続ける」に統一） */}
+          <OAuthButtons hideDivider={true} />
+          {/* Issue#104: OAuth ボタン下に注記テキストを表示（同意の sign-in-wrap パターン） */}
+          <p className="text-xs text-gray-500 text-center mt-2">
+            {t('auth.oauth.consentNotice')}
+          </p>
           <hr className="border-t border-gray-200 my-4" />
 
           {error && (

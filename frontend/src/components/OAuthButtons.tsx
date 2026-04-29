@@ -6,9 +6,10 @@ import { GoogleIcon } from './icons/GoogleIcon'
 import { LineIcon } from './icons/LineIcon'
 
 /**
- * Issue#81 Phase 5b - Google / LINE サインインボタン。
+ * Issue#81 Phase 5b - Google / LINE 認証ボタン。
+ * Issue#104 で variant プロパティを削除し、ラベルを「〇〇で続ける」に統一。
  *
- * <p>Phase 8a (Q4) 以降の仕様:
+ * <p>Phase 8a (Q4) 以降の仕様（継続）:
  * - {@code enabled=false}（OAuth 環境無効）でもボタンは表示し、{@code disabled} 状態にする。
  * - {@code disabled=true} でも両ボタンを非活性にし、クリック時の遷移を抑止する。
  * - {@code hideDivider=true} で「または」区切り線を描画しない（LoginDialog 等、
@@ -16,10 +17,7 @@ import { LineIcon } from './icons/LineIcon'
  *
  * <p>最終的な非活性判定: {@code disabled || !(enabled ?? isOAuthEnabled())}。
  */
-type Variant = 'signIn' | 'signUp'
-
 interface OAuthButtonsProps {
-  variant?: Variant
   /** テスト・上書き用。省略時は {@code import.meta.env.VITE_OAUTH_ENABLED} を参照 */
   enabled?: boolean
   /** クリック不可にするが表示は維持（利用規約未チェック等）。 */
@@ -31,7 +29,6 @@ interface OAuthButtonsProps {
 }
 
 export default function OAuthButtons({
-  variant = 'signIn',
   enabled,
   disabled = false,
   hideDivider = false,
@@ -48,12 +45,8 @@ export default function OAuthButtons({
     window.location.href = `${base}/api/v1/auth/oauth2/authorization/${provider}?lang=${encodeURIComponent(lang)}`
   }
 
-  const googleLabel = variant === 'signUp'
-    ? t('auth.oauth.signUpWithGoogle')
-    : t('auth.oauth.signInWithGoogle')
-  const lineLabel = variant === 'signUp'
-    ? t('auth.oauth.signUpWithLine')
-    : t('auth.oauth.signInWithLine')
+  const googleLabel = t('auth.oauth.continueWithGoogle')
+  const lineLabel = t('auth.oauth.continueWithLine')
 
   return (
     <div className={className ? `space-y-2 ${className}` : 'space-y-2'}>

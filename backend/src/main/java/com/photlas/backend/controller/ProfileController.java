@@ -174,6 +174,20 @@ public class ProfileController {
     }
 
     /**
+     * Issue#104: 利用規約・プライバシーポリシーへの同意を記録する
+     * POST /api/v1/users/me/agree-terms
+     *
+     * <p>OAuth 経由の新規ユーザーが同意ダイアログで「利用を開始する」を押した際に呼ばれる。
+     * 常に現在時刻で上書きする（既に同意済みでも実害なし、§4.11）。
+     */
+    @PostMapping("/me/agree-terms")
+    public ResponseEntity<Void> agreeToTerms(Authentication authentication) {
+        String email = authentication.getName();
+        profileService.agreeToTerms(email);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * Issue#81 Phase 4h: OAuth 連携一覧取得
      * GET /api/v1/users/me/oauth-connections
      *

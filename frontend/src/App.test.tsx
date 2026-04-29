@@ -283,7 +283,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('[Phase 8r-3] transitions from LoginRequiredDialog to SignUpMethodDialog when signup button is clicked', async () => {
+    it('[Issue#104] transitions from LoginRequiredDialog directly to SignUpDialog when signup button is clicked', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
@@ -300,9 +300,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
       await user.click(signUpButton)
 
-      // Q1 改訂後: OAuth 有無に関わらず SignUpMethodDialog が最初に表示される
+      // Issue#104: SignUpMethodDialog 削除に伴い、SignUpDialog が直接開く
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント登録方法を選択' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウントを新規登録' })).toBeInTheDocument()
       })
     })
 
@@ -329,7 +329,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('[Phase 8r-3] transitions from TopMenuPanel to SignUpMethodDialog when signup is clicked', async () => {
+    it('[Issue#104] TopMenuPanel does not have signup button (removed)', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
@@ -339,17 +339,12 @@ describe('App - Issue#28: App.tsx再構築', () => {
       await user.click(menuButton)
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /新規アカウント作成/i })).toBeInTheDocument()
+        // ログインボタンは存在する
+        expect(screen.getByRole('button', { name: /ログイン/i })).toBeInTheDocument()
       })
 
-      // 新規アカウント作成ボタンをクリック
-      const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
-      await user.click(signUpButton)
-
-      // Q1 改訂後: SignUpMethodDialog が最初に表示される
-      await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント登録方法を選択' })).toBeInTheDocument()
-      })
+      // Issue#104: 「新規アカウント作成」ボタンは削除されている
+      expect(screen.queryByRole('button', { name: /新規アカウント作成/i })).not.toBeInTheDocument()
     })
 
     it('transitions from LoginDialog to PasswordResetDialog', async () => {
@@ -382,7 +377,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('[Phase 8r-3] transitions from LoginDialog to SignUpMethodDialog（Q1 改訂）', async () => {
+    it('[Issue#104] transitions from LoginDialog directly to SignUpDialog', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
@@ -402,39 +397,32 @@ describe('App - Issue#28: App.tsx再構築', () => {
         expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
       })
 
-      // 「新規登録」リンクをクリック → SignUpMethodDialog が開く（旧: SignUpDialog）
+      // Issue#104: 「新規登録」リンクから SignUpDialog に直接遷移（SignUpMethodDialog 経由なし）
       const signUpLink = screen.getByText(/新規登録/i)
       await user.click(signUpLink)
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント登録方法を選択' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'アカウントを新規登録' })).toBeInTheDocument()
       })
     })
 
-    it('[Phase 8r-3] transitions from SignUpDialog to LoginDialog（Method → メール → SignUp → ログイン）', async () => {
+    it('[Issue#104] transitions from SignUpDialog to LoginDialog (LoginRequired → SignUp → Login)', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
 
-      // メニュー → 新規アカウント作成ボタン → SignUpMethodDialog が開く
-      const menuButton = screen.getByRole('button', { name: /メニュー/i })
-      await user.click(menuButton)
+      // 投稿 → LoginRequiredDialog → 新規アカウント作成 → SignUpDialog が直接開く
+      const postButton = screen.getByRole('button', { name: /投稿/i })
+      await user.click(postButton)
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /新規アカウント作成/i })).toBeInTheDocument()
+        expect(screen.getByText('ログインが必要です')).toBeInTheDocument()
       })
 
       const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
       await user.click(signUpButton)
 
-      await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント登録方法を選択' })).toBeInTheDocument()
-      })
-
-      // 「メールアドレスで登録」を押して SignUpDialog へ遷移
-      const emailBtn = screen.getByRole('button', { name: 'メールアドレスで登録' })
-      await user.click(emailBtn)
-
+      // Issue#104: SignUpDialog が直接開く（SignUpMethodDialog 経由なし）
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'アカウントを新規登録' })).toBeInTheDocument()
       })
@@ -467,13 +455,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
       await user.click(signUpButton)
 
-      // [Phase 8r-3] SignUpMethodDialog が最初に表示される → 「メールアドレスで登録」で SignUpDialog へ
-      await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'アカウント登録方法を選択' })).toBeInTheDocument()
-      })
-      const emailBtn = screen.getByRole('button', { name: 'メールアドレスで登録' })
-      await user.click(emailBtn)
-
+      // Issue#104: SignUpDialog が直接開く（SignUpMethodDialog 経由なし）
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'アカウントを新規登録' })).toBeInTheDocument()
       })
@@ -660,18 +642,54 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     }
 
-    it('?requires_username_setup=1 があると UsernameSetupDialog が開く', async () => {
+    it('[Issue#104] /users/me が usernameTemporary=true を返すと UsernameSetupDialog が開く', async () => {
       setAuthenticatedUser()
-      renderAppAtPath('/?requires_username_setup=1')
+      // /users/me が usernameTemporary=true を返すモック（Issue#104 §4.18）
+      ;(global.fetch as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
+        if (typeof url === 'string' && url.includes('/users/me')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({
+              userId: 1,
+              username: 'user_abc1234',
+              email: 'oauth@example.com',
+              language: 'ja',
+              requiresTermsAgreement: false,
+              usernameTemporary: true,
+            }),
+          } as Response)
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) } as Response)
+      })
+      renderAppAtPath('/')
       skipSplashScreen()
+      vi.useRealTimers()  // /users/me の async fetch 解決のため real timers に切り替え
 
       await waitFor(() => {
         expect(screen.getByText('表示名を設定')).toBeInTheDocument()
       })
     })
 
-    it('?requires_username_setup=1 がない場合、UsernameSetupDialog は開かない', async () => {
+    it('[Issue#104] /users/me が usernameTemporary=false の場合、UsernameSetupDialog は開かない', async () => {
       setAuthenticatedUser()
+      ;(global.fetch as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
+        if (typeof url === 'string' && url.includes('/users/me')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({
+              userId: 1,
+              username: 'user_abc1234',
+              email: 'oauth@example.com',
+              language: 'ja',
+              requiresTermsAgreement: false,
+              usernameTemporary: false,
+            }),
+          } as Response)
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) } as Response)
+      })
       renderAppAtPath('/')
       skipSplashScreen()
 
@@ -681,9 +699,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('未認証時は ?requires_username_setup=1 でも UsernameSetupDialog は開かない', async () => {
+    it('未認証時は UsernameSetupDialog は開かない（マウント時 /users/me チェックがスキップされる）', async () => {
       // localStorage は空（setAuthenticatedUser を呼ばない）
-      renderAppAtPath('/?requires_username_setup=1')
+      renderAppAtPath('/')
       skipSplashScreen()
 
       await waitFor(() => {

@@ -102,4 +102,19 @@ public class AccountController {
         );
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Issue#104: OAuth 経由の未同意ユーザーが利用規約同意ダイアログでキャンセルした場合、
+     * アカウントを物理削除する。
+     * DELETE /api/v1/users/me/cancel-registration
+     *
+     * <p>{@code terms_agreed_at IS NULL} のときのみ実行可能。NOT NULL の場合は 403 を返す。
+     * 通常の退会処理 ({@link #deleteAccount}) は論理削除だが、こちらは未同意ユーザー専用で物理削除する。
+     */
+    @DeleteMapping("/cancel-registration")
+    public ResponseEntity<Void> cancelRegistration(Authentication authentication) {
+        String email = authentication.getName();
+        accountService.cancelRegistration(email);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -203,9 +203,11 @@ describe('OAuthCallbackPage', () => {
         </MemoryRouter>
       )
 
+      // Issue#104: requires_username_setup の URL パラメータは廃止（/users/me ベースに移行）
+      // OAuthCallbackPage は常に / にリダイレクト
       await waitFor(() => {
         expect(mockNavigate).toHaveBeenCalledWith(
-          '/?requires_username_setup=1',
+          '/',
           { replace: true }
         )
       })
