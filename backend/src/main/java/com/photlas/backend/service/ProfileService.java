@@ -25,9 +25,15 @@ import java.util.stream.Collectors;
 @Service
 public class ProfileService {
 
+    /**
+     * Issue#102: 登録可能なSNSプラットフォーム一覧。
+     * YouTube/TikTok はロゴ使用許可未取得のため一時停止中
+     * （定数は CodeConstants に残置し、許可取得後に再追加して再開予定）。
+     */
     private static final List<Integer> ALLOWED_PLATFORMS = List.of(
-            CodeConstants.PLATFORM_TWITTER, CodeConstants.PLATFORM_INSTAGRAM,
-            CodeConstants.PLATFORM_YOUTUBE, CodeConstants.PLATFORM_TIKTOK);
+            CodeConstants.PLATFORM_TWITTER,
+            CodeConstants.PLATFORM_INSTAGRAM,
+            CodeConstants.PLATFORM_THREADS);
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
     private static final String ERROR_UNSUPPORTED_PLATFORM = "未対応のプラットフォームです: ";
     private static final String ERROR_DUPLICATE_PLATFORM = "同じプラットフォームが重複しています: ";
@@ -193,7 +199,7 @@ public class ProfileService {
     private UserProfileResponse buildProfileResponse(User user, boolean includeEmail) {
         List<UserSnsLink> snsLinks = userSnsLinkRepository.findByUserId(user.getId());
         List<UserProfileResponse.SnsLink> snsLinkDtos = snsLinks.stream()
-                .map(link -> new UserProfileResponse.SnsLink(link.getUrl()))
+                .map(link -> new UserProfileResponse.SnsLink(link.getPlatform(), link.getUrl()))
                 .collect(Collectors.toList());
 
         String profileImageUrl = s3Service.generateCdnUrl(user.getProfileImageS3Key());
@@ -241,8 +247,13 @@ public class ProfileService {
                 case CodeConstants.PLATFORM_TWITTER -> host.equals("x.com") || host.equals("twitter.com")
                         || host.endsWith(".x.com") || host.endsWith(".twitter.com");
                 case CodeConstants.PLATFORM_INSTAGRAM -> host.equals("instagram.com") || host.endsWith(".instagram.com");
+                // Issue#102: YouTube/TikTok は ALLOWED_PLATFORMS から除外したため到達不能だが、
+                // 将来再開時にコード変更なしで使えるようケースは残置。
                 case CodeConstants.PLATFORM_YOUTUBE -> host.equals("youtube.com") || host.endsWith(".youtube.com");
                 case CodeConstants.PLATFORM_TIKTOK -> host.equals("tiktok.com") || host.endsWith(".tiktok.com");
+                // Issue#102: Threads は threads.com (現行) と threads.net (旧、リダイレクト) の両方を許可。
+                case CodeConstants.PLATFORM_THREADS -> host.equals("threads.com") || host.endsWith(".threads.com")
+                        || host.equals("threads.net") || host.endsWith(".threads.net");
                 default -> false;
             };
         } catch (Exception e) {

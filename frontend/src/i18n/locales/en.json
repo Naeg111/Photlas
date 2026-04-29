@@ -455,8 +455,11 @@
   },
   "snsEdit": {
     "title": "Edit SNS Links",
-    "description": "Add, edit, or delete SNS links",
-    "add": "Add"
+    "description": "Edit SNS links",
+    "invalidUrlFormat": "Please enter a valid URL",
+    "invalidInstagramUrl": "Please enter a valid Instagram URL",
+    "invalidThreadsUrl": "Please enter a valid Threads URL",
+    "invalidXUrl": "Please enter a valid X URL"
   },
   "wantToGo": {
     "title": "Want to Go List",

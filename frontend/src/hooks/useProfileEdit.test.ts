@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { toast } from 'sonner'
 import { useProfileEdit } from './useProfileEdit'
-import { PLATFORM_TWITTER, PLATFORM_INSTAGRAM } from '../utils/codeConstants'
 
 // sonnerのモック
 vi.mock('sonner', () => ({
@@ -31,10 +30,8 @@ globalThis.fetch = mockFetch
 describe('useProfileEdit', () => {
   const defaultProps = {
     initialUsername: 'testuser',
-    snsLinks: [] as { url: string; platform?: number }[],
     onUsernameUpdated: vi.fn(),
     onImageUpdated: vi.fn(),
-    onSnsLinksUpdated: vi.fn(),
   }
 
   beforeEach(() => {
@@ -389,8 +386,10 @@ describe('useProfileEdit', () => {
       expect(result.current.hasUnsavedChanges).toBe(true)
     })
 
-    it('レポート#5-3 - 画像アップロード失敗時も表示名やSNSリンクの保存は続行される', async () => {
+    it('Issue#102 - 画像アップロード失敗時も表示名の保存は続行される', async () => {
       mockFetch
+        // 表示名保存: 成功
+        .mockResolvedValueOnce({ ok: true })
         // 署名付きURL取得: 成功
         .mockResolvedValueOnce({
           ok: true,
@@ -398,26 +397,24 @@ describe('useProfileEdit', () => {
         })
         // S3 PUT: 失敗
         .mockResolvedValueOnce({ ok: false, status: 500 })
-        // SNSリンク保存: 成功
-        .mockResolvedValueOnce({ ok: true })
 
-      const onSnsLinksUpdated = vi.fn()
-      const existingLinks = [
-        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
-      ]
+      const onUsernameUpdated = vi.fn()
       const { result } = renderHook(() =>
-        useProfileEdit({ ...defaultProps, snsLinks: existingLinks, onSnsLinksUpdated })
+        useProfileEdit({ ...defaultProps, onUsernameUpdated })
       )
+
+      // 表示名編集
+      act(() => {
+        result.current.handleUsernameEditClick()
+      })
+      act(() => {
+        result.current.handleUsernameChange('newname')
+      })
 
       // 画像クロップ
       const croppedBlob = new Blob(['cropped-data'], { type: 'image/jpeg' })
       await act(async () => {
         await result.current.handleCropComplete(croppedBlob)
-      })
-
-      // SNSリンク編集開始
-      act(() => {
-        result.current.handleStartEditSnsLinks()
       })
 
       await act(async () => {
@@ -427,12 +424,8 @@ describe('useProfileEdit', () => {
       // 画像はエラー
       expect(toast.error).toHaveBeenCalledWith('プロフィール画像の登録に失敗しました')
 
-      // SNSリンクの保存は続行されている
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/users/me/sns-links',
-        expect.objectContaining({ method: 'PUT' })
-      )
-      expect(onSnsLinksUpdated).toHaveBeenCalled()
+      // 表示名の保存は完了している
+      expect(onUsernameUpdated).toHaveBeenCalledWith('newname')
     })
 
     it('Issue#82 - handleCancelAllChangesで画像変更がリバートされる', async () => {
@@ -461,210 +454,23 @@ describe('useProfileEdit', () => {
     })
   })
 
-  describe('SNSリンク', () => {
-    it('handleStartEditSnsLinksで既存のリンクから初期化される', () => {
-      const existingLinks = [
-        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
-      ]
-      const { result } = renderHook(() =>
-        useProfileEdit({ ...defaultProps, snsLinks: existingLinks })
-      )
-
-      act(() => {
-        result.current.handleStartEditSnsLinks()
-      })
-
-      expect(result.current.isEditingSnsLinks).toBe(true)
-      expect(result.current.editingSnsLinks).toEqual([
-        expect.objectContaining({ platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' }),
-      ])
-    })
-
-    it('handleStartEditSnsLinksで空の場合にデフォルトエントリが追加される', () => {
-      const { result } = renderHook(() =>
-        useProfileEdit({ ...defaultProps, snsLinks: [] })
-      )
-
-      act(() => {
-        result.current.handleStartEditSnsLinks()
-      })
-
-      expect(result.current.editingSnsLinks).toEqual([
-        expect.objectContaining({ platform: PLATFORM_TWITTER, url: '' }),
-      ])
-    })
-
-    it('handleAddSnsLinkで新しいエントリが追加される（最大3件）', () => {
-      const { result } = renderHook(() =>
-        useProfileEdit({ ...defaultProps, snsLinks: [] })
-      )
-
-      act(() => {
-        result.current.handleStartEditSnsLinks()
-      })
-
-      // 初期状態で1件
-      expect(result.current.editingSnsLinks).toHaveLength(1)
-
-      act(() => {
-        result.current.handleAddSnsLink()
-      })
-      expect(result.current.editingSnsLinks).toHaveLength(2)
-
-      act(() => {
-        result.current.handleAddSnsLink()
-      })
-      expect(result.current.editingSnsLinks).toHaveLength(3)
-
-      // 最大3件なので4件目は追加されない
-      act(() => {
-        result.current.handleAddSnsLink()
-      })
-      expect(result.current.editingSnsLinks).toHaveLength(3)
-    })
-
-    it('handleRemoveSnsLinkで指定インデックスのエントリが削除される', () => {
-      const existingLinks = [
-        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
-        { platform: PLATFORM_INSTAGRAM, url: 'https://instagram.com/test' },
-      ]
-      const { result } = renderHook(() =>
-        useProfileEdit({ ...defaultProps, snsLinks: existingLinks })
-      )
-
-      act(() => {
-        result.current.handleStartEditSnsLinks()
-      })
-      expect(result.current.editingSnsLinks).toHaveLength(2)
-
-      act(() => {
-        result.current.handleRemoveSnsLink(0)
-      })
-
-      expect(result.current.editingSnsLinks).toHaveLength(1)
-      expect(result.current.editingSnsLinks[0].platform).toBe(PLATFORM_INSTAGRAM)
-    })
-
-    it('handleUpdateSnsLinkで指定インデックスのフィールドが更新される', () => {
-      const existingLinks = [
-        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
-      ]
-      const { result } = renderHook(() =>
-        useProfileEdit({ ...defaultProps, snsLinks: existingLinks })
-      )
-
-      act(() => {
-        result.current.handleStartEditSnsLinks()
-      })
-
-      act(() => {
-        result.current.handleUpdateSnsLink(0, 'url', 'https://twitter.com/updated')
-      })
-
-      expect(result.current.editingSnsLinks[0].url).toBe(
-        'https://twitter.com/updated'
-      )
-
-      act(() => {
-        result.current.handleUpdateSnsLink(0, 'platform', PLATFORM_INSTAGRAM)
-      })
-
-      expect(result.current.editingSnsLinks[0].platform).toBe(PLATFORM_INSTAGRAM)
-    })
-
-    it('handleSaveSnsLinksでURLが空でないリンクのみPUTリクエストが送信される', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: true })
-      const onSnsLinksUpdated = vi.fn()
-      const existingLinks = [
-        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
-        { platform: PLATFORM_INSTAGRAM, url: '' },
-      ]
-      const { result } = renderHook(() =>
-        useProfileEdit({
-          ...defaultProps,
-          snsLinks: existingLinks,
-          onSnsLinksUpdated,
-        })
-      )
-
-      act(() => {
-        result.current.handleStartEditSnsLinks()
-      })
-
-      await act(async () => {
-        await result.current.handleSaveSnsLinks()
-      })
-
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/users/me/sns-links', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer test-token',
-        },
-        body: JSON.stringify({
-          snsLinks: [{ platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' }],
-        }),
-      })
-      expect(onSnsLinksUpdated).toHaveBeenCalledWith([
-        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
-      ])
-    })
-
-    it('handleCancelEditSnsLinksで編集状態がリセットされる', () => {
-      const existingLinks = [
-        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
-      ]
-      const { result } = renderHook(() =>
-        useProfileEdit({ ...defaultProps, snsLinks: existingLinks })
-      )
-
-      act(() => {
-        result.current.handleStartEditSnsLinks()
-      })
-      expect(result.current.isEditingSnsLinks).toBe(true)
-
-      act(() => {
-        result.current.handleCancelEditSnsLinks()
-      })
-
-      expect(result.current.isEditingSnsLinks).toBe(false)
-      expect(result.current.editingSnsLinks).toEqual([])
-    })
-  })
-
   describe('統一保存機能', () => {
-    it('handleSaveAllChangesで表示名とSNSリンクが一括保存される', async () => {
-      // 表示名保存のレスポンス
-      mockFetch
-        .mockResolvedValueOnce({ ok: true })
-        // SNSリンク保存のレスポンス
-        .mockResolvedValueOnce({ ok: true })
+    it('handleSaveAllChangesで表示名が保存される', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true })
 
       const onUsernameUpdated = vi.fn()
-      const onSnsLinksUpdated = vi.fn()
-      const existingLinks = [
-        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
-      ]
       const { result } = renderHook(() =>
         useProfileEdit({
           ...defaultProps,
-          snsLinks: existingLinks,
           onUsernameUpdated,
-          onSnsLinksUpdated,
         })
       )
 
-      // 表示名編集を開始
       act(() => {
         result.current.handleUsernameEditClick()
       })
       act(() => {
         result.current.handleUsernameChange('newname')
-      })
-
-      // SNSリンク編集を開始
-      act(() => {
-        result.current.handleStartEditSnsLinks()
       })
 
       expect(result.current.hasUnsavedChanges).toBe(true)
@@ -673,42 +479,21 @@ describe('useProfileEdit', () => {
         await result.current.handleSaveAllChanges()
       })
 
-      // 表示名のPUTリクエスト
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/v1/users/me/username',
         expect.objectContaining({ method: 'PUT' })
       )
-      // SNSリンクのPUTリクエスト
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/v1/users/me/sns-links',
-        expect.objectContaining({ method: 'PUT' })
-      )
       expect(onUsernameUpdated).toHaveBeenCalledWith('newname')
-      expect(onSnsLinksUpdated).toHaveBeenCalled()
     })
 
-    it('handleCancelAllChangesで全ての編集状態がリセットされる', () => {
-      const existingLinks = [
-        { platform: PLATFORM_TWITTER, url: 'https://twitter.com/test' },
-      ]
-      const { result } = renderHook(() =>
-        useProfileEdit({
-          ...defaultProps,
-          snsLinks: existingLinks,
-        })
-      )
+    it('handleCancelAllChangesで表示名の編集状態がリセットされる', () => {
+      const { result } = renderHook(() => useProfileEdit(defaultProps))
 
-      // 表示名編集を開始
       act(() => {
         result.current.handleUsernameEditClick()
       })
       act(() => {
         result.current.handleUsernameChange('changed')
-      })
-
-      // SNSリンク編集を開始
-      act(() => {
-        result.current.handleStartEditSnsLinks()
       })
 
       expect(result.current.hasUnsavedChanges).toBe(true)
@@ -720,8 +505,6 @@ describe('useProfileEdit', () => {
       expect(result.current.isEditingUsername).toBe(false)
       expect(result.current.editingUsername).toBe('testuser')
       expect(result.current.usernameError).toBe('')
-      expect(result.current.isEditingSnsLinks).toBe(false)
-      expect(result.current.editingSnsLinks).toEqual([])
       expect(result.current.hasUnsavedChanges).toBe(false)
     })
   })

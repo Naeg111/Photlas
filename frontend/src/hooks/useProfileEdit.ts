@@ -2,7 +2,6 @@ import { useState, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
-import { PLATFORM_TWITTER } from '../utils/codeConstants'
 import { validateUsername as validateUsernameLite } from '../utils/validation/username'
 import { localizeFieldError } from '../utils/validation/localizeFieldError'
 
@@ -10,59 +9,25 @@ import { localizeFieldError } from '../utils/validation/localizeFieldError'
 const API_ENDPOINTS = {
   PROFILE_IMAGE_PRESIGNED_URL: '/api/v1/users/me/profile-image/presigned-url',
   PROFILE_IMAGE: '/api/v1/users/me/profile-image',
-  SNS_LINKS: '/api/v1/users/me/sns-links',
+  PROFILE_IMAGE_DELETE: '/api/v1/users/me/profile-image',
   USERNAME: '/api/v1/users/me/username',
 } as const
 
-// バリデーションエラーメッセージ定数
-// Issue#98: USERNAME_REQUIRED / USERNAME_TOO_LONG は i18n キー方式
-// （errors.USERNAME_*）に置換されたため削除
 const ERROR_MESSAGES = {
   FAILED_TO_GET_PRESIGNED_URL: 'Failed to get presigned URL',
   FAILED_TO_UPDATE_USERNAME: 'Failed to update username',
   FAILED_TO_REGISTER_PROFILE_IMAGE: 'プロフィール画像の登録に失敗しました',
 } as const
 
-// バリデーション定数
-// Issue#98: MAX_USERNAME_LENGTH は utils/validation/username.ts に集約されたため削除
-const VALIDATION = {
-  MAX_SNS_LINKS: 3,
-} as const
-
-// HTTPステータスコード定数
 const HTTP_STATUS = {
   BAD_REQUEST: 400,
   CONFLICT: 409,
 } as const
 
-interface SnsLink {
-  id?: string
-  url: string
-  platform?: number
-}
-
-let snsLinkIdCounter = 0
-function generateSnsLinkId(): string {
-  snsLinkIdCounter += 1
-  return `sns-${snsLinkIdCounter}`
-}
-
-/** SnsLinkにidが未設定の場合、idを付与して返す */
-function ensureSnsLinkIds(links: SnsLink[]): SnsLink[] {
-  return links.map(link => link.id ? link : { ...link, id: generateSnsLinkId() })
-}
-
-/** SnsLinkからidを除去して返す */
-function stripSnsLinkIds(links: SnsLink[]): SnsLink[] {
-  return links.map(({ url, platform }) => ({ url, platform }))
-}
-
 interface UseProfileEditProps {
   initialUsername: string
-  snsLinks: SnsLink[]
   onUsernameUpdated?: (newUsername: string) => void
   onImageUpdated?: (previewUrl: string | null) => void
-  onSnsLinksUpdated?: (newLinks: SnsLink[]) => void
 }
 
 interface UseProfileEditReturn {
@@ -85,16 +50,6 @@ interface UseProfileEditReturn {
   handleCropComplete: (croppedBlob: Blob) => Promise<void>
   handleCropCancel: () => void
 
-  // SNSリンク
-  isEditingSnsLinks: boolean
-  editingSnsLinks: SnsLink[]
-  handleStartEditSnsLinks: () => void
-  handleCancelEditSnsLinks: () => void
-  handleAddSnsLink: () => void
-  handleRemoveSnsLink: (index: number) => void
-  handleUpdateSnsLink: (index: number, field: 'platform' | 'url', value: string | number) => void
-  handleSaveSnsLinks: () => Promise<void>
-
   // 統一保存機能
   hasUnsavedChanges: boolean
   isSaving: boolean
@@ -109,10 +64,8 @@ interface UseProfileEditReturn {
  */
 export const useProfileEdit = ({
   initialUsername,
-  snsLinks,
   onUsernameUpdated,
   onImageUpdated,
-  onSnsLinksUpdated,
 }: UseProfileEditProps): UseProfileEditReturn => {
   const { getAuthToken } = useAuth()
   const { t } = useTranslation()
@@ -131,11 +84,6 @@ export const useProfileEdit = ({
   // Issue#82: 画像の遅延アップロード
   const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null)
   const [pendingImageDelete, setPendingImageDelete] = useState(false)
-
-  // SNSリンク編集の状態
-  // Issue#37: 編集中のSNSリンクをステートで管理
-  const [isEditingSnsLinks, setIsEditingSnsLinks] = useState(false)
-  const [editingSnsLinks, setEditingSnsLinks] = useState<SnsLink[]>([])
 
   // 統一保存機能の状態
   const [isSaving, setIsSaving] = useState(false)
@@ -279,83 +227,11 @@ export const useProfileEdit = ({
   }, [onImageUpdated])
 
   /**
-   * Issue#37: SNSリンク編集を開始
-   */
-  const handleStartEditSnsLinks = useCallback(() => {
-    // 既存のsnsLinksをコピーして編集用ステートにセット
-    // 空の場合は1つの空エントリを追加
-    const initialLinks = snsLinks.length > 0
-      ? ensureSnsLinkIds(snsLinks)
-      : [{ id: generateSnsLinkId(), platform: PLATFORM_TWITTER, url: '' }]
-    setEditingSnsLinks(initialLinks)
-    setIsEditingSnsLinks(true)
-  }, [snsLinks])
-
-  /**
-   * Issue#37: SNSリンク編集をキャンセル
-   */
-  const handleCancelEditSnsLinks = useCallback(() => {
-    setIsEditingSnsLinks(false)
-    setEditingSnsLinks([])
-  }, [])
-
-  /**
-   * Issue#37: SNSリンクを追加（最大件数まで）
-   */
-  const handleAddSnsLink = useCallback(() => {
-    if (editingSnsLinks.length < VALIDATION.MAX_SNS_LINKS) {
-      setEditingSnsLinks([...editingSnsLinks, { id: generateSnsLinkId(), platform: PLATFORM_TWITTER, url: '' }])
-    }
-  }, [editingSnsLinks])
-
-  /**
-   * Issue#37: SNSリンクを削除
-   */
-  const handleRemoveSnsLink = useCallback((index: number) => {
-    setEditingSnsLinks(editingSnsLinks.filter((_, i) => i !== index))
-  }, [editingSnsLinks])
-
-  /**
-   * Issue#37: SNSリンクを更新
-   */
-  const handleUpdateSnsLink = useCallback((index: number, field: 'platform' | 'url', value: string | number) => {
-    const updated = [...editingSnsLinks]
-    updated[index] = { ...updated[index], [field]: value }
-    setEditingSnsLinks(updated)
-  }, [editingSnsLinks])
-
-  /**
-   * Issue#37: SNSリンクを保存（編集内容を送信）
-   */
-  const handleSaveSnsLinks = useCallback(async () => {
-    // URLが空でないリンクのみ保存
-    const linksToSave = editingSnsLinks.filter(link => link.url.trim() !== '')
-
-    const token = getAuthToken()
-    const headers: HeadersInit = { 'Content-Type': 'application/json' }
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-
-    const response = await fetch(API_ENDPOINTS.SNS_LINKS, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify({ snsLinks: linksToSave.map(({ platform, url }) => ({ platform, url })) }),
-    })
-
-    if (response.ok) {
-      // 保存成功時にコールバックを呼び出し、表示を更新
-      onSnsLinksUpdated?.(stripSnsLinkIds(linksToSave))
-    }
-
-    setIsEditingSnsLinks(false)
-  }, [editingSnsLinks, getAuthToken, onSnsLinksUpdated])
-
-  /**
    * 未保存の変更があるかどうか
    * Issue#82: 画像変更・画像削除も含める
+   * Issue#102: SNS リンク編集は SnsLinkEditDialog に切り出し済みのため除外
    */
-  const hasUnsavedChanges = isEditingUsername || isEditingSnsLinks || pendingImageBlob !== null || pendingImageDelete
+  const hasUnsavedChanges = isEditingUsername || pendingImageBlob !== null || pendingImageDelete
 
   /**
    * 統一保存機能：アカウント名とSNSリンクを一括保存
@@ -457,22 +333,7 @@ export const useProfileEdit = ({
         setPendingImageDelete(false)
       }
 
-      // SNSリンクを保存（編集中の場合のみ）
-      if (isEditingSnsLinks) {
-        const linksToSave = editingSnsLinks.filter(link => link.url.trim() !== '')
-
-        const snsResponse = await fetch(API_ENDPOINTS.SNS_LINKS, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify({ snsLinks: linksToSave.map(({ platform, url }) => ({ platform, url })) }),
-        })
-
-        if (snsResponse.ok) {
-          onSnsLinksUpdated?.(stripSnsLinkIds(linksToSave))
-        }
-
-        setIsEditingSnsLinks(false)
-      }
+      // Issue#102: SNSリンクは SnsLinkEditDialog 内で直接保存するため、ここでは扱わない
     } catch {
       // エラー時の処理
     } finally {
@@ -483,11 +344,9 @@ export const useProfileEdit = ({
     isEditingUsername,
     editingUsername,
     onUsernameUpdated,
-    isEditingSnsLinks,
-    editingSnsLinks,
-    onSnsLinksUpdated,
     pendingImageBlob,
     pendingImageDelete,
+    t,
   ])
 
   /**
@@ -499,10 +358,6 @@ export const useProfileEdit = ({
       setEditingUsername(initialUsername)
       setUsernameError('')
     }
-    if (isEditingSnsLinks) {
-      setIsEditingSnsLinks(false)
-      setEditingSnsLinks([])
-    }
     // Issue#82: 画像変更をリバート（hook内部の状態のみリセット）
     // ProfileDialogのクリーンアップeffectがUI状態をリセットするため
     // onImageUpdatedは呼ばない（呼ぶとisImagePendingDeleteが再設定される）
@@ -510,7 +365,7 @@ export const useProfileEdit = ({
       setPendingImageBlob(null)
       setPendingImageDelete(false)
     }
-  }, [isEditingUsername, isEditingSnsLinks, initialUsername, pendingImageBlob, pendingImageDelete])
+  }, [isEditingUsername, initialUsername, pendingImageBlob, pendingImageDelete])
 
   return {
     // 表示名編集
@@ -531,16 +386,6 @@ export const useProfileEdit = ({
     cropperImageSrc,
     handleCropComplete,
     handleCropCancel,
-
-    // SNSリンク
-    isEditingSnsLinks,
-    editingSnsLinks,
-    handleStartEditSnsLinks,
-    handleCancelEditSnsLinks,
-    handleAddSnsLink,
-    handleRemoveSnsLink,
-    handleUpdateSnsLink,
-    handleSaveSnsLinks,
 
     // 統一保存機能
     hasUnsavedChanges,

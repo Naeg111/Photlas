@@ -63,8 +63,12 @@ export const DEVICE_TYPE_OTHER = 506
 // ========== 600番台: UserSnsLink.platform ==========
 export const PLATFORM_TWITTER = 601
 export const PLATFORM_INSTAGRAM = 602
+/** Issue#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
 export const PLATFORM_YOUTUBE = 603
+/** Issue#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
 export const PLATFORM_TIKTOK = 604
+/** Issue#102: Threads(605) を新規追加 */
+export const PLATFORM_THREADS = 605
 
 // ========== 800番台: Report.reason ==========
 export const REASON_ADULT_CONTENT = 801
@@ -154,12 +158,17 @@ export const PLATFORM_LABELS: Record<number, string> = {
   [PLATFORM_INSTAGRAM]: 'Instagram',
   [PLATFORM_YOUTUBE]: 'YouTube',
   [PLATFORM_TIKTOK]: 'TikTok',
+  [PLATFORM_THREADS]: 'Threads',
 }
 
-/** SNSプラットフォームの選択肢 */
+/**
+ * SNSプラットフォームの選択肢
+ * Issue#102: Threads 追加。YouTube/TikTok は一時停止中だが将来再開時のため残置。
+ */
 export const PLATFORM_OPTIONS = [
   { value: PLATFORM_TWITTER, label: 'X' },
   { value: PLATFORM_INSTAGRAM, label: 'Instagram' },
+  { value: PLATFORM_THREADS, label: 'Threads' },
   { value: PLATFORM_YOUTUBE, label: 'YouTube' },
   { value: PLATFORM_TIKTOK, label: 'TikTok' },
 ] as const
