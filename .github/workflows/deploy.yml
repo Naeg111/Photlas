@@ -381,8 +381,9 @@ jobs:
       env:
         VITE_API_URL: 'https://api.photlas.jp'
         VITE_MAPBOX_ACCESS_TOKEN: ${{ secrets.VITE_MAPBOX_ACCESS_TOKEN }}
-        # Issue#81: OAuth ボタンの表示制御（GitHub Actions Variables で制御）
-        VITE_OAUTH_ENABLED: ${{ vars.VITE_OAUTH_ENABLED || 'false' }}
+        # Issue#99: 本番は VITE_OAUTH_ENABLED_PROD で個別管理（ステージング用 VITE_OAUTH_ENABLED とは独立）。
+        # 審査未通過時は false のままにして OAuth ボタンを非活性化する。
+        VITE_OAUTH_ENABLED: ${{ vars.VITE_OAUTH_ENABLED_PROD || 'false' }}
         VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
       run: pnpm build
