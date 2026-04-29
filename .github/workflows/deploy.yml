@@ -71,7 +71,7 @@ jobs:
           VITE_MAPBOX_ACCESS_TOKEN=${{ secrets.VITE_MAPBOX_ACCESS_TOKEN }}
           VITE_GA_MEASUREMENT_ID=${{ secrets.VITE_GA_MEASUREMENT_ID }}
           VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
-          VITE_OAUTH_ENABLED=${{ vars.VITE_OAUTH_ENABLED || 'false' }}
+          VITE_OAUTH_ENABLED=${{ vars.VITE_OAUTH_ENABLED_STAGING || 'false' }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -124,7 +124,7 @@ jobs:
         VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
         # Issue#81: OAuth ボタンの表示制御（GitHub Actions Variables で制御）
-        VITE_OAUTH_ENABLED: ${{ vars.VITE_OAUTH_ENABLED || 'false' }}
+        VITE_OAUTH_ENABLED: ${{ vars.VITE_OAUTH_ENABLED_STAGING || 'false' }}
       run: pnpm build
 
     - name: Configure AWS credentials
@@ -164,7 +164,7 @@ jobs:
         DEPLOY_LINE_CLIENT_ID: ${{ secrets.STAGING_LINE_CLIENT_ID }}
         DEPLOY_LINE_CLIENT_SECRET: ${{ secrets.STAGING_LINE_CLIENT_SECRET }}
         DEPLOY_OAUTH_ENCRYPTION_KEY_BASE64: ${{ secrets.STAGING_OAUTH_ENCRYPTION_KEY_BASE64 }}
-        DEPLOY_PHOTLAS_OAUTH_ENABLED: ${{ vars.PHOTLAS_OAUTH_ENABLED || 'false' }}
+        DEPLOY_PHOTLAS_OAUTH_ENABLED: ${{ vars.PHOTLAS_OAUTH_ENABLED_STAGING || 'false' }}
         DEPLOY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # デプロイスクリプトを生成してbase64エンコード
