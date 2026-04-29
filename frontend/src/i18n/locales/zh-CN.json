@@ -83,26 +83,10 @@
     "createAccount": "创建账户",
     "accountSuspended": "您的账户已被暂停，请联系客服。",
     "oauth": {
-      "signInWithGoogle": "使用 Google 登录",
-      "signInWithLine": "使用 LINE 登录",
-      "signUpWithGoogle": "使用 Google 注册",
-      "signUpWithLine": "使用 LINE 注册",
       "continueWithGoogle": "使用 Google 继续",
       "continueWithLine": "使用 LINE 继续",
       "consentNotice": "选择即表示您同意服务条款和隐私政策",
-      "dividerOr": "或",
-      "chooseMethod": {
-        "title": "选择注册方式",
-        "description": "请选择注册方式。",
-        "sns": "使用社交账号注册",
-        "email": "使用邮箱注册"
-      },
-      "snsSignUp": {
-        "title": "使用社交账号注册",
-        "description": "使用社交账号注册Photlas账户。",
-        "agreeToTerms": "同意服务条款",
-        "agreeToTermsRequired": "同意服务条款后，社交账号注册按钮将启用。"
-      }
+      "dividerOr": "或"
     },
     "privacyPolicy": "隐私政策",
     "termsAgreement": {

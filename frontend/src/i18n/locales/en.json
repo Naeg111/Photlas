@@ -84,10 +84,6 @@
     "createAccount": "Create Account",
     "accountSuspended": "Your account has been suspended. Please contact support.",
     "oauth": {
-      "signInWithGoogle": "Sign in with Google",
-      "signInWithLine": "Sign in with LINE",
-      "signUpWithGoogle": "Sign up with Google",
-      "signUpWithLine": "Sign up with LINE",
       "continueWithGoogle": "Continue with Google",
       "continueWithLine": "Continue with LINE",
       "consentNotice": "By selecting, you agree to the Terms of Service and Privacy Policy",
@@ -118,18 +114,6 @@
         "description": "We recommend setting a password so you can sign in even if {{provider}} becomes unavailable.",
         "cta": "Set password",
         "dismiss": "Dismiss"
-      },
-      "chooseMethod": {
-        "title": "Choose sign-up method",
-        "description": "Please choose how you'd like to sign up.",
-        "sns": "Sign up with a social account",
-        "email": "Sign up with email"
-      },
-      "snsSignUp": {
-        "title": "Sign up with a social account",
-        "description": "Register a new Photlas account using your social account.",
-        "agreeToTerms": "I agree to the Terms of Service",
-        "agreeToTermsRequired": "Agree to the Terms of Service to enable the social sign-up buttons."
       }
     },
     "privacyPolicy": "Privacy Policy",

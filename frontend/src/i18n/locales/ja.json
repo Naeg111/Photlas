@@ -84,10 +84,6 @@
     "createAccount": "新規アカウント作成",
     "accountSuspended": "アカウントが停止されています。詳しくはお問い合わせください。",
     "oauth": {
-      "signInWithGoogle": "Google でサインイン",
-      "signInWithLine": "LINE でサインイン",
-      "signUpWithGoogle": "Google で新規登録",
-      "signUpWithLine": "LINE で新規登録",
       "continueWithGoogle": "Google で続ける",
       "continueWithLine": "LINE で続ける",
       "consentNotice": "選択することで、利用規約とプライバシーポリシーに同意したものとみなします",
@@ -118,18 +114,6 @@
         "description": "{{provider}} アカウントが利用できなくなった場合でもログインできるよう、パスワードを設定することをおすすめします。",
         "cta": "パスワードを設定する",
         "dismiss": "閉じる"
-      },
-      "chooseMethod": {
-        "title": "アカウント登録方法を選択",
-        "description": "新規登録方法を選んでください。",
-        "sns": "SNSアカウントで登録",
-        "email": "メールアドレスで登録"
-      },
-      "snsSignUp": {
-        "title": "SNSアカウントで新規登録",
-        "description": "SNSアカウントでPhotlasに新規登録します。",
-        "agreeToTerms": "利用規約に同意する",
-        "agreeToTermsRequired": "利用規約に同意すると SNS 登録ボタンが有効になります。"
       }
     },
     "privacyPolicy": "プライバシーポリシー",
