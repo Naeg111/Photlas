@@ -454,51 +454,54 @@ export function SignUpDialog({
           <Separator />
 
           {/* 利用規約・プライバシーポリシー（Issue#104 でプライバシーポリシー追加） */}
+          {/* w-fit mx-auto で内側ラッパー幅を最長行（プライバシー）にそろえ、両チェックボックスの左端を一致させる */}
           <div className="space-y-3 my-[50px]">
             {errors.terms && (
               <p className="text-sm text-red-600">{errors.terms}</p>
             )}
-            <div className="flex items-center justify-center space-x-2">
-              <Checkbox
-                id="terms"
-                checked={agreedToTerms}
-                onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-              />
-              <label htmlFor="terms" className="text-sm">
-                <a
-                  href="#"
-                  role="link"
-                  className="text-blue-600 underline hover:text-blue-800"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    onShowTerms()
-                  }}
-                >
-                  {t('auth.termsOfService')}
-                </a>
-                {t('auth.agreeToTerms')}
-              </label>
-            </div>
-            <div className="flex items-center justify-center space-x-2">
-              <Checkbox
-                id="privacy"
-                checked={agreedToPrivacy}
-                onCheckedChange={(checked) => setAgreedToPrivacy(checked === true)}
-              />
-              <label htmlFor="privacy" className="text-sm">
-                <a
-                  href="#"
-                  role="link"
-                  className="text-blue-600 underline hover:text-blue-800"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    onShowPrivacyPolicy()
-                  }}
-                >
-                  {t('auth.privacyPolicy')}
-                </a>
-                {t('auth.termsAgreement.agreeToPrivacyPolicySuffix')}
-              </label>
+            <div className="w-fit mx-auto space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="terms"
+                  checked={agreedToTerms}
+                  onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                />
+                <label htmlFor="terms" className="text-sm">
+                  <a
+                    href="#"
+                    role="link"
+                    className="text-blue-600 underline hover:text-blue-800"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      onShowTerms()
+                    }}
+                  >
+                    {t('auth.termsOfService')}
+                  </a>
+                  {t('auth.agreeToTerms')}
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="privacy"
+                  checked={agreedToPrivacy}
+                  onCheckedChange={(checked) => setAgreedToPrivacy(checked === true)}
+                />
+                <label htmlFor="privacy" className="text-sm">
+                  <a
+                    href="#"
+                    role="link"
+                    className="text-blue-600 underline hover:text-blue-800"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      onShowPrivacyPolicy()
+                    }}
+                  >
+                    {t('auth.privacyPolicy')}
+                  </a>
+                  {t('auth.termsAgreement.agreeToPrivacyPolicySuffix')}
+                </label>
+              </div>
             </div>
           </div>
 
