@@ -48,7 +48,7 @@ export default function AboutPage() {
           <ul className="space-y-4 text-gray-700">
             <li>
               <strong className="text-gray-900">地図上でスポットを探索:</strong>{' '}
-              投稿された写真を地図上のピンで一覧表示し、地図を眺めるうちに、思いがけない投稿と出会い、行きたい場所が広がります。
+              投稿された写真を地図上のピンで一覧表示することで、何気なく地図を眺めるうちに思いがけない投稿と出会い、行ってみたい場所が見つかります。
             </li>
             <li>
               <strong className="text-gray-900">写真の条件で投稿を絞り込み:</strong>{' '}
