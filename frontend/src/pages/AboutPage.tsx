@@ -47,8 +47,8 @@ export default function AboutPage() {
           <h2 className="text-2xl font-semibold mb-6">主な特徴</h2>
           <ul className="space-y-4 text-gray-700">
             <li>
-              <strong className="text-gray-900">地図でスポットを探索:</strong>{' '}
-              投稿された写真を地図上のピンで一覧表示し、気になる場所を視覚的に発見できます。
+              <strong className="text-gray-900">地図上でスポットを探索:</strong>{' '}
+              投稿された写真を地図上のピンで一覧表示し、地図を眺めるうちに、思いがけない投稿と出会い、行きたい場所が広がります。
             </li>
             <li>
               <strong className="text-gray-900">写真の条件で投稿を絞り込み:</strong>{' '}
