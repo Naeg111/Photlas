@@ -11,35 +11,41 @@ import {
  * Issue#55: Symbol Layer移行 - ピン画像生成ユーティリティのテスト
  */
 
-describe('pinImageGenerator - Issue#55', () => {
+describe('pinImageGenerator - Issue#55 / Issue#103', () => {
   describe('PIN_COLOR_MAP', () => {
-    it('4色のカラーマッピングが定義されている', () => {
+    it('5色のカラーマッピングが定義されている (Issue#103: Purple 追加)', () => {
       expect(PIN_COLOR_MAP.Green).toBe('#00d68f')
       expect(PIN_COLOR_MAP.Yellow).toBe('#ffbe0b')
       expect(PIN_COLOR_MAP.Orange).toBe('#ff6b35')
       expect(PIN_COLOR_MAP.Red).toBe('#ff006e')
+      expect(PIN_COLOR_MAP.Purple).toBe('#8b5cf6')
     })
   })
 
-  describe('determinePinColor', () => {
-    it('1〜4件の場合はGreen (#00d68f) を返す', () => {
+  describe('determinePinColor (Issue#103: 新閾値)', () => {
+    it('1〜9件の場合はGreen (#00d68f) を返す', () => {
       expect(determinePinColor(1)).toBe('#00d68f')
-      expect(determinePinColor(4)).toBe('#00d68f')
+      expect(determinePinColor(9)).toBe('#00d68f')
     })
 
-    it('5〜9件の場合はYellow (#ffbe0b) を返す', () => {
-      expect(determinePinColor(5)).toBe('#ffbe0b')
-      expect(determinePinColor(9)).toBe('#ffbe0b')
+    it('10〜49件の場合はYellow (#ffbe0b) を返す', () => {
+      expect(determinePinColor(10)).toBe('#ffbe0b')
+      expect(determinePinColor(49)).toBe('#ffbe0b')
     })
 
-    it('10〜29件の場合はOrange (#ff6b35) を返す', () => {
-      expect(determinePinColor(10)).toBe('#ff6b35')
-      expect(determinePinColor(29)).toBe('#ff6b35')
+    it('50〜99件の場合はOrange (#ff6b35) を返す', () => {
+      expect(determinePinColor(50)).toBe('#ff6b35')
+      expect(determinePinColor(99)).toBe('#ff6b35')
     })
 
-    it('30件以上の場合はRed (#ff006e) を返す', () => {
-      expect(determinePinColor(30)).toBe('#ff006e')
+    it('100〜999件の場合はRed (#ff006e) を返す', () => {
       expect(determinePinColor(100)).toBe('#ff006e')
+      expect(determinePinColor(999)).toBe('#ff006e')
+    })
+
+    it('1000件以上の場合はPurple (#8b5cf6) を返す', () => {
+      expect(determinePinColor(1000)).toBe('#8b5cf6')
+      expect(determinePinColor(5000)).toBe('#8b5cf6')
     })
   })
 
@@ -139,16 +145,28 @@ describe('pinImageGenerator - Issue#55', () => {
       )
     })
 
-    it('999件超の場合は「999」と「+」の2段テキストが描画される', () => {
-      generatePinImage('#ff006e', 1000, 1.0)
+    it('Issue#103 - 紫色のピンの場合はテキストが描画されない', () => {
+      generatePinImage(PIN_COLOR_MAP.Purple, 1500, 1.0)
+
+      expect(mockContext.fillText).not.toHaveBeenCalled()
+      expect(mockContext.strokeText).not.toHaveBeenCalled()
+    })
+
+    it('Issue#103 - 紫以外のピンには photoCount >= 1000 でも件数テキストが描画される (Red)', () => {
+      generatePinImage(PIN_COLOR_MAP.Red, 1500, 1.0)
 
       expect(mockContext.fillText).toHaveBeenCalledWith(
-        '999',
+        '1500',
         expect.any(Number),
         expect.any(Number)
       )
+    })
+
+    it('Issue#103 - 紫以外のピンには photoCount >= 1000 でも件数テキストが描画される (Yellow)', () => {
+      generatePinImage(PIN_COLOR_MAP.Yellow, 1500, 1.0)
+
       expect(mockContext.fillText).toHaveBeenCalledWith(
-        '+',
+        '1500',
         expect.any(Number),
         expect.any(Number)
       )
