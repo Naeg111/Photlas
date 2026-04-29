@@ -71,6 +71,14 @@ public class User {
     @Column(name = "password_recommendation_dismissed_at")
     private LocalDateTime passwordRecommendationDismissedAt;
 
+    // Issue#104: 利用規約への同意日時（NULL の場合は未同意）
+    @Column(name = "terms_agreed_at")
+    private LocalDateTime termsAgreedAt;
+
+    // Issue#104: プライバシーポリシーへの同意日時（NULL の場合は未同意）
+    @Column(name = "privacy_policy_agreed_at")
+    private LocalDateTime privacyPolicyAgreedAt;
+
     public User() {}
 
     public User(String username, String email, String passwordHash, Integer role) {
@@ -199,6 +207,22 @@ public class User {
 
     public void setPasswordRecommendationDismissedAt(LocalDateTime passwordRecommendationDismissedAt) {
         this.passwordRecommendationDismissedAt = passwordRecommendationDismissedAt;
+    }
+
+    public LocalDateTime getTermsAgreedAt() {
+        return termsAgreedAt;
+    }
+
+    public void setTermsAgreedAt(LocalDateTime termsAgreedAt) {
+        this.termsAgreedAt = termsAgreedAt;
+    }
+
+    public LocalDateTime getPrivacyPolicyAgreedAt() {
+        return privacyPolicyAgreedAt;
+    }
+
+    public void setPrivacyPolicyAgreedAt(LocalDateTime privacyPolicyAgreedAt) {
+        this.privacyPolicyAgreedAt = privacyPolicyAgreedAt;
     }
 
     @Override

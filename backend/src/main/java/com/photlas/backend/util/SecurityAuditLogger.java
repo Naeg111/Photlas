@@ -33,7 +33,8 @@ public class SecurityAuditLogger {
         OAUTH_LOGIN_FAILED,
         OAUTH_TOKEN_REVOKE_FAILED,
         OAUTH_LINK_CONFIRMED,
-        OAUTH_LINK_REJECTED;
+        OAUTH_LINK_REJECTED,
+        OAUTH_ACCOUNT_CANCELLED;  // Issue#104: 同意ダイアログでキャンセルされた未同意アカウントの削除
     }
 
     /**
