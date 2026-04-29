@@ -9,12 +9,10 @@ import { localizeFieldError } from '../utils/validation/localizeFieldError'
 const API_ENDPOINTS = {
   PROFILE_IMAGE_PRESIGNED_URL: '/api/v1/users/me/profile-image/presigned-url',
   PROFILE_IMAGE: '/api/v1/users/me/profile-image',
-  PROFILE_IMAGE_DELETE: '/api/v1/users/me/profile-image',
   USERNAME: '/api/v1/users/me/username',
 } as const
 
 const ERROR_MESSAGES = {
-  FAILED_TO_GET_PRESIGNED_URL: 'Failed to get presigned URL',
   FAILED_TO_UPDATE_USERNAME: 'Failed to update username',
   FAILED_TO_REGISTER_PROFILE_IMAGE: 'プロフィール画像の登録に失敗しました',
 } as const
@@ -59,8 +57,10 @@ interface UseProfileEditReturn {
 
 /**
  * プロフィール編集機能を提供するカスタムフック
- * Issue#29: プロフィール機能強化
- * Issue#36: 表示名更新時のコールバック追加
+ *
+ * 表示名編集とプロフィール画像の遅延アップロードをまとめて扱う。
+ * Issue#102: SNS リンクの保存は SnsLinkEditDialog から直接 API を叩くようになり、
+ * 本フックからは責務を切り離した。
  */
 export const useProfileEdit = ({
   initialUsername,
