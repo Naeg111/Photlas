@@ -37,8 +37,8 @@ export default function AboutPage() {
           <h1 className="text-4xl font-bold mb-4">Photlas</h1>
           <p className="text-lg text-gray-700 leading-relaxed">
             写真から行ってみたい場所が見つかる Web サービスです。
-            ユーザーが投稿した撮影スポットの写真と位置情報を地図上で探索でき、
-            旅行やお出かけのきっかけを生み出します。
+            ユーザーが投稿した写真とその撮影場所を地図上から自由に探索でき、
+            新たな旅のきっかけを生み出します。
           </p>
         </section>
 
@@ -51,8 +51,8 @@ export default function AboutPage() {
               投稿された写真を地図上のピンで一覧表示し、気になる場所を視覚的に発見できます。
             </li>
             <li>
-              <strong className="text-gray-900">写真から場所を発見:</strong>{' '}
-              ジャンル・季節・時間帯・天候などの条件で絞り込んで、自分好みの場所を探せます。
+              <strong className="text-gray-900">写真の条件で投稿を絞り込み:</strong>{' '}
+              ジャンル・季節・時間帯・天候などの条件で絞り込んで、自分好みの投稿を探せます。
             </li>
             <li>
               <strong className="text-gray-900">撮影情報の共有:</strong>{' '}
