@@ -300,6 +300,18 @@ export function SignUpDialog({
             </div>
           )}
 
+          {/* OAuth 登録への誘導リンク */}
+          <div className="text-center text-sm text-gray-600">
+            {t('auth.oauthSignupNotice')}
+            <Button
+              variant="link"
+              className="p-0 h-auto ml-1"
+              onClick={handleLoginClick}
+            >
+              {t('auth.oauthSignupNoticeLink')}
+            </Button>
+          </div>
+
           {/* プロフィール画像 */}
           <div className="space-y-3">
             <Label>{t('auth.profileImage')}</Label>
@@ -488,18 +500,6 @@ export function SignUpDialog({
                 {t('auth.termsAgreement.agreeToPrivacyPolicySuffix')}
               </label>
             </div>
-          </div>
-
-          {/* ログインリンク Issue#26: 追加実装 */}
-          <div className="text-center text-sm text-gray-600">
-            {t('auth.hasAccount')}
-            <Button
-              variant="link"
-              className="p-0 h-auto ml-1"
-              onClick={handleLoginClick}
-            >
-              {t('common.login')}
-            </Button>
           </div>
 
           {/* ボタン（Issue#81 Phase 8r-2: 「キャンセル」→「戻る」、handleCancelClick → handleBackClick 相当） */}
