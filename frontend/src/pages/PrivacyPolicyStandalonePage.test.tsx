@@ -25,6 +25,6 @@ describe('PrivacyPolicyStandalonePage', () => {
   it('プライバシーポリシー本文が表示される（個人情報の文言を含む）', () => {
     renderPage()
     // PrivacyContentJa が描画されていることを 1 文だけ抽出して確認
-    expect(screen.getByText(/個人情報保護法/)).toBeInTheDocument()
+    expect(screen.getAllByText(/個人情報保護法/).length).toBeGreaterThan(0)
   })
 })
