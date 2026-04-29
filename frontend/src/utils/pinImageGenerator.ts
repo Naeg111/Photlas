@@ -6,12 +6,16 @@
  * 生成した画像は map.addImage() で登録して使用する。
  */
 
-/** ピンの色をHEXカラーにマッピング */
+/**
+ * ピンの色をHEXカラーにマッピング
+ * Issue#103: 1,000 件以上の Purple を追加
+ */
 export const PIN_COLOR_MAP: Record<string, string> = {
   Green: '#00d68f',
   Yellow: '#ffbe0b',
   Orange: '#ff6b35',
   Red: '#ff006e',
+  Purple: '#8b5cf6',
 }
 
 /** ピンの基準サイズ (px) */
@@ -20,19 +24,18 @@ export const BASE_PIN_SIZE = 32
 export const PIN_HEIGHT_RATIO = 1.2
 /** シャドウ用の余白 (px) */
 export const SHADOW_PADDING = 4
-/** 999件超の表示上限 */
-const PIN_COUNT_DISPLAY_LIMIT = 999
 /** 高DPI対応のピクセル比率（デバイスのピクセル密度に応じて自動調整） */
 export const PIN_PIXEL_RATIO = Math.max(2, Math.ceil(window.devicePixelRatio || 2))
 
 /**
  * 投稿件数からピン色のHEXカラーを決定
- * Issue#12のピン色ルールに準拠
+ * Issue#103 で閾値を全体的に引き上げ、Purple (1,000 件以上) を追加
  */
 export function determinePinColor(count: number): string {
-  if (count >= 30) return PIN_COLOR_MAP.Red
-  if (count >= 10) return PIN_COLOR_MAP.Orange
-  if (count >= 5) return PIN_COLOR_MAP.Yellow
+  if (count >= 1000) return PIN_COLOR_MAP.Purple
+  if (count >= 100) return PIN_COLOR_MAP.Red
+  if (count >= 50) return PIN_COLOR_MAP.Orange
+  if (count >= 10) return PIN_COLOR_MAP.Yellow
   return PIN_COLOR_MAP.Green
 }
 
@@ -137,33 +140,12 @@ export function generatePinImage(
   ctx.stroke()
 
   // 3. 件数テキスト描画
-  const centerX = SHADOW_PADDING / 2 + 16 * pathScale
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-
-  if (count > PIN_COUNT_DISPLAY_LIMIT) {
-    // 999+表示：2段テキスト
-    const fontSize = Math.round(14 * pathScale)
-    const smallFontSize = Math.round(10 * pathScale)
-
-    // ストローク（黒縁取り）
-    ctx.font = `bold ${fontSize}px sans-serif`
-    ctx.strokeStyle = 'rgba(0,0,0,0.6)'
-    ctx.lineWidth = 3 * pathScale
-    ctx.lineJoin = 'round'
-    const textY1 = SHADOW_PADDING / 2 + 14 * pathScale
-    ctx.strokeText('999', centerX, textY1)
-    ctx.fillStyle = '#ffffff'
-    ctx.fillText('999', centerX, textY1)
-
-    ctx.font = `bold ${smallFontSize}px sans-serif`
-    ctx.lineWidth = 2 * pathScale
-    const textY2 = SHADOW_PADDING / 2 + 25 * pathScale
-    ctx.strokeText('+', centerX, textY2)
-    ctx.fillStyle = '#ffffff'
-    ctx.fillText('+', centerX, textY2)
-  } else {
-    // 通常テキスト
+  // Issue#103: Purple ピンはテキスト非表示（ピン形状のみ）。
+  // 色ベース判定にしたことで「フィルター適用時に黄ピン + 999+ が出る」既存不整合も解消。
+  if (color !== PIN_COLOR_MAP.Purple) {
+    const centerX = SHADOW_PADDING / 2 + 16 * pathScale
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
     const fontSize = Math.round(14 * pathScale)
     ctx.font = `bold ${fontSize}px sans-serif`
     ctx.strokeStyle = 'rgba(0,0,0,0.6)'

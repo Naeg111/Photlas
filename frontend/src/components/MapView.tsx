@@ -37,7 +37,7 @@ interface SpotResponse {
   spotId: number
   latitude: number
   longitude: number
-  pinColor: 'Green' | 'Yellow' | 'Orange' | 'Red'
+  pinColor: 'Green' | 'Yellow' | 'Orange' | 'Red' | 'Purple'
   thumbnailUrl: string
   photoCount: number
 }
@@ -58,9 +58,8 @@ export interface MapViewFilterParams {
 // 地図の初期設定
 const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 const DEFAULT_ZOOM = 11
-const MIN_ZOOM_FOR_PINS = 10
 
-// クラスタリング設定（Issue#39, Issue#55）
+// クラスタリング設定（Issue#39, Issue#55, Issue#103: 全ズームレベル対応）
 const CLUSTER_RADIUS = 70
 const CLUSTER_MAX_ZOOM = 17
 
@@ -127,22 +126,36 @@ const PIN_IMAGE_SCALE = 1.4
 // icon-sizeで縮小補正してIssue#55以前のPinSvg（32x38px表示）と同じサイズにする
 const PIN_IMAGE_LOGICAL_WIDTH = Math.round(BASE_PIN_SIZE * PIN_IMAGE_SCALE) + SHADOW_PADDING
 const PIN_SIZE_CORRECTION = BASE_PIN_SIZE / PIN_IMAGE_LOGICAL_WIDTH
-const ICON_SIZE_EXPRESSION: ExpressionSpecification = [
-  'step', ['zoom'],
-  PIN_SIZE_CORRECTION,                          // zoom < 16: 通常サイズ（縮小表示）
-  16, PIN_SIZE_CORRECTION * PIN_IMAGE_SCALE,    // zoom >= 16: 1.4倍（ほぼ等倍表示）
-]
+
+/**
+ * Issue#103: zoom >= 16 で 1.4 倍に拡大するが、1,000 件以上の Purple ピンは
+ * テキストがないため拡大せず通常サイズで表示する（地図上のバランスを揃える）。
+ * @param countProperty - 件数を取得するプロパティ名（クラスタは totalPhotoCount、個別ピンは photoCount）
+ */
+function buildIconSizeExpression(countProperty: string): ExpressionSpecification {
+  return [
+    'step', ['zoom'],
+    PIN_SIZE_CORRECTION, // zoom < 16: 通常サイズ
+    16, [
+      'case',
+      ['>=', ['get', countProperty], 1000], PIN_SIZE_CORRECTION,
+      PIN_SIZE_CORRECTION * PIN_IMAGE_SCALE,
+    ],
+  ]
+}
 
 /**
  * 投稿件数プロパティからピン色HEXを決定するMapbox Expression
+ * Issue#103: 閾値を引き上げ、1,000 件以上の Purple を追加
  * @param countProperty - 件数を取得するプロパティ名
  */
 function buildPinColorExpression(countProperty: string): ExpressionSpecification {
   return [
     'case',
-    ['>=', ['get', countProperty], 30], PIN_COLOR_MAP.Red,
-    ['>=', ['get', countProperty], 10], PIN_COLOR_MAP.Orange,
-    ['>=', ['get', countProperty], 5], PIN_COLOR_MAP.Yellow,
+    ['>=', ['get', countProperty], 1000], PIN_COLOR_MAP.Purple,
+    ['>=', ['get', countProperty], 100], PIN_COLOR_MAP.Red,
+    ['>=', ['get', countProperty], 50], PIN_COLOR_MAP.Orange,
+    ['>=', ['get', countProperty], 10], PIN_COLOR_MAP.Yellow,
     PIN_COLOR_MAP.Green,
   ]
 }
@@ -241,7 +254,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [spots, setSpots] = useState<SpotResponse[]>([])
   const [map, setMap] = useState<MapboxMap | null>(null)
-  const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const [showToast, setShowToast] = useState(false)
   const [mapTransitioning, setMapTransitioning] = useState(false)
   const [mapTransitionFading, setMapTransitionFading] = useState(false)
@@ -314,12 +326,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       }
     })
 
-    // クラスタ用 Symbol Layer
+    // クラスタ用 Symbol Layer (Issue#103: minzoom 制約を撤廃)
     mapInstance.addLayer({
       id: CLUSTER_LAYER_ID,
       type: 'symbol',
       source: SOURCE_ID,
-      minzoom: MIN_ZOOM_FOR_PINS,
       filter: ['has', 'point_count'],
       layout: {
         'icon-image': [
@@ -331,16 +342,15 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         ],
         'icon-allow-overlap': true,
         'icon-anchor': 'bottom',
-        'icon-size': ICON_SIZE_EXPRESSION,
+        'icon-size': buildIconSizeExpression('totalPhotoCount'),
       },
     })
 
-    // 個別ピン用 Symbol Layer
+    // 個別ピン用 Symbol Layer (Issue#103: minzoom 制約を撤廃, Purple 追加)
     mapInstance.addLayer({
       id: UNCLUSTERED_LAYER_ID,
       type: 'symbol',
       source: SOURCE_ID,
-      minzoom: MIN_ZOOM_FOR_PINS,
       filter: ['!', ['has', 'point_count']],
       layout: {
         'icon-image': [
@@ -348,6 +358,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           'pin-',
           [
             'case',
+            ['==', ['get', 'pinColor'], 'Purple'], PIN_COLOR_MAP.Purple,
             ['==', ['get', 'pinColor'], 'Red'], PIN_COLOR_MAP.Red,
             ['==', ['get', 'pinColor'], 'Orange'], PIN_COLOR_MAP.Orange,
             ['==', ['get', 'pinColor'], 'Yellow'], PIN_COLOR_MAP.Yellow,
@@ -358,7 +369,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         ],
         'icon-allow-overlap': true,
         'icon-anchor': 'bottom',
-        'icon-size': ICON_SIZE_EXPRESSION,
+        'icon-size': buildIconSizeExpression('photoCount'),
       },
     })
 
@@ -601,11 +612,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
-    const currentZoom = mapInstance.getZoom()
-    // ズームが変わった場合のみstate更新（パン操作では不要な再レンダリングを回避）
-    if (currentZoom !== undefined) {
-      setZoom(prev => prev === currentZoom ? prev : currentZoom)
-    }
     debouncedFetchSpots(mapInstance)
   }, [debouncedFetchSpots])
 
@@ -720,15 +726,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
             mapTransitionFading ? 'opacity-0' : 'opacity-100'
           }`}
         />
-      )}
-
-      {/* Issue#68: Zoom 10未満の場合、拡大を促す静的メッセージを表示 */}
-      {zoom < MIN_ZOOM_FOR_PINS && (
-        <div className="absolute top-[calc(5rem+env(safe-area-inset-top,0px))] left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg pointer-events-none select-none">
-          <p className="text-center text-gray-700 font-semibold whitespace-nowrap md:whitespace-normal">
-            投稿を表示するには<br className="md:hidden" />地図を拡大してください
-          </p>
-        </div>
       )}
 
       {/* エラートースト */}

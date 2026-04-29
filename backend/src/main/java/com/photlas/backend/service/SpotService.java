@@ -26,9 +26,15 @@ import java.util.stream.Collectors;
 public class SpotService {
 
     private static final Logger logger = LoggerFactory.getLogger(SpotService.class);
-    private static final int PHOTO_COUNT_THRESHOLD_RED = 30;
-    private static final int PHOTO_COUNT_THRESHOLD_ORANGE = 10;
-    private static final int PHOTO_COUNT_THRESHOLD_YELLOW = 5;
+    /**
+     * Issue#103: ピン色閾値を全体的に引き上げ、1,000 件以上の Purple を追加。
+     * 全ズームレベルでクラスタリングピンを表示するようになり、低ズームで
+     * 巨大クラスタが発生するため、色のレンジを広げてバランスを取る。
+     */
+    private static final int PHOTO_COUNT_THRESHOLD_PURPLE = 1000;
+    private static final int PHOTO_COUNT_THRESHOLD_RED = 100;
+    private static final int PHOTO_COUNT_THRESHOLD_ORANGE = 50;
+    private static final int PHOTO_COUNT_THRESHOLD_YELLOW = 10;
     private static final int MAX_SPOTS_LIMIT = 50;
 
     private final SpotRepository spotRepository;
@@ -118,8 +124,16 @@ public class SpotService {
         return new SpotResponse(spotId, latitude, longitude, title, pinColor, thumbnailUrl, totalPhotoCount);
     }
 
-    private String determinePinColor(Integer photoCount) {
-        if (photoCount >= PHOTO_COUNT_THRESHOLD_RED) {
+    /**
+     * Issue#103: ピン色を投稿件数に応じて決定する。
+     * 1〜9: Green / 10〜49: Yellow / 50〜99: Orange / 100〜999: Red / 1000以上: Purple
+     * <p>
+     * パッケージプライベート可視性は SpotServiceTest からの単体テストを可能にするため。
+     */
+    String determinePinColor(Integer photoCount) {
+        if (photoCount >= PHOTO_COUNT_THRESHOLD_PURPLE) {
+            return "Purple";
+        } else if (photoCount >= PHOTO_COUNT_THRESHOLD_RED) {
             return "Red";
         } else if (photoCount >= PHOTO_COUNT_THRESHOLD_ORANGE) {
             return "Orange";

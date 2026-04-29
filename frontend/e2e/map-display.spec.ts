@@ -29,7 +29,6 @@ import {
 // 地図関連の定数
 const MAP_CONFIG = {
   DEFAULT_CENTER: { lat: 35.6585, lng: 139.7454 }, // 東京
-  MIN_ZOOM_FOR_PINS: 11,
   DEFAULT_ZOOM: 11,
 }
 
@@ -161,44 +160,25 @@ test.describe('地図表示・ピン表示機能', () => {
   // ============================================================
 
   test.describe('ピン表示', () => {
-    test('ズームレベル11以上でピンが表示される', async ({ page }) => {
-      // ズームレベルを11以上に設定
-      await zoomIn(page, 2)
-      await page.waitForTimeout(2000)
-
-      // ズームレベルが十分な場合、バナーは表示されない
-      const zoomBanner = page.getByText('投稿を表示するには')
-      const isZoomBannerVisible = await zoomBanner.isVisible().catch(() => false)
-      expect(isZoomBannerVisible).toBe(false)
-    })
-
-    test('ズームレベル11未満で「投稿を表示するには」バナーが表示される', async ({ page }) => {
-      // キーボードでズームアウト（mobile-chromeでも安定動作）
-      await zoomOut(page, 10)
-
-      // ズーム変更後のアイドル状態を待機
-      await page.waitForTimeout(3000)
-
-      // バナーが表示される
-      const banner = page.getByText('投稿を表示するには')
-      await expect(banner).toBeVisible({ timeout: 15000 })
-    })
-
-    test('ズームインするとバナーが消える', async ({ page }) => {
-      // ズームアウトしてバナーを表示
+    test('Issue#103 - 低ズームレベル（5）でクラスタピンが表示される', async ({ page }) => {
       await zoomOut(page, 5)
-      await page.waitForTimeout(1000)
-
-      // Issue#68: バナーは静的メッセージ（pointer-events-none）のためクリック不可
-      const banner = page.getByText('投稿を表示するには')
-      await expect(banner).toBeVisible({ timeout: 10000 })
-
-      // ズームインして復帰
-      await zoomIn(page, 5)
       await page.waitForTimeout(3000)
 
-      // バナーが消える
-      await expect(banner).not.toBeVisible({ timeout: 10000 })
+      // バナーが存在しない（Issue#103 で廃止）
+      const banner = page.getByText('投稿を表示するには')
+      await expect(banner).not.toBeVisible()
+
+      // クラスタが1つ以上検出される
+      const { clusterCount } = await findPinsAndClusters(page)
+      expect(clusterCount).toBeGreaterThan(0)
+    })
+
+    test('Issue#103 - ズームレベル0（世界全体）でもクラスタピンが表示される', async ({ page }) => {
+      await zoomOut(page, 12)
+      await page.waitForTimeout(3000)
+
+      const { clusterCount } = await findPinsAndClusters(page)
+      expect(clusterCount).toBeGreaterThan(0)
     })
   })
 
