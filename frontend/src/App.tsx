@@ -12,6 +12,9 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import ReviewLocationPage from './pages/ReviewLocationPage'
 import ConfirmEmailChangePage from './pages/ConfirmEmailChangePage'
 import OAuthCallbackPage from './pages/OAuthCallbackPage'
+import AboutPage from './pages/AboutPage'
+import PrivacyPolicyStandalonePage from './pages/PrivacyPolicyStandalonePage'
+import TermsOfServiceStandalonePage from './pages/TermsOfServiceStandalonePage'
 import { CookieConsentBanner } from './components/CookieConsentBanner'
 import { formatLocalDateTime } from './utils/extractExif'
 import { FilterPanel } from './components/FilterPanel'
@@ -912,6 +915,9 @@ function App() {
         <Route path="/review-location" element={<ReviewLocationPage />} />
         <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyStandalonePage />} />
+        <Route path="/terms-of-service" element={<TermsOfServiceStandalonePage />} />
         <Route path="/photo-viewer/:photoId" element={<MainApp />} />
         <Route path="/manage/moderation" element={<AdminModerationPage />} />
         <Route path="/manage/deleted-users" element={<AdminDeletedUsersPage />} />

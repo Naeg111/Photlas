@@ -24,6 +24,6 @@ describe('TermsOfServiceStandalonePage', () => {
 
   it('利用規約本文が表示される（規約の冒頭文を含む）', () => {
     renderPage()
-    expect(screen.getByText(/Photlas運営/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Photlas運営/).length).toBeGreaterThan(0)
   })
 })
