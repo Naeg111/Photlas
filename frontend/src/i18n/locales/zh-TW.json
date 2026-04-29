@@ -425,8 +425,11 @@
   },
   "snsEdit": {
     "title": "編輯 SNS 連結",
-    "description": "新增、編輯或刪除 SNS 連結",
-    "add": "新增"
+    "description": "編輯 SNS 連結",
+    "invalidUrlFormat": "請輸入正確的 URL",
+    "invalidInstagramUrl": "請輸入 Instagram 的 URL",
+    "invalidThreadsUrl": "請輸入 Threads 的 URL",
+    "invalidXUrl": "請輸入 X 的 URL"
   },
   "wantToGo": {
     "title": "想去清單",

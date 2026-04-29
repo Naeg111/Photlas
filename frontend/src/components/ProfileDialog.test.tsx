@@ -114,8 +114,8 @@ describe('ProfileDialog', () => {
     email: 'test@example.com',
     profileImageUrl: 'https://example.com/avatar.jpg',
     snsLinks: [
-      { url: 'https://x.com/testuser' },
-      { url: 'https://instagram.com/testuser' }
+      { platform: PLATFORM_TWITTER, url: 'https://x.com/testuser' },
+      { platform: PLATFORM_INSTAGRAM, url: 'https://instagram.com/testuser' }
     ]
   }
 
@@ -771,7 +771,7 @@ describe('ProfileDialog', () => {
     })
   })
 
-  describe('Issue#29: SNSリンク編集機能', () => {
+  describe('Issue#102: SNSリンク編集機能（固定3行UI）', () => {
     it('SNSリンク編集ボタンが表示される（自分のプロフィール）', () => {
       render(
         <ProfileDialog
@@ -786,7 +786,7 @@ describe('ProfileDialog', () => {
       expect(screen.getByTestId('edit-sns-links-button')).toBeInTheDocument()
     })
 
-    it('SNSリンク編集モードでプラットフォーム選択ができる', async () => {
+    it('編集ボタンを押すとダイアログが開き、Instagram/Threads/X の3行が表示される', async () => {
       const user = userEvent.setup()
 
       render(
@@ -803,11 +803,14 @@ describe('ProfileDialog', () => {
       await user.click(editButton)
 
       await waitFor(() => {
-        expect(screen.getByTestId('sns-platform-select-0')).toBeInTheDocument()
+        expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
       })
+      expect(screen.getByTestId('sns-url-input-instagram')).toBeInTheDocument()
+      expect(screen.getByTestId('sns-url-input-threads')).toBeInTheDocument()
+      expect(screen.getByTestId('sns-url-input-x')).toBeInTheDocument()
     })
 
-    it('4種類のSNSプラットフォームが選択可能', async () => {
+    it('既存リンク（platform 付き）が対応する入力欄に表示される', async () => {
       const user = userEvent.setup()
 
       render(
@@ -820,62 +823,6 @@ describe('ProfileDialog', () => {
         />
       )
 
-      const editButton = screen.getByTestId('edit-sns-links-button')
-      await user.click(editButton)
-
-      await waitFor(() => {
-        const platformSelect = screen.getByTestId('sns-platform-select-0')
-        expect(platformSelect).toBeInTheDocument()
-      })
-
-      // プラットフォームオプションを確認（最初のselectから取得）
-      const platformSelect = screen.getByTestId('sns-platform-select-0')
-      const options = platformSelect.querySelectorAll('option')
-      const optionTexts = Array.from(options).map((opt) => opt.textContent)
-      expect(optionTexts).toContain('X')
-      expect(optionTexts).toContain('Instagram')
-      expect(optionTexts).toContain('YouTube')
-      expect(optionTexts).toContain('TikTok')
-    })
-
-    it('SNSリンク編集ダイアログに設定済みのリンクが表示される', async () => {
-      const user = userEvent.setup()
-
-      global.fetch = vi.fn()
-        // プロフィールAPI（snsLinksが空なのでフェッチされる）
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({
-            userId: 123,
-            username: 'testuser',
-            profileImageUrl: null,
-            snsLinks: [
-              { platform: PLATFORM_INSTAGRAM, url: 'https://instagram.com/testuser' },
-            ],
-          }),
-        })
-        // 写真一覧API
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockEmptyPhotosResponse),
-        })
-
-      render(
-        <ProfileDialog
-          open={true}
-          onClose={mockOnClose}
-          userProfile={{ ...mockUserProfile, snsLinks: [] }}
-          isOwnProfile={true}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
-
-      // APIからSNSリンクが取得される
-      await waitFor(() => {
-        expect(screen.getByRole('link', { name: /instagram/i })).toBeInTheDocument()
-      })
-
-      // SNSリンク編集ダイアログを開く
       const editButton = screen.getByTestId('edit-sns-links-button')
       await user.click(editButton)
 
@@ -883,16 +830,13 @@ describe('ProfileDialog', () => {
         expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
       })
 
-      // 設定済みのURLが入力欄に表示されている
-      const urlInput = screen.getByTestId('sns-url-input-0')
-      expect(urlInput).toHaveValue('https://instagram.com/testuser')
-
-      // プラットフォームがInstagramに選択されている
-      const platformSelect = screen.getByTestId('sns-platform-select-0')
-      expect(platformSelect).toHaveValue(String(PLATFORM_INSTAGRAM))
+      expect(screen.getByTestId('sns-url-input-instagram')).toHaveValue(
+        'https://instagram.com/testuser'
+      )
+      expect(screen.getByTestId('sns-url-input-x')).toHaveValue('https://x.com/testuser')
     })
 
-    it('SNSリンクを保存するとAPIが呼び出される', async () => {
+    it('保存するとSNSリンクAPIが呼び出される', async () => {
       const user = userEvent.setup()
 
       global.fetch = vi.fn()
@@ -903,7 +847,7 @@ describe('ProfileDialog', () => {
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve({
-            snsLinks: [{ platform: PLATFORM_TWITTER, url: 'https://x.com/newuser' }]
+            snsLinks: [{ platform: PLATFORM_TWITTER, url: 'https://x.com/testuser' }]
           })
         })
 
@@ -917,16 +861,13 @@ describe('ProfileDialog', () => {
         />
       )
 
-      // SNSリンク編集ダイアログを開く
       const editButton = screen.getByTestId('edit-sns-links-button')
       await user.click(editButton)
 
-      // ダイアログが開くのを待つ
       await waitFor(() => {
         expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
       })
 
-      // ダイアログ内の保存ボタンをクリック
       const saveButton = screen.getByRole('button', { name: '保存' })
       await user.click(saveButton)
 
@@ -936,118 +877,6 @@ describe('ProfileDialog', () => {
           expect.objectContaining({ method: 'PUT' })
         )
       })
-    })
-
-    // Issue#37: SNSリンクURL入力のバインドテスト
-    it('SNSリンクのURLを入力して保存すると、入力内容がAPIに送信される', async () => {
-      const user = userEvent.setup()
-      const newUrl = 'https://x.com/newusername'
-
-      global.fetch = vi.fn()
-        // プロフィールAPI（snsLinksが空なのでフェッチされる）
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ profileImageUrl: null, snsLinks: [] }),
-        })
-        // 写真一覧API
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockEmptyPhotosResponse),
-        })
-        // SNSリンク保存API
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ snsLinks: [] })
-        })
-
-      render(
-        <ProfileDialog
-          open={true}
-          onClose={mockOnClose}
-          userProfile={{ ...mockUserProfile, snsLinks: [] }}
-          isOwnProfile={true}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
-
-      // SNSリンク編集ダイアログを開く
-      const editButton = screen.getByTestId('edit-sns-links-button')
-      await user.click(editButton)
-
-      // ダイアログが開くのを待つ
-      await waitFor(() => {
-        expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
-      })
-
-      // URLを入力
-      const urlInput = screen.getByTestId('sns-url-input-0')
-      await user.type(urlInput, newUrl)
-
-      // ダイアログ内の保存ボタンをクリック
-      const saveButton = screen.getByRole('button', { name: '保存' })
-      await user.click(saveButton)
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/v1/users/me/sns-links'),
-          expect.objectContaining({
-            method: 'PUT',
-            body: expect.stringContaining(newUrl)
-          })
-        )
-      })
-    })
-
-    // Issue#37: SNSリンク追加機能テスト
-    it('リンクを追加ボタンで新しいリンク入力欄が追加される', async () => {
-      const user = userEvent.setup()
-
-      render(
-        <ProfileDialog
-          open={true}
-          onClose={mockOnClose}
-          userProfile={{ ...mockUserProfile, snsLinks: [] }}
-          isOwnProfile={true}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
-
-      // 編集モードを開く
-      const editButton = screen.getByTestId('edit-sns-links-button')
-      await user.click(editButton)
-
-      // 追加ボタンをクリック
-      const addButton = screen.getByTestId('add-sns-link-button')
-      await user.click(addButton)
-
-      // 2つ目の入力欄が表示される
-      expect(screen.getByTestId('sns-url-input-1')).toBeInTheDocument()
-    })
-
-    // Issue#37: SNSリンク削除機能テスト
-    it('削除ボタンでリンク入力欄が削除される', async () => {
-      const user = userEvent.setup()
-
-      render(
-        <ProfileDialog
-          open={true}
-          onClose={mockOnClose}
-          userProfile={{ ...mockUserProfile, snsLinks: [{ url: 'https://x.com/test', platform: PLATFORM_TWITTER }] }}
-          isOwnProfile={true}
-          onPhotoClick={mockOnPhotoClick}
-        />
-      )
-
-      // 編集モードを開く
-      const editButton = screen.getByTestId('edit-sns-links-button')
-      await user.click(editButton)
-
-      // 削除ボタンをクリック
-      const deleteButton = screen.getByTestId('delete-sns-link-0')
-      await user.click(deleteButton)
-
-      // 入力欄が削除される
-      expect(screen.queryByTestId('sns-url-input-0')).not.toBeInTheDocument()
     })
   })
 
@@ -1811,8 +1640,8 @@ describe('ProfileDialog', () => {
         expect(screen.getByTestId('sns-link-edit-dialog')).toBeInTheDocument()
       })
 
-      // URLを入力して保存
-      const urlInput = screen.getByTestId('sns-url-input-0')
+      // X 入力欄に有効な URL を入力して保存
+      const urlInput = screen.getByTestId('sns-url-input-x')
       await user.type(urlInput, 'https://x.com/testuser')
 
       const saveButton = screen.getByRole('button', { name: '保存' })

@@ -425,8 +425,11 @@
   },
   "snsEdit": {
     "title": "SNS 링크 편집",
-    "description": "SNS 링크를 추가, 편집, 삭제하세요",
-    "add": "추가"
+    "description": "SNS 링크 편집",
+    "invalidUrlFormat": "올바른 URL을 입력해 주세요",
+    "invalidInstagramUrl": "Instagram URL을 입력해 주세요",
+    "invalidThreadsUrl": "Threads URL을 입력해 주세요",
+    "invalidXUrl": "X URL을 입력해 주세요"
   },
   "wantToGo": {
     "title": "가고 싶은 목록",

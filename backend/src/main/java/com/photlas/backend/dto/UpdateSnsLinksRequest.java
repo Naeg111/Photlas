@@ -13,7 +13,7 @@ import java.util.List;
 public class UpdateSnsLinksRequest {
 
     @NotNull
-    @Size(max = 4, message = "SNSリンクは最大4件までです")
+    @Size(max = 5, message = "SNSリンクは最大5件までです")
     @Valid
     private List<SnsLinkRequest> snsLinks;
 

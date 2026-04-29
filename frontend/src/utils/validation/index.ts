@@ -13,8 +13,8 @@ export const PASSWORD_MAX_LENGTH = 20
 /** 強いパスワードの最小文字数 */
 export const PASSWORD_STRONG_MIN_LENGTH = 12
 
-/** SNSリンク最大数 */
-export const MAX_SNS_LINKS = 3
+/** SNSリンク最大数 (Issue#102: 将来の5サービス対応用) */
+export const MAX_SNS_LINKS = 5
 
 /**
  * Issue#21: パスワードバリデーション統一

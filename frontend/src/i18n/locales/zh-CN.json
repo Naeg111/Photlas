@@ -425,8 +425,11 @@
   },
   "snsEdit": {
     "title": "编辑SNS链接",
-    "description": "添加、编辑或删除SNS链接",
-    "add": "添加"
+    "description": "编辑SNS链接",
+    "invalidUrlFormat": "请输入正确的URL",
+    "invalidInstagramUrl": "请输入Instagram的URL",
+    "invalidThreadsUrl": "请输入Threads的URL",
+    "invalidXUrl": "请输入X的URL"
   },
   "wantToGo": {
     "title": "心愿清单",

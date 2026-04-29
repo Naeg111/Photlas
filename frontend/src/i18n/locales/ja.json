@@ -455,8 +455,11 @@
   },
   "snsEdit": {
     "title": "SNSリンクを編集",
-    "description": "SNSリンクの追加・編集・削除",
-    "add": "追加"
+    "description": "SNSリンクの編集",
+    "invalidUrlFormat": "正しいURLを入力してください",
+    "invalidInstagramUrl": "InstagramのURLを入力してください",
+    "invalidThreadsUrl": "ThreadsのURLを入力してください",
+    "invalidXUrl": "XのURLを入力してください"
   },
   "wantToGo": {
     "title": "行きたい場所リスト",

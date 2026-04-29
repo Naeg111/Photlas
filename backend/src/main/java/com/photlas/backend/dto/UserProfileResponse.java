@@ -13,12 +13,22 @@ public class UserProfileResponse {
     private List<SnsLink> snsLinks;
 
     public static class SnsLink {
+        private Integer platform;
         private String url;
 
         public SnsLink() {}
 
-        public SnsLink(String url) {
+        public SnsLink(Integer platform, String url) {
+            this.platform = platform;
             this.url = url;
+        }
+
+        public Integer getPlatform() {
+            return platform;
+        }
+
+        public void setPlatform(Integer platform) {
+            this.platform = platform;
         }
 
         public String getUrl() {

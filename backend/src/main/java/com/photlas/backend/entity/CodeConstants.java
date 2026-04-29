@@ -68,8 +68,12 @@ public final class CodeConstants {
     // ========== 600番台: UserSnsLink.platform ==========
     public static final int PLATFORM_TWITTER = 601;
     public static final int PLATFORM_INSTAGRAM = 602;
+    /** Issue#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
     public static final int PLATFORM_YOUTUBE = 603;
+    /** Issue#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
     public static final int PLATFORM_TIKTOK = 604;
+    /** Issue#102: Threads は 2025-04 に threads.net → threads.com へ正式移行済み。 */
+    public static final int PLATFORM_THREADS = 605;
 
     // ========== 700番台: AccountSanction.sanction_type ==========
     public static final int SANCTION_WARNING = 701;
