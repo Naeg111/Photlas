@@ -118,11 +118,12 @@ describe('SignUpDialog', () => {
       expect(screen.getByRole('button', { name: '登録する' })).toBeInTheDocument()
     })
 
-    it('renders login link for existing users', () => {
+    it('renders OAuth signup notice with link to login', () => {
       render(<SignUpDialog {...defaultProps} />)
 
-      // Issue#26: "すでにアカウントをお持ちの方はログイン"リンクを追加
-      expect(screen.getByText('ログイン')).toBeInTheDocument()
+      // 「Google、LINEアカウントで登録される方は こちら」リンク
+      expect(screen.getByText(/Google、LINEアカウントで登録される方は/)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'こちら' })).toBeInTheDocument()
     })
 
     it('renders terms link in checkbox label', () => {
@@ -561,11 +562,11 @@ describe('SignUpDialog', () => {
   })
 
   describe('Dialog Transitions - ダイアログ遷移', () => {
-    it('calls onShowLogin when login link is clicked', async () => {
+    it('calls onShowLogin when OAuth signup notice link is clicked', async () => {
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
-      await user.click(screen.getByText('ログイン'))
+      await user.click(screen.getByRole('button', { name: 'こちら' }))
 
       expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
       expect(defaultProps.onShowLogin).toHaveBeenCalled()
