@@ -281,6 +281,40 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
+    it('Issue#103 修正 - icon-size 式は件数による分岐なしの単純な step 式（紫ピンも 1.4 倍拡大）', async () => {
+      setupFetchMock([TEST_SPOT])
+
+      render(<MapView />)
+
+      // クラスタ・個別ピンの両レイヤーを取得
+      let clusterIconSize: any
+      let unclusteredIconSize: any
+      await waitFor(() => {
+        const clusterLayerCall = mockMap.addLayer.mock.calls.find(
+          (call: any[]) => call[0]?.id === 'clusters'
+        )
+        const unclusteredLayerCall = mockMap.addLayer.mock.calls.find(
+          (call: any[]) => call[0]?.id === 'unclustered-point'
+        )
+        expect(clusterLayerCall).toBeDefined()
+        expect(unclusteredLayerCall).toBeDefined()
+        clusterIconSize = clusterLayerCall![0].layout['icon-size']
+        unclusteredIconSize = unclusteredLayerCall![0].layout['icon-size']
+      })
+
+      // ['step', ['zoom'], baseSize, 16, scaledSize] の形であること
+      // （>= 1000 の case 分岐がないこと）
+      const assertSimpleStepIconSize = (expr: any) => {
+        expect(Array.isArray(expr)).toBe(true)
+        expect(expr[0]).toBe('step')
+        expect(expr).toHaveLength(5) // step / zoom / baseSize / 16 / scaledSize
+        // 5 番目の要素が数値（case式ではない）であることを確認
+        expect(typeof expr[4]).toBe('number')
+      }
+      assertSimpleStepIconSize(clusterIconSize)
+      assertSimpleStepIconSize(unclusteredIconSize)
+    })
+
     it('Issue#103 - 「投稿を表示するには地図を拡大してください」バナーが存在しない', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(5)
