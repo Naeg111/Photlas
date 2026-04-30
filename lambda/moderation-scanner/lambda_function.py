@@ -76,9 +76,45 @@ DEFAULT_EXCLUDED_LABELS = {
 }
 
 
-def lambda_handler(event, context):
-    """S3イベントをトリガーにRekognitionスキャンを実行する。"""
+def extract_s3_records(event: dict) -> list:
+    """イベントから S3 レコード一覧を取り出す。
+
+    setup-s3-notifications.sh の構成変更により、Lambda は以下 2 種類の
+    イベント形式を受け取る可能性がある:
+
+    1. S3 から直接トリガーされた場合（後方互換）:
+       { "Records": [{ "s3": { "bucket": ..., "object": ... } }] }
+
+    2. S3 → SNS → Lambda の構成（新規）:
+       { "Records": [{ "EventSource": "aws:sns",
+                       "Sns": { "Message": "<S3 イベントの JSON 文字列>" } }] }
+
+    本関数は両方のケースを正規化し、S3 レコードのリスト
+    （`{"s3": {"bucket": ..., "object": ...}}` の形式）を返す。
+    """
+    s3_records = []
     for record in event.get("Records", []):
+        if record.get("EventSource") == "aws:sns" or "Sns" in record:
+            try:
+                message = json.loads(record["Sns"]["Message"])
+            except (KeyError, json.JSONDecodeError) as e:
+                logger.warning("SNS メッセージのパースに失敗: %s", str(e))
+                continue
+            for inner in message.get("Records", []):
+                if "s3" in inner:
+                    s3_records.append(inner)
+        elif "s3" in record:
+            s3_records.append(record)
+    return s3_records
+
+
+def lambda_handler(event, context):
+    """S3イベントをトリガーにRekognitionスキャンを実行する。
+
+    SNS ファンアウト構成にも対応するため、イベントを extract_s3_records で
+    正規化してから処理する。
+    """
+    for record in extract_s3_records(event):
         bucket = record["s3"]["bucket"]["name"]
         object_key = record["s3"]["object"]["key"]
 
