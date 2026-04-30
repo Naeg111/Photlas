@@ -1,11 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
-# Issue#75: S3イベント通知の統合セットアップスクリプト
+# Issue#75 + SNS ファンアウト対応:
+# S3 → SNS Topic → 複数 Lambda（moderation + thumbnail）の構成で
+# 同一プレフィックスへの複数 Lambda トリガーを実現する。
 #
-# モデレーションLambdaとサムネイル生成Lambdaの両方のS3トリガーを
-# 一括で設定する。put-bucket-notification-configurationはバケット全体の
-# 通知設定を上書きするため、このスクリプトで一元管理する。
+# S3 は「同じイベント・同じプレフィックス」で複数の Lambda を直接呼び出せないため、
+# SNS Topic を中継してファンアウトする。両 Lambda とも extract_s3_records()
+# で SNS ラップを正規化するように対応済み。
+#
+# 構成:
+#   S3 (uploads/, profile-images/) ──→ SNS Topic ─┬→ moderation-scanner Lambda
+#                                                 └→ thumbnail-generator Lambda
+#                                                    （thumbnail は内部で uploads/ のみ処理）
 #
 # 前提条件:
 #   - setup-moderation-lambda.sh が実行済み
@@ -31,11 +38,13 @@ fi
 
 SCANNER_FUNCTION_NAME="photlas-moderation-scanner-${FUNCTION_SUFFIX}"
 THUMBNAIL_FUNCTION_NAME="photlas-thumbnail-generator-${FUNCTION_SUFFIX}"
+SNS_TOPIC_NAME="photlas-s3-uploads-${FUNCTION_SUFFIX}"
 
-echo "=== S3イベント通知の統合設定 (${ENV}) ==="
-echo "S3バケット: ${S3_BUCKET}"
+echo "=== S3 → SNS → Lambda ファンアウト設定 (${ENV}) ==="
+echo "S3 バケット: ${S3_BUCKET}"
+echo "SNS Topic : ${SNS_TOPIC_NAME}"
 
-# Lambda関数のARNを取得
+# --- Lambda 関数の ARN を取得 ---
 SCANNER_ARN=$(aws lambda get-function \
     --function-name "$SCANNER_FUNCTION_NAME" \
     --query 'Configuration.FunctionArn' \
@@ -48,18 +57,119 @@ THUMBNAIL_ARN=$(aws lambda get-function \
     --output text \
     --region "$REGION")
 
-echo "モデレーションLambda ARN: ${SCANNER_ARN}"
-echo "サムネイルLambda ARN: ${THUMBNAIL_ARN}"
+echo "moderation Lambda ARN: ${SCANNER_ARN}"
+echo "thumbnail Lambda ARN : ${THUMBNAIL_ARN}"
 
-# 統合S3イベント通知設定
-# - モデレーション: uploads/ と profile-images/ プレフィックス
-# - サムネイル生成: uploads/ プレフィックス
+# --- SNS Topic 作成（既存の場合は ARN だけ取得） ---
+echo ""
+echo "=== SNS Topic 作成 ==="
+SNS_TOPIC_ARN=$(aws sns create-topic \
+    --name "$SNS_TOPIC_NAME" \
+    --region "$REGION" \
+    --query 'TopicArn' \
+    --output text)
+echo "SNS Topic ARN: ${SNS_TOPIC_ARN}"
+
+# --- SNS Topic ポリシー: S3 からの publish を許可 ---
+# S3 がこの SNS Topic に publish できるよう、Topic 自体のポリシーで許可する
+echo ""
+echo "=== SNS Topic ポリシー設定（S3 からの publish 許可） ==="
+SNS_POLICY=$(cat <<POLICY_EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowS3Publish",
+      "Effect": "Allow",
+      "Principal": { "Service": "s3.amazonaws.com" },
+      "Action": "sns:Publish",
+      "Resource": "${SNS_TOPIC_ARN}",
+      "Condition": {
+        "ArnLike": { "aws:SourceArn": "arn:aws:s3:::${S3_BUCKET}" },
+        "StringEquals": { "aws:SourceAccount": "${ACCOUNT_ID}" }
+      }
+    }
+  ]
+}
+POLICY_EOF
+)
+
+aws sns set-topic-attributes \
+    --topic-arn "$SNS_TOPIC_ARN" \
+    --attribute-name Policy \
+    --attribute-value "$SNS_POLICY" \
+    --region "$REGION"
+
+# --- 各 Lambda に SNS から呼ばれる権限を付与 ---
+# AddPermission は冪等でなく重複登録時にエラーになるため、既存を削除してから追加
+echo ""
+echo "=== Lambda 権限設定（SNS からの invoke 許可） ==="
+
+add_sns_permission_to_lambda() {
+    local function_name=$1
+    local statement_id="sns-invoke-${SNS_TOPIC_NAME}"
+
+    # 既存ステートメントがあれば削除（再実行時の冪等性のため）
+    aws lambda remove-permission \
+        --function-name "$function_name" \
+        --statement-id "$statement_id" \
+        --region "$REGION" \
+        2>/dev/null || true
+
+    aws lambda add-permission \
+        --function-name "$function_name" \
+        --statement-id "$statement_id" \
+        --action "lambda:InvokeFunction" \
+        --principal "sns.amazonaws.com" \
+        --source-arn "$SNS_TOPIC_ARN" \
+        --region "$REGION" \
+        > /dev/null
+    echo "  ${function_name}: 権限を更新"
+}
+
+add_sns_permission_to_lambda "$SCANNER_FUNCTION_NAME"
+add_sns_permission_to_lambda "$THUMBNAIL_FUNCTION_NAME"
+
+# --- SNS Topic に各 Lambda を Subscribe ---
+echo ""
+echo "=== SNS Topic への Lambda Subscribe ==="
+
+subscribe_lambda_to_sns() {
+    local lambda_arn=$1
+    # 既に subscribe 済みの場合は冪等に処理する
+    local existing=$(aws sns list-subscriptions-by-topic \
+        --topic-arn "$SNS_TOPIC_ARN" \
+        --region "$REGION" \
+        --query "Subscriptions[?Endpoint=='${lambda_arn}'].SubscriptionArn" \
+        --output text)
+    if [ -n "$existing" ] && [ "$existing" != "None" ]; then
+        echo "  ${lambda_arn}: 既に subscribe 済み"
+        return
+    fi
+    aws sns subscribe \
+        --topic-arn "$SNS_TOPIC_ARN" \
+        --protocol "lambda" \
+        --notification-endpoint "$lambda_arn" \
+        --region "$REGION" \
+        > /dev/null
+    echo "  ${lambda_arn}: subscribe 完了"
+}
+
+subscribe_lambda_to_sns "$SCANNER_ARN"
+subscribe_lambda_to_sns "$THUMBNAIL_ARN"
+
+# --- S3 → SNS の通知設定 ---
+# S3 NotificationConfiguration はバケット全体を上書きする API のため、
+# uploads/ と profile-images/ を 2 ルールで明示する（プレフィックスが重ならないため
+# 「同一イベントタイプで重複しない」ルール構成になり、S3 の制約を満たす）。
+echo ""
+echo "=== S3 → SNS 通知設定 ==="
 S3_NOTIFICATION=$(cat <<NOTIF_EOF
 {
-  "LambdaFunctionConfigurations": [
+  "TopicConfigurations": [
     {
-      "Id": "moderation-scan-uploads",
-      "LambdaFunctionArn": "${SCANNER_ARN}",
+      "Id": "photlas-uploads-to-sns",
+      "TopicArn": "${SNS_TOPIC_ARN}",
       "Events": ["s3:ObjectCreated:*"],
       "Filter": {
         "Key": {
@@ -70,25 +180,13 @@ S3_NOTIFICATION=$(cat <<NOTIF_EOF
       }
     },
     {
-      "Id": "moderation-scan-profile-images",
-      "LambdaFunctionArn": "${SCANNER_ARN}",
+      "Id": "photlas-profile-images-to-sns",
+      "TopicArn": "${SNS_TOPIC_ARN}",
       "Events": ["s3:ObjectCreated:*"],
       "Filter": {
         "Key": {
           "FilterRules": [
             { "Name": "prefix", "Value": "profile-images/" }
-          ]
-        }
-      }
-    },
-    {
-      "Id": "thumbnail-generator-uploads",
-      "LambdaFunctionArn": "${THUMBNAIL_ARN}",
-      "Events": ["s3:ObjectCreated:*"],
-      "Filter": {
-        "Key": {
-          "FilterRules": [
-            { "Name": "prefix", "Value": "uploads/" }
           ]
         }
       }
@@ -103,8 +201,10 @@ aws s3api put-bucket-notification-configuration \
     --notification-configuration "$S3_NOTIFICATION" \
     --region "$REGION"
 
-echo "=== S3イベント通知設定完了 ==="
 echo ""
-echo "設定されたトリガー:"
-echo "  uploads/           → モデレーションLambda + サムネイル生成Lambda"
-echo "  profile-images/    → モデレーションLambda"
+echo "=== 設定完了 ==="
+echo "構成:"
+echo "  S3 ${S3_BUCKET} (uploads/, profile-images/)"
+echo "    └→ SNS ${SNS_TOPIC_NAME}"
+echo "          ├→ ${SCANNER_FUNCTION_NAME}     （uploads/, profile-images/ をスキャン）"
+echo "          └→ ${THUMBNAIL_FUNCTION_NAME}   （uploads/ のみサムネイル生成）"
