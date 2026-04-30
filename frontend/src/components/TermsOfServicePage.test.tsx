@@ -1,10 +1,12 @@
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import i18n from 'i18next'
 import { TermsOfServicePage } from './TermsOfServicePage'
 
 /**
  * TermsOfServicePage コンポーネントのテスト
  * Issue#51: 利用規約の文面改訂
+ * Issue#101: 多言語対応 + ハードコード日本語の i18n 化
  */
 
 describe('TermsOfServicePage', () => {
@@ -89,4 +91,54 @@ describe('TermsOfServicePage', () => {
     })
   })
 
+  /**
+   * Issue#101: 5 言語対応 + ハードコード日本語の i18n 化のテスト。
+   */
+  describe('Issue#101 - 多言語対応', () => {
+    afterEach(async () => {
+      await i18n.changeLanguage('ja')
+    })
+
+    it('言語が ja の場合、日本語コンテンツが表示される', async () => {
+      await i18n.changeLanguage('ja')
+      render(<TermsOfServicePage {...defaultProps} />)
+      expect(screen.getByText(/第1条（適用）/)).toBeInTheDocument()
+    })
+
+    it('言語が en の場合、英語コンテンツが表示される', async () => {
+      await i18n.changeLanguage('en')
+      render(<TermsOfServicePage {...defaultProps} />)
+      expect(screen.getByText(/Article 1/)).toBeInTheDocument()
+    })
+
+    it('言語が ko の場合、韓国語コンテンツが表示される', async () => {
+      await i18n.changeLanguage('ko')
+      render(<TermsOfServicePage {...defaultProps} />)
+      expect(screen.getByText(/제1조/)).toBeInTheDocument()
+    })
+
+    it('言語が zh-CN の場合、簡体字コンテンツが表示される', async () => {
+      await i18n.changeLanguage('zh-CN')
+      render(<TermsOfServicePage {...defaultProps} />)
+      expect(screen.getByText(/第1条|第一条/)).toBeInTheDocument()
+    })
+
+    it('言語が zh-TW の場合、繁体字コンテンツが表示される', async () => {
+      await i18n.changeLanguage('zh-TW')
+      render(<TermsOfServicePage {...defaultProps} />)
+      expect(screen.getByText(/第1條|第一條/)).toBeInTheDocument()
+    })
+
+    it('DialogTitle が i18n 化されている（en で英語タイトルが表示される）', async () => {
+      await i18n.changeLanguage('en')
+      render(<TermsOfServicePage {...defaultProps} />)
+      expect(screen.getByRole('heading', { name: /Terms of Service/i })).toBeInTheDocument()
+    })
+
+    it('DialogTitle が i18n 化されている（ko で韓国語タイトルが表示される）', async () => {
+      await i18n.changeLanguage('ko')
+      render(<TermsOfServicePage {...defaultProps} />)
+      expect(screen.getByRole('heading', { name: /이용약관/ })).toBeInTheDocument()
+    })
+  })
 })
