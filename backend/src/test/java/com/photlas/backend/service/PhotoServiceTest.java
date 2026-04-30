@@ -1145,4 +1145,89 @@ public class PhotoServiceTest {
         assertThatThrownBy(() -> photoService.getPhotoDetail(99999L, testUser.getEmail()))
                 .isInstanceOf(PhotoNotFoundException.class);
     }
+
+    // ===== Issue#100: タグベース孤立ファイル対応 =====
+
+    @Test
+    @DisplayName("Issue#100 - createPhoto: DB保存前に元画像のタグを status=registered に更新する")
+    void testCreatePhoto_UpdatesOriginalTagToRegisteredBeforeDbSave() {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setS3ObjectKey("uploads/" + testUser.getId() + "/issue100-test.jpg");
+        request.setTakenAt("2026-01-01T12:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+
+        photoService.createPhoto(request, testUser.getEmail());
+
+        // 元画像のタグが registered に更新されたことを検証
+        org.mockito.Mockito.verify(s3Service).updateObjectTag(
+                request.getS3ObjectKey(),
+                S3Service.STATUS_TAG_KEY,
+                S3Service.STATUS_TAG_VALUE_REGISTERED
+        );
+    }
+
+    @Test
+    @DisplayName("Issue#100 - createPhoto: タグ更新が失敗した場合は DB 保存を行わずエラーを返す")
+    void testCreatePhoto_TagUpdateFails_DoesNotSaveDbAndThrows() {
+        // タグ更新で例外を投げるようにモック設定
+        org.mockito.Mockito.doThrow(new RuntimeException("S3 tag update failed"))
+                .when(s3Service).updateObjectTag(
+                        org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_KEY),
+                        org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_VALUE_REGISTERED)
+                );
+
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setS3ObjectKey("uploads/" + testUser.getId() + "/issue100-fail.jpg");
+        request.setTakenAt("2026-01-01T12:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+
+        long beforeCount = photoRepository.count();
+
+        assertThatThrownBy(() -> photoService.createPhoto(request, testUser.getEmail()))
+                .isInstanceOf(RuntimeException.class);
+
+        // DB に写真が保存されていないことを検証
+        long afterCount = photoRepository.count();
+        assertThat(afterCount).isEqualTo(beforeCount);
+    }
+
+    @Test
+    @DisplayName("Issue#100 - createPhoto: DB保存後にサムネイルのタグ更新を試みる（ベストエフォート、失敗してもエラーにしない）")
+    void testCreatePhoto_AttemptsThumbnailTagUpdate_BestEffortOnFailure() {
+        // 元画像のタグ更新は成功、サムネイルのタグ更新で例外
+        org.mockito.Mockito.doNothing().when(s3Service).updateObjectTag(
+                org.mockito.ArgumentMatchers.<String>argThat(key -> key != null && key.startsWith("uploads/")),
+                org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_KEY),
+                org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_VALUE_REGISTERED)
+        );
+        org.mockito.Mockito.doThrow(new RuntimeException("Thumbnail tag update failed"))
+                .when(s3Service).updateObjectTag(
+                        org.mockito.ArgumentMatchers.<String>argThat(key -> key != null && key.startsWith("thumbnails/")),
+                        org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_KEY),
+                        org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_VALUE_REGISTERED)
+                );
+
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setS3ObjectKey("uploads/" + testUser.getId() + "/issue100-thumb-fail.jpg");
+        request.setTakenAt("2026-01-01T12:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        request.setCategories(List.of("風景"));
+
+        // サムネイル失敗でも写真投稿は成功する
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+        assertThat(response).isNotNull();
+
+        // サムネイルのタグ更新が試みられたことを検証（"thumbnails/" で始まるキーで呼び出されたこと）
+        org.mockito.Mockito.verify(s3Service).updateObjectTag(
+                org.mockito.ArgumentMatchers.<String>argThat(key -> key != null && key.startsWith("thumbnails/")),
+                org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_KEY),
+                org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_VALUE_REGISTERED)
+        );
+    }
 }
