@@ -165,7 +165,7 @@ public class PhotoService {
         // Issue#100: サムネイルのタグもベストエフォートで registered に更新する。
         // Lambda が先にサムネイルを生成済みであれば即座に追従し、まだ未生成なら本処理は失敗するが
         // その場合は Lambda 側が二重チェック方式で源画像の registered タグをコピーする。
-        String thumbnailKey = deriveThumbnailKey(request.getS3ObjectKey());
+        String thumbnailKey = s3Service.deriveThumbnailKey(request.getS3ObjectKey());
         try {
             s3Service.updateObjectTag(
                     thumbnailKey,
@@ -178,19 +178,6 @@ public class PhotoService {
 
         // 5. レスポンスの構築（新規投稿なのでis_favoritedはfalse）
         return buildPhotoResponse(savedPhoto, spot, user, false);
-    }
-
-    /**
-     * Issue#100: 元画像 S3 キーからサムネイル S3 キーを導出する。
-     * 命名規則: uploads/1/abc.jpg → thumbnails/uploads/1/abc.webp
-     */
-    private String deriveThumbnailKey(String originalKey) {
-        if (originalKey == null) {
-            return null;
-        }
-        int dotIndex = originalKey.lastIndexOf('.');
-        String baseName = dotIndex > 0 ? originalKey.substring(0, dotIndex) : originalKey;
-        return "thumbnails/" + baseName + ".webp";
     }
 
     /**

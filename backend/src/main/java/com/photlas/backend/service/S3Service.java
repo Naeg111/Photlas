@@ -183,20 +183,34 @@ public class S3Service {
     }
 
     /**
-     * Issue#59: S3オブジェクトキーからサムネイルのCDN URLを生成する
+     * Issue#59: 元画像のS3キーからサムネイルのS3キーを導出する
      * 命名規則: uploads/1/abc.jpg → thumbnails/uploads/1/abc.webp
      *
+     * Issue#100: PhotoService 等の他サービスからもサムネイルキーが必要になったため、
+     * 命名規則の単一情報源として本メソッドに集約。Lambda 側 (lambda_function.py の
+     * generate_thumbnail_key) と同じ規則を実装する。
+     *
      * @param s3ObjectKey 元画像のS3オブジェクトキー
-     * @return サムネイルのCDN URL
+     * @return サムネイルのS3オブジェクトキー（拡張子は .webp）。入力が null の場合は null
      */
-    public String generateThumbnailCdnUrl(String s3ObjectKey) {
+    public String deriveThumbnailKey(String s3ObjectKey) {
         if (s3ObjectKey == null) {
             return null;
         }
         int dotIndex = s3ObjectKey.lastIndexOf('.');
         String baseName = dotIndex > 0 ? s3ObjectKey.substring(0, dotIndex) : s3ObjectKey;
-        String thumbnailKey = "thumbnails/" + baseName + ".webp";
-        return generateCdnUrl(thumbnailKey);
+        return "thumbnails/" + baseName + ".webp";
+    }
+
+    /**
+     * Issue#59: S3オブジェクトキーからサムネイルのCDN URLを生成する
+     *
+     * @param s3ObjectKey 元画像のS3オブジェクトキー
+     * @return サムネイルのCDN URL
+     */
+    public String generateThumbnailCdnUrl(String s3ObjectKey) {
+        String thumbnailKey = deriveThumbnailKey(s3ObjectKey);
+        return thumbnailKey != null ? generateCdnUrl(thumbnailKey) : null;
     }
 
     /**
