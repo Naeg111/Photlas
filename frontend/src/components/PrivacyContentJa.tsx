@@ -142,6 +142,10 @@ export function PrivacyContentJa() {
 
       <section>
         <h2 className="mb-3">第6条（第三者提供・外部サービスの利用）</h2>
+        <p className="text-sm text-gray-700 mb-2">
+          {/* Issue#105: Do Not Sell 宣言 */}
+          運営者は、ユーザーの個人情報を第三者に販売しません。
+        </p>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
           <li>
             運営者は、次に掲げる場合を除いて、あらかじめユーザーの同意を得ることなく、第三者に個人情報を提供することはありません。
@@ -299,14 +303,27 @@ export function PrivacyContentJa() {
           <li>
             削除後のデータの復旧はできません。
           </li>
+          <li>
+            {/* Issue#105: モデレーション削除写真の 180 日保持を開示 */}
+            コンテンツモデレーションにより削除された写真およびそのメタデータは、再審査・異議申立への対応を目的として180日間保持された後、完全に削除されます。
+          </li>
         </ol>
       </section>
 
       <section>
         <h2 className="mb-3">第12条（未成年者の利用）</h2>
-        <p className="text-sm text-gray-700">
-          未成年者が本サービスを利用する場合は、法定代理人（保護者）の同意を得た上で利用するものとします。未成年者が本サービスを利用した場合、法定代理人の同意を得ているものとみなします。
-        </p>
+        <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+          {/* Issue#105: 13歳以上の利用制限を明示（COPPA 準拠） */}
+          <li>
+            本サービスは、<span className="font-semibold">13歳以上</span>の方を対象として提供します。13歳未満の方は本サービスを利用することはできません。誤って 13歳未満の方が登録したことが判明した場合、運営者はアカウントおよび関連するデータを削除する措置を講じます。
+          </li>
+          <li>
+            13歳以上18歳未満の未成年者が本サービスを利用する場合は、法定代理人（保護者）の同意を得た上で利用するものとします。未成年者が本サービスを利用した場合、法定代理人の同意を得ているものとみなします。
+          </li>
+          <li>
+            13歳未満のお子様の登録に関する保護者からのお問い合わせは、第18条のお問い合わせ窓口までご連絡ください。
+          </li>
+        </ol>
       </section>
 
       <section>
@@ -353,7 +370,7 @@ export function PrivacyContentJa() {
           <li><span className="font-semibold">訂正権</span>：不正確な個人データの訂正を請求する権利</li>
           <li><span className="font-semibold">削除権（忘れられる権利）</span>：個人データの削除を請求する権利</li>
           <li><span className="font-semibold">処理の制限権</span>：個人データの処理の制限を請求する権利</li>
-          <li><span className="font-semibold">データポータビリティ権</span>：個人データを構造化された機械可読な形式で受け取る権利</li>
+          <li><span className="font-semibold">データポータビリティ権</span>：個人データを構造化された機械可読な形式で受け取る権利。本権利を行使される場合は、第18条のお問い合わせ窓口にご連絡ください。運営者がお客様のデータをエクスポートしてお渡しします（リクエストベース運用）。</li>
           <li><span className="font-semibold">異議申立権</span>：正当な利益に基づく処理に対して異議を申し立てる権利</li>
           <li><span className="font-semibold">同意の撤回権</span>：同意に基づく処理について、いつでも同意を撤回する権利（ブラウザの設定から本サイトのサイトデータを削除すると、Cookie同意バナーが再表示され、同意を撤回できます）</li>
         </ul>
@@ -361,6 +378,10 @@ export function PrivacyContentJa() {
 
       <section>
         <h2 className="mb-3">第17条（国際データ移転）</h2>
+        <p className="text-sm text-gray-700 mb-2">
+          {/* Issue#105: 国際ユーザー向けの包括的注意書きを追加 */}
+          本サービスは日本に拠点を置く事業者により提供されており、世界中からアクセス可能です。日本国外からアクセスされた場合でも、ユーザーの個人データは日本のサーバーに転送のうえ処理されます。
+        </p>
         <p className="text-sm text-gray-700 mb-2">
           ユーザーの個人データは、サービスの提供に必要な範囲で以下の地域に移転される場合があります。
         </p>
@@ -370,6 +391,10 @@ export function PrivacyContentJa() {
         </ul>
         <p className="text-sm text-gray-700 mt-2">
           これらのサービス提供者は、それぞれのプライバシーポリシーおよびデータ処理契約に基づき、適切なデータ保護措置を講じています。
+        </p>
+        <p className="text-sm text-gray-700 mt-2">
+          {/* Issue#105: ユーザー居住国の法律に基づく権利を尊重する旨 */}
+          ユーザーが居住する国の法律に基づき、本ポリシーに記載のない追加の権利を有する場合、運営者はそれらの権利を尊重し、適用法令の定めに従って対応します。
         </p>
       </section>
 
@@ -387,7 +412,7 @@ export function PrivacyContentJa() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           制定日：2026年2月16日<br />
-          最終改定日：2026年4月20日（SNSログイン機能に関する記載を追加）
+          最終改定日：2026年5月1日（国際対応版へ更新：最低利用年齢設定、データ保持期間開示強化、データポータビリティ運用方針明示、Do Not Sell 宣言、国際ユーザー向け注記追加）
         </p>
       </section>
     </div>

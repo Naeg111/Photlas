@@ -78,6 +78,10 @@ export function TermsContentEn() {
         <h2 className="mb-3">Article 3 (User Registration)</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
           <li>
+            {/* Issue#105: 13 years minimum age (matches Privacy Policy Article 12) */}
+            The Service is intended for users aged <span className="font-semibold">13 years</span> of age or older. Persons under 13 years of age may not register for or use the Service.
+          </li>
+          <li>
             Persons wishing to use certain features of the Service shall agree
             to comply with these Terms and apply for user registration through
             the method prescribed by the Operator. Registration requires the
@@ -254,6 +258,16 @@ export function TermsContentEn() {
           </li>
           <li>
             Other activities that the Operator determines to be inappropriate
+          </li>
+        </ol>
+        {/* Issue#105: Poster responsibility for filming-location laws */}
+        <p className="text-sm text-gray-700 mt-3 font-semibold">Poster Responsibility (additional provisions for international use)</p>
+        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 mt-1">
+          <li>
+            Users are responsible for complying with the <span className="font-semibold">laws of the photographing jurisdiction</span> (such as portrait rights, privacy rights, and regulations restricting the photography of buildings) when posting photos.
+          </li>
+          <li>
+            When third parties are identifiable in a photo, the user is responsible for either obtaining the <span className="font-semibold">consent</span> of those persons or de-identifying them before posting.
           </li>
         </ol>
       </section>
@@ -511,6 +525,10 @@ export function TermsContentEn() {
             subject to the exclusive jurisdiction of the Tokyo District Court
             as the court of first instance.
           </li>
+          {/* Issue#105: International usage notice */}
+          <li>
+            The Service is provided by an operator based in Japan, but is accessible worldwide. By using the Service, the user is responsible for verifying, on their own, whether use of the Service is permitted under the laws of <span className="font-semibold">the user&apos;s home country (or country of jurisdiction)</span>.
+          </li>
         </ol>
       </section>
 
@@ -584,7 +602,7 @@ export function TermsContentEn() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           Enacted: February 16, 2026<br />
-          Last revised: April 20, 2026 (Added provisions on Social Sign-In)
+          Last revised: May 1, 2026 (Updated to international version: enhanced poster responsibility, international usage notice, minimum age requirement)
         </p>
       </section>
     </div>

@@ -49,6 +49,10 @@ export function TermsContentJa() {
         <h2 className="mb-3">第3条（ユーザー登録）</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
           <li>
+            {/* Issue#105: 13歳以上の利用制限を明示（プライバシーポリシー第12条と整合） */}
+            本サービスは<span className="font-semibold">13歳以上</span>の方を対象として提供します。13歳未満の方はユーザー登録および本サービスの利用ができません。
+          </li>
+          <li>
             本サービスの一部機能の利用を希望する方は、本規約を遵守することに同意し、運営者の定める方法によってユーザー登録を申請するものとします。登録にはメールアドレス、表示名およびパスワードの入力が必要です。
           </li>
           <li>
@@ -138,6 +142,16 @@ export function TermsContentJa() {
           </li>
           <li>本サービスの運営を妨害するおそれのある行為</li>
           <li>その他、運営者が不適切と判断する行為</li>
+        </ol>
+        {/* Issue#105: 投稿者責任の強化（撮影地国の法令遵守） */}
+        <p className="text-sm text-gray-700 mt-3 font-semibold">投稿者の責任（国際利用に関する追加事項）</p>
+        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 mt-1">
+          <li>
+            ユーザーは、投稿する写真について、<span className="font-semibold">撮影地国の法令</span>（肖像権、プライバシー権、建造物の撮影禁止規制等）を遵守する責任を負います。
+          </li>
+          <li>
+            写真に第三者が識別可能な形で写り込む場合、ユーザーは当該人物の<span className="font-semibold">同意を取得する</span>か、または個人を特定できないよう加工した上で投稿する責任を負います。
+          </li>
         </ol>
       </section>
 
@@ -302,6 +316,10 @@ export function TermsContentJa() {
           <li>
             本サービスに関して紛争が生じた場合には、東京地方裁判所を第一審の専属的合意管轄裁判所とします。
           </li>
+          {/* Issue#105: 国際利用の注記 */}
+          <li>
+            本サービスは日本に拠点を置く事業者により提供されますが、世界中からのアクセスを受け入れています。ユーザーは本サービスの利用にあたり、<span className="font-semibold">自国の法律</span>に基づき本サービスを利用することが可能かを、自身の責任で確認するものとします。
+          </li>
         </ol>
       </section>
 
@@ -332,7 +350,7 @@ export function TermsContentJa() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           制定日：2026年2月16日<br />
-          最終改定日：2026年4月20日（SNSログインに関する条項を追加）
+          最終改定日：2026年5月1日（国際対応版へ更新：投稿者責任強化、国際利用注記追加、最低利用年齢設定）
         </p>
       </section>
     </div>

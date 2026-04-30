@@ -156,6 +156,10 @@ export function PrivacyContentEn() {
 
       <section>
         <h2 className="mb-3">Article 6 (Third-Party Disclosure and External Services)</h2>
+        <p className="text-sm text-gray-700 mb-2">
+          {/* Issue#105: Do Not Sell declaration */}
+          The Operator does not sell users&apos; personal information to third parties.
+        </p>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
           <li>
             The Operator will not provide personal information to third parties
@@ -360,16 +364,27 @@ export function PrivacyContentEn() {
           <li>
             Data cannot be recovered after deletion.
           </li>
+          <li>
+            {/* Issue#105: 180-day retention for moderated photos */}
+            Photos and their metadata removed by content moderation are retained for 180 days for re-review and appeal purposes, after which they are permanently deleted.
+          </li>
         </ol>
       </section>
 
       <section>
         <h2 className="mb-3">Article 12 (Use by Minors)</h2>
-        <p className="text-sm text-gray-700">
-          Minors must obtain consent from a legal guardian (parent) before using the
-          Service. If a minor uses the Service, it shall be deemed that the consent
-          of a legal guardian has been obtained.
-        </p>
+        <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+          {/* Issue#105: 13 years minimum age (COPPA aligned) */}
+          <li>
+            The Service is intended for users aged <span className="font-semibold">13 years</span> of age or older. Persons under 13 years of age may not use the Service. If the Operator becomes aware that a person under 13 has registered, the Operator will delete the account and related data.
+          </li>
+          <li>
+            Minors aged 13 or older but under 18 must obtain consent from a legal guardian (parent) before using the Service. If a minor uses the Service, it shall be deemed that consent of a legal guardian has been obtained.
+          </li>
+          <li>
+            Inquiries from guardians regarding registration of children under 13 should be sent to the contact endpoint described in Article 18.
+          </li>
+        </ol>
       </section>
 
       <section>
@@ -422,7 +437,7 @@ export function PrivacyContentEn() {
           <li><span className="font-semibold">Right to rectification</span>: The right to request correction of inaccurate personal data.</li>
           <li><span className="font-semibold">Right to erasure (right to be forgotten)</span>: The right to request deletion of your personal data.</li>
           <li><span className="font-semibold">Right to restriction of processing</span>: The right to request restriction of processing of your personal data.</li>
-          <li><span className="font-semibold">Right to data portability</span>: The right to receive your personal data in a structured, machine-readable format.</li>
+          <li><span className="font-semibold">Right to data portability</span>: The right to receive your personal data in a structured, machine-readable format. To exercise this right, please contact the endpoint described in Article 18 and the Operator will export your data and provide it to you (request-based operation).</li>
           <li><span className="font-semibold">Right to object</span>: The right to object to processing based on legitimate interests.</li>
           <li><span className="font-semibold">Right to withdraw consent</span>: The right to withdraw consent at any time for consent-based processing (you can withdraw cookie consent by clearing this site&apos;s data from your browser settings, which will cause the cookie consent banner to reappear).</li>
         </ul>
@@ -430,6 +445,10 @@ export function PrivacyContentEn() {
 
       <section>
         <h2 className="mb-3">Article 17 (International Data Transfers)</h2>
+        <p className="text-sm text-gray-700 mb-2">
+          {/* Issue#105: International user notice */}
+          The Service is provided by an operator based in Japan and is accessible worldwide. Even when accessed from outside Japan, your personal data is transferred to and processed on servers located in Japan.
+        </p>
         <p className="text-sm text-gray-700 mb-2">
           Your personal data may be transferred to the following regions as necessary for providing the Service:
         </p>
@@ -439,6 +458,10 @@ export function PrivacyContentEn() {
         </ul>
         <p className="text-sm text-gray-700 mt-2">
           These service providers implement appropriate data protection measures in accordance with their respective privacy policies and data processing agreements.
+        </p>
+        <p className="text-sm text-gray-700 mt-2">
+          {/* Issue#105: Respect rights under user's country of residence */}
+          If you have additional rights under the law of your country of residence that are not described in this Policy, the Operator will respect those rights and respond in accordance with applicable law.
         </p>
       </section>
 
@@ -456,7 +479,7 @@ export function PrivacyContentEn() {
       <section className="pt-6 border-t">
         <p className="text-sm text-gray-500">
           Enacted: February 16, 2026<br />
-          Last revised: April 20, 2026 (Added provisions on Social Sign-In)
+          Last revised: May 1, 2026 (Updated to international version: minimum age requirement, retention disclosure, data portability process clarification, Do Not Sell declaration, international user notice)
         </p>
       </section>
     </div>
