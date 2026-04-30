@@ -182,4 +182,41 @@ class ProfileServiceTest {
         assertThat(CodeConstants.PLATFORM_THREADS).isEqualTo(605);
         assertThat(CodeConstants.PLATFORM_THREADS).isBetween(600, 699);
     }
+
+    // ===== Issue#100: タグベース孤立ファイル対応 =====
+
+    @Test
+    @DisplayName("Issue#100 - updateProfileImage: ユーザー保存前にタグを status=registered に更新する")
+    void testUpdateProfileImage_UpdatesTagToRegisteredBeforeUserSave() {
+        String objectKey = "profile-images/" + testUser.getId() + "/issue100-test.jpg";
+
+        profileService.updateProfileImage(testUser.getEmail(), objectKey);
+
+        // タグが registered に更新されたことを検証
+        org.mockito.Mockito.verify(s3Service).updateObjectTag(
+                objectKey,
+                S3Service.STATUS_TAG_KEY,
+                S3Service.STATUS_TAG_VALUE_REGISTERED
+        );
+    }
+
+    @Test
+    @DisplayName("Issue#100 - updateProfileImage: タグ更新が失敗した場合はユーザー保存を行わずエラーを返す")
+    void testUpdateProfileImage_TagUpdateFails_DoesNotSaveUserAndThrows() {
+        org.mockito.Mockito.doThrow(new RuntimeException("S3 tag update failed"))
+                .when(s3Service).updateObjectTag(
+                        org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_KEY),
+                        org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_VALUE_REGISTERED)
+                );
+
+        String objectKey = "profile-images/" + testUser.getId() + "/issue100-fail.jpg";
+
+        assertThatThrownBy(() -> profileService.updateProfileImage(testUser.getEmail(), objectKey))
+                .isInstanceOf(RuntimeException.class);
+
+        // ユーザーレコードに profileImageS3Key がセットされていない（変更されていない）ことを検証
+        User reloaded = userRepository.findByEmail(testUser.getEmail()).orElseThrow();
+        assertThat(reloaded.getProfileImageS3Key()).isNotEqualTo(objectKey);
+    }
 }

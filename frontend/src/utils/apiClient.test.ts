@@ -5,8 +5,8 @@
  * - 既存コンストラクタ呼び出し (message, status) は後方互換で動作
  */
 
-import { describe, it, expect } from 'vitest'
-import { ApiError } from './apiClient'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { ApiError, uploadFileToS3, S3_TAG_HEADER_NAME, S3_TAG_HEADER_VALUE_PENDING } from './apiClient'
 
 describe('ApiError (Issue#96 拡張)', () => {
   describe('コンストラクタ', () => {
@@ -106,6 +106,47 @@ describe('ApiError (Issue#96 拡張)', () => {
     it('responseData に errors フィールドが無い場合は undefined', () => {
       const err = new ApiError('Bad Request', 400, undefined, { message: 'foo' })
       expect(err.getFieldErrorMessage('username')).toBeUndefined()
+    })
+  })
+})
+
+describe('Issue#100 - S3 タグベース孤立ファイル対応', () => {
+  describe('定数', () => {
+    it('S3_TAG_HEADER_NAME が "x-amz-tagging" として定義されている', () => {
+      expect(S3_TAG_HEADER_NAME).toBe('x-amz-tagging')
+    })
+
+    it('S3_TAG_HEADER_VALUE_PENDING が "status=pending" として定義されている', () => {
+      expect(S3_TAG_HEADER_VALUE_PENDING).toBe('status=pending')
+    })
+  })
+
+  describe('uploadFileToS3', () => {
+    let originalFetch: typeof globalThis.fetch
+    let fetchMock: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      originalFetch = globalThis.fetch
+      fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 })
+      globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch
+    })
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch
+    })
+
+    it('S3 への PUT リクエストに x-amz-tagging: status=pending ヘッダーが含まれる', async () => {
+      const blob = new Blob(['test'], { type: 'image/jpeg' })
+
+      await uploadFileToS3('https://example.com/upload', blob)
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      const callArgs = fetchMock.mock.calls[0]
+      const init = callArgs[1] as RequestInit
+      const headers = init.headers as Record<string, string>
+
+      // 文字列リテラルで明示的に検証（undefined === undefined の false-pass を防ぐ）
+      expect(headers['x-amz-tagging']).toBe('status=pending')
     })
   })
 })

@@ -14,6 +14,9 @@ from lambda_function import (
     lambda_handler,
     generate_thumbnail_key,
     should_process,
+    STATUS_TAG_KEY,
+    STATUS_TAG_VALUE_PENDING,
+    STATUS_TAG_VALUE_REGISTERED,
 )
 
 TEST_BUCKET = "photlas-uploads-test"
@@ -201,3 +204,105 @@ class TestLambdaHandler:
 
         assert result["statusCode"] == 200
         mock_s3.get_object.assert_not_called()
+
+
+class TestIssue100TagConstants:
+    """Issue#100 - タグ定数の定義。"""
+
+    def test_status_tag_key(self):
+        """STATUS_TAG_KEY が "status" として定義されている。"""
+        assert STATUS_TAG_KEY == "status"
+
+    def test_status_tag_value_pending(self):
+        """STATUS_TAG_VALUE_PENDING が "pending" として定義されている。"""
+        assert STATUS_TAG_VALUE_PENDING == "pending"
+
+    def test_status_tag_value_registered(self):
+        """STATUS_TAG_VALUE_REGISTERED が "registered" として定義されている。"""
+        assert STATUS_TAG_VALUE_REGISTERED == "registered"
+
+
+class TestIssue100TagCopy:
+    """Issue#100 - 元画像のタグをサムネイルに付与するテスト。"""
+
+    @patch("lambda_function.s3_client")
+    def test_thumbnail_inherits_pending_tag_from_source(self, mock_s3):
+        """元画像のタグが pending の場合、サムネイルにも pending タグが付与される。"""
+        jpeg_bytes = create_test_image(800, 600)
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes))
+        }
+        # get_object_tagging: 1回目は元画像 pending、2回目（二重チェック）も pending
+        mock_s3.get_object_tagging.return_value = {
+            "TagSet": [{"Key": "status", "Value": "pending"}]
+        }
+        mock_s3.put_object.return_value = {}
+
+        lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
+
+        # put_object 呼び出し時に Tagging="status=pending" が含まれること
+        call_args = mock_s3.put_object.call_args
+        assert call_args[1].get("Tagging") == "status=pending"
+
+    @patch("lambda_function.s3_client")
+    def test_thumbnail_inherits_registered_tag_from_source(self, mock_s3):
+        """元画像のタグが registered の場合、サムネイルにも registered タグが付与される。"""
+        jpeg_bytes = create_test_image(800, 600)
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes))
+        }
+        mock_s3.get_object_tagging.return_value = {
+            "TagSet": [{"Key": "status", "Value": "registered"}]
+        }
+        mock_s3.put_object.return_value = {}
+
+        lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
+
+        call_args = mock_s3.put_object.call_args
+        assert call_args[1].get("Tagging") == "status=registered"
+
+
+class TestIssue100DoubleCheck:
+    """Issue#100 - サムネイル書き込み後の二重チェックのテスト。"""
+
+    @patch("lambda_function.s3_client")
+    def test_double_check_updates_thumbnail_tag_when_source_changed(self, mock_s3):
+        """元画像のタグが書き込み中に変わった場合、サムネイルのタグを更新する。"""
+        jpeg_bytes = create_test_image(800, 600)
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes))
+        }
+        # get_object_tagging を順次返す: 1回目は pending、2回目（二重チェック）は registered
+        mock_s3.get_object_tagging.side_effect = [
+            {"TagSet": [{"Key": "status", "Value": "pending"}]},      # 1回目: 書き込み前
+            {"TagSet": [{"Key": "status", "Value": "registered"}]},   # 2回目: 書き込み後（変化）
+        ]
+        mock_s3.put_object.return_value = {}
+        mock_s3.put_object_tagging.return_value = {}
+
+        lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
+
+        # 二重チェック後、サムネイルのタグを registered に更新する put_object_tagging が呼ばれる
+        mock_s3.put_object_tagging.assert_called_once()
+        call_args = mock_s3.put_object_tagging.call_args
+        assert call_args[1]["Key"] == "thumbnails/uploads/1/test.webp"
+        tag_set = call_args[1]["Tagging"]["TagSet"]
+        assert {"Key": "status", "Value": "registered"} in tag_set
+
+    @patch("lambda_function.s3_client")
+    def test_double_check_does_not_update_when_source_unchanged(self, mock_s3):
+        """元画像のタグが変わっていない場合、サムネイルのタグ更新は呼ばれない。"""
+        jpeg_bytes = create_test_image(800, 600)
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes))
+        }
+        mock_s3.get_object_tagging.return_value = {
+            "TagSet": [{"Key": "status", "Value": "pending"}]
+        }
+        mock_s3.put_object.return_value = {}
+        mock_s3.put_object_tagging.return_value = {}
+
+        lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
+
+        # 二重チェックでタグ変化がないので put_object_tagging は呼ばれない
+        mock_s3.put_object_tagging.assert_not_called()
