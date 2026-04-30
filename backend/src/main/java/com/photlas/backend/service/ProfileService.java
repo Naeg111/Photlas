@@ -112,6 +112,13 @@ public class ProfileService {
             throw new IllegalArgumentException("不正なオブジェクトキーです");
         }
 
+        // Issue#100: ユーザー保存の前にタグを registered に更新する。
+        // タグ更新が失敗した場合はユーザー保存を行わずエラーを返す。
+        s3Service.updateObjectTag(
+                objectKey,
+                S3Service.STATUS_TAG_KEY,
+                S3Service.STATUS_TAG_VALUE_REGISTERED);
+
         user.setProfileImageS3Key(objectKey);
         userRepository.save(user);
 

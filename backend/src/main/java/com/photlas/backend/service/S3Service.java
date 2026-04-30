@@ -8,6 +8,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest;
+import software.amazon.awssdk.services.s3.model.Tag;
+import software.amazon.awssdk.services.s3.model.Tagging;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
@@ -29,6 +32,14 @@ public class S3Service {
 
     /** アバター・プロフィール画像の最大ファイルサイズ（5MB） */
     private static final long MAX_AVATAR_UPLOAD_SIZE = 5L * 1024 * 1024;
+
+    // Issue#100: S3 タグベース孤立ファイル対応
+    /** タグキー: アップロード状態を表す */
+    public static final String STATUS_TAG_KEY = "status";
+    /** タグ値: アップロード完了済みだがメタデータ未登録（孤立ファイル候補） */
+    public static final String STATUS_TAG_VALUE_PENDING = "pending";
+    /** タグ値: メタデータ登録済み（保持対象） */
+    public static final String STATUS_TAG_VALUE_REGISTERED = "registered";
 
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
@@ -57,10 +68,13 @@ public class S3Service {
                 .credentialsProvider(DefaultCredentialsProvider.create())
                 .build()) {
 
+            // Issue#100: presigned URL に status=pending タグを付与
+            // フロントエンドはアップロード時に x-amz-tagging: status=pending ヘッダーを送る必要がある
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(objectKey)
                     .contentType(contentType)
+                    .tagging(STATUS_TAG_KEY + "=" + STATUS_TAG_VALUE_PENDING)
                     .build();
 
             PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
@@ -135,6 +149,36 @@ public class S3Service {
             return true;
         } catch (software.amazon.awssdk.services.s3.model.NoSuchKeyException e) {
             return false;
+        }
+    }
+
+    /**
+     * Issue#100: S3オブジェクトのタグを更新する
+     *
+     * 単一のキー/値ペアでオブジェクトタギングを上書きする。
+     * メタデータ登録成功時に status=registered へ更新するなどの用途で使用する。
+     *
+     * @param s3ObjectKey 対象 S3 オブジェクトキー
+     * @param tagKey タグキー（例: "status"）
+     * @param tagValue タグ値（例: "registered"）
+     */
+    public void updateObjectTag(String s3ObjectKey, String tagKey, String tagValue) {
+        try (S3Client s3Client = S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build()) {
+
+            Tagging tagging = Tagging.builder()
+                    .tagSet(Tag.builder().key(tagKey).value(tagValue).build())
+                    .build();
+
+            PutObjectTaggingRequest taggingRequest = PutObjectTaggingRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3ObjectKey)
+                    .tagging(tagging)
+                    .build();
+
+            s3Client.putObjectTagging(taggingRequest);
         }
     }
 
