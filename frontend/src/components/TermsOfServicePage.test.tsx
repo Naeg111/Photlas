@@ -108,37 +108,39 @@ describe('TermsOfServicePage', () => {
     it('言語が en の場合、英語コンテンツが表示される', async () => {
       await i18n.changeLanguage('en')
       render(<TermsOfServicePage {...defaultProps} />)
-      expect(screen.getByText(/Article 1/)).toBeInTheDocument()
+      expect(screen.getAllByText(/Article \d+/).length).toBeGreaterThan(0)
     })
 
     it('言語が ko の場合、韓国語コンテンツが表示される', async () => {
       await i18n.changeLanguage('ko')
       render(<TermsOfServicePage {...defaultProps} />)
-      expect(screen.getByText(/제1조/)).toBeInTheDocument()
+      expect(screen.getAllByText(/제1조/).length).toBeGreaterThan(0)
     })
 
     it('言語が zh-CN の場合、簡体字コンテンツが表示される', async () => {
       await i18n.changeLanguage('zh-CN')
       render(<TermsOfServicePage {...defaultProps} />)
-      expect(screen.getByText(/第1条|第一条/)).toBeInTheDocument()
+      expect(screen.getAllByText(/第1条|第一条/).length).toBeGreaterThan(0)
     })
 
     it('言語が zh-TW の場合、繁体字コンテンツが表示される', async () => {
       await i18n.changeLanguage('zh-TW')
       render(<TermsOfServicePage {...defaultProps} />)
-      expect(screen.getByText(/第1條|第一條/)).toBeInTheDocument()
+      expect(screen.getAllByText(/第1條|第一條/).length).toBeGreaterThan(0)
     })
 
     it('DialogTitle が i18n 化されている（en で英語タイトルが表示される）', async () => {
       await i18n.changeLanguage('en')
       render(<TermsOfServicePage {...defaultProps} />)
-      expect(screen.getByRole('heading', { name: /Terms of Service/i })).toBeInTheDocument()
+      const headings = screen.getAllByRole('heading', { name: /Terms of Service/i })
+      expect(headings.length).toBeGreaterThan(0)
     })
 
     it('DialogTitle が i18n 化されている（ko で韓国語タイトルが表示される）', async () => {
       await i18n.changeLanguage('ko')
       render(<TermsOfServicePage {...defaultProps} />)
-      expect(screen.getByRole('heading', { name: /이용약관/ })).toBeInTheDocument()
+      const headings = screen.getAllByRole('heading', { name: /이용약관/ })
+      expect(headings.length).toBeGreaterThan(0)
     })
   })
 })

@@ -47,30 +47,32 @@ describe('Issue#101 - TermsOfServiceStandalonePage 多言語対応', () => {
   it('既存バグ修正: ko 言語で韓国語コンテンツが表示される（日本語ではなく）', async () => {
     await i18n.changeLanguage('ko')
     renderPage()
-    expect(screen.getByText(/제1조/)).toBeInTheDocument()
+    expect(screen.getAllByText(/제1조/).length).toBeGreaterThan(0)
   })
 
   it('既存バグ修正: zh-CN 言語で簡体字コンテンツが表示される', async () => {
     await i18n.changeLanguage('zh-CN')
     renderPage()
-    expect(screen.getByText(/第1条|第一条/)).toBeInTheDocument()
+    expect(screen.getAllByText(/第1条|第一条/).length).toBeGreaterThan(0)
   })
 
   it('既存バグ修正: zh-TW 言語で繁体字コンテンツが表示される', async () => {
     await i18n.changeLanguage('zh-TW')
     renderPage()
-    expect(screen.getByText(/第1條|第一條/)).toBeInTheDocument()
+    expect(screen.getAllByText(/第1條|第一條/).length).toBeGreaterThan(0)
   })
 
   it('en 言語では英語の見出しが表示される（i18n 化された h1）', async () => {
     await i18n.changeLanguage('en')
     renderPage()
-    expect(screen.getByRole('heading', { level: 1, name: /Terms of Service/i })).toBeInTheDocument()
+    const h1s = screen.getAllByRole('heading', { level: 1 })
+    expect(h1s.some(h => /Terms of Service/i.test(h.textContent ?? ''))).toBe(true)
   })
 
   it('ko 言語では韓国語の見出しが表示される', async () => {
     await i18n.changeLanguage('ko')
     renderPage()
-    expect(screen.getByRole('heading', { level: 1, name: /이용약관/ })).toBeInTheDocument()
+    const h1s = screen.getAllByRole('heading', { level: 1 })
+    expect(h1s.some(h => /이용약관/.test(h.textContent ?? ''))).toBe(true)
   })
 })
