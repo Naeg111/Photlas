@@ -2,21 +2,35 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { PrivacyContentJa } from '../components/PrivacyContentJa'
 import { PrivacyContentEn } from '../components/PrivacyContentEn'
+import { PrivacyContentKo } from '../components/PrivacyContentKo'
+import { PrivacyContentZhCN } from '../components/PrivacyContentZhCN'
+import { PrivacyContentZhTW } from '../components/PrivacyContentZhTW'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 /**
  * Issue#99 - プライバシーポリシーの単独ページ。
+ * Issue#101 - 5 言語対応 + ハードコード日本語の i18n 化、既存バグ修正
  *
  * Google OAuth 同意画面に登録するプライバシーポリシー URL
  * (https://photlas.jp/privacy-policy) が直接アクセス可能であることを保証する。
- * Dialog 版 ({@link import('../components/PrivacyPolicyPage').PrivacyPolicyPage})
- * は本文コンポーネント (PrivacyContentJa / PrivacyContentEn) を再利用する。
+ *
+ * 既存バグ: 旧実装の startsWith('en') 判定では ko / zh-CN / zh-TW のユーザーで
+ * 日本語が表示されていた（英語ですらフォールバックされていなかった）。
+ * 本対応で 5 言語対応の switch 方式に統一し、未対応言語は en にフォールバック。
  */
-export default function PrivacyPolicyStandalonePage() {
-  const { i18n } = useTranslation()
-  useDocumentTitle('プライバシーポリシー - Photlas')
+function selectPrivacyContent(language: string | undefined) {
+  switch (language) {
+    case 'ja': return <PrivacyContentJa />
+    case 'ko': return <PrivacyContentKo />
+    case 'zh-CN': return <PrivacyContentZhCN />
+    case 'zh-TW': return <PrivacyContentZhTW />
+    default: return <PrivacyContentEn />
+  }
+}
 
-  const isEnglish = i18n.language?.startsWith('en')
+export default function PrivacyPolicyStandalonePage() {
+  const { t, i18n } = useTranslation()
+  useDocumentTitle(`${t('auth.privacyPolicy')} - Photlas`)
 
   return (
     // index.css の html/body overflow:hidden を回避するため、
@@ -35,8 +49,9 @@ export default function PrivacyPolicyStandalonePage() {
       {/* 本文 */}
       <main className="flex-1">
         <article className="max-w-3xl mx-auto px-6 py-12">
-          <h1 className="text-3xl font-bold mb-8">プライバシーポリシー</h1>
-          {isEnglish ? <PrivacyContentEn /> : <PrivacyContentJa />}
+          {/* Issue#101: h1 を i18n 化 */}
+          <h1 className="text-3xl font-bold mb-8">{t('auth.privacyPolicy')}</h1>
+          {selectPrivacyContent(i18n.language)}
         </article>
       </main>
 
@@ -45,11 +60,12 @@ export default function PrivacyPolicyStandalonePage() {
         <div className="max-w-3xl mx-auto px-6 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-gray-600">
           <div>&copy; Photlas</div>
           <nav className="flex gap-4">
+            {/* Issue#101: フッターリンクを i18n 化 */}
             <Link to="/about" className="underline hover:text-gray-900">
-              Photlas について
+              {t('menu.about')}
             </Link>
             <a href="/terms-of-service" className="underline hover:text-gray-900">
-              利用規約
+              {t('auth.termsOfService')}
             </a>
           </nav>
         </div>

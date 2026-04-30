@@ -3,12 +3,18 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from './ui/scroll-area'
 import { TermsContentJa } from './TermsContentJa'
 import { TermsContentEn } from './TermsContentEn'
+import { TermsContentKo } from './TermsContentKo'
+import { TermsContentZhCN } from './TermsContentZhCN'
+import { TermsContentZhTW } from './TermsContentZhTW'
 
 /**
  * TermsOfServicePage コンポーネント
  * Issue#51: 利用規約の文面改訂
+ * Issue#101: 5 言語対応 + ハードコード日本語の i18n 化
  *
- * 利用規約を表示するダイアログ（言語設定に応じて日本語/英語を自動切替）
+ * 利用規約を表示するダイアログ。
+ * 言語設定に応じて 5 言語 (ja / en / ko / zh-CN / zh-TW) を切り替える。
+ * 未対応言語は en にフォールバックする。
  */
 
 interface TermsOfServicePageProps {
@@ -16,11 +22,21 @@ interface TermsOfServicePageProps {
   onOpenChange: (open: boolean) => void
 }
 
+function selectTermsContent(language: string | undefined) {
+  switch (language) {
+    case 'ja': return <TermsContentJa />
+    case 'ko': return <TermsContentKo />
+    case 'zh-CN': return <TermsContentZhCN />
+    case 'zh-TW': return <TermsContentZhTW />
+    default: return <TermsContentEn />
+  }
+}
+
 export function TermsOfServicePage({
   open,
   onOpenChange,
 }: Readonly<TermsOfServicePageProps>) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -28,9 +44,10 @@ export function TermsOfServicePage({
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            <DialogTitle>利用規約</DialogTitle>
+            {/* Issue#101: i18n 化（auth.termsOfService） */}
+            <DialogTitle>{t('auth.termsOfService')}</DialogTitle>
             <DialogDescription className="sr-only">
-              Photlasの利用規約
+              {t('auth.termsOfService')}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -38,7 +55,7 @@ export function TermsOfServicePage({
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-6 pb-6">
           <ScrollArea className="h-full pr-4 select-text">
-            {i18n.language === 'ja' ? <TermsContentJa /> : <TermsContentEn />}
+            {selectTermsContent(i18n.language)}
           </ScrollArea>
         </div>
       </DialogContent>
