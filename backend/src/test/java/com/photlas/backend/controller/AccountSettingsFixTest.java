@@ -9,12 +9,14 @@ import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.JwtService;
+import com.photlas.backend.service.S3Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -43,6 +45,10 @@ public class AccountSettingsFixTest {
     @Autowired private JwtService jwtService;
     @Autowired private RateLimitFilter rateLimitFilter;
     @Autowired private EmailVerificationTokenRepository emailVerificationTokenRepository;
+
+    // Issue#100: ProfileService.updateProfileImage が S3 タグ更新を呼ぶようになったため、
+    // S3 への実接続を防ぐためにモック化する
+    @MockBean private S3Service s3Service;
     @Autowired private PasswordResetTokenRepository passwordResetTokenRepository;
 
     private User testUser;

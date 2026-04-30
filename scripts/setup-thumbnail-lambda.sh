@@ -73,7 +73,9 @@ INLINE_POLICY=$(cat <<POLICY_EOF
       "Effect": "Allow",
       "Action": [
         "s3:GetObject",
-        "s3:PutObject"
+        "s3:PutObject",
+        "s3:GetObjectTagging",
+        "s3:PutObjectTagging"
       ],
       "Resource": "arn:aws:s3:::${S3_BUCKET}/*"
     }

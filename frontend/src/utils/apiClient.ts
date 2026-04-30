@@ -268,6 +268,16 @@ export async function getPhotoUploadUrl(request: UploadUrlRequest): Promise<Uplo
 }
 
 /**
+ * Issue#100: S3 タグベース孤立ファイル対応
+ *
+ * presigned URL は status=pending タグを必須とする署名で発行されているため、
+ * S3 への PUT リクエストには x-amz-tagging: status=pending ヘッダーが必須。
+ * バックエンド (S3Service)・Lambda・ライフサイクルルールスクリプトと値を揃える。
+ */
+export const S3_TAG_HEADER_NAME = 'x-amz-tagging'
+export const S3_TAG_HEADER_VALUE_PENDING = 'status=pending'
+
+/**
  * S3にファイルをアップロード
  * @param uploadUrl Presigned URL
  * @param file アップロードするファイル
@@ -278,6 +288,7 @@ export async function uploadFileToS3(uploadUrl: string, file: Blob): Promise<voi
     body: file,
     headers: {
       'Content-Type': file.type,
+      [S3_TAG_HEADER_NAME]: S3_TAG_HEADER_VALUE_PENDING,
     },
   })
 

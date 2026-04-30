@@ -124,6 +124,14 @@ public class PhotoService {
         LocalDateTime takenAt = LocalDateTime.parse(request.getTakenAt(), DateTimeFormatter.ISO_DATE_TIME);
         Integer weather = request.getWeather();
 
+        // Issue#100: DB 保存の前に元画像のタグを registered に更新する。
+        // タグ更新が失敗した場合は DB 保存を行わずエラーを返す
+        // （ファイルが pending タグのまま残れば、ライフサイクルルールで自動削除される）。
+        s3Service.updateObjectTag(
+                request.getS3ObjectKey(),
+                S3Service.STATUS_TAG_KEY,
+                S3Service.STATUS_TAG_VALUE_REGISTERED);
+
         // 4. 写真の保存
         Photo photo = new Photo();
         photo.setSpotId(spot.getSpotId());
@@ -154,8 +162,35 @@ public class PhotoService {
         logger.info("写真を投稿しました: photoId={}, userId={}, spotId={}",
                    savedPhoto.getPhotoId(), user.getId(), spot.getSpotId());
 
+        // Issue#100: サムネイルのタグもベストエフォートで registered に更新する。
+        // Lambda が先にサムネイルを生成済みであれば即座に追従し、まだ未生成なら本処理は失敗するが
+        // その場合は Lambda 側が二重チェック方式で源画像の registered タグをコピーする。
+        String thumbnailKey = deriveThumbnailKey(request.getS3ObjectKey());
+        try {
+            s3Service.updateObjectTag(
+                    thumbnailKey,
+                    S3Service.STATUS_TAG_KEY,
+                    S3Service.STATUS_TAG_VALUE_REGISTERED);
+        } catch (Exception e) {
+            logger.info("サムネイルのタグ更新をスキップ（未生成または一時エラー）: thumbnailKey={}, reason={}",
+                       thumbnailKey, e.getMessage());
+        }
+
         // 5. レスポンスの構築（新規投稿なのでis_favoritedはfalse）
         return buildPhotoResponse(savedPhoto, spot, user, false);
+    }
+
+    /**
+     * Issue#100: 元画像 S3 キーからサムネイル S3 キーを導出する。
+     * 命名規則: uploads/1/abc.jpg → thumbnails/uploads/1/abc.webp
+     */
+    private String deriveThumbnailKey(String originalKey) {
+        if (originalKey == null) {
+            return null;
+        }
+        int dotIndex = originalKey.lastIndexOf('.');
+        String baseName = dotIndex > 0 ? originalKey.substring(0, dotIndex) : originalKey;
+        return "thumbnails/" + baseName + ".webp";
     }
 
     /**

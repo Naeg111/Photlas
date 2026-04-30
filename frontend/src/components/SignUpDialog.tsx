@@ -12,7 +12,7 @@ import { Upload, Eye, EyeOff } from 'lucide-react'
 import { SnsLinkEditDialog } from './SnsLinkEditDialog'
 import { API_V1_URL } from '../config/api'
 import { toast } from 'sonner'
-import { ApiError } from '../utils/apiClient'
+import { ApiError, S3_TAG_HEADER_NAME, S3_TAG_HEADER_VALUE_PENDING } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
 import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
@@ -149,6 +149,10 @@ export function SignUpDialog({
       await fetch(uploadUrl, {
         method: 'PUT',
         body: file,
+        headers: {
+          // Issue#100: presigned URL の署名と整合させるため必須
+          [S3_TAG_HEADER_NAME]: S3_TAG_HEADER_VALUE_PENDING,
+        },
       })
 
       await fetch(`${API_V1_URL}/users/me/profile-image`, {
