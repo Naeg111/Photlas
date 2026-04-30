@@ -136,8 +136,10 @@ echo "=== SNS Topic への Lambda Subscribe ==="
 
 subscribe_lambda_to_sns() {
     local lambda_arn=$1
-    # 既に subscribe 済みの場合は冪等に処理する
-    local existing=$(aws sns list-subscriptions-by-topic \
+    # 既に subscribe 済みの場合は冪等に処理する。
+    # 宣言と代入を分けるのは aws CLI の終了コードを失わせないため (SC2155 対応)。
+    local existing
+    existing=$(aws sns list-subscriptions-by-topic \
         --topic-arn "$SNS_TOPIC_ARN" \
         --region "$REGION" \
         --query "Subscriptions[?Endpoint=='${lambda_arn}'].SubscriptionArn" \
