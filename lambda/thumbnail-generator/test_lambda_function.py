@@ -306,3 +306,75 @@ class TestIssue100DoubleCheck:
 
         # 二重チェックでタグ変化がないので put_object_tagging は呼ばれない
         mock_s3.put_object_tagging.assert_not_called()
+
+
+def create_sns_wrapped_s3_event(key, bucket=TEST_BUCKET):
+    """S3 イベントを SNS でラップした Lambda イベントを生成する。
+
+    setup-s3-notifications.sh の修正で S3 → SNS → Lambda となった場合の
+    Lambda が受け取るイベント形式。
+    """
+    import json as _json
+    s3_event = create_s3_event(key, bucket)
+    return {
+        "Records": [{
+            "EventSource": "aws:sns",
+            "EventVersion": "1.0",
+            "EventSubscriptionArn": "arn:aws:sns:ap-northeast-1:111111111111:photlas-s3-uploads-test:dummy-sub",
+            "Sns": {
+                "Type": "Notification",
+                "MessageId": "dummy-message-id",
+                "TopicArn": "arn:aws:sns:ap-northeast-1:111111111111:photlas-s3-uploads-test",
+                "Subject": "Amazon S3 Notification",
+                "Message": _json.dumps(s3_event),
+                "Timestamp": "2026-05-01T00:00:00.000Z",
+            }
+        }]
+    }
+
+
+class TestSnsWrappedEvent:
+    """SNS ファンアウト経由でイベントを受け取った場合のテスト。
+
+    setup-s3-notifications.sh の修正で S3 → SNS → 複数 Lambda の構成にした際、
+    Lambda が SNS でラップされたイベントを受け取れるよう正規化する必要がある。
+    """
+
+    @patch("lambda_function.s3_client")
+    def test_sns_wrapped_event_processed_correctly(self, mock_s3):
+        """SNS ラッパー経由の S3 イベントでも、サムネイルが生成される。"""
+        jpeg_bytes = create_test_image(800, 600)
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes))
+        }
+        mock_s3.get_object_tagging.return_value = {
+            "TagSet": [{"Key": "status", "Value": "pending"}]
+        }
+        mock_s3.put_object.return_value = {}
+
+        result = lambda_handler(
+            create_sns_wrapped_s3_event("uploads/1/test.jpg"), None
+        )
+
+        assert result["statusCode"] == 200
+        # サムネイル生成のための put_object が呼ばれていること
+        mock_s3.put_object.assert_called_once()
+        call_args = mock_s3.put_object.call_args
+        assert call_args[1]["Key"] == "thumbnails/uploads/1/test.webp"
+
+    @patch("lambda_function.s3_client")
+    def test_direct_s3_event_still_works(self, mock_s3):
+        """直接の S3 イベント（後方互換）も従来どおり処理される。"""
+        jpeg_bytes = create_test_image(800, 600)
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes))
+        }
+        mock_s3.get_object_tagging.return_value = {
+            "TagSet": [{"Key": "status", "Value": "pending"}]
+        }
+        mock_s3.put_object.return_value = {}
+
+        result = lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
+
+        assert result["statusCode"] == 200
+        mock_s3.put_object.assert_called_once()
