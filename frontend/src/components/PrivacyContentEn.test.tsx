@@ -69,3 +69,57 @@ describe('PrivacyContentEn - Issue#99 Google scope minimization', () => {
     expect(text).toContain('LINE: email address, display name, LINE user ID')
   })
 })
+
+/**
+ * Issue#105: International upgrade.
+ * Add provisions following industry best practices for international users.
+ */
+describe('PrivacyContentEn - Issue#105 International upgrade', () => {
+  // A. Article 12 - 13 years minimum age
+  it('Article 12 states the 13 years of age requirement', () => {
+    const { container } = render(<PrivacyContentEn />)
+    const text = container.textContent ?? ''
+    expect(text).toContain('13 years')
+  })
+
+  // B. Article 11 - 180-day retention for moderated photos
+  it('Article 11 discloses 180-day retention for moderated photos', () => {
+    const { container } = render(<PrivacyContentEn />)
+    const text = container.textContent ?? ''
+    expect(text).toContain('180 days')
+    expect(text).toMatch(/moderation[\s\S]*?180 days|180 days[\s\S]*?moderation/i)
+  })
+
+  // C. Article 16 - Data portability via request
+  it('Article 16 clarifies data portability is exercised via the contact endpoint', () => {
+    const { container } = render(<PrivacyContentEn />)
+    const text = container.textContent ?? ''
+    expect(text).toContain('data portability')
+    // Reference to Article 18 contact endpoint
+    expect(text).toMatch(/data portability[\s\S]*?Article 18/i)
+  })
+
+  // D. Article 6 - Do Not Sell declaration
+  it('Article 6 contains Do Not Sell declaration', () => {
+    const { container } = render(<PrivacyContentEn />)
+    const text = container.textContent ?? ''
+    expect(text).toMatch(/do not sell[\s\S]*?personal information|personal information[\s\S]*?not sell/i)
+  })
+
+  // E. Article 17 - International user notice
+  it('Article 17 contains international user notice', () => {
+    const { container } = render(<PrivacyContentEn />)
+    const text = container.textContent ?? ''
+    // Operator is based in Japan
+    expect(text).toMatch(/based in Japan|Japanese (?:entity|operator)/i)
+    // Respect user's country-of-residence rights
+    expect(text).toMatch(/country of residence|country where you reside/i)
+  })
+
+  // Last revised: international version update
+  it('Last revised note indicates international version update', () => {
+    const { container } = render(<PrivacyContentEn />)
+    const text = container.textContent ?? ''
+    expect(text).toMatch(/international version|international upgrade/i)
+  })
+})
