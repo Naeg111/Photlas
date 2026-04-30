@@ -69,3 +69,60 @@ describe('PrivacyContentJa - Issue#99 Google scope minimization', () => {
     expect(text).toContain('LINE：メールアドレス、表示名、LINE ユーザーID')
   })
 })
+
+/**
+ * Issue#105: 国際対応版への格上げ。
+ * 海外プロモーション (Product Hunt 等) に向けて、業界標準のベストプラクティスに
+ * 沿った条項をプライバシーポリシーに追加する。
+ */
+describe('PrivacyContentJa - Issue#105 国際対応版への格上げ', () => {
+  // A. 第12条 - 最低利用年齢 13 歳の明示
+  it('第12条に「13歳以上」の利用制限が明記されている', () => {
+    const { container } = render(<PrivacyContentJa />)
+    const text = container.textContent ?? ''
+    expect(text).toContain('13歳以上')
+  })
+
+  // B. 第11条 - モデレーション削除写真の 180 日保持
+  it('第11条にモデレーション削除写真の 180 日保持が明記されている', () => {
+    const { container } = render(<PrivacyContentJa />)
+    const text = container.textContent ?? ''
+    expect(text).toContain('180日')
+    // モデレーションによる削除と関連付けて記載されていること
+    expect(text).toMatch(/モデレーション[\s\S]*?180日|180日[\s\S]*?モデレーション/)
+  })
+
+  // C. 第16条 - データポータビリティの運用方針明示
+  it('第16条のデータポータビリティ権が「お問い合わせ窓口に連絡」のリクエストベース運用として記述されている', () => {
+    const { container } = render(<PrivacyContentJa />)
+    const text = container.textContent ?? ''
+    // データポータビリティ権の宣言は維持
+    expect(text).toContain('データポータビリティ')
+    // お問い合わせ窓口経由のリクエスト運用が明記されている
+    expect(text).toMatch(/データポータビリティ[\s\S]*?第18条のお問い合わせ窓口/)
+  })
+
+  // D. 第6条 - 「Do Not Sell」宣言
+  it('第6条に「個人情報を第三者に販売しません」の宣言が追記されている', () => {
+    const { container } = render(<PrivacyContentJa />)
+    const text = container.textContent ?? ''
+    expect(text).toContain('個人情報を第三者に販売しません')
+  })
+
+  // E. 第17条 - 国際ユーザー向け注記
+  it('第17条に国際ユーザー向けの包括的注意書きが追記されている', () => {
+    const { container } = render(<PrivacyContentJa />)
+    const text = container.textContent ?? ''
+    // 日本に拠点を置く事業者として世界中からアクセス可能である旨
+    expect(text).toContain('日本に拠点')
+    // ユーザー居住国の法律に基づく権利を尊重する旨
+    expect(text).toContain('居住する国の法律')
+  })
+
+  // 改定日: 国際対応版への更新が反映されている
+  it('最終改定日に「国際対応版へ更新」と記載されている', () => {
+    const { container } = render(<PrivacyContentJa />)
+    const text = container.textContent ?? ''
+    expect(text).toContain('国際対応版へ更新')
+  })
+})
