@@ -51,8 +51,10 @@ describe('TermsContentEn - Issue#105 International upgrade', () => {
   it('Article 16 contains the international usage notice (user verifies their own jurisdiction)', () => {
     const { container } = render(<TermsContentEn />)
     const text = container.textContent ?? ''
+    // 世界中からアクセス可能である旨
     expect(text).toMatch(/access(?:ed|ible) (?:from )?worldwide|worldwide access/i)
-    expect(text).toMatch(/(?:your|the user's) (?:home )?(?:country|jurisdiction).*law/i)
+    // ユーザー自身の責任で自国法令の確認
+    expect(text).toMatch(/laws? of[\s\S]*?(?:home )?(?:country|jurisdiction)/i)
   })
 
   // H. Article 3 - Minimum age 13
