@@ -75,6 +75,14 @@ public class PhotoServiceTest {
         org.mockito.Mockito.when(s3Service.existsInS3(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
         org.mockito.Mockito.when(s3Service.generateCdnUrl(org.mockito.ArgumentMatchers.anyString())).thenReturn("https://cdn.example.com/test.jpg");
         org.mockito.Mockito.when(s3Service.generateThumbnailCdnUrl(org.mockito.ArgumentMatchers.anyString())).thenReturn("https://cdn.example.com/thumb.webp");
+        // Issue#100: deriveThumbnailKey は実ロジックと同じ命名規則をモックでも返す
+        org.mockito.Mockito.when(s3Service.deriveThumbnailKey(org.mockito.ArgumentMatchers.anyString()))
+                .thenAnswer(inv -> {
+                    String key = inv.getArgument(0);
+                    int dot = key.lastIndexOf('.');
+                    String base = dot > 0 ? key.substring(0, dot) : key;
+                    return "thumbnails/" + base + ".webp";
+                });
 
         // クリーンアップ
         accountSanctionRepository.deleteAll();
