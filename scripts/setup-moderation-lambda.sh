@@ -17,6 +17,11 @@ ENV=${1:-test}
 REGION="ap-northeast-1"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
+# スクリプトのある場所を絶対パスで保持。
+# 後段で複数回 cd するため、相対パス (dirname "$0") を毎回使うと cd 後に
+# 解決失敗する（既知バグ修正）。
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # 環境別設定
 if [ "$ENV" = "prod" ]; then
     S3_BUCKET="photlas-uploads-prod-${ACCOUNT_ID}"
@@ -113,7 +118,7 @@ sleep 10
 # --- スキャン用Lambda作成 ---
 echo "=== スキャン用Lambda作成 ==="
 
-cd "$(dirname "$0")/../lambda/moderation-scanner"
+cd "$SCRIPT_DIR/../lambda/moderation-scanner"
 zip -j /tmp/moderation-scanner.zip lambda_function.py
 
 aws lambda create-function \
@@ -196,7 +201,7 @@ echo "S3イベント通知設定完了"
 # --- 監視用Lambda作成 ---
 echo "=== 監視用Lambda作成 ==="
 
-cd "$(dirname "$0")/../lambda/moderation-monitor"
+cd "$SCRIPT_DIR/../lambda/moderation-monitor"
 zip -j /tmp/moderation-monitor.zip lambda_function.py
 
 aws lambda create-function \
