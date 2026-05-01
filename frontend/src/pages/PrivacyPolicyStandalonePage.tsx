@@ -6,6 +6,7 @@ import { PrivacyContentKo } from '../components/PrivacyContentKo'
 import { PrivacyContentZhCN } from '../components/PrivacyContentZhCN'
 import { PrivacyContentZhTW } from '../components/PrivacyContentZhTW'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
 
 /**
  * Issue#99 - プライバシーポリシーの単独ページ。
@@ -31,6 +32,7 @@ function selectPrivacyContent(language: string | undefined) {
 export default function PrivacyPolicyStandalonePage() {
   const { t, i18n } = useTranslation()
   useDocumentTitle(`${t('auth.privacyPolicy')} - Photlas`)
+  useCanonicalUrl('/privacy-policy')
 
   return (
     // index.css の html/body overflow:hidden を回避するため、

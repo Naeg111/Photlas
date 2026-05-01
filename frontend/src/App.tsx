@@ -47,6 +47,7 @@ import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto, ApiErr
 import { MODERATION_STATUS_PUBLISHED, MODERATION_STATUS_QUARANTINED, ROLE_ADMIN } from './utils/codeConstants'
 import { stripExif } from './utils/stripExif'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
+import { useCanonicalUrl } from './hooks/useCanonicalUrl'
 import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed, Search } from 'lucide-react'
 import { CompassIcon } from './components/CompassIcon'
 import { Button } from './components/ui/button'
@@ -916,6 +917,9 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
  * 「最低表示時間の経過」かつ「マップの読み込み完了」の両方を満たした時点で行う。
  */
 function MainApp() {
+  // SEO: トップページの canonical URL を https://photlas.jp/ として明示する
+  useCanonicalUrl('/')
+
   const [isLoading, setIsLoading] = useState(true)
   const isMapReadyRef = useRef(false)
   const isMinDurationPassedRef = useRef(false)
