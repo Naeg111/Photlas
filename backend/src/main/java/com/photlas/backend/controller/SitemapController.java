@@ -75,8 +75,11 @@ public class SitemapController {
         sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
 
         appendUrl(sb, frontendUrl + "/", "daily", "1.0");
-        appendUrl(sb, frontendUrl + "/terms", "monthly", "0.3");
-        appendUrl(sb, frontendUrl + "/privacy", "monthly", "0.3");
+        // Issue#106 修正: React Router のルート定義（/terms-of-service, /privacy-policy）と一致させる。
+        // 旧 URL（/terms, /privacy）はキャッチオールルートに該当して NotFoundPage が表示されるため、
+        // Search Console から「ページにリダイレクトがあります」として警告されていた。
+        appendUrl(sb, frontendUrl + "/terms-of-service", "monthly", "0.3");
+        appendUrl(sb, frontendUrl + "/privacy-policy", "monthly", "0.3");
 
         sb.append("</urlset>");
         return ResponseEntity.ok(sb.toString());

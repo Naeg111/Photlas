@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
 
 /**
  * Issue#99 - Photlas のランディング/概要ページ。
@@ -19,6 +20,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
  */
 export default function AboutPage() {
   useDocumentTitle('Photlas - 写真から行ってみたい場所が見つかる Web サービス')
+  useCanonicalUrl('/about')
 
   return (
     // index.css の html/body overflow:hidden を回避するため、

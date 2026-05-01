@@ -6,6 +6,7 @@ import { TermsContentKo } from '../components/TermsContentKo'
 import { TermsContentZhCN } from '../components/TermsContentZhCN'
 import { TermsContentZhTW } from '../components/TermsContentZhTW'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
 
 /**
  * Issue#99 - 利用規約の単独ページ。
@@ -30,6 +31,7 @@ function selectTermsContent(language: string | undefined) {
 export default function TermsOfServiceStandalonePage() {
   const { t, i18n } = useTranslation()
   useDocumentTitle(`${t('auth.termsOfService')} - Photlas`)
+  useCanonicalUrl('/terms-of-service')
 
   return (
     // index.css の html/body overflow:hidden を回避するため、
