@@ -2,6 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-# Sitemap は API サブドメイン経由で配信される（prod の photlas.jp CloudFront には
-# /api/* の ALB ビヘイビアが無く、photlas.jp/api/v1/sitemap.xml は SPA の HTML を返してしまうため）
-Sitemap: https://api.photlas.jp/api/v1/sitemap.xml
+Sitemap: https://photlas.jp/api/v1/sitemap.xml

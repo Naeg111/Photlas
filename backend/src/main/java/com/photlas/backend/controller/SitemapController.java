@@ -50,14 +50,16 @@ public class SitemapController {
         sb.append("<sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
 
         // 静的ページサイトマップ
+        // SEO 上、サイトマップ内 URL のドメインはサイト本体のドメインに揃えるのが自然なため
+        // backendUrl ではなく frontendUrl を使う（CloudFront の /api/* ビヘイビアで ALB に転送される）
         sb.append("  <sitemap>\n");
-        sb.append("    <loc>").append(backendUrl).append("/api/v1/sitemap-static.xml</loc>\n");
+        sb.append("    <loc>").append(frontendUrl).append("/api/v1/sitemap-static.xml</loc>\n");
         sb.append("  </sitemap>\n");
 
         // 写真サイトマップ（ページごと）
         for (int i = 0; i < totalPages; i++) {
             sb.append("  <sitemap>\n");
-            sb.append("    <loc>").append(backendUrl).append("/api/v1/sitemap-photos-").append(i).append(".xml</loc>\n");
+            sb.append("    <loc>").append(frontendUrl).append("/api/v1/sitemap-photos-").append(i).append(".xml</loc>\n");
             sb.append("  </sitemap>\n");
         }
 
