@@ -99,6 +99,25 @@ function createTransitionCompleter(
   }
 }
 const TRANSITION_TIMEOUT_MS = 5000
+
+/**
+ * Issue#106 リファクタリング: ワープアニメーション（フェードアウト → 瞬時ジャンプ → フェードイン）を実行する共通ヘルパー。
+ * centerOnUserLocation・flyToPlace（長距離分岐）・autoCenter で重複していた処理を抽出。
+ */
+function performWarpAnimation(
+  map: MapboxMap,
+  jumpToOptions: Parameters<MapboxMap['jumpTo']>[0],
+  setMapTransitioning: (v: boolean) => void,
+  setMapTransitionFading: (v: boolean) => void
+) {
+  setMapTransitioning(true)
+  const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading)
+  requestAnimationFrame(() => {
+    map.jumpTo(jumpToOptions)
+    map.once('idle', completeTransition)
+    setTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
+  })
+}
 /** マップ移動完了時のスポット取得デバウンス（ms） */
 const FETCH_SPOTS_DEBOUNCE_MS = 500
 const SHOOTING_PIN_SCALE = 1.4
@@ -494,13 +513,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 Math.pow(newLocation.lng - currentCenter.lng, 2) + Math.pow(newLocation.lat - currentCenter.lat, 2)
               )
               if (distance > LONG_DISTANCE_THRESHOLD) {
-                setMapTransitioning(true)
-                const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading)
-                requestAnimationFrame(() => {
-                  map.jumpTo({ center: [newLocation.lng, newLocation.lat] })
-                  map.once('idle', completeTransition)
-                  setTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
-                })
+                performWarpAnimation(
+                  map,
+                  { center: [newLocation.lng, newLocation.lat] },
+                  setMapTransitioning,
+                  setMapTransitionFading,
+                )
               } else {
                 map.flyTo({ center: [newLocation.lng, newLocation.lat] })
               }
@@ -577,13 +595,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       const padding = { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 }
 
       if (distance > LONG_DISTANCE_THRESHOLD) {
-        setMapTransitioning(true)
-        const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading)
-        requestAnimationFrame(() => {
-          map.jumpTo({ center: [lng, lat], zoom, padding })
-          map.once('idle', completeTransition)
-          setTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
-        })
+        performWarpAnimation(
+          map,
+          { center: [lng, lat], zoom, padding },
+          setMapTransitioning,
+          setMapTransitionFading,
+        )
       } else {
         map.flyTo({ center: [lng, lat], zoom, speed: 0.8, padding })
       }
@@ -601,15 +618,14 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       if (!map) return
 
       const warpToLocation = (lng: number, lat: number, zoom: number) => {
-        setMapTransitioning(true)
-        const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading)
-        requestAnimationFrame(() => {
-          // Mapbox の jumpTo は moveend イベントを発火するため、handleMoveEnd 経由で
-          // fetchSpots が呼ばれる（zoom > 0 のフィルタにより、autoCenter 後のズーム5～14で動作）
-          map.jumpTo({ center: [lng, lat], zoom })
-          map.once('idle', completeTransition)
-          setTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
-        })
+        // Mapbox の jumpTo は moveend イベントを発火するため、handleMoveEnd 経由で
+        // fetchSpots が呼ばれる（zoom > 0 のフィルタにより、autoCenter 後のズーム5～14で動作）
+        performWarpAnimation(
+          map,
+          { center: [lng, lat], zoom },
+          setMapTransitioning,
+          setMapTransitionFading,
+        )
       }
 
       // 1. ブラウザの位置情報APIを試行
