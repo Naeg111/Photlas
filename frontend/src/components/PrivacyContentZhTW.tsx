@@ -126,6 +126,8 @@ export function PrivacyContentZhTW() {
           <li>對違反使用條款行為的處理</li>
           <li>本服務的廣告、宣傳、推廣(投稿資料的利用)</li>
           <li>使用者諮詢的處理</li>
+          {/* Issue#106: 透過 IP 位址判定國家 */}
+          <li>基於 IP 位址判定使用者所在國家(用於最佳化地圖的初始顯示位置。IP 位址不會儲存在伺服器上,僅用於轉換為國家代碼)</li>
           <li>附屬於上述使用目的的目的</li>
         </ul>
       </section>
@@ -180,6 +182,12 @@ export function PrivacyContentZhTW() {
               <li>
                 <span className="font-semibold">Sentry</span>: 用於應用程式的錯誤監控。錯誤發生時傳送技術性錯誤資訊(僅傳送全部錯誤的一部分)。Sentry 的隱私政策請參閱{' '}
                 <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">此處</a>。
+              </li>
+              {/* Issue#106: MaxMind GeoLite2 (透過 IP 位址判定國家) */}
+              <li>
+                <span className="font-semibold">MaxMind GeoLite2</span>: 用於透過 IP 位址判定使用者所在國家,以最佳化地圖的初始顯示位置。判定處理在伺服器上執行,IP 位址僅用於轉換為國家代碼,不會被儲存。本服務使用 GeoLite2 資料(Includes GeoLite2 data created by MaxMind, available from{' '}
+                <a href="https://www.maxmind.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">https://www.maxmind.com</a>
+                )。
               </li>
             </ul>
           </li>
@@ -357,7 +365,7 @@ export function PrivacyContentZhTW() {
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
           <li><span className="font-semibold">同意</span>(GDPR 第6條1款(a)): Google Analytics 4 進行的存取分析。使用者可透過 Cookie 同意橫幅選擇同意或拒絕。</li>
           <li><span className="font-semibold">合約履行</span>(GDPR 第6條1款(b)): 帳戶管理、服務提供、地圖功能(Mapbox)的提供。</li>
-          <li><span className="font-semibold">正當利益</span>(GDPR 第6條1款(f)): 錯誤監控(Sentry)、不當使用的偵測和防止、服務安全性的確保。</li>
+          <li><span className="font-semibold">正當利益</span>(GDPR 第6條1款(f)): 錯誤監控(Sentry)、不當使用的偵測和防止、服務安全性的確保、基於 IP 位址判定國家以最佳化初始顯示位置(提升使用者便利性)。</li>
         </ul>
       </section>
 

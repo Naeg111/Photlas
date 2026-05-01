@@ -123,6 +123,8 @@ export function PrivacyContentZhCN() {
           <li>对违反使用条款行为的处理</li>
           <li>本服务的广告、宣传、推广(投稿数据的利用)</li>
           <li>用户咨询的处理</li>
+          {/* Issue#106: 通过 IP 地址判定国家 */}
+          <li>基于 IP 地址判定用户所在国家(用于优化地图的初始显示位置。IP 地址不会保存在服务器上,仅用于转换为国家代码)</li>
           <li>附属于上述使用目的的目的</li>
         </ul>
       </section>
@@ -177,6 +179,12 @@ export function PrivacyContentZhCN() {
               <li>
                 <span className="font-semibold">Sentry</span>: 用于应用程序的错误监控。错误发生时发送技术性错误信息(仅发送全部错误的一部分)。Sentry 的隐私政策请参阅{' '}
                 <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">此处</a>。
+              </li>
+              {/* Issue#106: MaxMind GeoLite2 (通过 IP 地址判定国家) */}
+              <li>
+                <span className="font-semibold">MaxMind GeoLite2</span>: 用于通过 IP 地址判定用户所在国家,以优化地图的初始显示位置。判定处理在服务器上执行,IP 地址仅用于转换为国家代码,不会被保存。本服务使用 GeoLite2 数据(Includes GeoLite2 data created by MaxMind, available from{' '}
+                <a href="https://www.maxmind.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">https://www.maxmind.com</a>
+                )。
               </li>
             </ul>
           </li>
@@ -354,7 +362,7 @@ export function PrivacyContentZhCN() {
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
           <li><span className="font-semibold">同意</span>(GDPR 第6条1款(a)): Google Analytics 4 进行的访问分析。用户可通过 Cookie 同意横幅选择同意或拒绝。</li>
           <li><span className="font-semibold">合同履行</span>(GDPR 第6条1款(b)): 账户管理、服务提供、地图功能(Mapbox)的提供。</li>
-          <li><span className="font-semibold">正当利益</span>(GDPR 第6条1款(f)): 错误监控(Sentry)、不正使用的检测和防止、服务安全性的确保。</li>
+          <li><span className="font-semibold">正当利益</span>(GDPR 第6条1款(f)): 错误监控(Sentry)、不正使用的检测和防止、服务安全性的确保、基于 IP 地址判定国家以优化初始显示位置(提升用户便利性)。</li>
         </ul>
       </section>
 

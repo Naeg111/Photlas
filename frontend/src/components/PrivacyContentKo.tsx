@@ -123,6 +123,8 @@ export function PrivacyContentKo() {
           <li>이용약관 위반 대응</li>
           <li>본 서비스의 광고·홍보·프로모션 (게시 데이터의 이용)</li>
           <li>사용자 문의 대응</li>
+          {/* Issue#106: IP 주소로부터의 국가 판정 */}
+          <li>IP 주소를 기반으로 한 사용자의 소재 국가 판정 (지도의 초기 표시 위치 최적화를 위함. IP 주소는 서버에 저장되지 않으며, 국가 코드로의 변환에만 사용됩니다)</li>
           <li>위 이용 목적에 부수하는 목적</li>
         </ul>
       </section>
@@ -180,6 +182,12 @@ export function PrivacyContentKo() {
                 <span className="font-semibold">Sentry</span>: 애플리케이션 오류 모니터링에 사용합니다. 오류 발생 시 기술적인 오류 정보가 전송됩니다(전체 오류의 일부만). Sentry의 개인정보 처리방침은{' '}
                 <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">여기</a>{' '}
                 를 참조하십시오.
+              </li>
+              {/* Issue#106: MaxMind GeoLite2 (IP 주소로부터의 국가 판정) */}
+              <li>
+                <span className="font-semibold">MaxMind GeoLite2</span>: IP 주소로부터 사용자의 소재 국가를 판정하여 지도의 초기 표시 위치를 최적화하기 위해 사용합니다. 판정 처리는 서버에서 실행되며, IP 주소는 국가 코드로의 변환에만 사용되고 저장되지 않습니다. 본 서비스는 GeoLite2 데이터를 사용합니다(Includes GeoLite2 data created by MaxMind, available from{' '}
+                <a href="https://www.maxmind.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">https://www.maxmind.com</a>
+                ).
               </li>
             </ul>
           </li>
@@ -357,7 +365,7 @@ export function PrivacyContentKo() {
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
           <li><span className="font-semibold">동의</span>(GDPR 제6조 1항(a)): Google Analytics 4에 의한 액세스 분석. 사용자는 Cookie 동의 배너에 의해 동의 또는 거부를 선택할 수 있습니다.</li>
           <li><span className="font-semibold">계약 이행</span>(GDPR 제6조 1항(b)): 계정 관리, 서비스 제공, 지도 기능(Mapbox)의 제공.</li>
-          <li><span className="font-semibold">정당한 이익</span>(GDPR 제6조 1항(f)): 오류 모니터링(Sentry), 부정 이용 탐지·방지, 서비스 안전성 확보.</li>
+          <li><span className="font-semibold">정당한 이익</span>(GDPR 제6조 1항(f)): 오류 모니터링(Sentry), 부정 이용 탐지·방지, 서비스 안전성 확보, IP 주소로부터의 국가 판정에 의한 초기 표시 위치 최적화(사용자 편의성 향상).</li>
         </ul>
       </section>
 

@@ -74,19 +74,35 @@ const FLOATING_BUTTON_STYLES = {
 
 interface MainContentProps {
   onMapReady?: () => void
+  /** Issue#106: スプラッシュ画面が閉じたタイミングで autoCenter をトリガーするためのフラグ */
+  isSplashClosed?: boolean
 }
 
 /**
  * MainContent コンポーネント
  * useAuthを使用するためAuthProvider内で使用
  */
-function MainContent({ onMapReady }: Readonly<MainContentProps>) {
+function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>) {
   const { user, login, logout, isAuthenticated, getAuthToken } = useAuth()
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const dialog = useDialogState()
   const mapRef = useRef<MapViewHandle>(null)
+  // Issue#106: autoCenter を一度だけ呼び出すためのガード
+  const autoCenterCalledRef = useRef(false)
+
+  // Issue#106: スプラッシュ画面が閉じた後に MapView の autoCenter を呼ぶ
+  useEffect(() => {
+    if (isSplashClosed && !autoCenterCalledRef.current && mapRef.current) {
+      autoCenterCalledRef.current = true
+      mapRef.current.autoCenter().catch((err) => {
+        // autoCenter は内部でエラーを捕捉して東京へフォールバックする設計だが、
+        // 念のため予期しないエラーをログに残す
+        console.error('autoCenter failed:', err)
+      })
+    }
+  }, [isSplashClosed])
 
   // Issue#99: アカウントリンク確認フロー用の state
   // OAuthCallbackPage が `/` に linkConfirmationToken / provider 付き state で
@@ -930,7 +946,7 @@ function MainApp() {
       </AnimatePresence>
       {/* Issue#81 Phase 5e: OAuth のみユーザー向けパスワード設定推奨バナー */}
       <PasswordRecommendationBanner />
-      <MainContent onMapReady={handleMapReady} />
+      <MainContent onMapReady={handleMapReady} isSplashClosed={!isLoading} />
       <Toaster />
     </>
   )

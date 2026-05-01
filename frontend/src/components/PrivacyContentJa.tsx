@@ -122,6 +122,8 @@ export function PrivacyContentJa() {
           <li>利用規約違反への対応</li>
           <li>本サービスの広告・宣伝・プロモーション（投稿データの利用）</li>
           <li>ユーザーからのお問い合わせへの対応</li>
+          {/* Issue#106: IPアドレスからの国判定（マップの初期表示位置の最適化） */}
+          <li>IPアドレスに基づくユーザーの所在国の判定（マップの初期表示位置の最適化のため。IPアドレスはサーバー上に保存せず、国コードへの変換のみに使用します）</li>
           <li>上記の利用目的に付随する目的</li>
         </ul>
       </section>
@@ -179,6 +181,12 @@ export function PrivacyContentJa() {
                 <span className="font-semibold">Sentry</span>：アプリケーションのエラー監視に使用します。エラー発生時に技術的なエラー情報が送信されます（全エラーの一部のみ）。Sentryのプライバシーポリシーは{' '}
                 <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>{' '}
                 をご参照ください。
+              </li>
+              {/* Issue#106: MaxMind GeoLite2（IPアドレスからの国判定） */}
+              <li>
+                <span className="font-semibold">MaxMind GeoLite2</span>：IPアドレスからユーザーの所在国を判定し、マップの初期表示位置を最適化するために使用します。判定処理はサーバー上で実行され、IPアドレスは国コードへの変換にのみ使用され、保存されません。本サービスは GeoLite2 データを使用しています（Includes GeoLite2 data created by MaxMind, available from{' '}
+                <a href="https://www.maxmind.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">https://www.maxmind.com</a>
+                ）。
               </li>
             </ul>
           </li>
@@ -356,7 +364,7 @@ export function PrivacyContentJa() {
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
           <li><span className="font-semibold">同意</span>（GDPR第6条1項(a)）：Google Analytics 4によるアクセス解析。ユーザーはCookie同意バナーにより同意または拒否を選択できます。</li>
           <li><span className="font-semibold">契約の履行</span>（GDPR第6条1項(b)）：アカウント管理、サービス提供、地図機能（Mapbox）の提供。</li>
-          <li><span className="font-semibold">正当な利益</span>（GDPR第6条1項(f)）：エラー監視（Sentry）、不正利用の検知・防止、サービスの安全性確保。</li>
+          <li><span className="font-semibold">正当な利益</span>（GDPR第6条1項(f)）：エラー監視（Sentry）、不正利用の検知・防止、サービスの安全性確保、IPアドレスからの国判定による初期表示位置の最適化（ユーザーの利便性向上）。</li>
         </ul>
       </section>
 

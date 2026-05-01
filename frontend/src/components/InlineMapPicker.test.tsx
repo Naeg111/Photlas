@@ -512,7 +512,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       }
     })
 
-    it('Issue#106 - position プロパティがない場合、IP国判定キャッシュの座標を使用する', async () => {
+    it('Issue#106 - position プロパティがない場合、IP国判定キャッシュの座標を使用する', () => {
       // permissions.query が denied を返す（ブラウザ位置情報を使わない）
       Object.defineProperty(navigator, 'permissions', {
         value: {
@@ -524,12 +524,9 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
 
       render(<InlineMapPicker {...defaultProps} position={null} />)
 
-      // マップがレンダリングされること（具体的な座標検証は実装後）
+      // マップがレンダリングされ、useMemo 内で getGeoCountryCache（モック）が同期的に呼ばれる
       expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
-      // キャッシュが参照されること
-      await waitFor(() => {
-        expect(mockGetGeoCountryCacheIMP).toHaveBeenCalled()
-      })
+      expect(mockGetGeoCountryCacheIMP).toHaveBeenCalled()
     })
 
     it('Issue#106 - position プロパティ・キャッシュ・許可すべてなしの場合、東京駅にフォールバック', async () => {

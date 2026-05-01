@@ -805,8 +805,9 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.jumpTo).toHaveBeenCalled()
       })
       // ズーム5（国レベル）でワープしているはず
-      const jumpToCall = mockMap.jumpTo.mock.calls[0][0]
-      expect(jumpToCall.zoom).toBe(5)
+      const calls = mockMap.jumpTo.mock.calls
+      const lastCall = calls[calls.length - 1][0]
+      expect(lastCall.zoom).toBe(5)
     })
 
     it('Issue#106 - 位置情報取得失敗 + キャッシュなし + API成功時、APIからの国コードを使ってワープ', async () => {
@@ -841,6 +842,8 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
       // キャッシュには存在しない国コード
       mockGetGeoCountryCache.mockReturnValue('ZZ')
+      // fetchMyCountry も null にして API 経由でも取れない状態にする
+      mockFetchMyCountry.mockResolvedValue(null)
 
       const ref = { current: null as any }
       render(<MapView ref={ref} />)
@@ -855,8 +858,11 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.jumpTo).toHaveBeenCalled()
       })
       // 東京座標、ズーム11
-      const jumpToCall = mockMap.jumpTo.mock.calls[0][0]
-      expect(jumpToCall.zoom).toBe(11)
+      // 注意: requestAnimationFrame の遅延により、前のテストからの jumpTo 呼び出しが
+      // 残ることがあるため、現在のテストでの最後の呼び出しを確認する
+      const calls = mockMap.jumpTo.mock.calls
+      const lastCall = calls[calls.length - 1][0]
+      expect(lastCall.zoom).toBe(11)
     })
 
     it('Issue#106 - 位置情報・キャッシュ・API すべて失敗時、東京（ズーム11）にフォールバック', async () => {
@@ -880,8 +886,9 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       await waitFor(() => {
         expect(mockMap.jumpTo).toHaveBeenCalled()
       })
-      const jumpToCall = mockMap.jumpTo.mock.calls[0][0]
-      expect(jumpToCall.zoom).toBe(11)
+      const calls = mockMap.jumpTo.mock.calls
+      const lastCall = calls[calls.length - 1][0]
+      expect(lastCall.zoom).toBe(11)
     })
   })
 
