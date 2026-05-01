@@ -801,13 +801,13 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
       await ref.current.autoCenter()
 
+      // ズーム5（国レベル）でワープが完了するまで待つ。
+      // 前のテストで queue された rAF の影響を受けないよう、特定のズーム値で
+      // jumpTo が呼ばれることを確認する。
       await waitFor(() => {
-        expect(mockMap.jumpTo).toHaveBeenCalled()
+        const calls = mockMap.jumpTo.mock.calls
+        expect(calls[calls.length - 1]?.[0]?.zoom).toBe(5)
       })
-      // ズーム5（国レベル）でワープしているはず
-      const calls = mockMap.jumpTo.mock.calls
-      const lastCall = calls[calls.length - 1][0]
-      expect(lastCall.zoom).toBe(5)
     })
 
     it('Issue#106 - 位置情報取得失敗 + キャッシュなし + API成功時、APIからの国コードを使ってワープ', async () => {
@@ -854,15 +854,11 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
       await ref.current.autoCenter()
 
+      // 東京（ズーム11）でワープが完了するまで待つ
       await waitFor(() => {
-        expect(mockMap.jumpTo).toHaveBeenCalled()
+        const calls = mockMap.jumpTo.mock.calls
+        expect(calls[calls.length - 1]?.[0]?.zoom).toBe(11)
       })
-      // 東京座標、ズーム11
-      // 注意: requestAnimationFrame の遅延により、前のテストからの jumpTo 呼び出しが
-      // 残ることがあるため、現在のテストでの最後の呼び出しを確認する
-      const calls = mockMap.jumpTo.mock.calls
-      const lastCall = calls[calls.length - 1][0]
-      expect(lastCall.zoom).toBe(11)
     })
 
     it('Issue#106 - 位置情報・キャッシュ・API すべて失敗時、東京（ズーム11）にフォールバック', async () => {
@@ -884,11 +880,9 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       await ref.current.autoCenter()
 
       await waitFor(() => {
-        expect(mockMap.jumpTo).toHaveBeenCalled()
+        const calls = mockMap.jumpTo.mock.calls
+        expect(calls[calls.length - 1]?.[0]?.zoom).toBe(11)
       })
-      const calls = mockMap.jumpTo.mock.calls
-      const lastCall = calls[calls.length - 1][0]
-      expect(lastCall.zoom).toBe(11)
     })
   })
 
