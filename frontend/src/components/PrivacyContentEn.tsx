@@ -135,6 +135,8 @@ export function PrivacyContentEn() {
           <li>Responding to violations of the Terms of Service</li>
           <li>Advertising, promotion, and marketing of the Service (using posted data)</li>
           <li>Responding to user inquiries</li>
+          {/* Issue#106: Country detection from IP address */}
+          <li>Determining the user&apos;s country from their IP address to optimize the map&apos;s initial display location (the IP address is not stored on the server and is used only for conversion to a country code)</li>
           <li>Purposes incidental to the above</li>
         </ul>
       </section>
@@ -205,6 +207,12 @@ export function PrivacyContentEn() {
                 monitoring. Technical error information is transmitted when errors
                 occur (only a portion of all errors). Please refer to{' '}
                 <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Sentry&apos;s Privacy Policy</a>{' '}.
+              </li>
+              {/* Issue#106: MaxMind GeoLite2 (IP-based country detection) */}
+              <li>
+                <span className="font-semibold">MaxMind GeoLite2</span>: Used to determine the user&apos;s country from their IP address in order to optimize the map&apos;s initial display location. The detection is performed on the server, and the IP address is used only for conversion to a country code and is not stored. This product includes GeoLite2 data created by MaxMind, available from{' '}
+                <a href="https://www.maxmind.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">https://www.maxmind.com</a>
+                .
               </li>
             </ul>
           </li>
@@ -423,7 +431,7 @@ export function PrivacyContentEn() {
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
           <li><span className="font-semibold">Consent</span> (GDPR Art. 6(1)(a)): Analytics via Google Analytics 4. Users may accept or decline via the cookie consent banner.</li>
           <li><span className="font-semibold">Performance of a contract</span> (GDPR Art. 6(1)(b)): Account management, service delivery, and map functionality (Mapbox).</li>
-          <li><span className="font-semibold">Legitimate interests</span> (GDPR Art. 6(1)(f)): Error monitoring (Sentry), detection and prevention of misuse, and ensuring service security.</li>
+          <li><span className="font-semibold">Legitimate interests</span> (GDPR Art. 6(1)(f)): Error monitoring (Sentry), detection and prevention of misuse, ensuring service security, and optimizing the initial map display location based on country detection from the IP address (improving user convenience).</li>
         </ul>
       </section>
 

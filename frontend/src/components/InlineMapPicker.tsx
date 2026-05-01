@@ -10,6 +10,8 @@ import { Button } from './ui/button'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { sortSuggestionsByRelevance } from '../utils/sortSuggestions'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
+import { getGeoCountryCache } from '../utils/geoCountryCache'
+import { getCountryCoordinates } from '../utils/countryCoordinates'
 
 /**
  * InlineMapPicker コンポーネント
@@ -60,6 +62,8 @@ interface SearchSuggestion {
 // 地図の初期設定
 export const DEFAULT_CENTER = { lat: 35.6812, lng: 139.7671 } // 東京駅
 const DEFAULT_ZOOM = 15
+// Issue#106: ブラウザ位置情報取得時のズームレベル
+const GEOLOCATION_ZOOM = 15
 const SEARCH_DEBOUNCE_MS = 300
 const LONG_DISTANCE_THRESHOLD = 4.5
 const TRANSITION_FADE_MS = 500
@@ -373,16 +377,63 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
     }
   }, [isDropdownOpen])
 
-  const center = position || DEFAULT_CENTER
+  // Issue#106: position（EXIF座標）がない場合のフォールバック
+  // 優先順位: position → ブラウザ位置情報（許可済みの場合のみ） → IP国判定キャッシュ → 東京駅
+  // ※ permissions.query は async だが、初期表示は sync な initialCenter を使う必要があるため
+  //   同期的に取得できる「キャッシュ」と「東京駅」のみ initialCenter で使用する。
+  //   ブラウザ位置情報（許可済み）は別 useEffect で取得し、取得できたら map.flyTo で移動する。
+  const initialCenter = useMemo(() => {
+    if (position) return { center: position, zoom: DEFAULT_ZOOM }
+    const cachedCountry = getGeoCountryCache()
+    const countryCoords = getCountryCoordinates(cachedCountry)
+    if (countryCoords) {
+      return { center: { lat: countryCoords.lat, lng: countryCoords.lng }, zoom: countryCoords.zoom }
+    }
+    return { center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM }
+  }, [position])
+
+  // Issue#106: ブラウザ位置情報（許可済み）を取得して、得られたらマップを移動する
+  useEffect(() => {
+    if (position) return // EXIF 座標が指定済みなら何もしない
+
+    let cancelled = false
+    const tryGeolocation = async () => {
+      try {
+        if (!navigator.permissions || !navigator.permissions.query) return
+        const status = await navigator.permissions.query({ name: 'geolocation' as PermissionName })
+        if (cancelled || status.state !== 'granted') return
+        if (!('geolocation' in navigator)) return
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (cancelled || !mapRef.current) return
+            mapRef.current.flyTo({
+              center: [pos.coords.longitude, pos.coords.latitude],
+              zoom: GEOLOCATION_ZOOM,
+            })
+          },
+          () => {},
+          { enableHighAccuracy: false, timeout: 10000 },
+        )
+      } catch {
+        // navigator.permissions.query が未サポート（Safari 15 以前）等：何もしない
+      }
+    }
+    tryGeolocation()
+
+    return () => {
+      cancelled = true
+    }
+  }, [position])
 
   return (
     <div data-testid="inline-map-picker" style={{ position: 'relative', height: '100%' }}>
       <Map
         mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
         initialViewState={{
-          longitude: center.lng,
-          latitude: center.lat,
-          zoom: DEFAULT_ZOOM,
+          longitude: initialCenter.center.lng,
+          latitude: initialCenter.center.lat,
+          zoom: initialCenter.zoom,
         }}
         style={{ width: '100%', height: '100%' }}
         mapStyle={MAPBOX_STYLE}

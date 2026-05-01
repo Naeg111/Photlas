@@ -11,6 +11,9 @@ import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 import { buildRateLimitApiError, notifyIfRateLimitedBurst } from '../utils/notifyIfRateLimited'
 import { PinSvg } from './PinSvg'
 import { generatePinImage, getPinImageId, PIN_COLOR_MAP, BASE_PIN_SIZE, PIN_HEIGHT_RATIO, PIN_PIXEL_RATIO, SHADOW_PADDING } from '../utils/pinImageGenerator'
+import { getGeoCountryCache, setGeoCountryCache } from '../utils/geoCountryCache'
+import { fetchMyCountry } from '../utils/fetchMyCountry'
+import { getCountryCoordinates } from '../utils/countryCoordinates'
 
 // MapViewの公開メソッド型定義
 export interface MapViewHandle {
@@ -23,6 +26,8 @@ export interface MapViewHandle {
   clearShootingLocationPin: () => void
   /** Issue#69: 場所検索結果にマップを移動する */
   flyToPlace: (lng: number, lat: number, zoom: number) => void
+  /** Issue#106: 初期表示位置をユーザーの現在地またはIP国判定結果に自動的に移動する */
+  autoCenter: () => Promise<void>
 }
 
 /**
@@ -57,7 +62,14 @@ export interface MapViewFilterParams {
 
 // 地図の初期設定
 const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
-const DEFAULT_ZOOM = 11
+// Issue#106: 初期ズームは0（地球全体）。autoCenterで現在地/IP国判定結果にワープする
+const DEFAULT_ZOOM = 0
+// Issue#106: autoCenter のフォールバック用（位置情報・IP国判定がすべて失敗した場合）
+const FALLBACK_TOKYO_ZOOM = 11
+// Issue#106: 位置情報取得成功時のズームレベル
+const GEOLOCATION_ZOOM = 14
+// Issue#106: getCurrentPosition のタイムアウト
+const GEOLOCATION_TIMEOUT_MS = 10000
 
 // クラスタリング設定（Issue#39, Issue#55, Issue#103: 全ズームレベル対応）
 const CLUSTER_RADIUS = 70
@@ -576,6 +588,69 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         map.flyTo({ center: [lng, lat], zoom, speed: 0.8, padding })
       }
     },
+    /**
+     * Issue#106: 初期表示位置をユーザーの現在地またはIP国判定結果に自動的に移動する。
+     * スプラッシュ画面が閉じた後に App.tsx から呼び出される想定。
+     *
+     * フロー:
+     * 1. getCurrentPosition で位置取得を試行（成功 → 現在地ズーム14でワープ）
+     * 2. 失敗時: localStorage キャッシュまたはAPIから国コードを取得 → 国の中心座標にワープ（ズーム5）
+     * 3. すべて失敗: 東京（ズーム11）にワープ
+     */
+    autoCenter: async () => {
+      if (!map) return
+
+      const warpToLocation = (lng: number, lat: number, zoom: number) => {
+        setMapTransitioning(true)
+        const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading)
+        requestAnimationFrame(() => {
+          // Mapbox の jumpTo は moveend イベントを発火するため、handleMoveEnd 経由で
+          // fetchSpots が呼ばれる（zoom > 0 のフィルタにより、autoCenter 後のズーム5～14で動作）
+          map.jumpTo({ center: [lng, lat], zoom })
+          map.once('idle', completeTransition)
+          setTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
+        })
+      }
+
+      // 1. ブラウザの位置情報APIを試行
+      const geolocationResult = await new Promise<GeolocationPosition | null>((resolve) => {
+        if (!('geolocation' in navigator)) {
+          resolve(null)
+          return
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve(pos),
+          () => resolve(null),
+          { enableHighAccuracy: false, timeout: GEOLOCATION_TIMEOUT_MS },
+        )
+      })
+
+      if (geolocationResult) {
+        warpToLocation(
+          geolocationResult.coords.longitude,
+          geolocationResult.coords.latitude,
+          GEOLOCATION_ZOOM,
+        )
+        return
+      }
+
+      // 2. IP国判定（キャッシュ → API）
+      let countryCode = getGeoCountryCache()
+      if (!countryCode) {
+        countryCode = await fetchMyCountry()
+        if (countryCode) {
+          setGeoCountryCache(countryCode)
+        }
+      }
+      const countryCoords = getCountryCoordinates(countryCode)
+      if (countryCoords) {
+        warpToLocation(countryCoords.lng, countryCoords.lat, countryCoords.zoom)
+        return
+      }
+
+      // 3. すべて失敗 → 東京（ズーム11）にフォールバック
+      warpToLocation(DEFAULT_CENTER.lng, DEFAULT_CENTER.lat, FALLBACK_TOKYO_ZOOM)
+    },
   }), [map, requestOrientationPermission, fetchSpots])
 
   // 地図が読み込まれたときの処理
@@ -587,7 +662,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
     setMap(mapInstance)
 
-    fetchSpots(mapInstance)
+    // Issue#106: ズーム0（地球全体）では全世界のスポットを取得しないためスキップ。
+    // autoCenter のワープ完了後（mapInstance.getZoom() > 0 になった時点）の moveend / idle イベントで
+    // 通常通り fetchSpots が走る。
+    if (mapInstance.getZoom() > 0) {
+      fetchSpots(mapInstance)
+    }
 
     // E2Eテスト用: マップインスタンスをwindowに公開
     ;(globalThis as unknown as Record<string, unknown>).__photlas_map = mapInstance
@@ -603,6 +683,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
+    // Issue#106: ズーム0では全世界のスポットを取得しないためスキップ
+    if (mapInstance.getZoom() <= 0) return
     debouncedFetchSpots(mapInstance)
   }, [debouncedFetchSpots])
 

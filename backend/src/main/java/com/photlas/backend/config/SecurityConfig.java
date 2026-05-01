@@ -47,6 +47,7 @@ public class SecurityConfig {
     private static final String PHOTOS_ENDPOINT_PATTERN = "/api/v1/photos/**";
     private static final String USER_PROFILE_PATTERN = "/api/v1/users/\\d+";
     private static final String USER_PHOTOS_PATTERN = "/api/v1/users/\\d+/photos.*";
+    private static final String GEO_ENDPOINT_PATTERN = "/api/v1/geo/**"; // Issue#106: IP国判定（認証不要）
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
@@ -120,6 +121,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/sitemap-static.xml").permitAll()   // 静的サイトマップ
                 .requestMatchers("/api/v1/sitemap-photos-*.xml").permitAll() // 写真サイトマップ
                 .requestMatchers("/api/v1/internal/**").permitAll()         // Issue#54: 内部API（APIキー認証）
+                .requestMatchers(GEO_ENDPOINT_PATTERN).permitAll()          // Issue#106: IP国判定エンドポイント
                 .requestMatchers(HttpMethod.GET, PHOTOS_ENDPOINT_PATTERN).permitAll()  // 写真閲覧
                 .requestMatchers(new RegexRequestMatcher(USER_PROFILE_PATTERN, HttpMethod.GET.name())).permitAll()  // ユーザープロフィール閲覧
                 .requestMatchers(new RegexRequestMatcher(USER_PHOTOS_PATTERN, HttpMethod.GET.name())).permitAll()   // ユーザー写真一覧閲覧
