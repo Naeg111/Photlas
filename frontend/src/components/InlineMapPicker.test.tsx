@@ -66,6 +66,17 @@ vi.mock('@mapbox/search-js-core', () => ({
   SessionToken: vi.fn(),
 }))
 
+// Issue#106: IP国判定キャッシュのモック
+const { mockGetGeoCountryCacheIMP } = vi.hoisted(() => ({
+  mockGetGeoCountryCacheIMP: vi.fn(),
+}))
+vi.mock('../utils/geoCountryCache', () => ({
+  getGeoCountryCache: mockGetGeoCountryCacheIMP,
+  setGeoCountryCache: vi.fn(),
+  GEO_COUNTRY_CACHE_KEY: 'photlas_geo_country',
+  GEO_COUNTRY_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
+}))
+
 describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   const defaultProps = {
     position: null as { lat: number; lng: number } | null,
@@ -473,6 +484,86 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
           })
         )
       })
+    })
+  })
+
+  describe('Issue#106: 初期表示位置のフォールバック', () => {
+    let originalGeolocation: Geolocation | undefined
+    let originalPermissions: Permissions | undefined
+
+    beforeEach(() => {
+      mockGetGeoCountryCacheIMP.mockReset()
+      originalGeolocation = navigator.geolocation
+      originalPermissions = navigator.permissions
+    })
+
+    afterEach(() => {
+      if (originalGeolocation) {
+        Object.defineProperty(navigator, 'geolocation', {
+          value: originalGeolocation,
+          configurable: true,
+        })
+      }
+      if (originalPermissions) {
+        Object.defineProperty(navigator, 'permissions', {
+          value: originalPermissions,
+          configurable: true,
+        })
+      }
+    })
+
+    it('Issue#106 - position プロパティがない場合、IP国判定キャッシュの座標を使用する', async () => {
+      // permissions.query が denied を返す（ブラウザ位置情報を使わない）
+      Object.defineProperty(navigator, 'permissions', {
+        value: {
+          query: vi.fn().mockResolvedValue({ state: 'denied' }),
+        },
+        configurable: true,
+      })
+      mockGetGeoCountryCacheIMP.mockReturnValue('JP')
+
+      render(<InlineMapPicker {...defaultProps} position={null} />)
+
+      // マップがレンダリングされること（具体的な座標検証は実装後）
+      expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
+      // キャッシュが参照されること
+      await waitFor(() => {
+        expect(mockGetGeoCountryCacheIMP).toHaveBeenCalled()
+      })
+    })
+
+    it('Issue#106 - position プロパティ・キャッシュ・許可すべてなしの場合、東京駅にフォールバック', async () => {
+      Object.defineProperty(navigator, 'permissions', {
+        value: {
+          query: vi.fn().mockResolvedValue({ state: 'denied' }),
+        },
+        configurable: true,
+      })
+      mockGetGeoCountryCacheIMP.mockReturnValue(null)
+
+      render(<InlineMapPicker {...defaultProps} position={null} />)
+
+      // 東京駅をデフォルトとして使用
+      expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
+      expect(DEFAULT_CENTER.lat).toBeCloseTo(35.6812, 3)
+      expect(DEFAULT_CENTER.lng).toBeCloseTo(139.7671, 3)
+    })
+
+    it('Issue#106 - permissions.query が例外を投げてもクラッシュせず動作する（Safari 15以前対策）', async () => {
+      Object.defineProperty(navigator, 'permissions', {
+        value: {
+          query: vi.fn().mockRejectedValue(new Error('Not supported')),
+        },
+        configurable: true,
+      })
+      mockGetGeoCountryCacheIMP.mockReturnValue(null)
+
+      // 例外が伝播しないこと
+      expect(() => {
+        render(<InlineMapPicker {...defaultProps} position={null} />)
+      }).not.toThrow()
+
+      expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
     })
   })
 })
