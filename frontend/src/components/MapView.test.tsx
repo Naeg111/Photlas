@@ -14,6 +14,22 @@ vi.mock('../config/api', () => ({
   API_V1_URL: 'http://localhost:3000/api/v1',
 }))
 
+// Issue#106: IP国判定キャッシュ・APIのモック（autoCenter テスト用）
+const { mockGetGeoCountryCache, mockSetGeoCountryCache, mockFetchMyCountry } = vi.hoisted(() => ({
+  mockGetGeoCountryCache: vi.fn(),
+  mockSetGeoCountryCache: vi.fn(),
+  mockFetchMyCountry: vi.fn(),
+}))
+vi.mock('../utils/geoCountryCache', () => ({
+  getGeoCountryCache: mockGetGeoCountryCache,
+  setGeoCountryCache: mockSetGeoCountryCache,
+  GEO_COUNTRY_CACHE_KEY: 'photlas_geo_country',
+  GEO_COUNTRY_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
+}))
+vi.mock('../utils/fetchMyCountry', () => ({
+  fetchMyCountry: mockFetchMyCountry,
+}))
+
 // Issue#96 PR3: sonner のモック（429 バーストトースト検証用）
 const { mockToast } = vi.hoisted(() => ({
   mockToast: {
@@ -696,6 +712,195 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         pitch: 0,
         duration: 500,
       })
+    })
+  })
+
+  describe('Issue#106: autoCenter（初期表示位置の自動決定）', () => {
+    let originalGeolocation: Geolocation | undefined
+    const mockGetCurrentPosition = vi.fn()
+
+    beforeEach(() => {
+      // navigator.geolocation のモック
+      originalGeolocation = navigator.geolocation
+      Object.defineProperty(navigator, 'geolocation', {
+        value: { getCurrentPosition: mockGetCurrentPosition },
+        configurable: true,
+      })
+      mockGetCurrentPosition.mockReset()
+      mockGetGeoCountryCache.mockReset()
+      mockSetGeoCountryCache.mockReset()
+      mockFetchMyCountry.mockReset()
+    })
+
+    afterEach(() => {
+      if (originalGeolocation) {
+        Object.defineProperty(navigator, 'geolocation', {
+          value: originalGeolocation,
+          configurable: true,
+        })
+      }
+    })
+
+    it('Issue#106 - autoCenter メソッドが MapViewHandle に存在する', async () => {
+      setupFetchMock()
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      expect(typeof ref.current.autoCenter).toBe('function')
+    })
+
+    it('Issue#106 - 位置情報取得成功時にワープアニメーション（jumpTo）でユーザー座標へ移動する', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+      // 位置情報取得を成功させる（東京から離れた位置 = 大阪）
+      mockGetCurrentPosition.mockImplementation((success: PositionCallback) => {
+        success({
+          coords: { latitude: 34.6937, longitude: 135.5023, accuracy: 100 } as GeolocationCoordinates,
+          timestamp: Date.now(),
+        } as GeolocationPosition)
+      })
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      await ref.current.autoCenter()
+
+      // ズーム0からの長距離移動なのでワープ（jumpTo）
+      await waitFor(() => {
+        expect(mockMap.jumpTo).toHaveBeenCalled()
+      })
+    })
+
+    it('Issue#106 - 位置情報取得失敗 + キャッシュからの国コード取得成功時、国の中心座標にワープ', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 0, lat: 0 })
+      // 位置情報取得を失敗させる
+      mockGetCurrentPosition.mockImplementation((_success: PositionCallback, error?: PositionErrorCallback) => {
+        error?.({
+          code: 1, // PERMISSION_DENIED
+          message: 'User denied geolocation',
+        } as GeolocationPositionError)
+      })
+      // キャッシュにJPがある
+      mockGetGeoCountryCache.mockReturnValue('JP')
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      await ref.current.autoCenter()
+
+      await waitFor(() => {
+        expect(mockMap.jumpTo).toHaveBeenCalled()
+      })
+      // ズーム5（国レベル）でワープしているはず
+      const jumpToCall = mockMap.jumpTo.mock.calls[0][0]
+      expect(jumpToCall.zoom).toBe(5)
+    })
+
+    it('Issue#106 - 位置情報取得失敗 + キャッシュなし + API成功時、APIからの国コードを使ってワープ', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 0, lat: 0 })
+      mockGetCurrentPosition.mockImplementation((_success: PositionCallback, error?: PositionErrorCallback) => {
+        error?.({ code: 1, message: 'User denied' } as GeolocationPositionError)
+      })
+      mockGetGeoCountryCache.mockReturnValue(null)
+      mockFetchMyCountry.mockResolvedValue('US')
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      await ref.current.autoCenter()
+
+      await waitFor(() => {
+        expect(mockFetchMyCountry).toHaveBeenCalled()
+        expect(mockSetGeoCountryCache).toHaveBeenCalledWith('US')
+      })
+    })
+
+    it('Issue#106 - 位置情報失敗 + 国コードが COUNTRY_COORDINATES に存在しない場合、東京（ズーム11）にフォールバック', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 0, lat: 0 })
+      mockGetCurrentPosition.mockImplementation((_success: PositionCallback, error?: PositionErrorCallback) => {
+        error?.({ code: 1, message: 'denied' } as GeolocationPositionError)
+      })
+      // キャッシュには存在しない国コード
+      mockGetGeoCountryCache.mockReturnValue('ZZ')
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      await ref.current.autoCenter()
+
+      await waitFor(() => {
+        expect(mockMap.jumpTo).toHaveBeenCalled()
+      })
+      // 東京座標、ズーム11
+      const jumpToCall = mockMap.jumpTo.mock.calls[0][0]
+      expect(jumpToCall.zoom).toBe(11)
+    })
+
+    it('Issue#106 - 位置情報・キャッシュ・API すべて失敗時、東京（ズーム11）にフォールバック', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 0, lat: 0 })
+      mockGetCurrentPosition.mockImplementation((_success: PositionCallback, error?: PositionErrorCallback) => {
+        error?.({ code: 1, message: 'denied' } as GeolocationPositionError)
+      })
+      mockGetGeoCountryCache.mockReturnValue(null)
+      mockFetchMyCountry.mockResolvedValue(null)
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      await ref.current.autoCenter()
+
+      await waitFor(() => {
+        expect(mockMap.jumpTo).toHaveBeenCalled()
+      })
+      const jumpToCall = mockMap.jumpTo.mock.calls[0][0]
+      expect(jumpToCall.zoom).toBe(11)
+    })
+  })
+
+  describe('Issue#106: fetchSpots スキップ（autoCenter 完了前）', () => {
+    it('Issue#106 - 初期ズームレベルが0で、autoCenter 完了前は fetchSpots が呼ばれない', async () => {
+      const mockFetch = setupFetchMock()
+      mockMap.getZoom.mockReturnValue(0)
+
+      render(<MapView />)
+
+      // 初期マウント直後（autoCenter 未完了）→ fetchSpots は呼ばれない
+      // ※ MapMock の onLoad が即座に発火するため、handleLoad 内では fetchSpots がスキップされるべき
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // /spots エンドポイントへの fetch が呼ばれないことを確認
+      const spotsFetchCalls = (mockFetch.mock.calls as Array<[string]>).filter(
+        ([url]) => typeof url === 'string' && url.includes('/spots'),
+      )
+      expect(spotsFetchCalls.length).toBe(0)
     })
   })
 
