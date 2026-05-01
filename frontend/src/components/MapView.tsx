@@ -64,6 +64,13 @@ export interface MapViewFilterParams {
 const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 // Issue#106: 初期ズームは0（地球全体）。autoCenterで現在地/IP国判定結果にワープする
 const DEFAULT_ZOOM = 0
+// Issue#106: 初期ズーム0表示時、日本が画面中央付近に見えるよう調整した中心座標。
+// 経度139（日本）+ 緯度0（赤道）にすることで、Web Mercator 投影下でも
+// 世界全体が縦に偏らず、日本が上中央に視覚的に配置される。
+// （DEFAULT_CENTER（東京、緯度35）をそのまま使うと地図が上方向に偏り、
+//   日本が画面の上端付近に追いやられて中央に見えない問題があった）
+const INITIAL_VIEW_LNG = 139
+const INITIAL_VIEW_LAT = 0
 // Issue#106: autoCenter のフォールバック用（位置情報・IP国判定がすべて失敗した場合）
 const FALLBACK_TOKYO_ZOOM = 11
 // Issue#106: 位置情報取得成功時のズームレベル
@@ -752,8 +759,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       <Map
         mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
         initialViewState={{
-          longitude: DEFAULT_CENTER.lng,
-          latitude: DEFAULT_CENTER.lat,
+          longitude: INITIAL_VIEW_LNG,
+          latitude: INITIAL_VIEW_LAT,
           zoom: DEFAULT_ZOOM,
         }}
         style={{ width: '100%', height: '100%' }}
