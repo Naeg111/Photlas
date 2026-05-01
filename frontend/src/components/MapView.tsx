@@ -70,6 +70,10 @@ const FALLBACK_TOKYO_ZOOM = 11
 const GEOLOCATION_ZOOM = 14
 // Issue#106: getCurrentPosition のタイムアウト
 const GEOLOCATION_TIMEOUT_MS = 10000
+// Issue#106: 初回起動時、ユーザーが「地球全体（ズーム0）」を視認できる最低時間（ミリ秒）。
+// 位置情報がすでに許可済みのケースでは getCurrentPosition が即座に成功するため、
+// この時間を確保しないとユーザーがズーム0を見る間もなく現在地に飛ばされてしまう。
+const AUTO_CENTER_MIN_VIEW_MS = 1000
 
 // クラスタリング設定（Issue#39, Issue#55, Issue#103: 全ズームレベル対応）
 const CLUSTER_RADIUS = 70
@@ -610,12 +614,19 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
      * スプラッシュ画面が閉じた後に App.tsx から呼び出される想定。
      *
      * フロー:
-     * 1. getCurrentPosition で位置取得を試行（成功 → 現在地ズーム14でワープ）
+     * 1. getCurrentPosition で位置取得を試行（成功 → 現在地ズーム14でワープ + 現在地マーカー表示）
      * 2. 失敗時: localStorage キャッシュまたはAPIから国コードを取得 → 国の中心座標にワープ（ズーム5）
      * 3. すべて失敗: 東京（ズーム11）にワープ
+     *
+     * UX: ワープ前に最低 AUTO_CENTER_MIN_VIEW_MS だけズーム0（地球全体）を表示し続けて、
+     * ユーザーが「地球全体 → 自分の場所」という視覚的な移行を認識できるようにする。
+     * 位置情報のポップアップが表示されている間にユーザーが待機する場合は、その時間が
+     * カウント対象に含まれるため、追加の待機は発生しない。
      */
     autoCenter: async () => {
       if (!map) return
+
+      const startedAt = Date.now()
 
       const warpToLocation = (lng: number, lat: number, zoom: number) => {
         // Mapbox の jumpTo は moveend イベントを発火するため、handleMoveEnd 経由で
@@ -626,6 +637,14 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           setMapTransitioning,
           setMapTransitionFading,
         )
+      }
+
+      // ズーム0（地球全体）を最低一定時間表示するための待機ヘルパー
+      const waitForMinViewDuration = async () => {
+        const elapsed = Date.now() - startedAt
+        if (elapsed < AUTO_CENTER_MIN_VIEW_MS) {
+          await new Promise((resolve) => setTimeout(resolve, AUTO_CENTER_MIN_VIEW_MS - elapsed))
+        }
       }
 
       // 1. ブラウザの位置情報APIを試行
@@ -642,11 +661,14 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       })
 
       if (geolocationResult) {
-        warpToLocation(
-          geolocationResult.coords.longitude,
-          geolocationResult.coords.latitude,
-          GEOLOCATION_ZOOM,
-        )
+        // バグ修正: 現在地マーカー（青い点）を表示するため userLocation を設定する
+        const userPos = {
+          lat: geolocationResult.coords.latitude,
+          lng: geolocationResult.coords.longitude,
+        }
+        setUserLocation(userPos)
+        await waitForMinViewDuration()
+        warpToLocation(userPos.lng, userPos.lat, GEOLOCATION_ZOOM)
         return
       }
 
@@ -659,6 +681,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         }
       }
       const countryCoords = getCountryCoordinates(countryCode)
+
+      await waitForMinViewDuration()
+
       if (countryCoords) {
         warpToLocation(countryCoords.lng, countryCoords.lat, countryCoords.zoom)
         return
