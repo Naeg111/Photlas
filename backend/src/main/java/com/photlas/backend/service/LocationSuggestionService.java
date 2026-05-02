@@ -48,7 +48,7 @@ public class LocationSuggestionService {
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
 
-    @Value("${app.mail.from:noreply@photlas.jp}")
+    @Value("${app.mail.from:Photlas <noreply@photlas.jp>}")
     private String mailFrom;
 
     public LocationSuggestionService(
