@@ -97,10 +97,8 @@ const GLOBE_ROTATION_SECONDS_PER_REV = 60
 const GLOBE_ROTATION_IDLE_DELAY_MS = 5000
 /** 回転を行う最大ズームレベル（これ以上に拡大すると停止する） */
 const GLOBE_ROTATION_MAX_ZOOM = 4
-/** 回転 1 ティックの間隔（ミリ秒）。setInterval で呼ぶ。 */
-const ROTATION_TICK_MS = 16
-/** 回転 1 ティックあたりの経度の変化量（度） */
-const DEGREES_PER_TICK = 360 / GLOBE_ROTATION_SECONDS_PER_REV / (1000 / ROTATION_TICK_MS)
+/** 1秒あたりの経度変化量（度）。1周60秒なら 6度/秒。 */
+const DEGREES_PER_SECOND = 360 / GLOBE_ROTATION_SECONDS_PER_REV
 
 // クラスタリング設定（Issue#39, Issue#55, Issue#103: 全ズームレベル対応）
 const CLUSTER_RADIUS = 70
@@ -324,13 +322,23 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const layersInitializedRef = useRef(false)
 
   // Issue#111: 地球儀回転の制御用 ref。
-  // - rotationIntervalRef: 実行中の setInterval ID。null = 停止中。
+  // - rotationFrameRef: 実行中の requestAnimationFrame ID。null = ループ停止中。
+  //   （Issue#111-followup Bug5: setInterval から rAF に切り替え。
+  //    rAF はブラウザの描画タイミングと同期するため、ユーザー入力イベントとの競合が減り、
+  //    右ドラッグの反応が改善する）
+  // - lastTickTimestampRef: 直前の rAF コールバックが呼ばれた時刻 (performance.now)。
+  //   フレーム間の経過時間に応じて経度を進めることで、フレームレート差異を吸収する。
   // - idleTimerRef: 「マップ操作後 5秒経過したら回転開始」を予約する setTimeout ID。
-  // - isRotatingRef: state ではなく ref を使う理由は、回転中に発生した moveend で fetchSpots を
-  //   スキップする判定で同期的にチェックする必要があるため。
-  const rotationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // - isRotatingRef: 回転状態フラグ。回転中に発生した moveend で fetchSpots を同期的に
+  //   スキップする判定に使う。一時停止中（rotatestart 等）も true のままにし、
+  //   rotateend で再開する。
+  // - isInteractingWithRotationOrPitchRef: ユーザーが角度・ピッチ操作中フラグ。
+  //   true の間は rAF ループを動かさない（一時停止）。
+  const rotationFrameRef = useRef<number | null>(null)
+  const lastTickTimestampRef = useRef<number>(0)
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isRotatingRef = useRef(false)
+  const isInteractingWithRotationOrPitchRef = useRef(false)
 
   // Issue#111: 初期表示経度をマウント時に一度だけランダム化する（毎回違う面が正面に見える）。
   // モジュールトップレベルで Math.random() を呼ぶと SPA で MapView が再マウントされても
@@ -348,9 +356,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         }
         watchIdRef.current = null
       }
-      if (rotationIntervalRef.current !== null) {
-        clearInterval(rotationIntervalRef.current)
-        rotationIntervalRef.current = null
+      if (rotationFrameRef.current !== null) {
+        cancelAnimationFrame(rotationFrameRef.current)
+        rotationFrameRef.current = null
       }
       if (idleTimerRef.current !== null) {
         clearTimeout(idleTimerRef.current)
@@ -359,7 +367,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }
   }, [])
 
-  // Issue#111: アイドル予約タイマーを止める（再スケジュールも回転中も両方の経路で使う）
+  // Issue#111: アイドル予約タイマーを止める（再スケジュール経路でも、停止経路でも使う）
   const clearIdleRotationTimer = useCallback(() => {
     if (idleTimerRef.current !== null) {
       clearTimeout(idleTimerRef.current)
@@ -367,31 +375,51 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }
   }, [])
 
-  // Issue#111: 地球儀回転を停止する。アイドル予約タイマーも一緒に止めることで、
+  // Issue#111-followup Bug5: rAF ループを止めるだけのヘルパー。
+  // 「完全停止」と「角度操作中の一時停止」の両方で使う。
+  const cancelRotationFrame = useCallback(() => {
+    if (rotationFrameRef.current !== null) {
+      cancelAnimationFrame(rotationFrameRef.current)
+      rotationFrameRef.current = null
+    }
+  }, [])
+
+  // Issue#111: 地球儀回転を完全停止する。アイドル予約タイマーも一緒に止めて
   // 「停止したら確実に動かない」状態にする（再開は呼び出し側が明示的に scheduleGlobeRotation を呼ぶ）。
   const stopGlobeRotation = useCallback(() => {
-    if (rotationIntervalRef.current !== null) {
-      clearInterval(rotationIntervalRef.current)
-      rotationIntervalRef.current = null
-    }
+    cancelRotationFrame()
     clearIdleRotationTimer()
     isRotatingRef.current = false
-  }, [clearIdleRotationTimer])
+  }, [cancelRotationFrame, clearIdleRotationTimer])
+
+  // Issue#111-followup Bug5: rAF ループのコールバック本体。
+  // 直前のフレームから経過した実時間に比例した経度変化を加算する。
+  const rotationLoop = useCallback((mapInstance: MapboxMap) => {
+    const tick = (now: number) => {
+      const elapsedMs = now - lastTickTimestampRef.current
+      lastTickTimestampRef.current = now
+      const deltaDegrees = (DEGREES_PER_SECOND * elapsedMs) / 1000
+      const center = mapInstance.getCenter()
+      // Issue#111-followup Bug4: 緯度はそのまま維持する（ユーザーが緯度を変えれば
+      // その緯度で回転する）。方位リセットボタンを押すと緯度0に戻る仕様。
+      mapInstance.setCenter([center.lng + deltaDegrees, center.lat])
+      rotationFrameRef.current = requestAnimationFrame(tick)
+    }
+    lastTickTimestampRef.current = performance.now()
+    rotationFrameRef.current = requestAnimationFrame(tick)
+  }, [])
 
   // Issue#111: 地球儀回転を即時開始する。ズームが GLOBE_ROTATION_MAX_ZOOM を超えていたら何もしない。
   // 回転中はピン（クラスタ）を非表示にし、視覚的なシンプルさを保つ。
   const startGlobeRotation = useCallback((mapInstance: MapboxMap) => {
-    if (rotationIntervalRef.current !== null) return
+    if (rotationFrameRef.current !== null) return
     if (mapInstance.getZoom() > GLOBE_ROTATION_MAX_ZOOM) return
     isRotatingRef.current = true
     // 回転中はピン（クラスタ）を非表示にする。React state を空にすることで
     // GeoJSON Source の setData が空配列で更新され、ピンが消える。
     setSpots([])
-    rotationIntervalRef.current = setInterval(() => {
-      const center = mapInstance.getCenter()
-      mapInstance.setCenter([center.lng + DEGREES_PER_TICK, center.lat])
-    }, ROTATION_TICK_MS)
-  }, [])
+    rotationLoop(mapInstance)
+  }, [rotationLoop])
 
   // Issue#111: GLOBE_ROTATION_IDLE_DELAY_MS のアイドル待機後に回転を開始するスケジュールを立てる
   const scheduleGlobeRotation = useCallback((mapInstance: MapboxMap) => {
@@ -402,12 +430,13 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }, GLOBE_ROTATION_IDLE_DELAY_MS)
   }, [clearIdleRotationTimer, startGlobeRotation])
 
-  // Issue#111: ユーザーがマップを操作した時のハンドラ（movestart）。
-  // - 回転による setCenter で発火する movestart は originalEvent が undefined なので無視する
-  // - ユーザー操作（ドラッグ、ピンチ等）では originalEvent がセットされる
-  // 操作後にズーム 0〜4 のままなら 5秒後に再度回転を開始するスケジュールを立てる。
-  const handleUserMapInteraction = useCallback((mapInstance: MapboxMap, e: { originalEvent?: unknown } | undefined) => {
-    if (!e?.originalEvent) return
+  // Issue#111-followup Bug3: ユーザーのクリック・タップ・ドラッグ等で回転を停止する。
+  // 「2本指操作」と「右ボタンドラッグ」（角度変更操作）では呼ばれない設計。
+  const stopRotationOnUserInteraction = useCallback((mapInstance: MapboxMap) => {
+    if (!isRotatingRef.current && rotationFrameRef.current === null && idleTimerRef.current === null) {
+      // 回転していない / 予約もない場合は何もしない
+      return
+    }
     stopGlobeRotation()
     if (mapInstance.getZoom() <= GLOBE_ROTATION_MAX_ZOOM) {
       scheduleGlobeRotation(mapInstance)
@@ -659,11 +688,22 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     zoomOut: () => {
       if (map) {
         const current = map.getZoom() ?? DEFAULT_ZOOM
-        map.easeTo({ zoom: current - 1, duration: 375 })
+        // Issue#111-followup Bug1: ズーム下限（DEFAULT_ZOOM=0）にクランプする。
+        // easeTo はネイティブ minZoom 制約を無視するため、ボタン経由ではマイナス値にも
+        // なれてしまう（ホイールズームは Mapbox 内部でクランプされる）。
+        map.easeTo({ zoom: Math.max(DEFAULT_ZOOM, current - 1), duration: 375 })
       }
     },
     resetNorthHeading: () => {
-      if (map) {
+      if (!map) return
+      // Issue#111-followup Bug4: 地球儀表示時（ズーム 0〜4）に方位リセットを押した場合、
+      // 緯度（lat）も赤道（0）に戻すことで、画面アスペクト比による「北極が見えすぎる」状態を解消する。
+      // ユーザーが任意の緯度で回転させることは許容する（緯度0以外でも回転は可能）。
+      // 写真スポットなど高ズーム時は従来通り bearing/pitch のみリセット（中心位置を勝手に動かさない）。
+      if (map.getZoom() <= GLOBE_ROTATION_MAX_ZOOM) {
+        const center = map.getCenter()
+        map.easeTo({ center: [center.lng, 0], bearing: 0, pitch: 0, duration: 500 })
+      } else {
         map.easeTo({ bearing: 0, pitch: 0, duration: 500 })
       }
     },
@@ -831,11 +871,46 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
     setMap(mapInstance)
 
-    // Issue#111: ユーザー操作（ドラッグ／ピンチ等）を検知して回転を停止する。
-    // `originalEvent` の有無で programmatic / user 由来を区別する（handleUserMapInteraction 内で判定）。
-    mapInstance.on('movestart', (ev: { originalEvent?: unknown }) => {
-      handleUserMapInteraction(mapInstance, ev)
+    // Issue#111-followup Bug3: ユーザーのクリック・タップ・左ドラッグで回転停止 + 5秒タイマー再開。
+    // ただし「右ボタンドラッグ（角度変更）」と「2本指操作」では停止しない。
+    //
+    // mousedown: button=0（左）のみ停止。1（中）・2（右）はスキップ。
+    //   Mapbox は左ボタンドラッグ＝パン、右ボタンドラッグ＝角度変更にデフォルトでマッピングしているため、
+    //   左ボタンだけを「ユーザーがマップを操作した」とみなす。
+    mapInstance.on('mousedown', (ev: { originalEvent?: MouseEvent }) => {
+      if (ev.originalEvent?.button !== 0) return
+      stopRotationOnUserInteraction(mapInstance)
     })
+
+    // touchstart: タッチ数 1 のみ停止。2本指（ピンチズーム / 回転 / ピッチ）はスキップ。
+    mapInstance.on('touchstart', (ev: { originalEvent?: TouchEvent }) => {
+      const touches = ev.originalEvent?.touches
+      if (!touches || touches.length !== 1) return
+      stopRotationOnUserInteraction(mapInstance)
+    })
+
+    // Issue#111-followup Bug5: 角度・ピッチ操作中は rAF ループを一時停止する。
+    // ループが動いたままだと map.setCenter が連続発火して、ユーザーの右ドラッグ
+    // （bearing 変更）がうまく拾われずに反応が悪くなる。
+    const onInteractionStart = () => {
+      isInteractingWithRotationOrPitchRef.current = true
+      cancelRotationFrame()
+    }
+    const onInteractionEnd = () => {
+      isInteractingWithRotationOrPitchRef.current = false
+      // 回転状態が継続していて、ズーム範囲も維持されていれば再開
+      if (
+        isRotatingRef.current &&
+        rotationFrameRef.current === null &&
+        mapInstance.getZoom() <= GLOBE_ROTATION_MAX_ZOOM
+      ) {
+        rotationLoop(mapInstance)
+      }
+    }
+    mapInstance.on('rotatestart', onInteractionStart)
+    mapInstance.on('rotateend', onInteractionEnd)
+    mapInstance.on('pitchstart', onInteractionStart)
+    mapInstance.on('pitchend', onInteractionEnd)
 
     // Issue#111: 初期表示はズーム 0（地球全体）のため、5秒経過で地球儀回転を開始するスケジュールを立てる。
     // ただし granted/denied 既知のケースでは autoCenter が即座に warp するため、
@@ -855,7 +930,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     ;(globalThis as unknown as Record<string, unknown>).__photlas_map = mapInstance
 
     onMapReady?.()
-  }, [fetchSpots, onMapReady, initializeSymbolLayers, handleUserMapInteraction, scheduleGlobeRotation])
+  }, [fetchSpots, onMapReady, initializeSymbolLayers, stopRotationOnUserInteraction, scheduleGlobeRotation, cancelRotationFrame, rotationLoop])
 
   // 地図移動完了時のスポット取得（デバウンス: 連続操作を1回のAPI呼び出しにまとめる）
   const debouncedFetchSpots = useDebouncedCallback(
@@ -905,6 +980,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         fadeDuration={CLUSTER_FADE_DURATION_MS}
         renderWorldCopies={false}
         attributionControl={false}
+        // Issue#111-followup Bug1: ズームイン/アウトボタンの下限制約と
+        // ホイールズームの下限を一致させる
+        minZoom={DEFAULT_ZOOM}
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}
         onClick={() => onMapClickRef.current?.()}
