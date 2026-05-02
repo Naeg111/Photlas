@@ -7,25 +7,61 @@
  *
  * 24 時間で自動的に期限切れ（IP 国判定キャッシュと同じ TTL）。
  *
- * Red 段階（Issue#111）: スタブ実装。Green 段階で実装する。
+ * `geoCountryCache.ts` と同じパターンで実装している。
  */
 
 export const LAST_GEOLOCATION_CACHE_KEY = 'photlas_last_geolocation'
 export const LAST_GEOLOCATION_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
+interface LastGeolocationCacheEntry {
+  lat: number
+  lng: number
+  timestamp: number
+}
+
 /**
  * キャッシュからユーザーの最後の位置情報を取得する。
- * Red 段階: 常に null を返すスタブ。
+ * - キャッシュがない、または期限切れ（24時間超過）の場合は null を返す。
+ * - localStorage の中身が壊れている場合も null を返す（クラッシュしない）。
  */
 export function getLastGeolocationCache(): { lat: number; lng: number } | null {
-  return null
+  try {
+    const raw = localStorage.getItem(LAST_GEOLOCATION_CACHE_KEY)
+    if (!raw) return null
+
+    const parsed = JSON.parse(raw) as LastGeolocationCacheEntry
+    if (
+      typeof parsed.lat !== 'number' ||
+      typeof parsed.lng !== 'number' ||
+      typeof parsed.timestamp !== 'number'
+    ) {
+      return null
+    }
+
+    const ageMs = Date.now() - parsed.timestamp
+    if (ageMs >= LAST_GEOLOCATION_CACHE_TTL_MS) {
+      return null
+    }
+
+    return { lat: parsed.lat, lng: parsed.lng }
+  } catch {
+    return null
+  }
 }
 
 /**
  * ユーザーの最後の位置情報を localStorage に保存する。
- * Red 段階: 何もしないスタブ。
+ * 書き込み失敗（QuotaExceededError 等）してもクラッシュしない。
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function setLastGeolocationCache(_lat: number, _lng: number): void {
-  // Red 段階のスタブ: テストを失敗させるため何もしない
+export function setLastGeolocationCache(lat: number, lng: number): void {
+  try {
+    const entry: LastGeolocationCacheEntry = {
+      lat,
+      lng,
+      timestamp: Date.now(),
+    }
+    localStorage.setItem(LAST_GEOLOCATION_CACHE_KEY, JSON.stringify(entry))
+  } catch {
+    // 書き込み失敗は無視
+  }
 }

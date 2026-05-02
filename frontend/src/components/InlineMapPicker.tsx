@@ -12,6 +12,7 @@ import { sortSuggestionsByRelevance } from '../utils/sortSuggestions'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 import { getGeoCountryCache } from '../utils/geoCountryCache'
 import { getCountryCoordinates } from '../utils/countryCoordinates'
+import { getLastGeolocationCache } from '../utils/lastGeolocationCache'
 
 /**
  * InlineMapPicker コンポーネント
@@ -377,13 +378,22 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
     }
   }, [isDropdownOpen])
 
-  // Issue#106: position（EXIF座標）がない場合のフォールバック
-  // 優先順位: position → ブラウザ位置情報（許可済みの場合のみ） → IP国判定キャッシュ → 東京駅
+  // Issue#106 + Issue#111: position（EXIF座標）がない場合のフォールバック。
+  // 優先順位:
+  //   1. position（EXIF座標）
+  //   2. lastGeolocationCache（ユーザーの最後の位置情報。MapView が autoCenter / 現在位置ボタンで保存）
+  //   3. IP国判定キャッシュ
+  //   4. 東京駅
   // ※ permissions.query は async だが、初期表示は sync な initialCenter を使う必要があるため
   //   同期的に取得できる「キャッシュ」と「東京駅」のみ initialCenter で使用する。
   //   ブラウザ位置情報（許可済み）は別 useEffect で取得し、取得できたら map.flyTo で移動する。
   const initialCenter = useMemo(() => {
     if (position) return { center: position, zoom: DEFAULT_ZOOM }
+    // Issue#111: ユーザーの最後の位置情報キャッシュを優先利用
+    const lastGeo = getLastGeolocationCache()
+    if (lastGeo) {
+      return { center: lastGeo, zoom: DEFAULT_ZOOM }
+    }
     const cachedCountry = getGeoCountryCache()
     const countryCoords = getCountryCoordinates(cachedCountry)
     if (countryCoords) {

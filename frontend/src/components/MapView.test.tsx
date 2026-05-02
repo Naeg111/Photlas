@@ -1147,7 +1147,10 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       // AUTO_CENTER_MIN_VIEW_MS = 1000ms。skipMinView 時は待機がスキップされ、
       // 数百ミリ秒以内に完了する想定。
       expect(elapsed).toBeLessThan(800)
-      expect(mockMap.jumpTo).toHaveBeenCalled()
+      // ワープアニメーションは requestAnimationFrame 経由で jumpTo を呼ぶため非同期に発火する
+      await waitFor(() => {
+        expect(mockMap.jumpTo).toHaveBeenCalled()
+      })
     })
   })
 
@@ -1210,7 +1213,9 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(movestartCall).toBeDefined()
       const handler = movestartCall![1] as Function
       await act(async () => {
-        handler({})
+        // originalEvent 付きの event でユーザー操作をシミュレート
+        // （回転自身の setCenter による movestart は originalEvent を持たない）
+        handler({ originalEvent: { type: 'mousedown' } })
         // 回転停止後さらに時間を進める
         vi.advanceTimersByTime(500)
       })

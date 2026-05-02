@@ -94,18 +94,59 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
   const mapRef = useRef<MapViewHandle>(null)
   // Issue#106: autoCenter を一度だけ呼び出すためのガード
   const autoCenterCalledRef = useRef(false)
+  // Issue#111: マップ読み込み完了の追跡（granted/denied 時にスプラッシュ解除前に autoCenter を呼ぶため）
+  const [isMapReady, setIsMapReady] = useState(false)
+  // Issue#111: 位置情報の許可状態。Permissions API 非対応ブラウザは 'unknown'。
+  const [permissionState, setPermissionState] = useState<'granted' | 'denied' | 'prompt' | 'unknown' | null>(null)
 
-  // Issue#106: スプラッシュ画面が閉じた後に MapView の autoCenter を呼ぶ
+  // Issue#111: マウント時に Permissions API で位置情報の許可状態を事前判定
   useEffect(() => {
-    if (isSplashClosed && !autoCenterCalledRef.current && mapRef.current) {
+    let cancelled = false
+    const queryPermission = async () => {
+      try {
+        if (!navigator.permissions || !navigator.permissions.query) {
+          if (!cancelled) setPermissionState('unknown')
+          return
+        }
+        const status = await navigator.permissions.query({ name: 'geolocation' as PermissionName })
+        if (!cancelled) setPermissionState(status.state as 'granted' | 'denied' | 'prompt')
+      } catch {
+        if (!cancelled) setPermissionState('unknown')
+      }
+    }
+    queryPermission()
+    return () => { cancelled = true }
+  }, [])
+
+  // Issue#111: MapView の onMapReady をラップして isMapReady 状態も更新する
+  const handleMapReadyInternal = useCallback(() => {
+    setIsMapReady(true)
+    onMapReady?.()
+  }, [onMapReady])
+
+  // Issue#106 + Issue#111: 許可状態に応じて autoCenter のタイミングを変える
+  // - granted/denied: スプラッシュ解除前にバックグラウンドで実行（最低表示時間スキップ）
+  // - prompt/unknown: 従来通りスプラッシュ解除後に実行 + 即時に地球儀回転を開始
+  useEffect(() => {
+    if (autoCenterCalledRef.current) return
+    if (!isMapReady || !mapRef.current) return
+    if (permissionState === null) return // 許可状態未確定
+
+    if (permissionState === 'granted' || permissionState === 'denied') {
       autoCenterCalledRef.current = true
-      mapRef.current.autoCenter().catch((err) => {
-        // autoCenter は内部でエラーを捕捉して東京へフォールバックする設計だが、
-        // 念のため予期しないエラーをログに残す
+      mapRef.current.autoCenter({ skipMinView: true }).catch((err) => {
         console.error('autoCenter failed:', err)
       })
+    } else if (isSplashClosed) {
+      // prompt または unknown（Safari 等）: スプラッシュ解除後に通常通り autoCenter を実行
+      autoCenterCalledRef.current = true
+      mapRef.current.autoCenter().catch((err) => {
+        console.error('autoCenter failed:', err)
+      })
+      // Issue#111: 許可ポップアップ待ちの間、地球儀をゆっくり回転させて視覚的な楽しさを提供する
+      mapRef.current.startGlobeRotationImmediately()
     }
-  }, [isSplashClosed])
+  }, [isMapReady, permissionState, isSplashClosed])
 
   // Issue#99: アカウントリンク確認フロー用の state
   // OAuthCallbackPage が `/` に linkConfirmationToken / provider 付き state で
@@ -624,7 +665,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
           onSpotClick={handleSpotClick}
           onClusterClick={handleClusterClick}
           onMapClick={handleReturnFromPreview}
-          onMapReady={onMapReady}
+          onMapReady={handleMapReadyInternal}
         />
       </div>
 

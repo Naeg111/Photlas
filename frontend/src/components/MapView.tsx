@@ -14,6 +14,7 @@ import { generatePinImage, getPinImageId, PIN_COLOR_MAP, BASE_PIN_SIZE, PIN_HEIG
 import { getGeoCountryCache, setGeoCountryCache } from '../utils/geoCountryCache'
 import { fetchMyCountry } from '../utils/fetchMyCountry'
 import { getCountryCoordinates } from '../utils/countryCoordinates'
+import { setLastGeolocationCache } from '../utils/lastGeolocationCache'
 
 // MapViewの公開メソッド型定義
 export interface MapViewHandle {
@@ -26,8 +27,17 @@ export interface MapViewHandle {
   clearShootingLocationPin: () => void
   /** Issue#69: 場所検索結果にマップを移動する */
   flyToPlace: (lng: number, lat: number, zoom: number) => void
-  /** Issue#106: 初期表示位置をユーザーの現在地またはIP国判定結果に自動的に移動する */
-  autoCenter: () => Promise<void>
+  /**
+   * Issue#106: 初期表示位置をユーザーの現在地またはIP国判定結果に自動的に移動する。
+   * Issue#111: skipMinView=true で AUTO_CENTER_MIN_VIEW_MS の最低表示待機をスキップする
+   * （位置情報が granted/denied 既知のときにスプラッシュの裏で実行する用途）。
+   */
+  autoCenter: (options?: { skipMinView?: boolean }) => Promise<void>
+  /**
+   * Issue#111: 5秒のアイドル待機をせず即時に地球儀回転を開始する。
+   * App.tsx で permission=prompt のときにスプラッシュ解除と同時に呼ぶ。
+   */
+  startGlobeRotationImmediately: () => void
 }
 
 /**
@@ -64,12 +74,9 @@ export interface MapViewFilterParams {
 const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 // Issue#106: 初期ズームは0（地球全体）。autoCenterで現在地/IP国判定結果にワープする
 const DEFAULT_ZOOM = 0
-// Issue#106: 初期ズーム0表示時、日本が画面中央付近に見えるよう調整した中心座標。
-// 経度139（日本）+ 緯度0（赤道）にすることで、Web Mercator 投影下でも
-// 世界全体が縦に偏らず、日本が上中央に視覚的に配置される。
-// （DEFAULT_CENTER（東京、緯度35）をそのまま使うと地図が上方向に偏り、
-//   日本が画面の上端付近に追いやられて中央に見えない問題があった）
-const INITIAL_VIEW_LNG = 139
+// Issue#106: 初期ズーム0表示時の緯度。赤道（0）にすることで地球儀の中心が画面中央に置かれる。
+// Issue#111: 経度（INITIAL_VIEW_LNG）は削除し、コンポーネント内で 0〜359 のランダム値に切替える。
+// 緯度はランダム化せず引き続き赤道固定。
 const INITIAL_VIEW_LAT = 0
 // Issue#106: autoCenter のフォールバック用（位置情報・IP国判定がすべて失敗した場合）
 const FALLBACK_TOKYO_ZOOM = 11
@@ -80,7 +87,20 @@ const GEOLOCATION_TIMEOUT_MS = 10000
 // Issue#106: 初回起動時、ユーザーが「地球全体（ズーム0）」を視認できる最低時間（ミリ秒）。
 // 位置情報がすでに許可済みのケースでは getCurrentPosition が即座に成功するため、
 // この時間を確保しないとユーザーがズーム0を見る間もなく現在地に飛ばされてしまう。
+// Issue#111: skipMinView=true でこの待機をスキップできるようにした。
 const AUTO_CENTER_MIN_VIEW_MS = 1000
+
+// Issue#111: 地球儀回転の設定
+/** 地球 1 周にかかる秒数 */
+const GLOBE_ROTATION_SECONDS_PER_REV = 60
+/** マップ操作なしで回転開始するまでの待機時間（ミリ秒） */
+const GLOBE_ROTATION_IDLE_DELAY_MS = 5000
+/** 回転を行う最大ズームレベル（これ以上に拡大すると停止する） */
+const GLOBE_ROTATION_MAX_ZOOM = 4
+/** 回転 1 ティックの間隔（ミリ秒）。setInterval で呼ぶ。 */
+const ROTATION_TICK_MS = 16
+/** 回転 1 ティックあたりの経度の変化量（度） */
+const DEGREES_PER_TICK = 360 / GLOBE_ROTATION_SECONDS_PER_REV / (1000 / ROTATION_TICK_MS)
 
 // クラスタリング設定（Issue#39, Issue#55, Issue#103: 全ズームレベル対応）
 const CLUSTER_RADIUS = 70
@@ -303,15 +323,89 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const watchIdRef = useRef<number | null>(null)
   const layersInitializedRef = useRef(false)
 
+  // Issue#111: 地球儀回転の制御用 ref。
+  // - rotationIntervalRef: 実行中の setInterval ID。null = 停止中。
+  // - idleTimerRef: 「マップ操作後 5秒経過したら回転開始」を予約する setTimeout ID。
+  // - isRotatingRef: state ではなく ref を使う理由は、回転中に発生した moveend で fetchSpots を
+  //   スキップする判定で同期的にチェックする必要があるため。
+  const rotationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isRotatingRef = useRef(false)
+
+  // Issue#111: 初期表示経度をマウント時に一度だけランダム化する（毎回違う面が正面に見える）。
+  // モジュールトップレベルで Math.random() を呼ぶと SPA で MapView が再マウントされても
+  // 同じ値が使われ続けるため useMemo を使う。
+  const initialLongitude = useMemo(() => Math.floor(Math.random() * 360), [])
+
   // watchPositionのクリーンアップ
   useEffect(() => {
     return () => {
+      // 防御的チェック: テスト環境では unmount 時に navigator.geolocation の clearWatch が
+      // 差し替えにより undefined になっている場合があるため、関数として呼び出せるか確認する。
       if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current)
+        if (typeof navigator.geolocation?.clearWatch === 'function') {
+          navigator.geolocation.clearWatch(watchIdRef.current)
+        }
         watchIdRef.current = null
+      }
+      if (rotationIntervalRef.current !== null) {
+        clearInterval(rotationIntervalRef.current)
+        rotationIntervalRef.current = null
+      }
+      if (idleTimerRef.current !== null) {
+        clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = null
       }
     }
   }, [])
+
+  // Issue#111: 地球儀回転を停止する
+  const stopGlobeRotation = useCallback(() => {
+    if (rotationIntervalRef.current !== null) {
+      clearInterval(rotationIntervalRef.current)
+      rotationIntervalRef.current = null
+    }
+    isRotatingRef.current = false
+  }, [])
+
+  // Issue#111: 地球儀回転を即時開始する。ズームが GLOBE_ROTATION_MAX_ZOOM を超えていたら何もしない。
+  const startGlobeRotation = useCallback((mapInstance: MapboxMap) => {
+    if (rotationIntervalRef.current !== null) return
+    if (mapInstance.getZoom() > GLOBE_ROTATION_MAX_ZOOM) return
+    isRotatingRef.current = true
+    // 回転中はピン（クラスタ）を非表示にする。React state を空にすることで
+    // GeoJSON Source の setData が空配列で更新され、ピンが消える。
+    setSpots([])
+    rotationIntervalRef.current = setInterval(() => {
+      const center = mapInstance.getCenter()
+      mapInstance.setCenter([center.lng + DEGREES_PER_TICK, center.lat])
+    }, ROTATION_TICK_MS)
+  }, [])
+
+  // Issue#111: アイドル待機後に回転を開始するスケジュールを立てる
+  const scheduleGlobeRotation = useCallback((mapInstance: MapboxMap) => {
+    if (idleTimerRef.current !== null) clearTimeout(idleTimerRef.current)
+    idleTimerRef.current = setTimeout(() => {
+      idleTimerRef.current = null
+      startGlobeRotation(mapInstance)
+    }, GLOBE_ROTATION_IDLE_DELAY_MS)
+  }, [startGlobeRotation])
+
+  // Issue#111: ユーザーがマップを操作した時のハンドラ（movestart）。
+  // - 回転による setCenter で発火する movestart は originalEvent が undefined なので無視
+  // - ユーザー操作（ドラッグ、ピンチ等）では originalEvent がセットされる
+  const handleUserMapInteraction = useCallback((mapInstance: MapboxMap, e: { originalEvent?: unknown } | undefined) => {
+    if (!e?.originalEvent) return // 回転自身が起こした programmatic な move は無視
+    stopGlobeRotation()
+    if (idleTimerRef.current !== null) {
+      clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = null
+    }
+    // ズーム 0〜4 の範囲なら 5秒後に再度回転を開始するスケジュールを立てる
+    if (mapInstance.getZoom() <= GLOBE_ROTATION_MAX_ZOOM) {
+      scheduleGlobeRotation(mapInstance)
+    }
+  }, [stopGlobeRotation, scheduleGlobeRotation])
 
   // デバイスの向き取得の許可をリクエスト（iOS 13+用）
   const requestOrientationPermission = useCallback(async () => {
@@ -518,6 +612,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               lng: position.coords.longitude,
             }
             setUserLocation(newLocation)
+            // Issue#111: 現在位置ボタンで取得した位置も lastGeolocationCache に保存し、
+            // 写真投稿マップ（InlineMapPicker）が同期的に読み出せるようにする。
+            setLastGeolocationCache(newLocation.lat, newLocation.lng)
             if (isFirstUpdate) {
               const currentCenter = map.getCenter()
               const distance = Math.sqrt(
@@ -630,12 +727,19 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
      * 位置情報のポップアップが表示されている間にユーザーが待機する場合は、その時間が
      * カウント対象に含まれるため、追加の待機は発生しない。
      */
-    autoCenter: async () => {
+    autoCenter: async (options?: { skipMinView?: boolean }) => {
       if (!map) return
 
       const startedAt = Date.now()
+      const skipMinView = options?.skipMinView === true
 
       const warpToLocation = (lng: number, lat: number, zoom: number) => {
+        // Issue#111: ワープ開始時に地球儀回転を停止する
+        stopGlobeRotation()
+        if (idleTimerRef.current !== null) {
+          clearTimeout(idleTimerRef.current)
+          idleTimerRef.current = null
+        }
         // Mapbox の jumpTo は moveend イベントを発火するため、handleMoveEnd 経由で
         // fetchSpots が呼ばれる（zoom > 0 のフィルタにより、autoCenter 後のズーム5～14で動作）
         performWarpAnimation(
@@ -648,6 +752,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
       // ズーム0（地球全体）を最低一定時間表示するための待機ヘルパー
       const waitForMinViewDuration = async () => {
+        if (skipMinView) return
         const elapsed = Date.now() - startedAt
         if (elapsed < AUTO_CENTER_MIN_VIEW_MS) {
           await new Promise((resolve) => setTimeout(resolve, AUTO_CENTER_MIN_VIEW_MS - elapsed))
@@ -674,6 +779,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           lng: geolocationResult.coords.longitude,
         }
         setUserLocation(userPos)
+        // Issue#111: ユーザーの最後の位置情報を localStorage に保存し、
+        // 写真投稿マップ（InlineMapPicker）が同期的に初期表示位置として使えるようにする
+        setLastGeolocationCache(userPos.lat, userPos.lng)
         await waitForMinViewDuration()
         warpToLocation(userPos.lng, userPos.lat, GEOLOCATION_ZOOM)
         return
@@ -699,7 +807,20 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       // 3. すべて失敗 → 東京（ズーム11）にフォールバック
       warpToLocation(DEFAULT_CENTER.lng, DEFAULT_CENTER.lat, FALLBACK_TOKYO_ZOOM)
     },
-  }), [map, requestOrientationPermission, fetchSpots])
+    /**
+     * Issue#111: 5秒のアイドル待機をスキップして地球儀回転を即時開始する。
+     * 位置情報の許可状態が prompt の場合に、許可ポップアップ表示中の待ち時間を
+     * 視覚的に楽しませるため、App.tsx から呼び出す。
+     */
+    startGlobeRotationImmediately: () => {
+      if (!map) return
+      if (idleTimerRef.current !== null) {
+        clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = null
+      }
+      startGlobeRotation(map)
+    },
+  }), [map, requestOrientationPermission, fetchSpots, stopGlobeRotation, startGlobeRotation])
 
   // 地図が読み込まれたときの処理
   const handleLoad = useCallback((e: MapEvent) => {
@@ -709,6 +830,19 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     initializeSymbolLayers(mapInstance)
 
     setMap(mapInstance)
+
+    // Issue#111: ユーザー操作（ドラッグ／ピンチ等）を検知して回転を停止する。
+    // `originalEvent` の有無で programmatic / user 由来を区別する（handleUserMapInteraction 内で判定）。
+    mapInstance.on('movestart', (ev: { originalEvent?: unknown }) => {
+      handleUserMapInteraction(mapInstance, ev)
+    })
+
+    // Issue#111: 初期表示はズーム 0（地球全体）のため、5秒経過で地球儀回転を開始するスケジュールを立てる。
+    // ただし granted/denied 既知のケースでは autoCenter が即座に warp するため、
+    // 回転は始まらない（warp 前にズームが上がる）。
+    if (mapInstance.getZoom() <= GLOBE_ROTATION_MAX_ZOOM) {
+      scheduleGlobeRotation(mapInstance)
+    }
 
     // Issue#106: ズーム0（地球全体）では全世界のスポットを取得しないためスキップ。
     // autoCenter のワープ完了後（mapInstance.getZoom() > 0 になった時点）の moveend / idle イベントで
@@ -721,7 +855,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     ;(globalThis as unknown as Record<string, unknown>).__photlas_map = mapInstance
 
     onMapReady?.()
-  }, [fetchSpots, onMapReady, initializeSymbolLayers])
+  }, [fetchSpots, onMapReady, initializeSymbolLayers, handleUserMapInteraction, scheduleGlobeRotation])
 
   // 地図移動完了時のスポット取得（デバウンス: 連続操作を1回のAPI呼び出しにまとめる）
   const debouncedFetchSpots = useDebouncedCallback(
@@ -733,6 +867,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     const mapInstance = e.target
     // Issue#106: ズーム0では全世界のスポットを取得しないためスキップ
     if (mapInstance.getZoom() <= 0) return
+    // Issue#111: 地球儀回転中は moveend が連続で走るためスポット取得をスキップする
+    if (isRotatingRef.current) return
     debouncedFetchSpots(mapInstance)
   }, [debouncedFetchSpots])
 
@@ -759,7 +895,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       <Map
         mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
         initialViewState={{
-          longitude: INITIAL_VIEW_LNG,
+          longitude: initialLongitude,
           latitude: INITIAL_VIEW_LAT,
           zoom: DEFAULT_ZOOM,
         }}
