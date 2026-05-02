@@ -26,7 +26,7 @@ public class ModerationNotificationService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.mail.from:noreply@photlas.jp}")
+    @Value("${app.mail.from:Photlas <noreply@photlas.jp>}")
     private String mailFrom;
 
     public ModerationNotificationService(JavaMailSender mailSender) {
