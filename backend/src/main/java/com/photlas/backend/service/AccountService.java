@@ -156,7 +156,7 @@ public class AccountService {
                     link + "\n\n" +
                     "このリンクの有効期限は30分です。\n\n" +
                     "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                    "Photlas 運営");
+                    "Photlas");
         }
 
         // 旧メールアドレスに通知
@@ -176,7 +176,7 @@ public class AccountService {
                         user.getUsername() + " さん\n\n" +
                         "お客様のアカウントでメールアドレスの変更がリクエストされました。\n\n" +
                         "心当たりがない場合は、ただちにパスワードを変更してください。\n\n" +
-                        "Photlas 運営");
+                        "Photlas");
             }
         } catch (Exception e) {
             logger.error("Failed to send email change notification to old address: {}", e.getMessage());
@@ -423,7 +423,7 @@ public class AccountService {
                 "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワードでログインしてください。\n\n" +
                 "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
                 "support@photlas.jp\n\n" +
-                "Photlas 運営\nsupport@photlas.jp";
+                "Photlas\nsupport@photlas.jp";
     }
 
     private static String normalBodyEn(String username) {
@@ -445,7 +445,7 @@ public class AccountService {
                 "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワード、または " + providerName + " で再度サインインしてください。\n\n" +
                 "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
                 "support@photlas.jp\n\n" +
-                "Photlas 運営\nsupport@photlas.jp";
+                "Photlas\nsupport@photlas.jp";
     }
 
     private static String hybridBodyEn(String username, String providerName) {
@@ -467,7 +467,7 @@ public class AccountService {
                 "アカウントを復旧したい場合は、90日以内に " + providerName + " で再度サインインしてください。\n\n" +
                 "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
                 "support@photlas.jp\n\n" +
-                "Photlas 運営\nsupport@photlas.jp";
+                "Photlas\nsupport@photlas.jp";
     }
 
     private static String oauthOnlyBodyEn(String username, String providerName) {

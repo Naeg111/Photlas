@@ -680,7 +680,7 @@ public class UserServiceTest {
             "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワードでログインしてください。\n\n" +
             "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
             "support@photlas.jp\n\n" +
-            "Photlas 運営\nsupport@photlas.jp";
+            "Photlas\nsupport@photlas.jp";
 
     @Test
     @DisplayName("[Issue#81 4-B NORMAL ja Golden] 通常ユーザー ja: 退会メール本文は既存文面と完全一致")
