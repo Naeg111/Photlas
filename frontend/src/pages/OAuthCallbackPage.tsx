@@ -66,7 +66,7 @@ export default function OAuthCallbackPage() {
   }, [navigate, t])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8 text-center">
         {status === 'loading' && (
           <>
