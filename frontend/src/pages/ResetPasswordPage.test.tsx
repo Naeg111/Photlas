@@ -80,6 +80,21 @@ describe('ResetPasswordPage', () => {
 
       expect(document.title).toBe('パスワードの再設定 - Photlas')
     })
+
+    it('Issue#110 - ページ全体の外側コンテナの背景が bg-black である', () => {
+      const { container } = renderWithToken(VALID_TOKEN)
+
+      const outer = container.querySelector('.min-h-screen')
+      expect(outer).toHaveClass('bg-black')
+      expect(outer).not.toHaveClass('bg-gray-50')
+    })
+
+    it('Issue#110 - tokenなしのエラー画面でも背景が bg-black である', () => {
+      const { container } = renderWithToken()
+
+      const outer = container.querySelector('.min-h-screen')
+      expect(outer).toHaveClass('bg-black')
+    })
   })
 
   describe('バリデーション', () => {
