@@ -10,7 +10,7 @@ import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
 
 /** ページ共通のレイアウトクラス */
-const PAGE_LAYOUT_CLASS = 'min-h-screen flex items-center justify-center bg-gray-50'
+const PAGE_LAYOUT_CLASS = 'min-h-screen flex items-center justify-center bg-black'
 
 /** カードコンテナの共通クラス */
 const CARD_CLASS = 'max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8'
