@@ -74,10 +74,14 @@ export interface MapViewFilterParams {
 const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 // Issue#106: 初期ズームは0（地球全体）。autoCenterで現在地/IP国判定結果にワープする
 const DEFAULT_ZOOM = 0
-// Issue#106: 初期ズーム0表示時の緯度。赤道（0）にすることで地球儀の中心が画面中央に置かれる。
+// Issue#106: 初期ズーム0表示時の緯度。
 // Issue#111: 経度（INITIAL_VIEW_LNG）は削除し、コンポーネント内で 0〜359 のランダム値に切替える。
-// 緯度はランダム化せず引き続き赤道固定。
-const INITIAL_VIEW_LAT = 0
+// Issue#111-followup: 真の赤道（緯度0）だと球体の正中線が画面中央に来て少し違和感があったため、
+// 緯度 10 度で固定する（地球儀がやや見下ろし気味の自然な見え方になる）。
+const INITIAL_VIEW_LAT = 10
+// 方位リセットボタンを押した時 / 地球儀表示時の「赤道相当」のリセット先緯度。
+// INITIAL_VIEW_LAT と同じ値を使う（再リセットでも初期表示と同じ自然な見え方に）。
+const GLOBE_RESET_LAT = INITIAL_VIEW_LAT
 // Issue#106: autoCenter のフォールバック用（位置情報・IP国判定がすべて失敗した場合）
 const FALLBACK_TOKYO_ZOOM = 11
 // Issue#106: 位置情報取得成功時のズームレベル
@@ -396,12 +400,19 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // 直前のフレームから経過した実時間に比例した経度変化を加算する。
   const rotationLoop = useCallback((mapInstance: MapboxMap) => {
     const tick = (now: number) => {
+      // Issue#111-followup: 回転中にホイールズームインなどでズームが 5 以上に上がったら
+      // 自身でループを終了する（startGlobeRotation のガードは「開始時」しかチェックしないため）
+      if (mapInstance.getZoom() > GLOBE_ROTATION_MAX_ZOOM) {
+        rotationFrameRef.current = null
+        isRotatingRef.current = false
+        return
+      }
       const elapsedMs = now - lastTickTimestampRef.current
       lastTickTimestampRef.current = now
       const deltaDegrees = (DEGREES_PER_SECOND * elapsedMs) / 1000
       const center = mapInstance.getCenter()
       // Issue#111-followup Bug4: 緯度はそのまま維持する（ユーザーが緯度を変えれば
-      // その緯度で回転する）。方位リセットボタンを押すと緯度0に戻る仕様。
+      // その緯度で回転する）。方位リセットボタンを押すと初期緯度（GLOBE_RESET_LAT）に戻る仕様。
       mapInstance.setCenter([center.lng + deltaDegrees, center.lat])
       rotationFrameRef.current = requestAnimationFrame(tick)
     }
@@ -697,12 +708,13 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     resetNorthHeading: () => {
       if (!map) return
       // Issue#111-followup Bug4: 地球儀表示時（ズーム 0〜4）に方位リセットを押した場合、
-      // 緯度（lat）も赤道（0）に戻すことで、画面アスペクト比による「北極が見えすぎる」状態を解消する。
-      // ユーザーが任意の緯度で回転させることは許容する（緯度0以外でも回転は可能）。
+      // 緯度（lat）も初期表示と同じ GLOBE_RESET_LAT に戻すことで、画面アスペクト比による
+      // 「北極が見えすぎる」状態を解消する。
+      // ユーザーが任意の緯度で回転させることは許容する（GLOBE_RESET_LAT 以外でも回転は可能）。
       // 写真スポットなど高ズーム時は従来通り bearing/pitch のみリセット（中心位置を勝手に動かさない）。
       if (map.getZoom() <= GLOBE_ROTATION_MAX_ZOOM) {
         const center = map.getCenter()
-        map.easeTo({ center: [center.lng, 0], bearing: 0, pitch: 0, duration: 500 })
+        map.easeTo({ center: [center.lng, GLOBE_RESET_LAT], bearing: 0, pitch: 0, duration: 500 })
       } else {
         map.easeTo({ bearing: 0, pitch: 0, duration: 500 })
       }
@@ -940,12 +952,24 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
+    const zoom = mapInstance.getZoom()
+    // Issue#111-followup: ユーザーが（例えばズームアウトボタンで）ズーム 0〜4 の範囲に入って
+    // かつ回転中でも回転予約中でもない場合、5秒後の回転を予約する。
+    // movestart リスナーを廃止した影響で、UI ボタン経由のズーム変化では
+    // 回転予約のトリガーが失われていた問題（Bug followup）への対策。
+    if (
+      zoom <= GLOBE_ROTATION_MAX_ZOOM &&
+      !isRotatingRef.current &&
+      idleTimerRef.current === null
+    ) {
+      scheduleGlobeRotation(mapInstance)
+    }
     // Issue#106: ズーム0では全世界のスポットを取得しないためスキップ
-    if (mapInstance.getZoom() <= 0) return
+    if (zoom <= 0) return
     // Issue#111: 地球儀回転中は moveend が連続で走るためスポット取得をスキップする
     if (isRotatingRef.current) return
     debouncedFetchSpots(mapInstance)
-  }, [debouncedFetchSpots])
+  }, [debouncedFetchSpots, scheduleGlobeRotation])
 
   // フィルター条件が変更されたときにスポットを再取得
   useEffect(() => {
