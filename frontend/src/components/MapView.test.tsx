@@ -30,6 +30,18 @@ vi.mock('../utils/fetchMyCountry', () => ({
   fetchMyCountry: mockFetchMyCountry,
 }))
 
+// Issue#111: ユーザーの最後の位置情報キャッシュのモック
+const { mockGetLastGeolocationCache, mockSetLastGeolocationCache } = vi.hoisted(() => ({
+  mockGetLastGeolocationCache: vi.fn(),
+  mockSetLastGeolocationCache: vi.fn(),
+}))
+vi.mock('../utils/lastGeolocationCache', () => ({
+  getLastGeolocationCache: mockGetLastGeolocationCache,
+  setLastGeolocationCache: mockSetLastGeolocationCache,
+  LAST_GEOLOCATION_CACHE_KEY: 'photlas_last_geolocation',
+  LAST_GEOLOCATION_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
+}))
+
 // Issue#96 PR3: sonner のモック（429 バーストトースト検証用）
 const { mockToast } = vi.hoisted(() => ({
   mockToast: {
@@ -62,7 +74,7 @@ vi.mock('../utils/pinImageGenerator', () => ({
 }))
 
 // Mapbox GL JS のモックマップインスタンス
-const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() => {
+const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitialViewState } = vi.hoisted(() => {
   let hasMounted = false
   const timerIds: ReturnType<typeof setTimeout>[] = []
 
@@ -72,10 +84,12 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() =
   const layers: { config: any }[] = []
   // 登録されたイメージIDを保存
   const images: Set<string> = new Set()
-  // イベントハンドラーを保存
+  // イベントハンドラーを保存（3引数形式: layerId 別 / 2引数形式: '__no_layer__' キー）
   const eventHandlers: Record<string, Record<string, Function>> = {}
   // GeoJSONソースのsetData呼び出しを記録
   let lastSetData: any = null
+  // Issue#111: ランダム経度の検証用に initialViewState をキャプチャする
+  let capturedInitialViewState: any = null
 
   const mockMap = {
     setZoom: vi.fn(),
@@ -92,11 +106,17 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() =
     jumpTo: vi.fn(),
     once: vi.fn(),
     setLanguage: vi.fn(),
+    // Issue#111: 地球儀回転時に setCenter を呼び出す
+    setCenter: vi.fn(),
     on: vi.fn((event: string, layerOrHandler: string | Function, handler?: Function) => {
       if (typeof layerOrHandler === 'string' && handler) {
         // map.on('click', 'layerId', handler) 形式
         if (!eventHandlers[event]) eventHandlers[event] = {}
         eventHandlers[event][layerOrHandler] = handler
+      } else if (typeof layerOrHandler === 'function') {
+        // map.on('movestart', handler) 形式（Issue#111: 地球儀回転）
+        if (!eventHandlers[event]) eventHandlers[event] = {}
+        eventHandlers[event]['__no_layer__'] = layerOrHandler
       }
     }),
     off: vi.fn(),
@@ -127,9 +147,10 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() =
   }
 
   // react-map-gl のモック
-  const MapMock = ({ children, onLoad, onMoveEnd }: any) => {
+  const MapMock = ({ children, onLoad, onMoveEnd, initialViewState }: any) => {
     if (!hasMounted) {
       hasMounted = true
+      capturedInitialViewState = initialViewState
       if (onLoad) {
         onLoad({ target: mockMap })
       }
@@ -154,6 +175,7 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() =
     images.clear()
     Object.keys(eventHandlers).forEach(k => delete eventHandlers[k])
     lastSetData = null
+    capturedInitialViewState = null
   }
 
   const mockSourceData = {
@@ -164,7 +186,9 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag } = vi.hoisted(() =
     get lastSetData() { return lastSetData },
   }
 
-  return { mockMap, mockSourceData, MapMock, resetMockMountFlag }
+  const getCapturedInitialViewState = () => capturedInitialViewState
+
+  return { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitialViewState }
 })
 
 vi.mock('react-map-gl', () => ({
@@ -940,6 +964,318 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.jumpTo).toHaveBeenCalled()
       })
       expect(mockMap.flyTo).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Issue#111: ユーザー位置情報キャッシュ（lastGeolocationCache）', () => {
+    let originalGeolocation: Geolocation | undefined
+    const mockGetCurrentPosition = vi.fn()
+    const mockWatchPosition = vi.fn()
+    const mockClearWatch = vi.fn()
+
+    beforeEach(() => {
+      originalGeolocation = navigator.geolocation
+      Object.defineProperty(navigator, 'geolocation', {
+        value: {
+          getCurrentPosition: mockGetCurrentPosition,
+          watchPosition: mockWatchPosition,
+          clearWatch: mockClearWatch,
+        },
+        configurable: true,
+      })
+      mockGetCurrentPosition.mockReset()
+      mockWatchPosition.mockReset()
+      mockClearWatch.mockReset()
+      mockGetGeoCountryCache.mockReset()
+      mockSetGeoCountryCache.mockReset()
+      mockFetchMyCountry.mockReset()
+      mockGetLastGeolocationCache.mockReset()
+      mockSetLastGeolocationCache.mockReset()
+    })
+
+    afterEach(() => {
+      if (originalGeolocation) {
+        Object.defineProperty(navigator, 'geolocation', {
+          value: originalGeolocation,
+          configurable: true,
+        })
+      }
+    })
+
+    it('Issue#111 - autoCenter で位置情報取得成功時に setLastGeolocationCache が呼ばれる', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+      mockGetCurrentPosition.mockImplementation((success: PositionCallback) => {
+        success({
+          coords: { latitude: 34.6937, longitude: 135.5023, accuracy: 100 } as GeolocationCoordinates,
+          timestamp: Date.now(),
+        } as GeolocationPosition)
+      })
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      await ref.current.autoCenter()
+
+      await waitFor(() => {
+        expect(mockSetLastGeolocationCache).toHaveBeenCalledWith(34.6937, 135.5023)
+      })
+    })
+
+    it('Issue#111 - centerOnUserLocation の watchPosition 成功時に setLastGeolocationCache が呼ばれる', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+      mockWatchPosition.mockImplementation((success: PositionCallback) => {
+        success({
+          coords: { latitude: 35.6585, longitude: 139.7454, accuracy: 100 } as GeolocationCoordinates,
+          timestamp: Date.now(),
+        } as GeolocationPosition)
+        return 1 // watchId
+      })
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      await ref.current.centerOnUserLocation()
+
+      await waitFor(() => {
+        expect(mockSetLastGeolocationCache).toHaveBeenCalledWith(35.6585, 139.7454)
+      })
+    })
+  })
+
+  describe('Issue#111: 初期経度のランダム化', () => {
+    it('Issue#111 - 初回マウント時に Math.random が呼ばれる（経度のランダム化）', async () => {
+      setupFetchMock()
+      const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+      try {
+        render(<MapView />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
+        })
+
+        expect(randomSpy).toHaveBeenCalled()
+      } finally {
+        randomSpy.mockRestore()
+      }
+    })
+
+    it('Issue#111 - initialViewState の latitude は 0（赤道）に固定される', async () => {
+      setupFetchMock()
+      render(<MapView />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
+      })
+
+      const initialViewState = getCapturedInitialViewState()
+      expect(initialViewState).toBeTruthy()
+      expect(initialViewState.latitude).toBe(0)
+    })
+
+    it('Issue#111 - initialViewState の longitude は 0〜359 の範囲', async () => {
+      setupFetchMock()
+      render(<MapView />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
+      })
+
+      const initialViewState = getCapturedInitialViewState()
+      expect(initialViewState).toBeTruthy()
+      expect(initialViewState.longitude).toBeGreaterThanOrEqual(0)
+      expect(initialViewState.longitude).toBeLessThan(360)
+    })
+  })
+
+  describe('Issue#111: autoCenter の skipMinView オプション', () => {
+    let originalGeolocation: Geolocation | undefined
+    const mockGetCurrentPosition = vi.fn()
+
+    beforeEach(() => {
+      originalGeolocation = navigator.geolocation
+      Object.defineProperty(navigator, 'geolocation', {
+        value: { getCurrentPosition: mockGetCurrentPosition },
+        configurable: true,
+      })
+      mockGetCurrentPosition.mockReset()
+      mockGetGeoCountryCache.mockReset()
+      mockFetchMyCountry.mockReset()
+      mockGetLastGeolocationCache.mockReset()
+      mockSetLastGeolocationCache.mockReset()
+    })
+
+    afterEach(() => {
+      if (originalGeolocation) {
+        Object.defineProperty(navigator, 'geolocation', {
+          value: originalGeolocation,
+          configurable: true,
+        })
+      }
+    })
+
+    it('Issue#111 - autoCenter({ skipMinView: true }) で AUTO_CENTER_MIN_VIEW_MS の待機がスキップされる', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 0, lat: 0 })
+      mockGetCurrentPosition.mockImplementation((success: PositionCallback) => {
+        success({
+          coords: { latitude: 34.6937, longitude: 135.5023, accuracy: 100 } as GeolocationCoordinates,
+          timestamp: Date.now(),
+        } as GeolocationPosition)
+      })
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      const startedAt = Date.now()
+      await ref.current.autoCenter({ skipMinView: true })
+      const elapsed = Date.now() - startedAt
+
+      // AUTO_CENTER_MIN_VIEW_MS = 1000ms。skipMinView 時は待機がスキップされ、
+      // 数百ミリ秒以内に完了する想定。
+      expect(elapsed).toBeLessThan(800)
+      expect(mockMap.jumpTo).toHaveBeenCalled()
+    })
+  })
+
+  describe('Issue#111: 地球儀回転アニメーション', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      mockMap.setCenter.mockReset()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('Issue#111 - ズーム0で5秒間操作なしの場合、setCenter が呼ばれる（回転開始）', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(0)
+
+      render(<MapView />)
+
+      // mountは終わっているはず
+      await act(async () => {
+        // 5秒のアイドル待機 + 数フレーム分
+        vi.advanceTimersByTime(5100)
+      })
+
+      expect(mockMap.setCenter).toHaveBeenCalled()
+    })
+
+    it('Issue#111 - ズーム5以上では 5秒経過しても setCenter は呼ばれない（回転しない）', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(5)
+
+      render(<MapView />)
+
+      await act(async () => {
+        vi.advanceTimersByTime(10000)
+      })
+
+      expect(mockMap.setCenter).not.toHaveBeenCalled()
+    })
+
+    it('Issue#111 - movestart イベントで回転が停止する', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(0)
+
+      render(<MapView />)
+
+      // 回転開始まで進める
+      await act(async () => {
+        vi.advanceTimersByTime(5100)
+      })
+
+      expect(mockMap.setCenter).toHaveBeenCalled()
+      const callsBeforeStop = mockMap.setCenter.mock.calls.length
+
+      // movestart ハンドラを取得して呼ぶ（ユーザー操作のシミュレート）
+      const movestartCall = mockMap.on.mock.calls.find(
+        (c: any[]) => c[0] === 'movestart' && typeof c[1] === 'function',
+      )
+      expect(movestartCall).toBeDefined()
+      const handler = movestartCall![1] as Function
+      await act(async () => {
+        handler({})
+        // 回転停止後さらに時間を進める
+        vi.advanceTimersByTime(500)
+      })
+
+      // 停止後は setCenter の呼び出し回数が増えない
+      expect(mockMap.setCenter.mock.calls.length).toBe(callsBeforeStop)
+    })
+
+    it('Issue#111 - startGlobeRotationImmediately() で 5秒待たずに即時回転開始', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(0)
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      // 即時回転開始メソッド（Issue#111 で追加予定）
+      ref.current.startGlobeRotationImmediately()
+
+      await act(async () => {
+        // 数フレーム分だけ進める（5秒未満）
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(mockMap.setCenter).toHaveBeenCalled()
+    })
+
+    it('Issue#111 - 回転中の handleMoveEnd は fetchSpots をスキップする', async () => {
+      const mockFetch = setupFetchMock()
+      mockMap.getZoom.mockReturnValue(0)
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      // 即時回転開始
+      ref.current.startGlobeRotationImmediately()
+
+      await act(async () => {
+        vi.advanceTimersByTime(100)
+      })
+
+      // /spots fetchが呼ばれた回数を記録
+      const spotsFetchBefore = (mockFetch.mock.calls as Array<[string]>).filter(
+        ([url]) => typeof url === 'string' && url.includes('/spots'),
+      ).length
+
+      // 回転による setCenter で moveend が走る想定だが、回転中は fetchSpots をスキップする
+      // （setCenter が moveend を発火する前提でテスト）
+      await act(async () => {
+        vi.advanceTimersByTime(1000)
+      })
+
+      const spotsFetchAfter = (mockFetch.mock.calls as Array<[string]>).filter(
+        ([url]) => typeof url === 'string' && url.includes('/spots'),
+      ).length
+
+      // 回転中はスポット取得が増えない
+      expect(spotsFetchAfter).toBe(spotsFetchBefore)
     })
   })
 })

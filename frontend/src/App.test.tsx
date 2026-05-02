@@ -902,4 +902,105 @@ describe('App - Issue#28: App.tsx再構築', () => {
       expect(localStorageMock.removeItem).toHaveBeenCalledWith('auth_user')
     })
   })
+
+  describe('Issue#111: 位置情報許可状態に応じた autoCenter のタイミング', () => {
+    let originalGeolocation: Geolocation | undefined
+    let originalPermissions: Permissions | undefined
+    const mockGetCurrentPosition = vi.fn()
+
+    beforeEach(() => {
+      originalGeolocation = navigator.geolocation
+      originalPermissions = navigator.permissions
+      Object.defineProperty(navigator, 'geolocation', {
+        value: { getCurrentPosition: mockGetCurrentPosition, watchPosition: vi.fn(), clearWatch: vi.fn() },
+        configurable: true,
+      })
+      mockGetCurrentPosition.mockReset()
+    })
+
+    afterEach(() => {
+      if (originalGeolocation) {
+        Object.defineProperty(navigator, 'geolocation', {
+          value: originalGeolocation,
+          configurable: true,
+        })
+      }
+      if (originalPermissions) {
+        Object.defineProperty(navigator, 'permissions', {
+          value: originalPermissions,
+          configurable: true,
+        })
+      }
+    })
+
+    it('Issue#111 - permissions=granted の場合、スプラッシュ解除前に getCurrentPosition が呼ばれる', async () => {
+      Object.defineProperty(navigator, 'permissions', {
+        value: {
+          query: vi.fn().mockResolvedValue({ state: 'granted' }),
+        },
+        configurable: true,
+      })
+
+      renderApp()
+
+      // スプラッシュ表示中（解除タイマー未経過）
+      // 短時間 await で permissions.query → autoCenter() の起動を待つ
+      await waitFor(() => {
+        expect(mockGetCurrentPosition).toHaveBeenCalled()
+      }, { timeout: 1500 })
+
+      // スプラッシュはまだ表示されている
+      expect(screen.queryByTestId('splash-screen')).toBeInTheDocument()
+    })
+
+    it('Issue#111 - permissions=denied の場合、スプラッシュ解除前に IP国判定が走る', async () => {
+      Object.defineProperty(navigator, 'permissions', {
+        value: {
+          query: vi.fn().mockResolvedValue({ state: 'denied' }),
+        },
+        configurable: true,
+      })
+      // denied のため getCurrentPosition は失敗で返す
+      mockGetCurrentPosition.mockImplementation((_success: PositionCallback, error?: PositionErrorCallback) => {
+        error?.({ code: 1, message: 'denied' } as GeolocationPositionError)
+      })
+
+      renderApp()
+
+      // スプラッシュ表示中に getCurrentPosition の呼び出しが起きること
+      await waitFor(() => {
+        expect(mockGetCurrentPosition).toHaveBeenCalled()
+      }, { timeout: 1500 })
+
+      // スプラッシュはまだ表示されている
+      expect(screen.queryByTestId('splash-screen')).toBeInTheDocument()
+    })
+
+    it('Issue#111 - permissions=prompt の場合、スプラッシュ解除前は getCurrentPosition を呼ばない', async () => {
+      Object.defineProperty(navigator, 'permissions', {
+        value: {
+          query: vi.fn().mockResolvedValue({ state: 'prompt' }),
+        },
+        configurable: true,
+      })
+
+      renderApp()
+
+      // スプラッシュ表示時間（1秒分）経過させる（まだ解除されない）
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+
+      // この時点では prompt のため getCurrentPosition は呼ばれない
+      expect(mockGetCurrentPosition).not.toHaveBeenCalled()
+
+      // スプラッシュ解除（残り時間も進める）
+      skipSplashScreen()
+
+      // スプラッシュ解除後に呼ばれる
+      await waitFor(() => {
+        expect(mockGetCurrentPosition).toHaveBeenCalled()
+      }, { timeout: 1500 })
+    })
+  })
 })

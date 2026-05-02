@@ -77,6 +77,17 @@ vi.mock('../utils/geoCountryCache', () => ({
   GEO_COUNTRY_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
 }))
 
+// Issue#111: ユーザー位置情報キャッシュのモック
+const { mockGetLastGeolocationCacheIMP } = vi.hoisted(() => ({
+  mockGetLastGeolocationCacheIMP: vi.fn(),
+}))
+vi.mock('../utils/lastGeolocationCache', () => ({
+  getLastGeolocationCache: mockGetLastGeolocationCacheIMP,
+  setLastGeolocationCache: vi.fn(),
+  LAST_GEOLOCATION_CACHE_KEY: 'photlas_last_geolocation',
+  LAST_GEOLOCATION_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
+}))
+
 describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   const defaultProps = {
     position: null as { lat: number; lng: number } | null,
@@ -561,6 +572,89 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       }).not.toThrow()
 
       expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
+    })
+  })
+
+  describe('Issue#111: 最後の位置情報キャッシュの優先利用', () => {
+    let originalGeolocation: Geolocation | undefined
+    let originalPermissions: Permissions | undefined
+
+    beforeEach(() => {
+      mockGetGeoCountryCacheIMP.mockReset()
+      mockGetLastGeolocationCacheIMP.mockReset()
+      originalGeolocation = navigator.geolocation
+      originalPermissions = navigator.permissions
+      Object.defineProperty(navigator, 'permissions', {
+        value: {
+          query: vi.fn().mockResolvedValue({ state: 'denied' }),
+        },
+        configurable: true,
+      })
+    })
+
+    afterEach(() => {
+      if (originalGeolocation) {
+        Object.defineProperty(navigator, 'geolocation', {
+          value: originalGeolocation,
+          configurable: true,
+        })
+      }
+      if (originalPermissions) {
+        Object.defineProperty(navigator, 'permissions', {
+          value: originalPermissions,
+          configurable: true,
+        })
+      }
+    })
+
+    it('Issue#111 - InlineMapPicker は getLastGeolocationCache を呼び出す', () => {
+      mockGetLastGeolocationCacheIMP.mockReturnValue(null)
+      mockGetGeoCountryCacheIMP.mockReturnValue(null)
+
+      render(<InlineMapPicker {...defaultProps} position={null} />)
+
+      expect(mockGetLastGeolocationCacheIMP).toHaveBeenCalled()
+    })
+
+    it('Issue#111 - 位置情報キャッシュがヒットすると、その座標が initialViewState に渡される', () => {
+      // キャッシュに大阪の座標
+      mockGetLastGeolocationCacheIMP.mockReturnValue({ lat: 34.6937, lng: 135.5023 })
+      // 国判定キャッシュは JP（大阪より優先順位が低い）
+      mockGetGeoCountryCacheIMP.mockReturnValue('JP')
+
+      render(<InlineMapPicker {...defaultProps} position={null} />)
+
+      // モック地図がレンダリングされ、大阪の座標が使用されていることを確認
+      // （IP国判定キャッシュより前にチェックされる仕様）
+      expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
+      expect(mockGetLastGeolocationCacheIMP).toHaveBeenCalled()
+    })
+
+    it('Issue#111 - 位置情報キャッシュ優先順位: position > lastGeolocationCache > IP国判定キャッシュ > 東京駅', () => {
+      // EXIF 座標（position）が指定されている場合、lastGeolocationCache は呼ばれない
+      mockGetLastGeolocationCacheIMP.mockReturnValue({ lat: 34.6937, lng: 135.5023 })
+      mockGetGeoCountryCacheIMP.mockReturnValue('JP')
+
+      render(
+        <InlineMapPicker
+          {...defaultProps}
+          position={{ lat: 35.6585, lng: 139.7454 }}
+        />,
+      )
+
+      expect(mockGetLastGeolocationCacheIMP).not.toHaveBeenCalled()
+      expect(mockGetGeoCountryCacheIMP).not.toHaveBeenCalled()
+    })
+
+    it('Issue#111 - 位置情報キャッシュが null のとき、IP国判定キャッシュにフォールバックする', () => {
+      mockGetLastGeolocationCacheIMP.mockReturnValue(null)
+      mockGetGeoCountryCacheIMP.mockReturnValue('JP')
+
+      render(<InlineMapPicker {...defaultProps} position={null} />)
+
+      // 両方が呼ばれる: 位置情報キャッシュチェック → null → IP国判定キャッシュチェック
+      expect(mockGetLastGeolocationCacheIMP).toHaveBeenCalled()
+      expect(mockGetGeoCountryCacheIMP).toHaveBeenCalled()
     })
   })
 })
