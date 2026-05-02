@@ -394,10 +394,16 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
   /**
    * 写真投稿ハンドラー
    * Issue#9: 写真アップロード処理
+   *
+   * バックエンドの createPhoto は S3 上に対象ファイルが存在することを前提
+   * （existsInS3 チェック + status タグ更新）にしているため、
+   * S3 アップロードを先に完了させた後で createPhoto を呼ぶ必要がある。
+   *
    * 1. Presigned URL取得
-   * 2. S3へアップロード
-   * 3. メタデータ保存
-   * 4. マップ更新
+   * 2. EXIF削除（再エンコード）
+   * 3. S3 アップロード（status=pending タグ付き）
+   * 4. メタデータ保存（DB）
+   * 5. マップ更新
    */
   const handlePhotoSubmit = async (data: {
     file: File
@@ -432,7 +438,13 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
         contentType,
       })
 
-      // 2. メタデータ保存（EXIF情報を含む）
+      // 2. EXIF情報を削除して画像を再エンコード
+      const strippedBlob = await stripExif(data.file)
+
+      // 3. EXIF削除済み画像をS3へアップロード
+      await uploadFileToS3(uploadUrl, strippedBlob)
+
+      // 4. メタデータ保存（EXIF情報を含む）
       const photoResponse = await createPhoto({
         placeName: data.placeName,
         s3ObjectKey: objectKey,
@@ -454,12 +466,6 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
         cropCenterY: data.cropCenterY,
         cropZoom: data.cropZoom,
       })
-
-      // 3. EXIF情報を削除して画像を再エンコード
-      const strippedBlob = await stripExif(data.file)
-
-      // 4. EXIF削除済み画像をS3へアップロード
-      await uploadFileToS3(uploadUrl, strippedBlob)
 
       // 5. マップ更新
       mapRef.current?.refreshSpots()
