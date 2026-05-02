@@ -337,7 +337,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // 同じ値が使われ続けるため useMemo を使う。
   const initialLongitude = useMemo(() => Math.floor(Math.random() * 360), [])
 
-  // watchPositionのクリーンアップ
+  // watchPosition / 地球儀回転 / アイドル予約タイマーのクリーンアップ（unmount 時）
   useEffect(() => {
     return () => {
       // 防御的チェック: テスト環境では unmount 時に navigator.geolocation の clearWatch が
@@ -359,16 +359,27 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }
   }, [])
 
-  // Issue#111: 地球儀回転を停止する
+  // Issue#111: アイドル予約タイマーを止める（再スケジュールも回転中も両方の経路で使う）
+  const clearIdleRotationTimer = useCallback(() => {
+    if (idleTimerRef.current !== null) {
+      clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = null
+    }
+  }, [])
+
+  // Issue#111: 地球儀回転を停止する。アイドル予約タイマーも一緒に止めることで、
+  // 「停止したら確実に動かない」状態にする（再開は呼び出し側が明示的に scheduleGlobeRotation を呼ぶ）。
   const stopGlobeRotation = useCallback(() => {
     if (rotationIntervalRef.current !== null) {
       clearInterval(rotationIntervalRef.current)
       rotationIntervalRef.current = null
     }
+    clearIdleRotationTimer()
     isRotatingRef.current = false
-  }, [])
+  }, [clearIdleRotationTimer])
 
   // Issue#111: 地球儀回転を即時開始する。ズームが GLOBE_ROTATION_MAX_ZOOM を超えていたら何もしない。
+  // 回転中はピン（クラスタ）を非表示にし、視覚的なシンプルさを保つ。
   const startGlobeRotation = useCallback((mapInstance: MapboxMap) => {
     if (rotationIntervalRef.current !== null) return
     if (mapInstance.getZoom() > GLOBE_ROTATION_MAX_ZOOM) return
@@ -382,26 +393,22 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }, ROTATION_TICK_MS)
   }, [])
 
-  // Issue#111: アイドル待機後に回転を開始するスケジュールを立てる
+  // Issue#111: GLOBE_ROTATION_IDLE_DELAY_MS のアイドル待機後に回転を開始するスケジュールを立てる
   const scheduleGlobeRotation = useCallback((mapInstance: MapboxMap) => {
-    if (idleTimerRef.current !== null) clearTimeout(idleTimerRef.current)
+    clearIdleRotationTimer()
     idleTimerRef.current = setTimeout(() => {
       idleTimerRef.current = null
       startGlobeRotation(mapInstance)
     }, GLOBE_ROTATION_IDLE_DELAY_MS)
-  }, [startGlobeRotation])
+  }, [clearIdleRotationTimer, startGlobeRotation])
 
   // Issue#111: ユーザーがマップを操作した時のハンドラ（movestart）。
-  // - 回転による setCenter で発火する movestart は originalEvent が undefined なので無視
+  // - 回転による setCenter で発火する movestart は originalEvent が undefined なので無視する
   // - ユーザー操作（ドラッグ、ピンチ等）では originalEvent がセットされる
+  // 操作後にズーム 0〜4 のままなら 5秒後に再度回転を開始するスケジュールを立てる。
   const handleUserMapInteraction = useCallback((mapInstance: MapboxMap, e: { originalEvent?: unknown } | undefined) => {
-    if (!e?.originalEvent) return // 回転自身が起こした programmatic な move は無視
+    if (!e?.originalEvent) return
     stopGlobeRotation()
-    if (idleTimerRef.current !== null) {
-      clearTimeout(idleTimerRef.current)
-      idleTimerRef.current = null
-    }
-    // ズーム 0〜4 の範囲なら 5秒後に再度回転を開始するスケジュールを立てる
     if (mapInstance.getZoom() <= GLOBE_ROTATION_MAX_ZOOM) {
       scheduleGlobeRotation(mapInstance)
     }
@@ -734,12 +741,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       const skipMinView = options?.skipMinView === true
 
       const warpToLocation = (lng: number, lat: number, zoom: number) => {
-        // Issue#111: ワープ開始時に地球儀回転を停止する
+        // Issue#111: ワープ開始時に地球儀回転を停止する（idle タイマーも内部で止まる）
         stopGlobeRotation()
-        if (idleTimerRef.current !== null) {
-          clearTimeout(idleTimerRef.current)
-          idleTimerRef.current = null
-        }
         // Mapbox の jumpTo は moveend イベントを発火するため、handleMoveEnd 経由で
         // fetchSpots が呼ばれる（zoom > 0 のフィルタにより、autoCenter 後のズーム5～14で動作）
         performWarpAnimation(
@@ -814,13 +817,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
      */
     startGlobeRotationImmediately: () => {
       if (!map) return
-      if (idleTimerRef.current !== null) {
-        clearTimeout(idleTimerRef.current)
-        idleTimerRef.current = null
-      }
+      clearIdleRotationTimer()
       startGlobeRotation(map)
     },
-  }), [map, requestOrientationPermission, fetchSpots, stopGlobeRotation, startGlobeRotation])
+  }), [map, requestOrientationPermission, fetchSpots, stopGlobeRotation, startGlobeRotation, clearIdleRotationTimer])
 
   // 地図が読み込まれたときの処理
   const handleLoad = useCallback((e: MapEvent) => {
