@@ -732,7 +732,6 @@ describe('App - Issue#28: App.tsx再構築', () => {
         key: EMAIL_JUST_VERIFIED_KEY,
         newValue: String(Date.now()),
         oldValue: null,
-        storageArea: localStorage,
       }))
     }
 
@@ -817,12 +816,90 @@ describe('App - Issue#28: App.tsx再構築', () => {
           key: 'some_other_key',
           newValue: 'value',
           oldValue: null,
-          storageArea: localStorage,
         }))
       })
 
       await new Promise(resolve => setTimeout(resolve, 100))
       expect(screen.queryByRole('heading', { name: 'ログイン' })).not.toBeInTheDocument()
+    })
+  })
+
+  /**
+   * Issue#110: メールアドレス変更完了マーカーによる強制ログアウト＋ログインダイアログ表示
+   *
+   * メールアドレス変更確認ページが localStorage に email_just_changed を書き込むと、
+   * 元のタブの App.tsx が storage イベントを検知して既存セッションをログアウトし、
+   * ログインダイアログを開く（新メアドで再ログインを強制する）。
+   * email_just_verified と異なり、ログイン中の場合も処理を実行する（むしろログイン中が前提）。
+   */
+  describe('Issue#110: メールアドレス変更完了による再ログイン強制', () => {
+    const EMAIL_JUST_CHANGED_KEY = 'email_just_changed'
+
+    function dispatchEmailChangedStorageEvent() {
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: EMAIL_JUST_CHANGED_KEY,
+        newValue: String(Date.now()),
+        oldValue: null,
+      }))
+    }
+
+    beforeEach(() => {
+      // 認証済み状態をシミュレート（メアド変更時の前提）
+      localStorageMock.getItem.mockImplementation((key: string) => {
+        if (key === 'auth_token') return 'fake-token'
+        if (key === 'auth_user') return JSON.stringify({ userId: 1, email: 'old@example.com', username: 'testuser', role: 'user' })
+        return null
+      })
+    })
+
+    it('email_just_changed 検知でログアウトしてからログインダイアログが開く', async () => {
+      renderApp()
+      skipSplashScreen()
+      switchToRealTimers()
+
+      // ログイン中なのでメニューにアカウント設定がある状態（後で消えるはず）
+      act(() => {
+        dispatchEmailChangedStorageEvent()
+      })
+
+      // ログインダイアログが開く
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+      })
+    })
+
+    it('email_just_changed 検知でマーカーが localStorage から削除される', async () => {
+      renderApp()
+      skipSplashScreen()
+      switchToRealTimers()
+
+      act(() => {
+        dispatchEmailChangedStorageEvent()
+      })
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+      })
+
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(EMAIL_JUST_CHANGED_KEY)
+    })
+
+    it('ログアウト処理（auth_token削除）が呼ばれる', async () => {
+      renderApp()
+      skipSplashScreen()
+      switchToRealTimers()
+
+      act(() => {
+        dispatchEmailChangedStorageEvent()
+      })
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+      })
+
+      // logout() は localStorage の auth_token / auth_user / sessionStorage の同キーを削除する
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('auth_token')
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('auth_user')
     })
   })
 })
