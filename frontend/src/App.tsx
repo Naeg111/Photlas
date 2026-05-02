@@ -242,36 +242,28 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
     }
   }, [location.state])
 
-  // Issue#110: メール認証ページ（別タブ）が認証完了マーカーを localStorage に書き込んだら、
-  // 元のタブ（このタブ）でログインダイアログを自動で開く。
-  // 既にログイン中のユーザーがいる場合は無視する（誤動作防止）。
+  // Issue#110: 別タブのメール認証ページ / メアド変更確認ページが localStorage に
+  // マーカーを書き込んだとき、storage イベントを介してこのタブの認証状態を更新する。
+  //
+  // - email_just_verified: 新規登録のメール認証完了。未ログインならログインダイアログを開く。
+  //                        既ログイン中なら何もしない（別ユーザーが認証しているケースを想定）。
+  // - email_just_changed:  メアド変更確認の完了。古いセッションを破棄しログインダイアログを開く
+  //                        （新メアドで再ログインを強制。ログイン中であることが前提）。
   useEffect(() => {
     const handler = (e: StorageEvent) => {
-      if (e.key !== EMAIL_JUST_VERIFIED_KEY) return
-      if (isAuthenticated) return
-      dialog.open('login')
-      // 役目を終えたマーカーを削除する
-      localStorage.removeItem(EMAIL_JUST_VERIFIED_KEY)
+      if (e.key === EMAIL_JUST_VERIFIED_KEY) {
+        if (isAuthenticated) return
+        dialog.open('login')
+        localStorage.removeItem(EMAIL_JUST_VERIFIED_KEY)
+      } else if (e.key === EMAIL_JUST_CHANGED_KEY) {
+        logout()
+        dialog.open('login')
+        localStorage.removeItem(EMAIL_JUST_CHANGED_KEY)
+      }
     }
     window.addEventListener('storage', handler)
     return () => window.removeEventListener('storage', handler)
-  }, [isAuthenticated, dialog])
-
-  // Issue#110: メールアドレス変更確認ページ（別タブ）が変更完了マーカーを書き込んだら、
-  // 元のタブで古いセッションを破棄してログインダイアログを開く（新メアドで再ログインを強制）。
-  // email_just_verified と異なり、ログイン中であることが前提（メアド変更はログイン中ユーザーが行うため）。
-  useEffect(() => {
-    const handler = (e: StorageEvent) => {
-      if (e.key !== EMAIL_JUST_CHANGED_KEY) return
-      // 古いセッション（旧メアドの JWT）を破棄
-      logout()
-      dialog.open('login')
-      // 役目を終えたマーカーを削除する
-      localStorage.removeItem(EMAIL_JUST_CHANGED_KEY)
-    }
-    window.addEventListener('storage', handler)
-    return () => window.removeEventListener('storage', handler)
-  }, [logout, dialog])
+  }, [isAuthenticated, logout, dialog])
 
   // Issue#99: OAuthCallbackPage 経由で linkConfirmationToken が渡された場合に
   // リンク確認ダイアログを開く。再オープン防止のため state は読み取り後にクリアする。
