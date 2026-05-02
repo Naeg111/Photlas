@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, act } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import EmailVerificationPage from './EmailVerificationPage'
 
@@ -10,13 +11,23 @@ const VERIFY_EMAIL_ENDPOINT = '/api/v1/auth/verify-email'
 // テキスト定数
 const TEXT_LOADING = 'メールアドレスを認証しています...'
 const TEXT_SUCCESS_HEADING = '認証完了'
-const TEXT_SUCCESS_MESSAGE = 'メールアドレスの認証が完了しました。'
-const TEXT_AUTO_REDIRECT = '3秒後にトップページへ移動します...'
-const TEXT_GO_TO_TOP = '今すぐトップページへ'
+const TEXT_SUCCESS_MESSAGE = 'Photlasに戻ってログインしてください。'
+const TEXT_IN_APP_MESSAGE = 'ブラウザでPhotlasを開いてログインしてください。'
+const TEXT_OPEN_PHOTLAS = 'Photlasを開く'
+const TEXT_HOME = 'ホーム'
 const TEXT_ERROR_HEADING = '認証エラー'
 const TEXT_NO_TOKEN_ERROR = '認証トークンが見つかりません'
 const TEXT_GENERIC_ERROR = 'エラーが発生しました'
 const TEXT_API_ERROR = 'トークンが無効または期限切れです'
+
+// localStorage マーカーキー
+const EMAIL_JUST_VERIFIED_KEY = 'email_just_verified'
+
+// 通常ブラウザの user-agent
+const UA_NORMAL = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'
+
+// アプリ内ブラウザの user-agent（LINE）
+const UA_IN_APP = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Line/13.0.0'
 
 // fetchモック
 const mockFetch = vi.fn()
@@ -37,6 +48,16 @@ vi.mock('sonner', () => ({
 }))
 
 /**
+ * navigator.userAgent を一時的に上書きする
+ */
+function setUserAgent(ua: string) {
+  Object.defineProperty(navigator, 'userAgent', {
+    value: ua,
+    configurable: true,
+  })
+}
+
+/**
  * tokenパラメータ付きでEmailVerificationPageをレンダリングする
  */
 const renderWithToken = (token?: string) => {
@@ -55,6 +76,7 @@ describe('EmailVerificationPage', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     global.fetch = mockFetch
+    setUserAgent(UA_NORMAL)
   })
 
   afterEach(() => {
@@ -78,7 +100,33 @@ describe('EmailVerificationPage', () => {
     })
   })
 
-  describe('認証成功', () => {
+  describe('Issue#110 - 背景色', () => {
+    it('ページ全体の外側コンテナの背景が bg-black である', () => {
+      mockFetch.mockImplementation(() => new Promise(() => {}))
+
+      const { container } = renderWithToken(VALID_TOKEN)
+
+      // 外側コンテナ（最上位の div）
+      const outer = container.querySelector('.min-h-screen')
+      expect(outer).toHaveClass('bg-black')
+      expect(outer).not.toHaveClass('bg-gray-50')
+    })
+
+    it('中央のカード（bg-white）はそのまま維持される', () => {
+      mockFetch.mockImplementation(() => new Promise(() => {}))
+
+      const { container } = renderWithToken(VALID_TOKEN)
+
+      const card = container.querySelector('.bg-white')
+      expect(card).toBeInTheDocument()
+    })
+  })
+
+  describe('認証成功（通常ブラウザ）', () => {
+    beforeEach(() => {
+      setUserAgent(UA_NORMAL)
+    })
+
     it('API 200レスポンスで成功メッセージが表示される', async () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
@@ -90,24 +138,22 @@ describe('EmailVerificationPage', () => {
       })
     })
 
-    it('成功時に「今すぐトップページへ」リンクが表示される', async () => {
+    it('成功時に「Photlasを開く」リンクが表示される', async () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
       renderWithToken(VALID_TOKEN)
 
       await waitFor(() => {
-        expect(screen.getByText(TEXT_GO_TO_TOP)).toBeInTheDocument()
-        expect(screen.getByText(TEXT_AUTO_REDIRECT)).toBeInTheDocument()
+        expect(screen.getByText(TEXT_OPEN_PHOTLAS)).toBeInTheDocument()
       })
     })
 
-    it('成功後3秒でトップページへ自動遷移する', async () => {
+    it('Issue#110 - 成功後に自動遷移しない（3秒経過しても navigate されない）', async () => {
       vi.useFakeTimers()
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
       renderWithToken(VALID_TOKEN)
 
-      // Promiseのマイクロタスクを処理するためフラッシュ
       await act(async () => {
         await Promise.resolve()
       })
@@ -115,11 +161,90 @@ describe('EmailVerificationPage', () => {
       expect(screen.getByText(TEXT_SUCCESS_HEADING)).toBeInTheDocument()
       expect(mockNavigate).not.toHaveBeenCalled()
 
+      // 3秒経過しても navigate されないことを確認
       act(() => {
         vi.advanceTimersByTime(3000)
       })
+      expect(mockNavigate).not.toHaveBeenCalled()
 
-      expect(mockNavigate).toHaveBeenCalledWith('/')
+      // さらに10秒経過しても navigate されない
+      act(() => {
+        vi.advanceTimersByTime(10000)
+      })
+      expect(mockNavigate).not.toHaveBeenCalled()
+    })
+
+    it('Issue#110 - 「Photlasを開く」クリックで state.openLogin=true を渡して遷移する', async () => {
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
+      const user = userEvent.setup()
+
+      renderWithToken(VALID_TOKEN)
+
+      const link = await screen.findByText(TEXT_OPEN_PHOTLAS)
+      await user.click(link)
+
+      expect(mockNavigate).toHaveBeenCalledWith('/', { state: { openLogin: true } })
+    })
+
+    it('Issue#110 - 認証成功時に localStorage にマーカーが書き込まれる', async () => {
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
+
+      renderWithToken(VALID_TOKEN)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEXT_SUCCESS_HEADING)).toBeInTheDocument()
+      })
+
+      // マーカーが書き込まれた呼び出しが行われたことを確認
+      const calls = (localStorage.setItem as unknown as ReturnType<typeof vi.fn>).mock.calls
+      const markerCall = calls.find(([key]) => key === EMAIL_JUST_VERIFIED_KEY)
+      expect(markerCall).toBeDefined()
+      expect(markerCall![1]).toMatch(/^\d+$/) // タイムスタンプ
+    })
+  })
+
+  describe('Issue#110 - アプリ内ブラウザの場合', () => {
+    beforeEach(() => {
+      setUserAgent(UA_IN_APP)
+    })
+
+    it('成功画面に「ブラウザでPhotlasを開いて...」メッセージが表示される', async () => {
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
+
+      renderWithToken(VALID_TOKEN)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEXT_IN_APP_MESSAGE)).toBeInTheDocument()
+      })
+    })
+
+    it('成功画面に「Photlasを開く」リンクは表示されない', async () => {
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
+
+      renderWithToken(VALID_TOKEN)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEXT_SUCCESS_HEADING)).toBeInTheDocument()
+      })
+
+      expect(screen.queryByText(TEXT_OPEN_PHOTLAS)).not.toBeInTheDocument()
+    })
+
+    it('エラー画面に「ホーム」リンクは表示されない', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: TEXT_API_ERROR }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+
+      renderWithToken(VALID_TOKEN)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEXT_ERROR_HEADING)).toBeInTheDocument()
+      })
+
+      expect(screen.queryByText(TEXT_HOME)).not.toBeInTheDocument()
     })
   })
 
@@ -149,6 +274,26 @@ describe('EmailVerificationPage', () => {
         expect(screen.getByText(TEXT_ERROR_HEADING)).toBeInTheDocument()
         expect(screen.getByText(TEXT_GENERIC_ERROR)).toBeInTheDocument()
       })
+    })
+
+    it('Issue#110 - 認証失敗時はマーカーが書き込まれない', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: TEXT_API_ERROR }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+
+      renderWithToken(VALID_TOKEN)
+
+      await waitFor(() => {
+        expect(screen.getByText(TEXT_ERROR_HEADING)).toBeInTheDocument()
+      })
+
+      // マーカーキーで setItem が呼ばれていないことを確認
+      const calls = (localStorage.setItem as unknown as ReturnType<typeof vi.fn>).mock.calls
+      const markerCall = calls.find(([key]) => key === EMAIL_JUST_VERIFIED_KEY)
+      expect(markerCall).toBeUndefined()
     })
   })
 

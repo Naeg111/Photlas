@@ -711,4 +711,118 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
   })
+
+  /**
+   * Issue#110: メール認証完了マーカーによるログインダイアログ自動表示
+   *
+   * メール認証ページ（タブ2）が localStorage に email_just_verified を書き込むと、
+   * 元のタブ（タブ1）の App.tsx が storage イベントを検知してログインダイアログを開く。
+   * 既にログイン中の場合は無視する（誤動作防止）。
+   * ダイアログを開いた直後にマーカーを削除する。
+   */
+  describe('Issue#110: メール認証完了によるログインダイアログ自動表示', () => {
+    const EMAIL_JUST_VERIFIED_KEY = 'email_just_verified'
+
+    /**
+     * 別タブからの localStorage 変更をシミュレートする
+     * （window.dispatchEvent で StorageEvent を発火）
+     */
+    function dispatchEmailVerifiedStorageEvent() {
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: EMAIL_JUST_VERIFIED_KEY,
+        newValue: String(Date.now()),
+        oldValue: null,
+        storageArea: localStorage,
+      }))
+    }
+
+    it('未ログイン時、storage イベントでログインダイアログが開く', async () => {
+      renderApp()
+      skipSplashScreen()
+      switchToRealTimers()
+
+      // 別タブからの認証完了通知をシミュレート
+      act(() => {
+        dispatchEmailVerifiedStorageEvent()
+      })
+
+      // ログインダイアログが開く
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+      })
+    })
+
+    it('ログインダイアログが開いた後、localStorage からマーカーが削除される', async () => {
+      // setItem の引数を記録するため、特定の値が残っているかを直接 localStorage 上で確認する
+      let currentValue: string | null = null
+      localStorageMock.getItem.mockImplementation((key: string) => {
+        if (key === EMAIL_JUST_VERIFIED_KEY) return currentValue
+        return null
+      })
+      localStorageMock.setItem.mockImplementation((key: string, value: string) => {
+        if (key === EMAIL_JUST_VERIFIED_KEY) currentValue = value
+      })
+      localStorageMock.removeItem.mockImplementation((key: string) => {
+        if (key === EMAIL_JUST_VERIFIED_KEY) currentValue = null
+      })
+
+      // マーカーが書き込まれている状態を作る
+      currentValue = String(Date.now())
+
+      renderApp()
+      skipSplashScreen()
+      switchToRealTimers()
+
+      act(() => {
+        dispatchEmailVerifiedStorageEvent()
+      })
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+      })
+
+      // マーカー削除呼び出しが行われたことを確認
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(EMAIL_JUST_VERIFIED_KEY)
+    })
+
+    it('既にログイン中の場合、storage イベントでログインダイアログは開かない', async () => {
+      // 認証済み状態をシミュレート
+      localStorageMock.getItem.mockImplementation((key: string) => {
+        if (key === 'auth_token') return 'fake-token'
+        if (key === 'auth_user') return JSON.stringify({ userId: 1, email: 'test@example.com', username: 'testuser', role: 'user' })
+        return null
+      })
+
+      renderApp()
+      skipSplashScreen()
+      switchToRealTimers()
+
+      act(() => {
+        dispatchEmailVerifiedStorageEvent()
+      })
+
+      // 少し待ってからログインダイアログが開いていないことを確認
+      await new Promise(resolve => setTimeout(resolve, 100))
+      expect(screen.queryByRole('heading', { name: 'ログイン' })).not.toBeInTheDocument()
+    })
+
+    it('別キーの storage イベントは無視される', async () => {
+      renderApp()
+      skipSplashScreen()
+      switchToRealTimers()
+
+      // 関係ないキーの storage イベント
+      act(() => {
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'some_other_key',
+          newValue: 'value',
+          oldValue: null,
+          storageArea: localStorage,
+        }))
+      })
+
+      await new Promise(resolve => setTimeout(resolve, 100))
+      expect(screen.queryByRole('heading', { name: 'ログイン' })).not.toBeInTheDocument()
+    })
+  })
 })
