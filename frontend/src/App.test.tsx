@@ -47,6 +47,9 @@ const { mockMap, MapMock } = vi.hoisted(() => {
     removeLayer: vi.fn(),
     getLayer: vi.fn(() => undefined),
     setLayoutProperty: vi.fn(),
+    dragRotate: { enable: vi.fn(), disable: vi.fn() },
+    touchPitch: { enable: vi.fn(), disable: vi.fn() },
+    touchZoomRotate: { enableRotation: vi.fn(), disableRotation: vi.fn() },
   }
 
   const MapMock = ({ children, onLoad }: any) => {
