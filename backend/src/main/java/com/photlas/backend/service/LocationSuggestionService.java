@@ -182,7 +182,7 @@ public class LocationSuggestionService {
                         "対象の投稿はこちらからご確認いただけます。\n" +
                         link + "\n\n" +
                         "ご協力いただきありがとうございます。\n\n" +
-                        "Photlas 運営\nsupport@photlas.jp"
+                        "Photlas\nsupport@photlas.jp"
                 );
             }
             mailSender.send(message);
@@ -356,7 +356,7 @@ public class LocationSuggestionService {
                         "あなたの投稿写真について、撮影場所の指摘がありました。\n\n" +
                         "以下のリンクから指摘内容を確認し、受け入れるか拒否するかを判断してください：\n" +
                         link + "\n\n" +
-                        "Photlas 運営\nsupport@photlas.jp"
+                        "Photlas\nsupport@photlas.jp"
                 );
             }
             mailSender.send(message);
@@ -383,7 +383,7 @@ public class LocationSuggestionService {
                 message.setSubject("【Photlas】撮影場所の指摘について");
                 message.setText(
                         "撮影場所の指摘について、投稿者が指摘を受け入れませんでした。\n\n" +
-                        "Photlas 運営\nsupport@photlas.jp"
+                        "Photlas\nsupport@photlas.jp"
                 );
             }
             mailSender.send(message);

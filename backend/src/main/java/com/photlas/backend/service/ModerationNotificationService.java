@@ -21,7 +21,7 @@ import java.util.Locale;
 public class ModerationNotificationService {
 
     private static final Logger logger = LoggerFactory.getLogger(ModerationNotificationService.class);
-    private static final String MAIL_SIGNATURE_JA = "\n\nPhotlas 運営\nsupport@photlas.jp";
+    private static final String MAIL_SIGNATURE_JA = "\n\nPhotlas\nsupport@photlas.jp";
     private static final String MAIL_SIGNATURE_EN = "\n\nPhotlas Team\nsupport@photlas.jp";
 
     private final JavaMailSender mailSender;
