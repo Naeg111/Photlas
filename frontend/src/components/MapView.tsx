@@ -76,13 +76,11 @@ const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 const DEFAULT_ZOOM = 0
 // Issue#106: 初期ズーム0表示時の緯度。
 // Issue#111: 経度（INITIAL_VIEW_LNG）は削除し、コンポーネント内で 0〜359 のランダム値に切替える。
-// Issue#111-followup: 真の赤道（緯度0）だと球体の正中線が画面中央に来て少し違和感があったため、
-// 緯度 10 度で固定する（地球儀がやや見下ろし気味の自然な見え方になる）。
+// Issue#111-followup: 地球儀表示時の固定緯度は北緯 10 度。
+// 「初期表示」「回転中の固定緯度」「方位リセット時の戻り先」すべてに同じ値を使う。
 const INITIAL_VIEW_LAT = 10
-// 方位リセットボタンを押した時の「ホーム緯度」。
-// Issue#111-followup: 北緯 5 度。INITIAL_VIEW_LAT より低めにすることで、
-// 既に少し下を向いている地球儀から方位リセットすると「ほんの少しだけ姿勢が直る」感じになる。
-const GLOBE_RESET_LAT = 5
+const GLOBE_FIXED_LAT = INITIAL_VIEW_LAT
+const GLOBE_RESET_LAT = INITIAL_VIEW_LAT
 // Issue#106: autoCenter のフォールバック用（位置情報・IP国判定がすべて失敗した場合）
 const FALLBACK_TOKYO_ZOOM = 11
 // Issue#106: 位置情報取得成功時のズームレベル
@@ -407,9 +405,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       lastTickTimestampRef.current = now
       const deltaDegrees = (DEGREES_PER_SECOND * elapsedMs) / 1000
       const center = mapInstance.getCenter()
-      // Issue#111-followup Bug4: 緯度はそのまま維持する（ユーザーが緯度を変えれば
-      // その緯度で回転する）。方位リセットボタンを押すと初期緯度（GLOBE_RESET_LAT）に戻る仕様。
-      mapInstance.setCenter([center.lng + deltaDegrees, center.lat])
+      // Issue#111-followup（仕様変更3回目）: 回転中の緯度は GLOBE_FIXED_LAT で固定する。
+      // ピンチズーム等で center.lat が微妙にずれても、毎フレーム 10 度に強制スナップする。
+      mapInstance.setCenter([center.lng + deltaDegrees, GLOBE_FIXED_LAT])
       rotationFrameRef.current = requestAnimationFrame(tick)
     }
     lastTickTimestampRef.current = performance.now()
@@ -422,6 +420,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     if (rotationFrameRef.current !== null) return
     if (mapInstance.getZoom() > GLOBE_ROTATION_MAX_ZOOM) return
     isRotatingRef.current = true
+    // Issue#111-followup: 回転開始時に緯度を GLOBE_FIXED_LAT に揃える。
+    // ユーザーが回転前にどこを見ていても、回転は必ず固定緯度から始まる。
+    const center = mapInstance.getCenter()
+    if (center.lat !== GLOBE_FIXED_LAT) {
+      mapInstance.setCenter([center.lng, GLOBE_FIXED_LAT])
+    }
     // 回転中はピン（クラスタ）を非表示にする。React state を空にすることで
     // GeoJSON Source の setData が空配列で更新され、ピンが消える。
     setSpots([])
@@ -882,27 +886,44 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
     setMap(mapInstance)
 
-    // Issue#111-followup（2回目仕様変更）: 回転中のあらゆるユーザー操作で停止＋5秒タイマー再開。
-    // 当初は「左クリック/1本指タップ」だけだったが、ユーザーから「右ドラッグや2本指でも停止して欲しい」
-    // 「rAF ループとの干渉で操作が取りこぼされる」という要望があり、シンプルに広く拾う方式に変更した。
+    // Issue#111-followup（仕様変更3回目）: ズーム 0〜4（地球儀表示中）では角度・ピッチ変更ジェスチャーを無効化する。
+    // - dragRotate: 右ボタンドラッグでの bearing 変更
+    // - touchPitch: 2本指でのピッチ変更（iOS / Android）
+    // - touchZoomRotate.disableRotation(): 2本指での回転（ピンチズーム自体は維持）
+    // ズーム 5 以上に上がったら再度有効化して、写真スポット閲覧時の操作性を保つ。
+    const updateGlobeGestureHandlers = () => {
+      const inGlobeView = mapInstance.getZoom() <= GLOBE_ROTATION_MAX_ZOOM
+      if (inGlobeView) {
+        mapInstance.dragRotate.disable()
+        mapInstance.touchPitch.disable()
+        mapInstance.touchZoomRotate.disableRotation()
+      } else {
+        mapInstance.dragRotate.enable()
+        mapInstance.touchPitch.enable()
+        mapInstance.touchZoomRotate.enableRotation()
+      }
+    }
+    updateGlobeGestureHandlers() // 初期状態を設定
+    // zoom イベントは zoom 変化中も連続発火するため、ズームレベル境界をまたいだ瞬間に
+    // ジェスチャー有効/無効が切り替わる
+    mapInstance.on('zoom', updateGlobeGestureHandlers)
+
+    // Issue#111-followup（仕様変更3回目）: 「タップ/クリック/左ドラッグ」だけで停止する仕様に戻す。
+    // ホイールズーム・+/-ボタン・ピンチズームでは回転を継続し、
+    // 右ドラッグ・2本指角度操作はそもそも別箇所（updateGestureHandlers）で無効化済み。
     //
-    // 監視するイベント:
-    //   mousedown   - マウスボタン押下（左/中/右いずれも対象）。クリック・ドラッグ開始の検知。
-    //   touchstart  - タッチ開始（1本指/2本指いずれも対象）。タップ・スワイプ・ピンチ開始の検知。
-    //   wheel       - マウスホイールズーム。
-    //   zoomstart   - 上記以外も含むズーム開始（UI ボタン経由の easeTo もここで拾われる）。
-    //   rotatestart - 角度変更（右ドラッグや2本指回転、resetNorthHeading の easeTo 等）。
-    //   pitchstart  - ピッチ変更（右ドラッグ、2本指ピッチ等）。
-    //
-    // 設計意図: 「rotation 自身の setCenter は zoom/bearing/pitch を変えない」ため、
-    //          上記イベントは回転の自走では発火せず、誤発火しない。
-    const onUserCameraInteraction = () => stopRotationOnUserInteraction(mapInstance)
-    mapInstance.on('mousedown', onUserCameraInteraction)
-    mapInstance.on('touchstart', onUserCameraInteraction)
-    mapInstance.on('wheel', onUserCameraInteraction)
-    mapInstance.on('zoomstart', onUserCameraInteraction)
-    mapInstance.on('rotatestart', onUserCameraInteraction)
-    mapInstance.on('pitchstart', onUserCameraInteraction)
+    // mousedown: 左ボタン（button=0）のみ対象。中ボタン・右ボタンは対象外。
+    //   右ボタンは dragRotate.disable で何も起きないが、念のためフィルタする。
+    // touchstart: 1本指のみ対象。2本指（ピンチ）は対象外。
+    mapInstance.on('mousedown', (ev: { originalEvent?: MouseEvent }) => {
+      if (ev.originalEvent?.button !== 0) return
+      stopRotationOnUserInteraction(mapInstance)
+    })
+    mapInstance.on('touchstart', (ev: { originalEvent?: TouchEvent }) => {
+      const touches = ev.originalEvent?.touches
+      if (!touches || touches.length !== 1) return
+      stopRotationOnUserInteraction(mapInstance)
+    })
 
     // Issue#111: 初期表示はズーム 0（地球全体）のため、5秒経過で地球儀回転を開始するスケジュールを立てる。
     // ただし granted/denied 既知のケースでは autoCenter が即座に warp するため、
