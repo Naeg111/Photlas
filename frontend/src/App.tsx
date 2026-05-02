@@ -44,6 +44,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useDialogState } from './hooks/useDialogState'
 import { transformMonths, transformTimesOfDay, transformWeathers, transformDeviceTypes, transformCategories, categoryNamesToIds } from './utils/filterTransform'
 import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto, ApiError, getAuthHeaders } from './utils/apiClient'
+import { EMAIL_JUST_VERIFIED_KEY } from './pages/EmailVerificationPage'
+import { EMAIL_JUST_CHANGED_KEY } from './pages/ConfirmEmailChangePage'
 import { MODERATION_STATUS_PUBLISHED, MODERATION_STATUS_QUARANTINED, ROLE_ADMIN } from './utils/codeConstants'
 import { stripExif } from './utils/stripExif'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
@@ -239,6 +241,37 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
       globalThis.history.replaceState({}, '')
     }
   }, [location.state])
+
+  // Issue#110: メール認証ページ（別タブ）が認証完了マーカーを localStorage に書き込んだら、
+  // 元のタブ（このタブ）でログインダイアログを自動で開く。
+  // 既にログイン中のユーザーがいる場合は無視する（誤動作防止）。
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key !== EMAIL_JUST_VERIFIED_KEY) return
+      if (isAuthenticated) return
+      dialog.open('login')
+      // 役目を終えたマーカーを削除する
+      localStorage.removeItem(EMAIL_JUST_VERIFIED_KEY)
+    }
+    window.addEventListener('storage', handler)
+    return () => window.removeEventListener('storage', handler)
+  }, [isAuthenticated, dialog])
+
+  // Issue#110: メールアドレス変更確認ページ（別タブ）が変更完了マーカーを書き込んだら、
+  // 元のタブで古いセッションを破棄してログインダイアログを開く（新メアドで再ログインを強制）。
+  // email_just_verified と異なり、ログイン中であることが前提（メアド変更はログイン中ユーザーが行うため）。
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key !== EMAIL_JUST_CHANGED_KEY) return
+      // 古いセッション（旧メアドの JWT）を破棄
+      logout()
+      dialog.open('login')
+      // 役目を終えたマーカーを削除する
+      localStorage.removeItem(EMAIL_JUST_CHANGED_KEY)
+    }
+    window.addEventListener('storage', handler)
+    return () => window.removeEventListener('storage', handler)
+  }, [logout, dialog])
 
   // Issue#99: OAuthCallbackPage 経由で linkConfirmationToken が渡された場合に
   // リンク確認ダイアログを開く。再オープン防止のため state は読み取り後にクリアする。
