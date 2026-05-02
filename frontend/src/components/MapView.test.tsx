@@ -782,7 +782,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#111-followup Bug4 - ズーム0〜4のとき resetNorthHeading で緯度が 0（赤道）に戻る', async () => {
+    it('Issue#111-followup Bug4 - ズーム0〜4のとき resetNorthHeading で緯度が 10（初期値）に戻る', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(2) // 地球儀表示中
       mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 }) // 高緯度
@@ -796,9 +796,9 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
       ref.current.resetNorthHeading()
 
-      // center.lng は維持、lat は 0 にリセットされて bearing/pitch も 0
+      // center.lng は維持、lat は 10（GLOBE_RESET_LAT）にリセット、bearing/pitch も 0
       expect(mockMap.easeTo).toHaveBeenCalledWith({
-        center: [139.7, 0],
+        center: [139.7, 10],
         bearing: 0,
         pitch: 0,
         duration: 500,
@@ -1136,7 +1136,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }
     })
 
-    it('Issue#111 - initialViewState の latitude は 0（赤道）に固定される', async () => {
+    it('Issue#111-followup - initialViewState の latitude は 10（球体の見え方が自然になる固定値）', async () => {
       setupFetchMock()
       render(<MapView />)
 
@@ -1146,7 +1146,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
       const initialViewState = getCapturedInitialViewState()
       expect(initialViewState).toBeTruthy()
-      expect(initialViewState.latitude).toBe(0)
+      expect(initialViewState.latitude).toBe(10)
     })
 
     it('Issue#111 - initialViewState の longitude は 0〜359 の範囲', async () => {
@@ -1393,6 +1393,57 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         vi.advanceTimersByTime(200)
       })
       expect(mockMap.setCenter.mock.calls.length).toBeGreaterThan(callsDuringPause)
+    })
+
+    it('Issue#111-followup - moveend でズームが 0〜4 に下がったら 5秒後の回転を予約する', async () => {
+      // 高ズームで起動 → autoCenter 後を想定
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(11)
+
+      render(<MapView />)
+      // handleLoad の scheduleGlobeRotation は呼ばれない（zoom > 4）
+
+      // ユーザーが手動でズームアウトしてズーム 4 になったとシミュレート
+      mockMap.getZoom.mockReturnValue(4)
+      // moveend ハンドラを直接呼ぶ
+      // MapMock の onMoveEnd は 100ms / 200ms に setTimeout で呼ばれる構造になっている
+      await act(async () => {
+        vi.advanceTimersByTime(300) // moveend が 2 回呼ばれる
+      })
+
+      // 5秒経過させる
+      await act(async () => {
+        vi.advanceTimersByTime(5100)
+      })
+
+      // 回転が始まり setCenter が呼ばれている
+      expect(mockMap.setCenter).toHaveBeenCalled()
+    })
+
+    it('Issue#111-followup - 回転中にズームが 5 以上に上がると rAF ループが自身で停止する', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(0)
+
+      render(<MapView />)
+
+      // 回転開始まで進める
+      await act(async () => {
+        vi.advanceTimersByTime(5100)
+      })
+      expect(mockMap.setCenter).toHaveBeenCalled()
+
+      // ホイールズームでズーム 5 に上がったとシミュレート
+      mockMap.getZoom.mockReturnValue(5)
+
+      const callsBeforeZoomChange = mockMap.setCenter.mock.calls.length
+      await act(async () => {
+        vi.advanceTimersByTime(500)
+      })
+
+      // rAF ループが自身で停止し setCenter の呼び出しが増えていない
+      // （次フレームで getZoom > 4 を検出してループ終了する）
+      const diff = mockMap.setCenter.mock.calls.length - callsBeforeZoomChange
+      expect(diff).toBeLessThanOrEqual(1) // 検出までに最大 1 ティック分の余裕
     })
 
     it('Issue#111 - startGlobeRotationImmediately() で 5秒待たずに即時回転開始', async () => {
