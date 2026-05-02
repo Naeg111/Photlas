@@ -8,7 +8,7 @@ import { API_V1_URL } from '../config/api'
 import PhotoDetailDialog from '../components/PhotoDetailDialog'
 
 /** ページ共通のレイアウトクラス */
-const PAGE_LAYOUT_CLASS = 'min-h-screen flex items-center justify-center bg-gray-50'
+const PAGE_LAYOUT_CLASS = 'min-h-screen flex items-center justify-center bg-black'
 
 /** カードコンテナの共通クラス */
 const CARD_CLASS = 'max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8'
@@ -87,7 +87,7 @@ export default function PhotoViewerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-black">
       <PhotoDetailDialog
         open={status === 'ready'}
         spotIds={[]}
