@@ -782,7 +782,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#111-followup Bug4 - ズーム0〜4のとき resetNorthHeading で緯度が 10（初期値）に戻る', async () => {
+    it('Issue#111-followup Bug4 - ズーム0〜4のとき resetNorthHeading で緯度が 5（北緯5度）に戻る', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(2) // 地球儀表示中
       mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 }) // 高緯度
@@ -796,9 +796,9 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
       ref.current.resetNorthHeading()
 
-      // center.lng は維持、lat は 10（GLOBE_RESET_LAT）にリセット、bearing/pitch も 0
+      // center.lng は維持、lat は 5（GLOBE_RESET_LAT）にリセット、bearing/pitch も 0
       expect(mockMap.easeTo).toHaveBeenCalledWith({
-        center: [139.7, 10],
+        center: [139.7, 5],
         bearing: 0,
         pitch: 0,
         duration: 500,
@@ -1259,140 +1259,61 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter).not.toHaveBeenCalled()
     })
 
-    it('Issue#111-followup Bug3 - mousedown（左ボタン）で回転が停止する', async () => {
+    // Issue#111-followup（仕様変更2回目）: あらゆるユーザー操作で停止する。
+    // 共通ヘルパー: 指定イベント名のハンドラを取得し、回転中に呼んだ時の挙動を検証する。
+    const verifyEventStopsRotation = async (eventName: string, eventArg: unknown) => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
 
       render(<MapView />)
-
       await act(async () => {
         vi.advanceTimersByTime(5100)
       })
-
       expect(mockMap.setCenter).toHaveBeenCalled()
       const callsBeforeStop = mockMap.setCenter.mock.calls.length
 
-      const mousedownCall = mockMap.on.mock.calls.find(
-        (c: any[]) => c[0] === 'mousedown' && typeof c[1] === 'function',
+      const eventCall = mockMap.on.mock.calls.find(
+        (c: any[]) => c[0] === eventName && typeof c[1] === 'function',
       )
-      expect(mousedownCall).toBeDefined()
-      const handler = mousedownCall![1] as Function
+      expect(eventCall).toBeDefined()
+      const handler = eventCall![1] as Function
       await act(async () => {
-        handler({ originalEvent: { button: 0 } }) // 左ボタン
+        handler(eventArg)
         vi.advanceTimersByTime(500)
       })
-
       expect(mockMap.setCenter.mock.calls.length).toBe(callsBeforeStop)
+    }
+
+    it('Issue#111-followup - mousedown（左ボタン）で回転が停止する', async () => {
+      await verifyEventStopsRotation('mousedown', { originalEvent: { button: 0 } })
     })
 
-    it('Issue#111-followup Bug3 - mousedown（右ボタン）では回転が停止しない（角度変更想定）', async () => {
-      setupFetchMock()
-      mockMap.getZoom.mockReturnValue(0)
-
-      render(<MapView />)
-
-      await act(async () => {
-        vi.advanceTimersByTime(5100)
-      })
-
-      const callsBeforeStop = mockMap.setCenter.mock.calls.length
-
-      const mousedownCall = mockMap.on.mock.calls.find(
-        (c: any[]) => c[0] === 'mousedown' && typeof c[1] === 'function',
-      )
-      const handler = mousedownCall![1] as Function
-      await act(async () => {
-        handler({ originalEvent: { button: 2 } }) // 右ボタン = 角度変更
-        vi.advanceTimersByTime(200)
-      })
-
-      expect(mockMap.setCenter.mock.calls.length).toBeGreaterThan(callsBeforeStop)
+    it('Issue#111-followup - mousedown（右ボタン）でも回転が停止する（仕様変更）', async () => {
+      await verifyEventStopsRotation('mousedown', { originalEvent: { button: 2 } })
     })
 
-    it('Issue#111-followup Bug3 - touchstart（1本指）で回転が停止する', async () => {
-      setupFetchMock()
-      mockMap.getZoom.mockReturnValue(0)
-
-      render(<MapView />)
-
-      await act(async () => {
-        vi.advanceTimersByTime(5100)
-      })
-
-      const callsBeforeStop = mockMap.setCenter.mock.calls.length
-
-      const touchstartCall = mockMap.on.mock.calls.find(
-        (c: any[]) => c[0] === 'touchstart' && typeof c[1] === 'function',
-      )
-      expect(touchstartCall).toBeDefined()
-      const handler = touchstartCall![1] as Function
-      await act(async () => {
-        handler({ originalEvent: { touches: [{}] } })
-        vi.advanceTimersByTime(500)
-      })
-
-      expect(mockMap.setCenter.mock.calls.length).toBe(callsBeforeStop)
+    it('Issue#111-followup - touchstart（1本指）で回転が停止する', async () => {
+      await verifyEventStopsRotation('touchstart', { originalEvent: { touches: [{}] } })
     })
 
-    it('Issue#111-followup Bug3 - touchstart（2本指）では回転が停止しない（ピンチ等）', async () => {
-      setupFetchMock()
-      mockMap.getZoom.mockReturnValue(0)
-
-      render(<MapView />)
-
-      await act(async () => {
-        vi.advanceTimersByTime(5100)
-      })
-
-      const callsBeforeStop = mockMap.setCenter.mock.calls.length
-
-      const touchstartCall = mockMap.on.mock.calls.find(
-        (c: any[]) => c[0] === 'touchstart' && typeof c[1] === 'function',
-      )
-      const handler = touchstartCall![1] as Function
-      await act(async () => {
-        handler({ originalEvent: { touches: [{}, {}] } }) // 2本指
-        vi.advanceTimersByTime(200)
-      })
-
-      expect(mockMap.setCenter.mock.calls.length).toBeGreaterThan(callsBeforeStop)
+    it('Issue#111-followup - touchstart（2本指）でも回転が停止する（仕様変更）', async () => {
+      await verifyEventStopsRotation('touchstart', { originalEvent: { touches: [{}, {}] } })
     })
 
-    it('Issue#111-followup Bug5 - rotatestart で rAF ループが一時停止し、rotateend で再開する', async () => {
-      setupFetchMock()
-      mockMap.getZoom.mockReturnValue(0)
+    it('Issue#111-followup - wheel イベントで回転が停止する', async () => {
+      await verifyEventStopsRotation('wheel', {})
+    })
 
-      render(<MapView />)
+    it('Issue#111-followup - zoomstart イベントで回転が停止する（UI ボタン経由のズーム変更も含む）', async () => {
+      await verifyEventStopsRotation('zoomstart', {})
+    })
 
-      await act(async () => {
-        vi.advanceTimersByTime(5100)
-      })
+    it('Issue#111-followup - rotatestart イベントで回転が停止する', async () => {
+      await verifyEventStopsRotation('rotatestart', {})
+    })
 
-      const callsBeforeRotateStart = mockMap.setCenter.mock.calls.length
-
-      const rotatestartCall = mockMap.on.mock.calls.find(
-        (c: any[]) => c[0] === 'rotatestart' && typeof c[1] === 'function',
-      )
-      const rotateendCall = mockMap.on.mock.calls.find(
-        (c: any[]) => c[0] === 'rotateend' && typeof c[1] === 'function',
-      )
-      expect(rotatestartCall).toBeDefined()
-      expect(rotateendCall).toBeDefined()
-
-      // rotatestart で一時停止
-      await act(async () => {
-        ;(rotatestartCall![1] as Function)({})
-        vi.advanceTimersByTime(500)
-      })
-      const callsDuringPause = mockMap.setCenter.mock.calls.length
-      expect(callsDuringPause).toBe(callsBeforeRotateStart)
-
-      // rotateend で再開
-      await act(async () => {
-        ;(rotateendCall![1] as Function)({})
-        vi.advanceTimersByTime(200)
-      })
-      expect(mockMap.setCenter.mock.calls.length).toBeGreaterThan(callsDuringPause)
+    it('Issue#111-followup - pitchstart イベントで回転が停止する', async () => {
+      await verifyEventStopsRotation('pitchstart', {})
     })
 
     it('Issue#111-followup - moveend でズームが 0〜4 に下がったら 5秒後の回転を予約する', async () => {
