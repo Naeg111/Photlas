@@ -27,4 +27,10 @@ public interface UserSnsLinkRepository extends JpaRepository<UserSnsLink, Long> 
      * @param userId ユーザーID
      */
     void deleteByUserId(Long userId);
+
+    /**
+     * Issue#108: 指定ユーザーの SNS リンクを ID 降順で取得する。
+     * UserSnsLink には createdAt カラムが無いため snsLinkId を作成順の代理キーとして使用する。
+     */
+    List<UserSnsLink> findByUserIdOrderBySnsLinkIdDesc(Long userId);
 }

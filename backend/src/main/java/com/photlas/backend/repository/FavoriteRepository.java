@@ -47,4 +47,9 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Favorite.Fav
      * Issue#30: 写真IDでお気に入り数をカウント
      */
     long countByPhotoId(Long photoId);
+
+    /**
+     * Issue#108: ユーザーが付けたお気に入り全件を新しい順で取得する（エクスポート用）
+     */
+    java.util.List<Favorite> findByUserIdOrderByCreatedAtDesc(Long userId);
 }
