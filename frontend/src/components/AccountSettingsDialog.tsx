@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import streamSaver from "streamsaver";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -20,6 +21,20 @@ interface AccountSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentEmail: string;
+}
+
+/** Content-Disposition ヘッダーから filename を抽出する。失敗時は null。 */
+function extractFilename(disposition: string): string | null {
+  const match = /filename\s*=\s*"?([^";]+)"?/i.exec(disposition);
+  return match ? match[1].trim() : null;
+}
+
+/** バイト数を人間可読な単位（KB/MB/GB）にフォーマットする。 */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 export function AccountSettingsDialog({
@@ -47,6 +62,12 @@ export function AccountSettingsDialog({
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isDeletionComplete, setIsDeletionComplete] = useState(false);
+
+  // Issue#108: データエクスポート
+  const [exportPassword, setExportPassword] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const [receivedBytes, setReceivedBytes] = useState(0);
+  const exportAbortRef = useRef<AbortController | null>(null);
 
   // メールアドレス変更処理
   const handleEmailChange = async () => {
@@ -210,6 +231,106 @@ export function AccountSettingsDialog({
     }
   };
 
+  // Issue#108: データエクスポート処理
+  const handleDataExport = async () => {
+    if (!exportPassword) {
+      toast.error(t('settings.exportPasswordRequired'));
+      return;
+    }
+    const token = getAuthToken();
+    if (!token) {
+      toast.error(t('settings.loginRequired'));
+      return;
+    }
+
+    const controller = new AbortController();
+    exportAbortRef.current = controller;
+    setIsExporting(true);
+    setReceivedBytes(0);
+
+    try {
+      const response = await fetch(`${API_V1_URL}/users/me/export`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password: exportPassword }),
+        signal: controller.signal,
+      });
+
+      if (response.status === 401) {
+        toast.error(t('settings.exportPasswordIncorrect'));
+        return;
+      }
+      if (response.status === 409) {
+        toast.error(t('settings.exportInProgressMessage'));
+        return;
+      }
+      if (response.status === 429) {
+        const retryAfterSec = parseInt(response.headers.get('Retry-After') ?? '0', 10);
+        const nextDate = new Date(Date.now() + retryAfterSec * 1000);
+        toast.error(t('settings.exportRateLimited', { date: nextDate.toLocaleString() }));
+        return;
+      }
+      if (!response.ok) {
+        toast.error(t('settings.exportFailed'));
+        return;
+      }
+      if (!response.body) {
+        toast.error(t('settings.exportFailed'));
+        return;
+      }
+
+      // Content-Disposition から filename を抽出（無ければデフォルト名）
+      const disposition = response.headers.get('Content-Disposition') ?? '';
+      const filename = extractFilename(disposition) ?? `photlas-export-${Date.now()}.zip`;
+
+      const fileStream = streamSaver.createWriteStream(filename);
+      const writer = fileStream.getWriter();
+      const reader = response.body.getReader();
+
+      // Streams API でチャンクを逐次受信し、streamsaver の書き込みストリームへ流す
+      let total = 0;
+      try {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            total += value.byteLength;
+            setReceivedBytes(total);
+            await writer.write(value);
+          }
+        }
+        await writer.close();
+        toast.success(t('settings.exportSuccess'));
+        setExportPassword("");
+      } catch (e) {
+        if (controller.signal.aborted) {
+          await writer.abort();
+          toast.info(t('settings.exportCancelled'));
+        } else {
+          await writer.abort();
+          toast.error(t('settings.exportFailed'));
+          throw e;
+        }
+      }
+    } catch (e) {
+      // 既にキャンセルメッセージは表示済みなので、重複表示しない
+      if (!controller.signal.aborted) {
+        toast.error(t('settings.exportFailed'));
+      }
+    } finally {
+      setIsExporting(false);
+      exportAbortRef.current = null;
+    }
+  };
+
+  const handleCancelExport = () => {
+    exportAbortRef.current?.abort();
+  };
+
   return (
     <Dialog open={open} onOpenChange={isDeletionComplete ? undefined : onOpenChange}>
       <DialogContent className="max-h-[80vh]" style={{ display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', maxHeight: '80dvh' }}>
@@ -365,6 +486,51 @@ export function AccountSettingsDialog({
             <Button variant="outline" className="w-full" disabled>
               {t('settings.upgradePlan')}
             </Button>
+          </div>
+
+          <Separator />
+
+          {/* Issue#108: データのエクスポート */}
+          <div className="space-y-3">
+            <h3 className="font-medium">{t('settings.exportData')}</h3>
+            <p className="text-sm text-gray-500">
+              {t('settings.exportDescription')}
+            </p>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="export-password">{t('settings.exportPasswordLabel')}</Label>
+                <Input
+                  id="export-password"
+                  type="password"
+                  placeholder={t('settings.exportPasswordPlaceholder')}
+                  className="mt-2"
+                  value={exportPassword}
+                  onChange={(e) => setExportPassword(e.target.value)}
+                  disabled={isExporting}
+                />
+              </div>
+              {!isExporting ? (
+                <Button
+                  className="w-full"
+                  onClick={handleDataExport}
+                >
+                  {t('settings.exportButton')}
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">
+                    {t('settings.exportReceiving', { size: formatBytes(receivedBytes) })}
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleCancelExport}
+                  >
+                    {t('settings.exportCancel')}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
 
           <Separator />
