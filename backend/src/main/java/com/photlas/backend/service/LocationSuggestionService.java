@@ -44,6 +44,7 @@ public class LocationSuggestionService {
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
     private final S3Service s3Service;
+    private final EmailTemplateService emailTemplateService;
 
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
@@ -57,13 +58,15 @@ public class LocationSuggestionService {
             SpotRepository spotRepository,
             UserRepository userRepository,
             JavaMailSender mailSender,
-            S3Service s3Service) {
+            S3Service s3Service,
+            EmailTemplateService emailTemplateService) {
         this.locationSuggestionRepository = locationSuggestionRepository;
         this.photoRepository = photoRepository;
         this.spotRepository = spotRepository;
         this.userRepository = userRepository;
         this.mailSender = mailSender;
         this.s3Service = s3Service;
+        this.emailTemplateService = emailTemplateService;
     }
 
     /**
@@ -157,37 +160,16 @@ public class LocationSuggestionService {
     }
 
     /**
-     * 指摘承認通知メールを送信する
+     * Issue#113 グループ C: 指摘承認通知メールを送信。失敗時は WARN ログのみ。
      */
     private void sendAcceptanceNotification(String suggesterEmail, Long photoId, String language) {
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(mailFrom);
-            message.setTo(suggesterEmail);
             String link = frontendUrl + "/photo-viewer/" + photoId;
-
-            if ("en".equals(language)) {
-                message.setSubject("【Photlas】Your Location Suggestion Was Accepted");
-                message.setText(
-                        "Your location suggestion has been accepted by the photo owner.\n\n" +
-                        "You can view the photo here:\n" +
-                        link + "\n\n" +
-                        "Thank you for your contribution.\n\n" +
-                        "Photlas Team\nsupport@photlas.jp"
-                );
-            } else {
-                message.setSubject("【Photlas】撮影場所の指摘が受け入れられました");
-                message.setText(
-                        "撮影場所の指摘が投稿者に受け入れられました。\n\n" +
-                        "対象の投稿はこちらからご確認いただけます。\n" +
-                        link + "\n\n" +
-                        "ご協力いただきありがとうございます。\n\n" +
-                        "Photlas\nsupport@photlas.jp"
-                );
-            }
-            mailSender.send(message);
+            String subject = emailTemplateService.subject("email.locationSuggestionAccepted", language);
+            String body = emailTemplateService.body("email.locationSuggestionAccepted", language, link);
+            sendPlainMessage(suggesterEmail, subject, body);
         } catch (Exception e) {
-            logger.error("承認通知メールの送信に失敗しました: {}", e.getMessage());
+            logger.warn("承認通知メールの送信に失敗しました: error={}", e.getMessage());
         }
     }
 
@@ -330,66 +312,51 @@ public class LocationSuggestionService {
         }
     }
 
+    /**
+     * Issue#113: 撮影場所指摘通知を写真投稿者に送信。
+     *
+     * <p>本メソッドは boolean を返す既存の契約を維持する（呼び出し側が emailSent
+     * フラグで再送制御するため、グループ A 化せずに既存設計を維持）。失敗時は
+     * WARN ログを出して false を返す。</p>
+     */
     private boolean sendSuggestionNotification(Photo photo, LocationSuggestion suggestion) {
         try {
             User owner = userRepository.findById(photo.getUserId()).orElse(null);
             if (owner == null) return false;
 
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(mailFrom);
-            message.setTo(owner.getEmail());
             String link = frontendUrl + "/review-location?token=" + suggestion.getReviewToken();
-
-            if ("en".equals(owner.getLanguage())) {
-                message.setSubject("【Photlas】Location Suggestion for Your Photo");
-                message.setText(
-                        "Hi " + owner.getUsername() + ",\n\n" +
-                        "A location suggestion has been made for one of your photos.\n\n" +
-                        "Please review the suggestion and decide whether to accept or reject it:\n" +
-                        link + "\n\n" +
-                        "Photlas Team\nsupport@photlas.jp"
-                );
-            } else {
-                message.setSubject("【Photlas】撮影場所について指摘がありました");
-                message.setText(
-                        owner.getUsername() + " 様\n\n" +
-                        "あなたの投稿写真について、撮影場所の指摘がありました。\n\n" +
-                        "以下のリンクから指摘内容を確認し、受け入れるか拒否するかを判断してください：\n" +
-                        link + "\n\n" +
-                        "Photlas\nsupport@photlas.jp"
-                );
-            }
-            mailSender.send(message);
+            String subject = emailTemplateService.subject("email.locationSuggestion", owner);
+            String body = emailTemplateService.body("email.locationSuggestion", owner,
+                    owner.getUsername(), link);
+            sendPlainMessage(owner.getEmail(), subject, body);
             return true;
         } catch (Exception e) {
-            logger.error("位置情報指摘通知メールの送信に失敗しました: {}", e.getMessage());
+            logger.warn("位置情報指摘通知メールの送信に失敗しました: error={}", e.getMessage());
             return false;
         }
     }
 
+    /**
+     * Issue#113 グループ C: 指摘拒否通知メールを送信。失敗時は WARN ログのみ。
+     */
     private void sendRejectionNotification(String suggesterEmail, String language) {
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(mailFrom);
-            message.setTo(suggesterEmail);
-
-            if ("en".equals(language)) {
-                message.setSubject("【Photlas】Location Suggestion Update");
-                message.setText(
-                        "Your location suggestion was not accepted by the photo owner.\n\n" +
-                        "Photlas Team\nsupport@photlas.jp"
-                );
-            } else {
-                message.setSubject("【Photlas】撮影場所の指摘について");
-                message.setText(
-                        "撮影場所の指摘について、投稿者が指摘を受け入れませんでした。\n\n" +
-                        "Photlas\nsupport@photlas.jp"
-                );
-            }
-            mailSender.send(message);
+            String subject = emailTemplateService.subject("email.locationSuggestionRejected", language);
+            String body = emailTemplateService.body("email.locationSuggestionRejected", language);
+            sendPlainMessage(suggesterEmail, subject, body);
         } catch (Exception e) {
-            logger.error("拒否通知メールの送信に失敗しました: {}", e.getMessage());
+            logger.warn("拒否通知メールの送信に失敗しました: error={}", e.getMessage());
         }
+    }
+
+    /** プレーンテキストメールを送信する共通ヘルパー */
+    private void sendPlainMessage(String to, String subject, String body) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailFrom);
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
     }
 
     private String generateSecureToken() {

@@ -125,17 +125,18 @@ public class ModerationNotificationService {
 
     /**
      * createdAt を言語に応じて整形する。
+     * 言語ごとの代表的な日付表記習慣に合わせる:
+     *   en: "Mar 15, 2026 14:30" / ja: "2026年03月15日 14:30" / その他: "2026-03-15 14:30"
      */
     private String formatCreatedAt(LocalDateTime createdAt, String language) {
         if (createdAt == null) return "";
-        if ("en".equals(language)) {
-            return createdAt.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm", Locale.ENGLISH));
-        }
-        if ("ja".equals(language)) {
-            return createdAt.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm"));
-        }
-        // ko / zh-CN / zh-TW は ISO に近い表記で統一
-        return createdAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        DateTimeFormatter formatter = switch (language == null ? "" : language) {
+            case "en" -> DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm", Locale.ENGLISH);
+            case "ja" -> DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm");
+            // ko / zh-CN / zh-TW は ISO に近い表記で統一
+            default -> DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        };
+        return createdAt.format(formatter);
     }
 
     /**
