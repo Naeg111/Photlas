@@ -315,6 +315,61 @@ describe('AccountSettingsDialog', () => {
     })
   })
 
+  describe('Password Max Length - パスワード上限文字数', () => {
+    it('メールアドレス変更フォームのパスワード入力の maxLength 属性が 20 である', () => {
+      render(
+        <MockedAccountSettingsDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          currentEmail={CURRENT_EMAIL}
+        />
+      )
+      expect(screen.getByLabelText(LABEL_PASSWORD)).toHaveAttribute('maxLength', '20')
+    })
+
+    it('パスワード変更フォームの3つのパスワード入力すべての maxLength 属性が 20 である', () => {
+      render(
+        <MockedAccountSettingsDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          currentEmail={CURRENT_EMAIL}
+        />
+      )
+      expect(screen.getByLabelText(LABEL_CURRENT_PASSWORD)).toHaveAttribute('maxLength', '20')
+      expect(screen.getByLabelText(LABEL_NEW_PASSWORD)).toHaveAttribute('maxLength', '20')
+      expect(screen.getByLabelText(LABEL_NEW_PASSWORD_CONFIRM)).toHaveAttribute('maxLength', '20')
+    })
+
+    it('Issue#108 - データエクスポートのパスワード入力の maxLength 属性が 20 である', () => {
+      render(
+        <MockedAccountSettingsDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          currentEmail={CURRENT_EMAIL}
+        />
+      )
+      // settings.exportPasswordLabel は 5 言語対応されているため正規表現で許容
+      expect(
+        screen.getByLabelText(/エクスポート用|Export Password|내보내기 비밀번호|导出密码|匯出密碼/i)
+      ).toHaveAttribute('maxLength', '20')
+    })
+
+    it('退会フォームのパスワード入力の maxLength 属性が 20 である', () => {
+      render(
+        <MockedAccountSettingsDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          currentEmail={CURRENT_EMAIL}
+        />
+      )
+      // 退会ダイアログを開く
+      const deleteButton = screen.getByRole('button', { name: BUTTON_DELETE_ACCOUNT })
+      fireEvent.click(deleteButton)
+
+      expect(screen.getByLabelText(LABEL_PASSWORD_CONFIRM)).toHaveAttribute('maxLength', '20')
+    })
+  })
+
   // Issue#38: AuthContextからトークン取得のテスト
   describe('Token Authentication (Issue#38)', () => {
     it('uses getAuthToken from AuthContext for email change', async () => {
