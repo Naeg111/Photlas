@@ -92,6 +92,10 @@ public class Issue104TermsAgreementTest {
         request.setUsername(TEST_USERNAME);
         request.setEmail(TEST_EMAIL);
         request.setPassword(TEST_PASSWORD);
+        // Issue#109: 同意・年齢確認フィールドを true でセット
+        request.setAgreedToTerms(true);
+        request.setAgreedToPrivacy(true);
+        request.setAgeConfirmed(true);
 
         mockMvc.perform(post(REGISTER_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)

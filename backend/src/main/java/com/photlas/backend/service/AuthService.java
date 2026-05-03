@@ -86,10 +86,12 @@ public class AuthService {
         );
         user.setLanguage(LanguageUtils.resolve(acceptLanguage));
 
-        // Issue#104: メール+パスワード登録時は利用規約・プライバシーポリシー同意済みとして記録
+        // Issue#104 + Issue#109: メール+パスワード登録時は利用規約・プライバシーポリシー・年齢確認を同意済みとして記録
+        // (RegisterRequest の @AssertTrue により、各 boolean が true であることはバリデーション済み)
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         user.setTermsAgreedAt(now);
         user.setPrivacyPolicyAgreedAt(now);
+        user.setAgeConfirmedAt(now);
 
         user = userRepository.save(user);
 

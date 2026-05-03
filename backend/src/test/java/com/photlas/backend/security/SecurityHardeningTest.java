@@ -207,11 +207,15 @@ public class SecurityHardeningTest {
     @Test
     @DisplayName("認証: ユーザー登録エンドポイントはJWTトークンなしで動作する")
     void testAuth_RegisterEndpoint_WorksWithoutToken() throws Exception {
+        // Issue#109: 同意・年齢確認フィールドを true で送信
         String registerRequest = """
                 {
                     "username": "newuser",
                     "email": "newuser@example.com",
-                    "password": "NewPassword123"
+                    "password": "NewPassword123",
+                    "agreedToTerms": true,
+                    "agreedToPrivacy": true,
+                    "ageConfirmed": true
                 }
                 """;
 

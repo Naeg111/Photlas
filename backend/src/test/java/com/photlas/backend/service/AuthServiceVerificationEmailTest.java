@@ -121,6 +121,10 @@ class AuthServiceVerificationEmailTest {
         req.setUsername(username);
         req.setEmail(email);
         req.setPassword("Password1");
+        // Issue#109: 同意・年齢確認フィールドを true でセット
+        req.setAgreedToTerms(true);
+        req.setAgreedToPrivacy(true);
+        req.setAgeConfirmed(true);
         // language は registerUser 第 2 引数で指定するため req には含めない
         return req;
     }

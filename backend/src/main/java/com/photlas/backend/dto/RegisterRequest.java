@@ -7,6 +7,7 @@ import jakarta.validation.constraints.*;
  * ユーザー登録リクエストDTO
  * Issue#21: パスワードバリデーション統一
  * Issue#98: username バリデーション強化 - @ValidUsername で統一（@NotNull/@Size を削除）
+ * Issue#109: 利用規約・プライバシーポリシー・年齢確認の同意フィールドを追加
  */
 public class RegisterRequest {
     @ValidUsername
@@ -24,6 +25,18 @@ public class RegisterRequest {
         message = "パスワードには数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません"
     )
     private String password;
+
+    // Issue#109: 利用規約への同意（true 必須）
+    @AssertTrue(message = "利用規約への同意が必要です")
+    private boolean agreedToTerms;
+
+    // Issue#109: プライバシーポリシーへの同意（true 必須）
+    @AssertTrue(message = "プライバシーポリシーへの同意が必要です")
+    private boolean agreedToPrivacy;
+
+    // Issue#109: 年齢確認（13 歳以上、true 必須）
+    @AssertTrue(message = "13 歳以上であることの確認が必要です")
+    private boolean ageConfirmed;
 
     public RegisterRequest() {}
 
@@ -56,5 +69,29 @@ public class RegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public boolean isAgreedToTerms() {
+        return agreedToTerms;
+    }
+
+    public void setAgreedToTerms(boolean agreedToTerms) {
+        this.agreedToTerms = agreedToTerms;
+    }
+
+    public boolean isAgreedToPrivacy() {
+        return agreedToPrivacy;
+    }
+
+    public void setAgreedToPrivacy(boolean agreedToPrivacy) {
+        this.agreedToPrivacy = agreedToPrivacy;
+    }
+
+    public boolean isAgeConfirmed() {
+        return ageConfirmed;
+    }
+
+    public void setAgeConfirmed(boolean ageConfirmed) {
+        this.ageConfirmed = ageConfirmed;
     }
 }
