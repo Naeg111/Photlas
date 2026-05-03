@@ -79,6 +79,14 @@ public class User {
     @Column(name = "privacy_policy_agreed_at")
     private LocalDateTime privacyPolicyAgreedAt;
 
+    // Issue#108: 最後にデータエクスポートが正常完了した日時（頻度制限用、未エクスポートなら null）
+    @Column(name = "last_exported_at")
+    private LocalDateTime lastExportedAt;
+
+    // Issue#108: データエクスポート進行中フラグ（同時実行制御用、開始時セット・完了/失敗時クリア）
+    @Column(name = "export_in_progress_at")
+    private LocalDateTime exportInProgressAt;
+
     public User() {}
 
     public User(String username, String email, String passwordHash, Integer role) {
@@ -223,6 +231,22 @@ public class User {
 
     public void setPrivacyPolicyAgreedAt(LocalDateTime privacyPolicyAgreedAt) {
         this.privacyPolicyAgreedAt = privacyPolicyAgreedAt;
+    }
+
+    public LocalDateTime getLastExportedAt() {
+        return lastExportedAt;
+    }
+
+    public void setLastExportedAt(LocalDateTime lastExportedAt) {
+        this.lastExportedAt = lastExportedAt;
+    }
+
+    public LocalDateTime getExportInProgressAt() {
+        return exportInProgressAt;
+    }
+
+    public void setExportInProgressAt(LocalDateTime exportInProgressAt) {
+        this.exportInProgressAt = exportInProgressAt;
     }
 
     @Override
