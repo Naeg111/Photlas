@@ -17,11 +17,13 @@ import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.repository.UserSnsLinkRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -51,6 +53,8 @@ public class UserServiceTest {
     @Mock private JwtService jwtService;
     @Mock private JavaMailSender mailSender;
     @Mock private EmailVerificationTokenRepository emailVerificationTokenRepository;
+    // Issue#113: 共通基盤に移行したため、件名・本文をリアルな文字列で stub する
+    @Mock private EmailTemplateService emailTemplateService;
     @InjectMocks private AuthService authService;
 
     // ===== PasswordService用モック =====
@@ -74,6 +78,71 @@ public class UserServiceTest {
     // ObjectProvider<OAuthTokenRevokeService> を自前で stub する（@Mock だけでは @InjectMocks が選べない）
     @Mock private org.springframework.beans.factory.ObjectProvider<OAuthTokenRevokeService> oauthTokenRevokeServiceProvider;
     @InjectMocks private AccountService accountService;
+
+    /**
+     * Issue#113: 共通基盤 EmailTemplateService が件名・本文を返す挙動を
+     * テスト用にスタブする。既存テストが特定の文面（"パスワード" / "Password Changed" 等）を
+     * 期待しているため、key + language から代表的な文面を生成して返す。
+     */
+    @BeforeEach
+    void stubEmailTemplate() {
+        org.mockito.Mockito.lenient()
+                .when(emailTemplateService.subject(org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.any(User.class)))
+                .thenAnswer(this::stubSubject);
+        org.mockito.Mockito.lenient()
+                .when(emailTemplateService.subject(org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.any(User.class),
+                        org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(this::stubSubject);
+        org.mockito.Mockito.lenient()
+                .when(emailTemplateService.body(org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.any(User.class),
+                        org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(this::stubBody);
+        org.mockito.Mockito.lenient()
+                .when(emailTemplateService.body(org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.any(User.class),
+                        org.mockito.ArgumentMatchers.any(),
+                        org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(this::stubBody);
+    }
+
+    private String stubSubject(InvocationOnMock inv) {
+        String key = inv.getArgument(0);
+        User user = inv.getArgument(1);
+        boolean en = user != null && "en".equals(user.getLanguage());
+        return switch (key) {
+            case "email.passwordChanged" -> en
+                    ? "[Photlas] Password Changed" : "【Photlas】パスワードが変更されました";
+            case "email.passwordReset" -> en
+                    ? "[Photlas] Password Reset" : "【Photlas】パスワードの再設定";
+            case "email.verification" -> en
+                    ? "[Photlas] Email Verification" : "【Photlas】メールアドレスの確認";
+            // フェーズ 3 以降で追加予定: emailChangeConfirm, emailChangeNotifyOld,
+            // accountDeletion.{normal,oauthOnly,hybrid}, moderation*, locationSuggestion*
+            default -> key;
+        };
+    }
+
+    private String stubBody(InvocationOnMock inv) {
+        String key = inv.getArgument(0);
+        User user = inv.getArgument(1);
+        boolean en = user != null && "en".equals(user.getLanguage());
+        // 既存テストが本文中に期待する代表的な日英フレーズを返す
+        return switch (key) {
+            case "email.passwordChanged" -> en
+                    ? "Your account password has been changed."
+                    : "お客様のアカウントのパスワードが変更されました。";
+            case "email.passwordReset" -> en
+                    ? "We received a request to reset your password."
+                    : "パスワード再設定のリクエストを受け付けました。";
+            case "email.verification" -> en
+                    ? "Thank you for registering with Photlas!"
+                    : "Photlasへのご登録ありがとうございます。";
+            default -> "stub-body:" + key;
+        };
+    }
 
     // テスト用定数
     private static final String TEST_EMAIL = "test@example.com";
