@@ -808,6 +808,77 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         duration: 500,
       })
     })
+
+    it('Issue#111-followup（5回目仕様変更）- 極端な緯度（南極大陸）でも resetNorthHeading が緯度 10 に戻す easeTo を呼ぶ', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(0)
+      // 南極大陸を中心にした状態（lat=-80）
+      mockMap.getCenter.mockReturnValue({ lng: 0, lat: -80 })
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      ref.current.resetNorthHeading()
+
+      // どんなに極端な緯度でも lat=10 への easeTo が呼ばれる
+      expect(mockMap.easeTo).toHaveBeenCalledWith({
+        center: [0, 10],
+        bearing: 0,
+        pitch: 0,
+        duration: 500,
+      })
+    })
+
+    it('Issue#111-followup（5回目仕様変更）- 回転中に resetNorthHeading を呼ぶと easeTo 完了まで rAF を一時停止する', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        setupFetchMock()
+        mockMap.getZoom.mockReturnValue(0)
+        mockMap.getCenter.mockReturnValue({ lng: 0, lat: -80 })
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+
+        await waitFor(() => {
+          expect(ref.current).not.toBeNull()
+        })
+
+        // 回転を開始させる
+        await act(async () => {
+          vi.advanceTimersByTime(5100)
+        })
+        expect(mockMap.setCenter).toHaveBeenCalled()
+        const callsBeforeReset = mockMap.setCenter.mock.calls.length
+
+        // 回転中に resetNorthHeading を呼ぶ
+        ref.current.resetNorthHeading()
+
+        // 一時停止するため setCenter の呼び出しが増えない
+        await act(async () => {
+          vi.advanceTimersByTime(300)
+        })
+        expect(mockMap.setCenter.mock.calls.length).toBe(callsBeforeReset)
+
+        // map.once('moveend', ...) が登録されている
+        const moveendOnceCall = mockMap.once.mock.calls.find(
+          (c: any[]) => c[0] === 'moveend' && typeof c[1] === 'function',
+        )
+        expect(moveendOnceCall).toBeDefined()
+
+        // moveend を発火させて再開を確認
+        await act(async () => {
+          ;(moveendOnceCall![1] as Function)({})
+          vi.advanceTimersByTime(200)
+        })
+        expect(mockMap.setCenter.mock.calls.length).toBeGreaterThan(callsBeforeReset)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
   })
 
   describe('Issue#106: autoCenter（初期表示位置の自動決定）', () => {
