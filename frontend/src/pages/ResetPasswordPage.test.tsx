@@ -95,6 +95,18 @@ describe('ResetPasswordPage', () => {
       const outer = container.querySelector('.min-h-screen')
       expect(outer).toHaveClass('bg-black')
     })
+
+    it('新しいパスワード入力の maxLength 属性が 20 である', () => {
+      renderWithToken(VALID_TOKEN)
+      const input = screen.getByLabelText(LABEL_NEW_PASSWORD)
+      expect(input).toHaveAttribute('maxLength', '20')
+    })
+
+    it('確認用パスワード入力の maxLength 属性が 20 である', () => {
+      renderWithToken(VALID_TOKEN)
+      const input = screen.getByLabelText(LABEL_CONFIRM_PASSWORD)
+      expect(input).toHaveAttribute('maxLength', '20')
+    })
   })
 
   describe('バリデーション', () => {

@@ -108,6 +108,14 @@ describe('LoginDialog', () => {
     })
   })
 
+  describe('Password Max Length - パスワード上限文字数', () => {
+    it('パスワード入力の maxLength 属性が 20 である', () => {
+      render(<LoginDialog {...defaultProps} />)
+      const passwordInput = screen.getByLabelText('パスワード')
+      expect(passwordInput).toHaveAttribute('maxLength', '20')
+    })
+  })
+
   describe('Validation - バリデーション', () => {
     it('shows error when submitting with empty fields', async () => {
       const user = userEvent.setup()

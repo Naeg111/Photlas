@@ -91,6 +91,18 @@ describe('SignUpDialog', () => {
       expect(screen.getByLabelText(/パスワード（確認用・必須）/)).toBeInTheDocument()
     })
 
+    it('パスワード入力の maxLength 属性が 20 である', () => {
+      render(<SignUpDialog {...defaultProps} />)
+      const passwordInput = screen.getByLabelText(/^パスワード（必須）/)
+      expect(passwordInput).toHaveAttribute('maxLength', '20')
+    })
+
+    it('パスワード（確認用）入力の maxLength 属性が 20 である', () => {
+      render(<SignUpDialog {...defaultProps} />)
+      const confirmInput = screen.getByLabelText(/パスワード（確認用・必須）/)
+      expect(confirmInput).toHaveAttribute('maxLength', '20')
+    })
+
     it('renders SNS links section', () => {
       render(<SignUpDialog {...defaultProps} />)
 
