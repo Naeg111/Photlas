@@ -386,6 +386,7 @@ export function SignUpDialog({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t('auth.passwordExample')}
+                maxLength={20}
               />
               <Button
                 variant="ghost"
@@ -423,6 +424,7 @@ export function SignUpDialog({
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder={t('auth.passwordConfirmPlaceholder')}
+                maxLength={20}
               />
               <Button
                 variant="ghost"

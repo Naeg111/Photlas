@@ -210,6 +210,7 @@ export function LoginDialog({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t('auth.passwordPlaceholder')}
+                maxLength={20}
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               />
               <Button

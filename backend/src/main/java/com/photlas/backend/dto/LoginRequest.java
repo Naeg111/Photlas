@@ -2,6 +2,7 @@ package com.photlas.backend.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 /**
  * Issue#5: ログイン・ログアウト機能 - ログインリクエスト DTO
@@ -13,6 +14,7 @@ public class LoginRequest {
     private String email;
 
     @NotBlank(message = "パスワードは必須です")
+    @Size(max = 20, message = "パスワードは20文字以内で入力してください")
     private String password;
 
     public LoginRequest() {}

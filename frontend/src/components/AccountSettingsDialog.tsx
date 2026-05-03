@@ -416,6 +416,7 @@ export function AccountSettingsDialog({
                   className="mt-2"
                   value={emailPassword}
                   onChange={(e) => setEmailPassword(e.target.value)}
+                  maxLength={20}
                 />
               </div>
               <Button
@@ -442,6 +443,7 @@ export function AccountSettingsDialog({
                   className="mt-2"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
+                  maxLength={20}
                 />
               </div>
               <div>
@@ -452,6 +454,7 @@ export function AccountSettingsDialog({
                   className="mt-2"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
+                  maxLength={20}
                 />
               </div>
               <div>
@@ -462,6 +465,7 @@ export function AccountSettingsDialog({
                   className="mt-2"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  maxLength={20}
                 />
               </div>
               <Button
@@ -507,6 +511,7 @@ export function AccountSettingsDialog({
                   value={exportPassword}
                   onChange={(e) => setExportPassword(e.target.value)}
                   disabled={isExporting}
+                  maxLength={20}
                 />
               </div>
               {!isExporting ? (
@@ -563,6 +568,7 @@ export function AccountSettingsDialog({
                     className="mt-2"
                     value={deletePassword}
                     onChange={(e) => setDeletePassword(e.target.value)}
+                    maxLength={20}
                   />
                 </div>
                 <AlertDialogFooter>

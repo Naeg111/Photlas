@@ -1,6 +1,7 @@
 package com.photlas.backend.dto;
 
 import com.photlas.backend.validation.ValidDeleteAccountRequest;
+import jakarta.validation.constraints.Size;
 
 /**
  * Issue#20: アカウント設定機能 - アカウント削除リクエスト
@@ -13,8 +14,10 @@ public class DeleteAccountRequest {
 
     /**
      * 通常 / ハイブリッドユーザーの退会パスワード。OAuth のみユーザーでは null 必須。
-     * バリデーションは {@code @ValidDeleteAccountRequest} が行う。
+     * クラスレベルの整合性は {@code @ValidDeleteAccountRequest} が行うが、
+     * フィールド単独でも DoS 防止のため上限 20 文字を設ける（Photlas のパスワード要件と一致）。
      */
+    @Size(max = 20, message = "パスワードは20文字以内で入力してください")
     private String password;
 
     /**
