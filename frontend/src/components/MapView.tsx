@@ -222,6 +222,12 @@ interface MapViewProps {
   onClusterClick?: (spotIds: number[]) => void
   onMapClick?: () => void
   onMapReady?: () => void
+  /**
+   * Issue#111-followup §8: 投稿詳細ダイアログが表示中かどうか。
+   * true の間は地球儀回転と 5 秒タイマーを停止する。
+   * false に戻った時、ズーム 0〜4 なら 5 秒タイマーをセットする。
+   */
+  isPhotoDialogOpen?: boolean
 }
 
 /**
@@ -302,7 +308,7 @@ function handleClusterClick(mapInstance: MapboxMap, e: any, callbackRef: React.R
   })
 }
 
-const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady }, ref) {
+const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady, isPhotoDialogOpen }, ref) {
   const { t, i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [spots, setSpots] = useState<SpotResponse[]>([])
@@ -415,27 +421,41 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   }, [])
 
   // Issue#111: 地球儀回転を即時開始する。ズームが GLOBE_ROTATION_MAX_ZOOM を超えていたら何もしない。
-  // 回転中はピン（クラスタ）を非表示にし、視覚的なシンプルさを保つ。
   const startGlobeRotation = useCallback((mapInstance: MapboxMap) => {
     if (rotationFrameRef.current !== null) return
     if (mapInstance.getZoom() > GLOBE_ROTATION_MAX_ZOOM) return
+    // Issue#111-followup §8: 投稿詳細ダイアログ表示中は回転を開始しない
+    if (isPhotoDialogOpenRef.current) return
     isRotatingRef.current = true
     // Issue#111-followup（仕様変更4回目）: 回転開始時に緯度をリセットしない。
     // 「現在いる地点を視点に回転を始める」仕様。
-    // 回転中はピン（クラスタ）を非表示にする。React state を空にすることで
-    // GeoJSON Source の setData が空配列で更新され、ピンが消える。
-    setSpots([])
+    // Issue#111-followup §8: 回転中もピン（クラスタ）を表示し続ける。
+    // 既存の spots state は触らず、ピンが画面上で経度方向に流れて見える状態にする。
     rotationLoop(mapInstance)
   }, [rotationLoop])
 
   // Issue#111: GLOBE_ROTATION_IDLE_DELAY_MS のアイドル待機後に回転を開始するスケジュールを立てる
   const scheduleGlobeRotation = useCallback((mapInstance: MapboxMap) => {
+    // Issue#111-followup §8: 投稿詳細ダイアログ表示中はタイマーすら立てない
+    if (isPhotoDialogOpenRef.current) return
     clearIdleRotationTimer()
     idleTimerRef.current = setTimeout(() => {
       idleTimerRef.current = null
       startGlobeRotation(mapInstance)
     }, GLOBE_ROTATION_IDLE_DELAY_MS)
   }, [clearIdleRotationTimer, startGlobeRotation])
+
+  // Issue#111-followup §8: ユーザー操作完了直後の fetchSpots を呼ぶための ref 経由参照。
+  // `debouncedFetchSpots` は本コンポーネント内で後ろの位置に定義されるため、
+  // ここから直接参照すると JS の declaration 順序制約に当たる。ref を経由して回避する。
+  const debouncedFetchSpotsRef = useRef<((map: MapboxMap) => void) | null>(null)
+
+  // Issue#111-followup §8: 投稿詳細ダイアログ表示状態を ref で常に最新化。
+  // handleLoad は MapMock の onLoad / 実 Mapbox の load イベントから同期的に呼ばれる。
+  // 初期表示時に prop=true でも、useEffect が走る前に handleLoad → scheduleGlobeRotation
+  // が走るため、render 中に ref を更新して最新値を読めるようにする（refs は同期更新可）。
+  const isPhotoDialogOpenRef = useRef(false)
+  isPhotoDialogOpenRef.current = isPhotoDialogOpen ?? false
 
   // Issue#111-followup: ユーザーのあらゆるカメラ操作で回転を停止し、5秒タイマーを引き直す。
   // 仕様変更（2回目）: 当初は左クリック/1本指タップだけが停止トリガーだったが、
@@ -450,6 +470,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     if (mapInstance.getZoom() <= GLOBE_ROTATION_MAX_ZOOM) {
       scheduleGlobeRotation(mapInstance)
     }
+    // Issue#111-followup §8: ユーザー操作完了直後に最新スポットを 1 回 fetch（debounced 500ms）。
+    // ズーム/方位リセットの一時停止経路（cancelRotationFrame 単独）では呼ばれないようにこの場所のみ。
+    debouncedFetchSpotsRef.current?.(mapInstance)
   }, [stopGlobeRotation, scheduleGlobeRotation])
 
   // デバイスの向き取得の許可をリクエスト（iOS 13+用）
@@ -978,12 +1001,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       scheduleGlobeRotation(mapInstance)
     }
 
-    // Issue#106: ズーム0（地球全体）では全世界のスポットを取得しないためスキップ。
-    // autoCenter のワープ完了後（mapInstance.getZoom() > 0 になった時点）の moveend / idle イベントで
-    // 通常通り fetchSpots が走る。
-    if (mapInstance.getZoom() > 0) {
-      fetchSpots(mapInstance)
-    }
+    // Issue#111-followup §8: 全ズームレベルで fetchSpots を許可（Issue#106 のズーム 0 スキップを撤廃）。
+    // バックエンドの MAX_SPOTS_LIMIT=50 でレスポンス件数が保護されているため、
+    // 世界全体クエリでもペイロードは大きくならない。
+    // 巨大クラスタを安全に開く仕組みは Issue#112 のページネーションで担保済み。
+    fetchSpots(mapInstance)
 
     // E2Eテスト用: マップインスタンスをwindowに公開
     ;(globalThis as unknown as Record<string, unknown>).__photlas_map = mapInstance
@@ -996,6 +1018,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     (mapInstance: MapboxMap) => fetchSpots(mapInstance),
     FETCH_SPOTS_DEBOUNCE_MS
   )
+  // Issue#111-followup §8: stopRotationOnUserInteraction から ref 経由で参照するため登録
+  debouncedFetchSpotsRef.current = debouncedFetchSpots
 
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
@@ -1017,9 +1041,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     ) {
       scheduleGlobeRotation(mapInstance)
     }
-    // Issue#106: ズーム0では全世界のスポットを取得しないためスキップ
-    if (zoom <= 0) return
-    // Issue#111: 地球儀回転中は moveend が連続で走るためスポット取得をスキップする
+    // Issue#111-followup §8: ズーム0でも fetchSpots を許可（旧 Issue#106 のスキップ撤廃）。
+    // 回転中は moveend が連続で走るためスキップする方は維持。
     if (isRotatingRef.current) return
     debouncedFetchSpots(mapInstance)
   }, [debouncedFetchSpots, scheduleGlobeRotation])
@@ -1036,6 +1059,24 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterParams])
+
+  // Issue#111-followup §8: 投稿詳細ダイアログ表示中は地球儀回転と 5 秒タイマーを停止する。
+  // ダイアログを閉じた瞬間、ズーム 0〜4 なら 5 秒タイマーを再セットする。
+  // 他のダイアログ（FilterPanel, TopMenu 等）は対象外。
+  useEffect(() => {
+    if (!map) return
+    if (isPhotoDialogOpen) {
+      // ダイアログ表示中: rAF 一時停止 + idle タイマー停止 + isRotating クリア
+      cancelRotationFrame()
+      clearIdleRotationTimer()
+      isRotatingRef.current = false
+    } else {
+      // ダイアログ閉鎖: ズーム 0〜4 範囲内なら 5 秒タイマーをセット
+      if (map.getZoom() <= GLOBE_ROTATION_MAX_ZOOM) {
+        scheduleGlobeRotation(map)
+      }
+    }
+  }, [isPhotoDialogOpen, map, cancelRotationFrame, clearIdleRotationTimer, scheduleGlobeRotation])
 
   // アクセストークンが空の場合はフォールバックUIを表示
   if (!MAPBOX_ACCESS_TOKEN) {
