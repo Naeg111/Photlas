@@ -51,7 +51,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
             "/api/v1/auth/resend-verification",
             // Issue#81 Phase 4h: OAuth 初回パスワード設定とバナー dismiss は短時間連打を抑止
             "/api/v1/auth/oauth2/set-password",
-            "/api/v1/users/me/password-recommendation/dismiss"
+            "/api/v1/users/me/password-recommendation/dismiss",
+            // Issue#108: データエクスポートはパスワードを受け取るため総当たり防止
+            "/api/v1/users/me/export"
     );
 
     // エンドポイントパス定数

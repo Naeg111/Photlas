@@ -158,6 +158,27 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
+     * Issue#108: データエクスポート同時実行（409 Conflict）をハンドリング
+     */
+    @ExceptionHandler(ExportInProgressException.class)
+    public ResponseEntity<ErrorResponse> handleExportInProgressException(ExportInProgressException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("EXPORT_IN_PROGRESS", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    /**
+     * Issue#108: データエクスポート頻度制限（429 Too Many Requests + Retry-After）をハンドリング
+     */
+    @ExceptionHandler(ExportRateLimitException.class)
+    public ResponseEntity<ErrorResponse> handleExportRateLimitException(ExportRateLimitException ex) {
+        long seconds = Math.max(1, ex.getRetryAfter().toSeconds());
+        ErrorResponse errorResponse = new ErrorResponse("EXPORT_RATE_LIMITED", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(seconds))
+                .body(errorResponse);
+    }
+
+    /**
      * 未ハンドル例外のcatch-all（スタックトレース漏洩防止）
      */
     @ExceptionHandler(Exception.class)
