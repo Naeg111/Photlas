@@ -163,6 +163,28 @@ public class AdminDeletedUserControllerTest {
                 .andExpect(jsonPath("$.user.email", is("export@example.com")));
     }
 
+    @Test
+    @DisplayName("Issue#108 - 管理者エクスポートは camelCase + UTC ISO 8601(Z) で出力される")
+    void testExport_UsesCamelCaseAndUtcIso8601() throws Exception {
+        User deleted = createDeletedUser("camel@example.com", "camelname", 5);
+
+        mockMvc.perform(get(ENDPOINT + "/" + deleted.getId() + "/export")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                // camelCase キー
+                .andExpect(jsonPath("$.user.email", is("camel@example.com")))
+                .andExpect(jsonPath("$.user.originalUsername", is("camelname")))
+                .andExpect(jsonPath("$.user.createdAt").exists())
+                .andExpect(jsonPath("$.user.deletedAt").exists())
+                // 旧 snake_case キーは存在しない
+                .andExpect(jsonPath("$.user.original_username").doesNotExist())
+                .andExpect(jsonPath("$.user.created_at").doesNotExist())
+                .andExpect(jsonPath("$.user.deleted_at").doesNotExist())
+                // UTC ISO 8601: 末尾が "Z" であること
+                .andExpect(jsonPath("$.user.createdAt", endsWith("Z")))
+                .andExpect(jsonPath("$.user.deletedAt", endsWith("Z")));
+    }
+
     private User createDeletedUser(String email, String originalUsername, int daysAgo) {
         // 表示名は@Size(max=12)制約があるため12文字以内にする
         String shortId = String.valueOf(System.nanoTime() % 100000);
