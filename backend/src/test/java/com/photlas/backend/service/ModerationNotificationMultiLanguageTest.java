@@ -1,19 +1,24 @@
 package com.photlas.backend.service;
 
-import com.photlas.backend.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,28 +28,45 @@ import static org.mockito.Mockito.verify;
 /**
  * Issue#113 フェーズ 4 - ModerationNotificationService の 5 言語化テスト。
  *
- * <p>4 種類の通知（隔離 / 警告 / 一時停止 / 永久停止）が User の言語に
- * 応じて適切な言語で送信されることを検証する。グループ B (@Async 維持・
- * 失敗時 ERROR ログ統一) の挙動も対象。</p>
+ * <p>4 種類の通知（隔離 / 警告 / 一時停止 / 永久停止）が言語に応じて適切な
+ * 言語で送信されることを検証する。グループ B (@Async + try-catch + ERROR ログ) も対象。</p>
+ *
+ * <p>本テストは Mockito ベース（@SpringBootTest を使わない）。理由:
+ * <ul>
+ *   <li>@SpringBootTest だと @Async が実際に非同期実行され、テストアサーションが
+ *       タイミング依存になる</li>
+ *   <li>EmailTemplateService は実 ReloadableResourceBundleMessageSource を組み立てて
+ *       注入することで、実際の properties ファイルを読みつつ同期で動作させる</li>
+ * </ul>
+ * これにより「実際の翻訳 properties が読み込まれる + 同期実行で検証可能」を両立する。
  */
-@SpringBootTest
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ModerationNotificationMultiLanguageTest {
 
-    @Autowired private ModerationNotificationService notificationService;
+    @Mock private JavaMailSender mailSender;
 
-    @MockBean private JavaMailSender mailSender;
+    private EmailTemplateService emailTemplateService;
+    private ModerationNotificationService notificationService;
 
     @BeforeEach
     void setUp() {
-        org.mockito.Mockito.reset(mailSender);
+        // 実 MessageSource を組み立てる（properties ファイル経由）
+        ReloadableResourceBundleMessageSource source = new ReloadableResourceBundleMessageSource();
+        source.setBasename("classpath:i18n/email/messages");
+        source.setDefaultEncoding("UTF-8");
+        source.setDefaultLocale(Locale.ENGLISH);
+        source.setFallbackToSystemLocale(false);
+        emailTemplateService = new EmailTemplateService(source);
+        notificationService = new ModerationNotificationService(mailSender, emailTemplateService);
+        ReflectionTestUtils.setField(notificationService, "mailFrom", "noreply@photlas.jp");
     }
 
     @Test
     @DisplayName("Issue#113 - 隔離通知 ja: 日本語の件名・本文")
     void quarantineJa() {
         notificationService.sendQuarantineNotification("ja@example.com", "naegi",
-                LocalDateTime.now(), "ja");
+                LocalDateTime.of(2026, 3, 15, 14, 30), "ja");
 
         SimpleMailMessage captured = captureSent();
         assertThat(captured.getSubject()).contains("Photlas").contains("審査");
@@ -137,12 +159,10 @@ class ModerationNotificationMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - グループ B: メール送信失敗でも例外が外に伝播しない（@Async + try-catch）")
+    @DisplayName("Issue#113 - グループ B: メール送信失敗でも例外が外に伝播しない")
     void groupBFailureSwallowed() {
         doThrow(new RuntimeException("SMTP failure")).when(mailSender).send(any(SimpleMailMessage.class));
 
-        // @Async は呼び出し元に例外を返さない契約のため、テスト内では同期実行になる
-        // が、try-catch でラップされているので例外は伝播しない
         notificationService.sendQuarantineNotification("err@example.com", "naegi",
                 LocalDateTime.now(), "ja");
         // 例外が伝播しなければテスト成功
