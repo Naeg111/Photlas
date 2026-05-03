@@ -78,4 +78,29 @@ public interface UserRepository extends JpaRepository<User, Long> {
             "AND (u.deletionHoldUntil IS NULL OR u.deletionHoldUntil < CURRENT_TIMESTAMP)")
     List<User> findExpiredDeletedUsers(
             @org.springframework.data.repository.query.Param("cutoff") LocalDateTime cutoff);
+
+    /**
+     * Issue#108 §4.5: 同時実行ロック取得 + 頻度制限チェックを 1 つの UPDATE で原子的に行う。
+     *
+     * <p>WHERE 句で「export_in_progress_at が未セット または 30 分以上前（ストール扱い）」
+     * かつ「last_exported_at が未設定 または 168 時間以上前」の両方を満たすときだけ
+     * UPDATE する。影響行数 1 で取得成功、0 ならロック中または頻度制限のいずれか。</p>
+     *
+     * @param userId        対象ユーザー ID
+     * @param now           現在時刻
+     * @param staleCutoff   ストール扱いの閾値（now - 30 分）
+     * @param recentCutoff  頻度制限の閾値（now - 168 時間）
+     * @return 影響行数（1 = 成功、0 = 失敗）
+     */
+    @org.springframework.transaction.annotation.Transactional
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query(
+            "UPDATE User u SET u.exportInProgressAt = :now WHERE u.id = :userId " +
+            "AND (u.exportInProgressAt IS NULL OR u.exportInProgressAt < :staleCutoff) " +
+            "AND (u.lastExportedAt IS NULL OR u.lastExportedAt < :recentCutoff)")
+    int tryAcquireExportSlot(
+            @org.springframework.data.repository.query.Param("userId") Long userId,
+            @org.springframework.data.repository.query.Param("now") LocalDateTime now,
+            @org.springframework.data.repository.query.Param("staleCutoff") LocalDateTime staleCutoff,
+            @org.springframework.data.repository.query.Param("recentCutoff") LocalDateTime recentCutoff);
 }
