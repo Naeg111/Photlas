@@ -379,7 +379,7 @@ export function PrivacyContentZhTW() {
           <li><span className="font-semibold">更正權</span>: 請求更正不準確個人資料的權利</li>
           <li><span className="font-semibold">刪除權(被遺忘權)</span>: 請求刪除個人資料的權利</li>
           <li><span className="font-semibold">處理限制權</span>: 請求限制個人資料處理的權利</li>
-          <li><span className="font-semibold">資料可攜權</span>: 以結構化、機器可讀格式接收個人資料的權利。行使本權利時請聯絡第18條的諮詢窗口。營運方將匯出您的資料並提供給您(基於請求的營運)。</li>
+          <li><span className="font-semibold">資料可攜權</span>: 以結構化、機器可讀格式接收個人資料的權利。行使本權利時,可隨時在帳號設定的「匯出資料」中將您的資料下載為 ZIP 檔案。</li>
           <li><span className="font-semibold">異議權</span>: 對基於正當利益的處理提出異議的權利</li>
           <li><span className="font-semibold">同意撤回權</span>: 對基於同意的處理隨時撤回同意的權利(從瀏覽器設定刪除本網站的網站資料後,Cookie 同意橫幅會再次顯示,可撤回同意)</li>
         </ul>
