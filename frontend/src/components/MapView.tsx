@@ -76,10 +76,9 @@ const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
 const DEFAULT_ZOOM = 0
 // Issue#106: 初期ズーム0表示時の緯度。
 // Issue#111: 経度（INITIAL_VIEW_LNG）は削除し、コンポーネント内で 0〜359 のランダム値に切替える。
-// Issue#111-followup: 地球儀表示時の固定緯度は北緯 10 度。
-// 「初期表示」「回転中の固定緯度」「方位リセット時の戻り先」すべてに同じ値を使う。
+// Issue#111-followup: 緯度は「初回マウント時の見た目」と「方位リセット時の戻り先」の2用途で 10 度を使う。
+// 回転中は現在の center.lat を維持（ユーザーが緯度をいじれば、その緯度で回転を続ける）。
 const INITIAL_VIEW_LAT = 10
-const GLOBE_FIXED_LAT = INITIAL_VIEW_LAT
 const GLOBE_RESET_LAT = INITIAL_VIEW_LAT
 // Issue#106: autoCenter のフォールバック用（位置情報・IP国判定がすべて失敗した場合）
 const FALLBACK_TOKYO_ZOOM = 11
@@ -405,9 +404,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       lastTickTimestampRef.current = now
       const deltaDegrees = (DEGREES_PER_SECOND * elapsedMs) / 1000
       const center = mapInstance.getCenter()
-      // Issue#111-followup（仕様変更3回目）: 回転中の緯度は GLOBE_FIXED_LAT で固定する。
-      // ピンチズーム等で center.lat が微妙にずれても、毎フレーム 10 度に強制スナップする。
-      mapInstance.setCenter([center.lng + deltaDegrees, GLOBE_FIXED_LAT])
+      // Issue#111-followup（仕様変更4回目）: 緯度は強制スナップせず、現在の center.lat を維持する。
+      // ユーザーが任意の緯度に panning した場合はその緯度で回転を続ける。
+      // 緯度を 10 度に戻すのは方位リセットボタンを押した時のみ。
+      mapInstance.setCenter([center.lng + deltaDegrees, center.lat])
       rotationFrameRef.current = requestAnimationFrame(tick)
     }
     lastTickTimestampRef.current = performance.now()
@@ -420,12 +420,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     if (rotationFrameRef.current !== null) return
     if (mapInstance.getZoom() > GLOBE_ROTATION_MAX_ZOOM) return
     isRotatingRef.current = true
-    // Issue#111-followup: 回転開始時に緯度を GLOBE_FIXED_LAT に揃える。
-    // ユーザーが回転前にどこを見ていても、回転は必ず固定緯度から始まる。
-    const center = mapInstance.getCenter()
-    if (center.lat !== GLOBE_FIXED_LAT) {
-      mapInstance.setCenter([center.lng, GLOBE_FIXED_LAT])
-    }
+    // Issue#111-followup（仕様変更4回目）: 回転開始時に緯度をリセットしない。
+    // 「現在いる地点を視点に回転を始める」仕様。
     // 回転中はピン（クラスタ）を非表示にする。React state を空にすることで
     // GeoJSON Source の setData が空配列で更新され、ピンが消える。
     setSpots([])
@@ -908,6 +904,27 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     // ジェスチャー有効/無効が切り替わる
     mapInstance.on('zoom', updateGlobeGestureHandlers)
 
+    // Issue#111-followup（仕様変更4回目）: ズームアニメーション中は rAF ループを一時停止する。
+    // rAF tick の setCenter が easeTo（+/-ボタンや wheel zoom）の進行をキャンセルしてしまい、
+    // ズームインが「ほんの少しずつしか進まない」現象を防ぐため。
+    // isRotatingRef は維持し、zoomend で rAF を再開する。
+    mapInstance.on('zoomstart', () => {
+      if (rotationFrameRef.current !== null) {
+        cancelAnimationFrame(rotationFrameRef.current)
+        rotationFrameRef.current = null
+      }
+    })
+    mapInstance.on('zoomend', () => {
+      // 回転状態が継続していて、ズーム範囲も維持されていれば再開
+      if (
+        isRotatingRef.current &&
+        rotationFrameRef.current === null &&
+        mapInstance.getZoom() <= GLOBE_ROTATION_MAX_ZOOM
+      ) {
+        rotationLoop(mapInstance)
+      }
+    })
+
     // Issue#111-followup（仕様変更3回目）: 「タップ/クリック/左ドラッグ」だけで停止する仕様に戻す。
     // ホイールズーム・+/-ボタン・ピンチズームでは回転を継続し、
     // 右ドラッグ・2本指角度操作はそもそも別箇所（updateGestureHandlers）で無効化済み。
@@ -943,7 +960,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     ;(globalThis as unknown as Record<string, unknown>).__photlas_map = mapInstance
 
     onMapReady?.()
-  }, [fetchSpots, onMapReady, initializeSymbolLayers, stopRotationOnUserInteraction, scheduleGlobeRotation])
+  }, [fetchSpots, onMapReady, initializeSymbolLayers, stopRotationOnUserInteraction, scheduleGlobeRotation, rotationLoop])
 
   // 地図移動完了時のスポット取得（デバウンス: 連続操作を1回のAPI呼び出しにまとめる）
   const debouncedFetchSpots = useDebouncedCallback(
