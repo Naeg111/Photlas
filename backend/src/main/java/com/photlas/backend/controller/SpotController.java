@@ -1,10 +1,12 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.dto.SpotPhotosRequest;
+import com.photlas.backend.dto.SpotPhotosResponse;
 import com.photlas.backend.dto.SpotResponse;
 import com.photlas.backend.service.SpotService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -77,20 +79,32 @@ public class SpotController {
         return ResponseEntity.ok(spots);
     }
 
+    // Issue#112: ページネーションのデフォルト・上限
+    private static final int DEFAULT_PHOTO_PAGE_SIZE = 30;
+    private static final int DEFAULT_PHOTO_PAGE_OFFSET = 0;
+
     /**
-     * Issue#14: スポットの写真ID一覧を取得
+     * Issue#112: スポット写真ID一覧をページングで取得（複数スポット横断対応）
      *
-     * @param spotId スポットID
-     * @return 写真IDのリスト（撮影日時の新しい順）
+     * 撮影日時降順（NULLS LAST）でマージしたページを返す。
+     * `spotIds` を Body で受け取るため、巨大クラスタの spot_id 配列でも
+     * URL クエリ長制限の影響を受けない。
+     *
+     * @param request リクエスト Body（spotIds 必須、limit/offset/maxAgeDays は任意）
+     * @return 写真IDのページと総件数
      */
-    @GetMapping("/{spotId}/photos")
-    public ResponseEntity<List<Long>> getSpotPhotoIds(
-            @PathVariable Long spotId,
-            @RequestParam(name = "max_age_days", required = false) Integer maxAgeDays) {
-        logger.info("GET /api/v1/spots/{}/photos - maxAgeDays={}", spotId, maxAgeDays);
+    @PostMapping("/photos")
+    public ResponseEntity<SpotPhotosResponse> getSpotPhotos(
+            @Valid @RequestBody SpotPhotosRequest request) {
+        logger.info("POST /api/v1/spots/photos - spotIds={}, limit={}, offset={}, maxAgeDays={}",
+                request.getSpotIds(), request.getLimit(), request.getOffset(), request.getMaxAgeDays());
 
-        List<Long> photoIds = spotService.getSpotPhotoIds(spotId, maxAgeDays);
+        int limit = request.getLimit() != null ? request.getLimit() : DEFAULT_PHOTO_PAGE_SIZE;
+        int offset = request.getOffset() != null ? request.getOffset() : DEFAULT_PHOTO_PAGE_OFFSET;
 
-        return ResponseEntity.ok(photoIds);
+        SpotPhotosResponse response = spotService.getSpotPhotos(
+                request.getSpotIds(), limit, offset, request.getMaxAgeDays());
+
+        return ResponseEntity.ok(response);
     }
 }

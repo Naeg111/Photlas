@@ -44,6 +44,53 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         @org.springframework.data.repository.query.Param("moderationStatus") Integer moderationStatus);
 
     /**
+     * Issue#112: 複数スポットを横断した写真ID一覧をページング取得（撮影日時降順）
+     *
+     * 並び順: shot_at DESC NULLS LAST, photo_id DESC
+     *  - 撮影日が新しい順
+     *  - 撮影日不明（NULL）は末尾
+     *  - 同時刻は photo_id 降順（新しい投稿が先）でページ境界を安定化
+     *
+     * フィルタ:
+     *  - moderation_status = PUBLISHED 相当
+     *  - 退会済みユーザー（users.deleted_at IS NOT NULL）の写真は除外
+     *  - maxAgeCutoff が指定された場合、shot_at >= maxAgeCutoff のみ通す
+     *    （shot_at が NULL の写真は撮影日不明としてフィルタを通過する）
+     */
+    @Query(value =
+        "SELECT p.photo_id FROM photos p " +
+        "INNER JOIN users u ON p.user_id = u.id " +
+        "WHERE p.spot_id IN (:spotIds) " +
+        "  AND p.moderation_status = :moderationStatus " +
+        "  AND u.deleted_at IS NULL " +
+        "  AND (CAST(:maxAgeCutoff AS timestamp) IS NULL OR p.shot_at IS NULL OR p.shot_at >= :maxAgeCutoff) " +
+        "ORDER BY p.shot_at DESC NULLS LAST, p.photo_id DESC " +
+        "LIMIT :limit OFFSET :offset",
+        nativeQuery = true)
+    List<Long> findPhotoIdsBySpotsPaged(
+        @Param("spotIds") List<Long> spotIds,
+        @Param("moderationStatus") Integer moderationStatus,
+        @Param("maxAgeCutoff") LocalDateTime maxAgeCutoff,
+        @Param("limit") int limit,
+        @Param("offset") int offset);
+
+    /**
+     * Issue#112: 上記と同条件の総件数取得
+     */
+    @Query(value =
+        "SELECT COUNT(*) FROM photos p " +
+        "INNER JOIN users u ON p.user_id = u.id " +
+        "WHERE p.spot_id IN (:spotIds) " +
+        "  AND p.moderation_status = :moderationStatus " +
+        "  AND u.deleted_at IS NULL " +
+        "  AND (CAST(:maxAgeCutoff AS timestamp) IS NULL OR p.shot_at IS NULL OR p.shot_at >= :maxAgeCutoff)",
+        nativeQuery = true)
+    long countPhotosBySpots(
+        @Param("spotIds") List<Long> spotIds,
+        @Param("moderationStatus") Integer moderationStatus,
+        @Param("maxAgeCutoff") LocalDateTime maxAgeCutoff);
+
+    /**
      * Issue#54: モデレーションステータスで写真を検索
      */
     List<Photo> findByModerationStatus(Integer moderationStatus);

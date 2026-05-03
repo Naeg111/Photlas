@@ -190,6 +190,7 @@
     "editPhoto": "編輯照片資訊",
     "sharePhoto": "分享此照片",
     "loadFailed": "載入失敗",
+    "loadMoreFailed": "下一批照片載入失敗",
     "quarantined": "此貼文可能違反內容政策，目前已隱藏。",
     "pendingReview": "此貼文正在審核中，通過後將公開。",
     "notFound": "找不到照片",

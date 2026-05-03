@@ -566,7 +566,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     it('お気に入りボタンをクリックするとAPIが呼び出される', async () => {
       const photoDetail = createMockPhotoDetail({ isFavorited: false })
       const mockFetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
         .mockResolvedValueOnce({ ok: true }) // POST /favorite
 
@@ -601,7 +601,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     it('お気に入り済みの写真をクリックすると削除APIが呼び出される', async () => {
       const photoDetail = createMockPhotoDetail({ isFavorited: true })
       const mockFetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
         .mockResolvedValueOnce({ ok: true }) // DELETE /favorite
 
@@ -636,7 +636,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     it('API呼び出し中はボタンが無効化される', async () => {
       const photoDetail = createMockPhotoDetail({ isFavorited: false })
       const mockFetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
         .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
         .mockImplementationOnce(() => new Promise(() => {})) // 永続的にpending
@@ -669,7 +669,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     it('成功時にアイコン状態が即時更新される（楽観的UI更新）', async () => {
       const photoDetail = createMockPhotoDetail({ isFavorited: false })
       const mockFetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
         .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
         .mockResolvedValueOnce({ ok: true }) // POST /favorite
@@ -1652,7 +1652,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
           })
         }
         if (url.includes('/spots/') && url.includes('/photos')) {
-          return Promise.resolve({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+          return Promise.resolve({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         }
         if (url.includes(`/photos/${TEST_PHOTO_ID_1}`)) {
           return Promise.resolve({ ok: true, json: async () => photoDetail })
@@ -1771,7 +1771,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
           return Promise.resolve({ ok: true, json: async () => ({ hasSuggested: true }) })
         }
         if (url.includes('/spots/') && url.includes('/photos')) {
-          return Promise.resolve({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+          return Promise.resolve({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         }
         if (url.includes(`/photos/${TEST_PHOTO_ID_1}`)) {
           return Promise.resolve({ ok: true, json: async () => photoDetail })
@@ -1995,8 +1995,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const photoDetail1 = createMockPhotoDetail({ photoId: TEST_PHOTO_ID_1 })
 
       const mockFetch = vi.fn()
-        // 1. photo IDs 取得
-        .mockResolvedValueOnce({ ok: true, json: async () => photoIds })
+        // 1. photo IDs 取得（Issue#112: { ids, total } 形式）
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: photoIds, total: photoIds.length }) })
         // 2. photo 0 詳細取得（成功）
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail1 })
         // 3. プリフェッチ対象の photo 1 詳細取得（429）
@@ -2032,7 +2032,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         favoriteCount: 5,
       })
       const mockFetch = vi.fn()
-        .mockResolvedValueOnce({ ok: true, json: async () => [TEST_PHOTO_ID_1] })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
         .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
         .mockResolvedValueOnce(
@@ -2216,10 +2216,13 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('Issue#112 - 末尾から5枚以内に近づくと次ページを fetch する', async () => {
-      const page1Ids = makeIds(30)
-      const page2Ids = makeIds(30, 31)
-      const mockFetch = setupPaginatedFetch(page1Ids, page2Ids, 60)
+    it('Issue#112 - 末尾から5枚以内に近づくと次ページを裏で fetch する', async () => {
+      // page1 に 5件しか返さず、total=10 とすることで、初期 currentIndex=0 で
+      // remaining = 5 - 0 - 1 = 4 ≤ 5（PHOTO_PAGE_PRELOAD_THRESHOLD）となり、
+      // 即座に page2 取得トリガーが発火する
+      const page1Ids = makeIds(5)
+      const page2Ids = makeIds(5, 6)
+      const mockFetch = setupPaginatedFetch(page1Ids, page2Ids, 10)
 
       Object.defineProperty(globalThis, 'fetch', {
         value: mockFetch,
@@ -2227,43 +2230,17 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         configurable: true,
       })
 
-      const ref = renderPhotoDetailDialog()
+      renderPhotoDetailDialog()
 
-      // 初期 fetch（page1 + 写真詳細）が完了するまで待つ
+      // page2 取得（offset=5）が走ることを確認
       await waitFor(() => {
-        expect(screen.getByText(/1\s*\/\s*60/)).toBeInTheDocument()
-      })
-
-      // currentIndex を 26（末尾から 5 枚目以内）に進める
-      // ナビゲーションボタンを 25 回クリックすると遅いため、内部 state を直接動かす方法は無いので
-      // 「次の写真へ」ボタンを連打する
-      // ここでは API 呼び出しの確認だけが目的のため、emblaApi のモックや scroll を使う実装に依存
-      // → 代わりに「カルーセルで currentIndex を末尾近くにスキップした状態」をシミュレートするための
-      //    最終手段として、テストは「末尾10件目（index=24）まで進めると」次ページ取得を確認
-      // 実装の検証はもっと簡単に：直接 onSelect イベントを発火するか、テスト用の API を用意
-
-      // ここでは簡易的に、'次へ' ボタンを連打して末尾近くまで進める想定
-      // 25回クリックで index=25 → 末尾5枚以内に入る
-      const nextButton = screen.queryByRole('button', { name: /次の写真/ })
-      if (nextButton) {
-        for (let i = 0; i < 26; i++) {
-          // クリックは UI の embla 動作に依存するためスキップ可能
-          // ここではフォールバック的なテストとして、API 呼び出し回数だけ検証
-        }
-      }
-
-      // page2 取得が走ることだけを最終確認（実装依存）
-      await waitFor(() => {
-        const calls = mockFetch.mock.calls.filter(([url, init]) => {
+        const page2Calls = mockFetch.mock.calls.filter(([url, init]) => {
           if (typeof url !== 'string' || !url.includes('/api/v1/spots/photos')) return false
           const body = init && (init as RequestInit).body
-          return typeof body === 'string' && body.includes('"offset":30')
+          return typeof body === 'string' && body.includes('"offset":5')
         })
-        // 末尾近くまで進んだら page2 を fetch する想定
-        expect(calls.length).toBeGreaterThan(0)
+        expect(page2Calls.length).toBeGreaterThan(0)
       }, { timeout: 3000 })
-
-      void ref
     })
 
     it('Issue#112 - 全件取得後（photoIds.length === total）は追加 fetch しない', async () => {
@@ -2292,8 +2269,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
 
     it('Issue#112 - レスポンス型が { ids, total } である（クライアント期待形式）', async () => {
-      // setupMockFetch のデフォルトが { ids, total } を返すように更新済み
-      const photoIds = [TEST_PHOTO_ID_1]
+      // 2件以上ないと枚数インジケーターが表示されないため、2件で検証
+      const photoIds = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
       const photoDetail = createMockPhotoDetail()
       const mockFetch = setupMockFetch(photoIds, [photoDetail])
 
@@ -2307,7 +2284,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       // ダイアログが正常にレンダリングされ、写真が読み込まれる（レスポンス形式が正しく解釈されている）
       await waitFor(() => {
-        expect(screen.getByText(/1\s*\/\s*1/)).toBeInTheDocument()
+        expect(screen.getByText(/1\s*\/\s*2/)).toBeInTheDocument()
       })
     })
   })

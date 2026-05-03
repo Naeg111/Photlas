@@ -190,6 +190,7 @@
     "editPhoto": "사진 정보 편집",
     "sharePhoto": "이 사진 공유",
     "loadFailed": "불러오기 실패",
+    "loadMoreFailed": "다음 사진을 불러오지 못했습니다",
     "quarantined": "이 게시물은 콘텐츠 정책 위반 가능성이 있어 현재 숨겨져 있습니다.",
     "pendingReview": "이 게시물은 검토 중이며 승인 후 공개됩니다.",
     "notFound": "사진을 찾을 수 없습니다",
