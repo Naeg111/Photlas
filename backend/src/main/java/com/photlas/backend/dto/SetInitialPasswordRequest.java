@@ -11,7 +11,7 @@ import jakarta.validation.constraints.Size;
 public class SetInitialPasswordRequest {
 
     @NotBlank(message = "パスワードは必須です")
-    @Size(min = 8, message = "パスワードは 8 文字以上で入力してください")
+    @Size(min = 8, max = 20, message = "パスワードは 8 文字以上 20 文字以内で入力してください")
     private String password;
 
     public SetInitialPasswordRequest() {}

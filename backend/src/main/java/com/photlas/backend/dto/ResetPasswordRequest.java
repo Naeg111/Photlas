@@ -27,6 +27,7 @@ public class ResetPasswordRequest {
     private String newPassword;
 
     @NotBlank(message = "確認用パスワードは必須です")
+    @Size(max = 20, message = "確認用パスワードは20文字以内で入力してください")
     private String confirmPassword;
 
     public ResetPasswordRequest() {}

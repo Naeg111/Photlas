@@ -12,6 +12,7 @@ import jakarta.validation.constraints.*;
 public class UpdatePasswordRequest {
     @JsonProperty("current_password")
     @NotNull(message = "現在のパスワードは必須です")
+    @Size(max = 20, message = "現在のパスワードは20文字以内で入力してください")
     private String currentPassword;
 
     @JsonProperty("new_password")
@@ -26,6 +27,7 @@ public class UpdatePasswordRequest {
 
     @JsonProperty("new_password_confirm")
     @NotNull(message = "パスワード（確認用）は必須です")
+    @Size(max = 20, message = "パスワード（確認用）は20文字以内で入力してください")
     private String newPasswordConfirm;
 
     public UpdatePasswordRequest() {}

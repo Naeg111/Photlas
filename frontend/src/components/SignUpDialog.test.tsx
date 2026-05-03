@@ -242,19 +242,19 @@ describe('SignUpDialog', () => {
       expect(screen.getByText('パスワードは8文字以上20文字以内で入力してください')).toBeInTheDocument()
     })
 
-    it('shows error when password is more than 20 characters', async () => {
+    it('20 文字を超えるパスワードはブラウザ側で 20 文字に切り詰められる（maxLength 属性の効果）', async () => {
+      // maxLength={20} を入力に付与したため、ブラウザが 21 文字目以降の入力を物理的に拒否する。
+      // 旧来の「21 文字を入力するとフロント JS バリデーションでエラー表示」テストは、
+      // この物理ガードによって 21 文字以上が入力できなくなったため、別の検証に置き換える。
       const user = userEvent.setup()
       render(<SignUpDialog {...defaultProps} />)
 
-      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
-      await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
-      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123456789012345')
-      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123456789012345')
-      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
-      await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
-      await user.click(screen.getByRole('button', { name: '登録する' }))
+      const passwordInput = screen.getByLabelText(/^パスワード（必須）/) as HTMLInputElement
+      await user.type(passwordInput, 'Password123456789012345') // 23 文字
 
-      expect(screen.getByText('パスワードは8文字以上20文字以内で入力してください')).toBeInTheDocument()
+      // maxLength=20 によって 20 文字までしか入力されない
+      expect(passwordInput.value).toHaveLength(20)
+      expect(passwordInput.value).toBe('Password123456789012')
     })
 
     it('shows error when password does not contain number', async () => {

@@ -340,16 +340,20 @@ public class ResetPasswordTest {
 
     // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
     @Test
-    @DisplayName("バリデーションエラー - パスワード最大文字数超過")
+    @DisplayName("バリデーションエラー - パスワード最大文字数超過（newPassword と confirmPassword 両方が違反）")
     void testResetPassword_PasswordTooLong_ReturnsBadRequest() throws Exception {
+        // 同じ 21 文字を両フィールドに送ると、両方 @Size(max=20) 違反となる
+        // （以前は newPassword のみに max があり、エラーは 1 件だったが、
+        //   パスワード入力上限統一対応で confirmPassword にも max を付けたため 2 件になる）
         ResetPasswordRequest request = createResetPasswordRequest(VALID_RESET_TOKEN, TOO_LONG_PASSWORD, TOO_LONG_PASSWORD);
 
         mockMvc.perform(post(RESET_PASSWORD_ENDPOINT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(1)))
-                .andExpect(jsonPath(JSON_PATH_ERRORS_FIELD, is(FIELD_NEW_PASSWORD)));
+                .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(2)))
+                .andExpect(jsonPath("$.errors[*].field",
+                        org.hamcrest.Matchers.hasItems(FIELD_NEW_PASSWORD, FIELD_CONFIRM_PASSWORD)));
     }
 
     @Test

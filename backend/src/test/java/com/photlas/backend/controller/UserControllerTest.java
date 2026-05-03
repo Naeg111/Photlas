@@ -654,13 +654,16 @@ public class UserControllerTest {
 
     // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
     @Test
-    @DisplayName("Issue#21 - PUT /api/v1/users/me/password - 21文字以上のパスワードの場合は400を返す")
+    @DisplayName("Issue#21 - PUT /api/v1/users/me/password - 21文字以上のパスワードの場合は400を返す（newPassword と newPasswordConfirm 両方が違反）")
     void testUpdatePassword_PasswordTooLong_ReturnsBadRequest() throws Exception {
+        // 同じ 21 文字を newPassword と newPasswordConfirm に送ると、両方 @Size(max=20) 違反
+        // （パスワード入力上限統一対応で newPasswordConfirm にも max=20 を付けたため）
         String requestBody = buildPasswordUpdateRequestBody(TEST_PASSWORD, PASSWORD_TOO_LONG, PASSWORD_TOO_LONG);
 
         performUpdatePassword(requestBody)
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(JSON_PATH_ERRORS_0_FIELD, is("newPassword")));
+                .andExpect(jsonPath("$.errors[*].field",
+                        org.hamcrest.Matchers.hasItems("newPassword", "newPasswordConfirm")));
     }
 
     @Test
