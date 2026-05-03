@@ -376,7 +376,7 @@ export function PrivacyContentZhCN() {
           <li><span className="font-semibold">更正权</span>: 请求更正不准确个人数据的权利</li>
           <li><span className="font-semibold">删除权(被遗忘权)</span>: 请求删除个人数据的权利</li>
           <li><span className="font-semibold">处理限制权</span>: 请求限制个人数据处理的权利</li>
-          <li><span className="font-semibold">数据可携带权</span>: 以结构化、机器可读格式接收个人数据的权利。行使本权利时请联系第18条的咨询窗口。运营方将导出您的数据并提供给您(基于请求的运营)。</li>
+          <li><span className="font-semibold">数据可携带权</span>: 以结构化、机器可读格式接收个人数据的权利。行使本权利时,可随时在账号设置的&quot;导出数据&quot;中将您的数据下载为 ZIP 文件。</li>
           <li><span className="font-semibold">异议权</span>: 对基于正当利益的处理提出异议的权利</li>
           <li><span className="font-semibold">同意撤回权</span>: 对基于同意的处理随时撤回同意的权利(从浏览器设置删除本网站的网站数据后,Cookie 同意横幅会再次显示,可撤回同意)</li>
         </ul>

@@ -379,7 +379,7 @@ export function PrivacyContentKo() {
           <li><span className="font-semibold">정정권</span>: 부정확한 개인 데이터의 정정을 청구할 권리</li>
           <li><span className="font-semibold">삭제권(잊혀질 권리)</span>: 개인 데이터의 삭제를 청구할 권리</li>
           <li><span className="font-semibold">처리 제한권</span>: 개인 데이터의 처리 제한을 청구할 권리</li>
-          <li><span className="font-semibold">데이터 이동성권</span>: 개인 데이터를 구조화된 기계 가독 형식으로 받을 권리. 본 권리를 행사할 경우 제18조의 문의 창구로 연락 주십시오. 운영자가 고객의 데이터를 익스포트하여 전달합니다(요청 기반 운용).</li>
+          <li><span className="font-semibold">데이터 이동성권</span>: 개인 데이터를 구조화된 기계 가독 형식으로 받을 권리. 본 권리를 행사하실 경우, 계정 설정 화면의 &quot;데이터 내보내기&quot;에서 언제든지 회원님의 데이터를 ZIP 파일로 다운로드하실 수 있습니다.</li>
           <li><span className="font-semibold">이의 신청권</span>: 정당한 이익에 기초한 처리에 대해 이의를 제기할 권리</li>
           <li><span className="font-semibold">동의 철회권</span>: 동의에 기초한 처리에 대해 언제든지 동의를 철회할 권리(브라우저 설정에서 본 사이트의 사이트 데이터를 삭제하면 Cookie 동의 배너가 다시 표시되어 동의를 철회할 수 있습니다)</li>
         </ul>

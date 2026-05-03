@@ -90,13 +90,13 @@ describe('PrivacyContentEn - Issue#105 International upgrade', () => {
     expect(text).toMatch(/moderation[\s\S]*?180 days|180 days[\s\S]*?moderation/i)
   })
 
-  // C. Article 16 - Data portability via request
-  it('Article 16 clarifies data portability is exercised via the contact endpoint', () => {
+  // C. Article 16 - Issue#108 Data portability self-service via Account Settings
+  it('Article 16 clarifies data portability is exercised via self-service ZIP download from Account Settings', () => {
     const { container } = render(<PrivacyContentEn />)
     const text = container.textContent ?? ''
     expect(text).toContain('data portability')
-    // Reference to Article 18 contact endpoint
-    expect(text).toMatch(/data portability[\s\S]*?Article 18/i)
+    // Issue#108: Self-service download path mentioned
+    expect(text).toMatch(/data portability[\s\S]*?ZIP[\s\S]*?Export Data[\s\S]*?Account Settings/i)
   })
 
   // D. Article 6 - Do Not Sell declaration

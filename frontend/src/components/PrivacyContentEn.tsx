@@ -445,7 +445,7 @@ export function PrivacyContentEn() {
           <li><span className="font-semibold">Right to rectification</span>: The right to request correction of inaccurate personal data.</li>
           <li><span className="font-semibold">Right to erasure (right to be forgotten)</span>: The right to request deletion of your personal data.</li>
           <li><span className="font-semibold">Right to restriction of processing</span>: The right to request restriction of processing of your personal data.</li>
-          <li><span className="font-semibold">Right to data portability</span>: The right to receive your personal data in a structured, machine-readable format. To exercise this right, please contact the endpoint described in Article 18 and the Operator will export your data and provide it to you (request-based operation).</li>
+          <li><span className="font-semibold">Right to data portability</span>: The right to receive your personal data in a structured, machine-readable format. To exercise this right, you can download your data as a ZIP file at any time from &quot;Export Data&quot; in your Account Settings.</li>
           <li><span className="font-semibold">Right to object</span>: The right to object to processing based on legitimate interests.</li>
           <li><span className="font-semibold">Right to withdraw consent</span>: The right to withdraw consent at any time for consent-based processing (you can withdraw cookie consent by clearing this site&apos;s data from your browser settings, which will cause the cookie consent banner to reappear).</li>
         </ul>

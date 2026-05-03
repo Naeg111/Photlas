@@ -378,7 +378,7 @@ export function PrivacyContentJa() {
           <li><span className="font-semibold">訂正権</span>：不正確な個人データの訂正を請求する権利</li>
           <li><span className="font-semibold">削除権（忘れられる権利）</span>：個人データの削除を請求する権利</li>
           <li><span className="font-semibold">処理の制限権</span>：個人データの処理の制限を請求する権利</li>
-          <li><span className="font-semibold">データポータビリティ権</span>：個人データを構造化された機械可読な形式で受け取る権利。本権利を行使される場合は、第18条のお問い合わせ窓口にご連絡ください。運営者がお客様のデータをエクスポートしてお渡しします（リクエストベース運用）。</li>
+          <li><span className="font-semibold">データポータビリティ権</span>：個人データを構造化された機械可読な形式で受け取る権利。本権利を行使される場合は、アカウント設定画面の「データのエクスポート」から、いつでもご自身のデータをZIPファイルとしてダウンロードいただけます。</li>
           <li><span className="font-semibold">異議申立権</span>：正当な利益に基づく処理に対して異議を申し立てる権利</li>
           <li><span className="font-semibold">同意の撤回権</span>：同意に基づく処理について、いつでも同意を撤回する権利（ブラウザの設定から本サイトのサイトデータを削除すると、Cookie同意バナーが再表示され、同意を撤回できます）</li>
         </ul>
