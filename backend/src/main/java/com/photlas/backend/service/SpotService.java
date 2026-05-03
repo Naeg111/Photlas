@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.SpotPhotosResponse;
 import com.photlas.backend.dto.SpotResponse;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
@@ -145,37 +146,39 @@ public class SpotService {
     }
 
     /**
-     * Issue#14: スポットの写真ID一覧を取得
+     * Issue#112: 複数スポットを横断した写真ID一覧をページング取得（撮影日時降順）
      *
-     * @param spotId スポットID
-     * @return 写真IDのリスト（撮影日時順）
+     * @param spotIds 対象スポットID（1件以上）
+     * @param limit 取得件数（1〜100）
+     * @param offset 取得開始位置（0以上）
+     * @param maxAgeDays 撮影日からの最大日数（任意。null なら制限なし）
+     * @return 写真IDのページと総件数
      */
     @Transactional(readOnly = true)
-    public List<Long> getSpotPhotoIds(Long spotId, Integer maxAgeDays) {
-        logger.info("Getting photo IDs for spot: spotId={}, maxAgeDays={}", spotId, maxAgeDays);
+    public SpotPhotosResponse getSpotPhotos(List<Long> spotIds, int limit, int offset, Integer maxAgeDays) {
+        logger.info("Getting paged photos: spotIds={}, limit={}, offset={}, maxAgeDays={}",
+                spotIds, limit, offset, maxAgeDays);
 
-        // スポットの存在確認
-        spotRepository.findById(spotId)
-                .orElseThrow(() -> new SpotNotFoundException("Spot not found"));
-
-        List<Photo> photos = photoRepository.findBySpotIdAndModerationStatusOrderByShotAtAsc(
-                spotId, CodeConstants.MODERATION_STATUS_PUBLISHED);
-
-        // 鮮度フィルター
+        LocalDateTime maxAgeCutoff = null;
         if (maxAgeDays != null) {
-            LocalDateTime maxAgeDate = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).minusDays(maxAgeDays);
-            photos = photos.stream()
-                    .filter(p -> p.getShotAt() == null || !p.getShotAt().isBefore(maxAgeDate))
-                    .collect(Collectors.toList());
+            maxAgeCutoff = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).minusDays(maxAgeDays);
         }
 
-        List<Long> photoIds = photos.stream()
-                .map(Photo::getPhotoId)
-                .collect(Collectors.toList());
+        List<Long> ids = photoRepository.findPhotoIdsBySpotsPaged(
+                spotIds,
+                CodeConstants.MODERATION_STATUS_PUBLISHED,
+                maxAgeCutoff,
+                limit,
+                offset);
 
-        logger.info("Found {} photos for spot {}", photoIds.size(), spotId);
+        long total = photoRepository.countPhotosBySpots(
+                spotIds,
+                CodeConstants.MODERATION_STATUS_PUBLISHED,
+                maxAgeCutoff);
 
-        return photoIds;
+        logger.info("Found {} photo ids out of {} total", ids.size(), total);
+
+        return new SpotPhotosResponse(ids, total);
     }
 
     /** null/空リストをセンチネル値（-1）に変換 */

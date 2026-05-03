@@ -190,6 +190,7 @@
     "editPhoto": "编辑照片信息",
     "sharePhoto": "分享此照片",
     "loadFailed": "加载失败",
+    "loadMoreFailed": "下一批照片加载失败",
     "quarantined": "此内容可能违反我们的内容政策，目前已被隐藏。",
     "pendingReview": "此内容正在审核中，审核通过后将公开发布。",
     "notFound": "照片不存在",

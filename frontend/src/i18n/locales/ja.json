@@ -218,6 +218,7 @@
     "editPhoto": "写真情報を編集",
     "sharePhoto": "この写真を共有",
     "loadFailed": "読み込みに失敗しました",
+    "loadMoreFailed": "次の写真の読み込みに失敗しました",
     "quarantined": "この投稿はコンテンツポリシーに違反している可能性があるため、現在非公開です。",
     "pendingReview": "この投稿は審査中です。審査完了後に公開されます。",
     "notFound": "写真が見つかりません",

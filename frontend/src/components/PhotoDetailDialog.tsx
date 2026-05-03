@@ -39,8 +39,13 @@ import {
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 
 // API Endpoints
-const API_SPOTS_PHOTOS = `${API_V1_URL}/spots`
+// Issue#112: スポット写真ID一覧は POST /spots/photos に統一（複数スポット横断 + ページネーション）
+const API_SPOTS_PHOTOS_LIST = `${API_V1_URL}/spots/photos`
 const API_PHOTOS = `${API_V1_URL}/photos`
+
+// Issue#112: ページネーション設定
+const PHOTO_PAGE_SIZE = 30
+const PHOTO_PAGE_PRELOAD_THRESHOLD = 5
 
 // Test IDs
 const TEST_ID_DIALOG = 'photo-detail-dialog'
@@ -52,6 +57,12 @@ const TEST_ID_FAVORITE_COUNT = 'favorite-count'
 // Issue#87: 天気ラベルは codeConstants から取得
 const ERROR_FETCH_IDS = 'Failed to fetch photo IDs'
 const ERROR_FETCH_DETAIL = 'Failed to fetch photo detail'
+
+// Issue#112: スポット写真IDレスポンスの型
+interface SpotPhotosResponse {
+  ids: number[]
+  total: number
+}
 
 interface PhotoDetailDialogProps {
   open: boolean
@@ -219,28 +230,42 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
 }
 
 // Helper Functions
-async function fetchPhotoIdsForSpot(spotId: number, maxAgeDays?: number): Promise<number[]> {
-  const params = new URLSearchParams()
-  if (maxAgeDays != null) {
-    params.append('max_age_days', maxAgeDays.toString())
+/**
+ * Issue#112: スポット写真ID一覧を1ページ取得する。
+ * 複数スポットを横断して撮影日時降順でマージしたページが返る。
+ */
+async function fetchPhotoIdsPage(
+  spotIds: number[],
+  limit: number,
+  offset: number,
+  maxAgeDays?: number,
+): Promise<SpotPhotosResponse> {
+  const body: Record<string, unknown> = {
+    spotIds,
+    limit,
+    offset,
   }
-  const query = params.toString()
-  const url = `${API_SPOTS_PHOTOS}/${spotId}/photos${query ? `?${query}` : ''}`
+  if (maxAgeDays != null) {
+    body.maxAgeDays = maxAgeDays
+  }
 
-  const response = await fetch(url, {
-    headers: getAuthHeaders(),
+  const response = await fetch(API_SPOTS_PHOTOS_LIST, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {
+    if (response.status === 429) {
+      throw buildRateLimitApiError(response, ERROR_FETCH_IDS)
+    }
     throw new Error(ERROR_FETCH_IDS)
   }
 
   return await response.json()
-}
-
-async function fetchPhotoIdsForSpots(spotIds: number[], maxAgeDays?: number): Promise<number[]> {
-  const results = await Promise.all(spotIds.map(id => fetchPhotoIdsForSpot(id, maxAgeDays)))
-  return results.flat()
 }
 
 async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
@@ -378,6 +403,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const [error, setError] = useState<string | null>(null)
   const [emblaRef, emblaApi] = useEmblaCarousel()
 
+  // Issue#112: ページネーション用 state
+  const [totalPhotoCount, setTotalPhotoCount] = useState(0)
+  const isFetchingNextPageRef = useRef(false)
+
   // Issue#50: isSlideDownのref版（Radix flushSync対策）
   // Radix DismissableLayerのdispatchDiscreteCustomEventはflushSyncでstate更新を強制コミットするため、
   // モバイルタッチ時にisSlideDown propがfalseになった状態でイベントハンドラが評価される。
@@ -456,7 +485,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   // 最後に表示した写真情報を保持（点滅防止）
   const [displayedPhoto, setDisplayedPhoto] = useState<PhotoDetail | null>(null)
 
-  // スポットの写真ID一覧を取得
+  // スポットの写真ID一覧を取得（Issue#112: ページネーション対応）
   useEffect(() => {
     if (!open) {
       setPhotoIds([])
@@ -465,6 +494,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       setError(null)
       setLoading(true)
       setDisplayedPhoto(null)
+      setTotalPhotoCount(0)
+      isFetchingNextPageRef.current = false
       fetchingIdsRef.current.clear()
       suggestionCacheRef.current.clear()
       return
@@ -475,10 +506,11 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       setError(null)
 
       try {
-        // Issue#58: 単体写真モード
+        // Issue#58: 単体写真モード（Issue#112 ではページネーション対象外）
         if (singlePhotoId) {
           const detail = await fetchPhotoDetailById(singlePhotoId)
           setPhotoIds([singlePhotoId])
+          setTotalPhotoCount(1)
           setPhotoDetails(new Map().set(singlePhotoId, detail))
           setDisplayedPhoto(detail)
           setCurrentIndex(0)
@@ -486,13 +518,15 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           return
         }
 
-        const ids = await fetchPhotoIdsForSpots(spotIds, filterMaxAgeDays)
-        setPhotoIds(ids)
+        // Issue#112: 1ページ目（30件）を取得
+        const page = await fetchPhotoIdsPage(spotIds, PHOTO_PAGE_SIZE, 0, filterMaxAgeDays)
+        setPhotoIds(page.ids)
+        setTotalPhotoCount(page.total)
         setCurrentIndex(0)
 
-        if (ids.length > 0) {
-          const detail = await fetchPhotoDetailById(ids[0])
-          setPhotoDetails(new Map().set(ids[0], detail))
+        if (page.ids.length > 0) {
+          const detail = await fetchPhotoDetailById(page.ids[0])
+          setPhotoDetails(new Map().set(page.ids[0], detail))
           setDisplayedPhoto(detail)
         }
 
@@ -583,6 +617,37 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       }
     }
   }, [currentPhotoId, currentIndex, photoIds, fetchPhotoDetail])
+
+  // Issue#112: 末尾 PHOTO_PAGE_PRELOAD_THRESHOLD 枚以内に近づいたら次ページを裏で取得
+  useEffect(() => {
+    if (singlePhotoId) return // 単体写真モードは対象外
+    if (photoIds.length === 0) return
+    if (photoIds.length >= totalPhotoCount) return // 全件取得済み
+    if (isFetchingNextPageRef.current) return // 取得中は重複呼び出しを抑制
+
+    const remaining = photoIds.length - currentIndex - 1
+    if (remaining > PHOTO_PAGE_PRELOAD_THRESHOLD) return
+
+    isFetchingNextPageRef.current = true
+    const offset = photoIds.length
+    fetchPhotoIdsPage(spotIds, PHOTO_PAGE_SIZE, offset, filterMaxAgeDays)
+      .then((page) => {
+        // ダイアログが閉じている、または前提が変わった場合は捨てる
+        setPhotoIds((prev) => {
+          // 既に追加済みなら何もしない（StrictMode 二重呼び出し対策）
+          if (prev.length !== offset) return prev
+          return [...prev, ...page.ids]
+        })
+        // total はサーバーが返した最新値で更新（条件適用後の総件数）
+        setTotalPhotoCount(page.total)
+      })
+      .catch(() => {
+        toast.error(t('photo.loadMoreFailed'))
+      })
+      .finally(() => {
+        isFetchingNextPageRef.current = false
+      })
+  }, [currentIndex, photoIds, totalPhotoCount, spotIds, filterMaxAgeDays, singlePhotoId, t])
 
   // 表示用の写真情報を更新 + お気に入り状態を同期（1つのuseEffectで再レンダリング削減: #9）
   useEffect(() => {
@@ -1280,10 +1345,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     }) : undefined}
                   />
 
-                  {/* 写真枚数インジケーター */}
-                  {photoIds.length > 1 && (
+                  {/* 写真枚数インジケーター（Issue#112: total を使用） */}
+                  {totalPhotoCount > 1 && (
                     <p className="text-center text-sm text-gray-500">
-                      {currentIndex + 1} / {photoIds.length}
+                      {currentIndex + 1} / {totalPhotoCount}
                     </p>
                   )}
 
