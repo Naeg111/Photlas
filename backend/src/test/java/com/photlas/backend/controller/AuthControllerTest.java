@@ -365,6 +365,84 @@ public class AuthControllerTest {
         assertThat(savedUser.getLanguage()).isEqualTo("ja");
     }
 
+    // ===== Issue#109: 同意・年齢確認フィールドの検証 =====
+
+    /**
+     * 同意・年齢確認フィールドを含むリクエストボディの JSON を生成する。
+     * Issue#109 で追加された RegisterRequest の新フィールドの検証用。
+     */
+    private String createRegisterRequestJson(String username, String email, String password,
+                                              boolean agreedToTerms, boolean agreedToPrivacy,
+                                              boolean ageConfirmed) throws Exception {
+        var body = new java.util.LinkedHashMap<String, Object>();
+        body.put("username", username);
+        body.put("email", email);
+        body.put("password", password);
+        body.put("agreedToTerms", agreedToTerms);
+        body.put("agreedToPrivacy", agreedToPrivacy);
+        body.put("ageConfirmed", ageConfirmed);
+        return objectMapper.writeValueAsString(body);
+    }
+
+    @Test
+    @DisplayName("Issue#109 - ageConfirmed が false の場合 400 エラーが返ること")
+    void testRegisterUser_AgeNotConfirmed_ReturnsBadRequest() throws Exception {
+        String body = createRegisterRequestJson(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD,
+                true, true, false);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is("ageConfirmed")));
+    }
+
+    @Test
+    @DisplayName("Issue#109 - agreedToTerms が false の場合 400 エラーが返ること")
+    void testRegisterUser_TermsNotAgreed_ReturnsBadRequest() throws Exception {
+        String body = createRegisterRequestJson(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD,
+                false, true, true);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is("agreedToTerms")));
+    }
+
+    @Test
+    @DisplayName("Issue#109 - agreedToPrivacy が false の場合 400 エラーが返ること")
+    void testRegisterUser_PrivacyNotAgreed_ReturnsBadRequest() throws Exception {
+        String body = createRegisterRequestJson(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD,
+                true, false, true);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath(JSON_PATH_ERRORS, hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is("agreedToPrivacy")));
+    }
+
+    @Test
+    @DisplayName("Issue#109 - 3 つとも true の場合、age_confirmed_at が記録されること")
+    void testRegisterUser_AllAgreementsTrue_RecordsAgeConfirmedAt() throws Exception {
+        String body = createRegisterRequestJson(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD,
+                true, true, true);
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(status().isCreated());
+
+        User savedUser = userRepository.findByEmail(TEST_EMAIL).orElseThrow();
+        assertThat(savedUser.getAgeConfirmedAt()).isNotNull();
+        assertThat(savedUser.getTermsAgreedAt()).isNotNull();
+        assertThat(savedUser.getPrivacyPolicyAgreedAt()).isNotNull();
+    }
+
     // ===== Issue#54: アカウント停止テスト =====
 
     @Test
