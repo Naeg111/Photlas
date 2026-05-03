@@ -33,6 +33,7 @@ public class PasswordService {
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
+    private final EmailTemplateService emailTemplateService;
 
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
@@ -41,11 +42,13 @@ public class PasswordService {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             PasswordResetTokenRepository passwordResetTokenRepository,
-            EmailService emailService) {
+            EmailService emailService,
+            EmailTemplateService emailTemplateService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailService = emailService;
+        this.emailTemplateService = emailTemplateService;
     }
 
     /**
@@ -79,7 +82,7 @@ public class PasswordService {
         PasswordResetToken resetToken = new PasswordResetToken(user.getId(), token, expiryDate);
         passwordResetTokenRepository.save(resetToken);
 
-        sendPasswordResetEmail(user.getEmail(), token, user.getLanguage());
+        sendPasswordResetEmail(user, token);
     }
 
     /**
@@ -115,7 +118,7 @@ public class PasswordService {
 
         passwordResetTokenRepository.delete(resetToken);
 
-        sendPasswordChangedNotification(user.getEmail(), user.getUsername(), user.getLanguage());
+        sendPasswordChangedNotification(user.getEmail(), user);
     }
 
     /**
@@ -145,7 +148,7 @@ public class PasswordService {
         user.setPasswordRecommendationDismissedAt(null);
         userRepository.save(user);
 
-        sendPasswordChangedNotification(email, user.getUsername(), user.getLanguage());
+        sendPasswordChangedNotification(email, user);
     }
 
     /**
@@ -174,68 +177,33 @@ public class PasswordService {
         user.setPasswordHash(hashedPassword);
         userRepository.save(user);
 
-        sendPasswordChangedNotification(email, user.getUsername(), user.getLanguage());
+        sendPasswordChangedNotification(email, user);
     }
 
     /**
-     * パスワード変更完了の通知メールを送信
+     * Issue#113 グループ C: パスワード変更完了の通知メールを送信。
+     * 失敗時は WARN ログのみで業務操作は成功扱い（ユーザーは新パスワードでログインできる状態）。
      */
-    private void sendPasswordChangedNotification(String email, String username, String language) {
+    private void sendPasswordChangedNotification(String email, User user) {
         try {
-            if ("en".equals(language)) {
-                emailService.send(
-                        email,
-                        "【Photlas】Password Changed",
-                        "Hi " + (username != null ? username : "") + ",\n\n" +
-                        "Your account password has been changed.\n\n" +
-                        "If you did not make this change, please contact us immediately at:\n" +
-                        "support@photlas.jp\n\n" +
-                        "Photlas Team\nsupport@photlas.jp");
-            } else {
-                emailService.send(
-                        email,
-                        "【Photlas】パスワードが変更されました",
-                        (username != null ? username : "") + " 様\n\n" +
-                        "お客様のアカウントのパスワードが変更されました。\n\n" +
-                        "この変更に心当たりがない場合は、至急以下のメールアドレスまでご連絡ください。\n" +
-                        "support@photlas.jp\n\n" +
-                        "Photlas\nsupport@photlas.jp");
-            }
+            String subject = emailTemplateService.subject("email.passwordChanged", user);
+            String body = emailTemplateService.body("email.passwordChanged", user,
+                    user.getUsername() != null ? user.getUsername() : "");
+            emailService.send(email, subject, body);
         } catch (Exception e) {
-            logger.error("パスワード変更通知メールの送信に失敗しました: {}", e.getMessage());
+            logger.warn("パスワード変更通知メールの送信に失敗しました: userId={} error={}",
+                    user.getId(), e.getMessage());
         }
     }
 
     /**
-     * パスワードリセットメールを送信
+     * Issue#113 グループ A: パスワードリセットメールを送信。
+     * 失敗時は例外を呼び出し元へ伝播し HTTP 500 にマップされる。
      */
-    private void sendPasswordResetEmail(String email, String token, String language) {
-        try {
-            String link = frontendUrl + "/reset-password?token=" + token;
-
-            if ("en".equals(language)) {
-                emailService.send(
-                        email,
-                        "【Photlas】Password Reset",
-                        "We received a request to reset your password.\n\n" +
-                        "Please click the link below to reset your password:\n" +
-                        link + "\n\n" +
-                        "This link will expire in 30 minutes.\n\n" +
-                        "If you did not request this, please ignore this email.\n\n" +
-                        "Photlas Team\nsupport@photlas.jp");
-            } else {
-                emailService.send(
-                        email,
-                        "【Photlas】パスワードの再設定",
-                        "パスワード再設定のリクエストを受け付けました。\n\n" +
-                        "以下のリンクをクリックして、パスワードを再設定してください：\n" +
-                        link + "\n\n" +
-                        "このリンクの有効期限は30分です。\n\n" +
-                        "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                        "Photlas\nsupport@photlas.jp");
-            }
-        } catch (Exception e) {
-            logger.error("パスワードリセットメールの送信に失敗しました: {}", e.getMessage());
-        }
+    private void sendPasswordResetEmail(User user, String token) {
+        String link = frontendUrl + "/reset-password?token=" + token;
+        String subject = emailTemplateService.subject("email.passwordReset", user);
+        String body = emailTemplateService.body("email.passwordReset", user, link);
+        emailService.send(user.getEmail(), subject, body);
     }
 }
