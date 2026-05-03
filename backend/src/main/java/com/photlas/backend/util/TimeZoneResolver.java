@@ -53,7 +53,12 @@ public final class TimeZoneResolver {
      */
     public static ZoneId resolveZone(String language) {
         String key = normalize(language);
-        return key == null ? UTC : LANGUAGE_TO_ZONE.getOrDefault(key, UTC);
+        if (key == null) return UTC;
+        ZoneId zone = LANGUAGE_TO_ZONE.get(key);
+        if (zone != null) return zone;
+        // BCP-47 タグ（"zh-CN" など）はハイフン前の主タグでフォールバック
+        String primary = primarySubtag(key);
+        return LANGUAGE_TO_ZONE.getOrDefault(primary, UTC);
     }
 
     /**
@@ -65,10 +70,20 @@ public final class TimeZoneResolver {
      */
     public static String resolveLabel(String language) {
         String key = normalize(language);
-        return key == null ? "UTC" : LANGUAGE_TO_LABEL.getOrDefault(key, "UTC");
+        if (key == null) return "UTC";
+        String label = LANGUAGE_TO_LABEL.get(key);
+        if (label != null) return label;
+        String primary = primarySubtag(key);
+        return LANGUAGE_TO_LABEL.getOrDefault(primary, "UTC");
     }
 
     private static String normalize(String language) {
         return language == null ? null : language.toLowerCase();
+    }
+
+    /** BCP-47 タグの主言語サブタグを返す（例: "zh-cn" → "zh"）。 */
+    private static String primarySubtag(String language) {
+        int dash = language.indexOf('-');
+        return dash >= 0 ? language.substring(0, dash) : language;
     }
 }

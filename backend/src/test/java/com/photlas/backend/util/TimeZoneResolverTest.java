@@ -78,6 +78,16 @@ class TimeZoneResolverTest {
     }
 
     @Test
+    @DisplayName("Issue#108 - BCP-47 タグ（zh-CN / zh-TW）は主言語サブタグへフォールバック")
+    void bcp47TagsFallToPrimarySubtag() {
+        // zh-CN / zh-TW は両方とも zh の Asia/Shanghai にマップされる
+        assertThat(TimeZoneResolver.resolveZone("zh-CN")).isEqualTo(ZoneId.of("Asia/Shanghai"));
+        assertThat(TimeZoneResolver.resolveZone("zh-TW")).isEqualTo(ZoneId.of("Asia/Shanghai"));
+        assertThat(TimeZoneResolver.resolveLabel("zh-CN")).isEqualTo("CST");
+        assertThat(TimeZoneResolver.resolveLabel("zh-TW")).isEqualTo("CST");
+    }
+
+    @Test
     @DisplayName("Issue#108 - タイムゾーンの表示ラベル（JST/KST/CST/ICT/UTC）が言語ごとに返る")
     void displayLabel() {
         assertThat(TimeZoneResolver.resolveLabel("ja")).isEqualTo("JST");
