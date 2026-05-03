@@ -131,6 +131,35 @@ public class S3Service {
     }
 
     /**
+     * Issue#108: S3 オブジェクトの内容をバイト配列でダウンロードする。
+     *
+     * <p>ユーザーデータエクスポートで写真本体を ZIP に同梱する際に使用する。
+     * 1 枚あたり最大 50MB（{@link #MAX_PHOTO_UPLOAD_SIZE}）を想定するため、
+     * メモリへ全体を一度に読み込んでよい（ストリーミング処理側でメモリ使用量を
+     * 並列度で制御する想定、§4.3 §4.5 参照）。</p>
+     *
+     * @param s3ObjectKey ダウンロードする S3 オブジェクトキー
+     * @return オブジェクト本体のバイト配列
+     * @throws software.amazon.awssdk.services.s3.model.NoSuchKeyException 存在しないキー
+     * @throws software.amazon.awssdk.core.exception.SdkException その他の S3 エラー
+     */
+    public byte[] downloadObjectAsBytes(String s3ObjectKey) {
+        try (S3Client s3Client = S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build()) {
+
+            software.amazon.awssdk.services.s3.model.GetObjectRequest getRequest =
+                    software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
+                            .bucket(bucketName)
+                            .key(s3ObjectKey)
+                            .build();
+
+            return s3Client.getObjectAsBytes(getRequest).asByteArray();
+        }
+    }
+
+    /**
      * S3上にオブジェクトが存在するか確認する（HeadObject）
      *
      * @param s3ObjectKey 確認するS3オブジェクトキー
