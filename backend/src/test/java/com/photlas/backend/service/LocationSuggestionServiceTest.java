@@ -64,8 +64,26 @@ public class LocationSuggestionServiceTest {
     @Mock
     private S3Service s3Service;
 
-    @InjectMocks
+    private EmailTemplateService emailTemplateService;
     private LocationSuggestionService service;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUpEmailTemplate() {
+        // Issue#113: 共通基盤に移行したため実 ReloadableResourceBundleMessageSource を組み立てる
+        // (Mockito の varargs マッチングが信頼できないため properties 直接読み込み)
+        org.springframework.context.support.ReloadableResourceBundleMessageSource source =
+                new org.springframework.context.support.ReloadableResourceBundleMessageSource();
+        source.setBasename("classpath:i18n/email/messages");
+        source.setDefaultEncoding("UTF-8");
+        source.setDefaultLocale(java.util.Locale.ENGLISH);
+        source.setFallbackToSystemLocale(false);
+        emailTemplateService = new EmailTemplateService(source);
+        service = new LocationSuggestionService(
+                locationSuggestionRepository, photoRepository, spotRepository,
+                userRepository, mailSender, s3Service, emailTemplateService);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "frontendUrl", "https://photlas.jp");
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "mailFrom", "noreply@photlas.jp");
+    }
 
     // ========================================
     // 指摘作成
