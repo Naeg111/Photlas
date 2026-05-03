@@ -5,21 +5,26 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
  * Issue#54: モデレーション通知メールサービスのテスト
+ *
+ * <p>Issue#113 でテンプレートが {@link EmailTemplateService} 経由になったため、
+ * Mockito の varargs 仕様（空 varargs マッチが信頼できない）を回避するため
+ * 実 {@link ReloadableResourceBundleMessageSource} を組み立てて使用する。</p>
  */
 @ExtendWith(MockitoExtension.class)
 public class ModerationNotificationServiceTest {
@@ -27,11 +32,19 @@ public class ModerationNotificationServiceTest {
     @Mock
     private JavaMailSender mailSender;
 
-    @InjectMocks
+    private EmailTemplateService emailTemplateService;
     private ModerationNotificationService notificationService;
 
     @BeforeEach
     void setUp() {
+        // 実 MessageSource を組み立てて properties ファイルから件名・本文を読み込む
+        ReloadableResourceBundleMessageSource source = new ReloadableResourceBundleMessageSource();
+        source.setBasename("classpath:i18n/email/messages");
+        source.setDefaultEncoding("UTF-8");
+        source.setDefaultLocale(Locale.ENGLISH);
+        source.setFallbackToSystemLocale(false);
+        emailTemplateService = new EmailTemplateService(source);
+        notificationService = new ModerationNotificationService(mailSender, emailTemplateService);
         ReflectionTestUtils.setField(notificationService, "mailFrom", "noreply@photlas.jp");
     }
 
