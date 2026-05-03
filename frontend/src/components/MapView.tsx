@@ -706,16 +706,36 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     resetNorthHeading: () => {
       if (!map) return
       // Issue#111-followup Bug4: 地球儀表示時（ズーム 0〜4）に方位リセットを押した場合、
-      // 緯度（lat）も GLOBE_RESET_LAT（北緯5度）に戻す。これによってユーザーが地球儀を
-      // 北/南方向にどれだけ動かしていても、必ず一定の見え方に戻せる。
-      // 写真スポットなど高ズーム時は従来通り bearing/pitch のみリセット（中心位置を勝手に動かさない）。
-      // なお easeTo は zoomstart/rotatestart/pitchstart を発火するため、
-      // それを契機に stopRotationOnUserInteraction が呼ばれて回転は自動停止する。
+      // 緯度（lat）も GLOBE_RESET_LAT（北緯10度）に戻す。
+      // 写真スポットなど高ズーム時は従来通り bearing/pitch のみリセット。
+      //
+      // Issue#111-followup（仕様変更5回目）: 回転中の rAF tick による setCenter は
+      // easeTo の進行をキャンセルしてしまう（Mapbox 仕様）。緯度差が大きい時に
+      // 「方位リセットが効かない」現象を防ぐため、easeTo 中は rAF を一時停止し、
+      // moveend で再開する。`+/-` ボタンの zoomstart/zoomend 一時停止と同じパターン。
+      const wasRotating = rotationFrameRef.current !== null
+      if (wasRotating) {
+        cancelAnimationFrame(rotationFrameRef.current!)
+        rotationFrameRef.current = null
+      }
       if (map.getZoom() <= GLOBE_ROTATION_MAX_ZOOM) {
         const center = map.getCenter()
         map.easeTo({ center: [center.lng, GLOBE_RESET_LAT], bearing: 0, pitch: 0, duration: 500 })
       } else {
         map.easeTo({ bearing: 0, pitch: 0, duration: 500 })
+      }
+      if (wasRotating) {
+        // easeTo 完了（moveend）で回転を再開する。
+        // map.once('moveend') は 1回限りで自動解除されるため、後続の通常の moveend には影響しない。
+        map.once('moveend', () => {
+          if (
+            isRotatingRef.current &&
+            rotationFrameRef.current === null &&
+            map.getZoom() <= GLOBE_ROTATION_MAX_ZOOM
+          ) {
+            rotationLoop(map)
+          }
+        })
       }
     },
     showShootingLocationPin: (lat: number, lng: number) => {
@@ -871,7 +891,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       clearIdleRotationTimer()
       startGlobeRotation(map)
     },
-  }), [map, requestOrientationPermission, fetchSpots, stopGlobeRotation, startGlobeRotation, clearIdleRotationTimer])
+  }), [map, requestOrientationPermission, fetchSpots, stopGlobeRotation, startGlobeRotation, clearIdleRotationTimer, rotationLoop])
 
   // 地図が読み込まれたときの処理
   const handleLoad = useCallback((e: MapEvent) => {
