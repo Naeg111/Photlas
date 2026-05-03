@@ -56,20 +56,27 @@ vi.mock('../contexts/AuthContext', () => ({
 }))
 
 // streamsaver のモック（ブラウザ専用 API なので jsdom では動かない）
-const mockWritableStreamWrite = vi.fn()
-const mockWritableStreamClose = vi.fn()
-const mockWritableStreamAbort = vi.fn()
-const mockCreateWriteStream = vi.fn(() => ({
-  getWriter: () => ({
-    write: mockWritableStreamWrite,
-    close: mockWritableStreamClose,
-    abort: mockWritableStreamAbort,
-    releaseLock: vi.fn(),
-  }),
-}))
+// vi.mock のホイスト挙動に対応するため vi.hoisted で先行定義
+const streamSaverMocks = vi.hoisted(() => {
+  const writeFn = vi.fn()
+  const closeFn = vi.fn()
+  const abortFn = vi.fn()
+  const createWriteStreamFn = vi.fn(() => ({
+    getWriter: () => ({
+      write: writeFn,
+      close: closeFn,
+      abort: abortFn,
+      releaseLock: vi.fn(),
+    }),
+  }))
+  return { writeFn, closeFn, abortFn, createWriteStreamFn }
+})
+const mockWritableStreamWrite = streamSaverMocks.writeFn
+const mockWritableStreamClose = streamSaverMocks.closeFn
+const mockCreateWriteStream = streamSaverMocks.createWriteStreamFn
 vi.mock('streamsaver', () => ({
-  default: { createWriteStream: mockCreateWriteStream },
-  createWriteStream: mockCreateWriteStream,
+  default: { createWriteStream: streamSaverMocks.createWriteStreamFn },
+  createWriteStream: streamSaverMocks.createWriteStreamFn,
 }))
 
 const Wrapped = ({ open = true }: { open?: boolean }) => (
