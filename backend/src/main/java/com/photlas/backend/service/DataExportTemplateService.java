@@ -27,8 +27,18 @@ import java.util.Set;
 @Service
 public class DataExportTemplateService {
 
-    private static final Set<String> SUPPORTED_LANGUAGES = Set.of("ja", "en", "ko", "zh", "th");
+    /**
+     * テンプレートファイルが存在する言語コード（小文字、ファイル名と一致）。
+     * BCP-47 タグ（例: "zh-CN"）はハイフン込みで小文字化する。
+     */
+    private static final Set<String> SUPPORTED_LANGUAGES =
+            Set.of("ja", "en", "ko", "zh-cn", "zh-tw", "th");
     private static final String FALLBACK_LANGUAGE = "en";
+
+    /** 主言語サブタグから既定の地域タグへのマッピング（"zh" → "zh-cn" など）。 */
+    private static final Map<String, String> PRIMARY_DEFAULT = Map.of(
+            "zh", "zh-cn"
+    );
 
     /**
      * README.md をユーザー言語で生成する。
@@ -49,15 +59,24 @@ public class DataExportTemplateService {
 
     /**
      * 通知メールの件名を返す。
+     * BCP-47 タグ（"zh-CN" など）は主言語サブタグへフォールバックする。
      */
     public String renderEmailSubject(String language) {
-        return switch (normalize(language)) {
+        return switch (toEmailLanguage(language)) {
             case "ja" -> "【Photlas】データエクスポート完了のお知らせ";
             case "ko" -> "[Photlas] 데이터 내보내기 완료 안내";
             case "zh" -> "[Photlas] 数据导出完成通知";
             case "th" -> "[Photlas] แจ้งเตือนการส่งออกข้อมูลเสร็จสิ้น";
             default -> "[Photlas] Data Export Completed";
         };
+    }
+
+    /** 件名・本文のテキストは主言語サブタグ単位で出し分ける（"zh-CN" / "zh-TW" は両方とも "zh"）。 */
+    private String toEmailLanguage(String language) {
+        if (language == null) return FALLBACK_LANGUAGE;
+        String lower = language.toLowerCase();
+        int dash = lower.indexOf('-');
+        return dash >= 0 ? lower.substring(0, dash) : lower;
     }
 
     /**
@@ -75,7 +94,7 @@ public class DataExportTemplateService {
             ZonedDateTime exportedAt,
             String requestIp,
             String userAgent) {
-        String lang = normalize(language);
+        String lang = toEmailLanguage(language);
         String localizedTime = formatLocalTime(exportedAt, lang);
 
         return switch (lang) {
@@ -181,9 +200,27 @@ public class DataExportTemplateService {
         }
     }
 
+    /**
+     * テンプレート選択用の正規化。SUPPORTED に存在すれば BCP-47 タグそのまま、
+     * 主言語サブタグでも見つからなければ {@link #FALLBACK_LANGUAGE} を返す。
+     */
     private String normalize(String language) {
         if (language == null) return FALLBACK_LANGUAGE;
         String lower = language.toLowerCase();
-        return SUPPORTED_LANGUAGES.contains(lower) ? lower : FALLBACK_LANGUAGE;
+        if (SUPPORTED_LANGUAGES.contains(lower)) return lower;
+        // 主言語サブタグだけ来た場合（"zh"）は既定地域タグ（"zh-cn"）に振り替える
+        String promoted = PRIMARY_DEFAULT.get(lower);
+        if (promoted != null && SUPPORTED_LANGUAGES.contains(promoted)) return promoted;
+        // BCP-47 タグの主言語サブタグでもう一度試す（例: "zh-Hans" → "zh" → "zh-cn"）
+        int dash = lower.indexOf('-');
+        if (dash >= 0) {
+            String primary = lower.substring(0, dash);
+            if (SUPPORTED_LANGUAGES.contains(primary)) return primary;
+            String promotedFromPrimary = PRIMARY_DEFAULT.get(primary);
+            if (promotedFromPrimary != null && SUPPORTED_LANGUAGES.contains(promotedFromPrimary)) {
+                return promotedFromPrimary;
+            }
+        }
+        return FALLBACK_LANGUAGE;
     }
 }
