@@ -596,6 +596,10 @@ public class UserServiceTest {
         request.setEmail(TEST_EMAIL);
         request.setPassword(CURRENT_PASSWORD);
         request.setUsername("newuser");
+        // Issue#109: 同意・年齢確認フィールドを true でセット
+        request.setAgreedToTerms(true);
+        request.setAgreedToPrivacy(true);
+        request.setAgeConfirmed(true);
 
         assertThatThrownBy(() -> authService.registerUser(request))
                 .isInstanceOf(ConflictException.class)

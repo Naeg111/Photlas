@@ -91,12 +91,16 @@ public class AuthControllerTest {
 
     /**
      * RegisterRequestオブジェクトを生成するヘルパーメソッド
+     * Issue#109: 同意・年齢確認フィールドはデフォルトで true として設定する
      */
     private RegisterRequest createRegisterRequest(String username, String email, String password) {
         RegisterRequest request = new RegisterRequest();
         request.setUsername(username);
         request.setEmail(email);
         request.setPassword(password);
+        request.setAgreedToTerms(true);
+        request.setAgreedToPrivacy(true);
+        request.setAgeConfirmed(true);
         return request;
     }
 
