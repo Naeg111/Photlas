@@ -79,6 +79,10 @@ public class User {
     @Column(name = "privacy_policy_agreed_at")
     private LocalDateTime privacyPolicyAgreedAt;
 
+    // Issue#109: 年齢確認（13 歳以上）の自己申告日時（NULL の場合は未確認）
+    @Column(name = "age_confirmed_at")
+    private LocalDateTime ageConfirmedAt;
+
     // Issue#108: 最後にデータエクスポートが正常完了した日時（頻度制限用、未エクスポートなら null）
     @Column(name = "last_exported_at")
     private LocalDateTime lastExportedAt;
@@ -231,6 +235,14 @@ public class User {
 
     public void setPrivacyPolicyAgreedAt(LocalDateTime privacyPolicyAgreedAt) {
         this.privacyPolicyAgreedAt = privacyPolicyAgreedAt;
+    }
+
+    public LocalDateTime getAgeConfirmedAt() {
+        return ageConfirmedAt;
+    }
+
+    public void setAgeConfirmedAt(LocalDateTime ageConfirmedAt) {
+        this.ageConfirmedAt = ageConfirmedAt;
     }
 
     public LocalDateTime getLastExportedAt() {
