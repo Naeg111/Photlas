@@ -51,6 +51,7 @@ public class AccountService {
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
+    private final EmailTemplateService emailTemplateService;
     private final JwtService jwtService;
     private final UserOAuthConnectionRepository userOAuthConnectionRepository;
     /**
@@ -73,6 +74,7 @@ public class AccountService {
             EmailVerificationTokenRepository emailVerificationTokenRepository,
             PasswordResetTokenRepository passwordResetTokenRepository,
             EmailService emailService,
+            EmailTemplateService emailTemplateService,
             JwtService jwtService,
             UserOAuthConnectionRepository userOAuthConnectionRepository,
             ObjectProvider<OAuthTokenRevokeService> oauthTokenRevokeServiceProvider,
@@ -85,6 +87,7 @@ public class AccountService {
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailService = emailService;
+        this.emailTemplateService = emailTemplateService;
         this.jwtService = jwtService;
         this.userOAuthConnectionRepository = userOAuthConnectionRepository;
         this.oauthTokenRevokeServiceProvider = oauthTokenRevokeServiceProvider;
@@ -133,54 +136,17 @@ public class AccountService {
                 user.getId(), normalizedNewEmail, token, expiryDate);
         emailChangeTokenRepository.save(changeToken);
 
-        // 新メールアドレスに確認リンクを送信
-        String link = frontendUrl + "/confirm-email-change?token=" + token;
-        if ("en".equals(user.getLanguage())) {
-            emailService.send(
-                    normalizedNewEmail,
-                    "【Photlas】Email Change Confirmation",
-                    "Hi " + user.getUsername() + ",\n\n" +
-                    "We received a request to change your email address.\n" +
-                    "Please click the link below to confirm the change:\n\n" +
-                    link + "\n\n" +
-                    "This link will expire in 30 minutes.\n\n" +
-                    "If you did not request this, please ignore this email.\n\n" +
-                    "Photlas Team");
-        } else {
-            emailService.send(
-                    normalizedNewEmail,
-                    "【Photlas】メールアドレス変更の確認",
-                    user.getUsername() + " さん\n\n" +
-                    "メールアドレスの変更リクエストを受け付けました。\n" +
-                    "以下のリンクをクリックして、変更を確定してください：\n\n" +
-                    link + "\n\n" +
-                    "このリンクの有効期限は30分です。\n\n" +
-                    "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                    "Photlas");
-        }
+        // Issue#113 §4.5 A-1: 旧アドレス（アラート）を先に送信し、新アドレス（リンク）を後に送信する。
+        // 両方ともグループ A（失敗時 500）。@Transactional により、どちらか失敗すれば
+        // emailChangeToken も含めてロールバックされる。
+        String oldSubject = emailTemplateService.subject("email.emailChangeNotifyOld", user);
+        String oldBody = emailTemplateService.body("email.emailChangeNotifyOld", user, user.getUsername());
+        emailService.send(email, oldSubject, oldBody);
 
-        // 旧メールアドレスに通知
-        try {
-            if ("en".equals(user.getLanguage())) {
-                emailService.send(
-                        email,
-                        "【Photlas】Email Change Requested",
-                        "Hi " + user.getUsername() + ",\n\n" +
-                        "An email address change has been requested for your account.\n\n" +
-                        "If you did not make this request, please change your password immediately.\n\n" +
-                        "Photlas Team");
-            } else {
-                emailService.send(
-                        email,
-                        "【Photlas】メールアドレスの変更がリクエストされました",
-                        user.getUsername() + " さん\n\n" +
-                        "お客様のアカウントでメールアドレスの変更がリクエストされました。\n\n" +
-                        "心当たりがない場合は、ただちにパスワードを変更してください。\n\n" +
-                        "Photlas");
-            }
-        } catch (Exception e) {
-            logger.error("Failed to send email change notification to old address: {}", e.getMessage());
-        }
+        String link = frontendUrl + "/confirm-email-change?token=" + token;
+        String newSubject = emailTemplateService.subject("email.emailChangeConfirm", user);
+        String newBody = emailTemplateService.body("email.emailChangeConfirm", user, user.getUsername(), link);
+        emailService.send(normalizedNewEmail, newSubject, newBody);
     }
 
     /**
@@ -333,24 +299,30 @@ public class AccountService {
     }
 
     /**
-     * Issue#81 Phase 4d: アカウント削除確認メール送信のオーケストレータ（3 段階リファクタ）。
+     * Issue#81 Phase 4d / Issue#113 フェーズ 3: アカウント削除確認メールを送信。
      *
-     * <p>(1) ユーザー区分を解決 → (2) プロバイダ名を解決 → (3) 本文組み立て → (4) 送信。
+     * <p>ユーザー区分（NORMAL / OAUTH_ONLY / HYBRID）に応じて 3 サブキーを使い分け、
+     * 5 言語の properties から件名・本文を取得する。グループ C のため、メール送信
+     * 失敗時も削除処理は完了扱い（WARN ログのみ）。</p>
      */
     private void sendAccountDeletionConfirmation(User user, String originalUsername) {
         DeletionTemplate template = resolveDeletionTemplate(user);
         String providerName = template == DeletionTemplate.NORMAL ? null : resolveProviderName(user);
-        String language = user.getLanguage();
-
-        String subject = "en".equals(language)
-                ? "【Photlas】Account Deletion Confirmation"
-                : "【Photlas】アカウント削除のご確認";
-        String body = buildDeletionEmailBody(template, language, originalUsername, providerName);
+        String key = switch (template) {
+            case NORMAL     -> "email.accountDeletion.normal";
+            case OAUTH_ONLY -> "email.accountDeletion.oauthOnly";
+            case HYBRID     -> "email.accountDeletion.hybrid";
+        };
 
         try {
+            String subject = emailTemplateService.subject(key, user);
+            String body = template == DeletionTemplate.NORMAL
+                    ? emailTemplateService.body(key, user, originalUsername)
+                    : emailTemplateService.body(key, user, originalUsername, providerName);
             emailService.send(user.getEmail(), subject, body);
         } catch (Exception e) {
-            logger.error("アカウント削除確認メールの送信に失敗しました: {}", e.getMessage());
+            logger.warn("アカウント削除確認メールの送信に失敗しました: userId={} error={}",
+                    user.getId(), e.getMessage());
         }
     }
 
@@ -394,90 +366,6 @@ public class AccountService {
             case GOOGLE -> "Google";
             case LINE -> "LINE";
         };
-    }
-
-    /**
-     * 純関数: テンプレート区分 × 言語で本文を組み立てる。DB アクセス・SecurityContext 参照を行わない。
-     *
-     * @param template     ユーザー区分
-     * @param language     "en" 以外は ja 扱い
-     * @param username     元の表示名（宛名に使用）
-     * @param providerName プロバイダ名（OAUTH_ONLY / HYBRID 時のみ使用、NORMAL では null 可）
-     */
-    private static String buildDeletionEmailBody(
-            DeletionTemplate template, String language, String username, String providerName) {
-        boolean en = "en".equals(language);
-        return switch (template) {
-            case NORMAL -> en ? normalBodyEn(username) : normalBodyJa(username);
-            case HYBRID -> en ? hybridBodyEn(username, providerName) : hybridBodyJa(username, providerName);
-            case OAUTH_ONLY -> en ? oauthOnlyBodyEn(username, providerName) : oauthOnlyBodyJa(username, providerName);
-        };
-    }
-
-    // ---- NORMAL: 既存文面を一字一句保持（ゴールデンテストで検証）----
-
-    private static String normalBodyJa(String username) {
-        return username + " さん\n\n" +
-                "アカウントの削除が完了しました。\n\n" +
-                "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
-                "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワードでログインしてください。\n\n" +
-                "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
-                "support@photlas.jp\n\n" +
-                "Photlas\nsupport@photlas.jp";
-    }
-
-    private static String normalBodyEn(String username) {
-        return "Hi " + username + ",\n\n" +
-                "Your account has been deleted.\n\n" +
-                "Your data will be retained for 90 days. After that, all data will be permanently deleted.\n\n" +
-                "If you wish to restore your account, simply log in with your email and password within 90 days.\n\n" +
-                "If you did not perform this action, please contact us immediately at:\n" +
-                "support@photlas.jp\n\n" +
-                "Photlas Team\nsupport@photlas.jp";
-    }
-
-    // ---- HYBRID: 「メールアドレスとパスワード」+「または {provider}」 ----
-
-    private static String hybridBodyJa(String username, String providerName) {
-        return username + " さん\n\n" +
-                "アカウントの削除が完了しました。\n\n" +
-                "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
-                "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワード、または " + providerName + " で再度サインインしてください。\n\n" +
-                "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
-                "support@photlas.jp\n\n" +
-                "Photlas\nsupport@photlas.jp";
-    }
-
-    private static String hybridBodyEn(String username, String providerName) {
-        return "Hi " + username + ",\n\n" +
-                "Your account has been deleted.\n\n" +
-                "Your data will be retained for 90 days. After that, all data will be permanently deleted.\n\n" +
-                "If you wish to restore your account, sign in with your email and password, or sign in with " + providerName + " within 90 days.\n\n" +
-                "If you did not perform this action, please contact us immediately at:\n" +
-                "support@photlas.jp\n\n" +
-                "Photlas Team\nsupport@photlas.jp";
-    }
-
-    // ---- OAUTH_ONLY: プロバイダ再サインインのみ ----
-
-    private static String oauthOnlyBodyJa(String username, String providerName) {
-        return username + " さん\n\n" +
-                "アカウントの削除が完了しました。\n\n" +
-                "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
-                "アカウントを復旧したい場合は、90日以内に " + providerName + " で再度サインインしてください。\n\n" +
-                "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
-                "support@photlas.jp\n\n" +
-                "Photlas\nsupport@photlas.jp";
-    }
-
-    private static String oauthOnlyBodyEn(String username, String providerName) {
-        return "Hi " + username + ",\n\n" +
-                "Your account has been deleted.\n\n" +
-                "Your data will be retained for 90 days. After that, all data will be permanently deleted.\n\n" +
-                "If you wish to restore your account, sign in with " + providerName + " within 90 days.\n\n" +
-                "If you did not perform this action, please contact us immediately at:\n" +
-                "support@photlas.jp\n\n" +
-                "Photlas Team\nsupport@photlas.jp";
     }
 
     private void transferSpotOwnership(User deletingUser) {
