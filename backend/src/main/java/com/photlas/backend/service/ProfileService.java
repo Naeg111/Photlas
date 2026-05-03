@@ -220,10 +220,12 @@ public class ProfileService {
                 snsLinkDtos
         );
 
-        // Issue#104: GET /users/me のみで返す追加フィールド
+        // Issue#104 + Issue#109: GET /users/me のみで返す追加フィールド
+        // 規約・プライバシー・年齢確認のいずれかが未完了なら同意ダイアログを表示する
         if (includeEmail) {
             boolean requiresAgreement = user.getTermsAgreedAt() == null
-                    || user.getPrivacyPolicyAgreedAt() == null;
+                    || user.getPrivacyPolicyAgreedAt() == null
+                    || user.getAgeConfirmedAt() == null;
             response.setRequiresTermsAgreement(requiresAgreement);
             response.setUsernameTemporary(user.isUsernameTemporary());
         }
@@ -232,21 +234,27 @@ public class ProfileService {
     }
 
     /**
-     * Issue#104: 利用規約・プライバシーポリシーへの同意を記録する。
+     * Issue#104 + Issue#109: 利用規約・プライバシーポリシー・年齢確認への同意を一括で記録する。
      *
      * <p>常に現在時刻で上書きする（冪等性を優先するシンプルな実装）。
      * 既に同意済みの場合でも再記録される（実害なし）。
      *
+     * <p>Issue#109 で年齢確認のタイムスタンプも追加されたため、
+     * Issue#104 時点の名称 {@code agreeToTerms} から本メソッド名にリネームした。
+     * 規約・プライバシー・年齢確認の 3 つを同時に記録するため、
+     * 名前が示す範囲を「ユーザーの同意全般を記録する」に拡張している。
+     *
      * @param email ユーザーのメールアドレス
      */
     @Transactional
-    public void agreeToTerms(String email) {
+    public void recordUserAgreement(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         user.setTermsAgreedAt(now);
         user.setPrivacyPolicyAgreedAt(now);
+        user.setAgeConfirmedAt(now);
         userRepository.save(user);
     }
 
