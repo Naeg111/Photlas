@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDebouncedCallback } from '../hooks/useDebouncedCallback'
+import { useMapboxLanguageSync } from '../hooks/useMapboxLanguageSync'
 import Map, { Marker, AttributionControl } from 'react-map-gl'
 import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
 import type { Map as MapboxMap, ExpressionSpecification } from 'mapbox-gl'
@@ -585,13 +586,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // spotsをGeoJSON形式にメモ化（spots参照が変わっても中身が同じなら再生成しない）
   const geoJsonData = useMemo(() => spotsToGeoJson(spots), [spots])
 
-  // Issue#107: 表示言語が変わったとき、Mapbox の地名ラベルも追従させる。
-  // react-map-gl の language prop は初回レンダリング時にしか反映されないため、
-  // 言語切替時は map.setLanguage() を明示的に呼んでラベルを更新する。
-  useEffect(() => {
-    if (!map) return
-    map.setLanguage(mapboxLang)
-  }, [map, mapboxLang])
+  // Issue#107: 表示言語に追従して地名ラベルを切り替える
+  useMapboxLanguageSync(map, mapboxLang)
 
   // スポットデータが変更されたらSource/画像を更新
   useEffect(() => {
