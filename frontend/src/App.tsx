@@ -666,6 +666,8 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
           onClusterClick={handleClusterClick}
           onMapClick={handleReturnFromPreview}
           onMapReady={handleMapReadyInternal}
+          // Issue#111-followup §8: 投稿詳細ダイアログ表示中は地球儀回転を停止する
+          isPhotoDialogOpen={dialog.isOpen('photoDetail')}
         />
       </div>
 
