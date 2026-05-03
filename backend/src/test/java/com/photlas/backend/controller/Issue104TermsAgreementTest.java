@@ -294,7 +294,7 @@ public class Issue104TermsAgreementTest {
         return userRepository.save(user);
     }
 
-    /** 同意済みユーザー（terms_agreed_at, privacy_policy_agreed_at セット済み・確定表示名）を作成 */
+    /** 同意済みユーザー（terms_agreed_at, privacy_policy_agreed_at, age_confirmed_at セット済み・確定表示名）を作成 */
     private User createUserWithAgreement() {
         User user = new User(TEST_USERNAME, TEST_EMAIL,
                 passwordEncoder.encode(TEST_PASSWORD), CodeConstants.ROLE_USER);
@@ -302,6 +302,8 @@ public class Issue104TermsAgreementTest {
         user.setUsernameTemporary(false);
         user.setTermsAgreedAt(LocalDateTime.now());
         user.setPrivacyPolicyAgreedAt(LocalDateTime.now());
+        // Issue#109: requiresTermsAgreement の判定で age_confirmed_at もチェックされるため必須
+        user.setAgeConfirmedAt(LocalDateTime.now());
         return userRepository.save(user);
     }
 

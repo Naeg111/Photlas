@@ -174,16 +174,20 @@ public class ProfileController {
     }
 
     /**
-     * Issue#104: 利用規約・プライバシーポリシーへの同意を記録する
+     * Issue#104 + Issue#109: 利用規約・プライバシーポリシー・年齢確認への同意を一括記録する
      * POST /api/v1/users/me/agree-terms
      *
      * <p>OAuth 経由の新規ユーザーが同意ダイアログで「利用を開始する」を押した際に呼ばれる。
      * 常に現在時刻で上書きする（既に同意済みでも実害なし、§4.11）。
+     *
+     * <p>Issue#109: 年齢確認の記録もまとめて行うよう拡張した
+     * （サービス層メソッド名は agreeToTerms → recordUserAgreement にリネーム）。
+     * REST エンドポイントのパスは互換性のため変更しない。
      */
     @PostMapping("/me/agree-terms")
     public ResponseEntity<Void> agreeToTerms(Authentication authentication) {
         String email = authentication.getName();
-        profileService.agreeToTerms(email);
+        profileService.recordUserAgreement(email);
         return ResponseEntity.noContent().build();
     }
 
