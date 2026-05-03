@@ -9,6 +9,7 @@ import { MapPin, LocateFixed, Search } from 'lucide-react'
 import { Button } from './ui/button'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { sortSuggestionsByRelevance } from '../utils/sortSuggestions'
+import { useMapboxLanguageSync } from '../hooks/useMapboxLanguageSync'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 import { getGeoCountryCache } from '../utils/geoCountryCache'
 import { getCountryCoordinates } from '../utils/countryCoordinates'
@@ -325,15 +326,9 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
     setMapForLanguage(mapInstance)
   }, [])
 
-  // Issue#107: 表示言語が変わったとき、Mapbox の地名ラベルも追従させる。
-  // react-map-gl の language prop は初回レンダリング時にしか反映されないため、
-  // 言語切替時は map.setLanguage() を明示的に呼んでラベルを更新する。
-  // mapRef は ref のため依存配列に含められず変更を検知できないので、
-  // 同じ map インスタンスを state でも保持して useEffect の依存対象にする。
-  useEffect(() => {
-    if (!mapForLanguage) return
-    mapForLanguage.setLanguage(mapboxLang)
-  }, [mapForLanguage, mapboxLang])
+  // Issue#107: 表示言語に追従して地名ラベルを切り替える
+  // （mapRef は依存配列に含められないため、handleLoad で同 map を state にも保持して渡す）
+  useMapboxLanguageSync(mapForLanguage, mapboxLang)
 
   // 地図移動完了時に中心座標をonPositionChangeに伝播
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
