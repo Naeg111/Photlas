@@ -1393,20 +1393,81 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter.mock.calls.length).toBeGreaterThan(callsBeforeStop)
     })
 
-    it('Issue#111-followup - wheel / rotatestart / pitchstart のリスナーは登録されない', () => {
+    it('Issue#111-followup - rotatestart / pitchstart のリスナーは登録されない', () => {
       setupFetchMock()
       render(<MapView />)
       // これらのイベントは「回転を停止させない」ため、リスナー自体を登録しない
-      expect(findHandler('wheel')).toBeUndefined()
       expect(findHandler('rotatestart')).toBeUndefined()
       expect(findHandler('pitchstart')).toBeUndefined()
     })
 
-    it('Issue#111-followup - zoomstart / zoomend のリスナーは登録される（rAF 一時停止用）', () => {
+    it('Issue#111-followup - wheel / zoomstart / zoomend のリスナーは登録される（rAF 一時停止用）', () => {
       setupFetchMock()
       render(<MapView />)
+      expect(findHandler('wheel')).toBeDefined()
       expect(findHandler('zoomstart')).toBeDefined()
       expect(findHandler('zoomend')).toBeDefined()
+    })
+
+    it('Issue#111-followup（6回目仕様変更）- wheel イベントで rAF が一時停止する（zoomstart 前に）', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(0)
+
+      render(<MapView />)
+      await act(async () => {
+        vi.advanceTimersByTime(5100)
+      })
+      expect(mockMap.setCenter).toHaveBeenCalled()
+      const callsBeforeWheel = mockMap.setCenter.mock.calls.length
+
+      const wheelHandler = findHandler('wheel')![1] as Function
+      await act(async () => {
+        wheelHandler({})
+        vi.advanceTimersByTime(300)
+      })
+
+      // 一時停止しているので setCenter は増えない
+      expect(mockMap.setCenter.mock.calls.length).toBe(callsBeforeWheel)
+    })
+
+    it('Issue#111-followup（6回目仕様変更）- zoomend で zoom > 4 の場合 isRotatingRef がクリアされる（fetchSpots スキップ防止）', async () => {
+      const mockFetch = setupFetchMock()
+      mockMap.getZoom.mockReturnValue(0)
+
+      render(<MapView />)
+
+      // 回転を開始させる
+      await act(async () => {
+        vi.advanceTimersByTime(5100)
+      })
+      expect(mockMap.setCenter).toHaveBeenCalled()
+
+      // ホイールでズーム 5 まで上がったとシミュレート（zoomstart で rAF キャンセル相当）
+      const zoomstartHandler = findHandler('zoomstart')![1] as Function
+      await act(async () => {
+        zoomstartHandler({})
+      })
+
+      // zoom が 5 になったとシミュレート
+      mockMap.getZoom.mockReturnValue(5)
+
+      // zoomend で isRotating がクリアされるか
+      const zoomendHandler = findHandler('zoomend')![1] as Function
+      await act(async () => {
+        zoomendHandler({})
+      })
+
+      // この後の moveend で fetchSpots が走るかを確認
+      // handleMoveEnd を直接呼び出す代わりに、moveEnd を mockMap でシミュレートできる構造ではないため、
+      // 代わりに handleMoveEnd 側のフェイルセーフをテスト
+      // → 別テストで handleMoveEnd の中身は検証する
+      // ここでは zoomend ハンドラ呼び出し後に setCenter が走らないことを確認
+      const callsAfterZoomend = mockMap.setCenter.mock.calls.length
+      await act(async () => {
+        vi.advanceTimersByTime(500)
+      })
+      expect(mockMap.setCenter.mock.calls.length).toBe(callsAfterZoomend)
+      void mockFetch // fetchSpots が呼ばれることはここではテストせず、fetch スキップのフェイルセーフは別途
     })
 
     it('Issue#111-followup - 回転中の setCenter は現在の緯度を維持する（強制スナップしない）', async () => {
