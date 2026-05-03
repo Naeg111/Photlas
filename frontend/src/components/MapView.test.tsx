@@ -1052,22 +1052,24 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#106: fetchSpots スキップ（autoCenter 完了前）', () => {
-    it('Issue#106 - 初期ズームレベルが0で、autoCenter 完了前は fetchSpots が呼ばれない', async () => {
+  describe('Issue#111-followup §8: 全ズームレベル fetchSpots 許可', () => {
+    it('Issue#111-followup - 初期ズームレベルが0でも fetchSpots が呼ばれる', async () => {
+      // Issue#106 では「ズーム 0 では全世界 fetch を避けるためスキップ」していたが、
+      // Issue#112 でクラスタクリック時のページネーションが入ったため、
+      // ズーム 0 でも fetch を許可する仕様に変更した。
+      // バックエンドの MAX_SPOTS_LIMIT=50 でレスポンス件数は保護される。
       const mockFetch = setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
 
       render(<MapView />)
 
-      // 初期マウント直後（autoCenter 未完了）→ fetchSpots は呼ばれない
-      // ※ MapMock の onLoad が即座に発火するため、handleLoad 内では fetchSpots がスキップされるべき
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // /spots エンドポイントへの fetch が呼ばれないことを確認
-      const spotsFetchCalls = (mockFetch.mock.calls as Array<[string]>).filter(
-        ([url]) => typeof url === 'string' && url.includes('/spots'),
-      )
-      expect(spotsFetchCalls.length).toBe(0)
+      // /spots エンドポイントへの fetch が呼ばれること
+      await waitFor(() => {
+        const spotsFetchCalls = (mockFetch.mock.calls as Array<[string]>).filter(
+          ([url]) => typeof url === 'string' && url.includes('/spots'),
+        )
+        expect(spotsFetchCalls.length).toBeGreaterThan(0)
+      })
     })
   })
 
@@ -1652,6 +1654,205 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
       // 回転中はスポット取得が増えない
       expect(spotsFetchAfter).toBe(spotsFetchBefore)
+    })
+  })
+
+  // ============================================================
+  // Issue#111-followup §8: 回転中のクラスタ表示・ダイアログ中の停止
+  // ============================================================
+  describe('Issue#111-followup §8: 回転中のクラスタ表示', () => {
+    it('Issue#111-followup - 回転開始時に setData(空配列) で既存ピンをクリアしない', async () => {
+      // Issue#111 では setSpots([]) で回転開始時にピンをクリアしていたが、
+      // §8 では「回転中もクラスタを表示する」仕様に変更したため、クリアしない。
+      const mockFetch = setupFetchMock([
+        { spotId: 1, latitude: 35.6, longitude: 139.7, pinColor: 'Green' as const, thumbnailUrl: 'thumb', photoCount: 1 },
+      ])
+      mockMap.getZoom.mockReturnValue(0)
+
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+      await waitFor(() => expect(ref.current).not.toBeNull())
+
+      // 初期ロードでピンがセットされる
+      await waitFor(() => {
+        expect(mockSourceData.lastSetData).not.toBeNull()
+      })
+      // 回転開始
+      await act(async () => {
+        ref.current.startGlobeRotationImmediately()
+      })
+
+      // setData の最後のデータが空配列ではないこと（既存ピンが保持されている）
+      const lastFeatures = mockSourceData.lastSetData?.features ?? []
+      expect(lastFeatures.length).toBeGreaterThan(0)
+
+      void mockFetch
+    })
+
+    it('Issue#111-followup - ユーザー操作で停止した直後に fetchSpots（debounced）が呼ばれる', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const mockFetch = setupFetchMock()
+        mockMap.getZoom.mockReturnValue(0)
+
+        render(<MapView />)
+        // 5秒経過させて回転開始
+        await act(async () => {
+          vi.advanceTimersByTime(5100)
+        })
+
+        const spotsFetchBefore = (mockFetch.mock.calls as Array<[string]>).filter(
+          ([url]) => typeof url === 'string' && url.includes('/spots'),
+        ).length
+
+        // mousedown(左) ハンドラを取得して呼ぶ
+        const mousedownCall = mockMap.on.mock.calls.find(
+          (c: any[]) => c[0] === 'mousedown' && typeof c[1] === 'function',
+        )
+        const handler = mousedownCall![1] as Function
+        await act(async () => {
+          handler({ originalEvent: { button: 0 } })
+          // debounce 500ms 待つ
+          vi.advanceTimersByTime(600)
+        })
+
+        // /spots への fetch が増えている
+        const spotsFetchAfter = (mockFetch.mock.calls as Array<[string]>).filter(
+          ([url]) => typeof url === 'string' && url.includes('/spots'),
+        ).length
+        expect(spotsFetchAfter).toBeGreaterThan(spotsFetchBefore)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('Issue#111-followup - zoomstart 経由の一時停止では fetchSpots は呼ばれない', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const mockFetch = setupFetchMock()
+        mockMap.getZoom.mockReturnValue(0)
+
+        render(<MapView />)
+        // 5秒経過させて回転開始
+        await act(async () => {
+          vi.advanceTimersByTime(5100)
+        })
+
+        const spotsFetchBefore = (mockFetch.mock.calls as Array<[string]>).filter(
+          ([url]) => typeof url === 'string' && url.includes('/spots'),
+        ).length
+
+        // zoomstart ハンドラを呼ぶ（ズーム操作の一時停止）
+        const zoomstartCall = mockMap.on.mock.calls.find(
+          (c: any[]) => c[0] === 'zoomstart' && typeof c[1] === 'function',
+        )
+        const handler = zoomstartCall![1] as Function
+        await act(async () => {
+          handler({})
+          vi.advanceTimersByTime(600)
+        })
+
+        // /spots への fetch は増えない
+        const spotsFetchAfter = (mockFetch.mock.calls as Array<[string]>).filter(
+          ([url]) => typeof url === 'string' && url.includes('/spots'),
+        ).length
+        expect(spotsFetchAfter).toBe(spotsFetchBefore)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+  })
+
+  describe('Issue#111-followup §8: 投稿詳細ダイアログ表示中の回転停止', () => {
+    it('Issue#111-followup - isPhotoDialogOpen=true の間、5秒タイマー経過しても回転が始まらない', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        setupFetchMock()
+        mockMap.getZoom.mockReturnValue(0)
+
+        const { rerender } = render(<MapView isPhotoDialogOpen={true} />)
+
+        // 5秒タイマー経過させても setCenter（回転）が呼ばれない
+        await act(async () => {
+          vi.advanceTimersByTime(6000)
+        })
+
+        expect(mockMap.setCenter).not.toHaveBeenCalled()
+        void rerender
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('Issue#111-followup - 動いている回転中に isPhotoDialogOpen=true になると停止する', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        setupFetchMock()
+        mockMap.getZoom.mockReturnValue(0)
+
+        const { rerender } = render(<MapView isPhotoDialogOpen={false} />)
+        // 5秒経過させて回転開始
+        await act(async () => {
+          vi.advanceTimersByTime(5100)
+        })
+        expect(mockMap.setCenter).toHaveBeenCalled()
+        const callsBeforeOpen = mockMap.setCenter.mock.calls.length
+
+        // ダイアログを開く（prop を更新）
+        rerender(<MapView isPhotoDialogOpen={true} />)
+        await act(async () => {
+          vi.advanceTimersByTime(500)
+        })
+
+        // 一時停止後は setCenter が増えない
+        expect(mockMap.setCenter.mock.calls.length).toBe(callsBeforeOpen)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('Issue#111-followup - isPhotoDialogOpen が true→false に変わった時、ズーム 0〜4 なら 5秒後に回転が始まる', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        setupFetchMock()
+        mockMap.getZoom.mockReturnValue(0)
+
+        const { rerender } = render(<MapView isPhotoDialogOpen={true} />)
+        await act(async () => {
+          vi.advanceTimersByTime(6000) // ダイアログ表示中なので回転しない
+        })
+        expect(mockMap.setCenter).not.toHaveBeenCalled()
+
+        // ダイアログを閉じる
+        rerender(<MapView isPhotoDialogOpen={false} />)
+        await act(async () => {
+          vi.advanceTimersByTime(5100) // 5秒タイマー + 数フレーム
+        })
+
+        // 回転が始まり setCenter が呼ばれている
+        expect(mockMap.setCenter).toHaveBeenCalled()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('Issue#111-followup - isPhotoDialogOpen が true→false に変わった時、ズーム 5+ なら回転は始まらない', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        setupFetchMock()
+        mockMap.getZoom.mockReturnValue(11) // 写真スポット高ズーム
+
+        const { rerender } = render(<MapView isPhotoDialogOpen={true} />)
+        rerender(<MapView isPhotoDialogOpen={false} />)
+        await act(async () => {
+          vi.advanceTimersByTime(6000)
+        })
+
+        // ズーム 5+ なので回転は始まらない
+        expect(mockMap.setCenter).not.toHaveBeenCalled()
+      } finally {
+        vi.useRealTimers()
+      }
     })
   })
 })
