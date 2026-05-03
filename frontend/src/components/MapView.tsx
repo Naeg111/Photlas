@@ -928,19 +928,28 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     // rAF tick の setCenter が easeTo（+/-ボタンや wheel zoom）の進行をキャンセルしてしまい、
     // ズームインが「ほんの少しずつしか進まない」現象を防ぐため。
     // isRotatingRef は維持し、zoomend で rAF を再開する。
-    mapInstance.on('zoomstart', () => {
+    const cancelRotationFrameForZoom = () => {
       if (rotationFrameRef.current !== null) {
         cancelAnimationFrame(rotationFrameRef.current)
         rotationFrameRef.current = null
       }
-    })
+    }
+    // Issue#111-followup（仕様変更6回目）: wheel イベントを直接 listen して即時 rAF をキャンセルする。
+    // scrollZoom が小さな delta を smooth 処理する関係で、zoomstart 発火前に rAF tick の setCenter が
+    // 走り、scrollZoom の内部 easeTo を即キャンセルしてしまうケース（特にズーム4境界付近）を防ぐ。
+    mapInstance.on('wheel', cancelRotationFrameForZoom)
+    mapInstance.on('zoomstart', cancelRotationFrameForZoom)
     mapInstance.on('zoomend', () => {
-      // 回転状態が継続していて、ズーム範囲も維持されていれば再開
-      if (
-        isRotatingRef.current &&
-        rotationFrameRef.current === null &&
-        mapInstance.getZoom() <= GLOBE_ROTATION_MAX_ZOOM
-      ) {
+      // Issue#111-followup（仕様変更6回目）: ズームが回転範囲外（>4）に出た場合、
+      // 回転状態フラグをクリアする。rAF tick の auto-stop は rAF が動いている時しか働かないため、
+      // 「zoomstart で rAF を止めた直後にズームが 4 を超えた」ケースで isRotatingRef が
+      // true のまま残り、handleMoveEnd で fetchSpots がスキップされてピンが表示されない問題を防ぐ。
+      if (mapInstance.getZoom() > GLOBE_ROTATION_MAX_ZOOM) {
+        isRotatingRef.current = false
+        return
+      }
+      // 回転範囲内なら rAF を再開
+      if (isRotatingRef.current && rotationFrameRef.current === null) {
         rotationLoop(mapInstance)
       }
     })
@@ -991,6 +1000,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
     const zoom = mapInstance.getZoom()
+    // Issue#111-followup（仕様変更6回目）: 回転範囲外に出た時のフェイルセーフ。
+    // zoomend が万が一発火しないケースでも、moveend で isRotatingRef をクリアし、
+    // fetchSpots が必ず走るようにする。
+    if (zoom > GLOBE_ROTATION_MAX_ZOOM && isRotatingRef.current) {
+      isRotatingRef.current = false
+    }
     // Issue#111-followup: ユーザーが（例えばズームアウトボタンで）ズーム 0〜4 の範囲に入って
     // かつ回転中でも回転予約中でもない場合、5秒後の回転を予約する。
     // movestart リスナーを廃止した影響で、UI ボタン経由のズーム変化では
