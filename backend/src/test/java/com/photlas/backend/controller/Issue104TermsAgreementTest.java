@@ -206,6 +206,36 @@ public class Issue104TermsAgreementTest {
                 .isNotNull();
     }
 
+    @Test
+    @DisplayName("Issue#109 - POST /api/v1/users/me/agree-terms が age_confirmed_at もセットする")
+    void agreeTerms_setsAgeConfirmedAt() throws Exception {
+        User user = createOAuthUser();
+        String jwtToken = jwtService.generateTokenWithRole(user.getEmail(), "USER");
+
+        mockMvc.perform(post(AGREE_TERMS_ENDPOINT)
+                        .with(csrf())
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isNoContent());
+
+        User reloaded = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(reloaded.getAgeConfirmedAt())
+                .as("agree-terms 後に age_confirmed_at もセットされる")
+                .isNotNull();
+    }
+
+    @Test
+    @DisplayName("Issue#109 - age_confirmed_at が NULL の場合、GET /users/me が requiresTermsAgreement: true を返す")
+    void getUsersMe_returnsRequiresTermsAgreementTrue_whenAgeNotConfirmed() throws Exception {
+        // 規約・プライバシーは同意済みだが、age_confirmed_at だけ NULL のユーザー
+        User user = createUserWithTermsAndPrivacyOnly();
+        String jwtToken = jwtService.generateTokenWithRole(user.getEmail(), "USER");
+
+        mockMvc.perform(get(USERS_ME_ENDPOINT)
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requiresTermsAgreement", is(true)));
+    }
+
     // ===== Group 5: DELETE /api/v1/users/me/cancel-registration =====
 
     @Test
@@ -272,6 +302,21 @@ public class Issue104TermsAgreementTest {
         user.setUsernameTemporary(false);
         user.setTermsAgreedAt(LocalDateTime.now());
         user.setPrivacyPolicyAgreedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
+
+    /**
+     * Issue#109: 規約・プライバシーのみ同意済みで age_confirmed_at が NULL のユーザーを作成。
+     * （年齢確認だけ未完了のユーザーを再現するため）
+     */
+    private User createUserWithTermsAndPrivacyOnly() {
+        User user = new User("ageless_user", "ageless@example.com",
+                passwordEncoder.encode(TEST_PASSWORD), CodeConstants.ROLE_USER);
+        user.setEmailVerified(true);
+        user.setUsernameTemporary(false);
+        user.setTermsAgreedAt(LocalDateTime.now());
+        user.setPrivacyPolicyAgreedAt(LocalDateTime.now());
+        // ageConfirmedAt は意図的にセットしない（NULL）
         return userRepository.save(user);
     }
 
