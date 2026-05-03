@@ -573,6 +573,85 @@ describe('SignUpDialog', () => {
     })
   })
 
+  describe('Issue#109 - 年齢確認チェックボックス', () => {
+    it('年齢確認チェックボックス（13歳以上）が表示される', () => {
+      render(<SignUpDialog {...defaultProps} />)
+
+      expect(screen.getByRole('checkbox', { name: /13歳以上/ })).toBeInTheDocument()
+    })
+
+    it('年齢確認チェックボックスが未チェックでは登録ボタンが無効化される', async () => {
+      const user = userEvent.setup()
+      render(<SignUpDialog {...defaultProps} />)
+
+      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+      await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
+      await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // 年齢確認チェックボックスは意図的にクリックしない
+
+      expect(screen.getByRole('button', { name: '登録する' })).toBeDisabled()
+    })
+
+    it('3 つすべてチェックすると登録ボタンが有効化される', async () => {
+      const user = userEvent.setup()
+      render(<SignUpDialog {...defaultProps} />)
+
+      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+      await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
+      await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
+
+      expect(screen.getByRole('button', { name: '登録する' })).toBeEnabled()
+    })
+
+    it('register API リクエストボディに 3 つの同意フィールドが含まれる', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            user: { id: 1, username: 'テストユーザー', email: 'test@example.com' },
+            token: 'test-jwt-token',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+
+      render(<SignUpDialog {...defaultProps} />)
+
+      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+      await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
+      await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/auth/register'),
+          expect.objectContaining({
+            method: 'POST',
+            body: JSON.stringify({
+              username: 'テストユーザー',
+              email: 'test@example.com',
+              password: 'Password123',
+              agreedToTerms: true,
+              agreedToPrivacy: true,
+              ageConfirmed: true,
+            }),
+          })
+        )
+      })
+    })
+  })
+
   describe('Dialog Transitions - ダイアログ遷移', () => {
     it('calls onShowLogin when OAuth signup notice link is clicked', async () => {
       const user = userEvent.setup()
