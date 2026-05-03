@@ -17,6 +17,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
@@ -998,76 +1000,224 @@ public class SpotControllerTest {
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
     }
 
-    // --- getSpotPhotoIds テスト ---
+    // --- Issue#112: POST /spots/photos テスト（ページネーション対応） ---
+
+    private static final String SPOTS_PHOTOS_ENDPOINT = "/api/v1/spots/photos";
 
     @Test
-    @DisplayName("スポットに紐づく写真IDリストを撮影日昇順で取得できる")
-    void testGetSpotPhotoIds_ReturnsPhotoIdsInShotAtOrder() throws Exception {
-        // Given: スポット1つに写真3枚（異なる撮影日時）
+    @DisplayName("Issue#112 - 単一スポットの写真IDを撮影日降順で取得できる")
+    void testGetSpotPhotos_SingleSpot_ReturnsIdsInDescOrder() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo photo1 = createPhoto(spot, TEST_SHOT_AT.minusHours(2), WEATHER_SUNNY);
         Photo photo2 = createPhoto(spot, TEST_SHOT_AT, WEATHER_CLOUDY);
         Photo photo3 = createPhoto(spot, TEST_SHOT_AT.minusHours(1), WEATHER_SUNNY);
 
-        // When & Then: shotAt昇順で返る（photo1, photo3, photo2）
-        mockMvc.perform(get(SPOTS_ENDPOINT + "/" + spot.getSpotId() + "/photos"))
+        // 撮影日降順: photo2 → photo3 → photo1
+        String body = String.format("{\"spotIds\":[%d],\"limit\":30,\"offset\":0}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(3)))
-                .andExpect(jsonPath("$[0]", is(photo1.getPhotoId().intValue())))
-                .andExpect(jsonPath("$[1]", is(photo3.getPhotoId().intValue())))
-                .andExpect(jsonPath("$[2]", is(photo2.getPhotoId().intValue())));
+                .andExpect(jsonPath("$.ids", hasSize(3)))
+                .andExpect(jsonPath("$.ids[0]", is(photo2.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.ids[1]", is(photo3.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.ids[2]", is(photo1.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(3)));
     }
 
     @Test
-    @DisplayName("写真が0件のスポットは空リストを返す")
-    void testGetSpotPhotoIds_EmptySpot_ReturnsEmptyList() throws Exception {
-        // Given: 写真なしのスポット
+    @DisplayName("Issue#112 - 写真が0件のスポットは空リストとtotal=0を返す")
+    void testGetSpotPhotos_EmptySpot_ReturnsEmpty() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
 
-        // When & Then
-        mockMvc.perform(get(SPOTS_ENDPOINT + "/" + spot.getSpotId() + "/photos"))
+        String body = String.format("{\"spotIds\":[%d]}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$.ids", hasSize(0)))
+                .andExpect(jsonPath("$.total", is(0)));
     }
 
     @Test
-    @DisplayName("鮮度フィルター付きで写真IDリストを取得すると古い写真が除外される")
-    void testGetSpotPhotoIds_WithMaxAgeDays_FiltersOldPhotos() throws Exception {
+    @DisplayName("Issue#112 - max_age_days で古い写真を除外する")
+    void testGetSpotPhotos_MaxAgeDays_FiltersOldPhotos() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-
-        // 3日前の写真（7日以内）
         Photo recentPhoto = createPhoto(spot, LocalDateTime.now().minusDays(3), WEATHER_SUNNY);
-
-        // 10日前の写真（7日超え）
         createPhoto(spot, LocalDateTime.now().minusDays(10), WEATHER_SUNNY);
 
-        mockMvc.perform(get(SPOTS_ENDPOINT + "/" + spot.getSpotId() + "/photos")
-                        .param(PARAM_MAX_AGE_DAYS, "7"))
+        String body = String.format("{\"spotIds\":[%d],\"maxAgeDays\":7}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0]", is(recentPhoto.getPhotoId().intValue())));
+                .andExpect(jsonPath("$.ids", hasSize(1)))
+                .andExpect(jsonPath("$.ids[0]", is(recentPhoto.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(1)));
     }
 
     @Test
-    @DisplayName("存在しないスポットIDは404を返す")
-    void testGetSpotPhotoIds_NonExistentSpot_Returns404() throws Exception {
-        // When & Then
-        mockMvc.perform(get(SPOTS_ENDPOINT + "/99999/photos"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("退会済みユーザーの写真はスポット写真ID一覧に含まれない")
-    void testGetSpotPhotoIds_DeletedUser_PhotosExcluded() throws Exception {
+    @DisplayName("Issue#112 - shot_at が null の写真は max_age_days フィルタを通過する")
+    void testGetSpotPhotos_NullShotAt_PassesMaxAgeDaysFilter() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        // shot_at NULL の写真
+        Photo nullShotAtPhoto = new Photo();
+        nullShotAtPhoto.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-null-" + System.nanoTime());
+        nullShotAtPhoto.setSpotId(spot.getSpotId());
+        nullShotAtPhoto.setUserId(testUser.getId());
+        nullShotAtPhoto.setShotAt(null);
+        nullShotAtPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
+        nullShotAtPhoto = photoRepository.save(nullShotAtPhoto);
 
-        // 通常ユーザーの写真
+        // 古い写真（フィルタ対象）
+        createPhoto(spot, LocalDateTime.now().minusDays(10), WEATHER_SUNNY);
+
+        String body = String.format("{\"spotIds\":[%d],\"maxAgeDays\":7}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(1)))
+                .andExpect(jsonPath("$.ids[0]", is(nullShotAtPhoto.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(1)));
+    }
+
+    @Test
+    @DisplayName("Issue#112 - shot_at NULL の写真は並び順で末尾に来る（NULLS LAST）")
+    void testGetSpotPhotos_NullShotAt_OrderedLast() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo withDate1 = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+        Photo nullShotAt = new Photo();
+        nullShotAt.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-null-" + System.nanoTime());
+        nullShotAt.setSpotId(spot.getSpotId());
+        nullShotAt.setUserId(testUser.getId());
+        nullShotAt.setShotAt(null);
+        nullShotAt.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
+        nullShotAt = photoRepository.save(nullShotAt);
+        Photo withDate2 = createPhoto(spot, TEST_SHOT_AT.minusHours(1), WEATHER_SUNNY);
+
+        String body = String.format("{\"spotIds\":[%d]}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(3)))
+                // 撮影日のある写真が先頭、NULL は末尾
+                .andExpect(jsonPath("$.ids[0]", is(withDate1.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.ids[1]", is(withDate2.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.ids[2]", is(nullShotAt.getPhotoId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#112 - 同じ shot_at では photo_id 降順で並ぶ（tiebreaker）")
+    void testGetSpotPhotos_SameShotAt_OrderedByPhotoIdDesc() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo photo1 = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+        Photo photo2 = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+        Photo photo3 = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+
+        // photoId は INSERT 順に増える前提。tiebreaker は photo_id DESC
+        String body = String.format("{\"spotIds\":[%d]}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids[0]", is(photo3.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.ids[1]", is(photo2.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.ids[2]", is(photo1.getPhotoId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#112 - 複数スポットを横断してマージしたページが返る（撮影日降順）")
+    void testGetSpotPhotos_MultipleSpots_MergedAndSorted() throws Exception {
+        Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
+
+        Photo p1Recent = createPhoto(spot1, TEST_SHOT_AT, WEATHER_SUNNY);
+        Photo p2Old = createPhoto(spot2, TEST_SHOT_AT.minusHours(2), WEATHER_SUNNY);
+        Photo p2Mid = createPhoto(spot2, TEST_SHOT_AT.minusHours(1), WEATHER_SUNNY);
+
+        String body = String.format("{\"spotIds\":[%d,%d]}", spot1.getSpotId(), spot2.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(3)))
+                // 撮影日降順でマージ: p1Recent → p2Mid → p2Old
+                .andExpect(jsonPath("$.ids[0]", is(p1Recent.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.ids[1]", is(p2Mid.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.ids[2]", is(p2Old.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(3)));
+    }
+
+    @Test
+    @DisplayName("Issue#112 - limit と offset でページングできる")
+    void testGetSpotPhotos_LimitAndOffset_Paginates() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        // 撮影日順に photo1 (oldest) ... photo5 (newest)
+        Photo photo1 = createPhoto(spot, TEST_SHOT_AT.minusHours(4), WEATHER_SUNNY);
+        Photo photo2 = createPhoto(spot, TEST_SHOT_AT.minusHours(3), WEATHER_SUNNY);
+        Photo photo3 = createPhoto(spot, TEST_SHOT_AT.minusHours(2), WEATHER_SUNNY);
+        Photo photo4 = createPhoto(spot, TEST_SHOT_AT.minusHours(1), WEATHER_SUNNY);
+        Photo photo5 = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+
+        // 1 ページ目: limit=2, offset=0 → photo5, photo4
+        String page1 = String.format("{\"spotIds\":[%d],\"limit\":2,\"offset\":0}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(page1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(2)))
+                .andExpect(jsonPath("$.ids[0]", is(photo5.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.ids[1]", is(photo4.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(5)));
+
+        // 2 ページ目: limit=2, offset=2 → photo3, photo2
+        String page2 = String.format("{\"spotIds\":[%d],\"limit\":2,\"offset\":2}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(page2))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(2)))
+                .andExpect(jsonPath("$.ids[0]", is(photo3.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.ids[1]", is(photo2.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(5)));
+
+        // 3 ページ目: limit=2, offset=4 → photo1
+        String page3 = String.format("{\"spotIds\":[%d],\"limit\":2,\"offset\":4}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(page3))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(1)))
+                .andExpect(jsonPath("$.ids[0]", is(photo1.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(5)));
+    }
+
+    @Test
+    @DisplayName("Issue#112 - limit / offset 省略時はデフォルト値（30, 0）が使われる")
+    void testGetSpotPhotos_DefaultLimitAndOffset() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+
+        String body = String.format("{\"spotIds\":[%d]}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(1)))
+                .andExpect(jsonPath("$.total", is(1)));
+    }
+
+    @Test
+    @DisplayName("Issue#112 - 退会済みユーザーの写真は除外される")
+    void testGetSpotPhotos_DeletedUser_PhotosExcluded() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo activePhoto = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
 
-        // 退会済みユーザーの写真
         User deletedUser = new User();
-        deletedUser.setUsername("退会済み");
-        deletedUser.setEmail("deleted-spot@example.com");
+        deletedUser.setUsername("退会済み112");
+        deletedUser.setEmail("deleted-112@example.com");
         deletedUser.setPasswordHash("hashedpassword");
         deletedUser.setRole(CodeConstants.ROLE_USER);
         deletedUser.setDeletedAt(java.time.LocalDateTime.now());
@@ -1076,16 +1226,135 @@ public class SpotControllerTest {
         Photo deletedUserPhoto = new Photo();
         deletedUserPhoto.setSpotId(spot.getSpotId());
         deletedUserPhoto.setUserId(deletedUser.getId());
-        deletedUserPhoto.setS3ObjectKey("uploads/" + deletedUser.getId() + "/deleted-user-photo.jpg");
+        deletedUserPhoto.setS3ObjectKey("uploads/" + deletedUser.getId() + "/deleted-photo.jpg");
         deletedUserPhoto.setShotAt(TEST_SHOT_AT.plusHours(1));
         deletedUserPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         photoRepository.save(deletedUserPhoto);
 
-        // 退会済みユーザーの写真はIDリストに含まれないこと
-        mockMvc.perform(get(SPOTS_ENDPOINT + "/" + spot.getSpotId() + "/photos"))
+        String body = String.format("{\"spotIds\":[%d]}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0]", is(activePhoto.getPhotoId().intValue())));
+                .andExpect(jsonPath("$.ids", hasSize(1)))
+                .andExpect(jsonPath("$.ids[0]", is(activePhoto.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(1)));
+    }
+
+    @Test
+    @DisplayName("Issue#112 - PUBLISHED 以外のモデレーションステータスの写真は除外される")
+    void testGetSpotPhotos_OnlyPublished() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+
+        Photo published = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+        // QUARANTINED
+        Photo quarantined = createPhoto(spot, TEST_SHOT_AT.minusHours(1), WEATHER_SUNNY);
+        quarantined.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
+        photoRepository.save(quarantined);
+        // REMOVED
+        Photo removed = createPhoto(spot, TEST_SHOT_AT.minusHours(2), WEATHER_SUNNY);
+        removed.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
+        photoRepository.save(removed);
+
+        String body = String.format("{\"spotIds\":[%d]}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(1)))
+                .andExpect(jsonPath("$.ids[0]", is(published.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(1)));
+    }
+
+    @Test
+    @DisplayName("Issue#112 - 存在しない spot_id を含めてもエラーにならない（その分は単に件数0）")
+    void testGetSpotPhotos_NonExistentSpotId_NoError() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo photo = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+
+        String body = String.format("{\"spotIds\":[%d, 99999]}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(1)))
+                .andExpect(jsonPath("$.ids[0]", is(photo.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(1)));
+    }
+
+    @Test
+    @DisplayName("Issue#112 - spot_ids が空の場合は400")
+    void testGetSpotPhotos_EmptySpotIds_BadRequest() throws Exception {
+        String body = "{\"spotIds\":[]}";
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#112 - spot_ids が省略された場合は400")
+    void testGetSpotPhotos_MissingSpotIds_BadRequest() throws Exception {
+        String body = "{}";
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#112 - limit が101以上の場合は400")
+    void testGetSpotPhotos_LimitTooLarge_BadRequest() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        String body = String.format("{\"spotIds\":[%d],\"limit\":101}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#112 - limit が0の場合は400")
+    void testGetSpotPhotos_LimitZero_BadRequest() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        String body = String.format("{\"spotIds\":[%d],\"limit\":0}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#112 - limit が負値の場合は400")
+    void testGetSpotPhotos_LimitNegative_BadRequest() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        String body = String.format("{\"spotIds\":[%d],\"limit\":-1}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#112 - offset が負値の場合は400")
+    void testGetSpotPhotos_OffsetNegative_BadRequest() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        String body = String.format("{\"spotIds\":[%d],\"offset\":-1}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#112 - max_age_days が負値の場合は400")
+    void testGetSpotPhotos_MaxAgeDaysNegative_BadRequest() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        String body = String.format("{\"spotIds\":[%d],\"maxAgeDays\":-1}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
     }
 
     // --- Issue#54: モデレーションステータスによるフィルタリングテスト ---
@@ -1145,31 +1414,6 @@ public class SpotControllerTest {
                         .param(PARAM_WEST, BOUND_WEST))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
-    }
-
-    @Test
-    @DisplayName("Issue#54 - PUBLISHED写真のみがスポット写真一覧に含まれる")
-    void testGetSpotPhotoIds_OnlyPublishedPhotosReturned() throws Exception {
-        // Given: PUBLISHED1枚、QUARANTINED1枚、REMOVED1枚
-        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
-
-        Photo publishedPhoto = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
-        publishedPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
-        photoRepository.save(publishedPhoto);
-
-        Photo quarantinedPhoto = createPhoto(spot, TEST_SHOT_AT.minusHours(1), WEATHER_SUNNY);
-        quarantinedPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
-        photoRepository.save(quarantinedPhoto);
-
-        Photo removedPhoto = createPhoto(spot, TEST_SHOT_AT.minusHours(2), WEATHER_SUNNY);
-        removedPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
-        photoRepository.save(removedPhoto);
-
-        // When & Then: PUBLISHEDの1枚のみ返る
-        mockMvc.perform(get(SPOTS_ENDPOINT + "/" + spot.getSpotId() + "/photos"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0]", is(publishedPhoto.getPhotoId().intValue())));
     }
 
     // ヘルパーメソッド
