@@ -3,6 +3,7 @@ import { render, screen, waitFor, act } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import MapView from './MapView'
 import { _resetRateLimitBurstTracker } from '../utils/notifyIfRateLimited'
+import i18n from '../i18n'
 
 /**
  * Issue#53: Google Maps API から Mapbox API への移行
@@ -1853,6 +1854,51 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       } finally {
         vi.useRealTimers()
       }
+    })
+  })
+
+  // ============================================================
+  // Issue#107: マップの地名ラベルを表示言語と連動させる
+  // 表示言語を切り替えると map.setLanguage(newLang) が呼ばれ、
+  // マップ上の地名ラベルが新しい言語で表示されることを検証する
+  // ============================================================
+  describe('Issue#107: 表示言語と連動するマップ言語', () => {
+    afterEach(async () => {
+      // 他テストへの影響を避けるため日本語に戻す
+      await i18n.changeLanguage('ja')
+    })
+
+    it('Issue#107 - 言語を ja → en に切り替えると map.setLanguage("en") が呼ばれる', async () => {
+      await i18n.changeLanguage('ja')
+      setupFetchMock()
+
+      render(<MapView />)
+
+      // マウント直後の setLanguage 呼び出し（初期言語反映）はクリアして、
+      // 言語切替に伴う呼び出しのみを検証する
+      mockMap.setLanguage.mockClear()
+
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+
+      expect(mockMap.setLanguage).toHaveBeenCalledWith('en')
+    })
+
+    it('Issue#107 - 言語を ja → zh-CN に切り替えると map.setLanguage("zh-Hans") が呼ばれる（Mapbox言語コードに変換）', async () => {
+      await i18n.changeLanguage('ja')
+      setupFetchMock()
+
+      render(<MapView />)
+
+      mockMap.setLanguage.mockClear()
+
+      await act(async () => {
+        await i18n.changeLanguage('zh-CN')
+      })
+
+      // MAPBOX_LANGUAGE_MAP により 'zh-CN' → 'zh-Hans' に変換される
+      expect(mockMap.setLanguage).toHaveBeenCalledWith('zh-Hans')
     })
   })
 })

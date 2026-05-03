@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { act, render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { InlineMapPicker, DEFAULT_CENTER } from './InlineMapPicker'
+import i18n from '../i18n'
 
 /**
  * Issue#53: Google Maps API から Mapbox API への移行
@@ -655,6 +656,52 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       // 両方が呼ばれる: 位置情報キャッシュチェック → null → IP国判定キャッシュチェック
       expect(mockGetLastGeolocationCacheIMP).toHaveBeenCalled()
       expect(mockGetGeoCountryCacheIMP).toHaveBeenCalled()
+    })
+  })
+
+  // ============================================================
+  // Issue#107: マップの地名ラベルを表示言語と連動させる
+  // 表示言語を切り替えると map.setLanguage(newLang) が呼ばれ、
+  // マップ上の地名ラベルが新しい言語で表示されることを検証する
+  // ============================================================
+  describe('Issue#107: 表示言語と連動するマップ言語', () => {
+    afterEach(async () => {
+      // i18n.changeLanguage は内部的に Promise を解決するため real timer に切り替えてから戻す
+      vi.useRealTimers()
+      await i18n.changeLanguage('ja')
+    })
+
+    it('Issue#107 - 言語を ja → en に切り替えると map.setLanguage("en") が呼ばれる', async () => {
+      vi.useRealTimers()
+      await i18n.changeLanguage('ja')
+
+      render(<InlineMapPicker {...defaultProps} />)
+
+      // マウント直後の setLanguage 呼び出し（初期言語反映）はクリアして、
+      // 言語切替に伴う呼び出しのみを検証する
+      mockMap.setLanguage.mockClear()
+
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+
+      expect(mockMap.setLanguage).toHaveBeenCalledWith('en')
+    })
+
+    it('Issue#107 - 言語を ja → zh-TW に切り替えると map.setLanguage("zh-Hant") が呼ばれる（Mapbox言語コードに変換）', async () => {
+      vi.useRealTimers()
+      await i18n.changeLanguage('ja')
+
+      render(<InlineMapPicker {...defaultProps} />)
+
+      mockMap.setLanguage.mockClear()
+
+      await act(async () => {
+        await i18n.changeLanguage('zh-TW')
+      })
+
+      // MAPBOX_LANGUAGE_MAP により 'zh-TW' → 'zh-Hant' に変換される
+      expect(mockMap.setLanguage).toHaveBeenCalledWith('zh-Hant')
     })
   })
 })
