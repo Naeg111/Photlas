@@ -38,6 +38,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final EmailService emailService;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final EmailTemplateService emailTemplateService;
 
     @Value("${app.frontend-url:https://photlas.jp}")
     private String frontendUrl;
@@ -47,12 +48,14 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             EmailService emailService,
-            EmailVerificationTokenRepository emailVerificationTokenRepository) {
+            EmailVerificationTokenRepository emailVerificationTokenRepository,
+            EmailTemplateService emailTemplateService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.emailService = emailService;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
+        this.emailTemplateService = emailTemplateService;
     }
 
     /**
@@ -230,6 +233,10 @@ public class AuthService {
 
     /**
      * メール認証トークンを生成して認証メールを送信
+     *
+     * <p>Issue#113: テンプレートと言語判定を {@link EmailTemplateService} に一元化。
+     * グループ A (HTTP 失敗扱い) のため、メール送信失敗時は例外を呼び出し元へ伝播し、
+     * Controller 層で {@code 500 Internal Server Error} にマップされる。</p>
      */
     private void sendVerificationEmail(User user) {
         emailVerificationTokenRepository.findByUserId(user.getId()).ifPresent(
@@ -245,30 +252,9 @@ public class AuthService {
         emailVerificationTokenRepository.save(verificationToken);
 
         String link = frontendUrl + "/verify-email?token=" + token;
-
-        if ("en".equals(user.getLanguage())) {
-            emailService.send(
-                    user.getEmail(),
-                    "【Photlas】Email Verification",
-                    "Hi " + user.getUsername() + ",\n\n" +
-                    "Thank you for registering with Photlas!\n" +
-                    "Please click the link below to verify your email address:\n\n" +
-                    link + "\n\n" +
-                    "This link will expire in 24 hours.\n\n" +
-                    "If you did not create an account, please ignore this email.\n\n" +
-                    "Photlas Team");
-        } else {
-            emailService.send(
-                    user.getEmail(),
-                    "【Photlas】メールアドレスの確認",
-                    user.getUsername() + " さん\n\n" +
-                    "Photlasへのご登録ありがとうございます。\n" +
-                    "以下のリンクをクリックして、メールアドレスを確認してください。\n\n" +
-                    link + "\n\n" +
-                    "このリンクの有効期限は24時間です。\n\n" +
-                    "このメールに心当たりがない場合は、このメールを無視してください。\n\n" +
-                    "Photlas");
-        }
+        String subject = emailTemplateService.subject("email.verification", user);
+        String body = emailTemplateService.body("email.verification", user, user.getUsername(), link);
+        emailService.send(user.getEmail(), subject, body);
     }
 
 }
