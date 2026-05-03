@@ -128,6 +128,9 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const { i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const mapRef = useRef<MapboxMap | null>(null)
+  // Issue#107: 言語切替時に setLanguage を呼ぶ useEffect の依存対象として、
+  // ref とは別にロード済みの map インスタンスを state でも保持する。
+  const [mapForLanguage, setMapForLanguage] = useState<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
   // moveMapTo呼び出し時のターゲット座標（onMoveEndで正確な座標を返すため）
@@ -319,7 +322,18 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const handleLoad = useCallback((e: MapEvent) => {
     const mapInstance = e.target
     mapRef.current = mapInstance
+    setMapForLanguage(mapInstance)
   }, [])
+
+  // Issue#107: 表示言語が変わったとき、Mapbox の地名ラベルも追従させる。
+  // react-map-gl の language prop は初回レンダリング時にしか反映されないため、
+  // 言語切替時は map.setLanguage() を明示的に呼んでラベルを更新する。
+  // mapRef は ref のため依存配列に含められず変更を検知できないので、
+  // 同じ map インスタンスを state でも保持して useEffect の依存対象にする。
+  useEffect(() => {
+    if (!mapForLanguage) return
+    mapForLanguage.setLanguage(mapboxLang)
+  }, [mapForLanguage, mapboxLang])
 
   // 地図移動完了時に中心座標をonPositionChangeに伝播
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
