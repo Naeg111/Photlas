@@ -57,6 +57,11 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
     List<Spot> findByCreatedByUserId(Long createdByUserId);
 
     /**
+     * Issue#108: 指定ユーザーが作成者であるスポットを新しい順に取得する
+     */
+    List<Spot> findByCreatedByUserIdOrderByCreatedAtDesc(Long createdByUserId);
+
+    /**
      * Issue#72: 写真が0件の孤立スポットを削除
      */
     @org.springframework.data.jpa.repository.Modifying

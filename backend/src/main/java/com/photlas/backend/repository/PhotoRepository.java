@@ -136,6 +136,21 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     List<Photo> findByUserId(Long userId);
 
     /**
+     * Issue#108: 指定ユーザーの全写真をカテゴリ JOIN FETCH で取得し、shotAt 降順で返す。
+     *
+     * <p>ユーザーデータエクスポートの N+1 回避用。Photo のカテゴリは ManyToMany のため、
+     * 通常クエリだと写真ごとに別 SQL が走って遅くなる（N+1 問題）。LEFT JOIN FETCH で
+     * 1 度の SQL にまとめる。</p>
+     *
+     * <p>並び順: shotAt DESC NULLS LAST, photoId DESC（撮影日時不明な写真は末尾、
+     * 同時刻は新しい photoId を先に）。</p>
+     */
+    @Query("SELECT DISTINCT p FROM Photo p LEFT JOIN FETCH p.categories " +
+           "WHERE p.userId = :userId " +
+           "ORDER BY p.shotAt DESC NULLS LAST, p.photoId DESC")
+    List<Photo> findByUserIdWithCategoriesOrderByShotAtDesc(@Param("userId") Long userId);
+
+    /**
      * Issue#72: 指定スポットに写真を投稿しているアクティブユーザーのうち最も古い投稿者を取得
      */
     @org.springframework.data.jpa.repository.Query(

@@ -1,14 +1,14 @@
 package com.photlas.backend.controller;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.photlas.backend.dto.export.UserExportData;
 import com.photlas.backend.entity.*;
 import com.photlas.backend.repository.*;
 import com.photlas.backend.service.AccountCleanupService;
+import com.photlas.backend.service.UserDataCollectorService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -43,18 +43,21 @@ public class AdminDeletedUserController {
     private final ViolationRepository violationRepository;
     private final AccountSanctionRepository accountSanctionRepository;
     private final AccountCleanupService accountCleanupService;
+    private final UserDataCollectorService userDataCollectorService;
 
     public AdminDeletedUserController(
             UserRepository userRepository,
             PhotoRepository photoRepository,
             ViolationRepository violationRepository,
             AccountSanctionRepository accountSanctionRepository,
-            AccountCleanupService accountCleanupService) {
+            AccountCleanupService accountCleanupService,
+            UserDataCollectorService userDataCollectorService) {
         this.userRepository = userRepository;
         this.photoRepository = photoRepository;
         this.violationRepository = violationRepository;
         this.accountSanctionRepository = accountSanctionRepository;
         this.accountCleanupService = accountCleanupService;
+        this.userDataCollectorService = userDataCollectorService;
     }
 
     /**
@@ -157,41 +160,15 @@ public class AdminDeletedUserController {
     }
 
     /**
-     * データエクスポート
+     * データエクスポート（管理者用）。
+     * Issue#108 §4.14: UserDataCollectorService 経由で取得し camelCase + UTC ISO 8601(Z) で返す。
      */
     @GetMapping("/{userId}/export")
-    public ResponseEntity<Map<String, Object>> exportData(@PathVariable Long userId) {
-        User user = findDeletedUser(userId);
-
-        List<Photo> photos = photoRepository.findByUserId(user.getId());
-        List<Violation> violations = violationRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
-        List<AccountSanction> sanctions = accountSanctionRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
-
-        Map<String, Object> userData = new HashMap<>();
-        userData.put(KEY_EMAIL, user.getEmail());
-        userData.put(KEY_ORIGINAL_USERNAME, user.getOriginalUsername());
-        userData.put(KEY_CREATED_AT, formatDateTime(user.getCreatedAt()));
-        userData.put(KEY_DELETED_AT, formatDateTime(user.getDeletedAt()));
-
-        List<Map<String, Object>> photoData = photos.stream().map(p -> {
-            Map<String, Object> m = new HashMap<>();
-            m.put("photo_id", p.getPhotoId());
-            m.put("moderation_status", p.getModerationStatus());
-            m.put("shot_at", formatDateTime(p.getShotAt()));
-            m.put("latitude", p.getLatitude());
-            m.put("longitude", p.getLongitude());
-            m.put("camera_body", p.getCameraBody());
-            m.put("s3_object_key", p.getS3ObjectKey());
-            return m;
-        }).collect(Collectors.toList());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("user", userData);
-        response.put("photos", photoData);
-        response.put("violations", violations.stream().map(this::toViolationMap).collect(Collectors.toList()));
-        response.put("sanctions", sanctions.stream().map(this::toSanctionMap).collect(Collectors.toList()));
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<UserExportData> exportData(@PathVariable Long userId) {
+        // 退会済みユーザーであることを確認（findDeletedUser は退会していない場合に例外を投げる）
+        findDeletedUser(userId);
+        UserExportData data = userDataCollectorService.collectFor(userId);
+        return ResponseEntity.ok(data);
     }
 
     private User findDeletedUser(Long userId) {
@@ -240,6 +217,10 @@ public class AdminDeletedUserController {
         return m;
     }
 
+    /**
+     * 退会済みユーザー詳細・一覧用の日時フォーマット（snake_case 出力との互換性のため ISO_DATE_TIME 形式を維持）。
+     * エクスポート（{@link #exportData}）は Issue#108 で UTC ISO 8601(Z) へ移行済み。
+     */
     private String formatDateTime(LocalDateTime dt) {
         return dt != null ? dt.format(DateTimeFormatter.ISO_DATE_TIME) : null;
     }

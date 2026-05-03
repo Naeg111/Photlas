@@ -32,4 +32,9 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
      * Issue#57: 対象種別・対象IDで通報を全て削除する
      */
     void deleteByTargetTypeAndTargetId(Integer targetType, Long targetId);
+
+    /**
+     * Issue#108: 通報者本人が行った通報を新しい順で取得する（エクスポート用）
+     */
+    java.util.List<Report> findByReporterUserIdOrderByCreatedAtDesc(Long reporterUserId);
 }

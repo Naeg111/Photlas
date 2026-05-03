@@ -26,4 +26,9 @@ public interface LocationSuggestionRepository extends JpaRepository<LocationSugg
             Long photoId, Integer status, boolean emailSent);
 
     long countBySuggesterIdAndCreatedAtAfter(Long suggesterId, LocalDateTime after);
+
+    /**
+     * Issue#108: 提案者 ID で位置情報修正提案を新しい順に取得する。
+     */
+    List<LocationSuggestion> findBySuggesterIdOrderByCreatedAtDesc(Long suggesterId);
 }
