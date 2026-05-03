@@ -1322,17 +1322,23 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter.mock.calls.length).toBeGreaterThan(callsBeforeStop)
     })
 
-    it('Issue#111-followup - wheel / zoomstart / rotatestart / pitchstart のリスナーは登録されない', () => {
+    it('Issue#111-followup - wheel / rotatestart / pitchstart のリスナーは登録されない', () => {
       setupFetchMock()
       render(<MapView />)
       // これらのイベントは「回転を停止させない」ため、リスナー自体を登録しない
       expect(findHandler('wheel')).toBeUndefined()
-      expect(findHandler('zoomstart')).toBeUndefined()
       expect(findHandler('rotatestart')).toBeUndefined()
       expect(findHandler('pitchstart')).toBeUndefined()
     })
 
-    it('Issue#111-followup - 回転中の setCenter は緯度を 10（GLOBE_FIXED_LAT）に固定する', async () => {
+    it('Issue#111-followup - zoomstart / zoomend のリスナーは登録される（rAF 一時停止用）', () => {
+      setupFetchMock()
+      render(<MapView />)
+      expect(findHandler('zoomstart')).toBeDefined()
+      expect(findHandler('zoomend')).toBeDefined()
+    })
+
+    it('Issue#111-followup - 回転中の setCenter は現在の緯度を維持する（強制スナップしない）', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
       // ユーザーが緯度 35 度に panning した状態を再現
@@ -1343,13 +1349,49 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         vi.advanceTimersByTime(5100)
       })
 
-      // setCenter の引数の lat は常に 10
+      // setCenter の引数の lat は 35（現在値）であって 10 ではない
       const setCenterCalls = mockMap.setCenter.mock.calls
       expect(setCenterCalls.length).toBeGreaterThan(0)
       for (const call of setCenterCalls) {
         const [, lat] = call[0] as [number, number]
-        expect(lat).toBe(10)
+        expect(lat).toBe(35)
       }
+    })
+
+    it('Issue#111-followup - zoomstart で rAF が一時停止し、zoomend で再開する（+/-ボタン対応）', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(0)
+
+      render(<MapView />)
+
+      // 回転開始まで進める
+      await act(async () => {
+        vi.advanceTimersByTime(5100)
+      })
+      expect(mockMap.setCenter).toHaveBeenCalled()
+
+      const zoomstartHandler = findHandler('zoomstart')![1] as Function
+      const zoomendHandler = findHandler('zoomend')![1] as Function
+
+      // zoomstart で一時停止
+      await act(async () => {
+        zoomstartHandler({})
+        vi.advanceTimersByTime(500)
+      })
+      const callsDuringPause = mockMap.setCenter.mock.calls.length
+
+      // 一時停止中はさらに時間を進めても setCenter が増えない
+      await act(async () => {
+        vi.advanceTimersByTime(500)
+      })
+      expect(mockMap.setCenter.mock.calls.length).toBe(callsDuringPause)
+
+      // zoomend で再開
+      await act(async () => {
+        zoomendHandler({})
+        vi.advanceTimersByTime(200)
+      })
+      expect(mockMap.setCenter.mock.calls.length).toBeGreaterThan(callsDuringPause)
     })
 
     it('Issue#111-followup - ズーム0〜4では dragRotate / touchPitch / touchZoomRotate.rotation が無効化される', () => {
