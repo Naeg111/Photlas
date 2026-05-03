@@ -119,8 +119,14 @@ public class UserServiceTest {
                     ? "[Photlas] Password Reset" : "【Photlas】パスワードの再設定";
             case "email.verification" -> en
                     ? "[Photlas] Email Verification" : "【Photlas】メールアドレスの確認";
-            // フェーズ 3 以降で追加予定: emailChangeConfirm, emailChangeNotifyOld,
-            // accountDeletion.{normal,oauthOnly,hybrid}, moderation*, locationSuggestion*
+            case "email.emailChangeConfirm" -> en
+                    ? "[Photlas] Email Change Confirmation" : "【Photlas】メールアドレス変更の確認";
+            case "email.emailChangeNotifyOld" -> en
+                    ? "[Photlas] Email Change Requested" : "【Photlas】メールアドレスの変更がリクエストされました";
+            case "email.accountDeletion.normal", "email.accountDeletion.hybrid",
+                 "email.accountDeletion.oauthOnly" -> en
+                    ? "[Photlas] Account Deletion Confirmation" : "【Photlas】アカウント削除のご確認";
+            // フェーズ 4-5 で追加予定: moderation*, locationSuggestion*
             default -> key;
         };
     }
@@ -129,6 +135,10 @@ public class UserServiceTest {
         String key = inv.getArgument(0);
         User user = inv.getArgument(1);
         boolean en = user != null && "en".equals(user.getLanguage());
+        Object[] argv = inv.getArguments();
+        // 後続引数 (args) — accountDeletion では args[2]=username, args[3]=providerName
+        String username = argv.length > 2 && argv[2] != null ? argv[2].toString() : "";
+        String providerName = argv.length > 3 && argv[3] != null ? argv[3].toString() : "";
         // 既存テストが本文中に期待する代表的な日英フレーズを返す
         return switch (key) {
             case "email.passwordChanged" -> en
@@ -140,6 +150,21 @@ public class UserServiceTest {
             case "email.verification" -> en
                     ? "Thank you for registering with Photlas!"
                     : "Photlasへのご登録ありがとうございます。";
+            case "email.emailChangeConfirm" -> en
+                    ? "We received a request to change your email address."
+                    : "メールアドレスの変更リクエストを受け付けました。";
+            case "email.emailChangeNotifyOld" -> en
+                    ? "An email address change has been requested for your account."
+                    : "お客様のアカウントでメールアドレスの変更がリクエストされました。";
+            case "email.accountDeletion.normal" -> en
+                    ? username + " — Your account has been deleted. 90 days. email and password to log in."
+                    : username + " さん。アカウントの削除が完了しました。90日間保持されます。メールアドレスとパスワードでログインしてください。";
+            case "email.accountDeletion.hybrid" -> en
+                    ? username + " — Your account has been deleted. 90 days. email and password or " + providerName
+                    : username + " さん。アカウントの削除が完了しました。90日間保持されます。メールアドレスとパスワード、または " + providerName + " で再度サインインしてください。";
+            case "email.accountDeletion.oauthOnly" -> en
+                    ? username + " — Your account has been deleted. 90 days. sign in with " + providerName
+                    : username + " さん。アカウントの削除が完了しました。90日間保持されます。" + providerName + " で再度サインインしてください。";
             default -> "stub-body:" + key;
         };
     }
@@ -737,23 +762,13 @@ public class UserServiceTest {
 
     // ===== Issue#81 Phase 4d: 退会メール 3 パターン × 2 言語 + revoke 統合 =====
 
-    /**
-     * NORMAL ja ゴールデンテスト用の既存文面（Round 12 / Q15 / [4-B]）。
-     * <p>リリース前の退会メール文面を一字一句変えないことを担保する。
-     * リファクタ後も本文字列と完全一致するよう実装する。
-     */
-    private static final String EXPECTED_NORMAL_JA_BODY_TEMPLATE =
-            "%s さん\n\n" +
-            "アカウントの削除が完了しました。\n\n" +
-            "お客様のデータは90日間保持されます。90日経過後、すべてのデータが完全に削除されます。\n\n" +
-            "アカウントを復旧したい場合は、90日以内にメールアドレスとパスワードでログインしてください。\n\n" +
-            "この操作に心当たりがない場合は、至急以下までご連絡ください。\n" +
-            "support@photlas.jp\n\n" +
-            "Photlas\nsupport@photlas.jp";
-
     @Test
-    @DisplayName("[Issue#81 4-B NORMAL ja Golden] 通常ユーザー ja: 退会メール本文は既存文面と完全一致")
-    void testDeleteAccount_NormalUser_Ja_BodyMatchesExistingVerbatim() {
+    @DisplayName("[Issue#81 4-B NORMAL ja] 通常ユーザー ja: 退会メールが email.accountDeletion.normal キーで送信される")
+    void testDeleteAccount_NormalUser_Ja_UsesNormalDeletionKey() {
+        // Issue#113 で本文文言は properties ファイル (email.accountDeletion.normal.{subject,body}) へ移行。
+        // 本テストは「NORMAL ユーザーは normal キーで送信される」という委譲契約を検証する。
+        // 実際の文面ロックは AccountServiceMultiLanguageTest（@SpringBootTest で properties を読む）と
+        // EmailTemplateConsistencyTest（5 言語ファイルのキー集合検証）で担保する。
         User user = normalUserJa();
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH)).thenReturn(true);
@@ -762,8 +777,8 @@ public class UserServiceTest {
 
         accountService.deleteAccount(TEST_EMAIL, CURRENT_PASSWORD, false);
 
-        String expected = String.format(EXPECTED_NORMAL_JA_BODY_TEMPLATE, TEST_USERNAME);
-        verify(emailService).send(eq(TEST_EMAIL), contains("アカウント削除"), eq(expected));
+        verify(emailTemplateService).body(eq("email.accountDeletion.normal"),
+                any(User.class), eq(TEST_USERNAME));
     }
 
     @Test
