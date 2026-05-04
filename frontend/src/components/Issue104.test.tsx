@@ -144,14 +144,16 @@ describe('Issue#104: TermsAgreementDialog', () => {
     expect(startButton).toBeDisabled()
   })
 
-  it('チェックボックス 2 つを両方チェックすると「利用を開始する」ボタンが活性化', async () => {
+  it('チェックボックス 3 つすべてチェックすると「利用を開始する」ボタンが活性化', async () => {
+    // Issue#109: 年齢確認チェックボックスが追加されたため、チェックボックス数が 2 → 3 に変更
     const user = userEvent.setup()
     renderWithI18n(<TermsAgreementDialog {...defaultProps} />)
     const checkboxes = screen.getAllByRole('checkbox')
-    expect(checkboxes).toHaveLength(2)
+    expect(checkboxes).toHaveLength(3)
 
     await user.click(checkboxes[0])
     await user.click(checkboxes[1])
+    await user.click(checkboxes[2])
 
     const startButton = screen.getByRole('button', { name: '利用を開始する' })
     expect(startButton).not.toBeDisabled()
