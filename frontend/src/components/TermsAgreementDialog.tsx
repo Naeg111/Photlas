@@ -42,9 +42,11 @@ export default function TermsAgreementDialog({
   const { logout, getAuthToken } = useAuth()
   const [agreedTerms, setAgreedTerms] = useState(false)
   const [agreedPrivacy, setAgreedPrivacy] = useState(false)
+  // Issue#109: 13 歳以上であることの自己申告
+  const [ageConfirmed, setAgeConfirmed] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const canStart = agreedTerms && agreedPrivacy && !isSubmitting
+  const canStart = agreedTerms && agreedPrivacy && ageConfirmed && !isSubmitting
 
   /** 「利用を開始する」押下: POST /agree-terms 後に親に通知 */
   const handleStart = async () => {
@@ -133,6 +135,19 @@ export default function TermsAgreementDialog({
                 {t('auth.privacyPolicy')}
               </button>
               {t('auth.termsAgreement.agreeToPrivacyPolicySuffix')}
+            </label>
+          </div>
+
+          {/* Issue#109: 13 歳以上であることの自己申告 */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="terms-agreement-age"
+              checked={ageConfirmed}
+              onCheckedChange={(checked) => setAgeConfirmed(checked === true)}
+              disabled={isSubmitting}
+            />
+            <label htmlFor="terms-agreement-age" className="text-sm">
+              {t('auth.ageConfirmation')}
             </label>
           </div>
         </div>
