@@ -222,6 +222,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('正しいメールアドレスの形式で入力してください')).toBeInTheDocument()
@@ -237,6 +239,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Pass1')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードは8文字以上20文字以内で入力してください')).toBeInTheDocument()
@@ -267,6 +271,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'PasswordAbc')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードには数字を1文字以上含めてください')).toBeInTheDocument()
@@ -282,6 +288,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'PASSWORD123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードにはローマ字小文字を1文字以上含めてください')).toBeInTheDocument()
@@ -297,6 +305,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードにはローマ字大文字を1文字以上含めてください')).toBeInTheDocument()
@@ -312,6 +322,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password@123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードに記号を含めることはできません')).toBeInTheDocument()
@@ -327,6 +339,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password456')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       expect(screen.getByText('パスワードが一致しません')).toBeInTheDocument()
@@ -368,6 +382,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -379,6 +395,10 @@ describe('SignUpDialog', () => {
               username: 'テストユーザー',
               email: 'test@example.com',
               password: 'Password123',
+              // Issue#109: 利用規約・プライバシー・年齢確認の同意フィールド
+              agreedToTerms: true,
+              agreedToPrivacy: true,
+              ageConfirmed: true,
             }),
           })
         )
@@ -403,6 +423,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -460,6 +482,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -523,6 +547,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       // 画像アップロードが失敗しても登録自体は成功する
@@ -546,6 +572,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -565,6 +593,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -588,9 +618,11 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
       await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
-      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
-      await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
-      // 年齢確認チェックボックスは意図的にクリックしない
+      // 規約・プライバシーはチェックするが、年齢確認は意図的にクリックしない
+      const termsCheckbox = screen.getByRole('checkbox', { name: /利用規約/ })
+      await user.click(termsCheckbox)
+      const privacyCheckbox = screen.getByRole('checkbox', { name: /プライバシーポリシー/ })
+      await user.click(privacyCheckbox)
 
       expect(screen.getByRole('button', { name: '登録する' })).toBeDisabled()
     })
@@ -752,6 +784,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -795,6 +829,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
       await user.click(screen.getByRole('button', { name: '登録する' }))
 
       await waitFor(() => {
@@ -838,6 +874,8 @@ describe('SignUpDialog', () => {
       await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
       await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
       await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      // Issue#109: 年齢確認も同時にチェック
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
     }
 
     it('登録で429を受信したらレート制限メッセージをインライン表示する', async () => {

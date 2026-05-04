@@ -74,6 +74,8 @@ export function SignUpDialog({
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   // Issue#104: プライバシーポリシー同意チェックボックス追加
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false)
+  // Issue#109: 13 歳以上であることの自己申告チェックボックス追加
+  const [ageConfirmed, setAgeConfirmed] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -181,6 +183,10 @@ export function SignUpDialog({
           username: displayName,
           email,
           password,
+          // Issue#109: 利用規約・プライバシー・年齢確認の同意フラグをバックエンドへ送信
+          agreedToTerms,
+          agreedToPrivacy,
+          ageConfirmed,
         },
       })
       const token = data.token
@@ -508,6 +514,17 @@ export function SignUpDialog({
                   {t('auth.termsAgreement.agreeToPrivacyPolicySuffix')}
                 </label>
               </div>
+              {/* Issue#109: 13 歳以上であることの自己申告チェックボックス */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="age-confirmation"
+                  checked={ageConfirmed}
+                  onCheckedChange={(checked) => setAgeConfirmed(checked === true)}
+                />
+                <label htmlFor="age-confirmation" className="text-sm">
+                  {t('auth.ageConfirmation')}
+                </label>
+              </div>
             </div>
           </div>
 
@@ -523,7 +540,7 @@ export function SignUpDialog({
             <Button
               className="flex-1"
               onClick={handleSubmit}
-              disabled={isLoading || registerCooldown.isOnCooldown || !displayName.trim() || !email.trim() || !password || !confirmPassword || !agreedToTerms || !agreedToPrivacy}
+              disabled={isLoading || registerCooldown.isOnCooldown || !displayName.trim() || !email.trim() || !password || !confirmPassword || !agreedToTerms || !agreedToPrivacy || !ageConfirmed}
               aria-live="polite"
             >
               {registerCooldown.isOnCooldown

@@ -118,6 +118,7 @@
       }
     },
     "privacyPolicy": "プライバシーポリシー",
+    "ageConfirmation": "私は13歳以上です",
     "termsAgreement": {
       "title": "ご利用にあたって",
       "start": "利用を開始する",
