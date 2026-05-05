@@ -56,14 +56,8 @@ public class AiPredictionCacheService {
         String token = UUID.randomUUID().toString();
         Date now = new Date();
         Date expiresAt = Date.from(now.toInstant().plus(TTL));
-        try {
-            String json = objectMapper.writeValueAsString(result);
-            repository.save(new AiPredictionCache(token, json, expiresAt, now));
-            return token;
-        } catch (JsonProcessingException e) {
-            // LabelMappingResult は単純な record で必ずシリアライズできるため、ここに到達するのは異常
-            throw new IllegalStateException("AI 予測結果の JSON シリアライズに失敗しました", e);
-        }
+        repository.save(new AiPredictionCache(token, serialize(result), expiresAt, now));
+        return token;
     }
 
     /**
@@ -97,15 +91,21 @@ public class AiPredictionCacheService {
      *
      * <p>cron は午前3時固定（投稿が少ない時間帯）。期限切れトークンが
      * 短時間残ること自体は害がないため日次実行で十分。</p>
-     *
-     * @return 削除した行数（参考値、現状は常に 0 を返す。Spring Data の派生クエリは件数を返さないため）
      */
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
-    public int cleanupExpired() {
+    public void cleanupExpired() {
         repository.deleteByExpiresAtBefore(new Date());
         logger.info("AI 予測結果キャッシュ: 期限切れトークンのクリーンアップを実行しました");
-        return 0;
+    }
+
+    private String serialize(LabelMappingResult result) {
+        try {
+            return objectMapper.writeValueAsString(result);
+        } catch (JsonProcessingException e) {
+            // LabelMappingResult は単純な record で必ずシリアライズできるため、ここに到達するのは異常
+            throw new IllegalStateException("AI 予測結果の JSON シリアライズに失敗しました", e);
+        }
     }
 
     private LabelMappingResult deserialize(AiPredictionCache cache) {
