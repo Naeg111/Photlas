@@ -109,3 +109,6 @@ design-backup/
 # CLAUDE.md (project / system level) は Git 管理対象外
 CLAUDE.md
 **/CLAUDE.md
+
+# Issue#117: build-maintenance-function.sh が生成する CloudFront Function 成果物
+scripts/cloudfront-function/maintenance.js
