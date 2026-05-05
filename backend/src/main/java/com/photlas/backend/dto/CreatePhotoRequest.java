@@ -63,6 +63,14 @@ public class CreatePhotoRequest {
 
     private Double cropZoom;
 
+    /**
+     * Issue#119: AI 解析で発行された analyzeToken（任意）。
+     * フロントが {@code POST /api/v1/photos/analyze} で受け取り、投稿時にそのまま送信する。
+     * 本フィールドが設定されている場合、バックエンドは {@code ai_prediction_cache} から
+     * AI 結果を取り出して {@code photo_ai_predictions} に保存する。
+     */
+    private String analyzeToken;
+
     // Getters and Setters
     public String getPlaceName() {
         return placeName;
@@ -214,5 +222,13 @@ public class CreatePhotoRequest {
 
     public void setCropZoom(Double cropZoom) {
         this.cropZoom = cropZoom;
+    }
+
+    public String getAnalyzeToken() {
+        return analyzeToken;
+    }
+
+    public void setAnalyzeToken(String analyzeToken) {
+        this.analyzeToken = analyzeToken;
     }
 }

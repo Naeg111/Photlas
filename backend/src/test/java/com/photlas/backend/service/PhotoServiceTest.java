@@ -12,12 +12,17 @@ import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.AccountSuspendedException;
 import com.photlas.backend.exception.CategoryNotFoundException;
 import com.photlas.backend.exception.PhotoNotFoundException;
+import com.photlas.backend.dto.LabelMappingResult;
+import com.photlas.backend.entity.PhotoAiPrediction;
 import com.photlas.backend.repository.AccountSanctionRepository;
 import com.photlas.backend.repository.CategoryRepository;
+import com.photlas.backend.repository.PhotoAiPredictionRepository;
 import com.photlas.backend.repository.PhotoCategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -64,6 +69,15 @@ public class PhotoServiceTest {
 
     @Autowired
     private AccountSanctionRepository accountSanctionRepository;
+
+    @Autowired
+    private AiPredictionCacheService aiPredictionCacheService;
+
+    @Autowired
+    private PhotoAiPredictionRepository photoAiPredictionRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private User testUser;
     private Category landscapeCategory;
@@ -1237,5 +1251,156 @@ public class PhotoServiceTest {
                 org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_KEY),
                 org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_VALUE_REGISTERED)
         );
+    }
+
+    // ========== Issue#119: analyzeToken 経由の AI 予測結果保存 ==========
+
+    private CreatePhotoRequest baseRequest(String s3Key) {
+        CreatePhotoRequest request = new CreatePhotoRequest();
+        request.setS3ObjectKey(s3Key);
+        request.setTakenAt("2026-01-01T12:00:00Z");
+        request.setLatitude(new BigDecimal("35.658581"));
+        request.setLongitude(new BigDecimal("139.745433"));
+        return request;
+    }
+
+    private LabelMappingResult aiResult(List<Integer> categories, Integer weather) {
+        Map<String, Float> confidence = new java.util.HashMap<>();
+        for (Integer c : categories) {
+            confidence.put(String.valueOf(c), 85.0f);
+        }
+        if (weather != null) {
+            confidence.put(String.valueOf(weather), 90.0f);
+        }
+        return new LabelMappingResult(categories, weather, confidence);
+    }
+
+    @Test
+    @DisplayName("Issue#119 - createPhoto: analyzeToken なしの場合は photo_ai_predictions に保存されない")
+    void createPhoto_withoutAnalyzeToken_doesNotSavePrediction() {
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/no-token.jpg");
+        request.setCategories(List.of("風景"));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(photoAiPredictionRepository.findAll()).isEmpty();
+        assertThat(response).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Issue#119 - createPhoto: 有効な analyzeToken で AI 予測結果が photo_ai_predictions に保存される")
+    void createPhoto_withValidAnalyzeToken_savesPrediction() {
+        String token = aiPredictionCacheService.save(
+                aiResult(List.of(CodeConstants.CATEGORY_NATURE), CodeConstants.WEATHER_SUNNY)
+        );
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/with-token.jpg");
+        request.setCategories(List.of("風景"));
+        request.setAnalyzeToken(token);
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        List<PhotoAiPrediction> predictions = photoAiPredictionRepository.findAll();
+        assertThat(predictions).hasSize(1);
+        PhotoAiPrediction p = predictions.get(0);
+        assertThat(p.getPhotoId()).isEqualTo(response.getPhoto().getPhotoId());
+        assertThat(p.getModelName()).isEqualTo("rekognition-detect-labels");
+        assertThat(p.getPredictedWeather()).isEqualTo(CodeConstants.WEATHER_SUNNY);
+        assertThat(p.isUserDiffFlag()).isFalse(); // AI=[201], user=[201] → 重複あり
+    }
+
+    @Test
+    @DisplayName("Issue#119 - createPhoto: AI 予測カテゴリとユーザー選択が重複ゼロなら user_diff_flag=true")
+    void createPhoto_categoriesNoOverlap_setsUserDiffFlagTrue() {
+        // AI=自然風景(201), ユーザー=都市(202) → 重複ゼロ
+        String token = aiPredictionCacheService.save(
+                aiResult(List.of(CodeConstants.CATEGORY_NATURE), null)
+        );
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/diff.jpg");
+        request.setCategories(List.of("都市・街並み"));
+        request.setAnalyzeToken(token);
+
+        photoService.createPhoto(request, testUser.getEmail());
+
+        PhotoAiPrediction p = photoAiPredictionRepository.findAll().get(0);
+        assertThat(p.isUserDiffFlag()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Issue#119 - createPhoto: AI 予測カテゴリが空ならユーザー選択にかかわらず user_diff_flag=false")
+    void createPhoto_aiPredictedEmpty_userDiffFlagFalse() {
+        String token = aiPredictionCacheService.save(aiResult(List.of(), null));
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/empty-ai.jpg");
+        request.setCategories(List.of("風景"));
+        request.setAnalyzeToken(token);
+
+        photoService.createPhoto(request, testUser.getEmail());
+
+        PhotoAiPrediction p = photoAiPredictionRepository.findAll().get(0);
+        assertThat(p.isUserDiffFlag()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Issue#119 - createPhoto: 期限切れ analyzeToken は無視され、写真投稿は成功する")
+    void createPhoto_expiredAnalyzeToken_isIgnored() {
+        // 期限切れトークンを直接挿入（findValid() が空を返す状況を再現）
+        // 簡単に: 存在しない UUID を渡す = findValid() が Optional.empty()
+        String fakeToken = java.util.UUID.randomUUID().toString();
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/expired.jpg");
+        request.setCategories(List.of("風景"));
+        request.setAnalyzeToken(fakeToken);
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        assertThat(response).isNotNull();
+        assertThat(photoAiPredictionRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#119 - createPhoto: AI 予測結果保存後、analyzeToken はキャッシュから削除される（使い切り）")
+    void createPhoto_consumesAnalyzeToken() {
+        String token = aiPredictionCacheService.save(
+                aiResult(List.of(CodeConstants.CATEGORY_NATURE), null)
+        );
+        assertThat(aiPredictionCacheService.findValid(token)).isPresent();
+
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/consume.jpg");
+        request.setCategories(List.of("風景"));
+        request.setAnalyzeToken(token);
+
+        photoService.createPhoto(request, testUser.getEmail());
+
+        // 投稿後はトークンが削除されている
+        assertThat(aiPredictionCacheService.findValid(token)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#119 - createPhoto: predicted_categories と confidence は JSON 文字列で保存される")
+    void createPhoto_savesCategoriesAndConfidenceAsJson() throws Exception {
+        Map<String, Float> conf = Map.of(
+                String.valueOf(CodeConstants.CATEGORY_NATURE), 92.5f,
+                String.valueOf(CodeConstants.WEATHER_SUNNY), 88.0f
+        );
+        LabelMappingResult ai = new LabelMappingResult(
+                List.of(CodeConstants.CATEGORY_NATURE),
+                CodeConstants.WEATHER_SUNNY,
+                conf
+        );
+        String token = aiPredictionCacheService.save(ai);
+
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/json.jpg");
+        request.setCategories(List.of("風景"));
+        request.setAnalyzeToken(token);
+        photoService.createPhoto(request, testUser.getEmail());
+
+        PhotoAiPrediction p = photoAiPredictionRepository.findAll().get(0);
+        List<Integer> deserializedCategories = objectMapper.readValue(
+                p.getPredictedCategories(), new TypeReference<List<Integer>>() {});
+        Map<String, Float> deserializedConfidence = objectMapper.readValue(
+                p.getConfidence(), new TypeReference<Map<String, Float>>() {});
+
+        assertThat(deserializedCategories).containsExactly(CodeConstants.CATEGORY_NATURE);
+        assertThat(deserializedConfidence)
+                .containsEntry(String.valueOf(CodeConstants.CATEGORY_NATURE), 92.5f)
+                .containsEntry(String.valueOf(CodeConstants.WEATHER_SUNNY), 88.0f);
     }
 }

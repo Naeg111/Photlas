@@ -1,11 +1,15 @@
 package com.photlas.backend.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.CreatePhotoRequest;
+import com.photlas.backend.dto.LabelMappingResult;
 import com.photlas.backend.dto.PhotoDetailResponse;
 import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.dto.UpdatePhotoRequest;
 import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
+import com.photlas.backend.entity.PhotoAiPrediction;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.AccountSanction;
@@ -18,11 +22,15 @@ import com.photlas.backend.repository.AccountSanctionRepository;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.ModerationDetailRepository;
+import com.photlas.backend.repository.PhotoAiPredictionRepository;
 import com.photlas.backend.repository.PhotoCategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +64,9 @@ public class PhotoService {
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
     private static final String ERROR_SPOT_NOT_FOUND = "スポットが見つかりません";
 
+    /** Issue#119: photo_ai_predictions.model_name の固定値（現状 Rekognition のみ）。 */
+    private static final String AI_MODEL_NAME = "rekognition-detect-labels";
+
     private final PhotoRepository photoRepository;
     private final SpotRepository spotRepository;
     private final CategoryRepository categoryRepository;
@@ -66,6 +77,9 @@ public class PhotoService {
     private final PhotoCategoryRepository photoCategoryRepository;
     private final ReportRepository reportRepository;
     private final ModerationDetailRepository moderationDetailRepository;
+    private final PhotoAiPredictionRepository photoAiPredictionRepository;
+    private final AiPredictionCacheService aiPredictionCacheService;
+    private final ObjectMapper objectMapper;
 
     public PhotoService(
             PhotoRepository photoRepository,
@@ -77,7 +91,10 @@ public class PhotoService {
             AccountSanctionRepository accountSanctionRepository,
             PhotoCategoryRepository photoCategoryRepository,
             ReportRepository reportRepository,
-            ModerationDetailRepository moderationDetailRepository
+            ModerationDetailRepository moderationDetailRepository,
+            PhotoAiPredictionRepository photoAiPredictionRepository,
+            AiPredictionCacheService aiPredictionCacheService,
+            ObjectMapper objectMapper
     ) {
         this.photoRepository = photoRepository;
         this.spotRepository = spotRepository;
@@ -89,6 +106,9 @@ public class PhotoService {
         this.photoCategoryRepository = photoCategoryRepository;
         this.reportRepository = reportRepository;
         this.moderationDetailRepository = moderationDetailRepository;
+        this.photoAiPredictionRepository = photoAiPredictionRepository;
+        this.aiPredictionCacheService = aiPredictionCacheService;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -161,6 +181,11 @@ public class PhotoService {
 
         logger.info("写真を投稿しました: photoId={}, userId={}, spotId={}",
                    savedPhoto.getPhotoId(), user.getId(), spot.getSpotId());
+
+        // Issue#119: analyzeToken が指定されていれば AI 予測結果を保存
+        if (request.getAnalyzeToken() != null) {
+            savePhotoAiPrediction(savedPhoto.getPhotoId(), request);
+        }
 
         // Issue#100: サムネイルのタグもベストエフォートで registered に更新する。
         // Lambda が先にサムネイルを生成済みであれば即座に追従し、まだ未生成なら本処理は失敗するが
@@ -715,4 +740,13 @@ public class PhotoService {
         return cameraInfo;
     }
 
+    // ========== Issue#119: AI 予測結果の保存 ==========
+
+    /**
+     * analyzeToken に紐づく AI 予測結果を {@code photo_ai_predictions} に保存する。
+     * Phase 6 Red 段階: スタブ実装（次の Green で本実装）。
+     */
+    private void savePhotoAiPrediction(Long photoId, CreatePhotoRequest request) {
+        // Phase 6 Red 段階: 何もしない
+    }
 }
