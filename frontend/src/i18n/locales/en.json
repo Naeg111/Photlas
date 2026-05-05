@@ -466,6 +466,11 @@
     "starrysky": "Starry Sky",
     "other": "Other"
   },
+  "aiPrefill": {
+    "banner": "Some fields were auto-filled by AI. Please review the content.",
+    "analyzing": "Analyzing with AI...",
+    "error": "Auto-fill failed. Please select categories and weather conditions manually."
+  },
   "weather": {
     "sunny": "Sunny",
     "cloudy": "Cloudy",
