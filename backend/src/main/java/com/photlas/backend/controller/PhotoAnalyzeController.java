@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 /**
  * Issue#119: 写真の AI 解析エンドポイント。
  *
@@ -30,8 +32,11 @@ public class PhotoAnalyzeController {
     }
 
     @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<PhotoAnalyzeResponse> analyze(@RequestParam("file") MultipartFile file) {
-        // Phase 5 Red 段階: スタブ実装
-        return ResponseEntity.ok(PhotoAnalyzeResponse.empty());
+    public ResponseEntity<PhotoAnalyzeResponse> analyze(@RequestParam("file") MultipartFile file) throws IOException {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("ファイルが空です");
+        }
+        PhotoAnalyzeResponse response = photoAnalyzeService.analyze(file.getBytes(), file.getContentType());
+        return ResponseEntity.ok(response);
     }
 }
