@@ -466,6 +466,10 @@
     "starrysky": "星空",
     "other": "その他"
   },
+  "aiPrefill": {
+    "banner": "いくつかの項目を AI が自動入力しました。内容をご確認ください。",
+    "analyzing": "AI 解析中..."
+  },
   "weather": {
     "sunny": "晴れ",
     "cloudy": "曇り",

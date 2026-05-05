@@ -111,6 +111,8 @@ interface PhotoContributionDialogProps {
     cropCenterX?: number
     cropCenterY?: number
     cropZoom?: number
+    /** Issue#119: AI 解析で発行された analyzeToken（任意）。バックエンドが photo_ai_predictions に紐づける */
+    analyzeToken?: string
   }) => Promise<void>
 }
 
@@ -145,9 +147,16 @@ export function PhotoContributionDialog({
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [cropZoom, setCropZoom] = useState(1)
   const [croppedArea, setCroppedArea] = useState<Area | null>(null)
+  // Issue#119: AI プリフィル関連
+  const [analyzeToken, setAnalyzeToken] = useState<string | null>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [aiPrefillApplied, setAiPrefillApplied] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Issue#119: AI analyze の AbortController と debounce タイマー
+  const analyzeAbortRef = useRef<AbortController | null>(null)
+  const analyzeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // スクロール時の選択取り消し機構（モバイルタッチ対応）
   const lastToggleRef = useRef<(() => void) | null>(null)
@@ -198,8 +207,27 @@ export function PhotoContributionDialog({
       setCrop({ x: 0, y: 0 })
       setCropZoom(1)
       setCroppedArea(null)
+      // Issue#119: AI プリフィル関連の state とタイマー・AbortController をリセット
+      setAnalyzeToken(null)
+      setIsAnalyzing(false)
+      setAiPrefillApplied(false)
+      if (analyzeDebounceRef.current) {
+        clearTimeout(analyzeDebounceRef.current)
+        analyzeDebounceRef.current = null
+      }
+      if (analyzeAbortRef.current) {
+        analyzeAbortRef.current.abort()
+        analyzeAbortRef.current = null
+      }
     }
   }, [open])
+
+  // Issue#119: トリミング領域が確定したら debounce で AI 解析を呼び出す（Phase 8）
+  // Red 段階: スタブ（次の Green で本実装）
+  useEffect(() => {
+    if (!previewUrl || !croppedArea) return
+    // Phase 8 Red 段階: 何もしない
+  }, [previewUrl, croppedArea])
 
   // ダイアログ表示時にスクロール位置を先頭にリセット
   useEffect(() => {
@@ -376,6 +404,7 @@ export function PhotoContributionDialog({
           cropCenterX: croppedArea ? (croppedArea.x + croppedArea.width / 2) / 100 : 0.5,
           cropCenterY: croppedArea ? (croppedArea.y + croppedArea.height / 2) / 100 : 0.5,
           cropZoom,
+          analyzeToken: analyzeToken ?? undefined,
         })
       }
 
@@ -466,6 +495,15 @@ export function PhotoContributionDialog({
               {t('photo.contributeDescription')}
             </DialogDescription>
           </DialogHeader>
+          {/* Issue#119: AI プリフィル成功時の控えめなバナー */}
+          {aiPrefillApplied && (
+            <p
+              data-testid="ai-prefill-banner"
+              className="text-sm text-gray-500 mt-2"
+            >
+              {t('aiPrefill.banner')}
+            </p>
+          )}
         </div>
 
         {/* スクロール可能なフォーム部分 */}
@@ -671,8 +709,17 @@ export function PhotoContributionDialog({
             </div>
 
             {/* カテゴリ選択 */}
-            <div className="space-y-3">
+            <div className="space-y-3 relative">
               <Label className="text-base">{t('photo.categoryRequired')}</Label>
+              {/* Issue#119: AI 解析中はカテゴリ選択を無効化（スピナーで覆う） */}
+              {isAnalyzing && (
+                <div
+                  data-testid="ai-analyzing-categories"
+                  className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 rounded"
+                >
+                  <span className="text-sm text-gray-600">{t('aiPrefill.analyzing')}</span>
+                </div>
+              )}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {PHOTO_CATEGORIES.map((category) => (
                   <div
@@ -725,8 +772,17 @@ export function PhotoContributionDialog({
             </div>
 
             {/* 天気選択 */}
-            <div className="space-y-3">
+            <div className="space-y-3 relative">
               <Label className="text-base">{t('photo.weatherLabel')}</Label>
+              {/* Issue#119: AI 解析中は天気選択を無効化（スピナーで覆う） */}
+              {isAnalyzing && (
+                <div
+                  data-testid="ai-analyzing-weather"
+                  className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 rounded"
+                >
+                  <span className="text-sm text-gray-600">{t('aiPrefill.analyzing')}</span>
+                </div>
+              )}
               <div className="grid grid-cols-4 gap-3">
                 {CODE_WEATHER_OPTIONS.map((option) => {
                   const label = WEATHER_LABELS[option.value] ?? ''
