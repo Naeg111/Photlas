@@ -2,6 +2,12 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { analyzePhoto, type PhotoAnalyzeResponse } from '../utils/photoAnalyzeApi'
 import { cropImageToBlob } from '../utils/cropImageToBlob'
 import { CATEGORY_LABELS } from '../utils/codeConstants'
+import { trackAiPrefillEvent, compareAiPrefill } from '../utils/aiPrefillAnalytics'
+
+/** カテゴリ名 → ID の逆引きマップ（CATEGORY_LABELS の逆） */
+const CATEGORY_NAME_TO_ID: Record<string, number> = Object.fromEntries(
+  Object.entries(CATEGORY_LABELS).map(([id, name]) => [name, Number(id)])
+)
 
 /** Issue#119: ユーザーがトリミング調整を止めてから AI 解析を発火するまでの待ち時間 */
 const ANALYZE_DEBOUNCE_MS = 1000
@@ -161,6 +167,8 @@ export function PhotoContributionDialog({
   const [analyzeToken, setAnalyzeToken] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [aiPrefillApplied, setAiPrefillApplied] = useState(false)
+  // Issue#119: GA4 accepted/modified 判定用に AI 元結果を保持
+  const aiOriginalResponseRef = useRef<PhotoAnalyzeResponse | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -281,6 +289,9 @@ export function PhotoContributionDialog({
       // （Issue#119 4.6: フォームは空欄のまま手動入力でフォロー）。
       if (!isAbortError(error)) {
         toast.error(t('aiPrefill.error'))
+        trackAiPrefillEvent('ai_prefill_failed', {
+          error_type: error instanceof Error ? error.name : 'unknown',
+        })
       }
     } finally {
       if (analyzeAbortRef.current === controller) {
@@ -297,6 +308,8 @@ export function PhotoContributionDialog({
     if (response.analyzeToken) {
       setAnalyzeToken(response.analyzeToken)
     }
+    // accepted/modified 判定用に AI 元結果を保持
+    aiOriginalResponseRef.current = response
 
     const prefillCategoryNames = response.categories
       .map((id) => CATEGORY_LABELS[id])
@@ -317,6 +330,10 @@ export function PhotoContributionDialog({
     // バナーは「実際にプリフィルが発生した」場合のみ表示
     if (prefillCategoryNames.length > 0 || response.weather) {
       setAiPrefillApplied(true)
+      trackAiPrefillEvent('ai_prefill_shown', {
+        categories_count: prefillCategoryNames.length,
+        weather_filled: response.weather !== null,
+      })
     }
   }, [])
 
@@ -473,6 +490,28 @@ export function PhotoContributionDialog({
     }, UPLOAD_STATUS.PROGRESS_INTERVAL)
 
     try {
+      // Issue#119: AI 採用/修正イベントを onSubmit 直前に送信
+      const aiOriginal = aiOriginalResponseRef.current
+      if (aiOriginal && analyzeToken) {
+        const userCategoryIds = selectedCategories
+          .map((name) => CATEGORY_NAME_TO_ID[name])
+          .filter((id): id is number => typeof id === 'number')
+        const comparison = compareAiPrefill({
+          aiCategories: aiOriginal.categories,
+          aiWeather: aiOriginal.weather,
+          userCategories: userCategoryIds,
+          userWeather: selectedWeather === '' ? null : selectedWeather,
+        })
+        if (comparison.isModified) {
+          trackAiPrefillEvent('ai_prefill_modified', {
+            modification_type: comparison.modificationType,
+            user_diff_flag: comparison.userDiffFlag,
+          })
+        } else {
+          trackAiPrefillEvent('ai_prefill_accepted')
+        }
+      }
+
       if (onSubmit) {
         await onSubmit({
           file: selectedFile,
