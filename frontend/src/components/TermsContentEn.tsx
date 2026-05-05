@@ -180,6 +180,11 @@ export function TermsContentEn() {
             suggestion, the shooting location information will be updated
             accordingly.
           </li>
+          {/* Issue#119: Operator may modify AI-classification metadata */}
+          <li>
+            The Operator may modify metadata such as categories and weather
+            conditions assigned to posts in order to improve search accuracy.
+          </li>
         </ol>
       </section>
 
