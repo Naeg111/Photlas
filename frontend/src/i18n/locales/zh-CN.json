@@ -436,6 +436,11 @@
     "starrysky": "星空",
     "other": "其他"
   },
+  "aiPrefill": {
+    "banner": "部分项目已由 AI 自动填写。请确认内容。",
+    "analyzing": "AI 分析中...",
+    "error": "自动填写失败。请手动选择类别和天气。"
+  },
   "weather": {
     "sunny": "晴天",
     "cloudy": "阴天",
