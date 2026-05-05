@@ -8,6 +8,7 @@
 import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { toast } from 'sonner'
 import { PhotoContributionDialog } from './PhotoContributionDialog'
 
 // motion / map / search-js / extractExif のモック（PhotoContributionDialog.test.tsx と同等）
@@ -310,5 +311,44 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     })
     expect(screen.queryByTestId('ai-prefill-banner')).not.toBeInTheDocument()
     expect(screen.queryByTestId('ai-analyzing-categories')).not.toBeInTheDocument()
+  })
+
+  // ========== Phase 9: エラー時のトースト通知 ==========
+
+  it('Issue#119 - analyze エラー時にトースト通知 toast.error が呼ばれる', async () => {
+    mockAnalyzePhoto.mockRejectedValue(new Error('AI service down'))
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    await selectFileAndTriggerCrop(user)
+    await act(async () => {
+      vi.advanceTimersByTime(DEBOUNCE_MS)
+    })
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled()
+    })
+    // 文言は i18n キー aiPrefill.error の日本語文
+    expect(toast.error).toHaveBeenCalledWith(
+      '自動入力できませんでした。お手数ですがカテゴリ・天候を選択してください。'
+    )
+  })
+
+  it('Issue#119 - AbortError ではトースト通知 toast.error は呼ばれない', async () => {
+    // AbortError を模倣
+    const abortError = new DOMException('aborted', 'AbortError')
+    mockAnalyzePhoto.mockRejectedValue(abortError)
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    await selectFileAndTriggerCrop(user)
+    await act(async () => {
+      vi.advanceTimersByTime(DEBOUNCE_MS)
+    })
+
+    await waitFor(() => {
+      expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
+    })
+    expect(toast.error).not.toHaveBeenCalled()
   })
 })
