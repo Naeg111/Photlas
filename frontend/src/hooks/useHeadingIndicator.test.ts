@@ -12,17 +12,24 @@ import { useHeadingIndicator, HEADING_INDICATOR_STORAGE_KEY } from './useHeading
 describe('useHeadingIndicator', () => {
   let addEventListenerSpy: ReturnType<typeof vi.spyOn>
   let removeEventListenerSpy: ReturnType<typeof vi.spyOn>
+  let rafSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     vi.clearAllMocks()
     // localStorage のモックは setup.ts で global に設定されている
     addEventListenerSpy = vi.spyOn(window, 'addEventListener')
     removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
+    // RAF を同期実行に差し替え（テスト中の状態反映を act() 完了時に確定させるため）
+    rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      cb(performance.now())
+      return 0
+    })
   })
 
   afterEach(() => {
     addEventListenerSpy.mockRestore()
     removeEventListenerSpy.mockRestore()
+    rafSpy.mockRestore()
   })
 
   describe('初期状態', () => {
