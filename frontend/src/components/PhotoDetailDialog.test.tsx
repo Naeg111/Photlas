@@ -217,14 +217,23 @@ interface RenderPhotoDetailDialogProps {
   open?: boolean
   spotIds?: number[]
   onClose?: () => void
+  onPhotoViewed?: (photoId: number) => void
 }
 
 function renderPhotoDetailDialog({
   open = true,
   spotIds = [TEST_SPOT_ID],
   onClose = () => {},
+  onPhotoViewed,
 }: RenderPhotoDetailDialogProps = {}) {
-  return render(<PhotoDetailDialog open={open} spotIds={spotIds} onClose={onClose} />)
+  return render(
+    <PhotoDetailDialog
+      open={open}
+      spotIds={spotIds}
+      onClose={onClose}
+      onPhotoViewed={onPhotoViewed}
+    />,
+  )
 }
 
 describe('PhotoDetailDialog Component - Issue#14', () => {
@@ -2285,6 +2294,45 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       // ダイアログが正常にレンダリングされ、写真が読み込まれる（レスポンス形式が正しく解釈されている）
       await waitFor(() => {
         expect(screen.getByText(/1\s*\/\s*2/)).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('Issue#118 - onPhotoViewed コールバック（登録壁カウント連携）', () => {
+    it('Issue#118 - 写真詳細を最初に表示したとき、その photoId で onPhotoViewed が呼ばれる', async () => {
+      const photoIds = [TEST_PHOTO_ID_1]
+      const photoDetail = createMockPhotoDetail()
+      const mockFetch = setupMockFetch(photoIds, [photoDetail])
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      const onPhotoViewed = vi.fn()
+      renderPhotoDetailDialog({ onPhotoViewed })
+
+      await waitFor(() => {
+        expect(onPhotoViewed).toHaveBeenCalledWith(TEST_PHOTO_ID_1)
+      })
+    })
+
+    it('Issue#118 - onPhotoViewed が指定されていなくてもクラッシュしない', async () => {
+      const photoIds = [TEST_PHOTO_ID_1]
+      const photoDetail = createMockPhotoDetail()
+      const mockFetch = setupMockFetch(photoIds, [photoDetail])
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      // onPhotoViewed を渡さずレンダリング
+      expect(() => renderPhotoDetailDialog()).not.toThrow()
+      await waitFor(() => {
+        expect(screen.queryByTestId('mapbox-map')).not.toBeNull()
       })
     })
   })
