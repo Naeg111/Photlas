@@ -4,7 +4,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "./ui/accordion";
-import { Search, LocateFixed } from "lucide-react";
+import { Search, LocateFixed, Navigation } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { CompassIcon } from "./CompassIcon";
 import { ScrollableInfoDialog } from "./ScrollableInfoDialog";
@@ -78,6 +78,14 @@ export function HowToUseDialog({ open, onOpenChange }: Readonly<HowToUseDialogPr
                 <div>
                   <h4 className="font-semibold">{t('howToUse.currentLocation')}</h4>
                   <p>{t('howToUse.currentLocationText')}</p>
+                </div>
+              </div>
+              {/* Issue#115: 方角インジケーター ON/OFF トグルの説明 */}
+              <div className="flex items-start gap-2">
+                <Navigation className="w-5 h-5 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold">{t('howToUse.headingIndicator')}</h4>
+                  <p>{t('howToUse.headingIndicatorText')}</p>
                 </div>
               </div>
             </div>

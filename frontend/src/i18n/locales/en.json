@@ -320,6 +320,8 @@
     "placeSearchText": "Search by place name or facility to move the map to that location.",
     "currentLocation": "Current Location Button",
     "currentLocationText": "Displays a marker for your current location on the map.",
+    "headingIndicator": "Facing Direction Display",
+    "headingIndicatorText": "Turning on the \"Facing direction\" switch in the menu shows a fan-shaped indicator around your location marker, pointing in the direction your device is facing. The fan keeps pointing to the same real-world direction even when you rotate the map. Turn it off when you don't need it to save battery.",
     "post": "Post Photos",
     "postPhotos": "Post Photos",
     "postPhotosText1": "Once you create an account and log in, you can post photos via the \"+\" button at the bottom right. If the photo contains location data, the shooting location is set automatically. (If not, please specify the location manually.)",
