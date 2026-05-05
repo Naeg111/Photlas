@@ -11,6 +11,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { toast } from 'sonner'
 import { PhotoContributionDialog } from './PhotoContributionDialog'
 
+// trackAiPrefillEvent のモック
+const mockTrackAiPrefillEvent = vi.fn()
+vi.mock('../utils/aiPrefillAnalytics', async () => {
+  const actual = await vi.importActual<typeof import('../utils/aiPrefillAnalytics')>(
+    '../utils/aiPrefillAnalytics'
+  )
+  return {
+    ...actual,
+    trackAiPrefillEvent: (...args: unknown[]) => mockTrackAiPrefillEvent(...args),
+  }
+})
+
 // motion / map / search-js / extractExif のモック（PhotoContributionDialog.test.tsx と同等）
 vi.mock('motion/react', () => ({
   motion: { div: ({ children, ...props }: any) => <div {...props}>{children}</div> },
@@ -350,5 +362,87 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
       expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
     })
     expect(toast.error).not.toHaveBeenCalled()
+  })
+
+  // ========== Phase 10: GA4 アナリティクスイベント送信 ==========
+
+  it('Issue#119 - プリフィル成功時に ai_prefill_shown が送信される', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    await selectFileAndTriggerCrop(user)
+    await act(async () => {
+      vi.advanceTimersByTime(DEBOUNCE_MS)
+    })
+
+    await waitFor(() => {
+      // categories=[201, 204], weather=401（beforeEach の mockAnalyzePhoto 設定値）
+      expect(mockTrackAiPrefillEvent).toHaveBeenCalledWith('ai_prefill_shown', {
+        categories_count: 2,
+        weather_filled: true,
+      })
+    })
+  })
+
+  it('Issue#119 - 空結果（プリフィル発生せず）の場合は ai_prefill_shown は送信されない', async () => {
+    mockAnalyzePhoto.mockResolvedValue({
+      categories: [],
+      weather: null,
+      confidence: {},
+      analyzeToken: null,
+    })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    await selectFileAndTriggerCrop(user)
+    await act(async () => {
+      vi.advanceTimersByTime(DEBOUNCE_MS)
+    })
+
+    await waitFor(() => {
+      expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
+    })
+    expect(mockTrackAiPrefillEvent).not.toHaveBeenCalledWith(
+      'ai_prefill_shown',
+      expect.anything()
+    )
+  })
+
+  it('Issue#119 - analyze エラー時に ai_prefill_failed が送信される', async () => {
+    mockAnalyzePhoto.mockRejectedValue(new Error('AI service down'))
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    await selectFileAndTriggerCrop(user)
+    await act(async () => {
+      vi.advanceTimersByTime(DEBOUNCE_MS)
+    })
+
+    await waitFor(() => {
+      expect(mockTrackAiPrefillEvent).toHaveBeenCalledWith(
+        'ai_prefill_failed',
+        expect.objectContaining({ error_type: expect.any(String) })
+      )
+    })
+  })
+
+  it('Issue#119 - AbortError では ai_prefill_failed は送信されない', async () => {
+    const abortError = new DOMException('aborted', 'AbortError')
+    mockAnalyzePhoto.mockRejectedValue(abortError)
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    await selectFileAndTriggerCrop(user)
+    await act(async () => {
+      vi.advanceTimersByTime(DEBOUNCE_MS)
+    })
+
+    await waitFor(() => {
+      expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
+    })
+    expect(mockTrackAiPrefillEvent).not.toHaveBeenCalledWith(
+      'ai_prefill_failed',
+      expect.anything()
+    )
   })
 })
