@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { LoginDialog } from './LoginDialog'
 
 /**
@@ -559,6 +559,52 @@ describe('LoginDialog', () => {
     it('OAuth の「または」区切り線は LoginDialog では表示されない（hideDivider）', () => {
       render(<LoginDialog {...defaultProps} />)
       expect(screen.queryByText('または')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Issue#118 - 登録壁経由のログイン成功イベント', () => {
+    let mockGtag: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      mockGtag = vi.fn()
+      vi.stubGlobal('gtag', mockGtag)
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ user: { id: 1, email: 'test@example.com', username: 'testuser', role: 'user' }, token: 'test-token' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('Issue#118 - triggeredFromWall=true でログイン成功時に registration_wall_login_success が送信される', async () => {
+      const user = userEvent.setup()
+      render(<LoginDialog {...defaultProps} triggeredFromWall />)
+
+      await user.type(screen.getByLabelText('メールアドレス'), 'test@example.com')
+      await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      await waitFor(() => {
+        expect(mockGtag).toHaveBeenCalledWith('event', 'registration_wall_login_success')
+      })
+    })
+
+    it('Issue#118 - triggeredFromWall=false（既定）ならログイン成功でも壁の success イベントは送信されない', async () => {
+      const user = userEvent.setup()
+      render(<LoginDialog {...defaultProps} />)
+
+      await user.type(screen.getByLabelText('メールアドレス'), 'test@example.com')
+      await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      await waitFor(() => {
+        expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
+      })
+      expect(mockGtag).not.toHaveBeenCalledWith('event', 'registration_wall_login_success')
     })
   })
 })

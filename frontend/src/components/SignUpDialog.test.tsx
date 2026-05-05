@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { SignUpDialog } from './SignUpDialog'
 import { PLATFORM_TWITTER } from '../utils/codeConstants'
 
@@ -971,6 +971,65 @@ describe('SignUpDialog', () => {
       await user.click(screen.getByRole('button', { name: '戻る' }))
 
       expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
+    })
+  })
+
+  describe('Issue#118 - 登録壁経由の登録成功イベント', () => {
+    let mockGtag: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      mockGtag = vi.fn()
+      vi.stubGlobal('gtag', mockGtag)
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    async function fillRequiredFieldsAndSubmit(user: ReturnType<typeof userEvent.setup>) {
+      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+      await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
+      await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+    }
+
+    it('Issue#118 - triggeredFromWall=true で登録成功時に registration_wall_signup_success が送信される', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ user: { id: 1 }, token: 'test-jwt-token' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+      const user = userEvent.setup()
+      render(<SignUpDialog {...defaultProps} triggeredFromWall />)
+
+      await fillRequiredFieldsAndSubmit(user)
+
+      await waitFor(() => {
+        expect(mockGtag).toHaveBeenCalledWith('event', 'registration_wall_signup_success')
+      })
+    })
+
+    it('Issue#118 - triggeredFromWall=false（既定）なら登録成功でも壁の success イベントは送信されない', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ user: { id: 1 }, token: 'test-jwt-token' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+      const user = userEvent.setup()
+      render(<SignUpDialog {...defaultProps} />)
+
+      await fillRequiredFieldsAndSubmit(user)
+
+      await waitFor(() => {
+        expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false)
+      })
+      expect(mockGtag).not.toHaveBeenCalledWith('event', 'registration_wall_signup_success')
     })
   })
 })
