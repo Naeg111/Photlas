@@ -44,6 +44,7 @@ import MapView from './components/MapView'
 import type { MapViewFilterParams, MapViewHandle } from './components/MapView'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useDialogState } from './hooks/useDialogState'
+import { useHeadingIndicator } from './hooks/useHeadingIndicator'
 import { transformMonths, transformTimesOfDay, transformWeathers, transformDeviceTypes, transformCategories, categoryNamesToIds } from './utils/filterTransform'
 import { fetchCategories, getPhotoUploadUrl, uploadFileToS3, createPhoto, ApiError, getAuthHeaders } from './utils/apiClient'
 import { EMAIL_JUST_VERIFIED_KEY } from './pages/EmailVerificationPage'
@@ -93,6 +94,8 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
   const navigate = useNavigate()
   const location = useLocation()
   const dialog = useDialogState()
+  // Issue#115: 方角インジケーター（メニューのスイッチと MapView のマーカーで共有）
+  const headingIndicator = useHeadingIndicator()
   const mapRef = useRef<MapViewHandle>(null)
   // Issue#106: autoCenter を一度だけ呼び出すためのガード
   const autoCenterCalledRef = useRef(false)
@@ -805,6 +808,8 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
         onAboutClick={() => dialog.open('about')}
         onHowToUseClick={() => dialog.open('howToUse')}
         onContactClick={() => dialog.open('contact')}
+        headingIndicatorEnabled={headingIndicator.enabled}
+        onHeadingIndicatorChange={(next) => { void headingIndicator.setEnabled(next) }}
         onTermsClick={() => dialog.open('terms')}
         onPrivacyClick={() => dialog.open('privacy')}
         onLoginClick={() => dialog.open('login')}
