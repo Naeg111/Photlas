@@ -251,6 +251,14 @@ export function PrivacyContentZhTW() {
         </ol>
       </section>
 
+      {/* Issue#119: AI 影像識別對類別・天氣的自動判別 */}
+      <section>
+        <h2 className="mb-3">第8條之2 (類別和天氣的自動判別)</h2>
+        <p className="text-sm text-gray-700">
+          發布的照片將傳送至 AWS Rekognition(東京區域)進行影像分析,用於自動判別類別和天氣。分析結果用於改進服務和提高搜尋準確性。
+        </p>
+      </section>
+
       <section>
         <h2 className="mb-3">第9條 (Cookie 等的使用)</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">

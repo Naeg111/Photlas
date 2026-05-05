@@ -295,6 +295,16 @@ export function PrivacyContentEn() {
         </ol>
       </section>
 
+      {/* Issue#119: AI image analysis for category/weather auto-detection */}
+      <section>
+        <h2 className="mb-3">Article 8.2 (Automatic Detection of Categories and Weather)</h2>
+        <p className="text-sm text-gray-700">
+          Posted photos are sent to AWS Rekognition (Tokyo region) for automatic
+          detection of categories and weather conditions. The analysis results are
+          used to improve the service and search accuracy.
+        </p>
+      </section>
+
       <section>
         <h2 className="mb-3">Article 9 (Use of Cookies)</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
