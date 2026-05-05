@@ -188,4 +188,83 @@ describe('useHeadingIndicator', () => {
       expect(result.current.heading).toBeNull()
     })
   })
+
+  // Phase4: iOS 許可フロー
+  describe('iOS 許可フロー (DeviceOrientationEvent.requestPermission)', () => {
+    type EventCtor = typeof DeviceOrientationEvent & { requestPermission?: () => Promise<'granted' | 'denied' | 'default'> }
+
+    afterEach(() => {
+      // 各テスト後に requestPermission をクリーンアップ（次のテストへの汚染防止）
+      const ctor = DeviceOrientationEvent as EventCtor
+      if ('requestPermission' in ctor) {
+        delete ctor.requestPermission
+      }
+    })
+
+    it('iOS で setEnabled(true) → 許可 granted で enabled=true、リスナー登録される', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      const requestPermissionMock = vi.fn().mockResolvedValue('granted')
+      ;(DeviceOrientationEvent as EventCtor).requestPermission = requestPermissionMock
+
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      await act(async () => { await result.current.setEnabled(true) })
+
+      expect(requestPermissionMock).toHaveBeenCalledTimes(1)
+      expect(result.current.enabled).toBe(true)
+    })
+
+    it('iOS で setEnabled(true) → 許可 denied で enabled=false、localStorage も false', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      const requestPermissionMock = vi.fn().mockResolvedValue('denied')
+      ;(DeviceOrientationEvent as EventCtor).requestPermission = requestPermissionMock
+
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      let returnValue: unknown
+      await act(async () => { returnValue = await result.current.setEnabled(true) })
+
+      expect(requestPermissionMock).toHaveBeenCalledTimes(1)
+      expect(result.current.enabled).toBe(false)
+      expect(localStorage.setItem).toHaveBeenCalledWith(HEADING_INDICATOR_STORAGE_KEY, 'false')
+      // setEnabled は許可拒否時に { granted: false } を返す（呼び出し元がトースト表示等に利用）
+      expect(returnValue).toMatchObject({ granted: false })
+    })
+
+    it('iOS で setEnabled(true) → 許可 granted で setEnabled は { granted: true } を返す', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      ;(DeviceOrientationEvent as EventCtor).requestPermission = vi.fn().mockResolvedValue('granted')
+
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      let returnValue: unknown
+      await act(async () => { returnValue = await result.current.setEnabled(true) })
+
+      expect(returnValue).toMatchObject({ granted: true })
+    })
+
+    it('setEnabled(false) では requestPermission を呼ばない', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      const requestPermissionMock = vi.fn().mockResolvedValue('granted')
+      ;(DeviceOrientationEvent as EventCtor).requestPermission = requestPermissionMock
+
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      await act(async () => { await result.current.setEnabled(false) })
+
+      expect(requestPermissionMock).not.toHaveBeenCalled()
+    })
+
+    it('非iOS（requestPermission 未定義）では setEnabled(true) は { granted: true } を返す', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      // requestPermission を定義しない（非iOS パス）
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      let returnValue: unknown
+      await act(async () => { returnValue = await result.current.setEnabled(true) })
+
+      expect(returnValue).toMatchObject({ granted: true })
+      expect(result.current.enabled).toBe(true)
+    })
+  })
 })
