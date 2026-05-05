@@ -1901,4 +1901,365 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setLanguage).toHaveBeenCalledWith('zh-Hans')
     })
   })
+
+  // ============================================================
+  // Issue#116: flyTo のズームレベル差による暗転制御
+  //
+  // showShootingLocationPin / clearShootingLocationPin / flyToPlace に
+  // 「距離 OR ズーム差」の暗転判定を追加する。
+  // - 撮影地点プレビュー: |現在ズーム - 16| ≥ 5 で暗転
+  // - 場所検索:           |現在ズーム - 飛び先ズーム| ≥ 4 で暗転
+  // - 距離閾値（4.5度）はそのまま維持
+  // - flyTo 呼び出しに speed: 0.8 と padding: { top: 56, ... } を統一
+  // - performWarpAnimation の jumpTo にも padding を指定
+  // ============================================================
+  describe('Issue#116: flyTo のズームレベル差による暗転制御', () => {
+    /** Issue#116: TOP_UI_HEIGHT (= 56) に合わせた padding */
+    const EXPECTED_PADDING = { top: 56, bottom: 0, left: 0, right: 0 }
+
+    describe('showShootingLocationPin（撮影地点プレビュー・行き）', () => {
+      it('Issue#116 - 現在ズーム=16・距離=0 → flyTo（条件外）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(16)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        ref.current.showShootingLocationPin(35.6, 139.7)
+
+        expect(mockMap.flyTo).toHaveBeenCalledWith(
+          expect.objectContaining({
+            center: [139.7, 35.6],
+            zoom: 16,
+            speed: 0.8,
+            padding: EXPECTED_PADDING,
+          })
+        )
+        expect(mockMap.jumpTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 現在ズーム=11・距離=0 → 暗転（ズーム差5以上）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(11)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        ref.current.showShootingLocationPin(35.6, 139.7)
+
+        await waitFor(() => {
+          expect(mockMap.jumpTo).toHaveBeenCalledWith(
+            expect.objectContaining({
+              center: [139.7, 35.6],
+              zoom: 16,
+              padding: EXPECTED_PADDING,
+            })
+          )
+        })
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 現在ズーム=12・距離=0 → flyTo（ズーム差4で閾値未満）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(12)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        ref.current.showShootingLocationPin(35.6, 139.7)
+
+        expect(mockMap.flyTo).toHaveBeenCalled()
+        expect(mockMap.jumpTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 現在ズーム=21・距離=0 → 暗転（ズーム差5、ズームアウト方向）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(21)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        ref.current.showShootingLocationPin(35.6, 139.7)
+
+        await waitFor(() => {
+          expect(mockMap.jumpTo).toHaveBeenCalled()
+        })
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 現在ズーム=16・距離=10度 → 暗転（距離超過）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(16)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        // showShootingLocationPin(lat, lng) なので lng=150 で経度差 ~10.3 度
+        ref.current.showShootingLocationPin(35.6, 150.0)
+
+        await waitFor(() => {
+          expect(mockMap.jumpTo).toHaveBeenCalled()
+        })
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 現在ズーム=11・距離=10度 → 暗転（両方の条件に該当）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(11)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        ref.current.showShootingLocationPin(35.6, 150.0)
+
+        await waitFor(() => {
+          expect(mockMap.jumpTo).toHaveBeenCalled()
+        })
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('clearShootingLocationPin（撮影地点プレビュー・戻り）', () => {
+      it('Issue#116 - 元ズーム=16・距離=0 → flyTo', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(16)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        // 行き：saved zoom=16, saved center=[139.7,35.6]、距離0・ズーム差0 → flyTo
+        ref.current.showShootingLocationPin(35.6, 139.7)
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        // 戻り：現在 zoom=16・center 同一 → 距離0・ズーム差0 → flyTo
+        ref.current.clearShootingLocationPin()
+
+        expect(mockMap.flyTo).toHaveBeenCalledWith(
+          expect.objectContaining({
+            center: [139.7, 35.6],
+            zoom: 16,
+            speed: 0.8,
+            padding: EXPECTED_PADDING,
+          })
+        )
+        expect(mockMap.jumpTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 元ズーム=11・距離=0 → 暗転（ズーム差5以上）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(11)  // 行く前: zoom=11
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        // 行き：saved zoom=11、ズーム差5 → 暗転
+        ref.current.showShootingLocationPin(35.6, 139.7)
+        // 行きの jumpTo を待ってからクリア（rAF 経由のため async）
+        await waitFor(() => { expect(mockMap.jumpTo).toHaveBeenCalled() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+        // プレビュー中は zoom=16 にいる想定
+        mockMap.getZoom.mockReturnValue(16)
+
+        ref.current.clearShootingLocationPin()
+
+        // 戻り：|16 - 11| = 5 ≥ 5 → 暗転、saved center/zoom にジャンプ
+        await waitFor(() => {
+          expect(mockMap.jumpTo).toHaveBeenCalledWith(
+            expect.objectContaining({
+              center: [139.7, 35.6],
+              zoom: 11,
+              padding: EXPECTED_PADDING,
+            })
+          )
+        })
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 元ズーム=21・距離=0 → 暗転（ズーム差5、ズームアウト方向）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(21)  // 行く前: zoom=21
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        ref.current.showShootingLocationPin(35.6, 139.7)
+        await waitFor(() => { expect(mockMap.jumpTo).toHaveBeenCalled() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+        mockMap.getZoom.mockReturnValue(16)
+
+        ref.current.clearShootingLocationPin()
+
+        // |16 - 21| = 5 ≥ 5 → 暗転
+        await waitFor(() => {
+          expect(mockMap.jumpTo).toHaveBeenCalled()
+        })
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 元ズーム=16・距離=10度 → 暗転（距離超過）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(16)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        ref.current.showShootingLocationPin(35.6, 139.7)
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+        // 戻り時にユーザーは遠い場所にいる
+        mockMap.getCenter.mockReturnValue({ lng: 150.0, lat: 35.6 })
+
+        ref.current.clearShootingLocationPin()
+
+        // 距離 ~10.3 度 > 4.5 → 暗転
+        await waitFor(() => {
+          expect(mockMap.jumpTo).toHaveBeenCalled()
+        })
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('flyToPlace（場所検索）', () => {
+      it('Issue#116 - 現在ズーム=14・飛び先ズーム=14・距離=0 → flyTo', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(14)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        ref.current.flyToPlace(139.7, 35.6, 14)
+
+        expect(mockMap.flyTo).toHaveBeenCalled()
+        expect(mockMap.jumpTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 現在ズーム=14・飛び先ズーム=11・距離=0 → flyTo（差3で閾値未満）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(14)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        ref.current.flyToPlace(139.7, 35.6, 11)
+
+        expect(mockMap.flyTo).toHaveBeenCalled()
+        expect(mockMap.jumpTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 現在ズーム=14・飛び先ズーム=10・距離=0 → 暗転（差4）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(14)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        ref.current.flyToPlace(139.7, 35.6, 10)
+
+        await waitFor(() => {
+          expect(mockMap.jumpTo).toHaveBeenCalled()
+        })
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 現在ズーム=14・飛び先ズーム=14・距離=10度 → 暗転（距離超過）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(14)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        ref.current.flyToPlace(150.0, 35.6, 14)
+
+        await waitFor(() => {
+          expect(mockMap.jumpTo).toHaveBeenCalled()
+        })
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
+      })
+
+      it('Issue#116 - 現在ズーム=18・飛び先ズーム=14・距離=0 → 暗転（差4、ズームアウト方向）', async () => {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        mockMap.getZoom.mockReturnValue(18)
+
+        const ref = { current: null as any }
+        render(<MapView ref={ref} />)
+        await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+        mockMap.flyTo.mockClear()
+        mockMap.jumpTo.mockClear()
+
+        ref.current.flyToPlace(139.7, 35.6, 14)
+
+        await waitFor(() => {
+          expect(mockMap.jumpTo).toHaveBeenCalled()
+        })
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
+      })
+    })
+  })
 })
