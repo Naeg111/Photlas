@@ -61,6 +61,29 @@ function readInitialEnabled(): boolean {
   }
 }
 
+/** localStorage に enabled 値を書き込む。プライベートブラウズ等の失敗は無視する */
+function writeEnabledToStorage(value: boolean): void {
+  try {
+    localStorage.setItem(HEADING_INDICATOR_STORAGE_KEY, String(value))
+  } catch {
+    /* noop */
+  }
+}
+
+/**
+ * Issue#115 §4: 方角センサーが利用可能と推定できるかを判定する。
+ *
+ * 厳密な「センサー有無」は Web 標準で取得できない（Permissions API も geolocation 等のみ）ため、
+ * `(any-pointer: coarse)` メディアクエリで「タッチ操作可能なデバイス（モバイル/タブレット）」かを
+ * 確認する近似判定を採用する。スマートフォン/タブレットは通常センサーを持つ。
+ *
+ * matchMedia 非対応環境では true を返す（不明なら有効寄り、ユーザーが OFF にできる）。
+ */
+export function isHeadingIndicatorAvailable(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true
+  return window.matchMedia('(any-pointer: coarse)').matches
+}
+
 /**
  * iOS 13+ の DeviceOrientationEvent.requestPermission を呼んで結果を返す。
  * 関数が存在しない（非iOS / 旧バージョン）場合は granted 扱い。
@@ -139,18 +162,12 @@ export function useHeadingIndicator(): UseHeadingIndicatorReturn {
       const granted = await requestOrientationPermission()
       if (!granted) {
         setEnabledState(false)
-        try {
-          localStorage.setItem(HEADING_INDICATOR_STORAGE_KEY, 'false')
-        } catch { /* noop */ }
+        writeEnabledToStorage(false)
         return { granted: false }
       }
     }
     setEnabledState(next)
-    try {
-      localStorage.setItem(HEADING_INDICATOR_STORAGE_KEY, String(next))
-    } catch {
-      // localStorage が使えない環境（プライベートブラウズ等）でも動作は継続
-    }
+    writeEnabledToStorage(next)
     return { granted: true }
   }, [])
 

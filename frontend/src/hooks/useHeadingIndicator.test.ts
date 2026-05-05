@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { useHeadingIndicator, HEADING_INDICATOR_STORAGE_KEY } from './useHeadingIndicator'
+import { useHeadingIndicator, HEADING_INDICATOR_STORAGE_KEY, isHeadingIndicatorAvailable } from './useHeadingIndicator'
 
 /**
  * Issue#115: 方角インジケーターのフックテスト
@@ -266,5 +266,38 @@ describe('useHeadingIndicator', () => {
       expect(returnValue).toMatchObject({ granted: true })
       expect(result.current.enabled).toBe(true)
     })
+  })
+})
+
+// Issue#115 §4: デスクトップ等センサー非対応端末の検出
+describe('isHeadingIndicatorAvailable', () => {
+  it('matchMedia("(any-pointer: coarse)") が true（タッチ端末）を返す場合、true を返す', () => {
+    vi.spyOn(window, 'matchMedia').mockReturnValue({
+      matches: true,
+      media: '(any-pointer: coarse)',
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    } as MediaQueryList)
+
+    expect(isHeadingIndicatorAvailable()).toBe(true)
+  })
+
+  it('matchMedia("(any-pointer: coarse)") が false（マウス専用デスクトップ）を返す場合、false を返す', () => {
+    vi.spyOn(window, 'matchMedia').mockReturnValue({
+      matches: false,
+      media: '(any-pointer: coarse)',
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    } as MediaQueryList)
+
+    expect(isHeadingIndicatorAvailable()).toBe(false)
   })
 })
