@@ -1,7 +1,8 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
-import { User, Settings, FileText, Shield, LogOut, /* Heart, */ LogIn, CircleHelp, UserX, BookOpen, Bell, Mail } from "lucide-react";
+import { User, Settings, FileText, Shield, LogOut, /* Heart, */ LogIn, CircleHelp, UserX, BookOpen, Bell, Mail, Navigation } from "lucide-react";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
+import { Switch } from "./ui/switch";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useAuth } from "../contexts/AuthContext";
@@ -22,6 +23,12 @@ interface TopMenuPanelProps {
   onAboutClick: () => void;
   onHowToUseClick: () => void;
   onContactClick: () => void;
+  /** Issue#115: 方角インジケーター ON/OFF 状態 */
+  headingIndicatorEnabled: boolean;
+  /** Issue#115: 方角インジケーター ON/OFF 切替（OS 許可リクエストを含む） */
+  onHeadingIndicatorChange: (enabled: boolean) => void;
+  /** Issue#115: 方角インジケーターが利用可能か（デスクトップ等の非対応環境では false → スイッチ disabled）。既定: true */
+  headingIndicatorAvailable?: boolean;
   onLoginClick: () => void;
   // Issue#104: onSignUpClick を削除（メニューから「新規アカウント作成」ボタンを削除）
   onLogout: () => void;
@@ -40,6 +47,9 @@ export function TopMenuPanel({
   onAboutClick,
   onHowToUseClick,
   onContactClick,
+  headingIndicatorEnabled,
+  onHeadingIndicatorChange,
+  headingIndicatorAvailable = true,
   onTermsClick,
   onPrivacyClick,
   onLoginClick,
@@ -236,6 +246,20 @@ export function TopMenuPanel({
                 <Separator />
               </>
             )}
+            {/* Issue#115: 方角インジケーター ON/OFF スイッチ */}
+            <div className="flex items-center justify-between px-4 py-2">
+              <div className="flex items-center gap-3">
+                <Navigation className="w-5 h-5" />
+                <span className="text-sm">{t('menu.headingIndicator')}</span>
+              </div>
+              <Switch
+                checked={headingIndicatorEnabled}
+                onCheckedChange={onHeadingIndicatorChange}
+                disabled={!headingIndicatorAvailable}
+                aria-label={t('menu.headingIndicator')}
+              />
+            </div>
+            <Separator />
             {/* Issue#93: 言語スイッチ */}
             <div className="flex justify-center py-2">
               <LanguageSwitcher
