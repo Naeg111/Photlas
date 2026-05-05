@@ -113,6 +113,12 @@ const TOAST_DURATION_MS = 3000
 const TOP_UI_HEIGHT = 56
 /** 長距離移動の閾値（緯度経度の度数、約500km） */
 const LONG_DISTANCE_THRESHOLD = 4.5
+/** Issue#116: 撮影地点プレビューの目標ズーム（行き先 + 暗転判定基準） */
+const SHOOTING_PREVIEW_TARGET_ZOOM = 16
+/** Issue#116: 撮影地点プレビューの暗転判定ズーム差（|現在ズーム - 16| ≥ 5 で暗転） */
+const SHOOTING_PREVIEW_ZOOM_DIFF_THRESHOLD = 5
+/** Issue#116: 場所検索（flyToPlace）の暗転判定ズーム差（|現在ズーム - 飛び先ズーム| ≥ 4 で暗転） */
+const FLYTO_ZOOM_DIFF_THRESHOLD = 4
 const TRANSITION_FADE_MS = 500
 
 /** 地図遷移完了時のフェードアウト処理を生成（ネスト深度削減用） */
@@ -777,26 +783,52 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         const distance = Math.sqrt(
           Math.pow(lng - currentCenter.lng, 2) + Math.pow(lat - currentCenter.lat, 2)
         )
-        if (distance > LONG_DISTANCE_THRESHOLD) {
+        // Issue#116: ズーム差（target=16 との絶対差）も暗転判定の対象にする
+        const zoomDiff = Math.abs(map.getZoom() - SHOOTING_PREVIEW_TARGET_ZOOM)
+        const padding = { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 }
+        if (
+          distance > LONG_DISTANCE_THRESHOLD ||
+          zoomDiff >= SHOOTING_PREVIEW_ZOOM_DIFF_THRESHOLD
+        ) {
           setMapTransitioning(true)
           const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading)
           requestAnimationFrame(() => {
-            map.jumpTo({ center: [lng, lat], zoom: 16 })
+            map.jumpTo({ center: [lng, lat], zoom: SHOOTING_PREVIEW_TARGET_ZOOM, padding })
             map.once('idle', completeTransition)
             setTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
           })
         } else {
-          map.flyTo({ center: [lng, lat], zoom: 16 })
+          map.flyTo({ center: [lng, lat], zoom: SHOOTING_PREVIEW_TARGET_ZOOM, speed: 0.8, padding })
         }
         setShootingLocationPin({ lat, lng })
       }
     },
     clearShootingLocationPin: () => {
       if (map && savedMapStateRef.current) {
-        map.flyTo({
-          center: savedMapStateRef.current.center,
-          zoom: savedMapStateRef.current.zoom,
-        })
+        const savedZoom = savedMapStateRef.current.zoom
+        const savedCenter = savedMapStateRef.current.center
+        const currentCenter = map.getCenter()
+        const distance = Math.sqrt(
+          Math.pow(savedCenter[0] - currentCenter.lng, 2) +
+            Math.pow(savedCenter[1] - currentCenter.lat, 2)
+        )
+        // Issue#116: 行きと同じ判定基準（距離 OR ズーム差）で戻りも暗転制御する
+        const zoomDiff = Math.abs(map.getZoom() - savedZoom)
+        const padding = { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 }
+        if (
+          distance > LONG_DISTANCE_THRESHOLD ||
+          zoomDiff >= SHOOTING_PREVIEW_ZOOM_DIFF_THRESHOLD
+        ) {
+          setMapTransitioning(true)
+          const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading)
+          requestAnimationFrame(() => {
+            map.jumpTo({ center: savedCenter, zoom: savedZoom, padding })
+            map.once('idle', completeTransition)
+            setTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
+          })
+        } else {
+          map.flyTo({ center: savedCenter, zoom: savedZoom, speed: 0.8, padding })
+        }
         savedMapStateRef.current = null
       }
       setShootingLocationPin(null)
@@ -807,9 +839,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       const distance = Math.sqrt(
         Math.pow(lng - currentCenter.lng, 2) + Math.pow(lat - currentCenter.lat, 2)
       )
+      // Issue#116: 飛び先ズームとのズーム差も暗転判定の対象にする
+      const zoomDiff = Math.abs(map.getZoom() - zoom)
       const padding = { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 }
 
-      if (distance > LONG_DISTANCE_THRESHOLD) {
+      if (distance > LONG_DISTANCE_THRESHOLD || zoomDiff >= FLYTO_ZOOM_DIFF_THRESHOLD) {
         performWarpAnimation(
           map,
           { center: [lng, lat], zoom, padding },
