@@ -277,11 +277,10 @@ export function PhotoContributionDialog({
       applyAiPrefill(response)
     } catch (error) {
       // AbortError は意図的なキャンセルなので無視。
-      // 他のエラー（ネットワーク・5xx 等）は Phase 9 でトースト表示予定。
-      // 現段階では黙って続行（フォームは空欄でユーザーが手動入力可能）。
+      // 他のエラー（ネットワーク・5xx 等）はトースト通知でユーザーに案内する
+      // （Issue#119 4.6: フォームは空欄のまま手動入力でフォロー）。
       if (!isAbortError(error)) {
-        // 無音でログのみ（Phase 9 でトースト化）
-        console.warn('AI 解析失敗（フォームは空欄で続行）:', error)
+        toast.error(t('aiPrefill.error'))
       }
     } finally {
       if (analyzeAbortRef.current === controller) {
