@@ -251,6 +251,14 @@ export function PrivacyContentKo() {
         </ol>
       </section>
 
+      {/* Issue#119: AI 이미지 인식에 의한 카테고리・날씨 자동 판별 */}
+      <section>
+        <h2 className="mb-3">제8조의2 (카테고리와 날씨의 자동 판별)</h2>
+        <p className="text-sm text-gray-700">
+          게시된 사진은 카테고리와 날씨 자동 판별을 위해 AWS Rekognition(도쿄 리전)에 전송되어 이미지 분석됩니다. 분석 결과는 서비스 개선 및 검색 정확도 향상을 위해 이용됩니다.
+        </p>
+      </section>
+
       <section>
         <h2 className="mb-3">제9조 (Cookie 등의 이용)</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">

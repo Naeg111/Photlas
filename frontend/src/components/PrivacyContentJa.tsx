@@ -250,6 +250,14 @@ export function PrivacyContentJa() {
         </ol>
       </section>
 
+      {/* Issue#119: AI 画像認識によるカテゴリ・天候の自動判定 */}
+      <section>
+        <h2 className="mb-3">第8条の2（カテゴリ・天候の自動判定）</h2>
+        <p className="text-sm text-gray-700">
+          投稿された写真は、カテゴリ・天候の自動判定のため、AWS Rekognition（東京リージョン）に送信され画像解析されます。解析結果はサービスの改善および検索精度向上のために利用されます。
+        </p>
+      </section>
+
       <section>
         <h2 className="mb-3">第9条（Cookie等の利用）</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
