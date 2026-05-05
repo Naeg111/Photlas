@@ -1,0 +1,184 @@
+import { renderHook, act } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { useHeadingIndicator, HEADING_INDICATOR_STORAGE_KEY } from './useHeadingIndicator'
+
+/**
+ * Issue#115: 方角インジケーターのフックテスト
+ * Phase1 Red段階: localStorage 連携 + ON/OFF 状態 + リスナー登録/解除
+ *
+ * iOS 許可フローは Phase4 で別途追加するため本テストでは扱わない
+ * （DeviceOrientationEvent.requestPermission は未定義として扱われる = 非iOS パス）
+ */
+describe('useHeadingIndicator', () => {
+  let addEventListenerSpy: ReturnType<typeof vi.spyOn>
+  let removeEventListenerSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // localStorage のモックは setup.ts で global に設定されている
+    addEventListenerSpy = vi.spyOn(window, 'addEventListener')
+    removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
+  })
+
+  afterEach(() => {
+    addEventListenerSpy.mockRestore()
+    removeEventListenerSpy.mockRestore()
+  })
+
+  describe('初期状態', () => {
+    it('localStorage に値がない場合、enabled は false', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      const { result } = renderHook(() => useHeadingIndicator())
+      expect(result.current.enabled).toBe(false)
+    })
+
+    it('localStorage に "true" が保存されている場合、enabled は true', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      const { result } = renderHook(() => useHeadingIndicator())
+      expect(result.current.enabled).toBe(true)
+    })
+
+    it('localStorage に "false" が保存されている場合、enabled は false', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('false')
+      const { result } = renderHook(() => useHeadingIndicator())
+      expect(result.current.enabled).toBe(false)
+    })
+
+    it('localStorage キーは photlas_heading_indicator_enabled', () => {
+      expect(HEADING_INDICATOR_STORAGE_KEY).toBe('photlas_heading_indicator_enabled')
+    })
+
+    it('初期状態の heading は null', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      const { result } = renderHook(() => useHeadingIndicator())
+      expect(result.current.heading).toBeNull()
+    })
+  })
+
+  describe('setEnabled でトグル', () => {
+    it('setEnabled(true) で enabled が true になる', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      await act(async () => { await result.current.setEnabled(true) })
+
+      expect(result.current.enabled).toBe(true)
+    })
+
+    it('setEnabled(true) で localStorage に "true" が保存される', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      await act(async () => { await result.current.setEnabled(true) })
+
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        HEADING_INDICATOR_STORAGE_KEY,
+        'true'
+      )
+    })
+
+    it('setEnabled(false) で localStorage に "false" が保存される', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      await act(async () => { await result.current.setEnabled(false) })
+
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        HEADING_INDICATOR_STORAGE_KEY,
+        'false'
+      )
+    })
+  })
+
+  describe('リスナー登録/解除', () => {
+    it('enabled=true になると deviceorientation 系イベントリスナーが登録される', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      await act(async () => { await result.current.setEnabled(true) })
+
+      const orientationListenerCalls = addEventListenerSpy.mock.calls.filter(
+        ([eventName]) => eventName === 'deviceorientation' || eventName === 'deviceorientationabsolute'
+      )
+      expect(orientationListenerCalls.length).toBeGreaterThan(0)
+    })
+
+    it('enabled=true から false に切り替えるとリスナーが解除される', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      await act(async () => { await result.current.setEnabled(false) })
+
+      const removeCalls = removeEventListenerSpy.mock.calls.filter(
+        ([eventName]) => eventName === 'deviceorientation' || eventName === 'deviceorientationabsolute'
+      )
+      expect(removeCalls.length).toBeGreaterThan(0)
+    })
+
+    it('unmount 時にリスナーが解除される', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      const { unmount } = renderHook(() => useHeadingIndicator())
+
+      unmount()
+
+      const removeCalls = removeEventListenerSpy.mock.calls.filter(
+        ([eventName]) => eventName === 'deviceorientation' || eventName === 'deviceorientationabsolute'
+      )
+      expect(removeCalls.length).toBeGreaterThan(0)
+    })
+
+    it('enabled=false の状態ではリスナーは登録されない', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      renderHook(() => useHeadingIndicator())
+
+      const orientationListenerCalls = addEventListenerSpy.mock.calls.filter(
+        ([eventName]) => eventName === 'deviceorientation' || eventName === 'deviceorientationabsolute'
+      )
+      expect(orientationListenerCalls.length).toBe(0)
+    })
+  })
+
+  describe('heading の更新', () => {
+    it('webkitCompassHeading 付きイベント（iOS 形式）で heading が更新される', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      // フックがリスナーを登録するのを待つ
+      await act(async () => {
+        const event = new Event('deviceorientation') as Event & { webkitCompassHeading?: number; alpha?: number; absolute?: boolean }
+        event.webkitCompassHeading = 90
+        window.dispatchEvent(event)
+      })
+
+      // ローパスフィルタの初回値はそのまま入る
+      expect(result.current.heading).toBeCloseTo(90, 0)
+    })
+
+    it('alpha 付きイベント（Android 形式: deviceorientationabsolute, absolute=true）で heading が更新される', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      await act(async () => {
+        // alpha=270 → (360 - 270) % 360 = 90 (時計回り変換)
+        const event = new Event('deviceorientationabsolute') as Event & { alpha?: number; absolute?: boolean }
+        event.alpha = 270
+        event.absolute = true
+        window.dispatchEvent(event)
+      })
+
+      expect(result.current.heading).toBeCloseTo(90, 0)
+    })
+
+    it('alpha も webkitCompassHeading も無いイベントでは heading は変わらない', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      await act(async () => {
+        const event = new Event('deviceorientation')
+        window.dispatchEvent(event)
+      })
+
+      expect(result.current.heading).toBeNull()
+    })
+  })
+})
