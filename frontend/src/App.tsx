@@ -39,6 +39,8 @@ import PhotoDetailDialog from './components/PhotoDetailDialog'
 import { AboutDialog } from './components/AboutDialog'
 import { HowToUseDialog } from './components/HowToUseDialog'
 import { ContactDialog } from './components/ContactDialog'
+import { RegistrationWallOverlay } from './components/RegistrationWallOverlay'
+import { addViewedPhotoId, shouldShowRegistrationWall } from './utils/registrationWall'
 import { PhotoLightbox } from './components/PhotoLightbox'
 import MapView from './components/MapView'
 import type { MapViewFilterParams, MapViewHandle } from './components/MapView'
@@ -105,6 +107,29 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
   const [isMapReady, setIsMapReady] = useState(false)
   // Issue#111: 位置情報の許可状態。Permissions API 非対応ブラウザは 'unknown'。
   const [permissionState, setPermissionState] = useState<'granted' | 'denied' | 'prompt' | 'unknown' | null>(null)
+
+  // Issue#118: 登録壁の表示状態。useState 初期値で localStorage を同期評価し、
+  // 初回レンダリング時点から正しい状態にすることでフリッカーを防ぐ。
+  // shouldShowRegistrationWall 内で hasValidAuthToken() を呼び、AuthContext の
+  // useEffect 完了前（isAuthenticated=false）でも有効な JWT があれば false を返す。
+  const [showRegistrationWall, setShowRegistrationWall] = useState(() =>
+    shouldShowRegistrationWall(isAuthenticated),
+  )
+
+  // 認証状態が変化したら登録壁の表示判定を再計算する
+  useEffect(() => {
+    setShowRegistrationWall(shouldShowRegistrationWall(isAuthenticated))
+  }, [isAuthenticated])
+
+  // Issue#118: 写真詳細を開いた瞬間のカウント加算。ログイン中はカウントしない（実害もないが余計な書き込みを避ける）。
+  const handlePhotoViewed = useCallback(
+    (photoId: number) => {
+      if (isAuthenticated) return
+      addViewedPhotoId(photoId)
+      setShowRegistrationWall(shouldShowRegistrationWall(false))
+    },
+    [isAuthenticated],
+  )
 
   // Issue#111: マウント時に Permissions API で位置情報の許可状態を事前判定
   useEffect(() => {
@@ -989,6 +1014,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
             mapRef.current?.refreshSpots()
           }}
           filterMaxAgeDays={mapFilterParams?.max_age_days}
+          onPhotoViewed={handlePhotoViewed}
         />
       )}
 
@@ -1002,6 +1028,26 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
           }
         }}
         imageUrl={selectedImageUrl}
+      />
+
+      {/*
+        Issue#118: 登録壁オーバーレイ
+        about / login / signUp のいずれかが開いている間は壁を一時的に隠す。
+        - 上記ダイアログは shadcn Dialog (z-50) で壁 (z-70) より下に出るため、
+          視覚的衝突を避けるために suppression する
+        - ダイアログを閉じれば壁が自動復帰し、ログイン成功時は isAuthenticated=true で
+          showRegistrationWall も false になる
+      */}
+      <RegistrationWallOverlay
+        isOpen={
+          showRegistrationWall &&
+          !dialog.isOpen('about') &&
+          !dialog.isOpen('login') &&
+          !dialog.isOpen('signUp')
+        }
+        onClickSignUp={() => dialog.open('signUp')}
+        onClickLogin={() => dialog.open('login')}
+        onClickAbout={() => dialog.open('about')}
       />
 
     </div>

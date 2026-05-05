@@ -81,6 +81,12 @@ interface PhotoDetailDialogProps {
   singlePhotoId?: number
   /** フィルター条件（スポット写真ID取得時に適用） */
   filterMaxAgeDays?: number
+  /**
+   * Issue#118: 写真詳細を開いた / 別の写真に切り替えた瞬間に呼ばれる。
+   * 未ログインユーザーの登録壁トリガーとして閲覧履歴に photoId を記録するために使用する。
+   * ログイン済みユーザーが渡しても安全（呼び出し側が冪等性と未ログイン判定を担当）。
+   */
+  onPhotoViewed?: (photoId: number) => void
 }
 
 // Issue#88: APIレスポンスの型定義（PhotoDetailResponse形式）
@@ -392,7 +398,7 @@ const DetailMiniMap = React.memo(function DetailMiniMap({
   )
 })
 
-export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted, singlePhotoId, filterMaxAgeDays }: Readonly<PhotoDetailDialogProps>) {
+export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted, singlePhotoId, filterMaxAgeDays, onPhotoViewed }: Readonly<PhotoDetailDialogProps>) {
   const { t, i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const { isAuthenticated, user } = useAuth()
@@ -602,6 +608,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     if (currentPhotoId && !photoDetailsRef.current.has(currentPhotoId)) {
       fetchPhotoDetail(currentPhotoId)
     }
+    // Issue#118: 現在の写真IDを登録壁カウントへ通知（重複は呼び出し側で吸収される）
+    if (currentPhotoId) {
+      onPhotoViewed?.(currentPhotoId)
+    }
     // 前後1枚の写真データを事前取得
     const prevId = photoIds[currentIndex - 1]
     const nextId = photoIds[currentIndex + 1]
@@ -616,7 +626,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         img.src = photo.thumbnailUrl
       }
     }
-  }, [currentPhotoId, currentIndex, photoIds, fetchPhotoDetail])
+  }, [currentPhotoId, currentIndex, photoIds, fetchPhotoDetail, onPhotoViewed])
 
   // Issue#112: 末尾 PHOTO_PAGE_PRELOAD_THRESHOLD 枚以内に近づいたら次ページを裏で取得
   useEffect(() => {
