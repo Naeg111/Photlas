@@ -10,9 +10,21 @@ import {
   addViewedPhotoId,
   clearViewedPhotoIds,
   shouldShowRegistrationWall,
+  hasValidAuthToken,
   REGISTRATION_WALL_VIEW_LIMIT,
   VIEWED_PHOTO_IDS_STORAGE_KEY,
 } from './registrationWall'
+
+/**
+ * テスト用の JWT を生成するヘルパー。
+ * header.payload.signature の形式で、payload は base64url エンコードされた JSON。
+ * Issue#118 のフリッカー対策では payload.exp のみを参照するため、署名は適当な文字列でよい。
+ */
+function makeJwt(expUnixSeconds: number): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+  const payload = btoa(JSON.stringify({ exp: expUnixSeconds }))
+  return `${header}.${payload}.signature`
+}
 
 describe('registrationWall - Issue#118', () => {
   let store: Map<string, string>
@@ -162,7 +174,89 @@ describe('registrationWall - Issue#118', () => {
     })
   })
 
+  describe('hasValidAuthToken', () => {
+    it('Issue#118 - localStorage/sessionStorage にトークンが無ければ false', () => {
+      expect(hasValidAuthToken()).toBe(false)
+    })
+
+    it('Issue#118 - localStorage に有効期限内のトークンがあれば true', () => {
+      const futureExp = Math.floor(Date.now() / 1000) + 60 * 60 // 1時間後
+      store.set('auth_token', makeJwt(futureExp))
+      expect(hasValidAuthToken()).toBe(true)
+    })
+
+    it('Issue#118 - sessionStorage に有効期限内のトークンがあっても true', () => {
+      const sessionStore = new Map<string, string>()
+      const futureExp = Math.floor(Date.now() / 1000) + 60 * 60
+      sessionStore.set('auth_token', makeJwt(futureExp))
+      Object.defineProperty(global, 'sessionStorage', {
+        value: {
+          getItem: (key: string) => (sessionStore.has(key) ? sessionStore.get(key)! : null),
+          setItem: (key: string, value: string) => {
+            sessionStore.set(key, value)
+          },
+          removeItem: (key: string) => {
+            sessionStore.delete(key)
+          },
+        },
+        configurable: true,
+        writable: true,
+      })
+      expect(hasValidAuthToken()).toBe(true)
+    })
+
+    it('Issue#118 - 期限切れのトークンなら false', () => {
+      const pastExp = Math.floor(Date.now() / 1000) - 60 // 1分前
+      store.set('auth_token', makeJwt(pastExp))
+      expect(hasValidAuthToken()).toBe(false)
+    })
+
+    it('Issue#118 - 形式が壊れたトークンなら false（堅牢性）', () => {
+      store.set('auth_token', 'not-a-jwt')
+      expect(hasValidAuthToken()).toBe(false)
+    })
+
+    it('Issue#118 - payload が JSON でないトークンなら false（堅牢性）', () => {
+      store.set('auth_token', `${btoa('header')}.${btoa('not-json')}.sig`)
+      expect(hasValidAuthToken()).toBe(false)
+    })
+
+    it('Issue#118 - exp フィールドが無いトークンは false（保守的に未認証扱い）', () => {
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+      const payload = btoa(JSON.stringify({ sub: 'user' }))
+      store.set('auth_token', `${header}.${payload}.sig`)
+      expect(hasValidAuthToken()).toBe(false)
+    })
+
+    it('Issue#118 - localStorage 読み込みが例外を投げても false（堅牢性）', () => {
+      Object.defineProperty(global, 'localStorage', {
+        value: {
+          getItem: () => {
+            throw new Error('localStorage unavailable')
+          },
+          setItem: () => {},
+          removeItem: () => {},
+        },
+        configurable: true,
+        writable: true,
+      })
+      expect(hasValidAuthToken()).toBe(false)
+    })
+  })
+
   describe('shouldShowRegistrationWall', () => {
+    beforeEach(() => {
+      Object.defineProperty(global, 'sessionStorage', {
+        value: {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        },
+        configurable: true,
+        writable: true,
+      })
+    })
+
     it('Issue#118 - ログイン中は常に false を返す', () => {
       for (let i = 1; i <= 20; i++) {
         addViewedPhotoId(i)
@@ -185,6 +279,28 @@ describe('registrationWall - Issue#118', () => {
       for (let i = 1; i <= 10; i++) {
         addViewedPhotoId(i)
       }
+      expect(shouldShowRegistrationWall(false)).toBe(true)
+    })
+
+    it('Issue#118 - フリッカー対策: 引数 isLoggedIn=false でも localStorage に有効なトークンがあれば false', () => {
+      // シナリオ: ログイン済みユーザーがリロードした直後の初回レンダリング。
+      //   AuthContext の useEffect がまだ走っておらず isAuthenticated=false だが、
+      //   localStorage には有効な JWT が残っている。閲覧履歴が10件以上あっても
+      //   登録壁を出してはいけない（フリッカー防止）。
+      for (let i = 1; i <= 10; i++) {
+        addViewedPhotoId(i)
+      }
+      const futureExp = Math.floor(Date.now() / 1000) + 60 * 60
+      store.set('auth_token', makeJwt(futureExp))
+      expect(shouldShowRegistrationWall(false)).toBe(false)
+    })
+
+    it('Issue#118 - 期限切れトークンが残っていても閲覧10件なら true（実質ログアウト扱い）', () => {
+      for (let i = 1; i <= 10; i++) {
+        addViewedPhotoId(i)
+      }
+      const pastExp = Math.floor(Date.now() / 1000) - 60
+      store.set('auth_token', makeJwt(pastExp))
       expect(shouldShowRegistrationWall(false)).toBe(true)
     })
   })
