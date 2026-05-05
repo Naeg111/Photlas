@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TopMenuPanel } from './TopMenuPanel'
 import { AuthProvider } from '../contexts/AuthContext'
@@ -23,6 +23,8 @@ describe('TopMenuPanel', () => {
   const mockOnFavoritesClick = vi.fn()
   const mockOnAccountSettingsClick = vi.fn()
   const mockOnAboutClick = vi.fn()
+  const mockOnHowToUseClick = vi.fn()
+  const mockOnContactClick = vi.fn()
   const mockOnTermsClick = vi.fn()
   const mockOnPrivacyClick = vi.fn()
   const mockOnLoginClick = vi.fn()
@@ -37,6 +39,8 @@ describe('TopMenuPanel', () => {
     onFavoritesClick: mockOnFavoritesClick,
     onAccountSettingsClick: mockOnAccountSettingsClick,
     onAboutClick: mockOnAboutClick,
+    onHowToUseClick: mockOnHowToUseClick,
+    onContactClick: mockOnContactClick,
     onTermsClick: mockOnTermsClick,
     onPrivacyClick: mockOnPrivacyClick,
     onLoginClick: mockOnLoginClick,
@@ -113,6 +117,57 @@ describe('TopMenuPanel', () => {
 
       expect(screen.getByText(/プロフィール/)).toBeInTheDocument()
       expect(screen.queryByText(/マイページ/)).not.toBeInTheDocument()
+    })
+  })
+
+  // Issue#114: メニュー再構成 - 「操作方法」「お知らせ」「お問い合わせ」ボタンの新設
+  describe('Issue#114 - 新規メニューボタン', () => {
+    it('「操作方法」ボタンが表示される（ログイン時）', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
+      expect(screen.getByText(/操作方法/)).toBeInTheDocument()
+    })
+
+    it('「操作方法」ボタンが表示される（ログアウト時）', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} isLoggedIn={false} />)
+      expect(screen.getByText(/操作方法/)).toBeInTheDocument()
+    })
+
+    it('「お知らせ」ボタンが表示される（ログイン時）', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
+      expect(screen.getByText(/お知らせ/)).toBeInTheDocument()
+    })
+
+    it('「お知らせ」ボタンが表示される（ログアウト時）', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} isLoggedIn={false} />)
+      expect(screen.getByText(/お知らせ/)).toBeInTheDocument()
+    })
+
+    it('「お問い合わせ」ボタンが表示される（ログイン時）', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
+      expect(screen.getByText(/お問い合わせ/)).toBeInTheDocument()
+    })
+
+    it('「お問い合わせ」ボタンが表示される（ログアウト時）', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} isLoggedIn={false} />)
+      expect(screen.getByText(/お問い合わせ/)).toBeInTheDocument()
+    })
+
+    it('「操作方法」ボタンをクリックすると onHowToUseClick が呼ばれる', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
+      fireEvent.click(screen.getByText(/操作方法/))
+      expect(mockOnHowToUseClick).toHaveBeenCalledTimes(1)
+    })
+
+    it('「お問い合わせ」ボタンをクリックすると onContactClick が呼ばれる', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
+      fireEvent.click(screen.getByText(/お問い合わせ/))
+      expect(mockOnContactClick).toHaveBeenCalledTimes(1)
+    })
+
+    it('「お知らせ」ボタンは disabled 状態である', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
+      const newsButton = screen.getByText(/お知らせ/).closest('button')
+      expect(newsButton).toBeDisabled()
     })
   })
 })
