@@ -1,4 +1,14 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { analyzePhoto, type PhotoAnalyzeResponse } from '../utils/photoAnalyzeApi'
+import { cropImageToBlob } from '../utils/cropImageToBlob'
+import { CATEGORY_LABELS } from '../utils/codeConstants'
+
+/** Issue#119: ユーザーがトリミング調整を止めてから AI 解析を発火するまでの待ち時間 */
+const ANALYZE_DEBOUNCE_MS = 1000
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError'
+}
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
@@ -223,11 +233,93 @@ export function PhotoContributionDialog({
   }, [open])
 
   // Issue#119: トリミング領域が確定したら debounce で AI 解析を呼び出す（Phase 8）
-  // Red 段階: スタブ（次の Green で本実装）
+  // 1秒 debounce: ユーザーがトリミング調整を止めた頃に analyze を実行する
   useEffect(() => {
     if (!previewUrl || !croppedArea) return
-    // Phase 8 Red 段階: 何もしない
+
+    // 既存の debounce タイマーを破棄（連続 cropComplete に対応）
+    if (analyzeDebounceRef.current) {
+      clearTimeout(analyzeDebounceRef.current)
+    }
+
+    analyzeDebounceRef.current = setTimeout(() => {
+      runAnalyze(previewUrl, croppedArea)
+    }, ANALYZE_DEBOUNCE_MS)
+
+    return () => {
+      if (analyzeDebounceRef.current) {
+        clearTimeout(analyzeDebounceRef.current)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewUrl, croppedArea])
+
+  /**
+   * AI 解析を実行する。進行中の analyze は AbortController でキャンセル。
+   * 失敗時は黙って続行（Phase 9 でトースト追加予定）。
+   */
+  const runAnalyze = useCallback(async (imageSrc: string, area: Area) => {
+    // 進行中の analyze をキャンセル
+    if (analyzeAbortRef.current) {
+      analyzeAbortRef.current.abort()
+    }
+    const controller = new AbortController()
+    analyzeAbortRef.current = controller
+
+    setIsAnalyzing(true)
+    try {
+      const blob = await cropImageToBlob(imageSrc, area)
+      if (controller.signal.aborted) return
+
+      const response = await analyzePhoto(blob, { signal: controller.signal })
+      if (controller.signal.aborted) return
+
+      applyAiPrefill(response)
+    } catch (error) {
+      // AbortError は意図的なキャンセルなので無視。
+      // 他のエラー（ネットワーク・5xx 等）は Phase 9 でトースト表示予定。
+      // 現段階では黙って続行（フォームは空欄でユーザーが手動入力可能）。
+      if (!isAbortError(error)) {
+        // 無音でログのみ（Phase 9 でトースト化）
+        console.warn('AI 解析失敗（フォームは空欄で続行）:', error)
+      }
+    } finally {
+      if (analyzeAbortRef.current === controller) {
+        analyzeAbortRef.current = null
+        setIsAnalyzing(false)
+      }
+    }
+  }, [])
+
+  /**
+   * AI レスポンスを state に反映する。空結果の場合はバナーを表示しない。
+   */
+  const applyAiPrefill = useCallback((response: PhotoAnalyzeResponse) => {
+    if (response.analyzeToken) {
+      setAnalyzeToken(response.analyzeToken)
+    }
+
+    const prefillCategoryNames = response.categories
+      .map((id) => CATEGORY_LABELS[id])
+      .filter((name): name is string => Boolean(name))
+
+    if (prefillCategoryNames.length > 0) {
+      setSelectedCategories((prev) => {
+        // 既存ユーザー選択を残しつつ AI 提案を追加（重複排除）
+        const merged = new Set([...prev, ...prefillCategoryNames])
+        return Array.from(merged)
+      })
+    }
+
+    if (response.weather) {
+      setSelectedWeather(response.weather)
+    }
+
+    // バナーは「実際にプリフィルが発生した」場合のみ表示
+    if (prefillCategoryNames.length > 0 || response.weather) {
+      setAiPrefillApplied(true)
+    }
+  }, [])
 
   // ダイアログ表示時にスクロール位置を先頭にリセット
   useEffect(() => {
