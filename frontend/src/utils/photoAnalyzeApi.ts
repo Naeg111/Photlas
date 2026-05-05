@@ -46,6 +46,14 @@ export async function analyzePhoto(
   file: Blob,
   options: AnalyzePhotoOptions = {}
 ): Promise<PhotoAnalyzeResponse> {
-  // Phase 7 Red 段階: スタブ実装（fetch を呼ばず空レスポンスを返す）
-  return { categories: [], weather: null, confidence: {}, analyzeToken: null }
+  const formData = new FormData()
+  // multipart の file パート名はバックエンド @RequestParam("file") と揃える
+  formData.append('file', file, 'photo.jpg')
+
+  return fetchJson<PhotoAnalyzeResponse>(`${API_V1_URL}/photos/analyze`, {
+    method: 'POST',
+    body: formData,
+    requireAuth: true,
+    signal: options.signal,
+  })
 }

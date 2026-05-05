@@ -5,9 +5,13 @@
  * （apiClient.test.ts と同じパターン）。
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest'
 import { analyzePhoto } from './photoAnalyzeApi'
 import { ApiError } from './apiClient'
+
+// setup.ts で localStorage のメソッドが vi.fn() でモック化されている
+// （sessionStorage は jsdom 標準のため触らない）
+const localStorageGetItemMock = localStorage.getItem as unknown as Mock
 
 const ANALYZE_URL_FRAGMENT = '/api/v1/photos/analyze'
 
@@ -27,6 +31,7 @@ describe('analyzePhoto', () => {
       ok: true,
       status: 200,
       headers: new Headers({ 'Content-Type': 'application/json' }),
+      json: async () => body,
       text: async () => JSON.stringify(body),
     })
   }
@@ -48,14 +53,12 @@ describe('analyzePhoto', () => {
     originalFetch = globalThis.fetch
     fetchMock = vi.fn()
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch
-    localStorage.clear()
-    sessionStorage.clear()
+    localStorageGetItemMock.mockReturnValue(null)
   })
 
   afterEach(() => {
     globalThis.fetch = originalFetch
-    localStorage.clear()
-    sessionStorage.clear()
+    localStorageGetItemMock.mockReset()
   })
 
   // ========== 正常系 ==========
@@ -98,15 +101,18 @@ describe('analyzePhoto', () => {
   // ========== 認証 ==========
 
   it('Issue#119 - localStorage の auth_token を Authorization ヘッダーに付与する', async () => {
-    localStorage.setItem('auth_token', 'jwt-test-token')
+    localStorageGetItemMock.mockImplementation((key: string) =>
+      key === 'auth_token' ? 'jwt-test-token' : null
+    )
     mockOk(validResponseBody)
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
 
     await analyzePhoto(file)
 
     const [, init] = fetchMock.mock.calls[0]
-    const headers = (init as RequestInit).headers as Record<string, string>
-    expect(headers.Authorization).toBe('Bearer jwt-test-token')
+    // fetchJson は Headers オブジェクトを生成するため Headers#get で取り出す
+    const headers = (init as RequestInit).headers as Headers
+    expect(headers.get('Authorization')).toBe('Bearer jwt-test-token')
   })
 
   // ========== AbortSignal ==========
