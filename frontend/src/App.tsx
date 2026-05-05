@@ -801,6 +801,8 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
         onModerationClick={() => navigate('/manage/moderation')}
         onDeletedUsersClick={() => navigate('/manage/deleted-users')}
         onAboutClick={() => dialog.open('about')}
+        onHowToUseClick={() => dialog.open('howToUse')}
+        onContactClick={() => dialog.open('contact')}
         onTermsClick={() => dialog.open('terms')}
         onPrivacyClick={() => dialog.open('privacy')}
         onLoginClick={() => dialog.open('login')}
