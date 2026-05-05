@@ -184,7 +184,7 @@ public class PhotoService {
 
         // Issue#119: analyzeToken が指定されていれば AI 予測結果を保存
         if (request.getAnalyzeToken() != null) {
-            savePhotoAiPrediction(savedPhoto.getPhotoId(), request);
+            savePhotoAiPrediction(savedPhoto.getPhotoId(), request, categories);
         }
 
         // Issue#100: サムネイルのタグもベストエフォートで registered に更新する。
@@ -744,9 +744,64 @@ public class PhotoService {
 
     /**
      * analyzeToken に紐づく AI 予測結果を {@code photo_ai_predictions} に保存する。
-     * Phase 6 Red 段階: スタブ実装（次の Green で本実装）。
+     * トークンが期限切れ・不存在の場合は黙って無視する（Issue#119 4.4.1: AI 結果なし扱い）。
+     * 保存後にキャッシュから当該トークンを削除する（使い切り）。
+     *
+     * @param photoId        既に保存済みの写真 ID
+     * @param request        投稿リクエスト（analyzeToken を含む）
+     * @param userCategories ユーザー選択カテゴリの実体（{@code user_diff_flag} 計算に使用）
      */
-    private void savePhotoAiPrediction(Long photoId, CreatePhotoRequest request) {
-        // Phase 6 Red 段階: 何もしない
+    private void savePhotoAiPrediction(Long photoId, CreatePhotoRequest request, List<Category> userCategories) {
+        Optional<LabelMappingResult> aiResult = aiPredictionCacheService.findValid(request.getAnalyzeToken());
+        if (aiResult.isEmpty()) {
+            logger.info("analyzeToken は期限切れまたは不存在のため AI 予測結果の保存をスキップ: photoId={}",
+                    photoId);
+            return;
+        }
+
+        LabelMappingResult ai = aiResult.get();
+        Set<Integer> userCategoryIds = userCategories.stream()
+                .map(Category::getCategoryId)
+                .collect(Collectors.toSet());
+        boolean diffFlag = computeUserDiffFlag(ai.categories(), userCategoryIds);
+
+        PhotoAiPrediction prediction = new PhotoAiPrediction();
+        prediction.setPhotoId(photoId);
+        prediction.setModelName(AI_MODEL_NAME);
+        prediction.setPredictedCategories(serializeJson(ai.categories()));
+        prediction.setPredictedWeather(ai.weather());
+        prediction.setConfidence(serializeJson(ai.confidence()));
+        prediction.setUserDiffFlag(diffFlag);
+        prediction.setCreatedAt(LocalDateTime.now());
+        photoAiPredictionRepository.save(prediction);
+
+        // 使い切り: キャッシュから該当トークンを削除
+        aiPredictionCacheService.delete(request.getAnalyzeToken());
+    }
+
+    /**
+     * Issue#119 3.3: ユーザー選択カテゴリと AI 予測カテゴリの「重複ゼロ」判定。
+     *
+     * <ul>
+     *   <li>AI 予測が空の場合: 比較対象がないので {@code false}</li>
+     *   <li>AI とユーザー選択の集合に1つでも重複があれば {@code false}</li>
+     *   <li>重複ゼロのときだけ {@code true}（運営の事後確認対象としてフラグ付け）</li>
+     * </ul>
+     */
+    private boolean computeUserDiffFlag(List<Integer> aiCategories, Set<Integer> userCategoryIds) {
+        if (aiCategories == null || aiCategories.isEmpty()) {
+            return false;
+        }
+        Set<Integer> intersection = new HashSet<>(aiCategories);
+        intersection.retainAll(userCategoryIds);
+        return intersection.isEmpty();
+    }
+
+    private String serializeJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("AI 予測結果の JSON シリアライズに失敗しました", e);
+        }
     }
 }
