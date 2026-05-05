@@ -3,7 +3,6 @@ package com.photlas.backend.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -32,10 +31,13 @@ public class AiPredictionCache {
 
     /**
      * AI 結果 JSON（{@link com.photlas.backend.dto.LabelMappingResult} を Jackson で
-     * シリアライズした文字列）。{@code @Lob} により H2 では CLOB、PostgreSQL では TEXT 列に対応。
+     * シリアライズした文字列）。
+     *
+     * <p>{@code columnDefinition = "TEXT"} で明示的に TEXT 型を指定する（PostgreSQL/H2 両対応）。
+     * {@code @Lob} は PostgreSQL では OID（Large Object）にマッピングされ、V32 で TEXT 化した
+     * カラムと不整合を起こすため使わない。</p>
      */
-    @Lob
-    @Column(name = "ai_result", nullable = false)
+    @Column(name = "ai_result", nullable = false, columnDefinition = "TEXT")
     @NotNull
     private String aiResult;
 
