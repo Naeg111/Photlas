@@ -16,6 +16,7 @@ import { ApiError, S3_TAG_HEADER_NAME, S3_TAG_HEADER_VALUE_PENDING } from '../ut
 import { fetchJson } from '../utils/fetchJson'
 import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
+import { trackRegistrationWallEvent } from '../utils/registrationWallAnalytics'
 import {
   getPasswordStrength,
   validatePassword,
@@ -52,6 +53,11 @@ interface SignUpDialogProps {
    * 省略時は従来通り onOpenChange(false) で単純に閉じる。
    */
   onBack?: () => void
+  /**
+   * Issue#118: 登録壁から開かれた場合 true。
+   * 登録成功時に registration_wall_signup_success イベントを送信する目印。
+   */
+  triggeredFromWall?: boolean
 }
 
 export function SignUpDialog({
@@ -61,6 +67,7 @@ export function SignUpDialog({
   onShowPrivacyPolicy,
   onShowLogin,
   onBack,
+  triggeredFromWall = false,
 }: Readonly<SignUpDialogProps>) {
   const { t } = useTranslation()
   const [profileImage, setProfileImage] = useState<string>('')
@@ -200,6 +207,10 @@ export function SignUpDialog({
         await uploadSnsLinks(token, filledSnsLinks)
       }
 
+      // Issue#118: 登録壁経由の登録成功は別イベントとして計測
+      if (triggeredFromWall) {
+        trackRegistrationWallEvent('registration_wall_signup_success')
+      }
       toast(t('auth.signupSuccess'), {
         duration: 8000,
       })
