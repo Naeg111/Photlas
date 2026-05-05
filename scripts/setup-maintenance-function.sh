@@ -19,6 +19,8 @@
 #   - distribution の関連付けは CloudFront 全体の更新となるため 5〜15 分
 #     かかる場合がある。失敗した場合は AWS Console から手動で完了させる。
 #
+# 対象リージョン: ap-northeast-1
+#
 # タグ:
 #   Project=Photlas
 #   ManagedBy=Issue-117
@@ -26,6 +28,10 @@
 #   Name=photlas-maintenance-rule-${ENV}
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/maintenance-common.sh disable=SC1091
+. "${SCRIPT_DIR}/lib/maintenance-common.sh"
 
 ENV="${1:-}"
 case "$ENV" in
@@ -36,8 +42,6 @@ case "$ENV" in
     exit 1
     ;;
 esac
-
-REGION="ap-northeast-1"
 
 if [ "$ENV" = "prod" ]; then
   DISTRIBUTION_ID="E3RXKAXCTDAFOI"
@@ -51,9 +55,7 @@ else
   INACTIVE_PRIORITY=51
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PASSTHROUGH_JS="${SCRIPT_DIR}/cloudfront-function/passthrough.js"
-ALB_NAME="photlas-alb"
 
 echo "=== メンテナンスモード初回セットアップ (${ENV}) ==="
 echo "Region:        ${REGION}"

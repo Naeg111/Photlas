@@ -12,6 +12,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/maintenance-common.sh disable=SC1091
+. "${SCRIPT_DIR}/lib/maintenance-common.sh"
+
 ENV="${1:-}"
 case "$ENV" in
   prod)
@@ -35,11 +39,7 @@ case "$ENV" in
     ;;
 esac
 
-REGION="ap-northeast-1"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PASSTHROUGH_JS="${SCRIPT_DIR}/cloudfront-function/passthrough.js"
-ALB_NAME="photlas-alb"
-PROPAGATION_WAIT_SEC=30
 
 echo "=== メンテナンスモード OFF (${ENV}) ==="
 echo "Region:   ${REGION}"
