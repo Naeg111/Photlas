@@ -371,6 +371,7 @@
     "RATE_LIMIT_EXCEEDED_SHORT": "目前擁擠（{{seconds}} 秒後重試）",
     "RATE_LIMIT_BURST": "網路繁忙，請稍候再試。",
     "NETWORK_ERROR": "網路連線失敗，請檢查您的網路連線。",
+    "HEADING_PERMISSION_DENIED": "未取得方向資訊的存取權限。請在設定中允許。",
     "USERNAME_REQUIRED": "請輸入顯示名稱。",
     "USERNAME_LENGTH_INVALID": "顯示名稱長度需在 2 到 12 個字元之間。",
     "USERNAME_INVALID_CHARACTER_SYMBOL": "顯示名稱不可包含符號。",

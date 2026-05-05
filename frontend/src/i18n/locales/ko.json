@@ -371,6 +371,7 @@
     "RATE_LIMIT_EXCEEDED_SHORT": "혼잡합니다 ({{seconds}}초 후 재시도)",
     "RATE_LIMIT_BURST": "통신이 혼잡합니다. 잠시 후 다시 시도해 주세요.",
     "NETWORK_ERROR": "네트워크 연결에 실패했습니다. 연결 상태를 확인해 주세요.",
+    "HEADING_PERMISSION_DENIED": "방향 정보 접근이 허용되지 않았습니다. 설정에서 허용해 주세요.",
     "USERNAME_REQUIRED": "표시 이름을 입력해 주세요.",
     "USERNAME_LENGTH_INVALID": "표시 이름은 2자 이상 12자 이하로 입력해 주세요.",
     "USERNAME_INVALID_CHARACTER_SYMBOL": "표시 이름에는 기호를 사용할 수 없습니다.",

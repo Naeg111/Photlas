@@ -399,6 +399,7 @@
     "RATE_LIMIT_EXCEEDED_SHORT": "混雑しています（{{seconds}} 秒後に再取得）",
     "RATE_LIMIT_BURST": "通信が混み合っています。しばらく操作を控えてください。",
     "NETWORK_ERROR": "ネットワーク接続に失敗しました。接続を確認してください。",
+    "HEADING_PERMISSION_DENIED": "方角の取得が許可されていません。設定から許可してください。",
     "USERNAME_REQUIRED": "表示名を入力してください。",
     "USERNAME_LENGTH_INVALID": "表示名は2文字以上12文字以内で入力してください。",
     "USERNAME_INVALID_CHARACTER_SYMBOL": "表示名に記号は使用できません。",

@@ -23,13 +23,19 @@ interface OrientationEventLike extends Event {
   absolute?: boolean
 }
 
+/** setEnabled の戻り値。呼び出し元はトースト表示などに使う */
+export interface SetHeadingEnabledResult {
+  /** OS の方角センサー許可が得られたか（OFF→指定時のみ意味を持つ。OFF 化時は常に true） */
+  granted: boolean
+}
+
 interface UseHeadingIndicatorReturn {
   /** トグルの ON/OFF 状態 */
   enabled: boolean
   /** 現在の方角（度数、0=北、時計回り）。未取得時は null */
   heading: number | null
-  /** ON/OFF を切り替える。Promise を返すのは Phase4 の iOS 許可フロー統合に備えた形 */
-  setEnabled: (next: boolean) => Promise<void>
+  /** ON/OFF を切り替える。iOS では ON 化時に OS の方角センサー許可をリクエストする */
+  setEnabled: (next: boolean) => Promise<SetHeadingEnabledResult>
 }
 
 /**
@@ -50,6 +56,23 @@ function extractHeading(event: OrientationEventLike): number | null {
 function readInitialEnabled(): boolean {
   try {
     return localStorage.getItem(HEADING_INDICATOR_STORAGE_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * iOS 13+ の DeviceOrientationEvent.requestPermission を呼んで結果を返す。
+ * 関数が存在しない（非iOS / 旧バージョン）場合は granted 扱い。
+ */
+async function requestOrientationPermission(): Promise<boolean> {
+  const ctor = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+    requestPermission?: () => Promise<'granted' | 'denied' | 'default'>
+  }
+  if (typeof ctor.requestPermission !== 'function') return true
+  try {
+    const result = await ctor.requestPermission()
+    return result === 'granted'
   } catch {
     return false
   }
@@ -110,13 +133,25 @@ export function useHeadingIndicator(): UseHeadingIndicatorReturn {
     }
   }, [enabled, flushHeading])
 
-  const setEnabled = useCallback(async (next: boolean) => {
+  const setEnabled = useCallback(async (next: boolean): Promise<SetHeadingEnabledResult> => {
+    if (next) {
+      // ON 化時のみ OS 許可を確認。iOS では拒否された場合は OFF に戻す。
+      const granted = await requestOrientationPermission()
+      if (!granted) {
+        setEnabledState(false)
+        try {
+          localStorage.setItem(HEADING_INDICATOR_STORAGE_KEY, 'false')
+        } catch { /* noop */ }
+        return { granted: false }
+      }
+    }
     setEnabledState(next)
     try {
       localStorage.setItem(HEADING_INDICATOR_STORAGE_KEY, String(next))
     } catch {
       // localStorage が使えない環境（プライベートブラウズ等）でも動作は継続
     }
+    return { granted: true }
   }, [])
 
   return { enabled, heading, setEnabled }
