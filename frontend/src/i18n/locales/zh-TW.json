@@ -499,5 +499,13 @@
     "photoAlt": "待審核的照片",
     "accepted": "已接受拍攝地點建議。",
     "rejected": "已拒絕拍攝地點建議。"
+  },
+  "registrationWall": {
+    "title": "繼續使用 Photlas 需要登入",
+    "thanks": "感謝您的瀏覽。",
+    "description": "建立帳戶後，您可以儲存喜歡的照片，並發佈自己的照片加入社群。",
+    "signupButton": "註冊",
+    "loginButton": "登入",
+    "aboutLink": "什麼是 Photlas?"
   }
 }

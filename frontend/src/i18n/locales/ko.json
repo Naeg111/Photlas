@@ -499,5 +499,13 @@
     "photoAlt": "검토 대상 사진",
     "accepted": "촬영 장소 제안을 수락했습니다.",
     "rejected": "촬영 장소 제안을 거부했습니다."
+  },
+  "registrationWall": {
+    "title": "Photlas를 계속 이용하려면 로그인이 필요합니다",
+    "thanks": "둘러봐 주셔서 감사합니다.",
+    "description": "계정을 만들면 마음에 드는 사진을 저장하거나 자신의 사진을 게시해 커뮤니티에 참여할 수 있습니다.",
+    "signupButton": "회원가입",
+    "loginButton": "로그인",
+    "aboutLink": "Photlas란?"
   }
 }
