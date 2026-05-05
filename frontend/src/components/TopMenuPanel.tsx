@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
-import { User, Settings, FileText, Shield, LogOut, /* Heart, */ LogIn, CircleHelp, UserX } from "lucide-react";
+import { User, Settings, FileText, Shield, LogOut, /* Heart, */ LogIn, CircleHelp, UserX, BookOpen, Bell, Mail } from "lucide-react";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { useTranslation } from "react-i18next";
@@ -20,6 +20,8 @@ interface TopMenuPanelProps {
   onTermsClick: () => void;
   onPrivacyClick: () => void;
   onAboutClick: () => void;
+  onHowToUseClick: () => void;
+  onContactClick: () => void;
   onLoginClick: () => void;
   // Issue#104: onSignUpClick を削除（メニューから「新規アカウント作成」ボタンを削除）
   onLogout: () => void;
@@ -36,6 +38,8 @@ export function TopMenuPanel({
   onModerationClick,
   onDeletedUsersClick,
   onAboutClick,
+  onHowToUseClick,
+  onContactClick,
   onTermsClick,
   onPrivacyClick,
   onLoginClick,
@@ -69,6 +73,42 @@ export function TopMenuPanel({
             >
               <CircleHelp className="w-5 h-5" />
               {t('menu.about')}
+            </Button>
+            <Separator />
+            {/* Issue#114: 操作方法ボタン（全ユーザー） */}
+            <Button
+              variant="ghost"
+              className="justify-start gap-3"
+              onClick={() => {
+                onHowToUseClick();
+                onOpenChange(false);
+              }}
+            >
+              <BookOpen className="w-5 h-5" />
+              {t('menu.howToUse')}
+            </Button>
+            <Separator />
+            {/* Issue#114: お知らせボタン（非活性、中身は別Issueで実装） */}
+            <Button
+              variant="ghost"
+              className="justify-start gap-3"
+              disabled
+            >
+              <Bell className="w-5 h-5" />
+              {t('menu.news')}
+            </Button>
+            <Separator />
+            {/* Issue#114: お問い合わせボタン（全ユーザー） */}
+            <Button
+              variant="ghost"
+              className="justify-start gap-3"
+              onClick={() => {
+                onContactClick();
+                onOpenChange(false);
+              }}
+            >
+              <Mail className="w-5 h-5" />
+              {t('menu.contact')}
             </Button>
             <Separator />
             {isLoggedIn ? (

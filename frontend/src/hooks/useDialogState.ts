@@ -21,6 +21,9 @@ export type DialogName =
   | 'lightbox'
   | 'wantToGoList'
   | 'about'
+  // Issue#114: メニュー再構成（操作方法・お問い合わせダイアログ）
+  | 'howToUse'
+  | 'contact'
   | 'placeSearch'
 
 /**
@@ -69,6 +72,9 @@ const INITIAL_STATE: DialogState = {
   lightbox: false,
   wantToGoList: false,
   about: false,
+  // Issue#114
+  howToUse: false,
+  contact: false,
   placeSearch: false,
 }
 
