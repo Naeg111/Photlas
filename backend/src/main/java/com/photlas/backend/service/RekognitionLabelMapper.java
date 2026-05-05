@@ -119,72 +119,113 @@ public class RekognitionLabelMapper {
      * @return マッピング結果。信頼度70%未満のラベルは除外される。
      */
     public LabelMappingResult map(List<Label> labels) {
-        List<Label> qualified = labels.stream()
+        List<Label> qualified = filterByConfidence(labels);
+        CategoryMapping categoryMapping = mapCategories(qualified);
+        WeatherMapping weatherMapping = mapWeather(qualified);
+        return combine(categoryMapping, weatherMapping);
+    }
+
+    private static List<Label> filterByConfidence(List<Label> labels) {
+        return labels.stream()
                 .filter(l -> l.confidence() != null && l.confidence() >= CONFIDENCE_THRESHOLD)
                 .toList();
+    }
 
-        Set<Integer> categories = new LinkedHashSet<>();
+    private static String normalize(String labelName) {
+        return labelName.toLowerCase(Locale.ROOT);
+    }
+
+    /** ラベル群からカテゴリ群を構築する（夜景の組合せ判定を含む）。 */
+    private static CategoryMapping mapCategories(List<Label> qualified) {
+        Set<Integer> codes = new LinkedHashSet<>();
         Map<String, Float> confidence = new LinkedHashMap<>();
-
-        boolean hasNightLabel = false;
-        float nightConfidence = 0f;
-        boolean hasNightPartner = false;
-        float nightPartnerConfidence = 0f;
+        NightViewState nightViewState = new NightViewState();
 
         for (Label label : qualified) {
-            String name = label.name().toLowerCase(Locale.ROOT);
+            String name = normalize(label.name());
             float conf = label.confidence();
 
             if (NIGHT_LABEL.equals(name)) {
-                hasNightLabel = true;
-                nightConfidence = conf;
-                // Night 単独ではカテゴリにマッピングしない（夜景の組合せ判定でのみ使用）
+                nightViewState.recordNight(conf);
                 continue;
             }
-
             if (NIGHT_VIEW_PARTNER_LABELS.contains(name)) {
-                hasNightPartner = true;
-                nightPartnerConfidence = Math.max(nightPartnerConfidence, conf);
+                nightViewState.recordPartner(conf);
             }
 
             List<Integer> mapped = LABEL_TO_CATEGORIES.get(name);
             if (mapped != null) {
                 for (Integer code : mapped) {
-                    categories.add(code);
+                    codes.add(code);
                     confidence.merge(String.valueOf(code), conf, Math::max);
                 }
             }
         }
 
-        // 夜景: Night + (City | Building | Architecture) の組合せが揃った場合のみ追加
-        if (hasNightLabel && hasNightPartner) {
-            categories.add(CodeConstants.CATEGORY_NIGHT_VIEW);
-            // 組合せの「弱い側」を信頼度として記録（両方が揃って初めて成立するため）
-            confidence.put(
-                    String.valueOf(CodeConstants.CATEGORY_NIGHT_VIEW),
-                    Math.min(nightConfidence, nightPartnerConfidence)
-            );
-        }
+        nightViewState.applyTo(codes, confidence);
+        return new CategoryMapping(codes, confidence);
+    }
 
-        // 天候: 70%以上のラベルから信頼度最高のものを単一採用
-        Integer weather = null;
-        float bestWeatherConfidence = -1f;
+    /** ラベル群から信頼度最高の天候を選定する。該当なしなら code = null。 */
+    private static WeatherMapping mapWeather(List<Label> qualified) {
+        Integer bestCode = null;
+        float bestConf = -1f;
         for (Label label : qualified) {
-            String name = label.name().toLowerCase(Locale.ROOT);
-            Integer code = LABEL_TO_WEATHER.get(name);
-            if (code != null && label.confidence() > bestWeatherConfidence) {
-                weather = code;
-                bestWeatherConfidence = label.confidence();
+            Integer code = LABEL_TO_WEATHER.get(normalize(label.name()));
+            if (code != null && label.confidence() > bestConf) {
+                bestCode = code;
+                bestConf = label.confidence();
             }
         }
-        if (weather != null) {
-            confidence.put(String.valueOf(weather), bestWeatherConfidence);
+        return new WeatherMapping(bestCode, bestCode != null ? bestConf : null);
+    }
+
+    private static LabelMappingResult combine(CategoryMapping categories, WeatherMapping weather) {
+        Map<String, Float> confidence = new LinkedHashMap<>(categories.confidence());
+        if (weather.code() != null) {
+            confidence.put(String.valueOf(weather.code()), weather.confidence());
+        }
+        return new LabelMappingResult(new ArrayList<>(categories.codes()), weather.code(), confidence);
+    }
+
+    /** カテゴリマッピング結果（コード集合 + 信頼度マップ）。内部使用のみ。 */
+    private record CategoryMapping(Set<Integer> codes, Map<String, Float> confidence) {
+    }
+
+    /** 天候マッピング結果。code が null なら採用なし。 */
+    private record WeatherMapping(Integer code, Float confidence) {
+    }
+
+    /**
+     * 「夜景」(204) の組合せ判定状態。Night ラベルと相棒ラベル（City/Building/Architecture）
+     * の両方が信頼度70%以上で揃った場合に 204 を成立させる。
+     */
+    private static final class NightViewState {
+        private boolean hasNight = false;
+        private float nightConfidence = 0f;
+        private boolean hasPartner = false;
+        private float partnerConfidence = 0f;
+
+        void recordNight(float confidence) {
+            hasNight = true;
+            nightConfidence = confidence;
         }
 
-        return new LabelMappingResult(
-                new ArrayList<>(categories),
-                weather,
-                confidence
-        );
+        void recordPartner(float confidence) {
+            hasPartner = true;
+            partnerConfidence = Math.max(partnerConfidence, confidence);
+        }
+
+        void applyTo(Set<Integer> codes, Map<String, Float> confidenceMap) {
+            if (!hasNight || !hasPartner) {
+                return;
+            }
+            codes.add(CodeConstants.CATEGORY_NIGHT_VIEW);
+            // 組合せの「弱い側」を信頼度として記録（両方が揃って初めて成立するため）
+            confidenceMap.put(
+                    String.valueOf(CodeConstants.CATEGORY_NIGHT_VIEW),
+                    Math.min(nightConfidence, partnerConfidence)
+            );
+        }
     }
 }
