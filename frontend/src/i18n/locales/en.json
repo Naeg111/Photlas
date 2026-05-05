@@ -529,5 +529,13 @@
     "photoAlt": "Photo under review",
     "accepted": "The location suggestion has been accepted.",
     "rejected": "The location suggestion has been rejected."
+  },
+  "registrationWall": {
+    "title": "Sign in to continue using Photlas",
+    "thanks": "Thank you for browsing.",
+    "description": "Create an account to save your favorite photos and post your own photos to join the community.",
+    "signupButton": "Sign up",
+    "loginButton": "Log in",
+    "aboutLink": "What is Photlas?"
   }
 }

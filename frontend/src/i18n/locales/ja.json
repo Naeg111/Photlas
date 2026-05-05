@@ -529,5 +529,13 @@
     "photoAlt": "レビュー対象の写真",
     "accepted": "撮影場所の指摘を受け入れました。",
     "rejected": "撮影場所の指摘を拒否しました。"
+  },
+  "registrationWall": {
+    "title": "Photlas を続けてご利用いただくには、ログインが必要です",
+    "thanks": "ご覧いただきありがとうございます。",
+    "description": "アカウントを作成すると、お気に入りの写真を保存したり、自分の写真を投稿してコミュニティに参加できます。",
+    "signupButton": "アカウント作成",
+    "loginButton": "ログイン",
+    "aboutLink": "Photlasとは？"
   }
 }
