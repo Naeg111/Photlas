@@ -3,6 +3,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 
+// Issue#118: 登録壁ユーティリティをモックし、login() からのクリア呼び出しを観測する
+const { mockClearViewedPhotoIds } = vi.hoisted(() => ({
+  mockClearViewedPhotoIds: vi.fn(),
+}))
+vi.mock('../utils/registrationWall', () => ({
+  clearViewedPhotoIds: mockClearViewedPhotoIds,
+}))
+
 /**
  * Issue#5: ログイン・ログアウト機能 - 認証コンテキスト テスト
  * Issue#36: ユーザー情報更新機能追加
@@ -559,6 +567,43 @@ describe('AuthProvider', () => {
       )
 
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Authenticated')
+    })
+  })
+
+  describe('Issue#118 - 登録壁の閲覧履歴クリア連携', () => {
+    beforeEach(() => {
+      mockClearViewedPhotoIds.mockClear()
+    })
+
+    it('Issue#118 - login() 呼び出し時に clearViewedPhotoIds が呼ばれる', () => {
+      render(
+        <MockedAuthProvider>
+          <TestComponent />
+        </MockedAuthProvider>
+      )
+
+      // 初期状態（未ログイン）ではクリアは呼ばれていない
+      expect(mockClearViewedPhotoIds).not.toHaveBeenCalled()
+
+      fireEvent.click(screen.getByTestId('login-button'))
+
+      // login 完了後にクリアが呼ばれる
+      expect(mockClearViewedPhotoIds).toHaveBeenCalledTimes(1)
+    })
+
+    it('Issue#118 - logout() ではクリアされない（ログアウト後は再度10件閲覧可能になる仕様）', () => {
+      render(
+        <MockedAuthProvider>
+          <TestComponent />
+        </MockedAuthProvider>
+      )
+
+      // login → logout の流れ
+      fireEvent.click(screen.getByTestId('login-button'))
+      mockClearViewedPhotoIds.mockClear()
+      fireEvent.click(screen.getByTestId('logout-button'))
+
+      expect(mockClearViewedPhotoIds).not.toHaveBeenCalled()
     })
   })
 })
