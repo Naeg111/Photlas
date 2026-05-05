@@ -25,6 +25,7 @@ describe('TopMenuPanel', () => {
   const mockOnAboutClick = vi.fn()
   const mockOnHowToUseClick = vi.fn()
   const mockOnContactClick = vi.fn()
+  const mockOnHeadingIndicatorChange = vi.fn()
   const mockOnTermsClick = vi.fn()
   const mockOnPrivacyClick = vi.fn()
   const mockOnLoginClick = vi.fn()
@@ -41,6 +42,8 @@ describe('TopMenuPanel', () => {
     onAboutClick: mockOnAboutClick,
     onHowToUseClick: mockOnHowToUseClick,
     onContactClick: mockOnContactClick,
+    headingIndicatorEnabled: false,
+    onHeadingIndicatorChange: mockOnHeadingIndicatorChange,
     onTermsClick: mockOnTermsClick,
     onPrivacyClick: mockOnPrivacyClick,
     onLoginClick: mockOnLoginClick,
@@ -168,6 +171,53 @@ describe('TopMenuPanel', () => {
       renderWithProvider(<TopMenuPanel {...defaultProps} />)
       const newsButton = screen.getByText(/お知らせ/).closest('button')
       expect(newsButton).toBeDisabled()
+    })
+  })
+
+  // Issue#115: 方角インジケーター ON/OFF スイッチ
+  describe('Issue#115 - 方角インジケーター スイッチ', () => {
+    it('「向いている方角」ラベルが表示される', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
+      expect(screen.getByText(/向いている方角/)).toBeInTheDocument()
+    })
+
+    it('スイッチが表示される（role=switch）', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
+      expect(screen.getByRole('switch')).toBeInTheDocument()
+    })
+
+    it('headingIndicatorEnabled=false の場合、スイッチは unchecked 状態', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} headingIndicatorEnabled={false} />)
+      expect(screen.getByRole('switch')).not.toBeChecked()
+    })
+
+    it('headingIndicatorEnabled=true の場合、スイッチは checked 状態', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} headingIndicatorEnabled={true} />)
+      expect(screen.getByRole('switch')).toBeChecked()
+    })
+
+    it('スイッチをクリックすると onHeadingIndicatorChange(true) が呼ばれる（OFF→ON）', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} headingIndicatorEnabled={false} />)
+      fireEvent.click(screen.getByRole('switch'))
+      expect(mockOnHeadingIndicatorChange).toHaveBeenCalledWith(true)
+    })
+
+    it('スイッチをクリックすると onHeadingIndicatorChange(false) が呼ばれる（ON→OFF）', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} headingIndicatorEnabled={true} />)
+      fireEvent.click(screen.getByRole('switch'))
+      expect(mockOnHeadingIndicatorChange).toHaveBeenCalledWith(false)
+    })
+
+    it('headingIndicatorAvailable=false（デスクトップ）の場合、スイッチは disabled', () => {
+      renderWithProvider(
+        <TopMenuPanel {...defaultProps} headingIndicatorAvailable={false} />
+      )
+      expect(screen.getByRole('switch')).toBeDisabled()
+    })
+
+    it('headingIndicatorAvailable 未指定（既定）の場合、スイッチは有効', () => {
+      renderWithProvider(<TopMenuPanel {...defaultProps} />)
+      expect(screen.getByRole('switch')).not.toBeDisabled()
     })
   })
 })
