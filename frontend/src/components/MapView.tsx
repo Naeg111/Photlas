@@ -11,6 +11,7 @@ import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 import { buildRateLimitApiError, notifyIfRateLimitedBurst } from '../utils/notifyIfRateLimited'
 import { PinSvg } from './PinSvg'
+import { HeadingIndicator } from './HeadingIndicator'
 import { generatePinImage, getPinImageId, PIN_COLOR_MAP, BASE_PIN_SIZE, PIN_HEIGHT_RATIO, PIN_PIXEL_RATIO, SHADOW_PADDING } from '../utils/pinImageGenerator'
 import { getGeoCountryCache, setGeoCountryCache } from '../utils/geoCountryCache'
 import { fetchMyCountry } from '../utils/fetchMyCountry'
@@ -229,6 +230,10 @@ interface MapViewProps {
    * false に戻った時、ズーム 0〜4 なら 5 秒タイマーをセットする。
    */
   isPhotoDialogOpen?: boolean
+  /** Issue#115: 方角インジケーターの ON/OFF */
+  headingIndicatorEnabled?: boolean
+  /** Issue#115: 現在の方角（度数、0=北、時計回り）。null は未取得 */
+  heading?: number | null
 }
 
 /**
@@ -309,7 +314,7 @@ function handleClusterClick(mapInstance: MapboxMap, e: any, callbackRef: React.R
   })
 }
 
-const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady, isPhotoDialogOpen }, ref) {
+const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady, isPhotoDialogOpen, headingIndicatorEnabled = false, heading = null }, ref) {
   const { t, i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [spots, setSpots] = useState<SpotResponse[]>([])
@@ -318,6 +323,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const [mapTransitioning, setMapTransitioning] = useState(false)
   const [mapTransitionFading, setMapTransitionFading] = useState(false)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  // Issue#115: マップの bearing（0=北上）。HeadingIndicator が画面上の回転角を補正するために使う
+  const [mapBearing, setMapBearing] = useState<number>(0)
   const [shootingLocationPin, setShootingLocationPin] = useState<{ lat: number; lng: number } | null>(null)
   const savedMapStateRef = useRef<{ center: [number, number]; zoom: number } | null>(null)
   const onMapClickRef = useRef(onMapClick)
@@ -615,6 +622,17 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       // Layer未初期化の場合はスキップ
     }
   }, [map, shootingLocationPin])
+
+  // Issue#115: マップ bearing 変化を追跡（HeadingIndicator の角度補正用）。
+  // headingIndicatorEnabled が false の間は購読しない（不要な再レンダリングを防ぐ）。
+  useEffect(() => {
+    if (!map || !headingIndicatorEnabled) return
+    const handleRotate = () => setMapBearing(map.getBearing())
+    // 初期値を反映
+    handleRotate()
+    map.on('rotate', handleRotate)
+    return () => { map.off('rotate', handleRotate) }
+  }, [map, headingIndicatorEnabled])
 
   // スポットデータを取得
   const fetchSpots = useCallback(async (mapInstance: MapboxMap) => {
@@ -1157,6 +1175,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               className="relative"
               style={{ width: '80px', height: '80px' }}
             >
+              {/* Issue#115: 方角インジケーター（背面に配置、ON 時かつ heading 取得済のみ表示） */}
+              {headingIndicatorEnabled && heading !== null && (
+                <HeadingIndicator heading={heading} mapBearing={mapBearing} />
+              )}
               <div
                 className="location-pulse absolute top-1/2 left-1/2 w-8 h-8 rounded-full bg-blue-400"
                 style={{ transform: 'translate(-50%, -50%)' }}
