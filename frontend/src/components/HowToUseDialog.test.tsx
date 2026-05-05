@@ -74,6 +74,13 @@ describe('HowToUseDialog', () => {
       expect(screen.getByText('現在位置ボタン')).toBeInTheDocument()
     })
 
+    // Issue#115: 方角インジケーターのON/OFFトグル説明
+    it('「マップの操作」を開くと「向いている方角の表示」が表示される', () => {
+      render(<HowToUseDialog open={true} onOpenChange={mockOnOpenChange} />)
+      fireEvent.click(screen.getByText('マップの操作'))
+      expect(screen.getByText('向いている方角の表示')).toBeInTheDocument()
+    })
+
     it('「写真の投稿」を開くと「写真を投稿する」が表示される', () => {
       render(<HowToUseDialog open={true} onOpenChange={mockOnOpenChange} />)
       fireEvent.click(screen.getByText('写真の投稿'))
