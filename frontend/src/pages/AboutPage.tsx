@@ -19,7 +19,7 @@ import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
  * メインの地図画面 (https://photlas.jp/) には影響を与えない設計。
  */
 export default function AboutPage() {
-  useDocumentTitle('Photlas - 写真から行ってみたい場所が見つかる Web サービス')
+  useDocumentTitle('Photlas - 写真から行ってみたい場所が見つかるサービス')
   useCanonicalUrl('/about')
 
   return (
@@ -39,7 +39,7 @@ export default function AboutPage() {
         <section className="max-w-3xl mx-auto px-6 py-16">
           <h1 className="text-4xl font-bold mb-4">Photlas</h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            写真から行ってみたい場所が見つかる Web サービスです。
+            写真から行ってみたい場所が見つかるサービスです。
             ユーザーが投稿した写真とその撮影場所を地図上から自由に探索でき、
             新たな旅のきっかけを生み出します。
           </p>
