@@ -812,7 +812,13 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
         onHowToUseClick={() => dialog.open('howToUse')}
         onContactClick={() => dialog.open('contact')}
         headingIndicatorEnabled={headingIndicator.enabled}
-        onHeadingIndicatorChange={(next) => { void headingIndicator.setEnabled(next) }}
+        onHeadingIndicatorChange={async (next) => {
+          // Issue#115: ON 化時の OS 許可拒否はトーストで通知（フックがスイッチ自体は OFF に戻す）
+          const result = await headingIndicator.setEnabled(next)
+          if (next && !result.granted) {
+            toast.error(t('errors.HEADING_PERMISSION_DENIED'))
+          }
+        }}
         onTermsClick={() => dialog.open('terms')}
         onPrivacyClick={() => dialog.open('privacy')}
         onLoginClick={() => dialog.open('login')}

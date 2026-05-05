@@ -399,6 +399,7 @@
     "RATE_LIMIT_EXCEEDED_SHORT": "Rate limited (retry in {{seconds}}s)",
     "RATE_LIMIT_BURST": "The network is congested. Please pause briefly before retrying.",
     "NETWORK_ERROR": "Network connection failed. Please check your connection.",
+    "HEADING_PERMISSION_DENIED": "Permission to access compass direction was denied. Please allow it in your settings.",
     "USERNAME_REQUIRED": "Please enter a display name.",
     "USERNAME_LENGTH_INVALID": "Display name must be between 2 and 12 characters.",
     "USERNAME_INVALID_CHARACTER_SYMBOL": "Display name cannot contain symbols.",

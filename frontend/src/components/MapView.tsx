@@ -483,23 +483,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     debouncedFetchSpotsRef.current?.(mapInstance)
   }, [stopGlobeRotation, scheduleGlobeRotation])
 
-  // デバイスの向き取得の許可をリクエスト（iOS 13+用）
-  const requestOrientationPermission = useCallback(async () => {
-    const DeviceOrientationEventWithPermission = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
-      requestPermission?: () => Promise<'granted' | 'denied' | 'default'>
-    }
-
-    if (typeof DeviceOrientationEventWithPermission.requestPermission === 'function') {
-      try {
-        const permission = await DeviceOrientationEventWithPermission.requestPermission()
-        return permission === 'granted'
-      } catch {
-        return false
-      }
-    }
-    return true
-  }, [])
-
   // Symbol Layerの初期化
   const initializeSymbolLayers = useCallback((mapInstance: MapboxMap) => {
     if (layersInitializedRef.current) return
@@ -687,7 +670,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     centerOnUserLocation: async () => {
       if (!map) return
 
-      await requestOrientationPermission()
+      // Issue#115: 旧 requestOrientationPermission 呼出を削除（結果未使用のデッドコードだった）。
+      // 方角センサーの許可は useHeadingIndicator のスイッチ ON 時に取得する。
 
       if ('geolocation' in navigator) {
         if (watchIdRef.current !== null) {
@@ -936,7 +920,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       clearIdleRotationTimer()
       startGlobeRotation(map)
     },
-  }), [map, requestOrientationPermission, fetchSpots, stopGlobeRotation, startGlobeRotation, clearIdleRotationTimer, rotationLoop])
+  }), [map, fetchSpots, stopGlobeRotation, startGlobeRotation, clearIdleRotationTimer, rotationLoop])
 
   // 地図が読み込まれたときの処理
   const handleLoad = useCallback((e: MapEvent) => {
