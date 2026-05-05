@@ -27,16 +27,11 @@ export function RegistrationWallOverlay({
   const { t } = useTranslation()
   const signUpButtonRef = useRef<HTMLButtonElement>(null)
 
+  // 開いた瞬間に「表示イベント送信」と「自動フォーカス」を一括処理
   useEffect(() => {
-    if (isOpen) {
-      trackRegistrationWallEvent('registration_wall_shown')
-    }
-  }, [isOpen])
-
-  useEffect(() => {
-    if (isOpen) {
-      signUpButtonRef.current?.focus()
-    }
+    if (!isOpen) return
+    trackRegistrationWallEvent('registration_wall_shown')
+    signUpButtonRef.current?.focus()
   }, [isOpen])
 
   if (!isOpen) return null
