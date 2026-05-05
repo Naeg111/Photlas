@@ -11,6 +11,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/maintenance-common.sh disable=SC1091
+. "${SCRIPT_DIR}/lib/maintenance-common.sh"
+
 ENV="${1:-}"
 case "$ENV" in
   prod)
@@ -31,9 +35,6 @@ case "$ENV" in
     exit 1
     ;;
 esac
-
-REGION="ap-northeast-1"
-ALB_NAME="photlas-alb"
 
 echo "=== メンテナンスモード状態確認 (${ENV}) ==="
 echo "Region:   ${REGION}"
