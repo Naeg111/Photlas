@@ -8,22 +8,40 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// CloudFront Function コードサイズ上限 (AWS 仕様)
+const CLOUDFRONT_FUNCTION_SIZE_LIMIT_BYTES = 10240;
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const HTML_FILE = path.join(REPO_ROOT, 'scripts', 'maintenance.html');
 const TEMPLATE_FILE = path.join(REPO_ROOT, 'scripts', 'cloudfront-function', 'maintenance.js.template');
 const OUTPUT_FILE = path.join(REPO_ROOT, 'scripts', 'cloudfront-function', 'maintenance.js');
 
-const html = fs.readFileSync(HTML_FILE, 'utf8');
-const template = fs.readFileSync(TEMPLATE_FILE, 'utf8');
+function escapeForSingleQuotedJsString(s) {
+  return s
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n');
+}
 
-const escapedHtml = html
-  .replace(/\\/g, '\\\\')
-  .replace(/'/g, "\\'")
-  .replace(/\r/g, '\\r')
-  .replace(/\n/g, '\\n');
+function readRequired(filePath, label) {
+  if (!fs.existsSync(filePath)) {
+    console.error(`Error: ${label} not found at ${filePath}`);
+    process.exit(1);
+  }
+  return fs.readFileSync(filePath, 'utf8');
+}
 
-const result = template.replace(/__MAINTENANCE_HTML__/g, escapedHtml);
+const html = readRequired(HTML_FILE, 'maintenance.html');
+const template = readRequired(TEMPLATE_FILE, 'maintenance.js.template');
+const result = template.replace(/__MAINTENANCE_HTML__/g, escapeForSingleQuotedJsString(html));
+
 fs.writeFileSync(OUTPUT_FILE, result);
 
-console.log(`Generated: ${OUTPUT_FILE} (${Buffer.byteLength(result, 'utf8')} bytes)`);
+const sizeBytes = Buffer.byteLength(result, 'utf8');
+console.log(`Generated: ${OUTPUT_FILE} (${sizeBytes} bytes / limit ${CLOUDFRONT_FUNCTION_SIZE_LIMIT_BYTES})`);
+if (sizeBytes >= CLOUDFRONT_FUNCTION_SIZE_LIMIT_BYTES) {
+  console.error(`Error: maintenance.js exceeds CloudFront Function 10KB limit (${sizeBytes} bytes)`);
+  process.exit(1);
+}
