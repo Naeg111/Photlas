@@ -40,7 +40,7 @@ import { AboutDialog } from './components/AboutDialog'
 import { HowToUseDialog } from './components/HowToUseDialog'
 import { ContactDialog } from './components/ContactDialog'
 import { RegistrationWallOverlay } from './components/RegistrationWallOverlay'
-import { addViewedPhotoId, shouldShowRegistrationWall } from './utils/registrationWall'
+import { useRegistrationWall } from './hooks/useRegistrationWall'
 import { PhotoLightbox } from './components/PhotoLightbox'
 import MapView from './components/MapView'
 import type { MapViewFilterParams, MapViewHandle } from './components/MapView'
@@ -108,34 +108,18 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
   // Issue#111: 位置情報の許可状態。Permissions API 非対応ブラウザは 'unknown'。
   const [permissionState, setPermissionState] = useState<'granted' | 'denied' | 'prompt' | 'unknown' | null>(null)
 
-  // Issue#118: 登録壁の表示状態。useState 初期値で localStorage を同期評価し、
-  // 初回レンダリング時点から正しい状態にすることでフリッカーを防ぐ。
-  // shouldShowRegistrationWall 内で hasValidAuthToken() を呼び、AuthContext の
-  // useEffect 完了前（isAuthenticated=false）でも有効な JWT があれば false を返す。
-  const [showRegistrationWall, setShowRegistrationWall] = useState(() =>
-    shouldShowRegistrationWall(isAuthenticated),
-  )
-
-  // 認証状態が変化したら登録壁の表示判定を再計算する
-  useEffect(() => {
-    setShowRegistrationWall(shouldShowRegistrationWall(isAuthenticated))
-  }, [isAuthenticated])
-
-  // Issue#118: 写真詳細を開いた瞬間のカウント加算。ログイン中はカウントしない（実害もないが余計な書き込みを避ける）。
-  const handlePhotoViewed = useCallback(
-    (photoId: number) => {
-      if (isAuthenticated) return
-      addViewedPhotoId(photoId)
-      setShowRegistrationWall(shouldShowRegistrationWall(false))
-    },
-    [isAuthenticated],
-  )
+  // Issue#118: 登録壁の表示判定 + 写真閲覧カウントを集約フックで管理
+  const registrationWall = useRegistrationWall(isAuthenticated)
 
   // Issue#118: 登録壁経由で開かれた SignUp / Login ダイアログの目印。
   // 成功イベント (registration_wall_*_success) の送信判定に使用する。
   // ダイアログを閉じた時点で個別にリセットする。
   const [signUpFromWall, setSignUpFromWall] = useState(false)
   const [loginFromWall, setLoginFromWall] = useState(false)
+
+  // Issue#118: 登録壁が他の関連ダイアログ（about / login / signUp）と重なるのを避ける
+  const isRelatedDialogOpen =
+    dialog.isOpen('about') || dialog.isOpen('login') || dialog.isOpen('signUp')
 
   // Issue#111: マウント時に Permissions API で位置情報の許可状態を事前判定
   useEffect(() => {
@@ -1032,7 +1016,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
             mapRef.current?.refreshSpots()
           }}
           filterMaxAgeDays={mapFilterParams?.max_age_days}
-          onPhotoViewed={handlePhotoViewed}
+          onPhotoViewed={registrationWall.recordPhotoView}
         />
       )}
 
@@ -1057,12 +1041,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
           showRegistrationWall も false になる
       */}
       <RegistrationWallOverlay
-        isOpen={
-          showRegistrationWall &&
-          !dialog.isOpen('about') &&
-          !dialog.isOpen('login') &&
-          !dialog.isOpen('signUp')
-        }
+        isOpen={registrationWall.isShown && !isRelatedDialogOpen}
         onClickSignUp={() => {
           setSignUpFromWall(true)
           dialog.open('signUp')
