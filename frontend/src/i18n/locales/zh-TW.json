@@ -310,6 +310,13 @@
     "reportText1": "從照片詳細畫面,可檢舉不當內容或有問題的貼文。檢舉內容將由營運方進行確認。",
     "reportText2": "另外,我們在發布時會進行自動偵測,可能不當的照片會事先封鎖,但仍可能有遺漏。"
   },
+  "contact": {
+    "title": "聯絡我們",
+    "description": "聯絡 Photlas",
+    "guideText": "如有意見回饋、功能需求或錯誤回報，請透過以下電子郵件與我們聯絡。",
+    "mailSubject": "Photlas 諮詢",
+    "mailBody": "請填寫您的諮詢內容。"
+  },
   "about": {
     "title": "關於 Photlas",
     "description": "關於 Photlas 服務",

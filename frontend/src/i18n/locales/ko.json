@@ -310,6 +310,13 @@
     "reportText1": "사진의 상세 화면에서 부적절한 콘텐츠나 문제 있는 게시물을 신고할 수 있습니다. 신고 내용은 운영진이 확인합니다.",
     "reportText2": "참고로, 게시 시 자동 감지를 실시하고 있어 부적절하다고 판단되는 사진은 미리 차단하고 있지만, 빠져나갈 가능성이 있습니다."
   },
+  "contact": {
+    "title": "문의하기",
+    "description": "Photlas 문의",
+    "guideText": "의견, 요청 사항, 불편 사항 신고 등은 아래 이메일 주소로 부담 없이 연락해 주세요.",
+    "mailSubject": "Photlas 문의",
+    "mailBody": "문의 내용을 입력해 주세요."
+  },
   "about": {
     "title": "Photlas 소개",
     "description": "Photlas 서비스 소개",

@@ -38,6 +38,7 @@ import PhotoDetailDialog from './components/PhotoDetailDialog'
 // import { WantToGoListDialog } from './components/WantToGoListDialog' // 行きたい場所リスト（一時非表示）
 import { AboutDialog } from './components/AboutDialog'
 import { HowToUseDialog } from './components/HowToUseDialog'
+import { ContactDialog } from './components/ContactDialog'
 import { PhotoLightbox } from './components/PhotoLightbox'
 import MapView from './components/MapView'
 import type { MapViewFilterParams, MapViewHandle } from './components/MapView'
@@ -813,6 +814,8 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
       <AboutDialog {...dialog.getProps('about')} />
 
       <HowToUseDialog {...dialog.getProps('howToUse')} />
+
+      <ContactDialog {...dialog.getProps('contact')} />
 
       <LoginRequiredDialog
         {...dialog.getProps('loginRequired')}
