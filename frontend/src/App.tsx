@@ -673,6 +673,9 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
           onMapReady={handleMapReadyInternal}
           // Issue#111-followup §8: 投稿詳細ダイアログ表示中は地球儀回転を停止する
           isPhotoDialogOpen={dialog.isOpen('photoDetail')}
+          // Issue#115: 方角インジケーター
+          headingIndicatorEnabled={headingIndicator.enabled}
+          heading={headingIndicator.heading}
         />
       </div>
 
