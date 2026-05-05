@@ -338,6 +338,13 @@
     "reportText1": "From the photo detail screen, you can report inappropriate content or problematic posts. Reports are reviewed by our team.",
     "reportText2": "Note that we automatically detect inappropriate content at the time of posting and block likely violations in advance, though some may slip through."
   },
+  "contact": {
+    "title": "Contact",
+    "description": "Contact Photlas",
+    "guideText": "For feedback, requests, or bug reports, please feel free to contact us at the email address below.",
+    "mailSubject": "Inquiry to Photlas",
+    "mailBody": "Please write your inquiry here."
+  },
   "about": {
     "title": "About Photlas",
     "description": "About the Photlas service",

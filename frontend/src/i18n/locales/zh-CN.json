@@ -310,6 +310,13 @@
     "reportText1": "可通过照片详情页面举报不当内容或有问题的发布。举报内容将由运营方审核。",
     "reportText2": "另外,我们在发布时会自动检测,提前屏蔽可能不当的照片,但仍可能有遗漏。"
   },
+  "contact": {
+    "title": "联系我们",
+    "description": "联系 Photlas",
+    "guideText": "如有反馈、建议或问题报告，请随时通过以下邮箱与我们联系。",
+    "mailSubject": "Photlas 咨询",
+    "mailBody": "请填写您的咨询内容。"
+  },
   "about": {
     "title": "关于 Photlas",
     "description": "关于 Photlas 服务",
