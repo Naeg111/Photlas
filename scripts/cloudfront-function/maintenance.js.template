@@ -1,0 +1,19 @@
+// Issue#117: メンテナンス時の CloudFront Function コードのテンプレート。
+// `scripts/build-maintenance-function.sh` が `__MAINTENANCE_HTML__` を
+// `scripts/maintenance.html` のエスケープ済み内容に置換して
+// `maintenance.js` を生成する。
+//
+// 503 + メンテナンス HTML を viewer-request 段階で返すため、リクエストは
+// オリジンに到達しない。Retry-After は 3 時間 (10800 秒)。
+function handler(event) {
+  return {
+    statusCode: 503,
+    statusDescription: 'Service Unavailable',
+    headers: {
+      'content-type': { value: 'text/html; charset=utf-8' },
+      'cache-control': { value: 'no-cache, no-store, must-revalidate' },
+      'retry-after': { value: '10800' }
+    },
+    body: '__MAINTENANCE_HTML__'
+  };
+}
