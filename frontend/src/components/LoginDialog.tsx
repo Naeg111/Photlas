@@ -14,6 +14,7 @@ import { fetchJson } from '../utils/fetchJson'
 import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
 import OAuthButtons from './OAuthButtons'
+import { trackRegistrationWallEvent } from '../utils/registrationWallAnalytics'
 
 /**
  * LoginDialog コンポーネント
@@ -27,6 +28,11 @@ interface LoginDialogProps {
   onOpenChange: (open: boolean) => void
   onShowSignUp: () => void
   onShowPasswordReset: () => void
+  /**
+   * Issue#118: 登録壁から開かれた場合 true。
+   * ログイン成功時に registration_wall_login_success イベントを送信する目印。
+   */
+  triggeredFromWall?: boolean
 }
 
 export function LoginDialog({
@@ -34,6 +40,7 @@ export function LoginDialog({
   onOpenChange,
   onShowSignUp,
   onShowPasswordReset,
+  triggeredFromWall = false,
 }: Readonly<LoginDialogProps>) {
   const { t } = useTranslation()
   const { login } = useAuth()
@@ -75,6 +82,10 @@ export function LoginDialog({
         data.token,
         rememberMe
       )
+      // Issue#118: 登録壁経由のログイン成功は別イベントとして計測
+      if (triggeredFromWall) {
+        trackRegistrationWallEvent('registration_wall_login_success')
+      }
       toast(t('auth.loginSuccess'))
       onOpenChange(false)
     } catch (err) {

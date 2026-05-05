@@ -131,6 +131,12 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
     [isAuthenticated],
   )
 
+  // Issue#118: 登録壁経由で開かれた SignUp / Login ダイアログの目印。
+  // 成功イベント (registration_wall_*_success) の送信判定に使用する。
+  // ダイアログを閉じた時点で個別にリセットする。
+  const [signUpFromWall, setSignUpFromWall] = useState(false)
+  const [loginFromWall, setLoginFromWall] = useState(false)
+
   // Issue#111: マウント時に Permissions API で位置情報の許可状態を事前判定
   useEffect(() => {
     let cancelled = false
@@ -866,14 +872,25 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
       />
 
       <LoginDialog
-        {...dialog.getProps('login')}
+        open={dialog.isOpen('login')}
+        onOpenChange={(open) => {
+          dialog.getProps('login').onOpenChange(open)
+          // Issue#118: 閉じる時に登録壁の起点フラグをクリア（成功時は閉じる前に送信済み）
+          if (!open) setLoginFromWall(false)
+        }}
         onShowSignUp={handleSignUpClick}
         onShowPasswordReset={() => dialog.open('passwordReset')}
+        triggeredFromWall={loginFromWall}
       />
 
       {/* Issue#104: SignUpMethodDialog / OAuthSignUpDialog を削除（新規登録フロー簡素化） */}
       <SignUpDialog
-        {...dialog.getProps('signUp')}
+        open={dialog.isOpen('signUp')}
+        onOpenChange={(open) => {
+          dialog.getProps('signUp').onOpenChange(open)
+          // Issue#118: 閉じる時に登録壁の起点フラグをクリア
+          if (!open) setSignUpFromWall(false)
+        }}
         onShowTerms={() => dialog.open('terms')}
         onShowPrivacyPolicy={() => dialog.open('privacy')}
         onShowLogin={() => dialog.open('login')}
@@ -884,6 +901,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
             dialog.open('login')
           }
         }
+        triggeredFromWall={signUpFromWall}
       />
 
       {/* Issue#99: 既存メールアカウントとの OAuth リンク確認ダイアログ */}
@@ -1045,8 +1063,14 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
           !dialog.isOpen('login') &&
           !dialog.isOpen('signUp')
         }
-        onClickSignUp={() => dialog.open('signUp')}
-        onClickLogin={() => dialog.open('login')}
+        onClickSignUp={() => {
+          setSignUpFromWall(true)
+          dialog.open('signUp')
+        }}
+        onClickLogin={() => {
+          setLoginFromWall(true)
+          dialog.open('login')
+        }}
         onClickAbout={() => dialog.open('about')}
       />
 
