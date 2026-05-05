@@ -2,10 +2,12 @@
  * 認証コンテキスト
  * Issue#5: ログイン・ログアウト機能
  * Issue#36: ユーザー情報更新機能追加
+ * Issue#118: ログイン成功時に登録壁の閲覧履歴をクリア
  */
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
 import i18n from '../i18n'
 import { type SupportedLanguage, SUPPORTED_LANGUAGES } from '../i18n'
+import { clearViewedPhotoIds } from '../utils/registrationWall'
 
 interface User {
   userId: number
@@ -77,6 +79,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       i18n.changeLanguage(userData.language)
       localStorage.setItem('photlas-language', userData.language)
     }
+
+    // Issue#118: ログイン成功時に登録壁の閲覧履歴をクリア（ログイン後は壁が出ないため不要）
+    clearViewedPhotoIds()
 
     setUser(userData)
     setIsAuthenticated(true)
