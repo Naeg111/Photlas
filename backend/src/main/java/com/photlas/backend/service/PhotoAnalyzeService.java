@@ -19,6 +19,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -77,16 +78,26 @@ public class PhotoAnalyzeService {
     public PhotoAnalyzeResponse analyze(byte[] imageBytes, String contentType) {
         validateContentType(contentType);
         byte[] resized = resizeForRekognition(imageBytes);
+        return callRekognitionSafely(resized)
+                .map(this::mapAndCache)
+                .orElseGet(PhotoAnalyzeResponse::empty);
+    }
 
-        DetectLabelsResponse rekognitionResponse;
+    /**
+     * Rekognition を呼び出す。例外時は空 Optional を返してフォールバック動作させる
+     * （Issue#119 4.6: フォーム空欄でユーザーに手動入力を促す）。
+     */
+    private Optional<DetectLabelsResponse> callRekognitionSafely(byte[] imageBytes) {
         try {
-            rekognitionResponse = rekognitionClient.detectLabels(buildDetectLabelsRequest(resized));
+            return Optional.of(rekognitionClient.detectLabels(buildDetectLabelsRequest(imageBytes)));
         } catch (RekognitionException e) {
-            // Issue#119 4.6: Rekognition エラー時は空レスポンスでフォールバック
             logger.error("Rekognition DetectLabels 呼び出しに失敗しました（フォールバック: 空レスポンス）", e);
-            return PhotoAnalyzeResponse.empty();
+            return Optional.empty();
         }
+    }
 
+    /** Rekognition のレスポンスをマッピング → キャッシュ → DTO 構築まで一気通貫で行う。 */
+    private PhotoAnalyzeResponse mapAndCache(DetectLabelsResponse rekognitionResponse) {
         LabelMappingResult mapped = labelMapper.map(rekognitionResponse.labels());
         String token = cacheService.save(mapped);
         return new PhotoAnalyzeResponse(mapped.categories(), mapped.weather(), mapped.confidence(), token);
