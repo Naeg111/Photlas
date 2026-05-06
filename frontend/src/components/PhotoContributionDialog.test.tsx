@@ -140,7 +140,7 @@ describe('PhotoContributionDialog', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
       expect(screen.getByText(/JPEG、PNG、HEIC/)).toBeInTheDocument()
-      expect(screen.getByText(/50MB/)).toBeInTheDocument()
+      expect(screen.getByText(/100MB/)).toBeInTheDocument()
     })
 
     it('Issue#74 - タイトル入力フィールドが表示されない', () => {

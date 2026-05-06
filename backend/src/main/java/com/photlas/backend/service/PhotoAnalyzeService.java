@@ -42,8 +42,8 @@ public class PhotoAnalyzeService {
 
     private static final Logger logger = LoggerFactory.getLogger(PhotoAnalyzeService.class);
 
-    /** Issue#119 4.5: Rekognition の MinConfidence。70%未満は除外。 */
-    private static final float MIN_CONFIDENCE = 70f;
+    /** Issue#119 4.5: Rekognition の MinConfidence。80%未満は除外（誤検出を抑えるため引き上げ）。 */
+    private static final float MIN_CONFIDENCE = 80f;
 
     /** Issue#119 4.5: 多すぎるとマッピング複雑化、少なすぎると見逃すため 30 が現実的。 */
     private static final int MAX_LABELS = 30;

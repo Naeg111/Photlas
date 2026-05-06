@@ -871,6 +871,13 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       const startedAt = Date.now()
       const skipMinView = options?.skipMinView === true
 
+      // skipMinView=false の場合（=ポップアップ表示パス）は、getCurrentPosition の前に
+      // 確実に zoom 0 へリセットする。位置情報許可ポップアップが表示されている間に
+      // 「地球全体（ズーム 0）」を見せるための保険。
+      if (!skipMinView) {
+        map.jumpTo({ zoom: DEFAULT_ZOOM })
+      }
+
       const warpToLocation = (lng: number, lat: number, zoom: number) => {
         // Issue#111: ワープ開始時に地球儀回転を停止する（idle タイマーも内部で止まる）
         stopGlobeRotation()
@@ -959,6 +966,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
     // Symbol Layerを初期化
     initializeSymbolLayers(mapInstance)
+
+    // ロード直後に明示的にズーム 0 を強制する。
+    // initialViewState だけだとスタイル・projection の初期計算次第で
+    // 微妙に異なる camera 位置になることがあるため、保険として固定する。
+    mapInstance.setZoom(DEFAULT_ZOOM)
 
     setMap(mapInstance)
 
@@ -1135,6 +1147,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         fadeDuration={CLUSTER_FADE_DURATION_MS}
         renderWorldCopies={false}
         attributionControl={false}
+        projection={{ name: 'globe' }}
         // Issue#111-followup Bug1: ズームイン/アウトボタンの下限制約と
         // ホイールズームの下限を一致させる
         minZoom={DEFAULT_ZOOM}

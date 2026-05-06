@@ -104,7 +104,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - analyze: Rekognition 呼び出しに MinConfidence=70, MaxLabels=30 が設定される")
+    @DisplayName("Issue#119 - analyze: Rekognition 呼び出しに MinConfidence=80, MaxLabels=30 が設定される")
     void analyze_setsRekognitionRequestParameters() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
@@ -115,7 +115,7 @@ class PhotoAnalyzeServiceTest {
         ArgumentCaptor<DetectLabelsRequest> captor = ArgumentCaptor.forClass(DetectLabelsRequest.class);
         verify(rekognitionClient).detectLabels(captor.capture());
         DetectLabelsRequest request = captor.getValue();
-        assertThat(request.minConfidence()).isEqualTo(70f);
+        assertThat(request.minConfidence()).isEqualTo(80f);
         assertThat(request.maxLabels()).isEqualTo(30);
     }
 
