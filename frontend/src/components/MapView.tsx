@@ -1145,7 +1145,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         mapStyle={MAPBOX_STYLE}
         language={mapboxLang}
         fadeDuration={CLUSTER_FADE_DURATION_MS}
-        renderWorldCopies={false}
         attributionControl={false}
         // Issue#111-followup Bug1: ズームイン/アウトボタンの下限制約と
         // ホイールズームの下限を一致させる

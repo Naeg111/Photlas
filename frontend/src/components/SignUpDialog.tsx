@@ -478,12 +478,12 @@ export function SignUpDialog({
 
           {/* 利用規約・プライバシーポリシー（Issue#104 でプライバシーポリシー追加） */}
           {/* w-fit mx-auto で内側ラッパー幅を最長行（プライバシー）にそろえ、両チェックボックスの左端を一致させる */}
-          <div className="space-y-3 my-[50px]">
+          <div className="space-y-5 my-[50px]">
             {errors.terms && (
               <p className="text-sm text-red-600">{errors.terms}</p>
             )}
-            <div className="w-fit mx-auto space-y-3">
-              <div className="flex items-center space-x-2">
+            <div className="w-fit mx-auto space-y-5">
+              <div className="flex items-center space-x-3">
                 <Checkbox
                   id="terms"
                   checked={agreedToTerms}
@@ -504,7 +504,7 @@ export function SignUpDialog({
                   {t('auth.agreeToTerms')}
                 </label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 <Checkbox
                   id="privacy"
                   checked={agreedToPrivacy}
@@ -526,7 +526,7 @@ export function SignUpDialog({
                 </label>
               </div>
               {/* Issue#109: 13 歳以上であることの自己申告チェックボックス */}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 <Checkbox
                   id="age-confirmation"
                   checked={ageConfirmed}
