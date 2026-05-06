@@ -99,8 +99,8 @@ export default function TermsAgreementDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          <div className="flex items-center space-x-2">
+        <div className="space-y-5 py-2">
+          <div className="flex items-center space-x-3">
             <Checkbox
               id="terms-agreement-tos"
               checked={agreedTerms}
@@ -119,7 +119,7 @@ export default function TermsAgreementDialog({
             </label>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <Checkbox
               id="terms-agreement-pp"
               checked={agreedPrivacy}
@@ -139,7 +139,7 @@ export default function TermsAgreementDialog({
           </div>
 
           {/* Issue#109: 13 歳以上であることの自己申告 */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <Checkbox
               id="terms-agreement-age"
               checked={ageConfirmed}
