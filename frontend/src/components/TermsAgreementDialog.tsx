@@ -100,62 +100,84 @@ export default function TermsAgreementDialog({
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          <div className="flex items-center space-x-3">
+          {/* 行全体を <label> でラップしてクリック範囲を行全体に拡大。
+              内部の <button>（利用規約等のリンク）を押した場合は HTML 仕様上 label 連動が
+              発動しないため、それ以外（チェックボックス本体・余白・「に同意する」テキスト）
+              のどこを押してもチェックボックスがトグルする。
+              p-2 -mx-2 で見た目を維持しつつタッチ領域を上下8px拡大している。 */}
+          <label
+            htmlFor="terms-agreement-tos"
+            className="flex items-center space-x-3 cursor-pointer p-2 -mx-2 select-none"
+          >
             <Checkbox
               id="terms-agreement-tos"
               checked={agreedTerms}
               onCheckedChange={(checked) => setAgreedTerms(checked === true)}
               disabled={isSubmitting}
             />
-            <label htmlFor="terms-agreement-tos" className="text-sm">
+            <span className="text-sm">
               <button
                 type="button"
                 className="text-blue-600 underline hover:text-blue-800"
-                onClick={onShowTerms}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onShowTerms()
+                }}
               >
                 {t('auth.termsOfService')}
               </button>
               {t('auth.agreeToTerms')}
-            </label>
-          </div>
+            </span>
+          </label>
 
-          <div className="flex items-center space-x-3">
+          <label
+            htmlFor="terms-agreement-pp"
+            className="flex items-center space-x-3 cursor-pointer p-2 -mx-2 select-none"
+          >
             <Checkbox
               id="terms-agreement-pp"
               checked={agreedPrivacy}
               onCheckedChange={(checked) => setAgreedPrivacy(checked === true)}
               disabled={isSubmitting}
             />
-            <label htmlFor="terms-agreement-pp" className="text-sm">
+            <span className="text-sm">
               <button
                 type="button"
                 className="text-blue-600 underline hover:text-blue-800"
-                onClick={onShowPrivacyPolicy}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onShowPrivacyPolicy()
+                }}
               >
                 {t('auth.privacyPolicy')}
               </button>
               {t('auth.termsAgreement.agreeToPrivacyPolicySuffix')}
-            </label>
-          </div>
+            </span>
+          </label>
 
           {/* Issue#109: 13 歳以上であることの自己申告 */}
-          <div className="flex items-center space-x-3">
+          <label
+            htmlFor="terms-agreement-age"
+            className="flex items-center space-x-3 cursor-pointer p-2 -mx-2 select-none"
+          >
             <Checkbox
               id="terms-agreement-age"
               checked={ageConfirmed}
               onCheckedChange={(checked) => setAgeConfirmed(checked === true)}
               disabled={isSubmitting}
             />
-            <label htmlFor="terms-agreement-age" className="text-sm">
+            <span className="text-sm">
               {t('auth.ageConfirmation')}
-            </label>
-          </div>
+            </span>
+          </label>
         </div>
 
         <div className="flex flex-col gap-2 pt-4">
           <Button
             type="button"
-            className="w-full"
+            className="w-full h-11"
             onClick={handleStart}
             disabled={!canStart}
           >
@@ -164,7 +186,7 @@ export default function TermsAgreementDialog({
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full h-11"
             onClick={handleCancel}
             disabled={isSubmitting}
           >
