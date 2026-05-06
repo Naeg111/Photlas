@@ -972,6 +972,24 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     // 微妙に異なる camera 位置になることがあるため、保険として固定する。
     mapInstance.setZoom(DEFAULT_ZOOM)
 
+    // Mapbox v3 の globe projection は、ビューポートサイズに応じた動的な最低ズーム
+    // （地球儀がビューポート内に収まる範囲）を内部的に計算し、setMinZoom(0) より
+    // 優先する。結果として PC ではズーム 1、モバイルでは 1.5〜2 程度で wheel/pinch
+    // ズームアウトが止まってしまう。「-」ボタン（easeTo 直接呼び出し）はこの制約を
+    // 貫通するが、wheel/pinch は内部で easeTo を呼ぶ際に動的下限でクランプされる。
+    //
+    // Mapbox には公開 API でこの制約を無効化する方法がないため、内部の transform
+    // オブジェクトの minZoom getter を上書きして固定値（DEFAULT_ZOOM=0）を返すように
+    // パッチする。これにより wheel/pinch も「-」ボタンと同じく zoom 0 まで到達できる。
+    const transform = (mapInstance as unknown as { transform?: { minZoom: number } }).transform
+    if (transform) {
+      Object.defineProperty(transform, 'minZoom', {
+        get() { return DEFAULT_ZOOM },
+        set() { /* Mapbox 内部からの動的引き上げを無視する */ },
+        configurable: true,
+      })
+    }
+
     setMap(mapInstance)
 
     // Issue#111-followup（仕様変更3回目）: ズーム 0〜4（地球儀表示中）では角度・ピッチ変更ジェスチャーを無効化する。

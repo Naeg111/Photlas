@@ -483,59 +483,73 @@ export function SignUpDialog({
               <p className="text-sm text-red-600">{errors.terms}</p>
             )}
             <div className="w-fit mx-auto space-y-5">
-              <div className="flex items-center space-x-3">
+              {/* TermsAgreementDialog と同じ構造: 行全体を <label> でラップしてクリック範囲拡大。
+                  内部 <a>/<button> は HTML 仕様上 label 連動が起きないため、テキスト・余白・
+                  チェックボックス自体のクリックで toggle、リンク部分は dialog 表示のみとなる。 */}
+              <label
+                htmlFor="terms"
+                className="flex items-center space-x-3 cursor-pointer p-2 -mx-2 select-none"
+              >
                 <Checkbox
                   id="terms"
                   checked={agreedToTerms}
                   onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
                 />
-                <label htmlFor="terms" className="text-sm">
+                <span className="text-sm">
                   <a
                     href="#"
                     role="link"
                     className="text-blue-600 underline hover:text-blue-800"
                     onClick={(e) => {
                       e.preventDefault()
+                      e.stopPropagation()
                       onShowTerms()
                     }}
                   >
                     {t('auth.termsOfService')}
                   </a>
                   {t('auth.agreeToTerms')}
-                </label>
-              </div>
-              <div className="flex items-center space-x-3">
+                </span>
+              </label>
+              <label
+                htmlFor="privacy"
+                className="flex items-center space-x-3 cursor-pointer p-2 -mx-2 select-none"
+              >
                 <Checkbox
                   id="privacy"
                   checked={agreedToPrivacy}
                   onCheckedChange={(checked) => setAgreedToPrivacy(checked === true)}
                 />
-                <label htmlFor="privacy" className="text-sm">
+                <span className="text-sm">
                   <a
                     href="#"
                     role="link"
                     className="text-blue-600 underline hover:text-blue-800"
                     onClick={(e) => {
                       e.preventDefault()
+                      e.stopPropagation()
                       onShowPrivacyPolicy()
                     }}
                   >
                     {t('auth.privacyPolicy')}
                   </a>
                   {t('auth.termsAgreement.agreeToPrivacyPolicySuffix')}
-                </label>
-              </div>
+                </span>
+              </label>
               {/* Issue#109: 13 歳以上であることの自己申告チェックボックス */}
-              <div className="flex items-center space-x-3">
+              <label
+                htmlFor="age-confirmation"
+                className="flex items-center space-x-3 cursor-pointer p-2 -mx-2 select-none"
+              >
                 <Checkbox
                   id="age-confirmation"
                   checked={ageConfirmed}
                   onCheckedChange={(checked) => setAgeConfirmed(checked === true)}
                 />
-                <label htmlFor="age-confirmation" className="text-sm">
+                <span className="text-sm">
                   {t('auth.ageConfirmation')}
-                </label>
-              </div>
+                </span>
+              </label>
             </div>
           </div>
 
