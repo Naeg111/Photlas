@@ -236,7 +236,7 @@ export function TopMenuPanel({
             </Button>
             <Separator />
             {/* 8. 向いている方角（ON/OFF スイッチ） */}
-            <div className="flex items-center justify-between pl-4 pr-5 py-2">
+            <div className="flex items-center justify-between pl-3 pr-5 py-2">
               <div className="flex items-center gap-3">
                 <Compass className="w-5 h-5" />
                 <span className="text-sm">{t('menu.headingIndicator')}</span>
