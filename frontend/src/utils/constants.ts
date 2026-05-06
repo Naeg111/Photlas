@@ -33,10 +33,14 @@ export type PhotoCategory = (typeof PHOTO_CATEGORIES)[number]
  * 写真アップロード関連の定数
  */
 export const PHOTO_UPLOAD = {
-  /** 最大ファイルサイズ（バイト） - 50MB */
-  MAX_FILE_SIZE: 50 * 1024 * 1024,
+  /** 受け入れる最大ファイルサイズ（バイト） - 100MB（中判デジタル等の高解像度を想定） */
+  MAX_FILE_SIZE: 100 * 1024 * 1024,
   /** 最大ファイルサイズ（表示用） */
-  MAX_FILE_SIZE_DISPLAY: '50MB',
+  MAX_FILE_SIZE_DISPLAY: '100MB',
+  /** 投稿時にここを超えると長辺 4000px へ自動リサイズする閾値（multipart 上限 50MB の保険） */
+  AUTO_RESIZE_THRESHOLD: 50 * 1024 * 1024,
+  /** 自動リサイズ時の長辺ピクセル数 */
+  AUTO_RESIZE_MAX_DIMENSION: 4000,
   /** 許可されるファイルタイプ */
   ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/heic'] as const,
   /** ファイルタイプ表示用テキスト */

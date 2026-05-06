@@ -30,8 +30,8 @@ import java.util.Set;
 @Component
 public class RekognitionLabelMapper {
 
-    /** Issue#119 4.5: Rekognition 呼び出し時の MinConfidence と同値。70% 未満は除外する。 */
-    private static final float CONFIDENCE_THRESHOLD = 70f;
+    /** Issue#119 4.5: Rekognition 呼び出し時の MinConfidence と同値。80% 未満は除外する。 */
+    private static final float CONFIDENCE_THRESHOLD = 80f;
 
     /** 「夜景」組合せ判定用の親ラベル（このラベル単独ではマッピングしない）。 */
     private static final String NIGHT_LABEL = "night";

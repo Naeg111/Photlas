@@ -1,5 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
-import { User, Settings, FileText, Shield, LogOut, /* Heart, */ LogIn, CircleHelp, UserX, BookOpen, Bell, Mail, Navigation } from "lucide-react";
+import { User, Settings, FileText, Shield, LogOut, /* Heart, */ LogIn, CircleHelp, UserX, BookOpen, Bell, Mail, Compass } from "lucide-react";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Switch } from "./ui/switch";
@@ -73,54 +73,7 @@ export function TopMenuPanel({
             </SheetDescription>
           </SheetHeader>
           <div className="flex flex-col gap-2 mt-[25px]">
-            <Button
-              variant="ghost"
-              className="justify-start gap-3"
-              onClick={() => {
-                onAboutClick();
-                onOpenChange(false);
-              }}
-            >
-              <CircleHelp className="w-5 h-5" />
-              {t('menu.about')}
-            </Button>
-            <Separator />
-            {/* Issue#114: 操作方法ボタン（全ユーザー） */}
-            <Button
-              variant="ghost"
-              className="justify-start gap-3"
-              onClick={() => {
-                onHowToUseClick();
-                onOpenChange(false);
-              }}
-            >
-              <BookOpen className="w-5 h-5" />
-              {t('menu.howToUse')}
-            </Button>
-            <Separator />
-            {/* Issue#114: お知らせボタン（非活性、中身は別Issueで実装） */}
-            <Button
-              variant="ghost"
-              className="justify-start gap-3"
-              disabled
-            >
-              <Bell className="w-5 h-5" />
-              {t('menu.news')}
-            </Button>
-            <Separator />
-            {/* Issue#114: お問い合わせボタン（全ユーザー） */}
-            <Button
-              variant="ghost"
-              className="justify-start gap-3"
-              onClick={() => {
-                onContactClick();
-                onOpenChange(false);
-              }}
-            >
-              <Mail className="w-5 h-5" />
-              {t('menu.contact')}
-            </Button>
-            <Separator />
+            {/* 1. ログイン or（ログイン中はプロフィール / アカウント設定 / モデレーション / ログアウト） */}
             {isLoggedIn ? (
               <>
                 <Button
@@ -135,20 +88,6 @@ export function TopMenuPanel({
                   {t('menu.profile')}
                 </Button>
                 <Separator />
-                {/* 行きたい場所リスト（一時非表示）
-                <Button
-                  variant="ghost"
-                  className="justify-start gap-3"
-                  onClick={() => {
-                    onFavoritesClick();
-                    onOpenChange(false);
-                  }}
-                >
-                  <Heart className="w-5 h-5" />
-                  行きたい場所リスト
-                </Button>
-                <Separator />
-                */}
                 <Button
                   variant="ghost"
                   className="justify-start gap-3"
@@ -175,23 +114,35 @@ export function TopMenuPanel({
                       <Shield className="w-5 h-5" />
                       {t('menu.moderation')}
                     </Button>
-                    {onDeletedUsersClick && (
-                      <Button
-                        variant="ghost"
-                        className="justify-start gap-3"
-                        onClick={() => {
-                          onDeletedUsersClick();
-                          onOpenChange(false);
-                        }}
-                        data-testid="deleted-users-menu-button"
-                      >
-                        <UserX className="w-5 h-5" />
-                        {t('menu.deletedUsers')}
-                      </Button>
-                    )}
                     <Separator />
+                    {onDeletedUsersClick && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          className="justify-start gap-3"
+                          onClick={() => {
+                            onDeletedUsersClick();
+                            onOpenChange(false);
+                          }}
+                          data-testid="deleted-users-menu-button"
+                        >
+                          <UserX className="w-5 h-5" />
+                          {t('menu.deletedUsers')}
+                        </Button>
+                        <Separator />
+                      </>
+                    )}
                   </>
                 )}
+                <Button
+                  variant="ghost"
+                  className="justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={onLogout}
+                >
+                  <LogOut className="w-5 h-5" />
+                  {t('common.logout')}
+                </Button>
+                <Separator />
               </>
             ) : (
               <>
@@ -209,6 +160,43 @@ export function TopMenuPanel({
                 <Separator />
               </>
             )}
+            {/* 2. お知らせ（非活性、中身は別Issueで実装） */}
+            <Button
+              variant="ghost"
+              className="justify-start gap-3"
+              disabled
+            >
+              <Bell className="w-5 h-5" />
+              {t('menu.news')}
+            </Button>
+            <Separator />
+            {/* 3. Photlasとは？ */}
+            <Button
+              variant="ghost"
+              className="justify-start gap-3"
+              onClick={() => {
+                onAboutClick();
+                onOpenChange(false);
+              }}
+            >
+              <CircleHelp className="w-5 h-5" />
+              {t('menu.about')}
+            </Button>
+            <Separator />
+            {/* 4. 操作方法 */}
+            <Button
+              variant="ghost"
+              className="justify-start gap-3"
+              onClick={() => {
+                onHowToUseClick();
+                onOpenChange(false);
+              }}
+            >
+              <BookOpen className="w-5 h-5" />
+              {t('menu.howToUse')}
+            </Button>
+            <Separator />
+            {/* 5. 利用規約 */}
             <Button
               variant="ghost"
               className="justify-start gap-3"
@@ -221,6 +209,7 @@ export function TopMenuPanel({
               {t('menu.terms')}
             </Button>
             <Separator />
+            {/* 6. プライバシーポリシー */}
             <Button
               variant="ghost"
               className="justify-start gap-3"
@@ -233,23 +222,23 @@ export function TopMenuPanel({
               {t('menu.privacy')}
             </Button>
             <Separator />
-            {isLoggedIn && (
-              <>
-                <Button
-                  variant="ghost"
-                  className="justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={onLogout}
-                >
-                  <LogOut className="w-5 h-5" />
-                  {t('common.logout')}
-                </Button>
-                <Separator />
-              </>
-            )}
-            {/* Issue#115: 方角インジケーター ON/OFF スイッチ */}
-            <div className="flex items-center justify-between px-4 py-2">
+            {/* 7. お問い合わせ */}
+            <Button
+              variant="ghost"
+              className="justify-start gap-3"
+              onClick={() => {
+                onContactClick();
+                onOpenChange(false);
+              }}
+            >
+              <Mail className="w-5 h-5" />
+              {t('menu.contact')}
+            </Button>
+            <Separator />
+            {/* 8. 向いている方角（ON/OFF スイッチ） */}
+            <div className="flex items-center justify-between pl-4 pr-5 py-2">
               <div className="flex items-center gap-3">
-                <Navigation className="w-5 h-5" />
+                <Compass className="w-5 h-5" />
                 <span className="text-sm">{t('menu.headingIndicator')}</span>
               </div>
               <Switch

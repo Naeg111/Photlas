@@ -221,17 +221,17 @@ class RekognitionLabelMapperTest {
     // ========== 信頼度閾値 ==========
 
     @Test
-    @DisplayName("Issue#119 - 信頼度70%未満のラベルはマッピングから除外される")
+    @DisplayName("Issue#119 - 信頼度80%未満のラベルはマッピングから除外される")
     void belowThresholdLabelsAreExcluded() {
-        LabelMappingResult result = mapper.map(List.of(label("Mountain", 65f)));
+        LabelMappingResult result = mapper.map(List.of(label("Mountain", 79f)));
 
         assertThat(result.categories()).isEmpty();
     }
 
     @Test
-    @DisplayName("Issue#119 - 信頼度70%ちょうどのラベルは含める（境界値）")
+    @DisplayName("Issue#119 - 信頼度80%ちょうどのラベルは含める（境界値）")
     void exactlyThresholdLabelIsIncluded() {
-        LabelMappingResult result = mapper.map(List.of(label("Mountain", 70f)));
+        LabelMappingResult result = mapper.map(List.of(label("Mountain", 80f)));
 
         assertThat(result.categories()).containsExactly(CodeConstants.CATEGORY_NATURE);
     }
@@ -313,9 +313,9 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 天候: 信頼度70%未満は採用されず null")
+    @DisplayName("Issue#119 - 天候: 信頼度80%未満は採用されず null")
     void weatherBelowThresholdReturnsNull() {
-        LabelMappingResult result = mapper.map(List.of(label("Blue Sky", 65f)));
+        LabelMappingResult result = mapper.map(List.of(label("Blue Sky", 79f)));
 
         assertThat(result.weather()).isNull();
     }

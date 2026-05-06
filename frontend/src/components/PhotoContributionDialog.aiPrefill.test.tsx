@@ -84,6 +84,8 @@ vi.mock('../utils/photoAnalyzeApi', () => ({
 const mockCropImageToBlob = vi.fn()
 vi.mock('../utils/cropImageToBlob', () => ({
   cropImageToBlob: (...args: unknown[]) => mockCropImageToBlob(...args),
+  cropImageToBlobForAnalyze: (...args: unknown[]) => mockCropImageToBlob(...args),
+  cropImageToBlobForUpload: (...args: unknown[]) => mockCropImageToBlob(...args),
 }))
 
 const DEBOUNCE_MS = 1000

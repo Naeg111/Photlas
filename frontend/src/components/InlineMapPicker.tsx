@@ -68,6 +68,8 @@ const DEFAULT_ZOOM = 15
 const GEOLOCATION_ZOOM = 15
 const SEARCH_DEBOUNCE_MS = 300
 const LONG_DISTANCE_THRESHOLD = 4.5
+/** Issue#116 と同じ: 飛び先ズームとの差がこの値以上なら暗転ワープに切替 */
+const FLYTO_ZOOM_DIFF_THRESHOLD = 4
 const TRANSITION_FADE_MS = 500
 const GEOCODING_TYPES = 'country,region,postcode,district,place,locality,neighborhood'
 
@@ -248,7 +250,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
     }, SEARCH_DEBOUNCE_MS)
   }, [searchBox, geocoding, mapboxLang])
 
-  // 長距離移動時にワープアニメーション、短距離はflyTo
+  // 距離 OR ズーム差が大きいときは暗転ワープ、それ以外は flyTo（MapView.flyToPlace と同じロジック）
   const moveMapTo = useCallback((lng: number, lat: number, zoom: number = DEFAULT_ZOOM) => {
     if (!mapRef.current) return
     // ターゲット座標を保存（onMoveEndでgetCenter()の代わりに使用し、Mercator変換誤差を回避）
@@ -257,7 +259,8 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
     const distance = Math.sqrt(
       Math.pow(lng - currentCenter.lng, 2) + Math.pow(lat - currentCenter.lat, 2)
     )
-    if (distance > LONG_DISTANCE_THRESHOLD) {
+    const zoomDiff = Math.abs(mapRef.current.getZoom() - zoom)
+    if (distance > LONG_DISTANCE_THRESHOLD || zoomDiff >= FLYTO_ZOOM_DIFF_THRESHOLD) {
       setMapTransitioning(true)
       let completed = false
       const completeTransition = () => {

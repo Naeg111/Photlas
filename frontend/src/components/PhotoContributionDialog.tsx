@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { analyzePhoto, type PhotoAnalyzeResponse } from '../utils/photoAnalyzeApi'
-import { cropImageToBlob } from '../utils/cropImageToBlob'
+import { cropImageToBlobForAnalyze } from '../utils/cropImageToBlob'
+import { resizeImageFile } from '../utils/resizeImageFile'
 import { CATEGORY_LABELS } from '../utils/codeConstants'
 import { trackAiPrefillEvent, compareAiPrefill } from '../utils/aiPrefillAnalytics'
 
@@ -276,7 +277,7 @@ export function PhotoContributionDialog({
 
     setIsAnalyzing(true)
     try {
-      const blob = await cropImageToBlob(imageSrc, area)
+      const blob = await cropImageToBlobForAnalyze(imageSrc, area)
       if (controller.signal.aborted) return
 
       const response = await analyzePhoto(blob, { signal: controller.signal })
@@ -512,9 +513,14 @@ export function PhotoContributionDialog({
         }
       }
 
+      // 50MB 超は長辺 4000px にリサイズして送信（multipart 上限 50MB の保険）
+      const fileToSend = selectedFile.size > PHOTO_UPLOAD.AUTO_RESIZE_THRESHOLD
+        ? await resizeImageFile(selectedFile, PHOTO_UPLOAD.AUTO_RESIZE_MAX_DIMENSION)
+        : selectedFile
+
       if (onSubmit) {
         await onSubmit({
-          file: selectedFile,
+          file: fileToSend,
           placeName: placeName || undefined,
           categories: selectedCategories,
           position: pinPosition,
@@ -591,12 +597,20 @@ export function PhotoContributionDialog({
   const handleRemovePhoto = () => {
     setSelectedFile(null)
     setPreviewUrl('')
+    setPlaceName('')
+    setPlaceNameSuggestions([])
+    setIsPlaceNameDropdownOpen(false)
+    setSelectedCategories([])
     setPinPosition(null)
-    setExifData(null)
+    setSelectedWeather('')
     setSelectedDeviceType('')
+    setExifData(null)
     setCrop({ x: 0, y: 0 })
     setCropZoom(1)
     setCroppedArea(null)
+    setAnalyzeToken(null)
+    setIsAnalyzing(false)
+    setAiPrefillApplied(false)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
