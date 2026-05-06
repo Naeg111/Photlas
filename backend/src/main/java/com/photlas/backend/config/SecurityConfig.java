@@ -114,6 +114,7 @@ public class SecurityConfig {
                 .requestMatchers(AUTH_ENDPOINT_PATTERN).permitAll()     // 認証エンドポイント
                 .requestMatchers(HEALTH_ENDPOINT).permitAll()            // ヘルスチェック
                 .requestMatchers(ERROR_ENDPOINT).permitAll()             // エラーページ
+                .requestMatchers("/robots.txt").permitAll()               // robots.txt（API ホスト用、検索エンジン向け）
                 .requestMatchers(SPOTS_ENDPOINT, SPOTS_ENDPOINT_PATTERN).permitAll()  // スポット関連（一覧・詳細）
                 .requestMatchers(CATEGORIES_ENDPOINT).permitAll()        // カテゴリ一覧
                 .requestMatchers("/api/v1/ogp/**").permitAll()              // OGPメタタグ
