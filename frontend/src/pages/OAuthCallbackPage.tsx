@@ -159,10 +159,11 @@ async function completeLogin(
   // iOS PWA では SFSafariViewController から戻った直後に即時リロードすると、
   // iOS の viewport 計算がオーバーレイ表示中の縮んだ状態のまま固定され、
   // 画面下部が home indicator 裏に隠れる事象が発生する。
-  // SFSafariViewController が完全に dispose されて viewport 状態が安定するのを
-  // 500ms 待ってからリロードする。通常ブラウザでは即時リロード（待機不要）。
+  // SFSafariViewController が完全に dispose されるのを 1500ms 待った上で、
+  // viewport meta タグをいったん空にして戻すことで iOS に viewport 再評価を促し、
+  // その後リロードする。通常ブラウザでは即時リロード（待機不要）。
   if (isPwaStandalone()) {
-    setTimeout(() => { window.location.reload() }, PWA_RELOAD_DELAY_MS)
+    setTimeout(() => { toggleViewportMetaThenReload() }, PWA_RELOAD_DELAY_MS)
   } else {
     window.location.reload()
   }
@@ -177,5 +178,26 @@ function isPwaStandalone(): boolean {
   return window.matchMedia('(display-mode: standalone)').matches
 }
 
+/**
+ * iOS PWA で OAuth 戻り後の viewport 不整合を回復する。
+ * viewport meta タグを一瞬空にして元に戻すことで、iOS WebKit に viewport を
+ * 再評価させる。デバイス回転で治る事象と同じトリガーを JavaScript で発火させる狙い。
+ */
+function toggleViewportMetaThenReload(): void {
+  const viewport = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
+  if (!viewport) {
+    window.location.reload()
+    return
+  }
+  const original = viewport.content
+  viewport.content = ''
+  requestAnimationFrame(() => {
+    viewport.content = original
+    requestAnimationFrame(() => {
+      window.location.reload()
+    })
+  })
+}
+
 /** PWA でのリロード遅延時間。SFSafariViewController の dispose 待ち */
-const PWA_RELOAD_DELAY_MS = 500
+const PWA_RELOAD_DELAY_MS = 1500
