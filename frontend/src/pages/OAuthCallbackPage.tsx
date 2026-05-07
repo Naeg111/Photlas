@@ -182,13 +182,17 @@ function isPwaStandalone(): boolean {
 }
 
 /**
- * iOS PWA で OAuth 戻り後の viewport 不整合を強制的に回復させる試み。
+ * iOS PWA で OAuth 戻り後の viewport 不整合を強制的に回復させる試み（H 改 D）。
+ *
+ * 過去の試行で viewport.content を空にして戻す方式は viewport-fit=cover の効果が
+ * 復元されず、UI 全体が下にズレる症状を起こしたため、initial-scale だけを一瞬変えて
+ * 元に戻す方式に変更した（viewport-fit=cover は常時維持される）。
  *
  * 1. 3 秒待機して SFSafariViewController が完全に dispose されるのを待つ
- * 2. viewport meta タグを 3 回連続でトグル（iOS WebKit に viewport 再評価を強く促す）
- * 3. resize イベントを dispatch（React や CSS の viewport 連動処理を再走させる）
+ * 2. viewport meta タグの initial-scale を 0.999999 → 1.0 にトグル（iOS に viewport 再評価を促す）
+ * 3. resize イベントを dispatch
+ * 4. window.scrollTo(0, 0) でスクロール位置を強制リセット（vertical shift 対策）
  *
- * 1500ms 1回トグルでは効かなかったため、より aggressive に複数回試行する。
  * デバイス回転で治ることが報告されている事象を JS で代替的にトリガーする狙い。
  * 効く保証はなく、効かなければユーザー案内（タスクキル誘導）に倒すしかない。
  */
@@ -196,12 +200,14 @@ async function runAggressiveViewportRecalc(): Promise<void> {
   // 3 秒待機: SFSafariViewController dispose を確実に
   await sleep(3000)
 
-  // viewport meta タグを 3 回連続でトグル
+  // viewport meta の initial-scale を一瞬変えて戻す。
+  // viewport-fit=cover を維持するため content 全体を空にはせず、initial-scale 部分のみ書き換える。
   const viewport = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
   if (viewport) {
     const original = viewport.content
-    for (let i = 0; i < 3; i++) {
-      viewport.content = ''
+    const scrambled = original.replace(/initial-scale=[^,\s]+/, 'initial-scale=0.999999')
+    if (scrambled !== original) {
+      viewport.content = scrambled
       await nextFrame()
       viewport.content = original
       await nextFrame()
@@ -210,6 +216,10 @@ async function runAggressiveViewportRecalc(): Promise<void> {
 
   // resize イベントを dispatch して各種リスナーに viewport 変化を通知
   window.dispatchEvent(new Event('resize'))
+
+  // 念のためスクロール位置をトップに戻す（WKWebView 内部スクロールがズレている場合に回復）
+  window.scrollTo(0, 0)
+  document.scrollingElement?.scrollTo(0, 0)
 }
 
 function sleep(ms: number): Promise<void> {
