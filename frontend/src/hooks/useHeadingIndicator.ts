@@ -12,6 +12,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  * iOS の許可リクエストは Phase4 で setEnabled に統合する（現段階では非iOS パスのみ）。
  */
 export const HEADING_INDICATOR_STORAGE_KEY = 'photlas_heading_indicator_enabled'
+/**
+ * 初期化マーカー。値の有無で「このユーザーが初期化済か」を判別する。
+ * 既存ユーザーの localStorage には旧 STORAGE_KEY が "true" のまま残っている可能性があるため、
+ * このマーカーが無い場合は強制的に OFF 化（旧値を削除）してからマーカーを立てる。
+ */
+export const HEADING_INDICATOR_INIT_KEY_V2 = 'photlas_heading_indicator_initialized_v2'
 
 /** ローパスフィルタ（前回値と新規値を平滑化） */
 const LOW_PASS_PREV_WEIGHT = 0.8
@@ -55,6 +61,12 @@ function extractHeading(event: OrientationEventLike): number | null {
 
 function readInitialEnabled(): boolean {
   try {
+    if (localStorage.getItem(HEADING_INDICATOR_INIT_KEY_V2) !== 'true') {
+      // 初回起動（または旧バージョンからの初回アクセス）: 旧 enabled 値をクリアして強制 OFF
+      localStorage.removeItem(HEADING_INDICATOR_STORAGE_KEY)
+      localStorage.setItem(HEADING_INDICATOR_INIT_KEY_V2, 'true')
+      return false
+    }
     return localStorage.getItem(HEADING_INDICATOR_STORAGE_KEY) === 'true'
   } catch {
     return false
