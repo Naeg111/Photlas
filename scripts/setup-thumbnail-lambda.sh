@@ -6,7 +6,7 @@ set -euo pipefail
 # 前提条件:
 #   - AWS CLIが設定済み
 #   - S3バケットが存在する
-#   - Pillow, pillow-heifのLambdaレイヤーが作成済み
+#   - python3 と pip が使えること（Pillow/pillow-heif の Linux 用 wheel を取得するため）
 #
 # 使用方法:
 #   ./scripts/setup-thumbnail-lambda.sh <env>
@@ -16,6 +16,11 @@ set -euo pipefail
 # 注意:
 #   S3イベント通知の設定は setup-s3-notifications.sh で一元管理しています。
 #   このスクリプト実行後に setup-s3-notifications.sh を実行してください。
+#
+# 依存ライブラリのバンドル方針:
+#   Pillow / pillow-heif は Lambda 実行環境（Amazon Linux x86_64）向けの wheel が必要。
+#   開発が Mac (arm64) でも、`--platform manylinux2014_x86_64 --only-binary=:all:` を
+#   付けて pip install することで PyPI から Linux 用 wheel をダウンロードして zip に同梱できる。
 
 ENV=${1:-test}
 REGION="ap-northeast-1"
@@ -100,7 +105,32 @@ sleep 10
 echo "=== サムネイル生成Lambda作成 ==="
 
 cd "$(dirname "$0")/../lambda/thumbnail-generator"
-zip -j /tmp/thumbnail-generator.zip lambda_function.py
+
+# 依存ライブラリのバンドル
+# Pillow / pillow-heif などの C 拡張は Lambda 実行環境（Amazon Linux x86_64, Python 3.12）の
+# ABI に合わせた wheel が必要。`--platform manylinux2014_x86_64 --only-binary=:all:` を指定して
+# Mac (arm64) からでも Linux 用 wheel を取得する。
+PACKAGE_DIR="/tmp/photlas-thumbnail-package"
+echo "=== 依存ライブラリのインストール (${PACKAGE_DIR}) ==="
+rm -rf "$PACKAGE_DIR"
+mkdir -p "$PACKAGE_DIR"
+python3 -m pip install \
+    --platform manylinux2014_x86_64 \
+    --target "$PACKAGE_DIR" \
+    --implementation cp \
+    --python-version 3.12 \
+    --only-binary=:all: \
+    --upgrade \
+    -r requirements.txt
+
+# Lambda 関数本体をパッケージディレクトリにコピー
+cp lambda_function.py "$PACKAGE_DIR/"
+
+# zip 作成（パッケージディレクトリの中身をルートに置く形で zip する）
+echo "=== zip 作成 ==="
+rm -f /tmp/thumbnail-generator.zip
+(cd "$PACKAGE_DIR" && zip -r9 /tmp/thumbnail-generator.zip . -x "*.pyc" "__pycache__/*" "*.dist-info/RECORD" > /dev/null)
+echo "zip サイズ: $(du -h /tmp/thumbnail-generator.zip | cut -f1)"
 
 aws lambda create-function \
     --function-name "$FUNCTION_NAME" \
