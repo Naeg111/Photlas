@@ -182,15 +182,14 @@ function isPwaStandalone(): boolean {
 }
 
 /**
- * iOS PWA で OAuth 戻り後の viewport 不整合を強制的に回復させる試み（案 O Phase 1）。
+ * iOS PWA で OAuth 戻り後の viewport 不整合を強制的に回復させる試み（案 Q）。
  *
- * デバイス物理回転で治ることが業界で報告されている事象を、Screen Orientation API で
- * プログラム的に再現する試み。横向きにロック → 縦向きにロック → 解除を行う。
- * iOS PWA で API がサポートされていれば、物理回転と同じ効果で iOS WebKit の
- * viewport 計算がリセットされる。
+ * 案 O（screen.orientation.lock）は iOS PWA で API が拒否されて効かなかったため、
+ * よりアグレッシブなアプローチとして React アプリ全体の unmount → remount を試みる。
+ * main.tsx 側に photlas-remount イベントリスナーがあり、受信すると現在の React root を
+ * 破棄して新しい #root 要素を作り、そこに React アプリを再 mount する。
  *
- * 注意: この Phase では UX 上「画面が一瞬回転する」のがそのまま見える。
- * 効果が確認できたら Phase 2 でローディングオーバーレイで視覚的に隠す。
+ * DOM ツリーが完全に作り直されることで iOS WebKit にレイアウトの完全再評価を促す狙い。
  *
  * 補助として resize イベント発火と scroll リセットも行う。
  */
@@ -198,46 +197,15 @@ async function runAggressiveViewportRecalc(): Promise<void> {
   // 3 秒待機: SFSafariViewController dispose を確実に
   await sleep(3000)
 
-  // メイン手段: Screen Orientation API で擬似的な物理回転を発火
-  await tryRotateForViewportRecalc()
-
-  // 補助: resize イベント発火 + スクロール位置リセット
+  // 補助: resize イベント発火 + スクロール位置リセット（remount 前に念のため）
   window.dispatchEvent(new Event('resize'))
   window.scrollTo(0, 0)
   document.scrollingElement?.scrollTo(0, 0)
-}
 
-/**
- * Screen Orientation API でデバイスを横向き → 縦向きに切り替えて viewport 計算をリセットする。
- *
- * iOS Safari の API サポートは限定的だが、PWA standalone モードなら動作する可能性がある。
- * API が存在しない、または fullscreen 必須等の理由で拒否された場合は静かに無視する。
- */
-async function tryRotateForViewportRecalc(): Promise<void> {
-  if (typeof screen === 'undefined') return
-  // OrientationLockType は TS lib バージョンによっては未定義のため、文字列リテラル union を直接記述する。
-  type LockMode = 'any' | 'natural' | 'landscape' | 'portrait'
-    | 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary'
-  const orientation = screen.orientation as ScreenOrientation & {
-    lock?: (mode: LockMode) => Promise<void>
-    unlock?: () => void
-  }
-  if (!orientation || typeof orientation.lock !== 'function') return
-
-  try {
-    // 横向きへロック（実際にデバイス画面が回転する）
-    await orientation.lock('landscape-primary')
-    await sleep(500)
-    // 縦向きへロック（戻す）
-    await orientation.lock('portrait-primary')
-    await sleep(100)
-    // ロック解除して manifest の orientation: any に従う状態に戻す
-    if (typeof orientation.unlock === 'function') {
-      orientation.unlock()
-    }
-  } catch {
-    // API 未サポート / fullscreen 必須拒否 / マニフェスト設定との不整合 等は無視
-  }
+  // メイン手段: React アプリ全体の unmount → remount を main.tsx に依頼
+  // この時点で OAuthCallbackPage は navigate('/') 済みでアンマウントされている可能性が高いが、
+  // ここのコードは fire-and-forget で実行されるため component lifecycle に依存しない。
+  window.dispatchEvent(new Event('photlas-remount'))
 }
 
 function sleep(ms: number): Promise<void> {
