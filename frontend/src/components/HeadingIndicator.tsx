@@ -8,7 +8,7 @@
  * 仕様:
  * - 開き角: 90 度
  * - 半径: 青い点（半径8px）の6倍 = 48px
- * - グラデーション: 中心 #4285F4 80% → 中間 60% → 外周 0%
+ * - グラデーション: 中心 #4285F4 70% → 中間 60% → 外周 0%
  */
 
 const SECTOR_RADIUS = 48
@@ -45,7 +45,7 @@ export function HeadingIndicator({ heading, mapBearing }: Readonly<HeadingIndica
     >
       <defs>
         <radialGradient id="headingGradient">
-          <stop offset="0%" stopColor="#4285F4" stopOpacity="0.8" />
+          <stop offset="0%" stopColor="#4285F4" stopOpacity="0.7" />
           <stop offset="50%" stopColor="#4285F4" stopOpacity="0.6" />
           <stop offset="100%" stopColor="#4285F4" stopOpacity="0" />
         </radialGradient>

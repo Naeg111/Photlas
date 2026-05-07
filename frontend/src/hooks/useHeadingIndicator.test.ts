@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { useHeadingIndicator, HEADING_INDICATOR_STORAGE_KEY, isHeadingIndicatorAvailable } from './useHeadingIndicator'
+import { useHeadingIndicator, HEADING_INDICATOR_STORAGE_KEY, HEADING_INDICATOR_INIT_KEY_V2, isHeadingIndicatorAvailable } from './useHeadingIndicator'
 
 /**
  * Issue#115: 方角インジケーターのフックテスト
@@ -59,6 +59,38 @@ describe('useHeadingIndicator', () => {
       vi.mocked(localStorage.getItem).mockReturnValue(null)
       const { result } = renderHook(() => useHeadingIndicator())
       expect(result.current.heading).toBeNull()
+    })
+
+    it('初期化マーカーが無い場合、旧 enabled 値が "true" でも強制 OFF にする', () => {
+      // 旧来のユーザーで STORAGE_KEY="true" だが INIT_KEY_V2 が未設定の状況をシミュレート
+      vi.mocked(localStorage.getItem).mockImplementation((key: string) => {
+        if (key === HEADING_INDICATOR_INIT_KEY_V2) return null
+        if (key === HEADING_INDICATOR_STORAGE_KEY) return 'true'
+        return null
+      })
+
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      expect(result.current.enabled).toBe(false)
+      // 初期化マーカーを立てた
+      expect(localStorage.setItem).toHaveBeenCalledWith(HEADING_INDICATOR_INIT_KEY_V2, 'true')
+      // 旧 enabled 値を削除した
+      expect(localStorage.removeItem).toHaveBeenCalledWith(HEADING_INDICATOR_STORAGE_KEY)
+    })
+
+    it('初期化マーカーがある場合、保存された enabled 値を引き継ぐ', () => {
+      // 既に初期化済みのユーザーで STORAGE_KEY="true" の状況
+      vi.mocked(localStorage.getItem).mockImplementation((key: string) => {
+        if (key === HEADING_INDICATOR_INIT_KEY_V2) return 'true'
+        if (key === HEADING_INDICATOR_STORAGE_KEY) return 'true'
+        return null
+      })
+
+      const { result } = renderHook(() => useHeadingIndicator())
+
+      expect(result.current.enabled).toBe(true)
+      // 初期化済なので強制リセットは行わない
+      expect(localStorage.removeItem).not.toHaveBeenCalled()
     })
   })
 
