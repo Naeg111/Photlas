@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Button } from './ui/button'
@@ -56,6 +56,22 @@ export function LoginDialog({
   const [resendRateLimitError, setResendRateLimitError] = useState<ApiError | null>(null)
   const loginCooldown = useRateLimitCooldown(loginRateLimitError)
   const resendCooldown = useRateLimitCooldown(resendRateLimitError)
+
+  // ダイアログを閉じたら入力内容と一時的な UI 状態をリセットする。
+  // 「ログイン → ログアウト → 再度ログイン画面を開く」シナリオで前回の入力が残らないようにする。
+  useEffect(() => {
+    if (!open) {
+      setEmail('')
+      setPassword('')
+      setShowPassword(false)
+      setError('')
+      setIsEmailNotVerified(false)
+      setIsLoading(false)
+      setIsResending(false)
+      setLoginRateLimitError(null)
+      setResendRateLimitError(null)
+    }
+  }, [open])
 
   interface LoginResponse {
     user: { id: number; email: string; username: string; role?: unknown }

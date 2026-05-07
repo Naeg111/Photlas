@@ -121,7 +121,7 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
             <Button
               type="submit"
               disabled={!email || isSubmitting || cooldown.isOnCooldown}
-              className="w-full"
+              className="w-full h-11"
               aria-live="polite"
             >
               {cooldown.isOnCooldown
@@ -135,7 +135,7 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full mt-2"
+                className="w-full h-11 mt-2"
                 onClick={() => {
                   onClose()
                   onShowLogin()
