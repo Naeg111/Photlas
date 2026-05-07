@@ -158,7 +158,31 @@ async function completeLogin(
   // 影響を受けたまま回復しないため、カスタムイベント駆動でリロードを回避する。
   window.dispatchEvent(new Event(AUTH_CHANGED_EVENT))
 
+  // 案 T: iOS PWA では OAuth 後に viewport が壊れる事象がある。
+  // Google OAuth では「外部ドメイン経由で戻る」遷移により iOS が viewport を再計算するが、
+  // LINE OAuth ではこの効果が得られない。
+  // 対策: OAuth 完了直後に test-api.photlas.jp/api/v1/auth/viewport-bounce へ navigate して
+  // 即 302 で test.photlas.jp/ に戻る経路を踏む。これにより SFSafariViewController が
+  // 開いて即閉じる短いサイクルが発生し、iOS が viewport を再計算する効果を狙う。
+  if (isPwaStandalone()) {
+    window.location.href = `${API_V1_URL}/auth/viewport-bounce`
+    return
+  }
+
+  // 通常ブラウザ: そのままホームへ遷移
   // Issue#104: URL パラメータ方式は廃止し、ホームに統一リダイレクト
   // 仮表示名／同意未済の判定は App.tsx のマウント時 /users/me チェックで行う（§4.18 / §4.14）
   navigate('/', { replace: true })
+}
+
+/** PWA standalone モード判定（iOS Safari の navigator.standalone と display-mode media query 両対応） */
+function isPwaStandalone(): boolean {
+  if (typeof window === 'undefined') return false
+  const iosStandalone = (window.navigator as { standalone?: boolean }).standalone === true
+  if (iosStandalone) return true
+  if (typeof window.matchMedia !== 'function') return false
+  // テスト環境では vi.resetAllMocks() で matchMedia の implementation が落ち、
+  // undefined を返す場合があるため null guard を入れる。本番では常に MediaQueryList が返る。
+  const mql = window.matchMedia('(display-mode: standalone)')
+  return mql != null && mql.matches === true
 }
