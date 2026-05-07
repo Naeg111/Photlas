@@ -158,6 +158,7 @@ jobs:
         DEPLOY_SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
         DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         DEPLOY_MODERATION_API_KEY: ${{ secrets.STAGING_MODERATION_API_KEY }}
+        DEPLOY_AWS_CLOUDFRONT_DOMAIN: ${{ secrets.STAGING_CLOUDFRONT_DOMAIN }}
         # Issue#81: OAuth 2.0 クライアント資格情報（ステージング用）
         DEPLOY_GOOGLE_CLIENT_ID: ${{ secrets.STAGING_GOOGLE_CLIENT_ID }}
         DEPLOY_GOOGLE_CLIENT_SECRET: ${{ secrets.STAGING_GOOGLE_CLIENT_SECRET }}
@@ -188,6 +189,7 @@ jobs:
         export SMTP_USERNAME='__SMTP_USERNAME__'
         export SMTP_PASSWORD='__SMTP_PASSWORD__'
         export MODERATION_API_KEY='__MODERATION_API_KEY__'
+        export AWS_CLOUDFRONT_DOMAIN='__AWS_CLOUDFRONT_DOMAIN__'
         # Issue#81: OAuth 2.0 クライアント資格情報 + access_token 暗号化鍵
         export GOOGLE_CLIENT_ID='__GOOGLE_CLIENT_ID__'
         export GOOGLE_CLIENT_SECRET='__GOOGLE_CLIENT_SECRET__'
@@ -284,6 +286,7 @@ jobs:
         sed -i "s|__SMTP_USERNAME__|${DEPLOY_SMTP_USERNAME}|g" /tmp/deploy_script.sh
         sed -i "s|__SMTP_PASSWORD__|${DEPLOY_SMTP_PASSWORD}|g" /tmp/deploy_script.sh
         sed -i "s|__MODERATION_API_KEY__|${DEPLOY_MODERATION_API_KEY}|g" /tmp/deploy_script.sh
+        sed -i "s|__AWS_CLOUDFRONT_DOMAIN__|${DEPLOY_AWS_CLOUDFRONT_DOMAIN}|g" /tmp/deploy_script.sh
         # Issue#81: OAuth 2.0 関連 sed 置換
         sed -i "s|__GOOGLE_CLIENT_ID__|${DEPLOY_GOOGLE_CLIENT_ID}|g" /tmp/deploy_script.sh
         sed -i "s|__GOOGLE_CLIENT_SECRET__|${DEPLOY_GOOGLE_CLIENT_SECRET}|g" /tmp/deploy_script.sh
