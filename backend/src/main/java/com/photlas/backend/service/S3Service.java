@@ -63,6 +63,11 @@ public class S3Service {
         // オブジェクトキーを生成: folder/userId/uuid.extension
         String objectKey = String.format("%s/%d/%s.%s", folder, userId, UUID.randomUUID(), extension);
 
+        // [一時デバッグ] PUT 失敗の原因調査用 - contentType が想定通りか確認するため
+        org.slf4j.LoggerFactory.getLogger(S3Service.class).info(
+                "[DEBUG-UPLOAD-URL] generatePresignedUploadUrl userId={} extension={} contentType=[{}] objectKey={}",
+                userId, extension, contentType, objectKey);
+
         try (S3Presigner presigner = S3Presigner.builder()
                 .region(Region.of(region))
                 .credentialsProvider(DefaultCredentialsProvider.create())
@@ -84,6 +89,10 @@ public class S3Service {
 
             PresignedPutObjectRequest presignedRequest = presigner.presignPutObject(presignRequest);
             String uploadUrl = presignedRequest.url().toString();
+
+            // [一時デバッグ] 生成された URL を確認
+            org.slf4j.LoggerFactory.getLogger(S3Service.class).info(
+                    "[DEBUG-UPLOAD-URL] generated url={}", uploadUrl);
 
             return new UploadUrlResult(uploadUrl, objectKey);
         }
