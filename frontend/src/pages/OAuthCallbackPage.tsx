@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { AUTH_CHANGED_EVENT } from '../contexts/AuthContext'
 
 /**
  * Issue#81 Phase 5a - OAuth コールバックページ。
@@ -151,53 +152,15 @@ async function completeLogin(
     language: userData.language,
   }))
 
+  // AuthProvider にストレージ更新を通知して state を再読させる。
+  // 過去は window.location.reload() で AuthProvider の初回 useEffect を再走させていたが、
+  // iOS PWA では reload しても WKWebView の viewport state が SFSafariViewController の
+  // 影響を受けたまま回復しない（→画面下が home indicator 裏に隠れる）。
+  // カスタムイベント駆動にすることで reload を回避し、React の自然な再レンダリングで
+  // iOS の viewport 状態が回復することを期待する。
+  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT))
+
   // Issue#104: URL パラメータ方式は廃止し、ホームに統一リダイレクト
   // 仮表示名／同意未済の判定は App.tsx のマウント時 /users/me チェックで行う（§4.18 / §4.14）
   navigate('/', { replace: true })
-
-  // ページ全体をリロードして AuthProvider の useEffect を再走させる。
-  // iOS PWA では SFSafariViewController から戻った直後に即時リロードすると、
-  // iOS の viewport 計算がオーバーレイ表示中の縮んだ状態のまま固定され、
-  // 画面下部が home indicator 裏に隠れる事象が発生する。
-  // SFSafariViewController が完全に dispose されるのを 1500ms 待った上で、
-  // viewport meta タグをいったん空にして戻すことで iOS に viewport 再評価を促し、
-  // その後リロードする。通常ブラウザでは即時リロード（待機不要）。
-  if (isPwaStandalone()) {
-    setTimeout(() => { toggleViewportMetaThenReload() }, PWA_RELOAD_DELAY_MS)
-  } else {
-    window.location.reload()
-  }
 }
-
-/** PWA standalone モード判定（iOS Safari の navigator.standalone と display-mode media query 両対応） */
-function isPwaStandalone(): boolean {
-  if (typeof window === 'undefined') return false
-  const iosStandalone = (window.navigator as { standalone?: boolean }).standalone === true
-  if (iosStandalone) return true
-  if (typeof window.matchMedia !== 'function') return false
-  return window.matchMedia('(display-mode: standalone)').matches
-}
-
-/**
- * iOS PWA で OAuth 戻り後の viewport 不整合を回復する。
- * viewport meta タグを一瞬空にして元に戻すことで、iOS WebKit に viewport を
- * 再評価させる。デバイス回転で治る事象と同じトリガーを JavaScript で発火させる狙い。
- */
-function toggleViewportMetaThenReload(): void {
-  const viewport = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
-  if (!viewport) {
-    window.location.reload()
-    return
-  }
-  const original = viewport.content
-  viewport.content = ''
-  requestAnimationFrame(() => {
-    viewport.content = original
-    requestAnimationFrame(() => {
-      window.location.reload()
-    })
-  })
-}
-
-/** PWA でのリロード遅延時間。SFSafariViewController の dispose 待ち */
-const PWA_RELOAD_DELAY_MS = 1500

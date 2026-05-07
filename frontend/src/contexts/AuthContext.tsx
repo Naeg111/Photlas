@@ -9,6 +9,16 @@ import i18n from '../i18n'
 import { type SupportedLanguage, SUPPORTED_LANGUAGES } from '../i18n'
 import { clearViewedPhotoIds } from '../utils/registrationWall'
 
+/**
+ * AuthProvider 外部から localStorage / sessionStorage の auth 情報変更を通知するためのカスタムイベント名。
+ * OAuthCallbackPage 等が直接ストレージに書き込んだ後にこのイベントを dispatch すると、
+ * AuthProvider が再読み込みして state を更新する。
+ *
+ * iOS PWA では window.location.reload() が WKWebView の viewport state を回復しないため、
+ * リロード代わりにイベント駆動で auth 状態を伝播させる用途で導入。
+ */
+export const AUTH_CHANGED_EVENT = 'photlas-auth-changed'
+
 interface User {
   userId: number
   username: string
@@ -37,36 +47,59 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
 
-  useEffect(() => {
-    // ページ読み込み時に保存されたトークンを確認
+  /**
+   * ストレージから auth 情報を読み込み、有効ならコンテキスト state に反映する。
+   * 初回マウントと、外部イベント（AUTH_CHANGED_EVENT）の両方から呼ばれる。
+   */
+  const loadAuthFromStorage = useCallback(() => {
     const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
     const savedUser = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user')
 
-    if (token && savedUser) {
-      try {
-        // JWTトークンの有効期限チェック
-        const payloadBase64 = token.split('.')[1]
-        if (payloadBase64) {
-          const payload = JSON.parse(atob(payloadBase64))
-          if (payload.exp && payload.exp * 1000 < Date.now()) {
-            logout()
-            return
-          }
-        }
+    if (!token || !savedUser) {
+      // 保存されていない: 未ログイン状態
+      setUser(null)
+      setIsAuthenticated(false)
+      return
+    }
 
-        const parsedUser = JSON.parse(savedUser)
-        if (!parsedUser.userId) {
-          // userIdがない古いデータの場合は再ログインを要求
+    try {
+      // JWTトークンの有効期限チェック
+      const payloadBase64 = token.split('.')[1]
+      if (payloadBase64) {
+        const payload = JSON.parse(atob(payloadBase64))
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
           logout()
           return
         }
-        setUser(parsedUser)
-        setIsAuthenticated(true)
-      } catch {
-        logout()
       }
+
+      const parsedUser = JSON.parse(savedUser)
+      if (!parsedUser.userId) {
+        // userIdがない古いデータの場合は再ログインを要求
+        logout()
+        return
+      }
+      setUser(parsedUser)
+      setIsAuthenticated(true)
+    } catch {
+      logout()
     }
+    // logout は useCallback で安定参照のため deps に含めなくて良いが、
+    // lint 警告回避のため後段で定義する logout を closure で参照する形にする。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // 初回マウント時にストレージを読む
+  useEffect(() => {
+    loadAuthFromStorage()
+  }, [loadAuthFromStorage])
+
+  // 外部からの auth 変更通知（OAuth callback 等）を購読してストレージを再読
+  useEffect(() => {
+    const handler = () => loadAuthFromStorage()
+    window.addEventListener(AUTH_CHANGED_EVENT, handler)
+    return () => window.removeEventListener(AUTH_CHANGED_EVENT, handler)
+  }, [loadAuthFromStorage])
 
   const login = useCallback((userData: User, token: string, remember: boolean) => {
     const storage = remember ? localStorage : sessionStorage
