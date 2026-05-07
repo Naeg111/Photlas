@@ -61,7 +61,7 @@ public class PhotoController {
      * @param authentication 認証情報（未認証の場合はnull）
      * @return 写真の詳細情報
      */
-    @GetMapping("/{photoId}")
+    @GetMapping("/{photoId:\\d+}")
     public ResponseEntity<PhotoDetailResponse> getPhotoDetail(
             @PathVariable Long photoId,
             Authentication authentication
@@ -111,7 +111,7 @@ public class PhotoController {
      * @param authentication 認証情報
      * @return モデレーションステータス
      */
-    @GetMapping("/{photoId}/status")
+    @GetMapping("/{photoId:\\d+}/status")
     public ResponseEntity<java.util.Map<String, Object>> getPhotoStatus(
             @PathVariable Long photoId,
             Authentication authentication
@@ -138,7 +138,7 @@ public class PhotoController {
      * @param authentication 認証情報
      * @return 更新後の写真詳細情報
      */
-    @PutMapping("/{photoId}")
+    @PutMapping("/{photoId:\\d+}")
     public ResponseEntity<PhotoDetailResponse> updatePhoto(
             @PathVariable Long photoId,
             @Valid @RequestBody UpdatePhotoRequest request,
@@ -156,7 +156,7 @@ public class PhotoController {
      * @param authentication 認証情報
      * @return 204 No Content
      */
-    @DeleteMapping("/{photoId}")
+    @DeleteMapping("/{photoId:\\d+}")
     public ResponseEntity<Void> deletePhoto(
             @PathVariable Long photoId,
             Authentication authentication
