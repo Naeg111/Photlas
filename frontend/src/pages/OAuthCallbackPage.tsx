@@ -154,6 +154,28 @@ async function completeLogin(
   // Issue#104: URL パラメータ方式は廃止し、ホームに統一リダイレクト
   // 仮表示名／同意未済の判定は App.tsx のマウント時 /users/me チェックで行う（§4.18 / §4.14）
   navigate('/', { replace: true })
-  // ページ全体をリロードして AuthProvider の useEffect を再走させる
-  window.location.reload()
+
+  // ページ全体をリロードして AuthProvider の useEffect を再走させる。
+  // iOS PWA では SFSafariViewController から戻った直後に即時リロードすると、
+  // iOS の viewport 計算がオーバーレイ表示中の縮んだ状態のまま固定され、
+  // 画面下部が home indicator 裏に隠れる事象が発生する。
+  // SFSafariViewController が完全に dispose されて viewport 状態が安定するのを
+  // 500ms 待ってからリロードする。通常ブラウザでは即時リロード（待機不要）。
+  if (isPwaStandalone()) {
+    setTimeout(() => { window.location.reload() }, PWA_RELOAD_DELAY_MS)
+  } else {
+    window.location.reload()
+  }
 }
+
+/** PWA standalone モード判定（iOS Safari の navigator.standalone と display-mode media query 両対応） */
+function isPwaStandalone(): boolean {
+  if (typeof window === 'undefined') return false
+  const iosStandalone = (window.navigator as { standalone?: boolean }).standalone === true
+  if (iosStandalone) return true
+  if (typeof window.matchMedia !== 'function') return false
+  return window.matchMedia('(display-mode: standalone)').matches
+}
+
+/** PWA でのリロード遅延時間。SFSafariViewController の dispose 待ち */
+const PWA_RELOAD_DELAY_MS = 500
