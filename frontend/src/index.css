@@ -140,11 +140,14 @@ input, textarea, [contenteditable="true"] {
     position: relative;
     width: 100%;
     /* iOS PWA で SFSafariViewController（LINE OAuth 等）から戻った直後、
-       100vh は再計算されず古い値のまま固定されることがあり、画面下部が見えなくなる。
-       100dvh は viewport 変化に追従する dynamic viewport height（iOS 15.4+）。
-       100vh はフォールバック用に残し、対応ブラウザでは 100dvh で上書きされる。 */
+       100vh は再計算されずに固定され画面下部が見えなくなる事象に対応するため、
+       index.html のインラインスクリプトが window.innerHeight を CSS 変数 --app-h に
+       流し込み、resize/pageshow/visibilitychange の各タイミングで再計算する。
+       100vh はスクリプト未実行時 / 非対応ブラウザのフォールバック。
+       なお 100dvh は viewport-fit=cover と組み合わせると home indicator 裏まで伸びる
+       挙動があり常時下部が見切れる事象が起きたため採用しない。 */
     height: 100vh;
-    height: 100dvh;
+    height: var(--app-h, 100vh);
     overflow: hidden;
   }
 }

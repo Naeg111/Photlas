@@ -4,20 +4,21 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  * Issue#115: 方角インジケーター用カスタムフック
  *
  * 役割：
- * - ON/OFF 状態を localStorage に永続化
+ * - ON/OFF 状態を sessionStorage に保存（タブクローズ / PWA タスクキルでクリア）
  * - ON のときだけ deviceorientation 系イベントを購読
  * - iOS (webkitCompassHeading) / Android (alpha) のプラットフォーム差異を吸収
  * - 取得した heading をローパスフィルタで平滑化、requestAnimationFrame でスロットリング
  *
+ * 永続化方針:
+ * - sessionStorage を使うことで、同一セッション（ページ遷移・OAuth リダイレクト戻り等）では
+ *   状態を維持しつつ、ブラウザタブクローズ / PWA タスクキル時には自動で OFF にリセットされる。
+ *   localStorage で長期保存していた頃は、OS 側の方角センサー許可がいつのまにかリセットされて
+ *   「トグル ON だがエフェクト出ない」不整合が起きていた。新しいセッション開始時に必ず OFF に
+ *   戻すことでこの不整合を回避する。
+ *
  * iOS の許可リクエストは Phase4 で setEnabled に統合する（現段階では非iOS パスのみ）。
  */
 export const HEADING_INDICATOR_STORAGE_KEY = 'photlas_heading_indicator_enabled'
-/**
- * 初期化マーカー。値の有無で「このユーザーが初期化済か」を判別する。
- * 既存ユーザーの localStorage には旧 STORAGE_KEY が "true" のまま残っている可能性があるため、
- * このマーカーが無い場合は強制的に OFF 化（旧値を削除）してからマーカーを立てる。
- */
-export const HEADING_INDICATOR_INIT_KEY_V2 = 'photlas_heading_indicator_initialized_v2'
 
 /** ローパスフィルタ（前回値と新規値を平滑化） */
 const LOW_PASS_PREV_WEIGHT = 0.8
@@ -61,22 +62,16 @@ function extractHeading(event: OrientationEventLike): number | null {
 
 function readInitialEnabled(): boolean {
   try {
-    if (localStorage.getItem(HEADING_INDICATOR_INIT_KEY_V2) !== 'true') {
-      // 初回起動（または旧バージョンからの初回アクセス）: 旧 enabled 値をクリアして強制 OFF
-      localStorage.removeItem(HEADING_INDICATOR_STORAGE_KEY)
-      localStorage.setItem(HEADING_INDICATOR_INIT_KEY_V2, 'true')
-      return false
-    }
-    return localStorage.getItem(HEADING_INDICATOR_STORAGE_KEY) === 'true'
+    return sessionStorage.getItem(HEADING_INDICATOR_STORAGE_KEY) === 'true'
   } catch {
     return false
   }
 }
 
-/** localStorage に enabled 値を書き込む。プライベートブラウズ等の失敗は無視する */
+/** sessionStorage に enabled 値を書き込む。プライベートブラウズ等の失敗は無視する */
 function writeEnabledToStorage(value: boolean): void {
   try {
-    localStorage.setItem(HEADING_INDICATOR_STORAGE_KEY, String(value))
+    sessionStorage.setItem(HEADING_INDICATOR_STORAGE_KEY, String(value))
   } catch {
     /* noop */
   }

@@ -21,6 +21,21 @@ Object.defineProperty(global, 'localStorage', {
   writable: true,
 })
 
+// sessionStorage のモック（useHeadingIndicator が利用）
+const sessionStorageMock = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+  length: 0,
+  key: vi.fn(),
+}
+
+Object.defineProperty(global, 'sessionStorage', {
+  value: sessionStorageMock,
+  writable: true,
+})
+
 // Issue#9: heic2anyのためにWorkerをモック
 // @ts-ignore
 global.Worker = class Worker {
