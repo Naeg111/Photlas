@@ -155,59 +155,10 @@ async function completeLogin(
   // AuthProvider にストレージ更新を通知して state を再読させる。
   // 過去は window.location.reload() で AuthProvider の初回 useEffect を再走させていたが、
   // iOS PWA では reload しても WKWebView の viewport state が SFSafariViewController の
-  // 影響を受けたまま回復しない（→画面下が home indicator 裏に隠れる）。
-  // カスタムイベント駆動にすることで reload を回避し、React の自然な再レンダリングで
-  // iOS の viewport 状態が回復することを期待する。
+  // 影響を受けたまま回復しないため、カスタムイベント駆動でリロードを回避する。
   window.dispatchEvent(new Event(AUTH_CHANGED_EVENT))
 
   // Issue#104: URL パラメータ方式は廃止し、ホームに統一リダイレクト
   // 仮表示名／同意未済の判定は App.tsx のマウント時 /users/me チェックで行う（§4.18 / §4.14）
   navigate('/', { replace: true })
-
-  // PWA のみ: イベント駆動だけでは iOS WebKit の viewport 計算が回復しない場合に備えて、
-  // バックグラウンドで viewport の強制再計算を試みる。画面遷移はすでに完了しているため
-  // この処理はメイン UX をブロックしない。
-  if (isPwaStandalone()) {
-    void runAggressiveViewportRecalc()
-  }
-}
-
-/** PWA standalone モード判定（iOS Safari の navigator.standalone と display-mode media query 両対応） */
-function isPwaStandalone(): boolean {
-  if (typeof window === 'undefined') return false
-  const iosStandalone = (window.navigator as { standalone?: boolean }).standalone === true
-  if (iosStandalone) return true
-  if (typeof window.matchMedia !== 'function') return false
-  return window.matchMedia('(display-mode: standalone)').matches
-}
-
-/**
- * iOS PWA で OAuth 戻り後の viewport 不整合を強制的に回復させる試み（案 Q）。
- *
- * 案 O（screen.orientation.lock）は iOS PWA で API が拒否されて効かなかったため、
- * よりアグレッシブなアプローチとして React アプリ全体の unmount → remount を試みる。
- * main.tsx 側に photlas-remount イベントリスナーがあり、受信すると現在の React root を
- * 破棄して新しい #root 要素を作り、そこに React アプリを再 mount する。
- *
- * DOM ツリーが完全に作り直されることで iOS WebKit にレイアウトの完全再評価を促す狙い。
- *
- * 補助として resize イベント発火と scroll リセットも行う。
- */
-async function runAggressiveViewportRecalc(): Promise<void> {
-  // 3 秒待機: SFSafariViewController dispose を確実に
-  await sleep(3000)
-
-  // 補助: resize イベント発火 + スクロール位置リセット（remount 前に念のため）
-  window.dispatchEvent(new Event('resize'))
-  window.scrollTo(0, 0)
-  document.scrollingElement?.scrollTo(0, 0)
-
-  // メイン手段: React アプリ全体の unmount → remount を main.tsx に依頼
-  // この時点で OAuthCallbackPage は navigate('/') 済みでアンマウントされている可能性が高いが、
-  // ここのコードは fire-and-forget で実行されるため component lifecycle に依存しない。
-  window.dispatchEvent(new Event('photlas-remount'))
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
 }
