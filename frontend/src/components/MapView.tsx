@@ -1227,10 +1227,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                 className="location-pulse absolute top-1/2 left-1/2 w-8 h-8 rounded-full bg-blue-400"
                 style={{ transform: 'translate(-50%, -50%)' }}
               />
-              <div
-                className="location-pulse absolute top-1/2 left-1/2 w-8 h-8 rounded-full bg-blue-400"
-                style={{ transform: 'translate(-50%, -50%)', animationDelay: '0.5s' }}
-              />
 
               <div
                 className="absolute top-1/2 left-1/2 w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg"

@@ -84,6 +84,7 @@
     "loginRequiredMessage": "この機能を利用するには、ログインまたはアカウント作成が必要です。",
     "createAccount": "新規アカウント作成",
     "accountSuspended": "アカウントが停止されています。詳しくはお問い合わせください。",
+    "sessionExpired": "ログインの有効期限が切れました。再度ログインしてください",
     "oauth": {
       "continueWithGoogle": "Google で続ける",
       "continueWithLine": "LINE で続ける",
