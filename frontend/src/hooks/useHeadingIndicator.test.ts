@@ -1,10 +1,10 @@
 import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { useHeadingIndicator, HEADING_INDICATOR_STORAGE_KEY, HEADING_INDICATOR_INIT_KEY_V2, isHeadingIndicatorAvailable } from './useHeadingIndicator'
+import { useHeadingIndicator, HEADING_INDICATOR_STORAGE_KEY, isHeadingIndicatorAvailable } from './useHeadingIndicator'
 
 /**
  * Issue#115: 方角インジケーターのフックテスト
- * Phase1 Red段階: localStorage 連携 + ON/OFF 状態 + リスナー登録/解除
+ * Phase1 Red段階: sessionStorage 連携 + ON/OFF 状態 + リスナー登録/解除
  *
  * iOS 許可フローは Phase4 で別途追加するため本テストでは扱わない
  * （DeviceOrientationEvent.requestPermission は未定義として扱われる = 非iOS パス）
@@ -16,7 +16,7 @@ describe('useHeadingIndicator', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    // localStorage のモックは setup.ts で global に設定されている
+    // sessionStorage のモックは setup.ts で global に設定されている
     addEventListenerSpy = vi.spyOn(window, 'addEventListener')
     removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
     // RAF を同期実行に差し替え（テスト中の状態反映を act() 完了時に確定させるため）
@@ -33,70 +33,38 @@ describe('useHeadingIndicator', () => {
   })
 
   describe('初期状態', () => {
-    it('localStorage に値がない場合、enabled は false', () => {
-      vi.mocked(localStorage.getItem).mockReturnValue(null)
+    it('sessionStorage に値がない場合、enabled は false', () => {
+      vi.mocked(sessionStorage.getItem).mockReturnValue(null)
       const { result } = renderHook(() => useHeadingIndicator())
       expect(result.current.enabled).toBe(false)
     })
 
-    it('localStorage に "true" が保存されている場合、enabled は true', () => {
-      vi.mocked(localStorage.getItem).mockReturnValue('true')
+    it('sessionStorage に "true" が保存されている場合、enabled は true', () => {
+      vi.mocked(sessionStorage.getItem).mockReturnValue('true')
       const { result } = renderHook(() => useHeadingIndicator())
       expect(result.current.enabled).toBe(true)
     })
 
-    it('localStorage に "false" が保存されている場合、enabled は false', () => {
-      vi.mocked(localStorage.getItem).mockReturnValue('false')
+    it('sessionStorage に "false" が保存されている場合、enabled は false', () => {
+      vi.mocked(sessionStorage.getItem).mockReturnValue('false')
       const { result } = renderHook(() => useHeadingIndicator())
       expect(result.current.enabled).toBe(false)
     })
 
-    it('localStorage キーは photlas_heading_indicator_enabled', () => {
+    it('sessionStorage キーは photlas_heading_indicator_enabled', () => {
       expect(HEADING_INDICATOR_STORAGE_KEY).toBe('photlas_heading_indicator_enabled')
     })
 
     it('初期状態の heading は null', () => {
-      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      vi.mocked(sessionStorage.getItem).mockReturnValue(null)
       const { result } = renderHook(() => useHeadingIndicator())
       expect(result.current.heading).toBeNull()
-    })
-
-    it('初期化マーカーが無い場合、旧 enabled 値が "true" でも強制 OFF にする', () => {
-      // 旧来のユーザーで STORAGE_KEY="true" だが INIT_KEY_V2 が未設定の状況をシミュレート
-      vi.mocked(localStorage.getItem).mockImplementation((key: string) => {
-        if (key === HEADING_INDICATOR_INIT_KEY_V2) return null
-        if (key === HEADING_INDICATOR_STORAGE_KEY) return 'true'
-        return null
-      })
-
-      const { result } = renderHook(() => useHeadingIndicator())
-
-      expect(result.current.enabled).toBe(false)
-      // 初期化マーカーを立てた
-      expect(localStorage.setItem).toHaveBeenCalledWith(HEADING_INDICATOR_INIT_KEY_V2, 'true')
-      // 旧 enabled 値を削除した
-      expect(localStorage.removeItem).toHaveBeenCalledWith(HEADING_INDICATOR_STORAGE_KEY)
-    })
-
-    it('初期化マーカーがある場合、保存された enabled 値を引き継ぐ', () => {
-      // 既に初期化済みのユーザーで STORAGE_KEY="true" の状況
-      vi.mocked(localStorage.getItem).mockImplementation((key: string) => {
-        if (key === HEADING_INDICATOR_INIT_KEY_V2) return 'true'
-        if (key === HEADING_INDICATOR_STORAGE_KEY) return 'true'
-        return null
-      })
-
-      const { result } = renderHook(() => useHeadingIndicator())
-
-      expect(result.current.enabled).toBe(true)
-      // 初期化済なので強制リセットは行わない
-      expect(localStorage.removeItem).not.toHaveBeenCalled()
     })
   })
 
   describe('setEnabled でトグル', () => {
     it('setEnabled(true) で enabled が true になる', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      vi.mocked(sessionStorage.getItem).mockReturnValue(null)
       const { result } = renderHook(() => useHeadingIndicator())
 
       await act(async () => { await result.current.setEnabled(true) })
@@ -104,25 +72,25 @@ describe('useHeadingIndicator', () => {
       expect(result.current.enabled).toBe(true)
     })
 
-    it('setEnabled(true) で localStorage に "true" が保存される', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue(null)
+    it('setEnabled(true) で sessionStorage に "true" が保存される', async () => {
+      vi.mocked(sessionStorage.getItem).mockReturnValue(null)
       const { result } = renderHook(() => useHeadingIndicator())
 
       await act(async () => { await result.current.setEnabled(true) })
 
-      expect(localStorage.setItem).toHaveBeenCalledWith(
+      expect(sessionStorage.setItem).toHaveBeenCalledWith(
         HEADING_INDICATOR_STORAGE_KEY,
         'true'
       )
     })
 
-    it('setEnabled(false) で localStorage に "false" が保存される', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue('true')
+    it('setEnabled(false) で sessionStorage に "false" が保存される', async () => {
+      vi.mocked(sessionStorage.getItem).mockReturnValue('true')
       const { result } = renderHook(() => useHeadingIndicator())
 
       await act(async () => { await result.current.setEnabled(false) })
 
-      expect(localStorage.setItem).toHaveBeenCalledWith(
+      expect(sessionStorage.setItem).toHaveBeenCalledWith(
         HEADING_INDICATOR_STORAGE_KEY,
         'false'
       )
@@ -131,7 +99,7 @@ describe('useHeadingIndicator', () => {
 
   describe('リスナー登録/解除', () => {
     it('enabled=true になると deviceorientation 系イベントリスナーが登録される', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      vi.mocked(sessionStorage.getItem).mockReturnValue(null)
       const { result } = renderHook(() => useHeadingIndicator())
 
       await act(async () => { await result.current.setEnabled(true) })
@@ -143,7 +111,7 @@ describe('useHeadingIndicator', () => {
     })
 
     it('enabled=true から false に切り替えるとリスナーが解除される', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      vi.mocked(sessionStorage.getItem).mockReturnValue('true')
       const { result } = renderHook(() => useHeadingIndicator())
 
       await act(async () => { await result.current.setEnabled(false) })
@@ -155,7 +123,7 @@ describe('useHeadingIndicator', () => {
     })
 
     it('unmount 時にリスナーが解除される', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      vi.mocked(sessionStorage.getItem).mockReturnValue('true')
       const { unmount } = renderHook(() => useHeadingIndicator())
 
       unmount()
@@ -167,7 +135,7 @@ describe('useHeadingIndicator', () => {
     })
 
     it('enabled=false の状態ではリスナーは登録されない', () => {
-      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      vi.mocked(sessionStorage.getItem).mockReturnValue(null)
       renderHook(() => useHeadingIndicator())
 
       const orientationListenerCalls = addEventListenerSpy.mock.calls.filter(
@@ -179,7 +147,7 @@ describe('useHeadingIndicator', () => {
 
   describe('heading の更新', () => {
     it('webkitCompassHeading 付きイベント（iOS 形式）で heading が更新される', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      vi.mocked(sessionStorage.getItem).mockReturnValue('true')
       const { result } = renderHook(() => useHeadingIndicator())
 
       // フックがリスナーを登録するのを待つ
@@ -194,7 +162,7 @@ describe('useHeadingIndicator', () => {
     })
 
     it('alpha 付きイベント（Android 形式: deviceorientationabsolute, absolute=true）で heading が更新される', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      vi.mocked(sessionStorage.getItem).mockReturnValue('true')
       const { result } = renderHook(() => useHeadingIndicator())
 
       await act(async () => {
@@ -209,7 +177,7 @@ describe('useHeadingIndicator', () => {
     })
 
     it('alpha も webkitCompassHeading も無いイベントでは heading は変わらない', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      vi.mocked(sessionStorage.getItem).mockReturnValue('true')
       const { result } = renderHook(() => useHeadingIndicator())
 
       await act(async () => {
@@ -234,7 +202,7 @@ describe('useHeadingIndicator', () => {
     })
 
     it('iOS で setEnabled(true) → 許可 granted で enabled=true、リスナー登録される', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      vi.mocked(sessionStorage.getItem).mockReturnValue(null)
       const requestPermissionMock = vi.fn().mockResolvedValue('granted')
       ;(DeviceOrientationEvent as EventCtor).requestPermission = requestPermissionMock
 
@@ -246,8 +214,8 @@ describe('useHeadingIndicator', () => {
       expect(result.current.enabled).toBe(true)
     })
 
-    it('iOS で setEnabled(true) → 許可 denied で enabled=false、localStorage も false', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue(null)
+    it('iOS で setEnabled(true) → 許可 denied で enabled=false、sessionStorage も false', async () => {
+      vi.mocked(sessionStorage.getItem).mockReturnValue(null)
       const requestPermissionMock = vi.fn().mockResolvedValue('denied')
       ;(DeviceOrientationEvent as EventCtor).requestPermission = requestPermissionMock
 
@@ -258,13 +226,13 @@ describe('useHeadingIndicator', () => {
 
       expect(requestPermissionMock).toHaveBeenCalledTimes(1)
       expect(result.current.enabled).toBe(false)
-      expect(localStorage.setItem).toHaveBeenCalledWith(HEADING_INDICATOR_STORAGE_KEY, 'false')
+      expect(sessionStorage.setItem).toHaveBeenCalledWith(HEADING_INDICATOR_STORAGE_KEY, 'false')
       // setEnabled は許可拒否時に { granted: false } を返す（呼び出し元がトースト表示等に利用）
       expect(returnValue).toMatchObject({ granted: false })
     })
 
     it('iOS で setEnabled(true) → 許可 granted で setEnabled は { granted: true } を返す', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      vi.mocked(sessionStorage.getItem).mockReturnValue(null)
       ;(DeviceOrientationEvent as EventCtor).requestPermission = vi.fn().mockResolvedValue('granted')
 
       const { result } = renderHook(() => useHeadingIndicator())
@@ -276,7 +244,7 @@ describe('useHeadingIndicator', () => {
     })
 
     it('setEnabled(false) では requestPermission を呼ばない', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue('true')
+      vi.mocked(sessionStorage.getItem).mockReturnValue('true')
       const requestPermissionMock = vi.fn().mockResolvedValue('granted')
       ;(DeviceOrientationEvent as EventCtor).requestPermission = requestPermissionMock
 
@@ -288,7 +256,7 @@ describe('useHeadingIndicator', () => {
     })
 
     it('非iOS（requestPermission 未定義）では setEnabled(true) は { granted: true } を返す', async () => {
-      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      vi.mocked(sessionStorage.getItem).mockReturnValue(null)
       // requestPermission を定義しない（非iOS パス）
       const { result } = renderHook(() => useHeadingIndicator())
 
