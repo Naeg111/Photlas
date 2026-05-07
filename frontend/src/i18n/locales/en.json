@@ -84,6 +84,7 @@
     "loginRequiredMessage": "Please log in or create an account to use this feature.",
     "createAccount": "Create Account",
     "accountSuspended": "Your account has been suspended. Please contact support.",
+    "sessionExpired": "Session expired. Please log in again",
     "oauth": {
       "continueWithGoogle": "Continue with Google",
       "continueWithLine": "Continue with LINE",

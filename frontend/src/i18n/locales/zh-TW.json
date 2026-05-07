@@ -83,6 +83,7 @@
     "loginRequiredMessage": "使用此功能需要先登入或建立帳號。",
     "createAccount": "建立帳號",
     "accountSuspended": "您的帳號已被停用。請聯絡客服。",
+    "sessionExpired": "登入已逾時，請重新登入",
     "oauth": {
       "continueWithGoogle": "使用 Google 繼續",
       "continueWithLine": "使用 LINE 繼續",
