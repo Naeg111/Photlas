@@ -215,8 +215,11 @@ async function runAggressiveViewportRecalc(): Promise<void> {
  */
 async function tryRotateForViewportRecalc(): Promise<void> {
   if (typeof screen === 'undefined') return
+  // OrientationLockType は TS lib バージョンによっては未定義のため、文字列リテラル union を直接記述する。
+  type LockMode = 'any' | 'natural' | 'landscape' | 'portrait'
+    | 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary'
   const orientation = screen.orientation as ScreenOrientation & {
-    lock?: (mode: OrientationLockType) => Promise<void>
+    lock?: (mode: LockMode) => Promise<void>
     unlock?: () => void
   }
   if (!orientation || typeof orientation.lock !== 'function') return
@@ -239,8 +242,4 @@ async function tryRotateForViewportRecalc(): Promise<void> {
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-function nextFrame(): Promise<void> {
-  return new Promise(resolve => requestAnimationFrame(() => resolve()))
 }
