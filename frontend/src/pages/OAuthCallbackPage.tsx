@@ -163,4 +163,59 @@ async function completeLogin(
   // Issue#104: URL パラメータ方式は廃止し、ホームに統一リダイレクト
   // 仮表示名／同意未済の判定は App.tsx のマウント時 /users/me チェックで行う（§4.18 / §4.14）
   navigate('/', { replace: true })
+
+  // PWA のみ: イベント駆動だけでは iOS WebKit の viewport 計算が回復しない場合に備えて、
+  // バックグラウンドで viewport の強制再計算を試みる。画面遷移はすでに完了しているため
+  // この処理はメイン UX をブロックしない。
+  if (isPwaStandalone()) {
+    void runAggressiveViewportRecalc()
+  }
+}
+
+/** PWA standalone モード判定（iOS Safari の navigator.standalone と display-mode media query 両対応） */
+function isPwaStandalone(): boolean {
+  if (typeof window === 'undefined') return false
+  const iosStandalone = (window.navigator as { standalone?: boolean }).standalone === true
+  if (iosStandalone) return true
+  if (typeof window.matchMedia !== 'function') return false
+  return window.matchMedia('(display-mode: standalone)').matches
+}
+
+/**
+ * iOS PWA で OAuth 戻り後の viewport 不整合を強制的に回復させる試み。
+ *
+ * 1. 3 秒待機して SFSafariViewController が完全に dispose されるのを待つ
+ * 2. viewport meta タグを 3 回連続でトグル（iOS WebKit に viewport 再評価を強く促す）
+ * 3. resize イベントを dispatch（React や CSS の viewport 連動処理を再走させる）
+ *
+ * 1500ms 1回トグルでは効かなかったため、より aggressive に複数回試行する。
+ * デバイス回転で治ることが報告されている事象を JS で代替的にトリガーする狙い。
+ * 効く保証はなく、効かなければユーザー案内（タスクキル誘導）に倒すしかない。
+ */
+async function runAggressiveViewportRecalc(): Promise<void> {
+  // 3 秒待機: SFSafariViewController dispose を確実に
+  await sleep(3000)
+
+  // viewport meta タグを 3 回連続でトグル
+  const viewport = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
+  if (viewport) {
+    const original = viewport.content
+    for (let i = 0; i < 3; i++) {
+      viewport.content = ''
+      await nextFrame()
+      viewport.content = original
+      await nextFrame()
+    }
+  }
+
+  // resize イベントを dispatch して各種リスナーに viewport 変化を通知
+  window.dispatchEvent(new Event('resize'))
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function nextFrame(): Promise<void> {
+  return new Promise(resolve => requestAnimationFrame(() => resolve()))
 }
