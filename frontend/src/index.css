@@ -139,7 +139,12 @@ input, textarea, [contenteditable="true"] {
   html.standalone #root {
     position: relative;
     width: 100%;
+    /* iOS PWA で SFSafariViewController（LINE OAuth 等）から戻った直後、
+       100vh は再計算されず古い値のまま固定されることがあり、画面下部が見えなくなる。
+       100dvh は viewport 変化に追従する dynamic viewport height（iOS 15.4+）。
+       100vh はフォールバック用に残し、対応ブラウザでは 100dvh で上書きされる。 */
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
   }
 }
