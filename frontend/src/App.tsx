@@ -515,24 +515,28 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
       imageHeight?: number
     }
   }) => {
-    // ファイル拡張子とContent-Typeを取得
-    const extension = data.file.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const contentType = data.file.type || 'image/jpeg'
-
     try {
-      // 1. Presigned URL取得
+      // 1. EXIF情報を削除して画像を再エンコード（HEIC等は JPEG に変換される）
+      //    stripExif は内部で createImageBitmap → canvas.toBlob を使うため、
+      //    HEIC のような Web で出力できない形式は image/jpeg に強制変換される。
+      //    presigned URL の Content-Type 署名と実際の PUT の Content-Type を
+      //    一致させるため、URL 取得は変換後の blob.type で行う必要がある。
+      const strippedBlob = await stripExif(data.file)
+
+      // 2. 変換後の Content-Type に合わせて拡張子を決定
+      const contentType = strippedBlob.type
+      const extension = contentType === 'image/png' ? 'png' : 'jpg'
+
+      // 3. Presigned URL取得（変換後の content-type で署名する）
       const { uploadUrl, objectKey } = await getPhotoUploadUrl({
         extension,
         contentType,
       })
 
-      // 2. EXIF情報を削除して画像を再エンコード
-      const strippedBlob = await stripExif(data.file)
-
-      // 3. EXIF削除済み画像をS3へアップロード
+      // 4. EXIF削除済み画像をS3へアップロード
       await uploadFileToS3(uploadUrl, strippedBlob)
 
-      // 4. メタデータ保存（EXIF情報を含む）
+      // 5. メタデータ保存（EXIF情報を含む）
       const photoResponse = await createPhoto({
         placeName: data.placeName,
         s3ObjectKey: objectKey,
