@@ -4,24 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <!-- Issue#70: iOS PWAスタンドアロンモード検出（CSS適用前に実行）+ ビューポート高さ追跡。
-         iOS PWA で OAuth 戻り後に 100vh が古い値で固定される事象 / 100dvh が
-         home indicator 裏まで伸びる事象に対応するため、window.innerHeight を CSS 変数
-         --app-h に流し込む。CSS 側は height: var(--app-h, 100vh) で参照する。 -->
-    <script>
-      if (navigator.standalone) {
-        document.documentElement.classList.add('standalone');
-        var setAppH = function () {
-          document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px');
-        };
-        setAppH();
-        window.addEventListener('resize', setAppH);
-        window.addEventListener('pageshow', setAppH);
-        document.addEventListener('visibilitychange', function () {
-          if (!document.hidden) requestAnimationFrame(setAppH);
-        });
-      }
-    </script>
+    <!-- Issue#70: iOS PWAスタンドアロンモード検出（CSS適用前に実行） -->
+    <script>if(navigator.standalone)document.documentElement.classList.add('standalone')</script>
     <meta name="theme-color" content="#000000" />
 
     <!-- PWA / Home Screen Web App -->
