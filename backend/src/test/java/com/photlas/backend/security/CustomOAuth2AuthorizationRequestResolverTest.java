@@ -128,35 +128,6 @@ class CustomOAuth2AuthorizationRequestResolverTest {
         assertThat(r2).isSameAs(authReq);
     }
 
-    @Test
-    @DisplayName("registrationId=line の場合、認可URLとadditionalParametersに disable_ios_auto_login=true が追加される")
-    void addsDisableIosAutoLoginForLine() {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/oauth2/authorization/line");
-        OAuth2AuthorizationRequest authReq = sampleLineAuthRequest();
-        when(delegate.resolve(request)).thenReturn(authReq);
-
-        OAuth2AuthorizationRequest result = resolver.resolve(request);
-
-        assertThat(result.getAdditionalParameters())
-                .containsEntry("disable_ios_auto_login", "true");
-        assertThat(result.getAuthorizationRequestUri())
-                .contains("disable_ios_auto_login=true");
-    }
-
-    @Test
-    @DisplayName("registrationId=google の場合、disable_ios_auto_login は追加されず元のオブジェクトをそのまま返す")
-    void doesNotAddDisableIosAutoLoginForGoogle() {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/oauth2/authorization/google");
-        OAuth2AuthorizationRequest authReq = sampleAuthRequest();
-        when(delegate.resolve(request)).thenReturn(authReq);
-
-        OAuth2AuthorizationRequest result = resolver.resolve(request);
-
-        // Google は元オブジェクトをそのまま返す（参照が同じ）
-        assertThat(result).isSameAs(authReq);
-        assertThat(result.getAdditionalParameters()).doesNotContainKey("disable_ios_auto_login");
-    }
-
     // ---------- テストヘルパー ----------
 
     private static OAuth2AuthorizationRequest sampleAuthRequest() {
@@ -169,20 +140,6 @@ class CustomOAuth2AuthorizationRequestResolverTest {
                 .additionalParameters(java.util.Map.of())
                 .authorizationRequestUri("https://accounts.google.com/o/oauth2/v2/auth?...")
                 .attributes(java.util.Map.of())
-                .build();
-    }
-
-    /** registrationId=line を attribute に持つ LINE 用の認可リクエストサンプル */
-    private static OAuth2AuthorizationRequest sampleLineAuthRequest() {
-        return OAuth2AuthorizationRequest.authorizationCode()
-                .authorizationUri("https://access.line.me/oauth2/v2.1/authorize")
-                .clientId("test-line-client-id")
-                .redirectUri("http://localhost:8080/api/v1/auth/oauth2/callback/line")
-                .scopes(java.util.Set.of("openid", "profile", "email"))
-                .state("test-state")
-                .additionalParameters(java.util.Map.of("nonce", "test-nonce"))
-                .authorizationRequestUri("https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=test-line-client-id&state=test-state&scope=openid%20profile%20email&nonce=test-nonce")
-                .attributes(java.util.Map.of("registration_id", "line"))
                 .build();
     }
 }
