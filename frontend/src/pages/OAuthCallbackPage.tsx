@@ -182,44 +182,59 @@ function isPwaStandalone(): boolean {
 }
 
 /**
- * iOS PWA で OAuth 戻り後の viewport 不整合を強制的に回復させる試み（H 改 D）。
+ * iOS PWA で OAuth 戻り後の viewport 不整合を強制的に回復させる試み（案 O Phase 1）。
  *
- * 過去の試行で viewport.content を空にして戻す方式は viewport-fit=cover の効果が
- * 復元されず、UI 全体が下にズレる症状を起こしたため、initial-scale だけを一瞬変えて
- * 元に戻す方式に変更した（viewport-fit=cover は常時維持される）。
+ * デバイス物理回転で治ることが業界で報告されている事象を、Screen Orientation API で
+ * プログラム的に再現する試み。横向きにロック → 縦向きにロック → 解除を行う。
+ * iOS PWA で API がサポートされていれば、物理回転と同じ効果で iOS WebKit の
+ * viewport 計算がリセットされる。
  *
- * 1. 3 秒待機して SFSafariViewController が完全に dispose されるのを待つ
- * 2. viewport meta タグの initial-scale を 0.999999 → 1.0 にトグル（iOS に viewport 再評価を促す）
- * 3. resize イベントを dispatch
- * 4. window.scrollTo(0, 0) でスクロール位置を強制リセット（vertical shift 対策）
+ * 注意: この Phase では UX 上「画面が一瞬回転する」のがそのまま見える。
+ * 効果が確認できたら Phase 2 でローディングオーバーレイで視覚的に隠す。
  *
- * デバイス回転で治ることが報告されている事象を JS で代替的にトリガーする狙い。
- * 効く保証はなく、効かなければユーザー案内（タスクキル誘導）に倒すしかない。
+ * 補助として resize イベント発火と scroll リセットも行う。
  */
 async function runAggressiveViewportRecalc(): Promise<void> {
   // 3 秒待機: SFSafariViewController dispose を確実に
   await sleep(3000)
 
-  // viewport meta の initial-scale を一瞬変えて戻す。
-  // viewport-fit=cover を維持するため content 全体を空にはせず、initial-scale 部分のみ書き換える。
-  const viewport = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
-  if (viewport) {
-    const original = viewport.content
-    const scrambled = original.replace(/initial-scale=[^,\s]+/, 'initial-scale=0.999999')
-    if (scrambled !== original) {
-      viewport.content = scrambled
-      await nextFrame()
-      viewport.content = original
-      await nextFrame()
-    }
-  }
+  // メイン手段: Screen Orientation API で擬似的な物理回転を発火
+  await tryRotateForViewportRecalc()
 
-  // resize イベントを dispatch して各種リスナーに viewport 変化を通知
+  // 補助: resize イベント発火 + スクロール位置リセット
   window.dispatchEvent(new Event('resize'))
-
-  // 念のためスクロール位置をトップに戻す（WKWebView 内部スクロールがズレている場合に回復）
   window.scrollTo(0, 0)
   document.scrollingElement?.scrollTo(0, 0)
+}
+
+/**
+ * Screen Orientation API でデバイスを横向き → 縦向きに切り替えて viewport 計算をリセットする。
+ *
+ * iOS Safari の API サポートは限定的だが、PWA standalone モードなら動作する可能性がある。
+ * API が存在しない、または fullscreen 必須等の理由で拒否された場合は静かに無視する。
+ */
+async function tryRotateForViewportRecalc(): Promise<void> {
+  if (typeof screen === 'undefined') return
+  const orientation = screen.orientation as ScreenOrientation & {
+    lock?: (mode: OrientationLockType) => Promise<void>
+    unlock?: () => void
+  }
+  if (!orientation || typeof orientation.lock !== 'function') return
+
+  try {
+    // 横向きへロック（実際にデバイス画面が回転する）
+    await orientation.lock('landscape-primary')
+    await sleep(500)
+    // 縦向きへロック（戻す）
+    await orientation.lock('portrait-primary')
+    await sleep(100)
+    // ロック解除して manifest の orientation: any に従う状態に戻す
+    if (typeof orientation.unlock === 'function') {
+      orientation.unlock()
+    }
+  } catch {
+    // API 未サポート / fullscreen 必須拒否 / マニフェスト設定との不整合 等は無視
+  }
 }
 
 function sleep(ms: number): Promise<void> {
