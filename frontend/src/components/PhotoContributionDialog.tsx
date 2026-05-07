@@ -639,15 +639,6 @@ export function PhotoContributionDialog({
               {t('photo.contributeDescription')}
             </DialogDescription>
           </DialogHeader>
-          {/* Issue#119: AI プリフィル成功時の控えめなバナー */}
-          {aiPrefillApplied && (
-            <p
-              data-testid="ai-prefill-banner"
-              className="text-sm text-gray-500 mt-2"
-            >
-              {t('aiPrefill.banner')}
-            </p>
-          )}
         </div>
 
         {/* スクロール可能なフォーム部分 */}
@@ -659,6 +650,15 @@ export function PhotoContributionDialog({
           onPointerUp={handlePointerUp}
           style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}
         >
+          {/* Issue#119: AI プリフィル成功時の控えめなバナー（タイトル領域ではなくコンテンツの一部として表示）*/}
+          {aiPrefillApplied && (
+            <p
+              data-testid="ai-prefill-banner"
+              className="text-sm text-gray-500 mt-4"
+            >
+              {t('aiPrefill.banner')}
+            </p>
+          )}
           <div className="space-y-6 mt-4">
             {/* 写真選択 */}
             <div className="space-y-3">
