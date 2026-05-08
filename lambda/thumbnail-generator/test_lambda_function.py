@@ -17,6 +17,7 @@ from lambda_function import (
     STATUS_TAG_KEY,
     STATUS_TAG_VALUE_PENDING,
     STATUS_TAG_VALUE_REGISTERED,
+    S3_CACHE_CONTROL_VALUE,
 )
 
 TEST_BUCKET = "photlas-uploads-test"
@@ -378,3 +379,28 @@ class TestSnsWrappedEvent:
 
         assert result["statusCode"] == 200
         mock_s3.put_object.assert_called_once()
+
+
+class TestIssue124CacheControl:
+    """Issue#124 - サムネイル put_object に Cache-Control を付与するテスト。"""
+
+    def test_cache_control_constant_defined(self):
+        """S3_CACHE_CONTROL_VALUE が "public, max-age=31536000, immutable" として定義されている。"""
+        assert S3_CACHE_CONTROL_VALUE == "public, max-age=31536000, immutable"
+
+    @patch("lambda_function.s3_client")
+    def test_thumbnail_put_object_includes_cache_control(self, mock_s3):
+        """サムネイル書き込み時の put_object に CacheControl が含まれる。"""
+        jpeg_bytes = create_test_image(800, 600)
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes))
+        }
+        mock_s3.get_object_tagging.return_value = {
+            "TagSet": [{"Key": "status", "Value": "pending"}]
+        }
+        mock_s3.put_object.return_value = {}
+
+        lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
+
+        call_args = mock_s3.put_object.call_args
+        assert call_args[1].get("CacheControl") == "public, max-age=31536000, immutable"
