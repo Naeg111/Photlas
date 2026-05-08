@@ -278,6 +278,15 @@ export const S3_TAG_HEADER_NAME = 'x-amz-tagging'
 export const S3_TAG_HEADER_VALUE_PENDING = 'status=pending'
 
 /**
+ * Issue#124: 写真画像の Cache-Control を immutable 化
+ *
+ * presigned URL は CacheControl 付きで署名されるため、S3 への PUT 時には
+ * 同一の Cache-Control ヘッダを送らないと SignedHeaders 不一致で 403 になる。
+ * バックエンド (S3Service)・Lambda と値を揃える（変更時は 3 箇所同時に変える）。
+ */
+export const S3_CACHE_CONTROL_VALUE = 'public, max-age=31536000, immutable'
+
+/**
  * S3にファイルをアップロード
  * @param uploadUrl Presigned URL
  * @param file アップロードするファイル
@@ -288,6 +297,7 @@ export async function uploadFileToS3(uploadUrl: string, file: Blob): Promise<voi
     body: file,
     headers: {
       'Content-Type': file.type,
+      'Cache-Control': S3_CACHE_CONTROL_VALUE,
       [S3_TAG_HEADER_NAME]: S3_TAG_HEADER_VALUE_PENDING,
     },
   })
