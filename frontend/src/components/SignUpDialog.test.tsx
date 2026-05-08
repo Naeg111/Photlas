@@ -508,6 +508,18 @@ describe('SignUpDialog', () => {
           })
         )
       })
+
+      // Issue#100 / Issue#124 - S3 PUT に必要なヘッダが揃っていること
+      // 呼び出し順: 1) registration POST, 2) presigned-url POST, 3) S3 PUT, 4) profile-image PUT
+      const s3PutCall = mockFetch.mock.calls[2]
+      expect(s3PutCall[0]).toBe('https://s3.example.com/upload')
+      const s3PutInit = s3PutCall[1] as RequestInit
+      expect(s3PutInit.method).toBe('PUT')
+      const s3PutHeaders = s3PutInit.headers as Record<string, string>
+      // Issue#100: presigned URL の署名と整合させるため必須
+      expect(s3PutHeaders['x-amz-tagging']).toBe('status=pending')
+      // Issue#124: 同上、署名対象に含まれているため必須
+      expect(s3PutHeaders['Cache-Control']).toBe('public, max-age=31536000, immutable')
     })
 
     it('registration succeeds even if profile image upload fails', async () => {

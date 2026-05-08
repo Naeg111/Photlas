@@ -324,6 +324,18 @@ describe('useProfileEdit', () => {
         '/api/v1/users/me/profile-image/presigned-url',
         expect.objectContaining({ method: 'POST' })
       )
+
+      // Issue#100 / Issue#124 - S3 PUT に必要なヘッダが揃っていること
+      // 呼び出し順: 1) presigned-url POST, 2) S3 PUT, 3) profile-image 登録 PUT
+      const s3PutCall = mockFetch.mock.calls[1]
+      expect(s3PutCall[0]).toBe('https://s3.example.com/upload')
+      const s3PutInit = s3PutCall[1] as RequestInit
+      expect(s3PutInit.method).toBe('PUT')
+      const s3PutHeaders = s3PutInit.headers as Record<string, string>
+      // Issue#100: presigned URL の署名と整合させるため必須
+      expect(s3PutHeaders['x-amz-tagging']).toBe('status=pending')
+      // Issue#124: 同上、署名対象に含まれているため必須
+      expect(s3PutHeaders['Cache-Control']).toBe('public, max-age=31536000, immutable')
     })
 
     it('レポート#5-3 - handleSaveAllChangesでS3 PUTが失敗した場合にエラートーストが表示される', async () => {
