@@ -195,6 +195,7 @@ export function SnsLinkEditDialog({
                     src={service.logoSrc}
                     alt={service.logoAlt}
                     data-testid={`sns-logo-${service.key}`}
+                    loading="eager"
                     className="w-8 h-8 opacity-60 hover:opacity-100 transition-opacity shrink-0"
                   />
                   <Input

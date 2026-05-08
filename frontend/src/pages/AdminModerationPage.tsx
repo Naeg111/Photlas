@@ -217,6 +217,7 @@ export default function AdminModerationPage() {
                   <img
                     src={item.thumbnail_url || item.image_url}
                     alt="画像"
+                    loading="lazy"
                     className={`w-full h-full object-cover transition-all duration-300 ${
                       revealedIds.has(item.photo_id) ? '' : 'blur-lg'
                     }`}

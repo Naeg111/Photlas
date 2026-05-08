@@ -296,6 +296,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
                 <img
                   src={displayImageUrl}
                   alt="フルサイズ写真"
+                  loading="eager"
                   className="max-w-[90vw] max-h-[90vh] object-contain"
                 />
               </motion.div>

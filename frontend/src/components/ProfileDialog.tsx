@@ -457,6 +457,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                   <ProtectedImage
                     src={displayProfileImageUrl}
                     alt={userProfile.username}
+                    loading="eager"
                     className="w-28 h-28 rounded-full object-cover"
                   />
                 ) : (
@@ -577,6 +578,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                     <img
                       src={SNS_ICON_MAP[link.platform]}
                       alt={PLATFORM_LABELS[link.platform] ?? 'Link'}
+                      loading="eager"
                       className="w-8 h-8"
                     />
                   </a>
