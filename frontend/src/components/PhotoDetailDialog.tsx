@@ -1057,6 +1057,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                               <ProtectedImage
                                 src={photo.thumbnailUrl}
                                 alt="画像"
+                                loading="eager"
                                 className="w-full h-full"
                                 style={{
                                   objectFit: 'cover',
@@ -1254,6 +1255,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       <img
                         src={displayedPhoto.user.profileImageUrl}
                         alt={displayedPhoto.user.username}
+                        loading="lazy"
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (

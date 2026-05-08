@@ -245,6 +245,7 @@ export default function ReviewLocationPage() {
           <img
             src={reviewData.imageUrl}
             alt={t('reviewLocation.photoAlt')}
+            loading="eager"
             className="w-full h-full object-cover"
             style={imageStyle}
             data-testid="review-photo"

@@ -72,6 +72,7 @@ function ProfileImageUploader({ onImageSelect }: Readonly<ProfileImageUploaderPr
           <img
             src={preview}
             alt="プロフィール画像プレビュー"
+            loading="eager"
             className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
           />
         </div>

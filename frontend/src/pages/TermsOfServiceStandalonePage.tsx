@@ -40,7 +40,7 @@ export default function TermsOfServiceStandalonePage() {
       {/* ヘッダー */}
       <header className="border-b border-gray-200">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-3">
-          <img src="/icons/icon-192.png" alt="" className="w-10 h-10" />
+          <img src="/icons/icon-192.png" alt="" loading="eager" className="w-10 h-10" />
           <Link to="/about" className="text-xl font-semibold hover:underline">
             Photlas
           </Link>
