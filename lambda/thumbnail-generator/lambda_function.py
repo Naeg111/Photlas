@@ -35,6 +35,10 @@ STATUS_TAG_KEY = "status"
 STATUS_TAG_VALUE_PENDING = "pending"
 STATUS_TAG_VALUE_REGISTERED = "registered"
 
+# Issue#124: 写真画像の Cache-Control を immutable 化（バックエンド S3Service /
+# フロントエンド apiClient.ts と値を揃える。変更時は 3 箇所同時に変える）
+S3_CACHE_CONTROL_VALUE = "public, max-age=31536000, immutable"
+
 
 def extract_s3_records(event: dict) -> list:
     """イベントから S3 レコード一覧を取り出す。
@@ -181,6 +185,7 @@ def lambda_handler(event, context):
                 "Key": thumbnail_key,
                 "Body": output.getvalue(),
                 "ContentType": "image/webp",
+                "CacheControl": S3_CACHE_CONTROL_VALUE,
             }
             # 元画像のタグが取得できた場合のみサムネイルにコピー
             if source_status_before is not None:

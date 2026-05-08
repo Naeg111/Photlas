@@ -41,6 +41,15 @@ public class S3Service {
     /** タグ値: メタデータ登録済み（保持対象） */
     public static final String STATUS_TAG_VALUE_REGISTERED = "registered";
 
+    // Issue#124: 写真画像の Cache-Control を immutable 化
+    /**
+     * S3 オブジェクトに付与する Cache-Control 値。
+     * フロントエンド (apiClient.ts の S3_CACHE_CONTROL_VALUE) と Lambda
+     * (lambda_function.py の S3_CACHE_CONTROL_VALUE) と完全一致させる。
+     * 変更時は 3 箇所同時に変えること。
+     */
+    public static final String S3_CACHE_CONTROL_VALUE = "public, max-age=31536000, immutable";
+
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
@@ -75,10 +84,14 @@ public class S3Service {
 
             // Issue#100: presigned URL に status=pending タグを付与
             // フロントエンドはアップロード時に x-amz-tagging: status=pending ヘッダーを送る必要がある
+            // Issue#124: CacheControl を署名対象に含めることで、PUT 後の S3 オブジェクトに
+            // 永続キャッシュ (immutable) を付与する。フロントエンドはアップロード時に
+            // Cache-Control ヘッダを送る必要がある（送らないと SignedHeaders 不一致で 403）。
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(objectKey)
                     .contentType(contentType)
+                    .cacheControl(S3_CACHE_CONTROL_VALUE)
                     .tagging(STATUS_TAG_KEY + "=" + STATUS_TAG_VALUE_PENDING)
                     .build();
 
