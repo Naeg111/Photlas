@@ -12,7 +12,7 @@ import { Upload, Eye, EyeOff } from 'lucide-react'
 import { SnsLinkEditDialog } from './SnsLinkEditDialog'
 import { API_V1_URL } from '../config/api'
 import { toast } from 'sonner'
-import { ApiError, S3_TAG_HEADER_NAME, S3_TAG_HEADER_VALUE_PENDING } from '../utils/apiClient'
+import { ApiError, S3_TAG_HEADER_NAME, S3_TAG_HEADER_VALUE_PENDING, S3_CACHE_CONTROL_VALUE } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
 import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
@@ -161,6 +161,8 @@ export function SignUpDialog({
         headers: {
           // Issue#100: presigned URL の署名と整合させるため必須
           [S3_TAG_HEADER_NAME]: S3_TAG_HEADER_VALUE_PENDING,
+          // Issue#124: presigned URL の SignedHeaders に cache-control が含まれるため必須
+          'Cache-Control': S3_CACHE_CONTROL_VALUE,
         },
       })
 
