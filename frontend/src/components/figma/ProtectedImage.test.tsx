@@ -109,4 +109,30 @@ describe('ProtectedImage', () => {
       expect(img.style.userSelect).toBe('none')
     })
   })
+
+  describe('Issue#126 - loading 属性', () => {
+    it('loading を指定しなかった場合、デフォルトで lazy が設定される', () => {
+      render(<ProtectedImage {...defaultProps} />)
+
+      const img = screen.getByAltText('テスト画像')
+
+      expect(img).toHaveAttribute('loading', 'lazy')
+    })
+
+    it('loading="eager" を指定した場合、デフォルトを上書きして eager が反映される', () => {
+      render(<ProtectedImage {...defaultProps} loading="eager" />)
+
+      const img = screen.getByAltText('テスト画像')
+
+      expect(img).toHaveAttribute('loading', 'eager')
+    })
+
+    it('loading="lazy" を明示指定した場合、lazy が反映される', () => {
+      render(<ProtectedImage {...defaultProps} loading="lazy" />)
+
+      const img = screen.getByAltText('テスト画像')
+
+      expect(img).toHaveAttribute('loading', 'lazy')
+    })
+  })
 })
