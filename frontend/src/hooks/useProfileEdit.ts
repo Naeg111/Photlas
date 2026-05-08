@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { validateUsername as validateUsernameLite } from '../utils/validation/username'
 import { localizeFieldError } from '../utils/validation/localizeFieldError'
-import { S3_TAG_HEADER_NAME, S3_TAG_HEADER_VALUE_PENDING } from '../utils/apiClient'
+import { S3_TAG_HEADER_NAME, S3_TAG_HEADER_VALUE_PENDING, S3_CACHE_CONTROL_VALUE } from '../utils/apiClient'
 
 // APIエンドポイント定数
 const API_ENDPOINTS = {
@@ -308,6 +308,8 @@ export const useProfileEdit = ({
             headers: {
               // Issue#100: presigned URL の署名と整合させるため必須
               [S3_TAG_HEADER_NAME]: S3_TAG_HEADER_VALUE_PENDING,
+              // Issue#124: presigned URL の SignedHeaders に cache-control が含まれるため必須
+              'Cache-Control': S3_CACHE_CONTROL_VALUE,
             },
           })
 
