@@ -6,7 +6,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { ApiError, uploadFileToS3, S3_TAG_HEADER_NAME, S3_TAG_HEADER_VALUE_PENDING } from './apiClient'
+import {
+  ApiError,
+  uploadFileToS3,
+  S3_TAG_HEADER_NAME,
+  S3_TAG_HEADER_VALUE_PENDING,
+  S3_CACHE_CONTROL_VALUE,
+} from './apiClient'
 
 describe('ApiError (Issue#96 拡張)', () => {
   describe('コンストラクタ', () => {
@@ -147,6 +153,42 @@ describe('Issue#100 - S3 タグベース孤立ファイル対応', () => {
 
       // 文字列リテラルで明示的に検証（undefined === undefined の false-pass を防ぐ）
       expect(headers['x-amz-tagging']).toBe('status=pending')
+    })
+  })
+})
+
+describe('Issue#124 - Cache-Control immutable 化', () => {
+  describe('定数', () => {
+    it('S3_CACHE_CONTROL_VALUE が "public, max-age=31536000, immutable" として定義されている', () => {
+      expect(S3_CACHE_CONTROL_VALUE).toBe('public, max-age=31536000, immutable')
+    })
+  })
+
+  describe('uploadFileToS3', () => {
+    let originalFetch: typeof globalThis.fetch
+    let fetchMock: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      originalFetch = globalThis.fetch
+      fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 })
+      globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch
+    })
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch
+    })
+
+    it('S3 への PUT リクエストに Cache-Control: public, max-age=31536000, immutable が含まれる', async () => {
+      const blob = new Blob(['test'], { type: 'image/jpeg' })
+
+      await uploadFileToS3('https://example.com/upload', blob)
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      const callArgs = fetchMock.mock.calls[0]
+      const init = callArgs[1] as RequestInit
+      const headers = init.headers as Record<string, string>
+
+      expect(headers['Cache-Control']).toBe('public, max-age=31536000, immutable')
     })
   })
 })
