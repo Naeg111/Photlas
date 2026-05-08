@@ -38,7 +38,7 @@ aws s3api put-bucket-cors \
         \"CORSRules\": [
             {
                 \"AllowedOrigins\": ${ALLOWED_ORIGINS},
-                \"AllowedMethods\": [\"GET\"],
+                \"AllowedMethods\": [\"GET\", \"PUT\", \"POST\", \"DELETE\"],
                 \"AllowedHeaders\": [\"*\"],
                 \"ExposeHeaders\": [\"Content-Length\"],
                 \"MaxAgeSeconds\": 3600
