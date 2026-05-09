@@ -31,6 +31,12 @@ THUMBNAIL_QUALITY = 85
 THUMBNAIL_PREFIX = "thumbnails/"
 UPLOADS_PREFIX = "uploads/"
 
+# Issue#123: アンシャープマスクのパラメータ（Pillow デフォルト値を初期値に採用）
+# 実物確認の結果でチューニングする想定のため、この定数値を変えて再デプロイで対応する
+UNSHARP_MASK_RADIUS = 2       # 強調するエッジの太さ（px）
+UNSHARP_MASK_PERCENT = 150    # 強調の強度（%）
+UNSHARP_MASK_THRESHOLD = 3    # この値以下のコントラスト差は無視（ノイズ抑制）
+
 # Issue#100: タグ定数（バックエンド S3Service / フロントエンド apiClient.ts と値を揃える）
 STATUS_TAG_KEY = "status"
 STATUS_TAG_VALUE_PENDING = "pending"
@@ -126,7 +132,11 @@ def center_crop_and_resize(image: Image.Image) -> Image.Image:
         (THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE), Image.LANCZOS
     )
     return image.filter(
-        ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3)
+        ImageFilter.UnsharpMask(
+            radius=UNSHARP_MASK_RADIUS,
+            percent=UNSHARP_MASK_PERCENT,
+            threshold=UNSHARP_MASK_THRESHOLD,
+        )
     )
 
 

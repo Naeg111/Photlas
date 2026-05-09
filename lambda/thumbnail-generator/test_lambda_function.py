@@ -18,6 +18,9 @@ from lambda_function import (
     STATUS_TAG_VALUE_PENDING,
     STATUS_TAG_VALUE_REGISTERED,
     S3_CACHE_CONTROL_VALUE,
+    UNSHARP_MASK_RADIUS,
+    UNSHARP_MASK_PERCENT,
+    UNSHARP_MASK_THRESHOLD,
 )
 
 TEST_BUCKET = "photlas-uploads-test"
@@ -411,16 +414,18 @@ class TestIssue123UnsharpMask:
 
     @patch("lambda_function.s3_client")
     @patch("lambda_function.ImageFilter")
-    def test_unsharp_mask_called_with_default_params(self, mock_image_filter, mock_s3):
+    def test_unsharp_mask_called_with_configured_params(self, mock_image_filter, mock_s3):
         """center_crop_and_resize の中で ImageFilter.UnsharpMask が
-        Pillow デフォルト値（radius=2, percent=150, threshold=3）で呼ばれる。
+        モジュール定数で設定された値で呼ばれる。
         """
         from PIL import ImageFilter as RealImageFilter
 
         # mock した ImageFilter.UnsharpMask は実際の UnsharpMask を返すようにし、
         # Image.filter() が動作するようにする
         mock_image_filter.UnsharpMask.return_value = RealImageFilter.UnsharpMask(
-            radius=2, percent=150, threshold=3
+            radius=UNSHARP_MASK_RADIUS,
+            percent=UNSHARP_MASK_PERCENT,
+            threshold=UNSHARP_MASK_THRESHOLD,
         )
 
         jpeg_bytes = create_test_image(1600, 1200)
@@ -435,7 +440,9 @@ class TestIssue123UnsharpMask:
         lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
 
         mock_image_filter.UnsharpMask.assert_called_once_with(
-            radius=2, percent=150, threshold=3
+            radius=UNSHARP_MASK_RADIUS,
+            percent=UNSHARP_MASK_PERCENT,
+            threshold=UNSHARP_MASK_THRESHOLD,
         )
 
 
