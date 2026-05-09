@@ -274,7 +274,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
             clearInterval(pollingIntervalRef.current)
             pollingIntervalRef.current = null
           }
-          mapRef.current?.refreshSpots()
+          mapRef.current?.refreshSpots({ bypassCache: true })
         } else if (status === MODERATION_STATUS_QUARANTINED) {
           toast.error('写真がコンテンツポリシーに違反している可能性があります')
           if (pollingIntervalRef.current) {
@@ -560,7 +560,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
       })
 
       // 5. マップ更新
-      mapRef.current?.refreshSpots()
+      mapRef.current?.refreshSpots({ bypassCache: true })
 
       // 6. Issue#54: モデレーションステータスのポーリング開始
       if (photoResponse?.photo?.photoId) {
@@ -940,7 +940,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
         onSubmit={handlePhotoSubmit}
         onOpenChange={(open) => {
           dialog.getProps('photoContribution').onOpenChange(open)
-          if (!open) mapRef.current?.refreshSpots()
+          if (!open) mapRef.current?.refreshSpots({ bypassCache: true })
         }}
       />
 
@@ -1017,7 +1017,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
           isDeletable={isPhotoFromProfile}
           onPhotoDeleted={() => {
             setRefreshPhotosKey(prev => prev + 1)
-            mapRef.current?.refreshSpots()
+            mapRef.current?.refreshSpots({ bypassCache: true })
           }}
           filterMaxAgeDays={mapFilterParams?.max_age_days}
           onPhotoViewed={registrationWall.recordPhotoView}

@@ -21,7 +21,15 @@ import { setLastGeolocationCache } from '../utils/lastGeolocationCache'
 // MapViewの公開メソッド型定義
 export interface MapViewHandle {
   centerOnUserLocation: () => void
-  refreshSpots: () => void
+  /**
+   * 地図上のスポット情報を再取得して描画する。
+   *
+   * Issue#127: bypassCache=true を渡すと、URL に使い捨てクエリパラメータ `_t=<timestamp>`
+   * を付与して CloudFront キャッシュをバイパスし、必ずバックエンドから最新データを取得する。
+   * 投稿成功・写真削除直後など、自分の操作を即座に地図に反映したい場合に使う。
+   * 通常の地図移動・フィルタ変更等では bypassCache を指定せず、CloudFront キャッシュを利用する。
+   */
+  refreshSpots: (opts?: { bypassCache?: boolean }) => void
   zoomIn: () => void
   zoomOut: () => void
   resetNorthHeading: () => void
@@ -637,7 +645,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   }, [map, headingIndicatorEnabled])
 
   // スポットデータを取得
-  const fetchSpots = useCallback(async (mapInstance: MapboxMap) => {
+  // Issue#127: bypassCache=true で _t=<timestamp> を付与し CloudFront キャッシュをバイパスする
+  const fetchSpots = useCallback(async (mapInstance: MapboxMap, bypassCache = false) => {
     try {
       const bounds = mapInstance.getBounds()
       if (!bounds) return
@@ -659,6 +668,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         appendArrayParams(params, 'aspect_ratios', filterParams.aspect_ratios)
         appendArrayParams(params, 'focal_length_ranges', filterParams.focal_length_ranges)
         appendScalarParam(params, 'max_iso', filterParams.max_iso)
+      }
+
+      // Issue#127: 投稿直後の自分自身向けに使い捨てクエリパラメータで CloudFront キャッシュをバイパス
+      if (bypassCache) {
+        params.append('_t', String(Date.now()))
       }
 
       const response = await fetch(`${API_V1_URL}/spots?${params}`, {
@@ -728,9 +742,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         )
       }
     },
-    refreshSpots: () => {
+    refreshSpots: (opts?: { bypassCache?: boolean }) => {
       if (map) {
-        fetchSpots(map)
+        fetchSpots(map, opts?.bypassCache ?? false)
       }
     },
     zoomIn: () => {

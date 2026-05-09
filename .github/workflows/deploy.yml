@@ -119,7 +119,10 @@ jobs:
     - name: Build frontend
       working-directory: ./frontend
       env:
-        VITE_API_URL: 'https://test-api.photlas.jp'
+        # Issue#127: 同一オリジン化（CloudFront /api/* Behavior 経由で API を叩く）
+        # photlas.jp / test.photlas.jp の CloudFront `/api/*` キャッシュを活用するため
+        # 相対 URL（VITE_API_URL=""）を使用する
+        VITE_API_URL: ''
         VITE_MAPBOX_ACCESS_TOKEN: ${{ secrets.VITE_MAPBOX_ACCESS_TOKEN }}
         VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
@@ -382,7 +385,9 @@ jobs:
     - name: Build frontend
       working-directory: ./frontend
       env:
-        VITE_API_URL: 'https://api.photlas.jp'
+        # Issue#127: 同一オリジン化（CloudFront /api/* Behavior 経由で API を叩く）。
+        # photlas.jp の CloudFront `/api/*` キャッシュを活用するため相対 URL を使用する。
+        VITE_API_URL: ''
         VITE_MAPBOX_ACCESS_TOKEN: ${{ secrets.VITE_MAPBOX_ACCESS_TOKEN }}
         # Issue#99: 本番は VITE_OAUTH_ENABLED_PROD で個別管理（ステージング用 VITE_OAUTH_ENABLED とは独立）。
         # 審査未通過時は false のままにして OAuth ボタンを非活性化する。
