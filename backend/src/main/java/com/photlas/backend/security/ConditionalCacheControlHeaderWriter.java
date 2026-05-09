@@ -15,10 +15,11 @@ import java.util.regex.Pattern;
 /**
  * Issue#127: パスごとに Cache-Control を出し分ける Servlet Filter。
  *
- * <p>対象 8 系統の公開 GET エンドポイントは {@code Cache-Control: public, max-age=<TTL>}
- * を返し、それ以外は従来の Spring Security デフォルトに任せる。これにより
- * CloudFront `/api/*` Behavior（{@code Managed-CachingOptimized}）と組み合わせて
- * 対象 API のみを CDN キャッシュ可能化する。</p>
+ * <p>対象 8 系統の公開 GET / HEAD エンドポイントは
+ * {@code Cache-Control: public, max-age=<TTL>} を返し、それ以外は従来の
+ * Spring Security デフォルトに任せる。これにより CloudFront `/api/*` Behavior
+ * （{@code Managed-CachingOptimized}）と組み合わせて対象 API のみを CDN キャッシュ
+ * 可能化する。</p>
  *
  * <p>登録方法（{@code SecurityConfig}）:</p>
  * <pre>{@code
@@ -26,27 +27,30 @@ import java.util.regex.Pattern;
  * }</pre>
  *
  * <p>{@code HeaderWriterFilter} の直後に挿入することが必須。これにより
- * {@code HeaderWriterFilter} が wrap した response を共有でき、その finally で
- * 走る default {@code CacheControlHeadersWriter} が containsHeader をチェックして
- * 本 Filter の上書きをスキップする（既に値がセットされているため）構造になる。</p>
- *
- * <p>通常の servlet filter として（Spring Security チェーン外で）登録すると、
- * chain.doFilter から戻った時点では response が既に commit されており setHeader が
- * no-op になるため、Spring Security チェーン内に挿入する必要がある。</p>
+ * {@code HeaderWriterFilter} が wrap した response を共有でき、forward direction で
+ * 本 Filter が設定した値を default {@code CacheControlHeadersWriter} が
+ * {@code containsHeader} チェックでスキップする構造になる。</p>
  *
  * <p>動作:</p>
  * <ol>
  *   <li>{@code HeaderWriterFilter} が response を wrap して chain を進める。</li>
- *   <li>本 Filter が forward 走行（何もしない）→ chain.doFilter で controller まで進む。</li>
- *   <li>controller が return → chain が戻り → 本 Filter の after-chain で
- *       対象パスなら Cache-Control / Pragma / Expires を上書き。</li>
- *   <li>{@code HeaderWriterFilter.finally} で default writers が走り、
+ *   <li>本 Filter の forward direction: 対象パスなら
+ *       {@code Cache-Control} / {@code Pragma}（空）/ {@code Expires}（空）を
+ *       wrap された response にセット。chain.doFilter で controller まで進む。</li>
+ *   <li>{@code HeaderWriterFilter} の finally で default writers が走り、
  *       既にセット済みのヘッダはスキップ。</li>
  * </ol>
  *
- * <p>controller が {@code ResponseEntity.cacheControl(...)} で独自に Cache-Control を
- * 設定済みの場合（{@code ViewportBounceController} の {@code no-store} 等）は
- * 「default 固定文字列以外」と判定して上書きを抑止する。</p>
+ * <p>注: chain.doFilter から戻った時点では response が既に commit されており
+ * {@code setHeader} が no-op になるため、forward direction でセットする必要がある
+ * （実機検証で判明）。これにより 4xx / 5xx エラーレスポンスでも対象パスなら
+ * Cache-Control: max-age=N が返るが、CloudFront は 4xx / 5xx に対して
+ * {@code ErrorCachingMinTTL}（デフォルト 10s）でキャッシュするため CDN 側の
+ * 実害は最小限で、許容範囲。</p>
+ *
+ * <p>controller が後続の処理で Cache-Control を独自に上書きする場合
+ * （{@code ViewportBounceController} の {@code no-store} 等）は controller の
+ * 設定が後勝ちで尊重される（setHeader は replace 仕様）。</p>
  */
 public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
 
@@ -54,7 +58,7 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
      * 対象パスごとに TTL（秒）を持たせるためのレコード。
      * 先頭から評価し最初にマッチしたものを採用する。
      *
-     * <p>マッチング: GET メソッド限定で、URL の path 部分を {@code Pattern} で
+     * <p>マッチング: GET / HEAD メソッド限定で、URL の path 部分を {@code Pattern} で
      * フル一致確認する。Spring Security の AntPathRequestMatcher /
      * RegexRequestMatcher はバージョン依存の挙動があるため、ここでは標準 java.util.regex
      * のみを使う。</p>
@@ -78,23 +82,15 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
-        // forward direction で対象パスを判定して Cache-Control を**先に**セットする。
-        // 理由: chain.doFilter から戻った時点では response が既に commit 済みで
-        // setHeader が no-op になるため、forward direction で先にセットしておく必要がある。
-        // この時点で response はまだ未 commit なので setHeader が有効。
-        // 後続の Spring Security default CacheControlHeadersWriter は response.containsHeader を
-        // チェックして、本 Filter が既に設定した値を尊重しスキップする。
-        // [TEMP DEBUG Issue#127]
-        res.addHeader("X-Issue127-FilterRan", "yes");
-        if ("GET".equals(req.getMethod())) {
+        // GET / HEAD のみキャッシュ対象（CloudFront も GET / HEAD のみキャッシュする）。
+        // forward direction でセットすることで、後続の Spring Security default writer が
+        // containsHeader チェックで上書きをスキップする。
+        String method = req.getMethod();
+        if ("GET".equals(method) || "HEAD".equals(method)) {
             String path = req.getRequestURI();
             Optional<CacheableRule> matched = CACHEABLE_RULES.stream()
                     .filter(rule -> rule.pathPattern().matcher(path).matches())
                     .findFirst();
-
-            // [TEMP DEBUG Issue#127]
-            res.addHeader("X-Issue127-Path", path);
-            res.addHeader("X-Issue127-Matched", String.valueOf(matched.isPresent()));
 
             if (matched.isPresent()) {
                 res.setHeader(HttpHeaders.CACHE_CONTROL,
@@ -103,32 +99,9 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
                 // 空文字で先にセットしておき、default writer の上書きを抑止する
                 res.setHeader(HttpHeaders.PRAGMA, "");
                 res.setHeader(HttpHeaders.EXPIRES, "");
-                // [TEMP DEBUG Issue#127]
-                res.addHeader("X-Issue127-SetCC", "max-age=" + matched.get().maxAgeSeconds()
-                        + " - now contains: " + res.containsHeader("Cache-Control"));
             }
         }
 
         chain.doFilter(req, res);
-    }
-
-    /**
-     * controller が独自に Cache-Control を設定したかどうかを判定する。
-     *
-     * <p>Spring Security の default {@code CacheControlHeadersWriter} は no-cache
-     * 系の固定文字列をセットするため、それ以外の値が入っていれば「controller 由来」と
-     * 判定する。具体的には {@code ViewportBounceController} の {@code no-store}
-     * や {@code DataExportController} の {@code no-store} を尊重する目的。</p>
-     */
-    private static boolean isControllerSetCacheControl(HttpServletResponse res) {
-        String cacheControl = res.getHeader(HttpHeaders.CACHE_CONTROL);
-        if (cacheControl == null) {
-            return false;
-        }
-        return !cacheControl.equals("no-cache, no-store, max-age=0, must-revalidate");
-    }
-
-    private static boolean isStatus2xx(int status) {
-        return status >= 200 && status < 300;
     }
 }
