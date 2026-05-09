@@ -1,9 +1,10 @@
 """
 Issue#75: サムネイル生成Lambda関数
 Issue#100: タグベース孤立ファイル対応（元画像タグのコピー + 二重チェック方式）
+Issue#123: Retina 対応として 800x800 化 + アンシャープマスク適用
 SNS ファンアウト対応: S3 → SNS Topic → 複数 Lambda の構成に対応
 
-S3にアップロードされた写真から中央クロップで正方形サムネイル（400x400 WebP）を
+S3にアップロードされた写真から中央クロップで正方形サムネイル（800x800 WebP）を
 生成し、thumbnails/ プレフィックス配下に保存する。
 
 Issue#100 対応として、元画像の status タグをサムネイルにコピーする。
@@ -18,17 +19,23 @@ import logging
 import urllib.parse
 
 import boto3
-from PIL import Image
+from PIL import Image, ImageFilter
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 s3_client = boto3.client("s3")
 
-THUMBNAIL_MAX_SIZE = 400
-THUMBNAIL_QUALITY = 80
+THUMBNAIL_MAX_SIZE = 800
+THUMBNAIL_QUALITY = 85
 THUMBNAIL_PREFIX = "thumbnails/"
 UPLOADS_PREFIX = "uploads/"
+
+# Issue#123: アンシャープマスクのパラメータ（Pillow デフォルト値を初期値に採用）
+# 実物確認の結果でチューニングする想定のため、この定数値を変えて再デプロイで対応する
+UNSHARP_MASK_RADIUS = 2       # 強調するエッジの太さ（px）
+UNSHARP_MASK_PERCENT = 150    # 強調の強度（%）
+UNSHARP_MASK_THRESHOLD = 3    # この値以下のコントラスト差は無視（ノイズ抑制）
 
 # Issue#100: タグ定数（バックエンド S3Service / フロントエンド apiClient.ts と値を揃える）
 STATUS_TAG_KEY = "status"
@@ -100,13 +107,17 @@ def should_process(s3_key: str) -> bool:
 
 
 def center_crop_and_resize(image: Image.Image) -> Image.Image:
-    """画像を中央正方形クロップし、400x400にリサイズする。
+    """画像を中央正方形クロップし、800x800にリサイズしてアンシャープマスクをかける。
+
+    Issue#123: Retina ディスプレイで CSS 200〜400 px の枠でも輪郭がくっきり
+    見えるよう、解像度を 400→800 に倍化。リサイズ後はアンシャープマスクで
+    エッジ強調する（threshold で平坦部のノイズには手を入れない）。
 
     Args:
         image: 元画像（PIL Image）
 
     Returns:
-        400x400にリサイズされた正方形画像
+        800x800にリサイズ + アンシャープマスク適用後の正方形画像
     """
     if image.mode in ("RGBA", "P"):
         image = image.convert("RGB")
@@ -117,8 +128,15 @@ def center_crop_and_resize(image: Image.Image) -> Image.Image:
     top = (height - min_dim) // 2
     image = image.crop((left, top, left + min_dim, top + min_dim))
 
-    return image.resize(
+    image = image.resize(
         (THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE), Image.LANCZOS
+    )
+    return image.filter(
+        ImageFilter.UnsharpMask(
+            radius=UNSHARP_MASK_RADIUS,
+            percent=UNSHARP_MASK_PERCENT,
+            threshold=UNSHARP_MASK_THRESHOLD,
+        )
     )
 
 
