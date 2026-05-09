@@ -84,11 +84,17 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
         // この時点で response はまだ未 commit なので setHeader が有効。
         // 後続の Spring Security default CacheControlHeadersWriter は response.containsHeader を
         // チェックして、本 Filter が既に設定した値を尊重しスキップする。
+        // [TEMP DEBUG Issue#127]
+        res.addHeader("X-Issue127-FilterRan", "yes");
         if ("GET".equals(req.getMethod())) {
             String path = req.getRequestURI();
             Optional<CacheableRule> matched = CACHEABLE_RULES.stream()
                     .filter(rule -> rule.pathPattern().matcher(path).matches())
                     .findFirst();
+
+            // [TEMP DEBUG Issue#127]
+            res.addHeader("X-Issue127-Path", path);
+            res.addHeader("X-Issue127-Matched", String.valueOf(matched.isPresent()));
 
             if (matched.isPresent()) {
                 res.setHeader(HttpHeaders.CACHE_CONTROL,
@@ -97,6 +103,9 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
                 // 空文字で先にセットしておき、default writer の上書きを抑止する
                 res.setHeader(HttpHeaders.PRAGMA, "");
                 res.setHeader(HttpHeaders.EXPIRES, "");
+                // [TEMP DEBUG Issue#127]
+                res.addHeader("X-Issue127-SetCC", "max-age=" + matched.get().maxAgeSeconds()
+                        + " - now contains: " + res.containsHeader("Cache-Control"));
             }
         }
 
