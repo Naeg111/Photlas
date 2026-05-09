@@ -78,7 +78,10 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
+        // [TEMP DEBUG Issue#127]
+        res.setHeader("X-Issue127-Filter", "v1-before-chain");
         chain.doFilter(req, res);
+        res.setHeader("X-Issue127-Filter", "v2-after-chain-status-" + res.getStatus());
 
         // chain 完了後の上書き判定。
         // 4xx/5xx エラー、GET 以外、対象外パスはすべてスキップして
@@ -92,12 +95,16 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
                 .filter(rule -> rule.pathPattern().matcher(path).matches())
                 .findFirst();
 
+        // [TEMP DEBUG Issue#127]
+        res.setHeader("X-Issue127-Filter", "v3-matched=" + matched.isPresent());
+
         if (matched.isPresent() && !isControllerSetCacheControl(res)) {
             res.setHeader(HttpHeaders.CACHE_CONTROL,
                     "public, max-age=" + matched.get().maxAgeSeconds());
             // CloudFront は Pragma: no-cache 残存時にキャッシュをスキップするため空文字で上書き
             res.setHeader(HttpHeaders.PRAGMA, "");
             res.setHeader(HttpHeaders.EXPIRES, "");
+            res.setHeader("X-Issue127-Filter", "v4-OVERRIDE-applied");
         }
     }
 
