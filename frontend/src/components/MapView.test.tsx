@@ -2262,4 +2262,71 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
   })
+
+  describe('Issue#127 - refreshSpots の CloudFront キャッシュバイパス', () => {
+    it('refreshSpots() を引数なしで呼んだ場合、URL に _t= が付与されない（CloudFront キャッシュを利用）', async () => {
+      const mockFetch = setupFetchMock([TEST_SPOT])
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+      await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+      // 初回ロードによる fetch をクリア
+      mockFetch.mockClear()
+
+      ref.current.refreshSpots()
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/spots'),
+          expect.any(Object)
+        )
+      })
+
+      const callArgs = mockFetch.mock.calls[0][0] as string
+      expect(callArgs).not.toContain('_t=')
+    })
+
+    it('refreshSpots({ bypassCache: true }) を呼んだ場合、URL に _t=<タイムスタンプ> が付与される（CloudFront キャッシュをバイパス）', async () => {
+      const mockFetch = setupFetchMock([TEST_SPOT])
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+      await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+      mockFetch.mockClear()
+
+      ref.current.refreshSpots({ bypassCache: true })
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/spots'),
+          expect.any(Object)
+        )
+      })
+
+      const callArgs = mockFetch.mock.calls[0][0] as string
+      // _t=<数字> がクエリ文字列に含まれること
+      expect(callArgs).toMatch(/[?&]_t=\d+/)
+    })
+
+    it('refreshSpots({ bypassCache: false }) を明示指定した場合、_t= が付与されない', async () => {
+      const mockFetch = setupFetchMock([TEST_SPOT])
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+      await waitFor(() => { expect(ref.current).not.toBeNull() })
+
+      mockFetch.mockClear()
+
+      ref.current.refreshSpots({ bypassCache: false })
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/spots'),
+          expect.any(Object)
+        )
+      })
+
+      const callArgs = mockFetch.mock.calls[0][0] as string
+      expect(callArgs).not.toContain('_t=')
+    })
+  })
 })
