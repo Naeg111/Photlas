@@ -90,6 +90,12 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
                 .filter(rule -> rule.matcher().matches(req))
                 .findFirst();
 
+        // [TEMP DEBUG Issue#127]
+        System.err.println("[Issue#127-FILTER] matched=" + matched.isPresent()
+                + " isControllerSet=" + isControllerSetCacheControl(res)
+                + " URI=" + req.getRequestURI()
+                + " ServletPath=" + req.getServletPath());
+
         if (matched.isPresent() && !isControllerSetCacheControl(res)) {
             // 対象 API + 2xx 成功 + controller が独自 Cache-Control を設定していない: 上書き
             res.setHeader(HttpHeaders.CACHE_CONTROL,
@@ -97,6 +103,8 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
             // Pragma / Expires は空文字に上書き（CloudFront キャッシュ阻害回避）
             res.setHeader(HttpHeaders.PRAGMA, "");
             res.setHeader(HttpHeaders.EXPIRES, "");
+            System.err.println("[Issue#127-FILTER] OVERRIDE applied. Final Cache-Control="
+                    + res.getHeader("Cache-Control"));
         }
         // それ以外は何もしない（Spring Security デフォルトの no-cache がそのまま使われる）
     }
