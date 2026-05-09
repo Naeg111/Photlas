@@ -111,29 +111,29 @@ class TestCenterCropAndResize:
     """中央クロップ+リサイズのテスト。"""
 
     def test_landscape_image(self):
-        """横長画像が400x400の正方形にクロップ+リサイズされる。"""
-        img = Image.new("RGB", (800, 600))
+        """Issue#123 - 横長画像が800x800の正方形にクロップ+リサイズされる。"""
+        img = Image.new("RGB", (1600, 1200))
         result = center_crop_and_resize(img)
-        assert result.size == (400, 400)
+        assert result.size == (800, 800)
 
     def test_portrait_image(self):
-        """縦長画像が400x400の正方形にクロップ+リサイズされる。"""
-        img = Image.new("RGB", (600, 800))
+        """Issue#123 - 縦長画像が800x800の正方形にクロップ+リサイズされる。"""
+        img = Image.new("RGB", (1200, 1600))
         result = center_crop_and_resize(img)
-        assert result.size == (400, 400)
+        assert result.size == (800, 800)
 
     def test_square_image(self):
-        """正方形画像が400x400にリサイズされる。"""
+        """Issue#123 - 正方形画像が800x800にリサイズされる。"""
         img = Image.new("RGB", (1000, 1000))
         result = center_crop_and_resize(img)
-        assert result.size == (400, 400)
+        assert result.size == (800, 800)
 
     def test_rgba_converted_to_rgb(self):
-        """RGBA画像がRGBに変換される。"""
-        img = Image.new("RGBA", (800, 600))
+        """Issue#123 - RGBA画像がRGBに変換され、800x800になる。"""
+        img = Image.new("RGBA", (1600, 1200))
         result = center_crop_and_resize(img)
         assert result.mode == "RGB"
-        assert result.size == (400, 400)
+        assert result.size == (800, 800)
 
 
 class TestLambdaHandler:
@@ -158,29 +158,29 @@ class TestLambdaHandler:
         assert call_args[1]["ContentType"] == "image/webp"
 
     @patch("lambda_function.s3_client")
-    def test_thumbnail_is_400x400_square(self, mock_s3):
-        """Issue#75 - 横長画像から400x400の正方形サムネイルが生成される。"""
-        jpeg_bytes = create_test_image(800, 600, color="blue")
+    def test_thumbnail_is_800x800_square(self, mock_s3):
+        """Issue#123 - 横長画像から800x800の正方形サムネイルが生成される。"""
+        jpeg_bytes = create_test_image(1600, 1200, color="blue")
         captured = setup_mock_s3_with_capture(mock_s3, jpeg_bytes)
 
         lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
 
         result_img = Image.open(io.BytesIO(captured["data"]))
-        assert result_img.size == (400, 400), (
-            f"サムネイルは400x400であるべきですが、{result_img.size}でした"
+        assert result_img.size == (800, 800), (
+            f"サムネイルは800x800であるべきですが、{result_img.size}でした"
         )
 
     @patch("lambda_function.s3_client")
-    def test_thumbnail_is_400x400_from_portrait(self, mock_s3):
-        """Issue#75 - 縦長画像から400x400の正方形サムネイルが生成される。"""
-        jpeg_bytes = create_test_image(600, 800, color="green")
+    def test_thumbnail_is_800x800_from_portrait(self, mock_s3):
+        """Issue#123 - 縦長画像から800x800の正方形サムネイルが生成される。"""
+        jpeg_bytes = create_test_image(1200, 1600, color="green")
         captured = setup_mock_s3_with_capture(mock_s3, jpeg_bytes)
 
         lambda_handler(create_s3_event("uploads/1/portrait.jpg"), None)
 
         result_img = Image.open(io.BytesIO(captured["data"]))
-        assert result_img.size == (400, 400), (
-            f"サムネイルは400x400であるべきですが、{result_img.size}でした"
+        assert result_img.size == (800, 800), (
+            f"サムネイルは800x800であるべきですが、{result_img.size}でした"
         )
 
     @patch("lambda_function.s3_client")
@@ -404,3 +404,60 @@ class TestIssue124CacheControl:
 
         call_args = mock_s3.put_object.call_args
         assert call_args[1].get("CacheControl") == "public, max-age=31536000, immutable"
+
+
+class TestIssue123UnsharpMask:
+    """Issue#123 - リサイズ後にアンシャープマスクが適用されるテスト。"""
+
+    @patch("lambda_function.s3_client")
+    @patch("lambda_function.ImageFilter")
+    def test_unsharp_mask_called_with_default_params(self, mock_image_filter, mock_s3):
+        """center_crop_and_resize の中で ImageFilter.UnsharpMask が
+        Pillow デフォルト値（radius=2, percent=150, threshold=3）で呼ばれる。
+        """
+        from PIL import ImageFilter as RealImageFilter
+
+        # mock した ImageFilter.UnsharpMask は実際の UnsharpMask を返すようにし、
+        # Image.filter() が動作するようにする
+        mock_image_filter.UnsharpMask.return_value = RealImageFilter.UnsharpMask(
+            radius=2, percent=150, threshold=3
+        )
+
+        jpeg_bytes = create_test_image(1600, 1200)
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes))
+        }
+        mock_s3.get_object_tagging.return_value = {
+            "TagSet": [{"Key": "status", "Value": "pending"}]
+        }
+        mock_s3.put_object.return_value = {}
+
+        lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
+
+        mock_image_filter.UnsharpMask.assert_called_once_with(
+            radius=2, percent=150, threshold=3
+        )
+
+
+class TestIssue123FileSizeLimit:
+    """Issue#123 - 生成サムネイルのファイルサイズ上限テスト。
+
+    800x800 化で 1 枚あたり 30KB → 100〜130KB 程度になる見込み。
+    余裕を見て 200KB を上限とする（CDN コスト・ストレージへの影響を抑える保証線）。
+    """
+
+    MAX_THUMBNAIL_BYTES = 200 * 1024  # 200KB
+
+    @patch("lambda_function.s3_client")
+    def test_thumbnail_size_does_not_exceed_limit(self, mock_s3):
+        """生成されたサムネイルが 200KB を超えない。"""
+        jpeg_bytes = create_test_image(1600, 1200, color="red")
+        captured = setup_mock_s3_with_capture(mock_s3, jpeg_bytes)
+
+        lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
+
+        size_bytes = len(captured["data"])
+        assert size_bytes <= self.MAX_THUMBNAIL_BYTES, (
+            f"サムネイルは {self.MAX_THUMBNAIL_BYTES} バイト以下であるべきですが、"
+            f"{size_bytes} バイトでした"
+        )
