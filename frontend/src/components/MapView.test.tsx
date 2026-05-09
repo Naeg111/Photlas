@@ -107,6 +107,9 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitial
     })),
     flyTo: vi.fn(),
     jumpTo: vi.fn(),
+    // Issue#121 Cycle2: preload 発火前のアニメーション進行中チェック用
+    isMoving: vi.fn(() => false),
+    isEasing: vi.fn(() => false),
     once: vi.fn(),
     setLanguage: vi.fn(),
     // Issue#111: 地球儀回転時に setCenter を呼び出す
@@ -236,6 +239,9 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     vi.clearAllMocks()
     resetMockMountFlag()
     mockMap.getZoom.mockReturnValue(11)
+    // Issue#121 Cycle2: isEasing/isMoving は各テストで明示上書きしない限り false
+    mockMap.isMoving.mockReturnValue(false)
+    mockMap.isEasing.mockReturnValue(false)
   })
 
   afterEach(() => {
@@ -2396,6 +2402,32 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     it('Issue#121 案C - 地球儀ビュー (zoom=0) では preloadOnly:true の jumpTo は呼ばれない', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
+      render(<MapView />)
+
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      expect(findPreloadCall()).toBeUndefined()
+    })
+
+    // Issue#121 Cycle2: jumpTo 内部の this.stop() がユーザーの進行中ズームアニメーションを
+    // 強制停止してしまう問題（iPhone XR で再現）への対策。
+    // アニメーション中（isMoving / isEasing が true）は preload をスキップする。
+    it('Issue#121 Cycle2 - isMoving=true（パン等の操作中）の間は preloadOnly:true の jumpTo は呼ばれない', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(12)
+      mockMap.isMoving.mockReturnValue(true) // 操作進行中をシミュレート
+      render(<MapView />)
+
+      // moveend (200ms) + debounce (500ms) + 余裕 (300ms)
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      expect(findPreloadCall()).toBeUndefined()
+    })
+
+    it('Issue#121 Cycle2 - isEasing=true（easeTo/flyTo 進行中）の間は preloadOnly:true の jumpTo は呼ばれない', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(12)
+      mockMap.isEasing.mockReturnValue(true) // ズーム/フライト進行中をシミュレート
       render(<MapView />)
 
       await new Promise(resolve => setTimeout(resolve, 1000))
