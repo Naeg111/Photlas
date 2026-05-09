@@ -116,6 +116,12 @@ const DEGREES_PER_SECOND = 360 / GLOBE_ROTATION_SECONDS_PER_REV
 const CLUSTER_RADIUS = 70
 const CLUSTER_MAX_ZOOM = 17
 
+// Issue#121: ベースタイル先読み設定
+/** タイルキャッシュ上限（案 B）。デフォルト動的算出より大幅に増やし、再表示時の白タイムを減らす。 */
+const MAX_TILE_CACHE_SIZE = 500
+/** preload で先取りする「現在ズームより何段階下」のズーム差分（案 C） */
+const PRELOAD_ZOOM_DELTA = 4
+
 // UI設定
 const TOAST_DURATION_MS = 3000
 const TOP_UI_HEIGHT = 56
@@ -1102,6 +1108,23 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // Issue#111-followup §8: stopRotationOnUserInteraction から ref 経由で参照するため登録
   debouncedFetchSpotsRef.current = debouncedFetchSpots
 
+  // Issue#121 案C: ユーザーのマップ操作完了後、ズームアウト方向のベースタイルを裏で先取りする。
+  // jumpTo({preloadOnly:true}) は内部 transform を clone() して使うため、実カメラは動かず、
+  // movestart/zoomstart/zoomend/moveend 等のイベントも一切発火しない（mapbox-gl-unminified.js
+  // 84381〜84425 行で確認済み）。Issue#111 の rAF/zoomstart/zoomend ハンドラとは衝突しない。
+  // 低ズーム（GLOBE_ROTATION_MAX_ZOOM 以下）では下位タイルの概念がないためスキップする。
+  const debouncedPreloadLowerZoom = useDebouncedCallback(
+    (mapInstance: MapboxMap) => {
+      const currentZoom = mapInstance.getZoom()
+      if (currentZoom <= GLOBE_ROTATION_MAX_ZOOM) return
+      mapInstance.jumpTo({
+        zoom: Math.max(0, currentZoom - PRELOAD_ZOOM_DELTA),
+        preloadOnly: true,
+      })
+    },
+    FETCH_SPOTS_DEBOUNCE_MS,
+  )
+
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
     const zoom = mapInstance.getZoom()
@@ -1126,7 +1149,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     // 回転中は moveend が連続で走るためスキップする方は維持。
     if (isRotatingRef.current) return
     debouncedFetchSpots(mapInstance)
-  }, [debouncedFetchSpots, scheduleGlobeRotation])
+    // Issue#121 案C: ベースタイル先読みも同タイミングで予約。debounce 内部で低ズームをスキップする。
+    debouncedPreloadLowerZoom(mapInstance)
+  }, [debouncedFetchSpots, debouncedPreloadLowerZoom, scheduleGlobeRotation])
 
   // フィルター条件が変更されたときにスポットを再取得
   useEffect(() => {
@@ -1181,6 +1206,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         // Issue#111-followup Bug1: ズームイン/アウトボタンの下限制約と
         // ホイールズームの下限を一致させる
         minZoom={DEFAULT_ZOOM}
+        // Issue#121 案B: タイルキャッシュ上限を拡張して、ズームアウト→再ズームインや
+        // 隣接エリアへのパン→戻りでの白タイムを減らす
+        maxTileCacheSize={MAX_TILE_CACHE_SIZE}
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}
         onClick={() => onMapClickRef.current?.()}
