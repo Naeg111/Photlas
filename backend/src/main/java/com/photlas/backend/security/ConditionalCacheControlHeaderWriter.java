@@ -4,14 +4,10 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -52,8 +48,6 @@ import java.util.Optional;
  * Spring Security の writer がそれを尊重するため、本 Filter も結果を尊重する
  * 設計になっている。</p>
  */
-@Component
-@Order(SecurityProperties.DEFAULT_FILTER_ORDER + 100)
 public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
 
     /**

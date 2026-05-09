@@ -2,6 +2,9 @@ package com.photlas.backend.config;
 
 import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.filter.TraceIdFilter;
+import com.photlas.backend.security.ConditionalCacheControlHeaderWriter;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -64,6 +67,21 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * Issue#127: Cache-Control 上書き Filter を Spring Security チェーンの「直前」に
+     * 登録する。Order = SecurityProperties.DEFAULT_FILTER_ORDER - 1 にすることで、
+     * Spring Security より早く forward 走行 → chain.doFilter 内で Spring Security が
+     * 走り（HeaderWriterFilter が default no-cache を設定）→ 戻り際に本 Filter が
+     * 対象パスのみ上書き、という流れを実現する。
+     */
+    @Bean
+    public FilterRegistrationBean<ConditionalCacheControlHeaderWriter> conditionalCacheControlFilter() {
+        FilterRegistrationBean<ConditionalCacheControlHeaderWriter> bean =
+                new FilterRegistrationBean<>(new ConditionalCacheControlHeaderWriter());
+        bean.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER - 1);
+        return bean;
     }
 
     /**
