@@ -1,103 +1,107 @@
 package com.photlas.backend.security;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.web.header.HeaderWriter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.RegexRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
- * Issue#127: パスごとに Cache-Control を出し分ける Spring Security HeaderWriter。
+ * Issue#127: パスごとに Cache-Control を出し分ける Servlet Filter。
  *
- * <p>対象 8 系統の公開 GET エンドポイントは {@code Cache-Control: public, max-age=<TTL>}
- * を返し、それ以外は従来の Spring Security デフォルトと同じ完全 no-cache を返す。
- * これにより CloudFront `/api/*` Behavior（{@code Managed-CachingOptimized}）と組み合わせて
- * 対象 API のみを CDN キャッシュ可能化する。</p>
+ * <p>対象 8 系統の公開 GET / HEAD エンドポイントは
+ * {@code Cache-Control: public, max-age=<TTL>} を返し、それ以外は従来の
+ * Spring Security デフォルトに任せる。これにより CloudFront `/api/*` Behavior
+ * （{@code Managed-CachingOptimized}）と組み合わせて対象 API のみを CDN キャッシュ
+ * 可能化する。</p>
  *
- * <p>本クラスは {@link org.springframework.security.web.header.writers.CacheControlHeadersWriter}
- * を置き換えて利用することを想定している（{@code SecurityConfig} で
- * {@code headers().cacheControl(c -> c.disable()).addHeaderWriter(...)} で登録）。</p>
+ * <p>登録方法（{@code SecurityConfig}）:</p>
+ * <pre>{@code
+ * http.addFilterAfter(new ConditionalCacheControlHeaderWriter(), HeaderWriterFilter.class);
+ * }</pre>
  *
- * <p>依存を持たないため、{@code @Component} ではなく {@code SecurityConfig} 内で
- * 直接 {@code new} する。これは {@code @WebMvcTest} で
- * {@code @Import(SecurityConfig.class)} する既存テスト
- * （HealthControllerTest 等）が {@code @Component} を自動 scan しない制約に対応するため。</p>
+ * <p>{@code HeaderWriterFilter} の直後に挿入することが必須。これにより
+ * {@code HeaderWriterFilter} が wrap した response を共有でき、forward direction で
+ * 本 Filter が設定した値を default {@code CacheControlHeadersWriter} が
+ * {@code containsHeader} チェックでスキップする構造になる。</p>
+ *
+ * <p>動作:</p>
+ * <ol>
+ *   <li>{@code HeaderWriterFilter} が response を wrap して chain を進める。</li>
+ *   <li>本 Filter の forward direction: 対象パスなら
+ *       {@code Cache-Control} / {@code Pragma}（空）/ {@code Expires}（空）を
+ *       wrap された response にセット。chain.doFilter で controller まで進む。</li>
+ *   <li>{@code HeaderWriterFilter} の finally で default writers が走り、
+ *       既にセット済みのヘッダはスキップ。</li>
+ * </ol>
+ *
+ * <p>注: chain.doFilter から戻った時点では response が既に commit されており
+ * {@code setHeader} が no-op になるため、forward direction でセットする必要がある
+ * （実機検証で判明）。これにより 4xx / 5xx エラーレスポンスでも対象パスなら
+ * Cache-Control: max-age=N が返るが、CloudFront は 4xx / 5xx に対して
+ * {@code ErrorCachingMinTTL}（デフォルト 10s）でキャッシュするため CDN 側の
+ * 実害は最小限で、許容範囲。</p>
+ *
+ * <p>controller が後続の処理で Cache-Control を独自に上書きする場合
+ * （{@code ViewportBounceController} の {@code no-store} 等）は controller の
+ * 設定が後勝ちで尊重される（setHeader は replace 仕様）。</p>
  */
-public class ConditionalCacheControlHeaderWriter implements HeaderWriter {
+public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
 
     /**
      * 対象パスごとに TTL（秒）を持たせるためのレコード。
      * 先頭から評価し最初にマッチしたものを採用する。
+     *
+     * <p>マッチング: GET / HEAD メソッド限定で、URL の path 部分を {@code Pattern} で
+     * フル一致確認する。Spring Security の AntPathRequestMatcher /
+     * RegexRequestMatcher はバージョン依存の挙動があるため、ここでは標準 java.util.regex
+     * のみを使う。</p>
      */
-    private record CacheableRule(RequestMatcher matcher, int maxAgeSeconds) {}
+    private record CacheableRule(Pattern pathPattern, int maxAgeSeconds) {}
 
-    // AntPathRequestMatcher は path 内の {var} で正規表現制約を表現できないため、
-    // 数値 userId に厳密マッチさせたい /users/\d+ 系は RegexRequestMatcher を使う
-    // （SecurityConfig が同じパターンを使っているので整合する）。
-    // /api/v1/users/me（自分のリソース、個人情報を含むためキャッシュ不可）は \d+ では
-    // マッチしないので意図的に除外される。
+    // 各パスを Pattern で表現する（フル一致）。
+    // \d+ で数字のみマッチさせることで、/api/v1/users/me（個人情報のためキャッシュ不可）
+    // を意図的に除外する。
     private static final List<CacheableRule> CACHEABLE_RULES = List.of(
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/spots", "GET"), 60),
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/categories", "GET"), 300),
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/ogp/photo/*", "GET"), 300),
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/sitemap.xml", "GET"), 3600),
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/sitemap-static.xml", "GET"), 3600),
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/sitemap-photos-*.xml", "GET"), 3600),
-            new CacheableRule(new RegexRequestMatcher("/api/v1/users/\\d+", "GET"), 60),
-            new CacheableRule(new RegexRequestMatcher("/api/v1/users/\\d+/photos", "GET"), 60)
+            new CacheableRule(Pattern.compile("/api/v1/spots"), 60),
+            new CacheableRule(Pattern.compile("/api/v1/categories"), 300),
+            new CacheableRule(Pattern.compile("/api/v1/ogp/photo/[^/]+"), 300),
+            new CacheableRule(Pattern.compile("/api/v1/sitemap\\.xml"), 3600),
+            new CacheableRule(Pattern.compile("/api/v1/sitemap-static\\.xml"), 3600),
+            new CacheableRule(Pattern.compile("/api/v1/sitemap-photos-[^/]+\\.xml"), 3600),
+            new CacheableRule(Pattern.compile("/api/v1/users/\\d+"), 60),
+            new CacheableRule(Pattern.compile("/api/v1/users/\\d+/photos"), 60)
     );
 
     @Override
-    public void writeHeaders(HttpServletRequest req, HttpServletResponse res) {
-        if (!isStatus2xx(res.getStatus())) {
-            // 4xx / 5xx エラーは対象パスでも no-cache（誤情報のキャッシュを防ぐ）
-            applyNoCacheHeaders(res);
-            return;
-        }
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+            throws ServletException, IOException {
+        // GET / HEAD のみキャッシュ対象（CloudFront も GET / HEAD のみキャッシュする）。
+        // forward direction でセットすることで、後続の Spring Security default writer が
+        // containsHeader チェックで上書きをスキップする。
+        String method = req.getMethod();
+        if ("GET".equals(method) || "HEAD".equals(method)) {
+            String path = req.getRequestURI();
+            Optional<CacheableRule> matched = CACHEABLE_RULES.stream()
+                    .filter(rule -> rule.pathPattern().matcher(path).matches())
+                    .findFirst();
 
-        Optional<CacheableRule> matched = CACHEABLE_RULES.stream()
-                .filter(rule -> rule.matcher().matches(req))
-                .findFirst();
-
-        if (matched.isPresent()) {
-            // 対象 API + 2xx 成功: 個別 TTL でキャッシュ可能化。
-            // Pragma / Expires は出さない（CloudFront は Pragma: no-cache 残存時に
-            // Cache-Control の指示と関係なくキャッシュをスキップするため）。
-            // controller が ResponseEntity.cacheControl(...) で明示している場合は尊重。
-            if (!res.containsHeader(HttpHeaders.CACHE_CONTROL)) {
+            if (matched.isPresent()) {
                 res.setHeader(HttpHeaders.CACHE_CONTROL,
                         "public, max-age=" + matched.get().maxAgeSeconds());
+                // CloudFront は Pragma: no-cache 残存時にキャッシュをスキップするため
+                // 空文字で先にセットしておき、default writer の上書きを抑止する
+                res.setHeader(HttpHeaders.PRAGMA, "");
+                res.setHeader(HttpHeaders.EXPIRES, "");
             }
-        } else {
-            // それ以外（対象外パス）: 従来の Spring Security デフォルトと同じ完全 no-cache
-            applyNoCacheHeaders(res);
         }
-    }
 
-    /**
-     * 各ヘッダ独立に「未セットなら付与」する。
-     * controller 側で Cache-Control: no-store を設定している場合（ViewportBounceController 等）
-     * は尊重し、Pragma / Expires のみ補完される。
-     */
-    private static void applyNoCacheHeaders(HttpServletResponse res) {
-        if (!res.containsHeader(HttpHeaders.CACHE_CONTROL)) {
-            res.setHeader(HttpHeaders.CACHE_CONTROL,
-                    "no-cache, no-store, max-age=0, must-revalidate");
-        }
-        if (!res.containsHeader(HttpHeaders.PRAGMA)) {
-            res.setHeader(HttpHeaders.PRAGMA, "no-cache");
-        }
-        if (!res.containsHeader(HttpHeaders.EXPIRES)) {
-            res.setHeader(HttpHeaders.EXPIRES, "0");
-        }
-    }
-
-    private static boolean isStatus2xx(int status) {
-        return status >= 200 && status < 300;
+        chain.doFilter(req, res);
     }
 }

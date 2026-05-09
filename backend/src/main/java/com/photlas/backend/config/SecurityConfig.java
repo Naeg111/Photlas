@@ -3,6 +3,7 @@ package com.photlas.backend.config;
 import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.filter.TraceIdFilter;
 import com.photlas.backend.security.ConditionalCacheControlHeaderWriter;
+import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,10 +54,6 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
     private final TraceIdFilter traceIdFilter;
-    // Issue#127: 依存なしのため @Component ではなくここで直接 new する
-    // （@WebMvcTest で @Component を auto-scan しない既存テストに影響しないため）
-    private final ConditionalCacheControlHeaderWriter conditionalCacheControlHeaderWriter =
-            new ConditionalCacheControlHeaderWriter();
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                           RateLimitFilter rateLimitFilter,
@@ -153,11 +150,18 @@ public class SecurityConfig {
                 .referrerPolicy(referrer -> referrer
                     .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                 )
-                // Issue#127: Spring Security 標準の Cache-Control writer を無効化し、
-                // パスごとに TTL を出し分けるカスタム writer に置き換える
-                .cacheControl(cache -> cache.disable())
-                .addHeaderWriter(conditionalCacheControlHeaderWriter)
             )
+            // Issue#127: 対象 8 系統の公開 GET エンドポイントを CDN キャッシュ可能化する。
+            // HeaderWriterFilter の直後に挿入することで、HeaderWriterFilter が wrap した
+            // response がまだ未 commit のうちに、本 Filter の after-chain ロジックで
+            // Cache-Control を上書きできる。これにより HeaderWriterFilter の finally で
+            // 走る default CacheControlHeadersWriter は containsHeader をチェックして
+            // 上書きをスキップする（既に本 Filter が値をセットしているため）。
+            //
+            // 通常の servlet filter として登録すると chain.doFilter 戻り時には response が
+            // 既に commit されており setHeader が no-op になるため、Spring Security の
+            // チェーン内に挿入する必要がある。
+            .addFilterAfter(new ConditionalCacheControlHeaderWriter(), HeaderWriterFilter.class)
             // フィルタ順序（Issue#95）:
             //   TraceIdFilter → JwtAuthenticationFilter → RateLimitFilter → UsernamePasswordAuthenticationFilter
             // 理由:
