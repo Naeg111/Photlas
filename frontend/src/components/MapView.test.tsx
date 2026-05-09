@@ -75,7 +75,7 @@ vi.mock('../utils/pinImageGenerator', () => ({
 }))
 
 // Mapbox GL JS のモックマップインスタンス
-const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitialViewState } = vi.hoisted(() => {
+const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitialViewState, getCapturedMaxTileCacheSize } = vi.hoisted(() => {
   let hasMounted = false
   const timerIds: ReturnType<typeof setTimeout>[] = []
 
@@ -91,6 +91,8 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitial
   let lastSetData: any = null
   // Issue#111: ランダム経度の検証用に initialViewState をキャプチャする
   let capturedInitialViewState: any = null
+  // Issue#121: maxTileCacheSize prop をキャプチャする
+  let capturedMaxTileCacheSize: number | undefined = undefined
 
   const mockMap = {
     setZoom: vi.fn(),
@@ -152,10 +154,11 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitial
   }
 
   // react-map-gl のモック
-  const MapMock = ({ children, onLoad, onMoveEnd, initialViewState }: any) => {
+  const MapMock = ({ children, onLoad, onMoveEnd, initialViewState, maxTileCacheSize }: any) => {
     if (!hasMounted) {
       hasMounted = true
       capturedInitialViewState = initialViewState
+      capturedMaxTileCacheSize = maxTileCacheSize
       if (onLoad) {
         onLoad({ target: mockMap })
       }
@@ -181,6 +184,7 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitial
     Object.keys(eventHandlers).forEach(k => delete eventHandlers[k])
     lastSetData = null
     capturedInitialViewState = null
+    capturedMaxTileCacheSize = undefined
   }
 
   const mockSourceData = {
@@ -192,8 +196,9 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitial
   }
 
   const getCapturedInitialViewState = () => capturedInitialViewState
+  const getCapturedMaxTileCacheSize = () => capturedMaxTileCacheSize
 
-  return { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitialViewState }
+  return { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitialViewState, getCapturedMaxTileCacheSize }
 })
 
 vi.mock('react-map-gl', () => ({
@@ -2327,6 +2332,75 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
       const callArgs = mockFetch.mock.calls[0][0] as string
       expect(callArgs).not.toContain('_t=')
+    })
+  })
+
+  describe('Issue#121 - ベースタイル先読み（maxTileCacheSize + preloadOnly）', () => {
+    /** preloadOnly: true 付きの jumpTo 呼び出しを抜き出すヘルパー */
+    const findPreloadCall = () => {
+      return mockMap.jumpTo.mock.calls.find(
+        (c: any[]) => c[0]?.preloadOnly === true,
+      )
+    }
+
+    it('Issue#121 案B - <Map> プロップに maxTileCacheSize=500 が指定されている', async () => {
+      setupFetchMock()
+      render(<MapView />)
+      await waitFor(() => {
+        expect(getCapturedMaxTileCacheSize()).toBe(500)
+      })
+    })
+
+    it('Issue#121 案C - 高ズーム (zoom=12) では moveend 後に jumpTo({preloadOnly:true, zoom:8}) が呼ばれる', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(12)
+      render(<MapView />)
+
+      // MapMock の onMoveEnd が 100/200ms に発火 → 500ms debounce → preload jumpTo
+      await waitFor(() => {
+        const preloadCall = findPreloadCall()
+        expect(preloadCall).toBeDefined()
+        expect(preloadCall![0]).toMatchObject({
+          preloadOnly: true,
+          zoom: 8, // 12 - 4
+        })
+      }, { timeout: 2000 })
+    })
+
+    it('Issue#121 案C - 高ズーム (zoom=10) では preload zoom = 6 (10 - 4) で呼ばれる', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(10)
+      render(<MapView />)
+
+      await waitFor(() => {
+        const preloadCall = findPreloadCall()
+        expect(preloadCall).toBeDefined()
+        expect(preloadCall![0]).toMatchObject({
+          preloadOnly: true,
+          zoom: 6,
+        })
+      }, { timeout: 2000 })
+    })
+
+    it('Issue#121 案C - 境界 (zoom=4) では preloadOnly:true の jumpTo は呼ばれない（GLOBE_ROTATION_MAX_ZOOM 以下）', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(4)
+      render(<MapView />)
+
+      // moveend (200ms) + debounce (500ms) + 余裕 (300ms)
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      expect(findPreloadCall()).toBeUndefined()
+    })
+
+    it('Issue#121 案C - 地球儀ビュー (zoom=0) では preloadOnly:true の jumpTo は呼ばれない', async () => {
+      setupFetchMock()
+      mockMap.getZoom.mockReturnValue(0)
+      render(<MapView />)
+
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      expect(findPreloadCall()).toBeUndefined()
     })
   })
 })
