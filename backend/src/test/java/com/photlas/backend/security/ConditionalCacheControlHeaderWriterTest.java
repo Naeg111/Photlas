@@ -113,7 +113,7 @@ class ConditionalCacheControlHeaderWriterTest {
     @Test
     @DisplayName("Issue#127 (j) - 対象パスでも GET 以外（POST 等）は no-cache に落ちる")
     void spotsPostShouldFallToNoCache() {
-        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/spots/photos");
+        MockHttpServletRequest req = buildRequest("POST", "/api/v1/spots/photos");
         MockHttpServletResponse res = new MockHttpServletResponse();
         res.setStatus(200);
 
@@ -157,7 +157,7 @@ class ConditionalCacheControlHeaderWriterTest {
     @Test
     @DisplayName("Issue#127 (n) - controller が既に Cache-Control をセットしている場合は上書きしない（ViewportBounceController 互換）")
     void shouldNotOverrideExistingCacheControl() {
-        MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/v1/spots");
+        MockHttpServletRequest req = buildRequest("GET", "/api/v1/spots");
         MockHttpServletResponse res = new MockHttpServletResponse();
         res.setStatus(200);
         // controller が ResponseEntity.cacheControl(...) で no-store を設定済みのケースを想定
@@ -173,10 +173,24 @@ class ConditionalCacheControlHeaderWriterTest {
     // ============================================================
 
     private MockHttpServletResponse invokeForGet(String uri, int status) {
-        MockHttpServletRequest req = new MockHttpServletRequest("GET", uri);
+        MockHttpServletRequest req = buildRequest("GET", uri);
         MockHttpServletResponse res = new MockHttpServletResponse();
         res.setStatus(status);
         writer.writeHeaders(req, res);
         return res;
+    }
+
+    /**
+     * MockHttpServletRequest を作成する。
+     *
+     * <p>注: AntPathRequestMatcher / RegexRequestMatcher はそれぞれ内部で
+     * {@code request.getServletPath()} と {@code request.getRequestURI()} を見る。
+     * Spring Boot の本番環境（context-path = ""）では両者とも同じ値になるため、
+     * テストでも同じ値を両方に明示的にセットする。</p>
+     */
+    private static MockHttpServletRequest buildRequest(String method, String uri) {
+        MockHttpServletRequest req = new MockHttpServletRequest(method, uri);
+        req.setServletPath(uri);
+        return req;
     }
 }
