@@ -3,8 +3,7 @@ package com.photlas.backend.config;
 import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.filter.TraceIdFilter;
 import com.photlas.backend.security.ConditionalCacheControlHeaderWriter;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -67,21 +66,6 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    /**
-     * Issue#127: Cache-Control 上書き Filter を Spring Security チェーンの「直前」に
-     * 登録する。Order = SecurityProperties.DEFAULT_FILTER_ORDER - 1 にすることで、
-     * Spring Security より早く forward 走行 → chain.doFilter 内で Spring Security が
-     * 走り（HeaderWriterFilter が default no-cache を設定）→ 戻り際に本 Filter が
-     * 対象パスのみ上書き、という流れを実現する。
-     */
-    @Bean
-    public FilterRegistrationBean<ConditionalCacheControlHeaderWriter> conditionalCacheControlFilter() {
-        FilterRegistrationBean<ConditionalCacheControlHeaderWriter> bean =
-                new FilterRegistrationBean<>(new ConditionalCacheControlHeaderWriter());
-        bean.setOrder(SecurityProperties.DEFAULT_FILTER_ORDER - 1);
-        return bean;
     }
 
     /**
@@ -167,13 +151,17 @@ public class SecurityConfig {
                     .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                 )
             )
-            // Issue#127: 対象 8 系統の公開 GET エンドポイントを CDN キャッシュ可能化する
-            // ConditionalCacheControlHeaderWriter は @Component + @Order で
-            // Spring Security の HeaderWriterFilter より後に登録され、
-            // chain.doFilter 後（Spring Security デフォルト no-cache 設定後）に
-            // 対象パスのみ Cache-Control: public, max-age=<TTL> に上書きする。
-            // Spring Security の HeaderWriter API は使用しない（addHeaderWriter
-            // が機能しなかった事象への対処として通常 Filter として実装）。
+            // Issue#127: 対象 8 系統の公開 GET エンドポイントを CDN キャッシュ可能化する。
+            // HeaderWriterFilter の直後に挿入することで、HeaderWriterFilter が wrap した
+            // response がまだ未 commit のうちに、本 Filter の after-chain ロジックで
+            // Cache-Control を上書きできる。これにより HeaderWriterFilter の finally で
+            // 走る default CacheControlHeadersWriter は containsHeader をチェックして
+            // 上書きをスキップする（既に本 Filter が値をセットしているため）。
+            //
+            // 通常の servlet filter として登録すると chain.doFilter 戻り時には response が
+            // 既に commit されており setHeader が no-op になるため、Spring Security の
+            // チェーン内に挿入する必要がある。
+            .addFilterAfter(new ConditionalCacheControlHeaderWriter(), HeaderWriterFilter.class)
             // フィルタ順序（Issue#95）:
             //   TraceIdFilter → JwtAuthenticationFilter → RateLimitFilter → UsernamePasswordAuthenticationFilter
             // 理由:

@@ -20,31 +20,33 @@ import java.util.regex.Pattern;
  * CloudFront `/api/*` Behavior（{@code Managed-CachingOptimized}）と組み合わせて
  * 対象 API のみを CDN キャッシュ可能化する。</p>
  *
- * <p>当初は Spring Security の {@code HeaderWriter} として実装したが、
- * {@code .cacheControl(c -> c.disable()).addHeaderWriter(...)} の組み合わせでは
- * Spring Security 6.4 系で本 writer が呼ばれない事象があったため、
- * Spring Security フィルタチェーンの「直後」に走る独立した Servlet Filter
- * として再実装した。これにより Spring Security の HeaderWriter 仕組みに
- * 一切依存しない。</p>
+ * <p>登録方法（{@code SecurityConfig}）:</p>
+ * <pre>{@code
+ * http.addFilterAfter(new ConditionalCacheControlHeaderWriter(), HeaderWriterFilter.class);
+ * }</pre>
+ *
+ * <p>{@code HeaderWriterFilter} の直後に挿入することが必須。これにより
+ * {@code HeaderWriterFilter} が wrap した response を共有でき、その finally で
+ * 走る default {@code CacheControlHeadersWriter} が containsHeader をチェックして
+ * 本 Filter の上書きをスキップする（既に値がセットされているため）構造になる。</p>
+ *
+ * <p>通常の servlet filter として（Spring Security チェーン外で）登録すると、
+ * chain.doFilter から戻った時点では response が既に commit されており setHeader が
+ * no-op になるため、Spring Security チェーン内に挿入する必要がある。</p>
  *
  * <p>動作:</p>
  * <ol>
- *   <li>chain.doFilter(req, res) で Spring Security とコントローラーが走る
- *       （Spring Security の default {@code CacheControlHeadersWriter} がここで
- *       no-cache 系ヘッダをセットする）。</li>
- *   <li>本 Filter が return path で対象パスかつ 2xx 成功なら、
- *       {@code Cache-Control} を {@code public, max-age=<TTL>} に上書きし、
- *       {@code Pragma} / {@code Expires} を空文字に上書き
- *       （CloudFront が {@code Pragma: no-cache} を理由にキャッシュをスキップする
- *       問題を回避するため）。</li>
- *   <li>それ以外（対象外 / 4xx / 5xx）は何もせず、Spring Security の
- *       no-cache 系ヘッダがそのまま返る。</li>
+ *   <li>{@code HeaderWriterFilter} が response を wrap して chain を進める。</li>
+ *   <li>本 Filter が forward 走行（何もしない）→ chain.doFilter で controller まで進む。</li>
+ *   <li>controller が return → chain が戻り → 本 Filter の after-chain で
+ *       対象パスなら Cache-Control / Pragma / Expires を上書き。</li>
+ *   <li>{@code HeaderWriterFilter.finally} で default writers が走り、
+ *       既にセット済みのヘッダはスキップ。</li>
  * </ol>
  *
  * <p>controller が {@code ResponseEntity.cacheControl(...)} で独自に Cache-Control を
  * 設定済みの場合（{@code ViewportBounceController} の {@code no-store} 等）は
- * Spring Security の writer がそれを尊重するため、本 Filter も結果を尊重する
- * 設計になっている。</p>
+ * 「default 固定文字列以外」と判定して上書きを抑止する。</p>
  */
 public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
 
@@ -76,19 +78,12 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
-        // [TEMP DEBUG Issue#127] レスポンスにマーカーを追加して filter が呼ばれたか可視化
-        res.setHeader("X-Issue127-Filter", "before-chain");
         chain.doFilter(req, res);
-        res.setHeader("X-Issue127-Filter", "after-chain-status-" + res.getStatus());
 
-        // chain 完了後（Spring Security の HeaderWriter 群が走った後）に上書きする
-        if (!isStatus2xx(res.getStatus())) {
-            // 4xx / 5xx エラーは対象パスでも no-cache のまま（Spring Security デフォルトに任せる）
-            return;
-        }
-
-        // GET 以外は対象外
-        if (!"GET".equals(req.getMethod())) {
+        // chain 完了後の上書き判定。
+        // 4xx/5xx エラー、GET 以外、対象外パスはすべてスキップして
+        // Spring Security デフォルトの no-cache をそのまま返す。
+        if (!isStatus2xx(res.getStatus()) || !"GET".equals(req.getMethod())) {
             return;
         }
 
@@ -97,23 +92,13 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
                 .filter(rule -> rule.pathPattern().matcher(path).matches())
                 .findFirst();
 
-        // [TEMP DEBUG Issue#127]
-        System.err.println("[Issue#127-FILTER] matched=" + matched.isPresent()
-                + " isControllerSet=" + isControllerSetCacheControl(res)
-                + " URI=" + req.getRequestURI()
-                + " ServletPath=" + req.getServletPath());
-
         if (matched.isPresent() && !isControllerSetCacheControl(res)) {
-            // 対象 API + 2xx 成功 + controller が独自 Cache-Control を設定していない: 上書き
             res.setHeader(HttpHeaders.CACHE_CONTROL,
                     "public, max-age=" + matched.get().maxAgeSeconds());
-            // Pragma / Expires は空文字に上書き（CloudFront キャッシュ阻害回避）
+            // CloudFront は Pragma: no-cache 残存時にキャッシュをスキップするため空文字で上書き
             res.setHeader(HttpHeaders.PRAGMA, "");
             res.setHeader(HttpHeaders.EXPIRES, "");
-            System.err.println("[Issue#127-FILTER] OVERRIDE applied. Final Cache-Control="
-                    + res.getHeader("Cache-Control"));
         }
-        // それ以外は何もしない（Spring Security デフォルトの no-cache がそのまま使われる）
     }
 
     /**
