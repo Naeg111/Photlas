@@ -78,34 +78,29 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
-        // [TEMP DEBUG Issue#127]
-        res.setHeader("X-Issue127-Filter", "v1-before-chain");
+        // forward direction で対象パスを判定して Cache-Control を**先に**セットする。
+        // 理由: chain.doFilter から戻った時点では response が既に commit 済みで
+        // setHeader が no-op になるため、forward direction で先にセットしておく必要がある。
+        // この時点で response はまだ未 commit なので setHeader が有効。
+        // 後続の Spring Security default CacheControlHeadersWriter は response.containsHeader を
+        // チェックして、本 Filter が既に設定した値を尊重しスキップする。
+        if ("GET".equals(req.getMethod())) {
+            String path = req.getRequestURI();
+            Optional<CacheableRule> matched = CACHEABLE_RULES.stream()
+                    .filter(rule -> rule.pathPattern().matcher(path).matches())
+                    .findFirst();
+
+            if (matched.isPresent()) {
+                res.setHeader(HttpHeaders.CACHE_CONTROL,
+                        "public, max-age=" + matched.get().maxAgeSeconds());
+                // CloudFront は Pragma: no-cache 残存時にキャッシュをスキップするため
+                // 空文字で先にセットしておき、default writer の上書きを抑止する
+                res.setHeader(HttpHeaders.PRAGMA, "");
+                res.setHeader(HttpHeaders.EXPIRES, "");
+            }
+        }
+
         chain.doFilter(req, res);
-        res.setHeader("X-Issue127-Filter", "v2-after-chain-status-" + res.getStatus());
-
-        // chain 完了後の上書き判定。
-        // 4xx/5xx エラー、GET 以外、対象外パスはすべてスキップして
-        // Spring Security デフォルトの no-cache をそのまま返す。
-        if (!isStatus2xx(res.getStatus()) || !"GET".equals(req.getMethod())) {
-            return;
-        }
-
-        String path = req.getRequestURI();
-        Optional<CacheableRule> matched = CACHEABLE_RULES.stream()
-                .filter(rule -> rule.pathPattern().matcher(path).matches())
-                .findFirst();
-
-        // [TEMP DEBUG Issue#127]
-        res.setHeader("X-Issue127-Filter", "v3-matched=" + matched.isPresent());
-
-        if (matched.isPresent() && !isControllerSetCacheControl(res)) {
-            res.setHeader(HttpHeaders.CACHE_CONTROL,
-                    "public, max-age=" + matched.get().maxAgeSeconds());
-            // CloudFront は Pragma: no-cache 残存時にキャッシュをスキップするため空文字で上書き
-            res.setHeader(HttpHeaders.PRAGMA, "");
-            res.setHeader(HttpHeaders.EXPIRES, "");
-            res.setHeader("X-Issue127-Filter", "v4-OVERRIDE-applied");
-        }
     }
 
     /**
