@@ -5,14 +5,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.RegexRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * Issue#127: パスごとに Cache-Control を出し分ける Servlet Filter。
@@ -53,22 +51,26 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
     /**
      * 対象パスごとに TTL（秒）を持たせるためのレコード。
      * 先頭から評価し最初にマッチしたものを採用する。
+     *
+     * <p>マッチング: GET メソッド限定で、URL の path 部分を {@code Pattern} で
+     * フル一致確認する。Spring Security の AntPathRequestMatcher /
+     * RegexRequestMatcher はバージョン依存の挙動があるため、ここでは標準 java.util.regex
+     * のみを使う。</p>
      */
-    private record CacheableRule(RequestMatcher matcher, int maxAgeSeconds) {}
+    private record CacheableRule(Pattern pathPattern, int maxAgeSeconds) {}
 
-    // AntPathRequestMatcher は path 内の {var} で正規表現制約を表現できないため、
-    // 数値 userId に厳密マッチさせたい /users/\d+ 系は RegexRequestMatcher を使う。
-    // /api/v1/users/me（自分のリソース、個人情報を含むためキャッシュ不可）は \d+ では
-    // マッチしないので意図的に除外される。
+    // 各パスを Pattern で表現する（フル一致）。
+    // \d+ で数字のみマッチさせることで、/api/v1/users/me（個人情報のためキャッシュ不可）
+    // を意図的に除外する。
     private static final List<CacheableRule> CACHEABLE_RULES = List.of(
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/spots", "GET"), 60),
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/categories", "GET"), 300),
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/ogp/photo/*", "GET"), 300),
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/sitemap.xml", "GET"), 3600),
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/sitemap-static.xml", "GET"), 3600),
-            new CacheableRule(new AntPathRequestMatcher("/api/v1/sitemap-photos-*.xml", "GET"), 3600),
-            new CacheableRule(new RegexRequestMatcher("/api/v1/users/\\d+", "GET"), 60),
-            new CacheableRule(new RegexRequestMatcher("/api/v1/users/\\d+/photos", "GET"), 60)
+            new CacheableRule(Pattern.compile("/api/v1/spots"), 60),
+            new CacheableRule(Pattern.compile("/api/v1/categories"), 300),
+            new CacheableRule(Pattern.compile("/api/v1/ogp/photo/[^/]+"), 300),
+            new CacheableRule(Pattern.compile("/api/v1/sitemap\\.xml"), 3600),
+            new CacheableRule(Pattern.compile("/api/v1/sitemap-static\\.xml"), 3600),
+            new CacheableRule(Pattern.compile("/api/v1/sitemap-photos-[^/]+\\.xml"), 3600),
+            new CacheableRule(Pattern.compile("/api/v1/users/\\d+"), 60),
+            new CacheableRule(Pattern.compile("/api/v1/users/\\d+/photos"), 60)
     );
 
     @Override
@@ -86,8 +88,14 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
             return;
         }
 
+        // GET 以外は対象外
+        if (!"GET".equals(req.getMethod())) {
+            return;
+        }
+
+        String path = req.getRequestURI();
         Optional<CacheableRule> matched = CACHEABLE_RULES.stream()
-                .filter(rule -> rule.matcher().matches(req))
+                .filter(rule -> rule.pathPattern().matcher(path).matches())
                 .findFirst();
 
         // [TEMP DEBUG Issue#127]
