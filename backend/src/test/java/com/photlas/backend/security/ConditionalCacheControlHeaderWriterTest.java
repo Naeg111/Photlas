@@ -24,13 +24,13 @@ class ConditionalCacheControlHeaderWriterTest {
     // ============================================================
 
     @Test
-    @DisplayName("Issue#127 (a) - GET /api/v1/spots は max-age=60 でキャッシュ可能化")
+    @DisplayName("Issue#127 (a) - GET /api/v1/spots は max-age=60 でキャッシュ可能化（Pragma/Expires は空に上書き）")
     void spotsGet200ShouldBeCacheable60() {
         MockHttpServletResponse res = invokeForGet("/api/v1/spots", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=60");
-        assertThat(res.containsHeader(HttpHeaders.PRAGMA)).isFalse();
-        assertThat(res.containsHeader(HttpHeaders.EXPIRES)).isFalse();
+        assertThat(res.getHeader(HttpHeaders.PRAGMA)).isEqualTo("");
+        assertThat(res.getHeader(HttpHeaders.EXPIRES)).isEqualTo("");
     }
 
     @Test
@@ -39,8 +39,8 @@ class ConditionalCacheControlHeaderWriterTest {
         MockHttpServletResponse res = invokeForGet("/api/v1/categories", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=300");
-        assertThat(res.containsHeader(HttpHeaders.PRAGMA)).isFalse();
-        assertThat(res.containsHeader(HttpHeaders.EXPIRES)).isFalse();
+        assertThat(res.getHeader(HttpHeaders.PRAGMA)).isEqualTo("");
+        assertThat(res.getHeader(HttpHeaders.EXPIRES)).isEqualTo("");
     }
 
     @Test
@@ -49,8 +49,8 @@ class ConditionalCacheControlHeaderWriterTest {
         MockHttpServletResponse res = invokeForGet("/api/v1/ogp/photo/123", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=300");
-        assertThat(res.containsHeader(HttpHeaders.PRAGMA)).isFalse();
-        assertThat(res.containsHeader(HttpHeaders.EXPIRES)).isFalse();
+        assertThat(res.getHeader(HttpHeaders.PRAGMA)).isEqualTo("");
+        assertThat(res.getHeader(HttpHeaders.EXPIRES)).isEqualTo("");
     }
 
     @Test
@@ -59,8 +59,8 @@ class ConditionalCacheControlHeaderWriterTest {
         MockHttpServletResponse res = invokeForGet("/api/v1/sitemap.xml", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=3600");
-        assertThat(res.containsHeader(HttpHeaders.PRAGMA)).isFalse();
-        assertThat(res.containsHeader(HttpHeaders.EXPIRES)).isFalse();
+        assertThat(res.getHeader(HttpHeaders.PRAGMA)).isEqualTo("");
+        assertThat(res.getHeader(HttpHeaders.EXPIRES)).isEqualTo("");
     }
 
     @Test

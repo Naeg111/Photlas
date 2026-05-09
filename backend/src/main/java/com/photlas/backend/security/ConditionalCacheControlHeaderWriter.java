@@ -54,9 +54,18 @@ public class ConditionalCacheControlHeaderWriter implements HeaderWriter {
 
     @Override
     public void writeHeaders(HttpServletRequest req, HttpServletResponse res) {
+        // controller が ResponseEntity.cacheControl(...) で明示している場合は尊重し、
+        // それ以外（Spring Security の default writer も含む）は本 writer が
+        // 上書きする（setHeader は既存値を置換する仕様）。
+        // これにより default CacheControlHeadersWriter が先に走っても、本 writer が
+        // 後勝ちで意図した値に修正できる。
+        boolean controllerSetCacheControl = isControllerSetCacheControl(res);
+
         if (!isStatus2xx(res.getStatus())) {
             // 4xx / 5xx エラーは対象パスでも no-cache（誤情報のキャッシュを防ぐ）
-            applyNoCacheHeaders(res);
+            if (!controllerSetCacheControl) {
+                applyNoCacheHeaders(res);
+            }
             return;
         }
 
@@ -66,35 +75,48 @@ public class ConditionalCacheControlHeaderWriter implements HeaderWriter {
 
         if (matched.isPresent()) {
             // 対象 API + 2xx 成功: 個別 TTL でキャッシュ可能化。
-            // Pragma / Expires は出さない（CloudFront は Pragma: no-cache 残存時に
-            // Cache-Control の指示と関係なくキャッシュをスキップするため）。
-            // controller が ResponseEntity.cacheControl(...) で明示している場合は尊重。
-            if (!res.containsHeader(HttpHeaders.CACHE_CONTROL)) {
+            // Pragma / Expires は空文字に上書きしてキャッシュ阻害を避ける
+            // （CloudFront は Pragma: no-cache 残存時にキャッシュをスキップするため）。
+            if (!controllerSetCacheControl) {
                 res.setHeader(HttpHeaders.CACHE_CONTROL,
                         "public, max-age=" + matched.get().maxAgeSeconds());
+                res.setHeader(HttpHeaders.PRAGMA, "");
+                res.setHeader(HttpHeaders.EXPIRES, "");
             }
         } else {
             // それ以外（対象外パス）: 従来の Spring Security デフォルトと同じ完全 no-cache
-            applyNoCacheHeaders(res);
+            if (!controllerSetCacheControl) {
+                applyNoCacheHeaders(res);
+            }
         }
     }
 
     /**
-     * 各ヘッダ独立に「未セットなら付与」する。
-     * controller 側で Cache-Control: no-store を設定している場合（ViewportBounceController 等）
-     * は尊重し、Pragma / Expires のみ補完される。
+     * controller が独自に Cache-Control を設定したかどうかを判定する。
+     *
+     * <p>Spring Security の default {@code CacheControlHeadersWriter} は no-cache
+     * 系の固定文字列をセットするため、それ以外の値が入っていれば「controller 由来」と
+     * 判定する。具体的には {@code ViewportBounceController} の {@code no-store}
+     * や {@code DataExportController} の {@code no-store} を尊重する目的。</p>
+     */
+    private static boolean isControllerSetCacheControl(HttpServletResponse res) {
+        String cacheControl = res.getHeader(HttpHeaders.CACHE_CONTROL);
+        if (cacheControl == null) {
+            return false;
+        }
+        // Spring Security default CacheControlHeadersWriter が出力する固定値とは
+        // 異なる値が controller 側でセットされていれば、それは controller 由来。
+        return !cacheControl.equals("no-cache, no-store, max-age=0, must-revalidate");
+    }
+
+    /**
+     * 完全 no-cache 系の 3 ヘッダを上書きで付与する。
      */
     private static void applyNoCacheHeaders(HttpServletResponse res) {
-        if (!res.containsHeader(HttpHeaders.CACHE_CONTROL)) {
-            res.setHeader(HttpHeaders.CACHE_CONTROL,
-                    "no-cache, no-store, max-age=0, must-revalidate");
-        }
-        if (!res.containsHeader(HttpHeaders.PRAGMA)) {
-            res.setHeader(HttpHeaders.PRAGMA, "no-cache");
-        }
-        if (!res.containsHeader(HttpHeaders.EXPIRES)) {
-            res.setHeader(HttpHeaders.EXPIRES, "0");
-        }
+        res.setHeader(HttpHeaders.CACHE_CONTROL,
+                "no-cache, no-store, max-age=0, must-revalidate");
+        res.setHeader(HttpHeaders.PRAGMA, "no-cache");
+        res.setHeader(HttpHeaders.EXPIRES, "0");
     }
 
     private static boolean isStatus2xx(int status) {
