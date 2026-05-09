@@ -76,11 +76,10 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
-        // [TEMP DEBUG Issue#127]
-        System.err.println("[Issue#127-FILTER] BEFORE chain: " + req.getMethod() + " " + req.getRequestURI());
+        // [TEMP DEBUG Issue#127] レスポンスにマーカーを追加して filter が呼ばれたか可視化
+        res.setHeader("X-Issue127-Filter", "before-chain");
         chain.doFilter(req, res);
-        System.err.println("[Issue#127-FILTER] AFTER chain: status=" + res.getStatus()
-                + " Cache-Control=" + res.getHeader("Cache-Control"));
+        res.setHeader("X-Issue127-Filter", "after-chain-status-" + res.getStatus());
 
         // chain 完了後（Spring Security の HeaderWriter 群が走った後）に上書きする
         if (!isStatus2xx(res.getStatus())) {
