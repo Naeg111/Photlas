@@ -1113,10 +1113,17 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // movestart/zoomstart/zoomend/moveend 等のイベントも一切発火しない（mapbox-gl-unminified.js
   // 84381〜84425 行で確認済み）。Issue#111 の rAF/zoomstart/zoomend ハンドラとは衝突しない。
   // 低ズーム（GLOBE_ROTATION_MAX_ZOOM 以下）では下位タイルの概念がないためスキップする。
+  //
+  // Issue#121 Cycle2: jumpTo は内部で this.stop() を「preloadOnly チェックの前に」呼ぶ
+  // （mapbox-gl-unminified.js 84381〜84382 行）。このため preload を進行中アニメーション
+  // と同じタイミングで発射すると、ユーザーのズーム操作が強制停止される（iPhone XR で再現）。
+  // isEasing()/isMoving() で進行中ならスキップ（次の moveend で再度 debounce が立つので
+  // preload の機会が失われるわけではない）。
   const debouncedPreloadLowerZoom = useDebouncedCallback(
     (mapInstance: MapboxMap) => {
       const currentZoom = mapInstance.getZoom()
       if (currentZoom <= GLOBE_ROTATION_MAX_ZOOM) return
+      if (mapInstance.isEasing() || mapInstance.isMoving()) return
       mapInstance.jumpTo({
         zoom: Math.max(0, currentZoom - PRELOAD_ZOOM_DELTA),
         preloadOnly: true,
