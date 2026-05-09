@@ -1,5 +1,6 @@
 package com.photlas.backend.security;
 
+import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -14,6 +15,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * パスごとの個別 TTL（60s/300s/3600s）でキャッシュ可能化される対象パス、
  * および対象外（4xx, POST, /me, /photos/{id} 等）が従来どおり no-cache に
  * 落ちることを検証する。
+ *
+ * 本 Filter は chain.doFilter 後に動作し、Spring Security デフォルトが
+ * 既にセットした no-cache ヘッダを「対象パス」のときだけ上書きする
+ * という設計。テストでは Spring Security のデフォルト動作を模擬するため、
+ * chain ステップで no-cache ヘッダを事前にセットする。
  */
 class ConditionalCacheControlHeaderWriterTest {
 
@@ -25,7 +31,7 @@ class ConditionalCacheControlHeaderWriterTest {
 
     @Test
     @DisplayName("Issue#127 (a) - GET /api/v1/spots は max-age=60 でキャッシュ可能化（Pragma/Expires は空に上書き）")
-    void spotsGet200ShouldBeCacheable60() {
+    void spotsGet200ShouldBeCacheable60() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/spots", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=60");
@@ -35,7 +41,7 @@ class ConditionalCacheControlHeaderWriterTest {
 
     @Test
     @DisplayName("Issue#127 (b) - GET /api/v1/categories は max-age=300 でキャッシュ可能化")
-    void categoriesGet200ShouldBeCacheable300() {
+    void categoriesGet200ShouldBeCacheable300() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/categories", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=300");
@@ -45,7 +51,7 @@ class ConditionalCacheControlHeaderWriterTest {
 
     @Test
     @DisplayName("Issue#127 (c) - GET /api/v1/ogp/photo/{id} は max-age=300 でキャッシュ可能化")
-    void ogpPhotoGet200ShouldBeCacheable300() {
+    void ogpPhotoGet200ShouldBeCacheable300() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/ogp/photo/123", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=300");
@@ -55,7 +61,7 @@ class ConditionalCacheControlHeaderWriterTest {
 
     @Test
     @DisplayName("Issue#127 (d) - GET /api/v1/sitemap.xml は max-age=3600 でキャッシュ可能化")
-    void sitemapIndexGet200ShouldBeCacheable3600() {
+    void sitemapIndexGet200ShouldBeCacheable3600() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/sitemap.xml", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=3600");
@@ -65,7 +71,7 @@ class ConditionalCacheControlHeaderWriterTest {
 
     @Test
     @DisplayName("Issue#127 (e) - GET /api/v1/sitemap-static.xml は max-age=3600 でキャッシュ可能化")
-    void sitemapStaticGet200ShouldBeCacheable3600() {
+    void sitemapStaticGet200ShouldBeCacheable3600() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/sitemap-static.xml", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=3600");
@@ -73,7 +79,7 @@ class ConditionalCacheControlHeaderWriterTest {
 
     @Test
     @DisplayName("Issue#127 (f) - GET /api/v1/sitemap-photos-{n}.xml は max-age=3600 でキャッシュ可能化")
-    void sitemapPhotosGet200ShouldBeCacheable3600() {
+    void sitemapPhotosGet200ShouldBeCacheable3600() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/sitemap-photos-0.xml", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=3600");
@@ -81,7 +87,7 @@ class ConditionalCacheControlHeaderWriterTest {
 
     @Test
     @DisplayName("Issue#127 (g) - GET /api/v1/users/{userId} は max-age=60 でキャッシュ可能化")
-    void usersByIdGet200ShouldBeCacheable60() {
+    void usersByIdGet200ShouldBeCacheable60() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/users/123", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=60");
@@ -89,21 +95,22 @@ class ConditionalCacheControlHeaderWriterTest {
 
     @Test
     @DisplayName("Issue#127 (h) - GET /api/v1/users/{userId}/photos は max-age=60 でキャッシュ可能化")
-    void usersByIdPhotosGet200ShouldBeCacheable60() {
+    void usersByIdPhotosGet200ShouldBeCacheable60() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/users/123/photos", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=60");
     }
 
     // ============================================================
-    // (i)〜(m) キャッシュしない（no-cache に落ちる）
+    // (i)〜(m) キャッシュしない（no-cache のまま）
     // ============================================================
 
     @Test
-    @DisplayName("Issue#127 (i) - 対象パスでも 4xx エラーは no-cache に落ちる")
-    void spotsGet400ShouldFallToNoCache() {
+    @DisplayName("Issue#127 (i) - 対象パスでも 4xx エラーは Spring Security デフォルトの no-cache のまま")
+    void spotsGet400ShouldRemainNoCache() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/spots", 400);
 
+        // Spring Security デフォルトがそのまま残る（本 Filter は何もしない）
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL))
                 .isEqualTo("no-cache, no-store, max-age=0, must-revalidate");
         assertThat(res.getHeader(HttpHeaders.PRAGMA)).isEqualTo("no-cache");
@@ -111,21 +118,19 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (j) - 対象パスでも GET 以外（POST 等）は no-cache に落ちる")
-    void spotsPostShouldFallToNoCache() {
+    @DisplayName("Issue#127 (j) - 対象パスでも GET 以外（POST 等）は Spring Security デフォルトのまま")
+    void spotsPostShouldRemainNoCache() throws Exception {
         MockHttpServletRequest req = buildRequest("POST", "/api/v1/spots/photos");
         MockHttpServletResponse res = new MockHttpServletResponse();
-        res.setStatus(200);
-
-        writer.writeHeaders(req, res);
+        invokeFilter(req, res, 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL))
                 .isEqualTo("no-cache, no-store, max-age=0, must-revalidate");
     }
 
     @Test
-    @DisplayName("Issue#127 (k) - 対象外パス /api/v1/photos/{id} は no-cache")
-    void photosByIdShouldNotBeCacheable() {
+    @DisplayName("Issue#127 (k) - 対象外パス /api/v1/photos/{id} は Spring Security デフォルトのまま")
+    void photosByIdShouldNotBeCacheable() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/photos/123", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL))
@@ -133,8 +138,8 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (l) - /api/v1/users/me は \\d+ にマッチせず no-cache（個人情報を含むため意図的除外）")
-    void usersMeShouldNotBeCacheable() {
+    @DisplayName("Issue#127 (l) - /api/v1/users/me は \\d+ にマッチせず no-cache のまま（個人情報のため意図的除外）")
+    void usersMeShouldNotBeCacheable() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/users/me", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL))
@@ -142,8 +147,8 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (m) - /api/v1/users/me/photos も同様に no-cache")
-    void usersMePhotosShouldNotBeCacheable() {
+    @DisplayName("Issue#127 (m) - /api/v1/users/me/photos も同様に no-cache のまま")
+    void usersMePhotosShouldNotBeCacheable() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/users/me/photos", 200);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL))
@@ -151,19 +156,22 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     // ============================================================
-    // (n) 既設 Cache-Control の尊重
+    // (n) controller が独自に Cache-Control を設定済みの場合は上書きしない
     // ============================================================
 
     @Test
-    @DisplayName("Issue#127 (n) - controller が既に Cache-Control をセットしている場合は上書きしない（ViewportBounceController 互換）")
-    void shouldNotOverrideExistingCacheControl() {
+    @DisplayName("Issue#127 (n) - controller が no-store を独自設定している場合は上書きしない（ViewportBounceController 互換）")
+    void shouldNotOverrideControllerSetCacheControl() throws Exception {
         MockHttpServletRequest req = buildRequest("GET", "/api/v1/spots");
         MockHttpServletResponse res = new MockHttpServletResponse();
-        res.setStatus(200);
         // controller が ResponseEntity.cacheControl(...) で no-store を設定済みのケースを想定
-        res.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
-
-        writer.writeHeaders(req, res);
+        // chain ステップで Spring Security デフォルトとは異なる値をセット
+        FilterChain chain = (request, response) -> {
+            MockHttpServletResponse r = (MockHttpServletResponse) response;
+            r.setStatus(200);
+            r.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+        };
+        writer.doFilter(req, res, chain);
 
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("no-store");
     }
@@ -172,12 +180,28 @@ class ConditionalCacheControlHeaderWriterTest {
     // ヘルパー
     // ============================================================
 
-    private MockHttpServletResponse invokeForGet(String uri, int status) {
+    private MockHttpServletResponse invokeForGet(String uri, int status) throws Exception {
         MockHttpServletRequest req = buildRequest("GET", uri);
         MockHttpServletResponse res = new MockHttpServletResponse();
-        res.setStatus(status);
-        writer.writeHeaders(req, res);
+        invokeFilter(req, res, status);
         return res;
+    }
+
+    /**
+     * Filter を呼び出すヘルパー。
+     * chain 内で Spring Security デフォルトの no-cache ヘッダを模擬的にセットすることで、
+     * 「Filter が後勝ちで対象パスのみ上書きする」挙動を本番と同じ条件下で検証できる。
+     */
+    private void invokeFilter(MockHttpServletRequest req, MockHttpServletResponse res, int status) throws Exception {
+        FilterChain chain = (request, response) -> {
+            MockHttpServletResponse r = (MockHttpServletResponse) response;
+            r.setStatus(status);
+            // Spring Security デフォルトを模擬
+            r.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, max-age=0, must-revalidate");
+            r.setHeader(HttpHeaders.PRAGMA, "no-cache");
+            r.setHeader(HttpHeaders.EXPIRES, "0");
+        };
+        writer.doFilter(req, res, chain);
     }
 
     /**

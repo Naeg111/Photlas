@@ -1,34 +1,60 @@
 package com.photlas.backend.security;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.web.header.HeaderWriter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Issue#127: パスごとに Cache-Control を出し分ける Spring Security HeaderWriter。
+ * Issue#127: パスごとに Cache-Control を出し分ける Servlet Filter。
  *
  * <p>対象 8 系統の公開 GET エンドポイントは {@code Cache-Control: public, max-age=<TTL>}
- * を返し、それ以外は従来の Spring Security デフォルトと同じ完全 no-cache を返す。
- * これにより CloudFront `/api/*` Behavior（{@code Managed-CachingOptimized}）と組み合わせて
+ * を返し、それ以外は従来の Spring Security デフォルトに任せる。これにより
+ * CloudFront `/api/*` Behavior（{@code Managed-CachingOptimized}）と組み合わせて
  * 対象 API のみを CDN キャッシュ可能化する。</p>
  *
- * <p>本クラスは {@link org.springframework.security.web.header.writers.CacheControlHeadersWriter}
- * を置き換えて利用することを想定している（{@code SecurityConfig} で
- * {@code headers().cacheControl(c -> c.disable()).addHeaderWriter(...)} で登録）。</p>
+ * <p>当初は Spring Security の {@code HeaderWriter} として実装したが、
+ * {@code .cacheControl(c -> c.disable()).addHeaderWriter(...)} の組み合わせでは
+ * Spring Security 6.4 系で本 writer が呼ばれない事象があったため、
+ * Spring Security フィルタチェーンの「直後」に走る独立した Servlet Filter
+ * として再実装した。これにより Spring Security の HeaderWriter 仕組みに
+ * 一切依存しない。</p>
  *
- * <p>依存を持たないため、{@code @Component} ではなく {@code SecurityConfig} 内で
- * 直接 {@code new} する。これは {@code @WebMvcTest} で
- * {@code @Import(SecurityConfig.class)} する既存テスト
- * （HealthControllerTest 等）が {@code @Component} を自動 scan しない制約に対応するため。</p>
+ * <p>動作:</p>
+ * <ol>
+ *   <li>chain.doFilter(req, res) で Spring Security とコントローラーが走る
+ *       （Spring Security の default {@code CacheControlHeadersWriter} がここで
+ *       no-cache 系ヘッダをセットする）。</li>
+ *   <li>本 Filter が return path で対象パスかつ 2xx 成功なら、
+ *       {@code Cache-Control} を {@code public, max-age=<TTL>} に上書きし、
+ *       {@code Pragma} / {@code Expires} を空文字に上書き
+ *       （CloudFront が {@code Pragma: no-cache} を理由にキャッシュをスキップする
+ *       問題を回避するため）。</li>
+ *   <li>それ以外（対象外 / 4xx / 5xx）は何もせず、Spring Security の
+ *       no-cache 系ヘッダがそのまま返る。</li>
+ * </ol>
+ *
+ * <p>controller が {@code ResponseEntity.cacheControl(...)} で独自に Cache-Control を
+ * 設定済みの場合（{@code ViewportBounceController} の {@code no-store} 等）は
+ * Spring Security の writer がそれを尊重するため、本 Filter も結果を尊重する
+ * 設計になっている。</p>
  */
-public class ConditionalCacheControlHeaderWriter implements HeaderWriter {
+@Component
+@Order(SecurityProperties.DEFAULT_FILTER_ORDER + 100)
+public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
 
     /**
      * 対象パスごとに TTL（秒）を持たせるためのレコード。
@@ -37,8 +63,7 @@ public class ConditionalCacheControlHeaderWriter implements HeaderWriter {
     private record CacheableRule(RequestMatcher matcher, int maxAgeSeconds) {}
 
     // AntPathRequestMatcher は path 内の {var} で正規表現制約を表現できないため、
-    // 数値 userId に厳密マッチさせたい /users/\d+ 系は RegexRequestMatcher を使う
-    // （SecurityConfig が同じパターンを使っているので整合する）。
+    // 数値 userId に厳密マッチさせたい /users/\d+ 系は RegexRequestMatcher を使う。
     // /api/v1/users/me（自分のリソース、個人情報を含むためキャッシュ不可）は \d+ では
     // マッチしないので意図的に除外される。
     private static final List<CacheableRule> CACHEABLE_RULES = List.of(
@@ -53,19 +78,13 @@ public class ConditionalCacheControlHeaderWriter implements HeaderWriter {
     );
 
     @Override
-    public void writeHeaders(HttpServletRequest req, HttpServletResponse res) {
-        // controller が ResponseEntity.cacheControl(...) で明示している場合は尊重し、
-        // それ以外（Spring Security の default writer も含む）は本 writer が
-        // 上書きする（setHeader は既存値を置換する仕様）。
-        // これにより default CacheControlHeadersWriter が先に走っても、本 writer が
-        // 後勝ちで意図した値に修正できる。
-        boolean controllerSetCacheControl = isControllerSetCacheControl(res);
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+            throws ServletException, IOException {
+        chain.doFilter(req, res);
 
+        // chain 完了後（Spring Security の HeaderWriter 群が走った後）に上書きする
         if (!isStatus2xx(res.getStatus())) {
-            // 4xx / 5xx エラーは対象パスでも no-cache（誤情報のキャッシュを防ぐ）
-            if (!controllerSetCacheControl) {
-                applyNoCacheHeaders(res);
-            }
+            // 4xx / 5xx エラーは対象パスでも no-cache のまま（Spring Security デフォルトに任せる）
             return;
         }
 
@@ -73,22 +92,15 @@ public class ConditionalCacheControlHeaderWriter implements HeaderWriter {
                 .filter(rule -> rule.matcher().matches(req))
                 .findFirst();
 
-        if (matched.isPresent()) {
-            // 対象 API + 2xx 成功: 個別 TTL でキャッシュ可能化。
-            // Pragma / Expires は空文字に上書きしてキャッシュ阻害を避ける
-            // （CloudFront は Pragma: no-cache 残存時にキャッシュをスキップするため）。
-            if (!controllerSetCacheControl) {
-                res.setHeader(HttpHeaders.CACHE_CONTROL,
-                        "public, max-age=" + matched.get().maxAgeSeconds());
-                res.setHeader(HttpHeaders.PRAGMA, "");
-                res.setHeader(HttpHeaders.EXPIRES, "");
-            }
-        } else {
-            // それ以外（対象外パス）: 従来の Spring Security デフォルトと同じ完全 no-cache
-            if (!controllerSetCacheControl) {
-                applyNoCacheHeaders(res);
-            }
+        if (matched.isPresent() && !isControllerSetCacheControl(res)) {
+            // 対象 API + 2xx 成功 + controller が独自 Cache-Control を設定していない: 上書き
+            res.setHeader(HttpHeaders.CACHE_CONTROL,
+                    "public, max-age=" + matched.get().maxAgeSeconds());
+            // Pragma / Expires は空文字に上書き（CloudFront キャッシュ阻害回避）
+            res.setHeader(HttpHeaders.PRAGMA, "");
+            res.setHeader(HttpHeaders.EXPIRES, "");
         }
+        // それ以外は何もしない（Spring Security デフォルトの no-cache がそのまま使われる）
     }
 
     /**
@@ -104,19 +116,7 @@ public class ConditionalCacheControlHeaderWriter implements HeaderWriter {
         if (cacheControl == null) {
             return false;
         }
-        // Spring Security default CacheControlHeadersWriter が出力する固定値とは
-        // 異なる値が controller 側でセットされていれば、それは controller 由来。
         return !cacheControl.equals("no-cache, no-store, max-age=0, must-revalidate");
-    }
-
-    /**
-     * 完全 no-cache 系の 3 ヘッダを上書きで付与する。
-     */
-    private static void applyNoCacheHeaders(HttpServletResponse res) {
-        res.setHeader(HttpHeaders.CACHE_CONTROL,
-                "no-cache, no-store, max-age=0, must-revalidate");
-        res.setHeader(HttpHeaders.PRAGMA, "no-cache");
-        res.setHeader(HttpHeaders.EXPIRES, "0");
     }
 
     private static boolean isStatus2xx(int status) {
