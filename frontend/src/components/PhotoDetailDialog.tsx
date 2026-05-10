@@ -1365,7 +1365,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                   )}
 
                   {/* Issue#30: お気に入りボタン / Issue#54: 通報ボタン */}
-                  <div className="flex gap-2 pt-4">
+                  {/* Issue#131: ボタンが画面横幅を超える場合は折り返す（横スクロール抑止） */}
+                  <div className="flex flex-wrap gap-2 pt-4">
                     <Button
                       variant="outline"
                       className={`flex-1 ${
