@@ -431,47 +431,75 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
     // Issue#122: prefetch 範囲拡大（radius=2）と thumbnail 画像 preload
     describe('Issue#122 - prefetch 範囲拡大と thumbnail 画像 preload', () => {
-      it('5枚の写真がある場合、currentIndex=0で自分+前後2枚（実質前0/後2）の合計3件の写真詳細APIが呼ばれる', async () => {
+      it('5枚の写真がある場合、currentIndex=0で自分(101)+前後2枚(102,103)が取得され、4枚目以降(104,105)は取得されない', async () => {
+        // Cycle3 でバッチエンドポイント導入後も機能するよう、実装非依存のチェックに変更
+        // （個別 GET でもバッチ POST でも、いずれかの経路で取得されていれば良い）
         const ids = [101, 102, 103, 104, 105]
-        const details = ids.map(id => createMockPhotoDetail({
-          photoId: id,
-          imageUrls: {
-            thumbnail: `https://example.com/thumb${id}.jpg`,
-            standard: `https://example.com/std${id}.jpg`,
-          },
-          user: { userId: TEST_USER_ID, username: TEST_USERNAME },
-          spot: { spotId: TEST_SPOT_ID },
-        }))
-        const mockFetch = setupMockFetch(ids, details)
+        const detailMap = new Map<number, ReturnType<typeof createMockPhotoDetail>>()
+        ids.forEach(id => {
+          detailMap.set(id, createMockPhotoDetail({
+            photoId: id,
+            imageUrls: {
+              thumbnail: `https://example.com/thumb${id}.jpg`,
+              standard: `https://example.com/std${id}.jpg`,
+            },
+            user: { userId: TEST_USER_ID, username: TEST_USERNAME },
+            spot: { spotId: TEST_SPOT_ID },
+          }))
+        })
+
+        const mockFetch = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+          if (typeof url === 'string' && url.includes('/api/v1/spots/photos')) {
+            return Promise.resolve({ ok: true, json: async () => ({ ids, total: 5 }) })
+          }
+          if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
+            const body = JSON.parse(String(options.body ?? '{}'))
+            const reqIds = body.photoIds as number[]
+            return Promise.resolve({ ok: true, json: async () => reqIds.map(id => detailMap.get(id)).filter(Boolean) })
+          }
+          if (typeof url === 'string') {
+            const m = url.match(/\/api\/v1\/photos\/(\d+)(?:\?|$)/)
+            if (m) {
+              const detail = detailMap.get(Number(m[1]))
+              if (detail) return Promise.resolve({ ok: true, json: async () => detail })
+            }
+          }
+          return Promise.resolve({ ok: true, json: async () => ({}) })
+        })
 
         const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
         Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
         rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
 
-        // 写真詳細 API（GET /api/v1/photos/{id}）のみを抽出
-        // 関連エンドポイント（/favorite, /location-suggestions/status 等）を除外するため
-        // {id} のあとは終端 or クエリ文字列のみを許可
-        const detailUrlRegex = /\/api\/v1\/photos\/\d+(?:\?|$)/
-        const isDetailUrl = (call: unknown[]) =>
-          typeof call[0] === 'string' && detailUrlRegex.test(call[0])
+        // 「個別 GET で取得された ID」と「バッチ body に含まれた ID」を合算して判定
+        const collectFetchedIds = (): Set<number> => {
+          const fetched = new Set<number>()
+          mockFetch.mock.calls.forEach((call: unknown[]) => {
+            const url = call[0] as string
+            const options = call[1] as RequestInit | undefined
+            if (typeof url !== 'string') return
+            if (url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
+              const body = JSON.parse(String(options.body ?? '{}'))
+              const arr = body.photoIds as number[] | undefined
+              if (Array.isArray(arr)) arr.forEach(id => fetched.add(id))
+              return
+            }
+            const m = url.match(/\/api\/v1\/photos\/(\d+)(?:\?|$)/)
+            if (m) fetched.add(Number(m[1]))
+          })
+          return fetched
+        }
 
-        // Issue#122: radius=2 → 自分(101)+次(102)+次々(103) の 3 件
         await waitFor(() => {
-          const photoCalls = mockFetch.mock.calls.filter(isDetailUrl)
-          expect(photoCalls.length).toBeGreaterThanOrEqual(3)
+          const fetchedIds = collectFetchedIds()
+          expect(fetchedIds.has(101)).toBe(true) // current photo
+          expect(fetchedIds.has(102)).toBe(true) // prefetch +1
+          expect(fetchedIds.has(103)).toBe(true) // prefetch +2
         })
 
-        // 4 枚目以降（104, 105）は radius=2 の範囲外なので prefetch されない
-        const photoCalls = mockFetch.mock.calls.filter(isDetailUrl)
-        const calledIds = photoCalls
-          .map((call: unknown[]) => {
-            const url = call[0] as string
-            const m = url.match(/\/photos\/(\d+)/)
-            return m ? Number(m[1]) : null
-          })
-          .filter((id): id is number => id !== null)
-        expect(calledIds).not.toContain(104)
-        expect(calledIds).not.toContain(105)
+        const fetchedIds = collectFetchedIds()
+        expect(fetchedIds.has(104)).toBe(false) // 範囲外
+        expect(fetchedIds.has(105)).toBe(false) // 範囲外
       })
 
       it('fetchPhotoDetail 成功時、取得した写真の thumbnail URL が new Image() で preload される', async () => {
@@ -547,6 +575,120 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(img).toHaveClass('opacity-100')
         // starting: バリアントは toHaveClass の引数では受け付けにくいので className 文字列で検証
         expect(img.className).toContain('starting:opacity-0')
+      })
+    })
+
+    // Issue#122 Cycle3: 写真詳細バッチエンドポイント
+    describe('Issue#122 Cycle3 - 写真詳細バッチエンドポイント', () => {
+      it('prefetch 範囲の写真詳細は POST /api/v1/photos/batch を 1 回呼ぶ', async () => {
+        const ids = [101, 102, 103]
+        const detailMap = new Map<number, ReturnType<typeof createMockApiResponse>>()
+        ids.forEach(id => {
+          detailMap.set(id, createMockApiResponse({
+            photoId: id,
+            imageUrls: { thumbnail: `https://example.com/c3-thumb${id}.jpg`, standard: `https://example.com/c3-std${id}.jpg` },
+            userId: TEST_USER_ID,
+            username: TEST_USERNAME,
+            spotId: TEST_SPOT_ID,
+          }))
+        })
+
+        // URL/method aware mock
+        const mockFetch = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+          if (typeof url === 'string' && url.includes('/api/v1/spots/photos')) {
+            return Promise.resolve({ ok: true, json: async () => ({ ids, total: 3 }) })
+          }
+          if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
+            const body = JSON.parse(String(options.body ?? '{}'))
+            const reqIds = body.photoIds as number[]
+            const arr = reqIds.map(id => detailMap.get(id)).filter(Boolean)
+            return Promise.resolve({ ok: true, json: async () => arr })
+          }
+          if (typeof url === 'string') {
+            const m = url.match(/\/api\/v1\/photos\/(\d+)(?:\?|$)/)
+            if (m) {
+              const id = Number(m[1])
+              const detail = detailMap.get(id)
+              if (detail) return Promise.resolve({ ok: true, json: async () => detail })
+            }
+          }
+          return Promise.resolve({ ok: true, json: async () => ({}) })
+        })
+
+        const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+        Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+        rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+        await waitFor(() => {
+          const batchCalls = mockFetch.mock.calls.filter((call: unknown[]) =>
+            typeof call[0] === 'string' &&
+            (call[0] as string).endsWith('/api/v1/photos/batch') &&
+            (call[1] as RequestInit | undefined)?.method === 'POST'
+          )
+          expect(batchCalls.length).toBeGreaterThanOrEqual(1)
+          // 102, 103 が photoIds に含まれる（101 は current photo として個別 GET）
+          const body = JSON.parse(String((batchCalls[0][1] as RequestInit).body ?? '{}'))
+          expect(body.photoIds).toContain(102)
+          expect(body.photoIds).toContain(103)
+        })
+      })
+
+      it('バッチで返ってきた写真の thumbnail も new Image() で preload される', async () => {
+        const ids = [201, 202]
+        const detailMap = new Map<number, ReturnType<typeof createMockApiResponse>>()
+        ids.forEach(id => {
+          detailMap.set(id, createMockApiResponse({
+            photoId: id,
+            imageUrls: { thumbnail: `https://example.com/c3-batch-thumb${id}.jpg`, standard: `https://example.com/c3-batch-std${id}.jpg` },
+            userId: TEST_USER_ID,
+            username: TEST_USERNAME,
+            spotId: TEST_SPOT_ID,
+          }))
+        })
+
+        const mockFetch = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+          if (typeof url === 'string' && url.includes('/api/v1/spots/photos')) {
+            return Promise.resolve({ ok: true, json: async () => ({ ids, total: 2 }) })
+          }
+          if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
+            const body = JSON.parse(String(options.body ?? '{}'))
+            const reqIds = body.photoIds as number[]
+            return Promise.resolve({ ok: true, json: async () => reqIds.map(id => detailMap.get(id)).filter(Boolean) })
+          }
+          if (typeof url === 'string') {
+            const m = url.match(/\/api\/v1\/photos\/(\d+)(?:\?|$)/)
+            if (m) {
+              const detail = detailMap.get(Number(m[1]))
+              if (detail) return Promise.resolve({ ok: true, json: async () => detail })
+            }
+          }
+          return Promise.resolve({ ok: true, json: async () => ({}) })
+        })
+
+        const setSrcSpy = vi.fn()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        function SpyImage(this: any) {
+          Object.defineProperty(this, 'src', {
+            configurable: true,
+            set(value: string) { setSrcSpy(value) },
+            get() { return '' },
+          })
+        }
+        vi.stubGlobal('Image', SpyImage)
+
+        try {
+          const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+          Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+          rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+          await waitFor(() => {
+            const calledUrls = setSrcSpy.mock.calls.map(c => c[0])
+            // バッチ結果の 2 枚目 thumbnail がブラウザキャッシュへ先読みされる
+            expect(calledUrls).toContain('https://example.com/c3-batch-thumb202.jpg')
+          })
+        } finally {
+          vi.unstubAllGlobals()
+        }
       })
     })
   })

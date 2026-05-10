@@ -1059,4 +1059,71 @@ public class PhotoControllerTest {
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
                 .andExpect(status().isNotFound());
     }
+
+    // ===== Issue#122 Cycle3: 写真詳細バッチ取得エンドポイント =====
+
+    @Test
+    @DisplayName("Issue#122 - POST /api/v1/photos/batch: 200 で写真詳細配列を返す")
+    void testGetPhotosBatch_ValidRequest_Returns200() throws Exception {
+        Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
+        Photo p1 = createPhoto("photos/batch-ctrl-1.jpg", spot.getSpotId());
+        Photo p2 = createPhoto("photos/batch-ctrl-2.jpg", spot.getSpotId());
+
+        String body = "{\"photoIds\":[" + p1.getPhotoId() + "," + p2.getPhotoId() + "]}";
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS + "/batch")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    @DisplayName("Issue#122 - POST /api/v1/photos/batch: 21 件以上で 400 を返す")
+    void testGetPhotosBatch_ExceedsMaxBatchSize_Returns400() throws Exception {
+        StringBuilder ids = new StringBuilder();
+        for (int i = 1; i <= 21; i++) {
+            if (i > 1) ids.append(",");
+            ids.append(i);
+        }
+        String body = "{\"photoIds\":[" + ids + "]}";
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS + "/batch")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#122 - POST /api/v1/photos/batch: 認可されていない写真は silent skip して残りを 200 で返す")
+    void testGetPhotosBatch_PartialUnauthorized_SilentlySkipsAndReturns200() throws Exception {
+        Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
+        Photo visible = createPhoto("photos/batch-vis.jpg", spot.getSpotId());
+
+        // REMOVED 写真は閲覧不可
+        Photo removed = new Photo();
+        removed.setS3ObjectKey("photos/batch-removed.jpg");
+        removed.setShotAt(LocalDateTime.now());
+        removed.setUserId(testUser.getId());
+        removed.setSpotId(spot.getSpotId());
+        removed.setModerationStatus(com.photlas.backend.entity.CodeConstants.MODERATION_STATUS_REMOVED);
+        removed = photoRepository.save(removed);
+
+        String body = "{\"photoIds\":[" + visible.getPhotoId() + "," + removed.getPhotoId() + "]}";
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS + "/batch")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].photoId").value(visible.getPhotoId()));
+    }
 }

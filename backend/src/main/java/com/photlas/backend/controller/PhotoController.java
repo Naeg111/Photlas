@@ -2,6 +2,7 @@ package com.photlas.backend.controller;
 
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.dto.ErrorResponse;
+import com.photlas.backend.dto.PhotoBatchRequest;
 import com.photlas.backend.dto.PhotoDetailResponse;
 import com.photlas.backend.dto.PhotoResponse;
 import com.photlas.backend.dto.UpdatePhotoRequest;
@@ -69,6 +70,25 @@ public class PhotoController {
         String email = authentication != null ? authentication.getName() : null;
         PhotoDetailResponse response = photoService.getPhotoDetail(photoId, email);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Issue#122: 写真詳細をバッチ取得する。
+     *
+     * 写真詳細ダイアログの prefetch を 1 リクエストに集約するための専用エンドポイント。
+     * 認可されていない photoId は silent skip し、認可された写真だけ配列で返す。
+     *
+     * @param request photoIds（1〜MAX_BATCH_SIZE 件）
+     * @param authentication 認証情報（未認証の場合は null）
+     * @return 認可された写真詳細のリスト（順序は保証しない）
+     */
+    @PostMapping("/batch")
+    public ResponseEntity<List<PhotoDetailResponse>> getPhotoDetailsBatch(
+            @Valid @RequestBody PhotoBatchRequest request,
+            Authentication authentication
+    ) {
+        // Issue#122 Cycle3 (Red): スタブ。Green 段階で実装する
+        throw new UnsupportedOperationException("Issue#122 Cycle3 - batch endpoint not yet implemented");
     }
 
     /**

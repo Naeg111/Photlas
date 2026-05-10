@@ -212,6 +212,22 @@ public class PhotoService {
      * @param email ログイン中ユーザーのメールアドレス（未認証の場合はnull）
      * @return 写真の詳細情報
      */
+    /**
+     * Issue#122: 写真詳細をバッチ取得する。
+     *
+     * 認可されていない写真（モデレーションステータス・退会済みオーナー・存在しない photoId）は
+     * silent skip し、認可された写真の詳細だけを返す（best-effort prefetch 用）。
+     *
+     * @param photoIds 取得したい写真ID のリスト
+     * @param email ログイン中ユーザーのメールアドレス（未認証の場合は null）
+     * @return 認可された写真詳細のリスト。順序は request 順を保証しない
+     */
+    @Transactional(readOnly = true)
+    public List<PhotoDetailResponse> getPhotoDetailsBatch(List<Long> photoIds, String email) {
+        // Issue#122 Cycle3 (Red): スタブ。Green 段階で実装する
+        throw new UnsupportedOperationException("Issue#122 Cycle3 - getPhotoDetailsBatch not yet implemented");
+    }
+
     @Transactional(readOnly = true)
     public PhotoDetailResponse getPhotoDetail(Long photoId, String email) {
         Photo photo = photoRepository.findById(photoId)
