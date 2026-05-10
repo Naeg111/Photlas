@@ -528,6 +528,27 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         }
       })
     })
+
+    // Issue#122 Cycle2: cross-fade アニメーション
+    describe('Issue#122 Cycle2 - cross-fade アニメーション', () => {
+      it('表示中の写真 <img> に Tailwind v4 の cross-fade 用クラスが付与されている', async () => {
+        const photoIds = [TEST_PHOTO_ID_1]
+        const photoDetail = createMockApiResponse({ username: TEST_USERNAME })
+        const mockFetch = setupMockFetch(photoIds, [photoDetail])
+
+        const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+        Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+        rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+        const img = await screen.findByAltText('画像')
+        // フェードイン効果の必要クラス（Tailwind v4 の @starting-style 相当）
+        expect(img).toHaveClass('transition-opacity')
+        expect(img).toHaveClass('duration-300')
+        expect(img).toHaveClass('opacity-100')
+        // starting: バリアントは toHaveClass の引数では受け付けにくいので className 文字列で検証
+        expect(img.className).toContain('starting:opacity-0')
+      })
+    })
   })
 
   describe('ローディングとエラーハンドリング', () => {
