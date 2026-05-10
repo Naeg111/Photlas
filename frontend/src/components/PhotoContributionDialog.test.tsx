@@ -884,12 +884,14 @@ describe('PhotoContributionDialog', () => {
   })
 
   // ============================================================
-  // Issue#131 Cycle2: モバイルでもクロップ枠が確実に視認できるよう
-  // Cropper に objectFit="cover" を渡す（画像を常にコンテナいっぱいに
-  // 拡大表示し、初期表示でも正方形クロップ枠が画像の上に乗るようにする）
+  // Issue#131 Cycle4: Cycle2 の objectFit="cover" 方針を撤回。
+  // 画像全体がコンテナ内にスクロールなしで収まり、クロップ枠は
+  // 画像の中に収まる形（react-easy-crop 既定の contain）に戻す。
+  // 動作確認の結果「画像を動かして選択範囲を変更する仕組みは
+  // 直感的でない」というフィードバックを反映。
   // ============================================================
-  describe('Issue#131 Cycle2: Cropper の objectFit 指定', () => {
-    it('Cropper に objectFit="cover" が渡される', async () => {
+  describe('Issue#131 Cycle4: Cropper の objectFit 指定', () => {
+    it('Cropper に objectFit="cover" が渡されない（既定の contain で表示）', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
@@ -902,7 +904,7 @@ describe('PhotoContributionDialog', () => {
       })
 
       const cropper = screen.getByTestId('cropper-component')
-      expect(cropper.getAttribute('data-object-fit')).toBe('cover')
+      expect(cropper.getAttribute('data-object-fit')).not.toBe('cover')
     })
   })
 })
