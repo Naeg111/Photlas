@@ -212,6 +212,35 @@ public class PhotoService {
      * @param email ログイン中ユーザーのメールアドレス（未認証の場合はnull）
      * @return 写真の詳細情報
      */
+    /**
+     * Issue#122: 写真詳細をバッチ取得する。
+     *
+     * 認可されていない写真（モデレーションステータス・退会済みオーナー・存在しない photoId）は
+     * silent skip し、認可された写真の詳細だけを返す（best-effort prefetch 用）。
+     *
+     * 内部的には各 photoId について getPhotoDetail と同じ認可ロジックを通すため、
+     * 単発エンドポイントとアクセス制御の挙動が一致する。
+     *
+     * @param photoIds 取得したい写真ID のリスト
+     * @param email ログイン中ユーザーのメールアドレス（未認証の場合は null）
+     * @return 認可された写真詳細のリスト。順序は request 順を保証しない
+     */
+    @Transactional(readOnly = true)
+    public List<PhotoDetailResponse> getPhotoDetailsBatch(List<Long> photoIds, String email) {
+        if (photoIds == null || photoIds.isEmpty()) {
+            return List.of();
+        }
+        List<PhotoDetailResponse> result = new ArrayList<>();
+        for (Long photoId : photoIds) {
+            try {
+                result.add(getPhotoDetail(photoId, email));
+            } catch (PhotoNotFoundException | SpotNotFoundException | UserNotFoundException e) {
+                // silent skip: 認可されていない写真・存在しない写真は best-effort で除外する
+            }
+        }
+        return result;
+    }
+
     @Transactional(readOnly = true)
     public PhotoDetailResponse getPhotoDetail(Long photoId, String email) {
         Photo photo = photoRepository.findById(photoId)

@@ -1403,4 +1403,67 @@ public class PhotoServiceTest {
                 .containsEntry(String.valueOf(CodeConstants.CATEGORY_NATURE), 92.5f)
                 .containsEntry(String.valueOf(CodeConstants.WEATHER_SUNNY), 88.0f);
     }
+
+    // ===== Issue#122 Cycle3: 写真詳細バッチ取得テスト =====
+
+    @Test
+    @DisplayName("Issue#122 - getPhotoDetailsBatch: 認可された全写真をまとめて返す")
+    void testGetPhotoDetailsBatch_AllAuthorized_ReturnsAll() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo p1 = createPhotoForUser(spot, "photos/batch-1.jpg",
+                java.time.LocalDateTime.of(2026, 1, 15, 10, 0), CodeConstants.WEATHER_SUNNY);
+        Photo p2 = createPhotoForUser(spot, "photos/batch-2.jpg",
+                java.time.LocalDateTime.of(2026, 1, 15, 11, 0), CodeConstants.WEATHER_SUNNY);
+        Photo p3 = createPhotoForUser(spot, "photos/batch-3.jpg",
+                java.time.LocalDateTime.of(2026, 1, 15, 12, 0), CodeConstants.WEATHER_SUNNY);
+
+        List<PhotoDetailResponse> result = photoService.getPhotoDetailsBatch(
+                List.of(p1.getPhotoId(), p2.getPhotoId(), p3.getPhotoId()),
+                testUser.getEmail());
+
+        assertThat(result).hasSize(3);
+        assertThat(result).extracting(PhotoDetailResponse::getPhotoId)
+                .containsExactlyInAnyOrder(p1.getPhotoId(), p2.getPhotoId(), p3.getPhotoId());
+    }
+
+    @Test
+    @DisplayName("Issue#122 - getPhotoDetailsBatch: 認可されていない写真は silent skip して返す")
+    void testGetPhotoDetailsBatch_PartialUnauthorized_SilentlySkips() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo visible = createPhotoForUser(spot, "photos/batch-visible.jpg",
+                java.time.LocalDateTime.of(2026, 1, 15, 10, 0), CodeConstants.WEATHER_SUNNY);
+        Photo removed = createPhotoWithStatus(spot, "photos/batch-removed.jpg",
+                CodeConstants.MODERATION_STATUS_REMOVED);
+
+        List<PhotoDetailResponse> result = photoService.getPhotoDetailsBatch(
+                List.of(visible.getPhotoId(), removed.getPhotoId()),
+                testUser.getEmail());
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getPhotoId()).isEqualTo(visible.getPhotoId());
+    }
+
+    @Test
+    @DisplayName("Issue#122 - getPhotoDetailsBatch: 存在しない photoId は silent skip して返す")
+    void testGetPhotoDetailsBatch_NonExistentId_SilentlySkips() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo visible = createPhotoForUser(spot, "photos/batch-real.jpg",
+                java.time.LocalDateTime.of(2026, 1, 15, 10, 0), CodeConstants.WEATHER_SUNNY);
+
+        List<PhotoDetailResponse> result = photoService.getPhotoDetailsBatch(
+                List.of(visible.getPhotoId(), 999_999L),
+                testUser.getEmail());
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getPhotoId()).isEqualTo(visible.getPhotoId());
+    }
+
+    @Test
+    @DisplayName("Issue#122 - getPhotoDetailsBatch: 空リストは空リストを返す")
+    void testGetPhotoDetailsBatch_EmptyList_ReturnsEmpty() {
+        List<PhotoDetailResponse> result = photoService.getPhotoDetailsBatch(
+                List.of(), testUser.getEmail());
+
+        assertThat(result).isEmpty();
+    }
 }
