@@ -53,10 +53,16 @@ vi.mock('../utils/extractExif', () => ({
 }))
 
 // react-easy-crop のモック（Issue#49）
+// Issue#131 Cycle2: 渡された objectFit を data 属性に記録して
+// テストから検証できるようにする
 vi.mock('react-easy-crop', () => ({
-  default: ({ onCropComplete, zoom }: { onCropComplete: (croppedArea: unknown, croppedAreaPixels: unknown) => void; zoom: number }) => {
+  default: ({ onCropComplete, zoom, objectFit }: {
+    onCropComplete: (croppedArea: unknown, croppedAreaPixels: unknown) => void
+    zoom: number
+    objectFit?: string
+  }) => {
     return (
-      <div data-testid="cropper-component">
+      <div data-testid="cropper-component" data-object-fit={objectFit ?? ''}>
         <button
           data-testid="mock-crop-trigger"
           onClick={() =>
@@ -874,6 +880,29 @@ describe('PhotoContributionDialog', () => {
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('混雑しています（60 秒後に再取得）')
       })
+    })
+  })
+
+  // ============================================================
+  // Issue#131 Cycle2: モバイルでもクロップ枠が確実に視認できるよう
+  // Cropper に objectFit="cover" を渡す（画像を常にコンテナいっぱいに
+  // 拡大表示し、初期表示でも正方形クロップ枠が画像の上に乗るようにする）
+  // ============================================================
+  describe('Issue#131 Cycle2: Cropper の objectFit 指定', () => {
+    it('Cropper に objectFit="cover" が渡される', async () => {
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('cropper-component')).toBeInTheDocument()
+      })
+
+      const cropper = screen.getByTestId('cropper-component')
+      expect(cropper.getAttribute('data-object-fit')).toBe('cover')
     })
   })
 })
