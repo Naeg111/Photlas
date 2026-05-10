@@ -428,6 +428,106 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const images = screen.queryAllByAltText('画像')
       expect(images.length).toBeLessThanOrEqual(2)
     })
+
+    // Issue#122: prefetch 範囲拡大（radius=2）と thumbnail 画像 preload
+    describe('Issue#122 - prefetch 範囲拡大と thumbnail 画像 preload', () => {
+      it('5枚の写真がある場合、currentIndex=0で自分+前後2枚（実質前0/後2）の合計3件の写真詳細APIが呼ばれる', async () => {
+        const ids = [101, 102, 103, 104, 105]
+        const details = ids.map(id => createMockPhotoDetail({
+          photoId: id,
+          imageUrls: {
+            thumbnail: `https://example.com/thumb${id}.jpg`,
+            standard: `https://example.com/std${id}.jpg`,
+          },
+          user: { userId: TEST_USER_ID, username: TEST_USERNAME },
+          spot: { spotId: TEST_SPOT_ID },
+        }))
+        const mockFetch = setupMockFetch(ids, details)
+
+        const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+        Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+        rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+        // 写真詳細 API（GET /api/v1/photos/{id}）のみを抽出
+        // 関連エンドポイント（/favorite, /location-suggestions/status 等）を除外するため
+        // {id} のあとは終端 or クエリ文字列のみを許可
+        const detailUrlRegex = /\/api\/v1\/photos\/\d+(?:\?|$)/
+        const isDetailUrl = (call: unknown[]) =>
+          typeof call[0] === 'string' && detailUrlRegex.test(call[0])
+
+        // Issue#122: radius=2 → 自分(101)+次(102)+次々(103) の 3 件
+        await waitFor(() => {
+          const photoCalls = mockFetch.mock.calls.filter(isDetailUrl)
+          expect(photoCalls.length).toBeGreaterThanOrEqual(3)
+        })
+
+        // 4 枚目以降（104, 105）は radius=2 の範囲外なので prefetch されない
+        const photoCalls = mockFetch.mock.calls.filter(isDetailUrl)
+        const calledIds = photoCalls
+          .map((call: unknown[]) => {
+            const url = call[0] as string
+            const m = url.match(/\/photos\/(\d+)/)
+            return m ? Number(m[1]) : null
+          })
+          .filter((id): id is number => id !== null)
+        expect(calledIds).not.toContain(104)
+        expect(calledIds).not.toContain(105)
+      })
+
+      it('fetchPhotoDetail 成功時、取得した写真の thumbnail URL が new Image() で preload される', async () => {
+        const ids = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
+        const detail1 = createMockPhotoDetail({
+          photoId: TEST_PHOTO_ID_1,
+          imageUrls: {
+            thumbnail: 'https://example.com/issue122-thumb-1.jpg',
+            standard: TEST_STANDARD_URL,
+          },
+          user: { userId: TEST_USER_ID, username: TEST_USERNAME },
+          spot: { spotId: TEST_SPOT_ID },
+        })
+        const detail2 = createMockPhotoDetail({
+          photoId: TEST_PHOTO_ID_2,
+          imageUrls: {
+            thumbnail: 'https://example.com/issue122-thumb-2.jpg',
+            standard: 'https://example.com/issue122-std-2.jpg',
+          },
+          user: { userId: TEST_USER_ID, username: TEST_USERNAME },
+          spot: { spotId: TEST_SPOT_ID },
+        })
+        const mockFetch = setupMockFetch(ids, [detail1, detail2])
+
+        // new Image() の src セッターを spy する
+        const setSrcSpy = vi.fn()
+        const OriginalImage = globalThis.Image
+        class SpyImage {
+          private _src = ''
+          set src(value: string) {
+            this._src = value
+            setSrcSpy(value)
+          }
+          get src() {
+            return this._src
+          }
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(globalThis as any).Image = SpyImage
+
+        try {
+          const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+          Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+          rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+          await waitFor(() => {
+            const calledUrls = setSrcSpy.mock.calls.map((c) => c[0])
+            expect(calledUrls).toContain('https://example.com/issue122-thumb-1.jpg')
+            expect(calledUrls).toContain('https://example.com/issue122-thumb-2.jpg')
+          })
+        } finally {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(globalThis as any).Image = OriginalImage
+        }
+      })
+    })
   })
 
   describe('ローディングとエラーハンドリング', () => {
