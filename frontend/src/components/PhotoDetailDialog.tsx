@@ -1084,7 +1084,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4 z-10"
+            className="absolute top-4 right-4 z-10 bg-gray-500/40 hover:bg-gray-500/60"
             onClick={onClose}
             aria-label={t('common.close')}
           >
@@ -1159,7 +1159,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute left-4 top-1/2 -translate-y-1/2"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-gray-500/40 hover:bg-gray-500/60"
                         onClick={scrollPrev}
                         aria-label={t('photo.prevPhoto')}
                       >
@@ -1170,7 +1170,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute right-4 top-1/2 -translate-y-1/2"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-gray-500/40 hover:bg-gray-500/60"
                         onClick={scrollNext}
                         aria-label={t('photo.nextPhoto')}
                       >
