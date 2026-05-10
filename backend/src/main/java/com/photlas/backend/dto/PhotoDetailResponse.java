@@ -82,6 +82,14 @@ public class PhotoDetailResponse {
         @JsonProperty("original")
         private String original;
 
+        /**
+         * Issue#125: LQIP（低品質プレースホルダー）の data URL 形式。
+         * モデレーション制限中（REMOVED/QUARANTINED/PENDING_REVIEW）は null（実画像漏れ防止）。
+         * Lambda コールバック未到達の場合も null（フロントが従来挙動にフォールバック）。
+         */
+        @JsonProperty("lqip")
+        private String lqip;
+
         public ImageUrls() {}
 
         public ImageUrls(String thumbnail, String standard, String original) {
@@ -90,12 +98,21 @@ public class PhotoDetailResponse {
             this.original = original;
         }
 
+        public ImageUrls(String thumbnail, String standard, String original, String lqip) {
+            this.thumbnail = thumbnail;
+            this.standard = standard;
+            this.original = original;
+            this.lqip = lqip;
+        }
+
         public String getThumbnail() { return thumbnail; }
         public void setThumbnail(String thumbnail) { this.thumbnail = thumbnail; }
         public String getStandard() { return standard; }
         public void setStandard(String standard) { this.standard = standard; }
         public String getOriginal() { return original; }
         public void setOriginal(String original) { this.original = original; }
+        public String getLqip() { return lqip; }
+        public void setLqip(String lqip) { this.lqip = lqip; }
     }
 
     public static class CameraInfo {
