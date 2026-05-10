@@ -1652,4 +1652,79 @@ describe('ProfileDialog', () => {
       })
     })
   })
+
+  describe('Issue#125 - LQIP（低品質プレースホルダー）表示', () => {
+    const SAMPLE_LQIP_DATA_URL = 'data:image/webp;base64,UklGRhwAAABXRUJQVlA4TBAAAAAvAAAAAA8B'
+
+    const lqipPhotosResponse = {
+      content: [
+        {
+          photo: {
+            photo_id: 1,
+            image_url: 'https://cdn.example.com/photos/1.jpg',
+            crop_center_x: 0.5,
+            crop_center_y: 0.5,
+            crop_zoom: 1,
+            lqip_data_url: SAMPLE_LQIP_DATA_URL,
+          },
+          spot: { spot_id: 10 },
+          user: { user_id: 123, username: 'testuser' },
+        },
+      ],
+      total_elements: 1,
+      total_pages: 1,
+      pageable: { page_number: 0, page_size: 20 },
+      last: true,
+    }
+
+    it('Issue#125 - lqip_data_url が API レスポンスに含まれるとき LQIP 画像が描画される', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(lqipPhotosResponse),
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={false}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('post-photo-item-1')).toBeInTheDocument()
+      })
+
+      const cell = screen.getByTestId('post-photo-item-1')
+      const lqipImg = cell.querySelector(`img[src="${SAMPLE_LQIP_DATA_URL}"]`)
+      expect(lqipImg).not.toBeNull()
+    })
+
+    it('Issue#125 - lqip_data_url が無いとき LQIP 画像は描画されない', async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockPhotosResponse),
+      })
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockUserProfile}
+          isOwnProfile={false}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('post-photo-item-1')).toBeInTheDocument()
+      })
+
+      const cell = screen.getByTestId('post-photo-item-1')
+      const dataImg = cell.querySelector('img[src^="data:image/webp"]')
+      expect(dataImg).toBeNull()
+    })
+  })
 })

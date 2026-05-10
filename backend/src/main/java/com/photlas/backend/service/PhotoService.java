@@ -530,6 +530,11 @@ public class PhotoService {
                 ? s3Service.generateCdnUrl(CodeConstants.BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey()));
 
+        // Issue#125: LQIP（低品質プレースホルダー）を設定。ブロック時は null（実画像漏れ防止）
+        if (!isBlocked) {
+            photoDTO.setLqipDataUrl(photo.getLqipDataUrl());
+        }
+
         // カテゴリ名リストを設定
         if (photo.getCategories() != null && !photo.getCategories().isEmpty()) {
             photoDTO.setCategories(
@@ -699,10 +704,12 @@ public class PhotoService {
         String thumbnailUrl = isBlocked
                 ? s3Service.generateCdnUrl(CodeConstants.BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey());
+        // Issue#125: ブロック中の写真は LQIP も漏らさない（thumbnail URL と同じ整合）
+        String lqip = isBlocked ? null : photo.getLqipDataUrl();
 
         PhotoDetailResponse response = new PhotoDetailResponse();
         response.setPhotoId(photo.getPhotoId());
-        response.setImageUrls(new PhotoDetailResponse.ImageUrls(thumbnailUrl, standardUrl, standardUrl));
+        response.setImageUrls(new PhotoDetailResponse.ImageUrls(thumbnailUrl, standardUrl, standardUrl, lqip));
         response.setPlaceName(photo.getPlaceName());
         response.setShotAt(photo.getShotAt());
         response.setWeather(photo.getWeather());

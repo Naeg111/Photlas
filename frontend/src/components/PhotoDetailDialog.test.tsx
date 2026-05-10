@@ -109,6 +109,8 @@ function createMockApiResponse(overrides?: {
     thumbnail?: string | null
     standard?: string
     original?: string
+    /** Issue#125: LQIP（低品質プレースホルダー）の data URL */
+    lqip?: string | null
   }
   shotAt?: string
   weather?: string
@@ -142,6 +144,8 @@ function createMockApiResponse(overrides?: {
       thumbnail: overrides?.imageUrls?.thumbnail ?? TEST_THUMBNAIL_URL,
       standard: overrides?.imageUrls?.standard ?? TEST_STANDARD_URL,
       original: overrides?.imageUrls?.original ?? TEST_ORIGINAL_URL,
+      // Issue#125: LQIP は overrides にあれば渡す（既定では含めない）
+      ...(overrides?.imageUrls?.lqip !== undefined && { lqip: overrides.imageUrls.lqip }),
     },
     placeName: overrides?.placeName ?? null,
     shotAt: overrides?.shotAt ?? TEST_SHOT_AT,
@@ -2607,6 +2611,53 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(buttonRow).not.toBeNull()
       // 横幅オーバー時に折り返すよう Tailwind の flex-wrap が付与されている
       expect(buttonRow!.className).toMatch(/\bflex-wrap\b/)
+    })
+  })
+
+  describe('Issue#125 - LQIP（低品質プレースホルダー）表示', () => {
+    const SAMPLE_LQIP_DATA_URL = 'data:image/webp;base64,UklGRhwAAABXRUJQVlA4TBAAAAAvAAAAAA8B'
+
+    it('Issue#125 - imageUrls.lqip が API レスポンスに含まれるとき LQIP 画像が描画される', async () => {
+      const photoDetail = createMockApiResponse({
+        imageUrls: { lqip: SAMPLE_LQIP_DATA_URL },
+      })
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch, writable: true, configurable: true,
+      })
+
+      renderPhotoDetailDialog()
+
+      await waitFor(() => {
+        // 写真クロップコンテナが描画されていることをまず確認
+        expect(screen.getAllByTestId('photo-crop-container').length).toBeGreaterThan(0)
+      })
+
+      // LQIP の <img src="data:image/webp..."> が描画されている
+      const cropContainers = screen.getAllByTestId('photo-crop-container')
+      const firstContainer = cropContainers[0]
+      const lqipImg = firstContainer.querySelector(`img[src="${SAMPLE_LQIP_DATA_URL}"]`)
+      expect(lqipImg).not.toBeNull()
+    })
+
+    it('Issue#125 - imageUrls.lqip が無いとき LQIP 画像は描画されない', async () => {
+      const photoDetail = createMockApiResponse()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch, writable: true, configurable: true,
+      })
+
+      renderPhotoDetailDialog()
+
+      await waitFor(() => {
+        expect(screen.getAllByTestId('photo-crop-container').length).toBeGreaterThan(0)
+      })
+
+      // data: URL の <img> は存在しない
+      const cropContainers = screen.getAllByTestId('photo-crop-container')
+      const firstContainer = cropContainers[0]
+      const dataImg = firstContainer.querySelector('img[src^="data:image/webp"]')
+      expect(dataImg).toBeNull()
     })
   })
 })

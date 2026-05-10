@@ -8,6 +8,7 @@ import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PinSvg } from './PinSvg'
 import { ProtectedImage } from './figma/ProtectedImage'
+import { LqipPlaceholder } from './LqipPlaceholder'
 import { getAuthHeaders } from '../utils/apiClient'
 import { buildRateLimitApiError, notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { API_V1_URL } from '../config/api'
@@ -104,6 +105,8 @@ interface PhotoApiResponse {
     thumbnail: string | null
     standard: string
     original: string
+    /** Issue#125: LQIP（低品質プレースホルダー）の data URL。モデレーション制限中は null。 */
+    lqip?: string | null
   }
   placeName?: string | null
   shotAt: string
@@ -156,6 +159,8 @@ interface PhotoDetail {
   placeName?: string | null
   thumbnailUrl: string
   originalUrl: string
+  /** Issue#125: LQIP（低品質プレースホルダー）の data URL。本物のサムネが読み込まれるまで blur 表示する。 */
+  lqip?: string | null
   shotAt: string
   weather?: number | null
   isFavorited?: boolean
@@ -218,6 +223,7 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
     placeName: response.placeName,
     thumbnailUrl,
     originalUrl,
+    lqip: response.imageUrls.lqip ?? null,
     shotAt: response.shotAt,
     weather: response.weather,
     isFavorited: response.isFavorited,
@@ -1133,13 +1139,18 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                                   ロジックは撤去。サムネイルをそのまま正方形枠に表示する。 */}
                               {/* Issue#122 Cycle2: key={photoId} で写真切り替え時に再マウントを発生させ、
                                   PHOTO_CROSS_FADE_CLASSES でフェードインさせる。 */}
-                              <ProtectedImage
-                                key={photo.photoId}
-                                src={photo.thumbnailUrl}
-                                alt="画像"
-                                loading="eager"
-                                className={`w-full h-full object-cover ${PHOTO_CROSS_FADE_CLASSES}`}
-                              />
+                              {/* Issue#125: LQIP を本物の下に絶対配置（LqipPlaceholder が
+                                  src 未設定時の null フォールバックも兼ねる） */}
+                              <div className="relative w-full h-full">
+                                <LqipPlaceholder src={photo.lqip} />
+                                <ProtectedImage
+                                  key={photo.photoId}
+                                  src={photo.thumbnailUrl}
+                                  alt="画像"
+                                  loading="eager"
+                                  className={`relative w-full h-full object-cover ${PHOTO_CROSS_FADE_CLASSES}`}
+                                />
+                              </div>
                             </div>
                           ) : (
                             <div className="flex items-center justify-center aspect-square w-full">

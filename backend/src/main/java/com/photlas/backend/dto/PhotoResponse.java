@@ -100,6 +100,14 @@ public class PhotoResponse {
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private String thumbnailUrl;
 
+        /**
+         * Issue#125: LQIP（低品質プレースホルダー）の data URL 形式。
+         * モデレーション制限中（REMOVED/QUARANTINED/PENDING_REVIEW）は null。
+         */
+        @JsonProperty("lqip_data_url")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private String lqipDataUrl;
+
         @JsonInclude(JsonInclude.Include.NON_NULL)
         private List<String> categories;
 
@@ -251,6 +259,14 @@ public class PhotoResponse {
 
         public void setThumbnailUrl(String thumbnailUrl) {
             this.thumbnailUrl = thumbnailUrl;
+        }
+
+        public String getLqipDataUrl() {
+            return lqipDataUrl;
+        }
+
+        public void setLqipDataUrl(String lqipDataUrl) {
+            this.lqipDataUrl = lqipDataUrl;
         }
 
         public List<String> getCategories() {

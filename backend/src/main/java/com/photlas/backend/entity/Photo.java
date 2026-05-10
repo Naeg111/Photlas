@@ -90,6 +90,13 @@ public class Photo {
     @Column(name = "moderation_status", nullable = false)
     private Integer moderationStatus = 1001;
 
+    /**
+     * Issue#125: LQIP（低品質プレースホルダー）の data URL 形式（data:image/webp;base64,...）。
+     * サムネイル Lambda がコールバックで書き込む。NULL の場合はフロントが従来挙動にフォールバック。
+     */
+    @Column(name = "lqip_data_url", columnDefinition = "TEXT")
+    private String lqipDataUrl;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -314,6 +321,14 @@ public class Photo {
 
     public void setModerationStatus(Integer moderationStatus) {
         this.moderationStatus = moderationStatus;
+    }
+
+    public String getLqipDataUrl() {
+        return lqipDataUrl;
+    }
+
+    public void setLqipDataUrl(String lqipDataUrl) {
+        this.lqipDataUrl = lqipDataUrl;
     }
 
     public List<Category> getCategories() {

@@ -34,6 +34,7 @@ import { ReportDialog } from './ReportDialog'
 import { SnsLinkEditDialog } from './SnsLinkEditDialog'
 import { ProtectedImage } from './figma/ProtectedImage'
 import { ImageWithFallback } from './figma/ImageWithFallback'
+import { LqipPlaceholder } from './LqipPlaceholder'
 
 // API Endpoints
 const API_MY_PROFILE = '/api/v1/users/me'
@@ -75,6 +76,8 @@ interface UserPhotoItem {
     crop_center_x?: number | null
     crop_center_y?: number | null
     crop_zoom?: number | null
+    /** Issue#125: LQIP（低品質プレースホルダー）の data URL。モデレーション制限中は null。 */
+    lqip_data_url?: string | null
   }
   spot: {
     spot_id: number
@@ -671,6 +674,17 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                         role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handlePhotoClick(item.photo.photo_id) }} onClick={() => handlePhotoClick(item.photo.photo_id)}
                         className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                       >
+                        {/* Issue#125: LQIP を本物のサムネの下に絶対配置。
+                            crop 変換と zoom*1.1 で blur の縁を画面外に押し出す。 */}
+                        <LqipPlaceholder
+                          src={item.photo.lqip_data_url}
+                          style={{
+                            objectFit: 'cover',
+                            objectPosition: `${cx * 100}% ${cy * 100}%`,
+                            transform: `scale(${zoom * 1.1})`,
+                            transformOrigin: `${cx * 100}% ${cy * 100}%`,
+                          }}
+                        />
                         <ImageWithFallback
                           src={item.photo.thumbnail_url || item.photo.image_url}
                           fallbackSrc={item.photo.image_url}
