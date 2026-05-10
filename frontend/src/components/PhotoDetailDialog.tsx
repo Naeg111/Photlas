@@ -47,6 +47,9 @@ const API_PHOTOS = `${API_V1_URL}/photos`
 const PHOTO_PAGE_SIZE = 30
 const PHOTO_PAGE_PRELOAD_THRESHOLD = 5
 
+// Issue#122: 写真詳細ダイアログで現在表示中の写真の前後 radius 枚を先読みする
+const PHOTO_PREFETCH_RADIUS = 2
+
 // Test IDs
 const TEST_ID_DIALOG = 'photo-detail-dialog'
 const TEST_ID_LOADING = 'loading-spinner'
@@ -291,6 +294,18 @@ async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
 }
 
 /**
+ * Issue#122: thumbnail 画像をブラウザキャッシュへ先読みする。
+ * `new Image()` で Image オブジェクトを生成し src を代入することで、
+ * 実際に <img> 要素が DOM にマウントされる前にネットワークフェッチを開始させ、
+ * スライド切り替え時の表示遅延を解消する。url が空の場合は何もしない。
+ */
+function preloadThumbnail(thumbnailUrl: string | null | undefined): void {
+  if (!thumbnailUrl) return
+  const img = new Image()
+  img.src = thumbnailUrl
+}
+
+/**
  * 撮影地点ミニマップコンポーネント
  * Issue#45: 写真詳細ダイアログ内に撮影地点を表示する静的地図
  */
@@ -520,6 +535,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           setPhotoDetails(new Map().set(singlePhotoId, detail))
           setDisplayedPhoto(detail)
           setCurrentIndex(0)
+          preloadThumbnail(detail.thumbnailUrl)
           setLoading(false)
           return
         }
@@ -534,6 +550,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           const detail = await fetchPhotoDetailById(page.ids[0])
           setPhotoDetails(new Map().set(page.ids[0], detail))
           setDisplayedPhoto(detail)
+          preloadThumbnail(detail.thumbnailUrl)
         }
 
         setLoading(false)
@@ -557,6 +574,11 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     try {
       const detail = await fetchPhotoDetailById(photoId)
       setPhotoDetails(prev => new Map(prev).set(photoId, detail))
+      // Issue#122: 取得直後に thumbnail をブラウザキャッシュへ先読みする。
+      // useEffect 側で post-hoc に preload しようとすると、fetch が非同期のため
+      // 最初の通過では photoDetailsRef がまだ空で空振りする。fetch 成功時に
+      // 必ずキャッシュ投入することで、後続のスライド切り替え時の即時表示を保証する。
+      preloadThumbnail(detail.thumbnailUrl)
     } catch (e) {
       // 429 のみトースト通知。それ以外のエラーは無視（ダイアログ全体をエラーにしない）
       notifyIfRateLimited(e, t)
@@ -602,29 +624,23 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const currentPhotoId = photoIds[currentIndex]
   const currentPhoto = currentPhotoId ? photoDetails.get(currentPhotoId) : null
 
-  // 現在のスライドの写真詳細を取得 + 前後1枚をプリフェッチ + 画像プリロード
+  // 現在のスライドの写真詳細を取得 + 前後 PHOTO_PREFETCH_RADIUS 枚をプリフェッチ
   // photoDetailsをrefで参照し、依存配列ループを防止（#7）
+  // Issue#122: thumbnail 画像のブラウザキャッシュ先読みは fetchPhotoDetail 内に移動
   useEffect(() => {
     if (currentPhotoId && !photoDetailsRef.current.has(currentPhotoId)) {
       fetchPhotoDetail(currentPhotoId)
     }
     // Issue#118: 現在の写真IDを登録壁カウントへ通知（重複は呼び出し側で吸収される）
+    // Issue#122: prefetch 対象には呼ばない（実際に閲覧した写真のみ通知）
     if (currentPhotoId) {
       onPhotoViewed?.(currentPhotoId)
     }
-    // 前後1枚の写真データを事前取得
-    const prevId = photoIds[currentIndex - 1]
-    const nextId = photoIds[currentIndex + 1]
-    if (prevId) fetchPhotoDetail(prevId)
-    if (nextId) fetchPhotoDetail(nextId)
-
-    // プリフェッチ済みの前後写真の画像をブラウザキャッシュにプリロード
-    for (const id of [prevId, nextId].filter(Boolean)) {
-      const photo = photoDetailsRef.current.get(id)
-      if (photo?.thumbnailUrl) {
-        const img = new Image()
-        img.src = photo.thumbnailUrl
-      }
+    // Issue#122: 前後 PHOTO_PREFETCH_RADIUS 枚の写真データを事前取得
+    for (let offset = -PHOTO_PREFETCH_RADIUS; offset <= PHOTO_PREFETCH_RADIUS; offset++) {
+      if (offset === 0) continue
+      const id = photoIds[currentIndex + offset]
+      if (id) fetchPhotoDetail(id)
     }
   }, [currentPhotoId, currentIndex, photoIds, fetchPhotoDetail, onPhotoViewed])
 
