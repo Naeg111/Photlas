@@ -8,6 +8,7 @@ import MapGL, { Marker } from 'react-map-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { PinSvg } from './PinSvg'
 import { ProtectedImage } from './figma/ProtectedImage'
+import { LqipPlaceholder } from './LqipPlaceholder'
 import { getAuthHeaders } from '../utils/apiClient'
 import { buildRateLimitApiError, notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { API_V1_URL } from '../config/api'
@@ -1138,17 +1139,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                                   ロジックは撤去。サムネイルをそのまま正方形枠に表示する。 */}
                               {/* Issue#122 Cycle2: key={photoId} で写真切り替え時に再マウントを発生させ、
                                   PHOTO_CROSS_FADE_CLASSES でフェードインさせる。 */}
-                              {/* Issue#125: LQIP（低品質プレースホルダー）を本物の下に絶対配置。
-                                  scale-110 + blur-md で blur の縁を画面外に押し出す。 */}
+                              {/* Issue#125: LQIP を本物の下に絶対配置（LqipPlaceholder が
+                                  src 未設定時の null フォールバックも兼ねる） */}
                               <div className="relative w-full h-full">
-                                {photo.lqip && (
-                                  <img
-                                    src={photo.lqip}
-                                    alt=""
-                                    aria-hidden="true"
-                                    className="absolute inset-0 w-full h-full object-cover scale-110 blur-md"
-                                  />
-                                )}
+                                <LqipPlaceholder src={photo.lqip} />
                                 <ProtectedImage
                                   key={photo.photoId}
                                   src={photo.thumbnailUrl}

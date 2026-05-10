@@ -34,6 +34,7 @@ import { ReportDialog } from './ReportDialog'
 import { SnsLinkEditDialog } from './SnsLinkEditDialog'
 import { ProtectedImage } from './figma/ProtectedImage'
 import { ImageWithFallback } from './figma/ImageWithFallback'
+import { LqipPlaceholder } from './LqipPlaceholder'
 
 // API Endpoints
 const API_MY_PROFILE = '/api/v1/users/me'
@@ -675,20 +676,15 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                       >
                         {/* Issue#125: LQIP を本物のサムネの下に絶対配置。
                             crop 変換と zoom*1.1 で blur の縁を画面外に押し出す。 */}
-                        {item.photo.lqip_data_url && (
-                          <img
-                            src={item.photo.lqip_data_url}
-                            alt=""
-                            aria-hidden="true"
-                            className="absolute inset-0 w-full h-full blur-md"
-                            style={{
-                              objectFit: 'cover',
-                              objectPosition: `${cx * 100}% ${cy * 100}%`,
-                              transform: `scale(${zoom * 1.1})`,
-                              transformOrigin: `${cx * 100}% ${cy * 100}%`,
-                            }}
-                          />
-                        )}
+                        <LqipPlaceholder
+                          src={item.photo.lqip_data_url}
+                          style={{
+                            objectFit: 'cover',
+                            objectPosition: `${cx * 100}% ${cy * 100}%`,
+                            transform: `scale(${zoom * 1.1})`,
+                            transformOrigin: `${cx * 100}% ${cy * 100}%`,
+                          }}
+                        />
                         <ImageWithFallback
                           src={item.photo.thumbnail_url || item.photo.image_url}
                           fallbackSrc={item.photo.image_url}
