@@ -1,5 +1,5 @@
 /**
- * Issue#129: Service Worker による写真画像キャッシュの URL パターン定義
+ * Issue#129: Service Worker による写真画像キャッシュの設定
  *
  * vite.config.ts の VitePWA `runtimeCaching` から参照される。
  * 別モジュールに切り出すことで Vitest からテスト可能にしている
@@ -27,3 +27,32 @@ export const PHOTO_CACHE_URL_PATTERN =
  * v1 → v2 に bump する（CHANGELOG / コミットメッセージにその旨を記載）。
  */
 export const PHOTO_CACHE_NAME = 'photlas-photos-v1'
+
+/**
+ * LRU で保持するエントリ件数の上限。
+ *
+ * Workbox の `expiration.maxEntries` はバイト数ではなく **件数** で制御する。
+ * HEIC は 1 枚 5〜15MB になりうるため、件数を絞らないと最悪数 GB に膨れる可能性がある。
+ * モバイルストレージ枯渇を防ぐため、安全側で 200 件に設定。
+ *
+ * 200 件 × 平均 1MB（webp サムネ中心の想定）≒ 約 200MB が現実的な期待上限。
+ */
+export const PHOTO_CACHE_MAX_ENTRIES = 200
+
+/** 1 日の秒数（マジックナンバー回避用）。 */
+const SECONDS_PER_DAY = 60 * 60 * 24
+
+/** キャッシュエントリの最大保持期間（秒）。30 日。 */
+export const PHOTO_CACHE_MAX_AGE_SECONDS = SECONDS_PER_DAY * 30
+
+/**
+ * キャッシュ可能と見なす HTTP ステータスコード。
+ *
+ * - 0: opaque レスポンス（CORS 無し fetch、`<img>` の no-cors 取得など）
+ * - 200: 通常の成功レスポンス
+ *
+ * `<img src>` 経由で取得される写真は no-cors なので opaque になる。
+ * 一方、PhotoLightbox の `fetch()` 経由では CORS が設定済み (Issue#88) のため 200 になる。
+ * どちらも許容する。
+ */
+export const PHOTO_CACHEABLE_STATUSES: readonly number[] = [0, 200]

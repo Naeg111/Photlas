@@ -6,7 +6,13 @@
  * （旧版の `[^.]+-cdn\.photlas\.jp` は本番ドメインにマッチしないバグがあった）
  */
 import { describe, it, expect } from 'vitest'
-import { PHOTO_CACHE_URL_PATTERN } from './serviceWorkerCache'
+import {
+  PHOTO_CACHE_URL_PATTERN,
+  PHOTO_CACHE_NAME,
+  PHOTO_CACHE_MAX_ENTRIES,
+  PHOTO_CACHE_MAX_AGE_SECONDS,
+  PHOTO_CACHEABLE_STATUSES,
+} from './serviceWorkerCache'
 
 describe('PHOTO_CACHE_URL_PATTERN', () => {
   describe('Issue#129 - マッチすべきURL（キャッシュ対象）', () => {
@@ -64,5 +70,37 @@ describe('PHOTO_CACHE_URL_PATTERN', () => {
       const stagingUrl = 'https://test-cdn.photlas.jp/uploads/1/test.jpg'
       expect(PHOTO_CACHE_URL_PATTERN.test(stagingUrl)).toBe(true)
     })
+  })
+})
+
+describe('PHOTO_CACHE_NAME', () => {
+  it('Issue#129 - キャッシュ名はバージョン番号を含む（4.6 のバージョニング運用に必要）', () => {
+    expect(PHOTO_CACHE_NAME).toMatch(/-v\d+$/)
+  })
+})
+
+describe('PHOTO_CACHE_MAX_ENTRIES', () => {
+  it('Issue#129 - HEIC 大容量を考慮し 200 件以下に抑えられている（モバイルストレージ枯渇対策）', () => {
+    expect(PHOTO_CACHE_MAX_ENTRIES).toBeLessThanOrEqual(200)
+    expect(PHOTO_CACHE_MAX_ENTRIES).toBeGreaterThan(0)
+  })
+})
+
+describe('PHOTO_CACHE_MAX_AGE_SECONDS', () => {
+  it('Issue#129 - 30 日相当の秒数（モデレーション削除リスクと再訪問効果のバランス点）', () => {
+    const THIRTY_DAYS_IN_SECONDS = 60 * 60 * 24 * 30
+    expect(PHOTO_CACHE_MAX_AGE_SECONDS).toBe(THIRTY_DAYS_IN_SECONDS)
+  })
+})
+
+describe('PHOTO_CACHEABLE_STATUSES', () => {
+  it('Issue#129 - opaque (0) と 通常成功 (200) の両方を許容する', () => {
+    expect(PHOTO_CACHEABLE_STATUSES).toContain(0)
+    expect(PHOTO_CACHEABLE_STATUSES).toContain(200)
+  })
+
+  it('Issue#129 - エラーレスポンスはキャッシュしない（404 / 500 等を含めない）', () => {
+    expect(PHOTO_CACHEABLE_STATUSES).not.toContain(404)
+    expect(PHOTO_CACHEABLE_STATUSES).not.toContain(500)
   })
 })

@@ -1,7 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import { PHOTO_CACHE_URL_PATTERN, PHOTO_CACHE_NAME } from './src/config/serviceWorkerCache'
+import {
+  PHOTO_CACHE_URL_PATTERN,
+  PHOTO_CACHE_NAME,
+  PHOTO_CACHE_MAX_ENTRIES,
+  PHOTO_CACHE_MAX_AGE_SECONDS,
+  PHOTO_CACHEABLE_STATUSES,
+} from './src/config/serviceWorkerCache'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -25,11 +31,11 @@ export default defineConfig({
             options: {
               cacheName: PHOTO_CACHE_NAME,
               expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
+                maxEntries: PHOTO_CACHE_MAX_ENTRIES,
+                maxAgeSeconds: PHOTO_CACHE_MAX_AGE_SECONDS,
                 purgeOnQuotaError: true,
               },
-              cacheableResponse: { statuses: [0, 200] },
+              cacheableResponse: { statuses: [...PHOTO_CACHEABLE_STATUSES] },
             },
           },
         ],
