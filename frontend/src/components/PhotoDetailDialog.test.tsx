@@ -213,6 +213,44 @@ function setupMockFetch(photoIds: number[], photoDetails: any[], totalOverride?:
   return mockFetch
 }
 
+/**
+ * Issue#122 Cycle3: バッチエンドポイントを含む URL/method aware な mock fetch を生成する。
+ *
+ * - POST /api/v1/spots/photos: { ids, total } を返す
+ * - POST /api/v1/photos/batch: body.photoIds に対応する詳細を `detailMap` から引いて配列で返す
+ * - GET /api/v1/photos/{id}: `detailMap` から詳細を引いて返す
+ * - その他: 空オブジェクトを返す
+ *
+ * 個別 GET ともバッチ POST ともに正しく応答するため、Cycle3 前後どちらの実装にも対応する。
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function setupBatchAwareMockFetch(ids: number[], detailMap: Map<number, any>, totalOverride?: number) {
+  return vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+    if (typeof url === 'string' && url.includes('/api/v1/spots/photos')) {
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ ids, total: totalOverride ?? ids.length }),
+      })
+    }
+    if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
+      const body = JSON.parse(String(options.body ?? '{}'))
+      const reqIds = body.photoIds as number[]
+      return Promise.resolve({
+        ok: true,
+        json: async () => reqIds.map(id => detailMap.get(id)).filter(Boolean),
+      })
+    }
+    if (typeof url === 'string') {
+      const m = url.match(/\/api\/v1\/photos\/(\d+)(?:\?|$)/)
+      if (m) {
+        const detail = detailMap.get(Number(m[1]))
+        if (detail) return Promise.resolve({ ok: true, json: async () => detail })
+      }
+    }
+    return Promise.resolve({ ok: true, json: async () => ({}) })
+  })
+}
+
 interface RenderPhotoDetailDialogProps {
   open?: boolean
   spotIds?: number[]
@@ -448,24 +486,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
           }))
         })
 
-        const mockFetch = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
-          if (typeof url === 'string' && url.includes('/api/v1/spots/photos')) {
-            return Promise.resolve({ ok: true, json: async () => ({ ids, total: 5 }) })
-          }
-          if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
-            const body = JSON.parse(String(options.body ?? '{}'))
-            const reqIds = body.photoIds as number[]
-            return Promise.resolve({ ok: true, json: async () => reqIds.map(id => detailMap.get(id)).filter(Boolean) })
-          }
-          if (typeof url === 'string') {
-            const m = url.match(/\/api\/v1\/photos\/(\d+)(?:\?|$)/)
-            if (m) {
-              const detail = detailMap.get(Number(m[1]))
-              if (detail) return Promise.resolve({ ok: true, json: async () => detail })
-            }
-          }
-          return Promise.resolve({ ok: true, json: async () => ({}) })
-        })
+        const mockFetch = setupBatchAwareMockFetch(ids, detailMap)
 
         const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
         Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
@@ -503,7 +524,6 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
 
       it('取得した写真の thumbnail URL が new Image() で preload される（current は GET 経由、prefetch はバッチ経由）', async () => {
-        // Cycle3 でバッチエンドポイント導入後に対応するため、URL/method aware mock を使う
         const ids = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
         const detailMap = new Map<number, ReturnType<typeof createMockPhotoDetail>>()
         detailMap.set(TEST_PHOTO_ID_1, createMockPhotoDetail({
@@ -519,24 +539,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
           spot: { spotId: TEST_SPOT_ID },
         }))
 
-        const mockFetch = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
-          if (typeof url === 'string' && url.includes('/api/v1/spots/photos')) {
-            return Promise.resolve({ ok: true, json: async () => ({ ids, total: 2 }) })
-          }
-          if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
-            const body = JSON.parse(String(options.body ?? '{}'))
-            const reqIds = body.photoIds as number[]
-            return Promise.resolve({ ok: true, json: async () => reqIds.map(id => detailMap.get(id)).filter(Boolean) })
-          }
-          if (typeof url === 'string') {
-            const m = url.match(/\/api\/v1\/photos\/(\d+)(?:\?|$)/)
-            if (m) {
-              const detail = detailMap.get(Number(m[1]))
-              if (detail) return Promise.resolve({ ok: true, json: async () => detail })
-            }
-          }
-          return Promise.resolve({ ok: true, json: async () => ({}) })
-        })
+        const mockFetch = setupBatchAwareMockFetch(ids, detailMap)
 
         // new Image() の src セッターを spy する
         const setSrcSpy = vi.fn()
@@ -602,27 +605,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
           }))
         })
 
-        // URL/method aware mock
-        const mockFetch = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
-          if (typeof url === 'string' && url.includes('/api/v1/spots/photos')) {
-            return Promise.resolve({ ok: true, json: async () => ({ ids, total: 3 }) })
-          }
-          if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
-            const body = JSON.parse(String(options.body ?? '{}'))
-            const reqIds = body.photoIds as number[]
-            const arr = reqIds.map(id => detailMap.get(id)).filter(Boolean)
-            return Promise.resolve({ ok: true, json: async () => arr })
-          }
-          if (typeof url === 'string') {
-            const m = url.match(/\/api\/v1\/photos\/(\d+)(?:\?|$)/)
-            if (m) {
-              const id = Number(m[1])
-              const detail = detailMap.get(id)
-              if (detail) return Promise.resolve({ ok: true, json: async () => detail })
-            }
-          }
-          return Promise.resolve({ ok: true, json: async () => ({}) })
-        })
+        const mockFetch = setupBatchAwareMockFetch(ids, detailMap)
 
         const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
         Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
@@ -655,24 +638,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
           }))
         })
 
-        const mockFetch = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
-          if (typeof url === 'string' && url.includes('/api/v1/spots/photos')) {
-            return Promise.resolve({ ok: true, json: async () => ({ ids, total: 2 }) })
-          }
-          if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
-            const body = JSON.parse(String(options.body ?? '{}'))
-            const reqIds = body.photoIds as number[]
-            return Promise.resolve({ ok: true, json: async () => reqIds.map(id => detailMap.get(id)).filter(Boolean) })
-          }
-          if (typeof url === 'string') {
-            const m = url.match(/\/api\/v1\/photos\/(\d+)(?:\?|$)/)
-            if (m) {
-              const detail = detailMap.get(Number(m[1]))
-              if (detail) return Promise.resolve({ ok: true, json: async () => detail })
-            }
-          }
-          return Promise.resolve({ ok: true, json: async () => ({}) })
-        })
+        const mockFetch = setupBatchAwareMockFetch(ids, detailMap)
 
         const setSrcSpy = vi.fn()
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
