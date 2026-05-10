@@ -528,13 +528,29 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
       const extension = contentType === 'image/png' ? 'png' : 'jpg'
 
       // 3. Presigned URL取得（変換後の content-type で署名する）
+      // Issue#131: crop 情報を一緒にバックエンドへ送り、S3 metadata の署名対象に含める。
+      // フロントは続く S3 PUT で同じ crop をヘッダ送信し、Lambda が指定範囲でクロップする。
+      const cropForUpload =
+        data.cropCenterX !== undefined &&
+        data.cropCenterY !== undefined &&
+        data.cropZoom !== undefined
+          ? {
+              cropCenterX: data.cropCenterX,
+              cropCenterY: data.cropCenterY,
+              cropZoom: data.cropZoom,
+            }
+          : undefined
+
       const { uploadUrl, objectKey } = await getPhotoUploadUrl({
         extension,
         contentType,
+        cropCenterX: cropForUpload?.cropCenterX,
+        cropCenterY: cropForUpload?.cropCenterY,
+        cropZoom: cropForUpload?.cropZoom,
       })
 
       // 4. EXIF削除済み画像をS3へアップロード
-      await uploadFileToS3(uploadUrl, strippedBlob)
+      await uploadFileToS3(uploadUrl, strippedBlob, cropForUpload)
 
       // 5. メタデータ保存（EXIF情報を含む）
       const photoResponse = await createPhoto({

@@ -186,6 +186,10 @@ export async function fetchSpots(params: SpotSearchParams): Promise<SpotResponse
 export interface UploadUrlRequest {
   extension: string
   contentType: string
+  // Issue#131: ユーザー指定範囲のクロップ情報（投稿写真のみ・avatar は省略）
+  cropCenterX?: number
+  cropCenterY?: number
+  cropZoom?: number
 }
 
 /**
@@ -287,19 +291,41 @@ export const S3_TAG_HEADER_VALUE_PENDING = 'status=pending'
 export const S3_CACHE_CONTROL_VALUE = 'public, max-age=31536000, immutable'
 
 /**
+ * Issue#131: S3 PUT 時に送る crop メタデータ。
+ * バックエンド（S3Service）と Lambda（lambda_function.py）と値を揃える。
+ */
+export interface S3UploadCropMetadata {
+  cropCenterX: number
+  cropCenterY: number
+  cropZoom: number
+}
+
+/**
  * S3にファイルをアップロード
  * @param uploadUrl Presigned URL
  * @param file アップロードするファイル
+ * @param crop  Issue#131: ユーザー指定のクロップ範囲（投稿写真のみ・avatar は省略可）
  */
-export async function uploadFileToS3(uploadUrl: string, file: Blob): Promise<void> {
+export async function uploadFileToS3(
+  uploadUrl: string,
+  file: Blob,
+  crop?: S3UploadCropMetadata,
+): Promise<void> {
+  const headers: Record<string, string> = {
+    'Content-Type': file.type,
+    'Cache-Control': S3_CACHE_CONTROL_VALUE,
+    [S3_TAG_HEADER_NAME]: S3_TAG_HEADER_VALUE_PENDING,
+  }
+  if (crop) {
+    // 数値文字列化はバックエンドと揃えて小数点 4 桁固定
+    headers['x-amz-meta-crop-center-x'] = crop.cropCenterX.toFixed(4)
+    headers['x-amz-meta-crop-center-y'] = crop.cropCenterY.toFixed(4)
+    headers['x-amz-meta-crop-zoom']     = crop.cropZoom.toFixed(4)
+  }
   const response = await fetch(uploadUrl, {
     method: 'PUT',
     body: file,
-    headers: {
-      'Content-Type': file.type,
-      'Cache-Control': S3_CACHE_CONTROL_VALUE,
-      [S3_TAG_HEADER_NAME]: S3_TAG_HEADER_VALUE_PENDING,
-    },
+    headers,
   })
 
   if (!response.ok) {
