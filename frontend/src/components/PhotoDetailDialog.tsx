@@ -1070,11 +1070,15 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                               {/* Issue#131: サムネイル自体がユーザー指定範囲で生成されるため、
                                   以前 objectPosition / transform: scale でクロップを再現していた
                                   ロジックは撤去。サムネイルをそのまま正方形枠に表示する。 */}
+                              {/* Issue#122 Cycle2: key={photoId} で写真切り替え時に再マウントを発生させ、
+                                  Tailwind v4 の @starting-style 相当（starting:opacity-0）で
+                                  フェードインさせる。スピナー → 画像差し替えの瞬間がそっけない問題を緩和。 */}
                               <ProtectedImage
+                                key={photo.photoId}
                                 src={photo.thumbnailUrl}
                                 alt="画像"
                                 loading="eager"
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover transition-opacity duration-300 opacity-100 starting:opacity-0"
                               />
                             </div>
                           ) : (
