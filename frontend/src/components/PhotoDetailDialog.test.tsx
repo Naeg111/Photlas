@@ -2336,4 +2336,33 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
   })
+
+  // ============================================================
+  // Issue#131: アクションボタン群が画面横幅を超えても折り返して表示される
+  // （横スクロールが発生する不具合の修正）
+  // ============================================================
+  describe('Issue#131: アクションボタン群の折り返しレイアウト', () => {
+    it('お気に入りボタンを含むボタン行のコンテナが flex-wrap で折り返し可能になっている', async () => {
+      const photoDetail = createMockPhotoDetail()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      renderPhotoDetailDialog()
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
+      })
+
+      const favoriteButton = screen.getByTestId('favorite-button')
+      const buttonRow = favoriteButton.parentElement
+      expect(buttonRow).not.toBeNull()
+      // 横幅オーバー時に折り返すよう Tailwind の flex-wrap が付与されている
+      expect(buttonRow!.className).toMatch(/\bflex-wrap\b/)
+    })
+  })
 })
