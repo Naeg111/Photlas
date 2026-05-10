@@ -106,6 +106,18 @@ def should_process(s3_key: str) -> bool:
     return s3_key.startswith(UPLOADS_PREFIX)
 
 
+def calculate_user_specified_crop_box(
+    width: int, height: int, cx: float, cy: float, zoom: float
+) -> tuple[float, float, float, float]:
+    """Issue#131 (Red 段階の空シグネチャ): 後続コミットで実装する。"""
+    raise NotImplementedError("Issue#131 で実装される")
+
+
+def parse_crop_metadata(metadata: dict) -> tuple[float, float, float] | None:
+    """Issue#131 (Red 段階の空シグネチャ): 後続コミットで実装する。"""
+    raise NotImplementedError("Issue#131 で実装される")
+
+
 def center_crop_and_resize(image: Image.Image) -> Image.Image:
     """画像を中央正方形クロップし、800x800にリサイズしてアンシャープマスクをかける。
 
