@@ -50,6 +50,11 @@ const PHOTO_PAGE_PRELOAD_THRESHOLD = 5
 // Issue#122: 写真詳細ダイアログで現在表示中の写真の前後 radius 枚を先読みする
 const PHOTO_PREFETCH_RADIUS = 2
 
+// Issue#122 Cycle2: 写真切り替え時の cross-fade 用 Tailwind v4 クラス
+// `key={photoId}` と組み合わせて使うことで、新しい <img> がマウントされた瞬間に
+// `@starting-style` 相当の `starting:opacity-0` から `opacity-100` へ滑らかに遷移する
+const PHOTO_CROSS_FADE_CLASSES = 'transition-opacity duration-300 opacity-100 starting:opacity-0'
+
 // Test IDs
 const TEST_ID_DIALOG = 'photo-detail-dialog'
 const TEST_ID_LOADING = 'loading-spinner'
@@ -1071,14 +1076,13 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                                   以前 objectPosition / transform: scale でクロップを再現していた
                                   ロジックは撤去。サムネイルをそのまま正方形枠に表示する。 */}
                               {/* Issue#122 Cycle2: key={photoId} で写真切り替え時に再マウントを発生させ、
-                                  Tailwind v4 の @starting-style 相当（starting:opacity-0）で
-                                  フェードインさせる。スピナー → 画像差し替えの瞬間がそっけない問題を緩和。 */}
+                                  PHOTO_CROSS_FADE_CLASSES でフェードインさせる。 */}
                               <ProtectedImage
                                 key={photo.photoId}
                                 src={photo.thumbnailUrl}
                                 alt="画像"
                                 loading="eager"
-                                className="w-full h-full object-cover transition-opacity duration-300 opacity-100 starting:opacity-0"
+                                className={`w-full h-full object-cover ${PHOTO_CROSS_FADE_CLASSES}`}
                               />
                             </div>
                           ) : (
