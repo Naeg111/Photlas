@@ -103,6 +103,26 @@ public class S3Service {
     }
 
     /**
+     * Issue#131 (Red 段階のスタブ): crop 情報付きの presigned URL 生成オーバーロード。
+     * 後続コミットで実装する。
+     */
+    public UploadUrlResult generatePresignedUploadUrl(
+            String folder, Long userId, String extension, String contentType,
+            Double cropCenterX, Double cropCenterY, Double cropZoom) {
+        throw new UnsupportedOperationException("Issue#131 で実装される");
+    }
+
+    /**
+     * Issue#131 (Red 段階のスタブ): PutObjectRequest を組み立てる純粋関数。
+     * 後続コミットで実装する。
+     */
+    PutObjectRequest buildPutObjectRequestForUpload(
+            String objectKey, String contentType,
+            Double cropCenterX, Double cropCenterY, Double cropZoom) {
+        throw new UnsupportedOperationException("Issue#131 で実装される");
+    }
+
+    /**
      * S3オブジェクトキーからCDN URLを生成する
      *
      * @param s3ObjectKey S3オブジェクトキー

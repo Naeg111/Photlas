@@ -2,11 +2,13 @@ package com.photlas.backend.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -91,6 +93,136 @@ class S3ServiceTest {
             assertThat(signedHeadersValue.split(";"))
                     .as("SignedHeaders に cache-control が含まれること: actual=%s", signedHeadersValue)
                     .contains("cache-control");
+        } finally {
+            restoreSystemProperty("aws.accessKeyId", prevAk);
+            restoreSystemProperty("aws.secretAccessKey", prevSk);
+        }
+    }
+
+    // ============================================================
+    // Issue#131: presigned URL に crop メタデータを含めるテスト
+    // ============================================================
+
+    @Test
+    @DisplayName("Issue#131 - buildPutObjectRequestForUpload に crop 情報を渡すと metadata に crop-center-x/y, crop-zoom が含まれ、%.4f でフォーマットされる")
+    void buildPutObjectRequestIncludesCropMetadata() {
+        S3Service s3Service = new S3Service();
+        setField(s3Service, "bucketName", "test-bucket");
+
+        PutObjectRequest request = s3Service.buildPutObjectRequestForUpload(
+                "uploads/1/abc.jpg", "image/jpeg", 0.3, 0.7, 2.0);
+
+        Map<String, String> metadata = request.metadata();
+        assertThat(metadata).containsEntry("crop-center-x", "0.3000");
+        assertThat(metadata).containsEntry("crop-center-y", "0.7000");
+        assertThat(metadata).containsEntry("crop-zoom", "2.0000");
+    }
+
+    @Test
+    @DisplayName("Issue#131 - crop 情報が null なら metadata に crop-* キーが含まれない（avatars 経路の互換）")
+    void buildPutObjectRequestWithoutCropDoesNotIncludeMetadata() {
+        S3Service s3Service = new S3Service();
+        setField(s3Service, "bucketName", "test-bucket");
+
+        PutObjectRequest request = s3Service.buildPutObjectRequestForUpload(
+                "avatars/1/abc.jpg", "image/jpeg", null, null, null);
+
+        Map<String, String> metadata = request.metadata();
+        assertThat(metadata).doesNotContainKey("crop-center-x");
+        assertThat(metadata).doesNotContainKey("crop-center-y");
+        assertThat(metadata).doesNotContainKey("crop-zoom");
+    }
+
+    @Test
+    @DisplayName("Issue#131 - cropCenterX が値域外 (1.5) なら 1.0 にクランプして metadata に入る")
+    void buildPutObjectRequestClampsCropCenterX() {
+        S3Service s3Service = new S3Service();
+        setField(s3Service, "bucketName", "test-bucket");
+
+        PutObjectRequest request = s3Service.buildPutObjectRequestForUpload(
+                "uploads/1/abc.jpg", "image/jpeg", 1.5, 0.5, 2.0);
+
+        Map<String, String> metadata = request.metadata();
+        assertThat(metadata).containsEntry("crop-center-x", "1.0000");
+    }
+
+    @Test
+    @DisplayName("Issue#131 - cropZoom が値域外 (5.0) なら 3.0 にクランプして metadata に入る")
+    void buildPutObjectRequestClampsCropZoom() {
+        S3Service s3Service = new S3Service();
+        setField(s3Service, "bucketName", "test-bucket");
+
+        PutObjectRequest request = s3Service.buildPutObjectRequestForUpload(
+                "uploads/1/abc.jpg", "image/jpeg", 0.5, 0.5, 5.0);
+
+        Map<String, String> metadata = request.metadata();
+        assertThat(metadata).containsEntry("crop-zoom", "3.0000");
+    }
+
+    @Test
+    @DisplayName("Issue#131 - generatePresignedUploadUrl の crop 情報付きオーバーロードで SignedHeaders に x-amz-meta-crop-* が含まれる")
+    void presignedUrlWithCropIncludesMetadataInSignedHeaders() throws Exception {
+        String prevAk = System.getProperty("aws.accessKeyId");
+        String prevSk = System.getProperty("aws.secretAccessKey");
+        System.setProperty("aws.accessKeyId", "test-access-key-id");
+        System.setProperty("aws.secretAccessKey", "test-secret-access-key");
+        try {
+            S3Service s3Service = new S3Service();
+            setField(s3Service, "bucketName", "test-bucket");
+            setField(s3Service, "region", "ap-northeast-1");
+
+            S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(
+                    "uploads", 1L, "jpg", "image/jpeg", 0.3, 0.7, 2.0);
+
+            URI uri = URI.create(result.getUploadUrl());
+            String rawQuery = uri.getRawQuery();
+            assertThat(rawQuery).isNotNull();
+
+            String signedHeadersValue = Arrays.stream(rawQuery.split("&"))
+                    .filter(p -> p.startsWith("X-Amz-SignedHeaders="))
+                    .map(p -> URLDecoder.decode(p.substring("X-Amz-SignedHeaders=".length()),
+                            StandardCharsets.UTF_8))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("X-Amz-SignedHeaders がクエリに存在しない: " + rawQuery));
+
+            assertThat(signedHeadersValue.split(";"))
+                    .as("SignedHeaders に x-amz-meta-crop-* が含まれること: actual=%s", signedHeadersValue)
+                    .contains("x-amz-meta-crop-center-x", "x-amz-meta-crop-center-y", "x-amz-meta-crop-zoom");
+        } finally {
+            restoreSystemProperty("aws.accessKeyId", prevAk);
+            restoreSystemProperty("aws.secretAccessKey", prevSk);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#131 - 既存 generatePresignedUploadUrl (crop 情報なし) の SignedHeaders に x-amz-meta-* が含まれない（avatars 経路の回帰）")
+    void presignedUrlWithoutCropDoesNotIncludeCropMetadataInSignedHeaders() throws Exception {
+        String prevAk = System.getProperty("aws.accessKeyId");
+        String prevSk = System.getProperty("aws.secretAccessKey");
+        System.setProperty("aws.accessKeyId", "test-access-key-id");
+        System.setProperty("aws.secretAccessKey", "test-secret-access-key");
+        try {
+            S3Service s3Service = new S3Service();
+            setField(s3Service, "bucketName", "test-bucket");
+            setField(s3Service, "region", "ap-northeast-1");
+
+            S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(
+                    "avatars", 1L, "jpg", "image/jpeg");
+
+            URI uri = URI.create(result.getUploadUrl());
+            String rawQuery = uri.getRawQuery();
+            assertThat(rawQuery).isNotNull();
+
+            String signedHeadersValue = Arrays.stream(rawQuery.split("&"))
+                    .filter(p -> p.startsWith("X-Amz-SignedHeaders="))
+                    .map(p -> URLDecoder.decode(p.substring("X-Amz-SignedHeaders=".length()),
+                            StandardCharsets.UTF_8))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("X-Amz-SignedHeaders がクエリに存在しない: " + rawQuery));
+
+            assertThat(signedHeadersValue)
+                    .as("avatars 経路は x-amz-meta-crop-* を含まない: actual=%s", signedHeadersValue)
+                    .doesNotContain("x-amz-meta-crop");
         } finally {
             restoreSystemProperty("aws.accessKeyId", prevAk);
             restoreSystemProperty("aws.secretAccessKey", prevSk);
