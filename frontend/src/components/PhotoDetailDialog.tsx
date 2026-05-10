@@ -294,6 +294,18 @@ async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
 }
 
 /**
+ * Issue#122: thumbnail 画像をブラウザキャッシュへ先読みする。
+ * `new Image()` で Image オブジェクトを生成し src を代入することで、
+ * 実際に <img> 要素が DOM にマウントされる前にネットワークフェッチを開始させ、
+ * スライド切り替え時の表示遅延を解消する。url が空の場合は何もしない。
+ */
+function preloadThumbnail(thumbnailUrl: string | null | undefined): void {
+  if (!thumbnailUrl) return
+  const img = new Image()
+  img.src = thumbnailUrl
+}
+
+/**
  * 撮影地点ミニマップコンポーネント
  * Issue#45: 写真詳細ダイアログ内に撮影地点を表示する静的地図
  */
@@ -523,11 +535,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           setPhotoDetails(new Map().set(singlePhotoId, detail))
           setDisplayedPhoto(detail)
           setCurrentIndex(0)
-          // Issue#122: thumbnail をブラウザキャッシュへ先読み
-          if (detail.thumbnailUrl) {
-            const img = new Image()
-            img.src = detail.thumbnailUrl
-          }
+          preloadThumbnail(detail.thumbnailUrl)
           setLoading(false)
           return
         }
@@ -542,11 +550,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           const detail = await fetchPhotoDetailById(page.ids[0])
           setPhotoDetails(new Map().set(page.ids[0], detail))
           setDisplayedPhoto(detail)
-          // Issue#122: thumbnail をブラウザキャッシュへ先読み
-          if (detail.thumbnailUrl) {
-            const img = new Image()
-            img.src = detail.thumbnailUrl
-          }
+          preloadThumbnail(detail.thumbnailUrl)
         }
 
         setLoading(false)
@@ -574,10 +578,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       // useEffect 側で post-hoc に preload しようとすると、fetch が非同期のため
       // 最初の通過では photoDetailsRef がまだ空で空振りする。fetch 成功時に
       // 必ずキャッシュ投入することで、後続のスライド切り替え時の即時表示を保証する。
-      if (detail.thumbnailUrl) {
-        const img = new Image()
-        img.src = detail.thumbnailUrl
-      }
+      preloadThumbnail(detail.thumbnailUrl)
     } catch (e) {
       // 429 のみトースト通知。それ以外のエラーは無視（ダイアログ全体をエラーにしない）
       notifyIfRateLimited(e, t)
