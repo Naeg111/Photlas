@@ -341,6 +341,21 @@ def post_lqip_to_backend(s3_object_key: str, lqip_data_url: str) -> bool:
     return False
 
 
+def process_lqip_callback(image: Image.Image, s3_object_key: str) -> None:
+    """Issue#125: LQIP 生成 + バックエンドコールバックを 1 関数にまとめる。
+
+    例外は内部で吸収する（ログ出力のみ）。サムネ生成の主流から呼んでも
+    Lambda 全体の成功・失敗には影響しない。
+    """
+    try:
+        lqip_bytes = generate_lqip(image)
+        lqip_b64 = base64.b64encode(lqip_bytes).decode("ascii")
+        lqip_data_url = f"data:image/webp;base64,{lqip_b64}"
+        post_lqip_to_backend(s3_object_key, lqip_data_url)
+    except Exception as e:
+        logger.warning("LQIP processing failed (non-fatal): %s", str(e))
+
+
 def lambda_handler(event, context):
     """Lambda関数ハンドラー。
 
@@ -408,13 +423,7 @@ def lambda_handler(event, context):
             # Issue#125: LQIP 生成 + バックエンド内部 API へのコールバック。
             # サムネ書き込み成功後に行い、コールバック失敗は致命的にしない
             # （LQIP 無しでもフロントは従来挙動にフォールバックするため）。
-            try:
-                lqip_bytes = generate_lqip(image)
-                lqip_b64 = base64.b64encode(lqip_bytes).decode("ascii")
-                lqip_data_url = f"data:image/webp;base64,{lqip_b64}"
-                post_lqip_to_backend(key, lqip_data_url)
-            except Exception as e:
-                logger.warning("LQIP generation failed (non-fatal): %s", str(e))
+            process_lqip_callback(image, key)
 
             # Issue#100: 二重チェック - 書き込み中にメタデータ登録が完了して
             # 元画像のタグが registered に変わっていた場合、サムネイルのタグも追従
