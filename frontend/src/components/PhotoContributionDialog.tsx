@@ -681,6 +681,10 @@ export function PhotoContributionDialog({
                         crop={crop}
                         zoom={cropZoom}
                         aspect={1}
+                        // Issue#131 Cycle2: 画像が常にコンテナを覆うように cover 指定。
+                        // 既定の contain だとモバイルで画像が縮小表示され、
+                        // クロップ枠線が画像の外側に来て視認できなくなる
+                        objectFit="cover"
                         showGrid
                         onCropChange={setCrop}
                         onZoomChange={setCropZoom}

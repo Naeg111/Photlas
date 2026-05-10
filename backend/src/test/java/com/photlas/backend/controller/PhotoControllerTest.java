@@ -33,6 +33,7 @@ import java.util.List;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -254,6 +255,20 @@ public class PhotoControllerTest {
      * S3サービスのモックをセットアップするヘルパーメソッド
      */
     private void setupS3ServiceMock() {
+        // Issue#131: PhotoController が呼ぶ 7 引数オーバーロード（crop 情報込み）に対応。
+        // crop 引数は nullable で受け、avatars 経路のような null 呼び出しもマッチする。
+        when(s3Service.generatePresignedUploadUrl(
+                anyString(), anyLong(), anyString(), anyString(),
+                nullable(Double.class), nullable(Double.class), nullable(Double.class)))
+                .thenAnswer(invocation -> {
+                    String folder = invocation.getArgument(0);
+                    Long userId = invocation.getArgument(1);
+                    String extension = invocation.getArgument(2);
+                    String objectKey = String.format("%s/%d/test-uuid.%s", folder, userId, extension);
+                    String uploadUrl = S3_PRESIGNED_URL_BASE + objectKey + S3_PRESIGNED_URL_SUFFIX;
+                    return new S3Service.UploadUrlResult(uploadUrl, objectKey);
+                });
+        // 既存の 4 引数オーバーロード（avatar 経路など）も同じ動作にしておく
         when(s3Service.generatePresignedUploadUrl(anyString(), anyLong(), anyString(), anyString()))
                 .thenAnswer(invocation -> {
                     String folder = invocation.getArgument(0);

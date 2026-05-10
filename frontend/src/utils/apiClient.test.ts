@@ -150,3 +150,51 @@ describe('Issue#100 - S3 タグベース孤立ファイル対応', () => {
     })
   })
 })
+
+describe('Issue#131 - uploadFileToS3 で crop メタデータを送信', () => {
+  let originalFetch: typeof globalThis.fetch
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch
+    fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 })
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  it('crop 引数を渡すと、x-amz-meta-crop-center-x/y, x-amz-meta-crop-zoom が %.4f で送信される', async () => {
+    const blob = new Blob(['test'], { type: 'image/jpeg' })
+
+    await uploadFileToS3('https://example.com/upload', blob, {
+      cropCenterX: 0.3,
+      cropCenterY: 0.7,
+      cropZoom: 2.0,
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const callArgs = fetchMock.mock.calls[0]
+    const init = callArgs[1] as RequestInit
+    const headers = init.headers as Record<string, string>
+
+    expect(headers['x-amz-meta-crop-center-x']).toBe('0.3000')
+    expect(headers['x-amz-meta-crop-center-y']).toBe('0.7000')
+    expect(headers['x-amz-meta-crop-zoom']).toBe('2.0000')
+  })
+
+  it('crop 引数を渡さない（avatar 経路）と、x-amz-meta-crop-* ヘッダは含まれない', async () => {
+    const blob = new Blob(['test'], { type: 'image/jpeg' })
+
+    await uploadFileToS3('https://example.com/upload', blob)
+
+    const callArgs = fetchMock.mock.calls[0]
+    const init = callArgs[1] as RequestInit
+    const headers = init.headers as Record<string, string>
+
+    expect(headers['x-amz-meta-crop-center-x']).toBeUndefined()
+    expect(headers['x-amz-meta-crop-center-y']).toBeUndefined()
+    expect(headers['x-amz-meta-crop-zoom']).toBeUndefined()
+  })
+})

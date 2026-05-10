@@ -93,11 +93,15 @@ public class PhotoController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
+        // Issue#131: crop 情報がリクエストにあれば S3 metadata 経由で Lambda に渡す
         S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(
                 "uploads",
                 user.getId(),
                 request.getExtension(),
-                request.getContentType()
+                request.getContentType(),
+                request.getCropCenterX(),
+                request.getCropCenterY(),
+                request.getCropZoom()
         );
 
         UploadUrlResponse response = new UploadUrlResponse(result.getUploadUrl(), result.getObjectKey());

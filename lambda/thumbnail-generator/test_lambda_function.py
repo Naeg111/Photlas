@@ -20,6 +20,8 @@ from lambda_function import (
     UNSHARP_MASK_RADIUS,
     UNSHARP_MASK_PERCENT,
     UNSHARP_MASK_THRESHOLD,
+    calculate_user_specified_crop_box,
+    parse_crop_metadata,
 )
 
 TEST_BUCKET = "photlas-uploads-test"
@@ -442,3 +444,224 @@ class TestIssue123FileSizeLimit:
             f"サムネイルは {self.MAX_THUMBNAIL_BYTES} バイト以下であるべきですが、"
             f"{size_bytes} バイトでした"
         )
+
+
+class TestIssue131CalculateCropBox:
+    """Issue#131 - calculate_user_specified_crop_box 純粋関数のテスト。
+
+    cx, cy: 0.0〜1.0 の正規化座標（画像の中心位置）
+    zoom:   1.0〜3.0（ユーザーが指定したズーム倍率）
+    戻り値: (left, top, right, bottom) のタプル
+    """
+
+    def test_center_zoom_one_landscape(self):
+        """横長画像で cx=0.5, cy=0.5, zoom=1.0 のとき、画像短辺の正方形が中央に来る。"""
+        # width=1600, height=1200 → short_side=1200, side=1200
+        # center=(800, 600), box=(200, 0, 1400, 1200)
+        box = calculate_user_specified_crop_box(1600, 1200, 0.5, 0.5, 1.0)
+        assert box == (200.0, 0.0, 1400.0, 1200.0)
+
+    def test_center_zoom_one_portrait(self):
+        """縦長画像で cx=0.5, cy=0.5, zoom=1.0 のとき、画像短辺の正方形が中央に来る。"""
+        # width=1200, height=1600 → short_side=1200, side=1200
+        # center=(600, 800), box=(0, 200, 1200, 1400)
+        box = calculate_user_specified_crop_box(1200, 1600, 0.5, 0.5, 1.0)
+        assert box == (0.0, 200.0, 1200.0, 1400.0)
+
+    def test_off_center_zoom_two(self):
+        """cx=0.3, cy=0.7, zoom=2.0 のとき、短辺/2 のサイズで指定位置を中心にクロップされる。"""
+        # width=1600, height=1200 → short_side=1200, side=600
+        # center=(480, 840), box=(180, 540, 780, 1140)
+        box = calculate_user_specified_crop_box(1600, 1200, 0.3, 0.7, 2.0)
+        assert box == (180.0, 540.0, 780.0, 1140.0)
+
+    def test_clamp_when_center_near_left_edge(self):
+        """cx が画像左端に寄っているとき、left が負にならず 0 にクランプされる。"""
+        # width=1600, height=1200 → short_side=1200, side=1200
+        # cx=0.0 にすると本来 left = -600 になるが、0 に補正される
+        box = calculate_user_specified_crop_box(1600, 1200, 0.0, 0.5, 1.0)
+        left, top, right, bottom = box
+        assert left == 0.0
+        assert right == 1200.0
+        assert top == 0.0
+        assert bottom == 1200.0
+
+    def test_clamp_when_center_near_right_edge(self):
+        """cx が画像右端に寄っているとき、right が画像幅を超えず width にクランプされる。"""
+        box = calculate_user_specified_crop_box(1600, 1200, 1.0, 0.5, 1.0)
+        left, top, right, bottom = box
+        assert right == 1600.0
+        assert left == 400.0  # right - side
+        assert top == 0.0
+        assert bottom == 1200.0
+
+    def test_high_zoom_results_in_smaller_box(self):
+        """zoom=3.0 のときクロップ範囲は短辺/3 になる。"""
+        # width=1600, height=1200 → short_side=1200, side=400
+        box = calculate_user_specified_crop_box(1600, 1200, 0.5, 0.5, 3.0)
+        left, top, right, bottom = box
+        assert (right - left) == 400.0
+        assert (bottom - top) == 400.0
+
+
+class TestIssue131ParseCropMetadata:
+    """Issue#131 - parse_crop_metadata のテスト。
+
+    S3 Metadata（小文字キーの dict）から (cx, cy, zoom) を取り出す純粋関数。
+    crop 情報が無い・不正な場合は None を返す（呼び出し側でフォールバック判定する）。
+    """
+
+    def test_valid_metadata(self):
+        """3 つの値が全て揃っていて値域内なら (cx, cy, zoom) を返す。"""
+        metadata = {
+            "crop-center-x": "0.3000",
+            "crop-center-y": "0.7000",
+            "crop-zoom": "2.0000",
+        }
+        result = parse_crop_metadata(metadata)
+        assert result == (0.3, 0.7, 2.0)
+
+    def test_empty_metadata_returns_none(self):
+        """メタデータが空なら None。"""
+        assert parse_crop_metadata({}) is None
+
+    def test_missing_one_key_returns_none(self):
+        """3 つのキーのうち 1 つでも欠けていたら None。"""
+        metadata = {
+            "crop-center-x": "0.3000",
+            "crop-center-y": "0.7000",
+            # crop-zoom が欠けている
+        }
+        assert parse_crop_metadata(metadata) is None
+
+    def test_unparseable_value_returns_none(self):
+        """値が float() でパースできないとき None。"""
+        metadata = {
+            "crop-center-x": "abc",
+            "crop-center-y": "0.7",
+            "crop-zoom": "2.0",
+        }
+        assert parse_crop_metadata(metadata) is None
+
+    def test_out_of_range_cx_returns_none(self):
+        """cx が 0.0〜1.0 の範囲外なら None。"""
+        metadata = {
+            "crop-center-x": "1.5",  # 範囲外
+            "crop-center-y": "0.5",
+            "crop-zoom": "1.0",
+        }
+        assert parse_crop_metadata(metadata) is None
+
+    def test_out_of_range_zoom_returns_none(self):
+        """zoom が 1.0〜3.0 の範囲外なら None。"""
+        metadata = {
+            "crop-center-x": "0.5",
+            "crop-center-y": "0.5",
+            "crop-zoom": "0.5",  # 範囲外（1.0 未満）
+        }
+        assert parse_crop_metadata(metadata) is None
+
+
+class TestIssue131UserSpecifiedCropFromMetadata:
+    """Issue#131 - lambda_handler が S3 Metadata からクロップ範囲を読んで適用するテスト。"""
+
+    @patch("lambda_function.s3_client")
+    def test_metadata_is_used_for_user_specified_crop(self, mock_s3):
+        """get_object のレスポンス Metadata に crop 情報があれば、その範囲でクロップされる。"""
+        # 左半分が赤、右半分が青の画像を作る
+        img = Image.new("RGB", (1600, 1200))
+        for x in range(800):
+            for y in range(1200):
+                img.putpixel((x, y), (255, 0, 0))  # 左半分: 赤
+        for x in range(800, 1600):
+            for y in range(1200):
+                img.putpixel((x, y), (0, 0, 255))  # 右半分: 青
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG")
+        jpeg_bytes = buf.getvalue()
+
+        # cx=0.25 (左寄り), cy=0.5, zoom=2.0 → 左寄りの 600x600 領域
+        # → 結果はほぼ赤くなる（青はほぼ含まれない）
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes)),
+            "Metadata": {
+                "crop-center-x": "0.25",
+                "crop-center-y": "0.5",
+                "crop-zoom": "2.0",
+            },
+        }
+        mock_s3.get_object_tagging.return_value = {
+            "TagSet": [{"Key": "status", "Value": "pending"}]
+        }
+        captured = {}
+
+        def capture_put(**kwargs):
+            captured["data"] = kwargs["Body"]
+            return {}
+
+        mock_s3.put_object.side_effect = capture_put
+
+        lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
+
+        result_img = Image.open(io.BytesIO(captured["data"]))
+        # サムネイル中央のピクセルを取って、赤系であることを確認
+        center_pixel = result_img.getpixel((400, 400))
+        # JPEG 圧縮の影響でぴったり (255,0,0) ではないが、R 成分が B 成分よりずっと大きいはず
+        r, _g, b = center_pixel[:3]
+        assert r > 150 and b < 80, (
+            f"左寄りクロップなので赤が支配的のはずですが、ピクセル値 {center_pixel}"
+        )
+
+    @patch("lambda_function.s3_client")
+    def test_no_metadata_falls_back_to_center_crop(self, mock_s3):
+        """Metadata に crop 情報が無い場合は中央クロップにフォールバック（既存挙動）。"""
+        jpeg_bytes = create_test_image(1600, 1200)
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes)),
+            "Metadata": {},
+        }
+        mock_s3.get_object_tagging.return_value = {
+            "TagSet": [{"Key": "status", "Value": "pending"}]
+        }
+        captured = {}
+
+        def capture_put(**kwargs):
+            captured["data"] = kwargs["Body"]
+            return {}
+
+        mock_s3.put_object.side_effect = capture_put
+
+        lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
+
+        result_img = Image.open(io.BytesIO(captured["data"]))
+        # 800x800 のサムネイルが生成される（既存挙動）
+        assert result_img.size == (800, 800)
+
+    @patch("lambda_function.s3_client")
+    def test_invalid_metadata_falls_back_to_center_crop(self, mock_s3):
+        """Metadata の値がパースできないとき中央クロップにフォールバック。"""
+        jpeg_bytes = create_test_image(1600, 1200)
+        mock_s3.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=jpeg_bytes)),
+            "Metadata": {
+                "crop-center-x": "abc",
+                "crop-center-y": "0.5",
+                "crop-zoom": "2.0",
+            },
+        }
+        mock_s3.get_object_tagging.return_value = {
+            "TagSet": [{"Key": "status", "Value": "pending"}]
+        }
+        captured = {}
+
+        def capture_put(**kwargs):
+            captured["data"] = kwargs["Body"]
+            return {}
+
+        mock_s3.put_object.side_effect = capture_put
+
+        lambda_handler(create_s3_event("uploads/1/test.jpg"), None)
+
+        # 中央クロップで通常のサムネイルが生成される
+        result_img = Image.open(io.BytesIO(captured["data"]))
+        assert result_img.size == (800, 800)

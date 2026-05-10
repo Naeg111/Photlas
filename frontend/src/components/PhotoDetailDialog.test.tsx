@@ -1061,7 +1061,11 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('クロップデータがある場合、画像にクロップスタイルが設定される', async () => {
+    // Issue#131: サムネイル自体がユーザー指定範囲で生成されるようになったため、
+    // フロント側で objectPosition / transform で再現する必要がなくなった。
+    // 既存のクロップ CSS 再現テスト2件は、「クロップスタイルが付与されない」
+    // ことを確認するレグレッションテストに置き換える。
+    it('Issue#131 - cropデータが photo に存在しても、画像に objectPosition / transform は付与されない', async () => {
       const photoDetail = createMockApiResponse({
         cropCenterX: 0.3,
         cropCenterY: 0.7,
@@ -1083,13 +1087,15 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       await waitFor(() => {
         const img = screen.getByAltText('画像')
-        expect(img).toHaveStyle({ objectFit: 'cover' })
-        expect(img).toHaveStyle({ objectPosition: '30% 70%' })
-        expect(img).toHaveStyle({ transform: 'scale(1.5)' })
+        // objectPosition と transform はインラインスタイルで設定されないこと
+        // （style 属性に含まれないことを文字列で確認）
+        const styleAttr = img.getAttribute('style') || ''
+        expect(styleAttr).not.toMatch(/object-position\s*:/)
+        expect(styleAttr).not.toMatch(/transform\s*:\s*scale/)
       })
     })
 
-    it('クロップデータがない場合、中央表示のデフォルトスタイルが適用される', async () => {
+    it('Issue#131 - cropデータが photo に無い場合も、画像に objectPosition / transform は付与されない', async () => {
       const photoDetail = createMockApiResponse()
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
@@ -1107,9 +1113,9 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       await waitFor(() => {
         const img = screen.getByAltText('画像')
-        expect(img).toHaveStyle({ objectFit: 'cover' })
-        expect(img).toHaveStyle({ objectPosition: '50% 50%' })
-        expect(img).toHaveStyle({ transform: 'scale(1)' })
+        const styleAttr = img.getAttribute('style') || ''
+        expect(styleAttr).not.toMatch(/object-position\s*:/)
+        expect(styleAttr).not.toMatch(/transform\s*:\s*scale/)
       })
     })
 
@@ -2334,6 +2340,35 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await waitFor(() => {
         expect(screen.queryByTestId('mapbox-map')).not.toBeNull()
       })
+    })
+  })
+
+  // ============================================================
+  // Issue#131: アクションボタン群が画面横幅を超えても折り返して表示される
+  // （横スクロールが発生する不具合の修正）
+  // ============================================================
+  describe('Issue#131: アクションボタン群の折り返しレイアウト', () => {
+    it('お気に入りボタンを含むボタン行のコンテナが flex-wrap で折り返し可能になっている', async () => {
+      const photoDetail = createMockPhotoDetail()
+      const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      renderPhotoDetailDialog()
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorite-button')).toBeInTheDocument()
+      })
+
+      const favoriteButton = screen.getByTestId('favorite-button')
+      const buttonRow = favoriteButton.parentElement
+      expect(buttonRow).not.toBeNull()
+      // 横幅オーバー時に折り返すよう Tailwind の flex-wrap が付与されている
+      expect(buttonRow!.className).toMatch(/\bflex-wrap\b/)
     })
   })
 })

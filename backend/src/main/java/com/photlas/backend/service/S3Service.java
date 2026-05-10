@@ -50,6 +50,16 @@ public class S3Service {
      */
     public static final String S3_CACHE_CONTROL_VALUE = "public, max-age=31536000, immutable";
 
+    // Issue#131: S3 オブジェクトメタデータのキー（"x-amz-meta-" は AWS SDK が自動付与）
+    /**
+     * S3 オブジェクトメタデータのキー（フロントエンド apiClient.ts の
+     * S3_META_HEADER_CROP_CENTER_X / Lambda lambda_function.py の
+     * S3_METADATA_KEY_CROP_CENTER_X と値を揃える。変更時は 3 箇所同時に変える）。
+     */
+    public static final String S3_METADATA_KEY_CROP_CENTER_X = "crop-center-x";
+    public static final String S3_METADATA_KEY_CROP_CENTER_Y = "crop-center-y";
+    public static final String S3_METADATA_KEY_CROP_ZOOM = "crop-zoom";
+
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
@@ -69,6 +79,21 @@ public class S3Service {
      * @return 署名付きURLとオブジェクトキーを含むレスポンス
      */
     public UploadUrlResult generatePresignedUploadUrl(String folder, Long userId, String extension, String contentType) {
+        // crop 情報なしのオーバーロード（avatars 経路など）
+        return generatePresignedUploadUrl(folder, userId, extension, contentType, null, null, null);
+    }
+
+    /**
+     * Issue#131: crop 情報付きの presigned URL 生成。
+     *
+     * crop 情報（cropCenterX, cropCenterY, cropZoom）が渡された場合、S3 オブジェクトの
+     * メタデータとして付与する。Lambda はこのメタデータを読んでユーザー指定範囲で
+     * サムネイルを生成する。
+     * crop が null の場合は既存挙動と同じ（メタデータ付与なし）。
+     */
+    public UploadUrlResult generatePresignedUploadUrl(
+            String folder, Long userId, String extension, String contentType,
+            Double cropCenterX, Double cropCenterY, Double cropZoom) {
         // オブジェクトキーを生成: folder/userId/uuid.extension
         String objectKey = String.format("%s/%d/%s.%s", folder, userId, UUID.randomUUID(), extension);
 
@@ -77,18 +102,8 @@ public class S3Service {
                 .credentialsProvider(DefaultCredentialsProvider.create())
                 .build()) {
 
-            // Issue#100: presigned URL に status=pending タグを付与
-            // フロントエンドはアップロード時に x-amz-tagging: status=pending ヘッダーを送る必要がある
-            // Issue#124: CacheControl を署名対象に含めることで、PUT 後の S3 オブジェクトに
-            // 永続キャッシュ (immutable) を付与する。フロントエンドはアップロード時に
-            // Cache-Control ヘッダを送る必要がある（送らないと SignedHeaders 不一致で 403）。
-            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(objectKey)
-                    .contentType(contentType)
-                    .cacheControl(S3_CACHE_CONTROL_VALUE)
-                    .tagging(STATUS_TAG_KEY + "=" + STATUS_TAG_VALUE_PENDING)
-                    .build();
+            PutObjectRequest putObjectRequest = buildPutObjectRequestForUpload(
+                    objectKey, contentType, cropCenterX, cropCenterY, cropZoom);
 
             PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
                     .signatureDuration(Duration.ofMinutes(PRESIGNED_URL_EXPIRATION_MINUTES))
@@ -100,6 +115,45 @@ public class S3Service {
 
             return new UploadUrlResult(uploadUrl, objectKey);
         }
+    }
+
+    /**
+     * Issue#131: PutObjectRequest を組み立てる純粋関数。
+     *
+     * - 既存タグ (status=pending) と Cache-Control を付与
+     * - crop 情報（cropCenterX/Y/Zoom）が全て非 null の場合、メタデータに含める
+     * - 値域外（cropCenterX/Y は [0, 1]、cropZoom は [1, 3]）の場合はクランプ
+     * - 値は %.4f でフォーマットして文字列化
+     *
+     * 実装本体ではなく署名段階で metadata を含めることで、フロントが PUT 時に
+     * x-amz-meta-* ヘッダを送る前提が成立する（Issue#124 の Cache-Control と同じ仕組み）。
+     */
+    PutObjectRequest buildPutObjectRequestForUpload(
+            String objectKey, String contentType,
+            Double cropCenterX, Double cropCenterY, Double cropZoom) {
+        PutObjectRequest.Builder builder = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(objectKey)
+                .contentType(contentType)
+                .cacheControl(S3_CACHE_CONTROL_VALUE)
+                .tagging(STATUS_TAG_KEY + "=" + STATUS_TAG_VALUE_PENDING);
+
+        if (cropCenterX != null && cropCenterY != null && cropZoom != null) {
+            double cx = clamp(cropCenterX, 0.0, 1.0);
+            double cy = clamp(cropCenterY, 0.0, 1.0);
+            double zoom = clamp(cropZoom, 1.0, 3.0);
+            builder.metadata(java.util.Map.of(
+                    S3_METADATA_KEY_CROP_CENTER_X, String.format("%.4f", cx),
+                    S3_METADATA_KEY_CROP_CENTER_Y, String.format("%.4f", cy),
+                    S3_METADATA_KEY_CROP_ZOOM,     String.format("%.4f", zoom)
+            ));
+        }
+
+        return builder.build();
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(value, max));
     }
 
     /**
