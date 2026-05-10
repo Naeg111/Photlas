@@ -2,11 +2,14 @@
 set -euo pipefail
 
 # Issue#75: サムネイル生成Lambda関数のセットアップスクリプト
+# Issue#125: LQIP（低品質プレースホルダー）コールバック対応で環境変数追加
 #
 # 前提条件:
 #   - AWS CLIが設定済み
 #   - S3バケットが存在する
 #   - python3 と pip が使えること（Pillow/pillow-heif の Linux 用 wheel を取得するため）
+#   - Issue#125 のコールバック先として、photlas-moderation-scanner-* Lambda が
+#     既にデプロイされている（MODERATION_API_KEY を共用するため）
 #
 # 使用方法:
 #   ./scripts/setup-thumbnail-lambda.sh <env>
@@ -30,13 +33,30 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 if [ "$ENV" = "prod" ]; then
     S3_BUCKET="photlas-uploads-prod-${ACCOUNT_ID}"
     FUNCTION_SUFFIX="prod"
+    # Issue#125: LQIP コールバック先（CloudFront 経由・同一オリジン）
+    BACKEND_URL="https://photlas.jp"
 else
     S3_BUCKET="photlas-uploads-test-${ACCOUNT_ID}"
     FUNCTION_SUFFIX="test"
+    BACKEND_URL="https://test.photlas.jp"
 fi
 
 FUNCTION_NAME="photlas-thumbnail-generator-${FUNCTION_SUFFIX}"
 ROLE_NAME="photlas-thumbnail-lambda-role-${FUNCTION_SUFFIX}"
+
+# Issue#125: API キーは既存の moderation scanner Lambda から取り出して共用する。
+# 取得できない場合はプレースホルダにし、ユーザーに手動更新を促す。
+MODERATION_FUNCTION_NAME="photlas-moderation-scanner-${FUNCTION_SUFFIX}"
+MODERATION_API_KEY=$(aws lambda get-function-configuration \
+    --function-name "$MODERATION_FUNCTION_NAME" \
+    --query 'Environment.Variables.MODERATION_API_KEY' \
+    --output text \
+    --region "$REGION" 2>/dev/null || echo "CHANGE_ME")
+if [ "$MODERATION_API_KEY" = "CHANGE_ME" ] || [ "$MODERATION_API_KEY" = "None" ]; then
+    echo "⚠️  既存の ${MODERATION_FUNCTION_NAME} から MODERATION_API_KEY を取得できません。"
+    echo "   後で手動更新が必要です（このスクリプトの末尾の案内を参照）。"
+    MODERATION_API_KEY="CHANGE_ME"
+fi
 
 echo "=== サムネイル生成Lambdaセットアップ (${ENV}) ==="
 echo "S3バケット: ${S3_BUCKET}"
@@ -138,14 +158,25 @@ aws lambda create-function \
     --handler lambda_function.lambda_handler \
     --role "$ROLE_ARN" \
     --zip-file fileb:///tmp/thumbnail-generator.zip \
-    --timeout 30 \
+    --timeout 60 \
     --memory-size 512 \
+    --environment "Variables={BACKEND_URL=${BACKEND_URL},MODERATION_API_KEY=${MODERATION_API_KEY}}" \
     --region "$REGION" \
     2>/dev/null || {
-    echo "関数は既に存在します。コードを更新します。"
+    echo "関数は既に存在します。コードと設定を更新します。"
     aws lambda update-function-code \
         --function-name "$FUNCTION_NAME" \
         --zip-file fileb:///tmp/thumbnail-generator.zip \
+        --region "$REGION"
+    # Issue#125: 既存関数にも環境変数 + timeout 60s を反映する。
+    # update-function-code 完了後に呼ぶ必要があるため、ここでウェイトを入れる。
+    aws lambda wait function-updated \
+        --function-name "$FUNCTION_NAME" \
+        --region "$REGION"
+    aws lambda update-function-configuration \
+        --function-name "$FUNCTION_NAME" \
+        --timeout 60 \
+        --environment "Variables={BACKEND_URL=${BACKEND_URL},MODERATION_API_KEY=${MODERATION_API_KEY}}" \
         --region "$REGION"
 }
 
@@ -160,6 +191,20 @@ aws lambda add-permission \
     2>/dev/null || echo "権限は既に存在します"
 
 echo "=== セットアップ完了 ==="
+echo ""
+echo "Issue#125: 環境変数の設定状況:"
+echo "  BACKEND_URL = ${BACKEND_URL}"
+if [ "$MODERATION_API_KEY" = "CHANGE_ME" ]; then
+    echo "  MODERATION_API_KEY = CHANGE_ME ⚠️  手動更新が必要"
+    echo ""
+    echo "  バックエンドの moderation.api-key と同じ値を設定してください:"
+    echo "    aws lambda update-function-configuration \\"
+    echo "      --function-name ${FUNCTION_NAME} \\"
+    echo "      --environment 'Variables={BACKEND_URL=${BACKEND_URL},MODERATION_API_KEY=<実際のキー>}' \\"
+    echo "      --region ${REGION}"
+else
+    echo "  MODERATION_API_KEY = ✅ 既存 ${MODERATION_FUNCTION_NAME} から取得して設定済み"
+fi
 echo ""
 echo "注意: S3イベント通知を設定するには、以下を実行してください:"
 echo "  ./scripts/setup-s3-notifications.sh ${ENV}"
