@@ -109,24 +109,87 @@ def should_process(s3_key: str) -> bool:
 def calculate_user_specified_crop_box(
     width: int, height: int, cx: float, cy: float, zoom: float
 ) -> tuple[float, float, float, float]:
-    """Issue#131 (Red 段階の空シグネチャ): 後続コミットで実装する。"""
-    raise NotImplementedError("Issue#131 で実装される")
+    """Issue#131: ユーザー指定範囲のクロップ box (left, top, right, bottom) を計算する。
+
+    cx, cy: 0.0〜1.0 の正規化座標（画像内の中心位置）
+    zoom:   1.0〜3.0 のズーム倍率
+    クロップする正方形の一辺は「画像短辺 / zoom」。中心が画像端に近い場合は
+    画像境界からはみ出さないよう左上座標を補正（クランプ）する。
+    """
+    short_side = min(width, height)
+    side = short_side / zoom
+
+    center_x = cx * width
+    center_y = cy * height
+
+    left = center_x - side / 2
+    top = center_y - side / 2
+
+    # 画像境界からはみ出ないようクランプ
+    left = max(0.0, min(left, width - side))
+    top = max(0.0, min(top, height - side))
+
+    return (left, top, left + side, top + side)
+
+
+# Issue#131: ユーザー指定範囲の crop 値域
+CROP_CENTER_MIN = 0.0
+CROP_CENTER_MAX = 1.0
+CROP_ZOOM_MIN = 1.0
+CROP_ZOOM_MAX = 3.0
 
 
 def parse_crop_metadata(metadata: dict) -> tuple[float, float, float] | None:
-    """Issue#131 (Red 段階の空シグネチャ): 後続コミットで実装する。"""
-    raise NotImplementedError("Issue#131 で実装される")
+    """Issue#131: S3 Metadata から (cx, cy, zoom) を取り出す。
+
+    キーが揃っていて、float としてパースでき、値域内の場合のみ tuple を返す。
+    そうでない場合は None を返し、呼び出し側で中央クロップにフォールバックする。
+
+    Lambda が受け取る metadata のキーは小文字に正規化済み:
+    - crop-center-x: 0.0〜1.0 の文字列
+    - crop-center-y: 0.0〜1.0 の文字列
+    - crop-zoom:     1.0〜3.0 の文字列
+    """
+    cx_str = metadata.get("crop-center-x")
+    cy_str = metadata.get("crop-center-y")
+    zoom_str = metadata.get("crop-zoom")
+
+    if cx_str is None or cy_str is None or zoom_str is None:
+        return None
+
+    try:
+        cx = float(cx_str)
+        cy = float(cy_str)
+        zoom = float(zoom_str)
+    except (TypeError, ValueError):
+        return None
+
+    if not (CROP_CENTER_MIN <= cx <= CROP_CENTER_MAX):
+        return None
+    if not (CROP_CENTER_MIN <= cy <= CROP_CENTER_MAX):
+        return None
+    if not (CROP_ZOOM_MIN <= zoom <= CROP_ZOOM_MAX):
+        return None
+
+    return (cx, cy, zoom)
 
 
-def center_crop_and_resize(image: Image.Image) -> Image.Image:
-    """画像を中央正方形クロップし、800x800にリサイズしてアンシャープマスクをかける。
+def center_crop_and_resize(
+    image: Image.Image,
+    crop: tuple[float, float, float] | None = None,
+) -> Image.Image:
+    """画像を正方形クロップし、800x800にリサイズしてアンシャープマスクをかける。
 
     Issue#123: Retina ディスプレイで CSS 200〜400 px の枠でも輪郭がくっきり
     見えるよう、解像度を 400→800 に倍化。リサイズ後はアンシャープマスクで
     エッジ強調する（threshold で平坦部のノイズには手を入れない）。
 
+    Issue#131: crop 引数（cx, cy, zoom）が渡された場合は、ユーザー指定範囲で
+    クロップする。None の場合は従来通り中央クロップにフォールバック。
+
     Args:
         image: 元画像（PIL Image）
+        crop:  ユーザー指定範囲 (cx, cy, zoom) または None（中央クロップ）
 
     Returns:
         800x800にリサイズ + アンシャープマスク適用後の正方形画像
@@ -135,10 +198,15 @@ def center_crop_and_resize(image: Image.Image) -> Image.Image:
         image = image.convert("RGB")
 
     width, height = image.size
-    min_dim = min(width, height)
-    left = (width - min_dim) // 2
-    top = (height - min_dim) // 2
-    image = image.crop((left, top, left + min_dim, top + min_dim))
+    if crop is not None:
+        cx, cy, zoom = crop
+        box = calculate_user_specified_crop_box(width, height, cx, cy, zoom)
+    else:
+        min_dim = min(width, height)
+        left = (width - min_dim) // 2
+        top = (height - min_dim) // 2
+        box = (left, top, left + min_dim, top + min_dim)
+    image = image.crop(box)
 
     image = image.resize(
         (THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE), Image.LANCZOS
@@ -198,8 +266,23 @@ def lambda_handler(event, context):
             response = s3_client.get_object(Bucket=bucket, Key=key)
             image_data = response["Body"].read()
 
+            # Issue#131: ユーザー指定範囲のクロップを S3 Metadata から取得。
+            # 無い・不正な値の場合は中央クロップにフォールバックする。
+            metadata = response.get("Metadata", {})
+            crop = parse_crop_metadata(metadata)
+            if crop is not None:
+                logger.info(
+                    "Using user-specified crop: cx=%.4f, cy=%.4f, zoom=%.4f",
+                    crop[0], crop[1], crop[2],
+                )
+            else:
+                logger.info(
+                    "No valid crop metadata, falling back to center crop "
+                    "(metadata=%s)", metadata,
+                )
+
             image = Image.open(io.BytesIO(image_data))
-            image = center_crop_and_resize(image)
+            image = center_crop_and_resize(image, crop=crop)
 
             output = io.BytesIO()
             image.save(output, format="WEBP", quality=THUMBNAIL_QUALITY)
