@@ -1036,9 +1036,6 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       // 仮想化: 現在の前後1枚のみ画像コンテンツをレンダリング
                       const isNearCurrent = Math.abs(index - currentIndex) <= 1
                       const photo = isNearCurrent ? photoDetails.get(photoId) : null
-                      const cx = photo?.cropCenterX ?? 0.5
-                      const cy = photo?.cropCenterY ?? 0.5
-                      const zoom = photo?.cropZoom ?? 1
                       return (
                         <div key={photoId} className="flex-[0_0_100%] min-w-0 flex items-center justify-center">
                           {photo ? (
@@ -1054,17 +1051,14 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                                 }
                               }}
                             >
+                              {/* Issue#131: サムネイル自体がユーザー指定範囲で生成されるため、
+                                  以前 objectPosition / transform: scale でクロップを再現していた
+                                  ロジックは撤去。サムネイルをそのまま正方形枠に表示する。 */}
                               <ProtectedImage
                                 src={photo.thumbnailUrl}
                                 alt="画像"
                                 loading="eager"
-                                className="w-full h-full"
-                                style={{
-                                  objectFit: 'cover',
-                                  objectPosition: `${cx * 100}% ${cy * 100}%`,
-                                  transform: `scale(${zoom})`,
-                                  transformOrigin: `${cx * 100}% ${cy * 100}%`,
-                                }}
+                                className="w-full h-full object-cover"
                               />
                             </div>
                           ) : (
