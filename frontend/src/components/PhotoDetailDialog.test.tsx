@@ -502,43 +502,53 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(fetchedIds.has(105)).toBe(false) // 範囲外
       })
 
-      it('fetchPhotoDetail 成功時、取得した写真の thumbnail URL が new Image() で preload される', async () => {
+      it('取得した写真の thumbnail URL が new Image() で preload される（current は GET 経由、prefetch はバッチ経由）', async () => {
+        // Cycle3 でバッチエンドポイント導入後に対応するため、URL/method aware mock を使う
         const ids = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
-        const detail1 = createMockPhotoDetail({
+        const detailMap = new Map<number, ReturnType<typeof createMockPhotoDetail>>()
+        detailMap.set(TEST_PHOTO_ID_1, createMockPhotoDetail({
           photoId: TEST_PHOTO_ID_1,
-          imageUrls: {
-            thumbnail: 'https://example.com/issue122-thumb-1.jpg',
-            standard: TEST_STANDARD_URL,
-          },
+          imageUrls: { thumbnail: 'https://example.com/issue122-thumb-1.jpg', standard: TEST_STANDARD_URL },
           user: { userId: TEST_USER_ID, username: TEST_USERNAME },
           spot: { spotId: TEST_SPOT_ID },
-        })
-        const detail2 = createMockPhotoDetail({
+        }))
+        detailMap.set(TEST_PHOTO_ID_2, createMockPhotoDetail({
           photoId: TEST_PHOTO_ID_2,
-          imageUrls: {
-            thumbnail: 'https://example.com/issue122-thumb-2.jpg',
-            standard: 'https://example.com/issue122-std-2.jpg',
-          },
+          imageUrls: { thumbnail: 'https://example.com/issue122-thumb-2.jpg', standard: 'https://example.com/issue122-std-2.jpg' },
           user: { userId: TEST_USER_ID, username: TEST_USERNAME },
           spot: { spotId: TEST_SPOT_ID },
+        }))
+
+        const mockFetch = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+          if (typeof url === 'string' && url.includes('/api/v1/spots/photos')) {
+            return Promise.resolve({ ok: true, json: async () => ({ ids, total: 2 }) })
+          }
+          if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
+            const body = JSON.parse(String(options.body ?? '{}'))
+            const reqIds = body.photoIds as number[]
+            return Promise.resolve({ ok: true, json: async () => reqIds.map(id => detailMap.get(id)).filter(Boolean) })
+          }
+          if (typeof url === 'string') {
+            const m = url.match(/\/api\/v1\/photos\/(\d+)(?:\?|$)/)
+            if (m) {
+              const detail = detailMap.get(Number(m[1]))
+              if (detail) return Promise.resolve({ ok: true, json: async () => detail })
+            }
+          }
+          return Promise.resolve({ ok: true, json: async () => ({}) })
         })
-        const mockFetch = setupMockFetch(ids, [detail1, detail2])
 
         // new Image() の src セッターを spy する
         const setSrcSpy = vi.fn()
-        const OriginalImage = globalThis.Image
-        class SpyImage {
-          private _src = ''
-          set src(value: string) {
-            this._src = value
-            setSrcSpy(value)
-          }
-          get src() {
-            return this._src
-          }
-        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(globalThis as any).Image = SpyImage
+        function SpyImage(this: any) {
+          Object.defineProperty(this, 'src', {
+            configurable: true,
+            set(value: string) { setSrcSpy(value) },
+            get() { return '' },
+          })
+        }
+        vi.stubGlobal('Image', SpyImage)
 
         try {
           const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
@@ -551,8 +561,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
             expect(calledUrls).toContain('https://example.com/issue122-thumb-2.jpg')
           })
         } finally {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ;(globalThis as any).Image = OriginalImage
+          vi.unstubAllGlobals()
         }
       })
     })

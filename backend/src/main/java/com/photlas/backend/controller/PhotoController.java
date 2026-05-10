@@ -87,8 +87,9 @@ public class PhotoController {
             @Valid @RequestBody PhotoBatchRequest request,
             Authentication authentication
     ) {
-        // Issue#122 Cycle3 (Red): スタブ。Green 段階で実装する
-        throw new UnsupportedOperationException("Issue#122 Cycle3 - batch endpoint not yet implemented");
+        String email = authentication != null ? authentication.getName() : null;
+        List<PhotoDetailResponse> response = photoService.getPhotoDetailsBatch(request.getPhotoIds(), email);
+        return ResponseEntity.ok(response);
     }
 
     /**

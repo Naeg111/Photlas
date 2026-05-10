@@ -299,6 +299,32 @@ async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
 }
 
 /**
+ * Issue#122 Cycle3: 複数の photoId をまとめて取得するバッチエンドポイントを呼ぶ。
+ * 認可されていない写真はサーバ側で silent skip され、認可された写真だけが返る
+ * （順序は保証されないので呼び出し側で photoId を見て対応付ける）。
+ */
+async function fetchPhotoDetailsBatchApi(photoIds: number[]): Promise<PhotoDetail[]> {
+  const response = await fetch(`${API_PHOTOS}/batch`, {
+    method: 'POST',
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ photoIds }),
+  })
+
+  if (!response.ok) {
+    if (response.status === 429) {
+      throw buildRateLimitApiError(response, ERROR_FETCH_DETAIL)
+    }
+    throw new Error(ERROR_FETCH_DETAIL)
+  }
+
+  const data: PhotoApiResponse[] = await response.json()
+  return data.map(transformApiResponse)
+}
+
+/**
  * Issue#122: thumbnail 画像をブラウザキャッシュへ先読みする。
  * `new Image()` で Image オブジェクトを生成し src を代入することで、
  * 実際に <img> 要素が DOM にマウントされる前にネットワークフェッチを開始させ、
@@ -592,6 +618,31 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }
   }, [t])
 
+  // Issue#122 Cycle3: prefetch をバッチエンドポイントで集約する
+  // 既にキャッシュ済み・取得中の photoId は除外してリクエストを最小化する
+  const fetchPhotoDetailsBatch = useCallback(async (photoIds: number[]) => {
+    if (photoIds.length === 0) return
+    const idsToFetch = photoIds.filter(id =>
+      !photoDetailsRef.current.has(id) && !fetchingIdsRef.current.has(id)
+    )
+    if (idsToFetch.length === 0) return
+
+    idsToFetch.forEach(id => fetchingIdsRef.current.add(id))
+    try {
+      const details = await fetchPhotoDetailsBatchApi(idsToFetch)
+      setPhotoDetails(prev => {
+        const next = new Map(prev)
+        details.forEach(d => next.set(d.photoId, d))
+        return next
+      })
+      details.forEach(d => preloadThumbnail(d.thumbnailUrl))
+    } catch (e) {
+      notifyIfRateLimited(e, t)
+    } finally {
+      idsToFetch.forEach(id => fetchingIdsRef.current.delete(id))
+    }
+  }, [t])
+
   // カルーセル操作
   const scrollPrev = useCallback(() => {
     if (!emblaApi) return
@@ -632,6 +683,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   // 現在のスライドの写真詳細を取得 + 前後 PHOTO_PREFETCH_RADIUS 枚をプリフェッチ
   // photoDetailsをrefで参照し、依存配列ループを防止（#7）
   // Issue#122: thumbnail 画像のブラウザキャッシュ先読みは fetchPhotoDetail 内に移動
+  // Issue#122 Cycle3: prefetch はバッチエンドポイントで 1 リクエストに集約
   useEffect(() => {
     if (currentPhotoId && !photoDetailsRef.current.has(currentPhotoId)) {
       fetchPhotoDetail(currentPhotoId)
@@ -641,13 +693,17 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     if (currentPhotoId) {
       onPhotoViewed?.(currentPhotoId)
     }
-    // Issue#122: 前後 PHOTO_PREFETCH_RADIUS 枚の写真データを事前取得
+    // Issue#122 Cycle3: 前後 PHOTO_PREFETCH_RADIUS 枚をバッチエンドポイントでまとめて取得
+    const idsToPrefetch: number[] = []
     for (let offset = -PHOTO_PREFETCH_RADIUS; offset <= PHOTO_PREFETCH_RADIUS; offset++) {
       if (offset === 0) continue
       const id = photoIds[currentIndex + offset]
-      if (id) fetchPhotoDetail(id)
+      if (id) idsToPrefetch.push(id)
     }
-  }, [currentPhotoId, currentIndex, photoIds, fetchPhotoDetail, onPhotoViewed])
+    if (idsToPrefetch.length > 0) {
+      fetchPhotoDetailsBatch(idsToPrefetch)
+    }
+  }, [currentPhotoId, currentIndex, photoIds, fetchPhotoDetail, fetchPhotoDetailsBatch, onPhotoViewed])
 
   // Issue#112: 末尾 PHOTO_PAGE_PRELOAD_THRESHOLD 枚以内に近づいたら次ページを裏で取得
   useEffect(() => {
