@@ -9,12 +9,8 @@ import App from './App.tsx'
 
 initSentry()
 
-// Issue#70: PWA対応 - Service Worker登録（ページ読み込み完了後に登録）
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-  })
-}
+// Issue#129: SW 登録は vite-plugin-pwa の injectRegister: 'auto' が
+// ビルド時に index.html へ自動注入するため、ここでの手動登録は不要
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
