@@ -291,6 +291,17 @@ export const S3_TAG_HEADER_VALUE_PENDING = 'status=pending'
 export const S3_CACHE_CONTROL_VALUE = 'public, max-age=31536000, immutable'
 
 /**
+ * Issue#131: S3 オブジェクトメタデータ送信用の HTTP ヘッダ名（"x-amz-meta-" プレフィックス込み）
+ *
+ * バックエンド S3Service.java の S3_METADATA_KEY_CROP_CENTER_X 等
+ * （プレフィックスを除いた値）と、Lambda lambda_function.py の
+ * S3_METADATA_KEY_CROP_CENTER_X と値を揃える（変更時は 3 箇所同時に変える）。
+ */
+export const S3_META_HEADER_CROP_CENTER_X = 'x-amz-meta-crop-center-x'
+export const S3_META_HEADER_CROP_CENTER_Y = 'x-amz-meta-crop-center-y'
+export const S3_META_HEADER_CROP_ZOOM = 'x-amz-meta-crop-zoom'
+
+/**
  * Issue#131: S3 PUT 時に送る crop メタデータ。
  * バックエンド（S3Service）と Lambda（lambda_function.py）と値を揃える。
  */
@@ -318,9 +329,9 @@ export async function uploadFileToS3(
   }
   if (crop) {
     // 数値文字列化はバックエンドと揃えて小数点 4 桁固定
-    headers['x-amz-meta-crop-center-x'] = crop.cropCenterX.toFixed(4)
-    headers['x-amz-meta-crop-center-y'] = crop.cropCenterY.toFixed(4)
-    headers['x-amz-meta-crop-zoom']     = crop.cropZoom.toFixed(4)
+    headers[S3_META_HEADER_CROP_CENTER_X] = crop.cropCenterX.toFixed(4)
+    headers[S3_META_HEADER_CROP_CENTER_Y] = crop.cropCenterY.toFixed(4)
+    headers[S3_META_HEADER_CROP_ZOOM]     = crop.cropZoom.toFixed(4)
   }
   const response = await fetch(uploadUrl, {
     method: 'PUT',

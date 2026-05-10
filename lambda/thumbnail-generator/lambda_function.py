@@ -138,6 +138,13 @@ CROP_CENTER_MAX = 1.0
 CROP_ZOOM_MIN = 1.0
 CROP_ZOOM_MAX = 3.0
 
+# Issue#131: S3 オブジェクトメタデータのキー（"x-amz-meta-" は除いた小文字キー）
+# バックエンド S3Service.java とフロントエンド apiClient.ts と値を揃える
+# （変更時は 3 箇所同時に変えること）
+S3_METADATA_KEY_CROP_CENTER_X = "crop-center-x"
+S3_METADATA_KEY_CROP_CENTER_Y = "crop-center-y"
+S3_METADATA_KEY_CROP_ZOOM = "crop-zoom"
+
 
 def parse_crop_metadata(metadata: dict) -> tuple[float, float, float] | None:
     """Issue#131: S3 Metadata から (cx, cy, zoom) を取り出す。
@@ -150,9 +157,9 @@ def parse_crop_metadata(metadata: dict) -> tuple[float, float, float] | None:
     - crop-center-y: 0.0〜1.0 の文字列
     - crop-zoom:     1.0〜3.0 の文字列
     """
-    cx_str = metadata.get("crop-center-x")
-    cy_str = metadata.get("crop-center-y")
-    zoom_str = metadata.get("crop-zoom")
+    cx_str = metadata.get(S3_METADATA_KEY_CROP_CENTER_X)
+    cy_str = metadata.get(S3_METADATA_KEY_CROP_CENTER_Y)
+    zoom_str = metadata.get(S3_METADATA_KEY_CROP_ZOOM)
 
     if cx_str is None or cy_str is None or zoom_str is None:
         return None

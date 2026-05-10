@@ -50,6 +50,16 @@ public class S3Service {
      */
     public static final String S3_CACHE_CONTROL_VALUE = "public, max-age=31536000, immutable";
 
+    // Issue#131: S3 オブジェクトメタデータのキー（"x-amz-meta-" は AWS SDK が自動付与）
+    /**
+     * S3 オブジェクトメタデータのキー（フロントエンド apiClient.ts の
+     * S3_META_HEADER_CROP_CENTER_X / Lambda lambda_function.py の
+     * S3_METADATA_KEY_CROP_CENTER_X と値を揃える。変更時は 3 箇所同時に変える）。
+     */
+    public static final String S3_METADATA_KEY_CROP_CENTER_X = "crop-center-x";
+    public static final String S3_METADATA_KEY_CROP_CENTER_Y = "crop-center-y";
+    public static final String S3_METADATA_KEY_CROP_ZOOM = "crop-zoom";
+
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
@@ -133,9 +143,9 @@ public class S3Service {
             double cy = clamp(cropCenterY, 0.0, 1.0);
             double zoom = clamp(cropZoom, 1.0, 3.0);
             builder.metadata(java.util.Map.of(
-                    "crop-center-x", String.format("%.4f", cx),
-                    "crop-center-y", String.format("%.4f", cy),
-                    "crop-zoom",     String.format("%.4f", zoom)
+                    S3_METADATA_KEY_CROP_CENTER_X, String.format("%.4f", cx),
+                    S3_METADATA_KEY_CROP_CENTER_Y, String.format("%.4f", cy),
+                    S3_METADATA_KEY_CROP_ZOOM,     String.format("%.4f", zoom)
             ));
         }
 
