@@ -10,9 +10,6 @@ const CATEGORY_NAME_TO_ID: Record<string, number> = Object.fromEntries(
   Object.entries(CATEGORY_LABELS).map(([id, name]) => [name, Number(id)])
 )
 
-/** Issue#119: ユーザーがトリミング調整を止めてから AI 解析を発火するまでの待ち時間 */
-const ANALYZE_DEBOUNCE_MS = 1000
-
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
 }
@@ -173,9 +170,8 @@ export function PhotoContributionDialog({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Issue#119: AI analyze の AbortController と debounce タイマー
+  // Issue#119: AI analyze の AbortController
   const analyzeAbortRef = useRef<AbortController | null>(null)
-  const analyzeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // スクロール時の選択取り消し機構（モバイルタッチ対応）
   const lastToggleRef = useRef<(() => void) | null>(null)
@@ -226,14 +222,10 @@ export function PhotoContributionDialog({
       setCrop({ x: 0, y: 0 })
       setCropZoom(1)
       setCroppedArea(null)
-      // Issue#119: AI プリフィル関連の state とタイマー・AbortController をリセット
+      // Issue#119: AI プリフィル関連の state と AbortController をリセット
       setAnalyzeToken(null)
       setIsAnalyzing(false)
       setAiPrefillApplied(false)
-      if (analyzeDebounceRef.current) {
-        clearTimeout(analyzeDebounceRef.current)
-        analyzeDebounceRef.current = null
-      }
       if (analyzeAbortRef.current) {
         analyzeAbortRef.current.abort()
         analyzeAbortRef.current = null
