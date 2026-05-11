@@ -81,11 +81,11 @@ describe('FilterPanel', () => {
     it('上級者向けフィルターを開かずに経過期間の選択肢が表示される', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      expect(screen.getByText('1週間')).toBeInTheDocument()
-      expect(screen.getByText('1ヶ月')).toBeInTheDocument()
-      expect(screen.getByText('3ヶ月')).toBeInTheDocument()
-      expect(screen.getByText('1年')).toBeInTheDocument()
-      expect(screen.getByText('3年')).toBeInTheDocument()
+      expect(screen.getByText('1週間以内')).toBeInTheDocument()
+      expect(screen.getByText('1ヶ月以内')).toBeInTheDocument()
+      expect(screen.getByText('3ヶ月以内')).toBeInTheDocument()
+      expect(screen.getByText('1年以内')).toBeInTheDocument()
+      expect(screen.getByText('3年以内')).toBeInTheDocument()
     })
   })
 
@@ -161,7 +161,7 @@ describe('FilterPanel', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
       // 上級者向けフィルターを開く前に経過期間が表示されていることを確認（通常フィルターにある）
-      expect(screen.getByText('1週間')).toBeInTheDocument()
+      expect(screen.getByText('1週間以内')).toBeInTheDocument()
 
       // 上級者向けフィルターを開いても、投稿の新しさのラベルは上級者セクションにない
       await user.click(screen.getByRole('button', { name: /上級者向け/ }))
@@ -197,7 +197,7 @@ describe('FilterPanel', () => {
       )
 
       // 経過期間を選択
-      await user.click(screen.getByText('3ヶ月'))
+      await user.click(screen.getByText('3ヶ月以内'))
 
       // 適用
       await user.click(screen.getByRole('button', { name: '適用' }))
@@ -228,7 +228,7 @@ describe('FilterPanel', () => {
 
       // 通常フィルターで選択
       await user.click(screen.getByRole('button', { name: /自然風景/ }))
-      await user.click(screen.getByText('3ヶ月'))
+      await user.click(screen.getByText('3ヶ月以内'))
       await user.click(screen.getByText('横位置'))
 
       // 上級者フィルターを開いて選択
@@ -266,10 +266,10 @@ describe('FilterPanel', () => {
       )
 
       // フィルターを1つ選択
-      await user.click(screen.getByText('1週間'))
+      await user.click(screen.getByText('1週間以内'))
 
       // 同じフィルターを再度クリックして解除
-      await user.click(screen.getByText('1週間'))
+      await user.click(screen.getByText('1週間以内'))
 
       // 全条件がなくなったのでonApplyが空条件で呼ばれる
       expect(mockOnApply).toHaveBeenCalledWith(
@@ -288,7 +288,7 @@ describe('FilterPanel', () => {
     it('renders when open prop is true', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      expect(screen.getByText('フィルター')).toBeInTheDocument()
+      expect(screen.getByText('写真フィルター')).toBeInTheDocument()
     })
 
     it('renders all month filter buttons', () => {

@@ -119,7 +119,7 @@
     "menuDescription": "存取帳號設定及其他功能"
   },
   "filter": {
-    "title": "篩選",
+    "title": "照片篩選",
     "description": "依類型、時期、時段、天氣篩選",
     "openFilter": "開啟照片篩選",
     "filterDescription": "設定照片篩選條件",
