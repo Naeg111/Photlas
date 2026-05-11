@@ -684,6 +684,13 @@ export function PhotoContributionDialog({
                         style={{
                           cropAreaStyle: {
                             border: '3px solid rgba(255, 255, 255, 0.5)',
+                            // Issue#131（モバイル枠表示修正・本命）: iOS Safari は
+                            // will-change: transform が付いた画像 (.reactEasyCrop_Image)
+                            // を GPU 合成レイヤーへ昇格させ、枠 (.reactEasyCrop_CropArea)
+                            // の上に合成してしまう。z-index を明示することで
+                            // CSS の合成順を W3C 仕様レベルで固定し、枠を常に
+                            // 画像より上に保つ。
+                            zIndex: 1,
                           },
                         }}
                       />
