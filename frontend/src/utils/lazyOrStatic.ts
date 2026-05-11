@@ -8,7 +8,8 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
  * 本番ビルド時は `import.meta.env.MODE === 'test'` が `false` リテラルに置換され、
  * `staticFallback` 参照は dead code として tree-shake される（Rollup の挙動依存）。
  */
-export function lazyOrStatic<T extends ComponentType<unknown>>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function lazyOrStatic<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
   staticFallback: T
 ): T | LazyExoticComponent<T> {
