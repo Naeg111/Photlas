@@ -1470,6 +1470,97 @@ public class SpotControllerTest {
     }
 
     // ============================================================
+    // Issue#127: /spots/photos が認証ユーザー本人の PENDING を含めて返す
+    // ============================================================
+
+    @Test
+    @DisplayName("Issue#127 - 認証なしの /spots/photos は PUBLISHED のみを返す（既存挙動）")
+    void testGetSpotPhotos_Anonymous_OnlyPublished() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo published = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+
+        // 自分の PENDING 投稿（同じスポット）
+        Photo pending = new Photo();
+        pending.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-pending-" + System.nanoTime());
+        pending.setSpotId(spot.getSpotId());
+        pending.setUserId(testUser.getId());
+        pending.setShotAt(TEST_SHOT_AT_NEW); // PUBLISHED より新しい
+        pending.setModerationStatus(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
+        photoRepository.save(pending);
+
+        String body = String.format("{\"spotIds\":[%d]}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(1)))
+                .andExpect(jsonPath("$.ids[0]", is(published.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(1)));
+    }
+
+    @Test
+    @DisplayName("Issue#127 - 認証ありの /spots/photos は自分の PENDING も含めて返す")
+    void testGetSpotPhotos_Authenticated_IncludesOwnPending() throws Exception {
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo published = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+
+        // 自分の PENDING 投稿
+        Photo pending = new Photo();
+        pending.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-own-pending-" + System.nanoTime());
+        pending.setSpotId(spot.getSpotId());
+        pending.setUserId(testUser.getId());
+        pending.setShotAt(TEST_SHOT_AT_NEW); // PUBLISHED より新しい → 先頭に出る
+        pending.setModerationStatus(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
+        pending = photoRepository.save(pending);
+
+        String body = String.format("{\"spotIds\":[%d]}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(2)))
+                .andExpect(jsonPath("$.ids[0]", is(pending.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.ids[1]", is(published.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(2)));
+    }
+
+    @Test
+    @DisplayName("Issue#127 - 認証ありでも他人の PENDING は表示しない")
+    void testGetSpotPhotos_Authenticated_ExcludesOthersPending() throws Exception {
+        // 他ユーザーを作成
+        User otherUser = new User();
+        otherUser.setUsername("otheru2");
+        otherUser.setEmail("other-photos@example.com");
+        otherUser.setPasswordHash(TEST_PASSWORD_HASH);
+        otherUser.setRole(CodeConstants.ROLE_USER);
+        otherUser = userRepository.save(otherUser);
+
+        Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
+        Photo published = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
+
+        // 他人の PENDING（このスポット）
+        Photo othersPending = new Photo();
+        othersPending.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-others-pending-" + System.nanoTime());
+        othersPending.setSpotId(spot.getSpotId());
+        othersPending.setUserId(otherUser.getId());
+        othersPending.setShotAt(TEST_SHOT_AT_NEW);
+        othersPending.setModerationStatus(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
+        photoRepository.save(othersPending);
+
+        // testUser として呼び出した結果には他人の PENDING は含まれない
+        String body = String.format("{\"spotIds\":[%d]}", spot.getSpotId());
+        mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ids", hasSize(1)))
+                .andExpect(jsonPath("$.ids[0]", is(published.getPhotoId().intValue())))
+                .andExpect(jsonPath("$.total", is(1)));
+    }
+
+    // ============================================================
     // Issue#72: ソフトデリート - 退会済みユーザーの写真除外テスト
     // ============================================================
 
