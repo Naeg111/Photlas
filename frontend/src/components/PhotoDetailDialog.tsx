@@ -51,6 +51,16 @@ const PHOTO_PAGE_PRELOAD_THRESHOLD = 5
 // Issue#122: 写真詳細ダイアログで現在表示中の写真の前後 radius 枚を先読みする
 const PHOTO_PREFETCH_RADIUS = 2
 
+// Issue#128: スワイプ方向に応じた非対称 prefetch
+// 直近の方向履歴を保持して、進行方向側を多めに先読みする。
+const SWIPE_HISTORY_SIZE = 3
+const PREFETCH_FORWARD = 3
+const PREFETCH_BACKWARD = 1
+// 中立判定の閾値（sum の絶対値がこの値以上で進行方向確定）
+const DOMINANT_DIRECTION_THRESHOLD = 2
+// 一定時間スワイプが止まったら履歴をクリアして対称に戻すミリ秒
+const SWIPE_HISTORY_RESET_MS = 3000
+
 // Issue#122 Cycle2: 写真切り替え時の cross-fade 用 Tailwind v4 クラス
 // `key={photoId}` と組み合わせて使うことで、新しい <img> がマウントされた瞬間に
 // `@starting-style` 相当の `starting:opacity-0` から `opacity-100` へ滑らかに遷移する
@@ -540,6 +550,11 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   // 指摘ステータスのキャッシュ（#8: 同じ写真に戻った時の再API呼び出し防止）
   const suggestionCacheRef = useRef(new Map<number, boolean>())
 
+  // Issue#128: スワイプ方向の履歴と前回 index を ref で保持
+  const swipeHistoryRef = useRef<Array<-1 | 1>>([])
+  const previousIndexRef = useRef<number>(0)
+  const swipeResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // 最後に表示した写真情報を保持（点滅防止）
   const [displayedPhoto, setDisplayedPhoto] = useState<PhotoDetail | null>(null)
 
@@ -650,12 +665,18 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   }, [t])
 
   // カルーセル操作
+  // Issue#128: ボタンクリック経路でも currentIndex を即時更新する。
+  // Embla の select イベントは jsdom で発火しないケースがあるため、
+  // emblaApi.scrollPrev/scrollNext と setCurrentIndex を併用する。
+  // ドラッグスワイプ時は onSelect 経由で setCurrentIndex が同じ値で再呼び出しされるが、
+  // React の state 更新は同値の場合 no-op なので問題ない。
   const scrollPrev = useCallback(() => {
     if (!emblaApi) return
     emblaApi.scrollPrev()
     const prevIndex = currentIndex - 1
     if (prevIndex >= 0) {
       fetchPhotoDetail(photoIds[prevIndex])
+      setCurrentIndex(prevIndex)
     }
   }, [emblaApi, currentIndex, photoIds, fetchPhotoDetail])
 
@@ -665,6 +686,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     const nextIndex = currentIndex + 1
     if (nextIndex < photoIds.length) {
       fetchPhotoDetail(photoIds[nextIndex])
+      setCurrentIndex(nextIndex)
     }
   }, [emblaApi, currentIndex, photoIds, fetchPhotoDetail])
 
@@ -683,6 +705,45 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }
   }, [emblaApi])
 
+  // Issue#128: currentIndex 変化を監視してスワイプ方向の履歴を更新する。
+  // ドラッグスワイプ（onSelect 経由）でもボタンクリック（scrollNext/scrollPrev 経由）でも、
+  // どちらの経路でも setCurrentIndex で値が変わるため、この useEffect で一元管理する。
+  useEffect(() => {
+    const prev = previousIndexRef.current
+    if (currentIndex !== prev) {
+      const direction: -1 | 1 = currentIndex > prev ? 1 : -1
+      swipeHistoryRef.current.push(direction)
+      if (swipeHistoryRef.current.length > SWIPE_HISTORY_SIZE) {
+        swipeHistoryRef.current.shift()
+      }
+      previousIndexRef.current = currentIndex
+
+      // 一定時間切替が止まったら履歴をクリアして対称に戻す
+      if (swipeResetTimerRef.current) clearTimeout(swipeResetTimerRef.current)
+      swipeResetTimerRef.current = setTimeout(() => {
+        swipeHistoryRef.current = []
+      }, SWIPE_HISTORY_RESET_MS)
+    }
+  }, [currentIndex])
+
+  // Issue#128: ダイアログ close 時に履歴とタイマーをクリーンアップ
+  useEffect(() => {
+    if (!open) {
+      swipeHistoryRef.current = []
+      previousIndexRef.current = 0
+      if (swipeResetTimerRef.current) {
+        clearTimeout(swipeResetTimerRef.current)
+        swipeResetTimerRef.current = null
+      }
+    }
+    return () => {
+      if (swipeResetTimerRef.current) {
+        clearTimeout(swipeResetTimerRef.current)
+        swipeResetTimerRef.current = null
+      }
+    }
+  }, [open])
+
   const currentPhotoId = photoIds[currentIndex]
   const currentPhoto = currentPhotoId ? photoDetails.get(currentPhotoId) : null
 
@@ -700,10 +761,28 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       onPhotoViewed?.(currentPhotoId)
     }
     // Issue#122 Cycle3: 前後 PHOTO_PREFETCH_RADIUS 枚をバッチエンドポイントでまとめて取得
+    // Issue#128: 履歴の方向偏重に応じて forward / backward の枚数を非対称化
+    const sumDirection = swipeHistoryRef.current.reduce<number>((a, b) => a + b, 0)
+    let forwardCount: number
+    let backwardCount: number
+    if (sumDirection >= DOMINANT_DIRECTION_THRESHOLD) {
+      forwardCount = PREFETCH_FORWARD
+      backwardCount = PREFETCH_BACKWARD
+    } else if (sumDirection <= -DOMINANT_DIRECTION_THRESHOLD) {
+      forwardCount = PREFETCH_BACKWARD
+      backwardCount = PREFETCH_FORWARD
+    } else {
+      forwardCount = PHOTO_PREFETCH_RADIUS
+      backwardCount = PHOTO_PREFETCH_RADIUS
+    }
+
     const idsToPrefetch: number[] = []
-    for (let offset = -PHOTO_PREFETCH_RADIUS; offset <= PHOTO_PREFETCH_RADIUS; offset++) {
-      if (offset === 0) continue
+    for (let offset = 1; offset <= forwardCount; offset++) {
       const id = photoIds[currentIndex + offset]
+      if (id) idsToPrefetch.push(id)
+    }
+    for (let offset = 1; offset <= backwardCount; offset++) {
+      const id = photoIds[currentIndex - offset]
       if (id) idsToPrefetch.push(id)
     }
     if (idsToPrefetch.length > 0) {
