@@ -154,25 +154,53 @@ public class SpotService {
      */
     @Transactional(readOnly = true)
     public SpotPhotosResponse getSpotPhotos(List<Long> spotIds, int limit, int offset, Integer maxAgeDays) {
-        logger.info("Getting paged photos: spotIds={}, limit={}, offset={}, maxAgeDays={}",
-                spotIds, limit, offset, maxAgeDays);
+        return getSpotPhotos(spotIds, limit, offset, maxAgeDays, null);
+    }
+
+    /**
+     * Issue#127: 認証ユーザー本人の PENDING_REVIEW 投稿も結果に含めるバージョン。
+     * viewerUserId が null（未認証）の場合は従来通り PUBLISHED のみを返す。
+     */
+    @Transactional(readOnly = true)
+    public SpotPhotosResponse getSpotPhotos(List<Long> spotIds, int limit, int offset,
+                                            Integer maxAgeDays, Long viewerUserId) {
+        logger.info("Getting paged photos: spotIds={}, limit={}, offset={}, maxAgeDays={}, viewerUserId={}",
+                spotIds, limit, offset, maxAgeDays, viewerUserId);
 
         LocalDateTime maxAgeCutoff = null;
         if (maxAgeDays != null) {
             maxAgeCutoff = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).minusDays(maxAgeDays);
         }
 
-        List<Long> ids = photoRepository.findPhotoIdsBySpotsPaged(
-                spotIds,
-                CodeConstants.MODERATION_STATUS_PUBLISHED,
-                maxAgeCutoff,
-                limit,
-                offset);
-
-        long total = photoRepository.countPhotosBySpots(
-                spotIds,
-                CodeConstants.MODERATION_STATUS_PUBLISHED,
-                maxAgeCutoff);
+        List<Long> ids;
+        long total;
+        if (viewerUserId != null) {
+            ids = photoRepository.findPhotoIdsBySpotsPagedWithViewer(
+                    spotIds,
+                    CodeConstants.MODERATION_STATUS_PUBLISHED,
+                    CodeConstants.MODERATION_STATUS_PENDING_REVIEW,
+                    viewerUserId,
+                    maxAgeCutoff,
+                    limit,
+                    offset);
+            total = photoRepository.countPhotosBySpotsWithViewer(
+                    spotIds,
+                    CodeConstants.MODERATION_STATUS_PUBLISHED,
+                    CodeConstants.MODERATION_STATUS_PENDING_REVIEW,
+                    viewerUserId,
+                    maxAgeCutoff);
+        } else {
+            ids = photoRepository.findPhotoIdsBySpotsPaged(
+                    spotIds,
+                    CodeConstants.MODERATION_STATUS_PUBLISHED,
+                    maxAgeCutoff,
+                    limit,
+                    offset);
+            total = photoRepository.countPhotosBySpots(
+                    spotIds,
+                    CodeConstants.MODERATION_STATUS_PUBLISHED,
+                    maxAgeCutoff);
+        }
 
         logger.info("Found {} photo ids out of {} total", ids.size(), total);
 
