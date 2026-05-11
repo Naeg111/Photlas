@@ -161,6 +161,11 @@ export function PhotoContributionDialog({
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [cropZoom, setCropZoom] = useState(1)
   const [croppedArea, setCroppedArea] = useState<Area | null>(null)
+  // Issue#131（モバイル枠表示修正）: react-easy-crop の auto-computed cropSize は
+  // 短辺の浮動小数（端数あり）となりやすく、retina + iOS Safari でアンチエイリアスに
+  // より枠線が視認できない事象が発生する。onMediaLoaded から取得した短辺を整数値に
+  // 切り捨てて cropSize プロパティへ明示指定することで、サブピクセル要因を排除する。
+  const [croppedAreaSize, setCroppedAreaSize] = useState<{ width: number; height: number } | null>(null)
   // Issue#119: AI プリフィル関連
   const [analyzeToken, setAnalyzeToken] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -222,6 +227,7 @@ export function PhotoContributionDialog({
       setCrop({ x: 0, y: 0 })
       setCropZoom(1)
       setCroppedArea(null)
+      setCroppedAreaSize(null)
       // Issue#119: AI プリフィル関連の state と AbortController をリセット
       setAnalyzeToken(null)
       setIsAnalyzing(false)
@@ -666,6 +672,13 @@ export function PhotoContributionDialog({
                         // クロップ枠線が画像の外側に来て視認できなくなる
                         objectFit="cover"
                         showGrid
+                        // Issue#131（モバイル枠表示修正）: onMediaLoaded で得た mediaSize の
+                        // 短辺を整数値に切り捨てて cropSize へ明示指定する（後述 onMediaLoaded 参照）。
+                        cropSize={croppedAreaSize ?? undefined}
+                        onMediaLoaded={(mediaSize) => {
+                          const shortSide = Math.floor(Math.min(mediaSize.width, mediaSize.height))
+                          setCroppedAreaSize({ width: shortSide, height: shortSide })
+                        }}
                         onCropChange={setCrop}
                         onZoomChange={setCropZoom}
                         onCropComplete={handleCropComplete}
