@@ -35,34 +35,32 @@ import { TermsOfServicePage } from './components/TermsOfServicePage'
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage'
 import PasswordResetRequestModal from './components/PasswordResetRequestModal'
 import ProfileDialog from './components/ProfileDialog'
-// Issue#130: Vitest 環境では React.lazy + Suspense の解決サイクルが既存テストと相性が悪く、
-// 動的 import の Promise が resolve するタイミングで waitFor が拾えない問題があるため、
-// テスト環境のみ静的 import を使う。本番では下の lazy() 経由でロードされ、
-// 下の静的 import は MODE === 'test' でしか参照されない dead code として除去される。
+import { lazyOrStatic } from './utils/lazyOrStatic'
+// Issue#130: Vitest 環境では React.lazy + Suspense の解決サイクルが既存テストと相性が悪いため、
+// テスト時は静的 import 側を、本番時は lazy() 側を使う（lazyOrStatic ヘルパーで切り替え）。
 import { PhotoContributionDialog as PhotoContributionDialogStatic } from './components/PhotoContributionDialog'
 import { AccountSettingsDialog as AccountSettingsDialogStatic } from './components/AccountSettingsDialog'
 import PhotoDetailDialogStatic from './components/PhotoDetailDialog'
 
-const IS_TEST_ENV = import.meta.env.MODE === 'test'
-
 // Issue#130: 重いダイアログは open のときだけマウントすることで初回バンドルから除外
-const PhotoContributionDialog = IS_TEST_ENV
-  ? PhotoContributionDialogStatic
-  : lazy(() =>
-      import('./components/PhotoContributionDialog').then((m) => ({
-        default: m.PhotoContributionDialog,
-      }))
-    )
-const AccountSettingsDialog = IS_TEST_ENV
-  ? AccountSettingsDialogStatic
-  : lazy(() =>
-      import('./components/AccountSettingsDialog').then((m) => ({
-        default: m.AccountSettingsDialog,
-      }))
-    )
-const PhotoDetailDialog = IS_TEST_ENV
-  ? PhotoDetailDialogStatic
-  : lazy(() => import('./components/PhotoDetailDialog'))
+const PhotoContributionDialog = lazyOrStatic(
+  () =>
+    import('./components/PhotoContributionDialog').then((m) => ({
+      default: m.PhotoContributionDialog,
+    })),
+  PhotoContributionDialogStatic
+)
+const AccountSettingsDialog = lazyOrStatic(
+  () =>
+    import('./components/AccountSettingsDialog').then((m) => ({
+      default: m.AccountSettingsDialog,
+    })),
+  AccountSettingsDialogStatic
+)
+const PhotoDetailDialog = lazyOrStatic(
+  () => import('./components/PhotoDetailDialog'),
+  PhotoDetailDialogStatic
+)
 // import { WantToGoListDialog } from './components/WantToGoListDialog' // 行きたい場所リスト（一時非表示）
 import { AboutDialog } from './components/AboutDialog'
 import { HowToUseDialog } from './components/HowToUseDialog'
