@@ -45,6 +45,8 @@ public class SecurityConfig {
     private static final String ERROR_ENDPOINT = "/error";
     private static final String SPOTS_ENDPOINT = "/api/v1/spots";
     private static final String SPOTS_ENDPOINT_PATTERN = "/api/v1/spots/**";
+    // Issue#127: 本人の PENDING_REVIEW 投稿だけを返すため認証必須。共有キャッシュ対象外。
+    private static final String SPOTS_MINE_PENDING_ENDPOINT = "/api/v1/spots/mine-pending";
     private static final String CATEGORIES_ENDPOINT = "/api/v1/categories";
     private static final String PHOTOS_ENDPOINT_PATTERN = "/api/v1/photos/**";
     private static final String USER_PROFILE_PATTERN = "/api/v1/users/\\d+";
@@ -117,6 +119,8 @@ public class SecurityConfig {
                 .requestMatchers(HEALTH_ENDPOINT).permitAll()            // ヘルスチェック
                 .requestMatchers(ERROR_ENDPOINT).permitAll()             // エラーページ
                 .requestMatchers("/robots.txt").permitAll()               // robots.txt（API ホスト用、検索エンジン向け）
+                // Issue#127: 本人の PENDING のみを返す mine-pending は permitAll より先にマッチさせて認証必須にする
+                .requestMatchers(SPOTS_MINE_PENDING_ENDPOINT).authenticated()
                 .requestMatchers(SPOTS_ENDPOINT, SPOTS_ENDPOINT_PATTERN).permitAll()  // スポット関連（一覧・詳細）
                 .requestMatchers(CATEGORIES_ENDPOINT).permitAll()        // カテゴリ一覧
                 .requestMatchers("/api/v1/ogp/**").permitAll()              // OGPメタタグ
