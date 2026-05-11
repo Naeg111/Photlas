@@ -7,6 +7,7 @@ import type { MapEvent, ViewStateChangeEvent } from 'react-map-gl'
 import type { Map as MapboxMap, ExpressionSpecification } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { API_V1_URL } from '../config/api'
+import { getAuthHeaders } from '../utils/apiClient'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 import { buildRateLimitApiError, notifyIfRateLimitedBurst } from '../utils/notifyIfRateLimited'
@@ -696,8 +697,51 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         throw new Error('API request failed')
       }
 
-      const data = await response.json()
-      setSpots(data)
+      const publishedSpots = await response.json()
+
+      // Issue#127: 認証済みユーザーは自分の PENDING 投稿があるスポットを別 API で取得して
+      // マージする。重い /spots は CloudFront 共有キャッシュを保ちつつ、本人差分だけを
+      // 軽量に取得する（他人の PENDING はバックエンドで除外されるためここでは何もしない）。
+      const auth = getAuthHeaders()
+      const isAuthenticated = 'Authorization' in auth
+      let merged = publishedSpots
+      if (isAuthenticated) {
+        // bounds と filter は /spots と完全に同じ条件で取りに行く
+        // （ただしモデレーション状態と本人 user_id でさらに絞られる）
+        const mineParams = new URLSearchParams({
+          north: bounds.getNorth().toString(),
+          south: bounds.getSouth().toString(),
+          east: bounds.getEast().toString(),
+          west: bounds.getWest().toString(),
+        })
+        try {
+          const mineResponse = await fetch(`${API_V1_URL}/spots/mine-pending?${mineParams}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              ...auth,
+            },
+          })
+          if (mineResponse.ok) {
+            const minePending = await mineResponse.json()
+            if (Array.isArray(minePending) && minePending.length > 0) {
+              // spotId 衝突時は published を優先（既に公開済みのものに重ねない）。
+              // mine-pending 専用の spot（新規投稿でまだ他に PUBLISHED 写真がない場所）
+              // だけが新しく追加される。
+              const publishedIds = new Set(publishedSpots.map((s: { spotId: number }) => s.spotId))
+              const additions = minePending.filter(
+                (s: { spotId: number }) => !publishedIds.has(s.spotId)
+              )
+              merged = [...publishedSpots, ...additions]
+            }
+          }
+          // mine-pending 失敗（401/5xx 等）は無視して published 結果だけ表示する
+        } catch {
+          // ネットワーク等の例外も同様に無視
+        }
+      }
+
+      setSpots(merged)
     } catch {
       setShowToast(true)
       setTimeout(() => setShowToast(false), TOAST_DURATION_MS)
