@@ -25,7 +25,7 @@ describe('FilterButton', () => {
   it('displays correct text', () => {
     // Red: ボタンテキストの確認
     render(<FilterButton />)
-    expect(screen.getByRole('button')).toHaveTextContent('フィルター')
+    expect(screen.getByRole('button')).toHaveTextContent('写真フィルター')
   })
 
   it('is clickable', () => {

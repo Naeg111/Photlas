@@ -280,15 +280,17 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="top" className="w-full h-full md:w-[70%] md:h-auto md:max-h-[90vh] md:left-[15%] md:rounded-b-lg md:overflow-hidden flex flex-col">
-        <SheetHeader className="sr-only">
-          <SheetTitle>{t('filter.title')}</SheetTitle>
-          <SheetDescription>
-            {t('filter.description')}
-          </SheetDescription>
-        </SheetHeader>
+        <div className="px-6 pt-[calc(1.5rem+var(--safe-area-top))] pb-2 shrink-0">
+          <SheetHeader className="p-0 gap-2 text-center">
+            <SheetTitle className="text-lg leading-none font-semibold">{t('filter.title')}</SheetTitle>
+            <SheetDescription className="sr-only">
+              {t('filter.description')}
+            </SheetDescription>
+          </SheetHeader>
+        </div>
 
-        <div data-testid="filter-scroll-container" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-[calc(1.5rem+var(--safe-area-top))]" style={{ touchAction: 'manipulation' }} onScroll={handleScrollDuringToggle} onPointerUp={handlePointerUp}>
-        <div className="space-y-[30px] pb-6 mt-[40px]">
+        <div data-testid="filter-scroll-container" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6" style={{ touchAction: 'manipulation' }} onScroll={handleScrollDuringToggle} onPointerUp={handlePointerUp}>
+        <div className="space-y-[30px] pb-6 mt-4">
           {/* Issue#63: 写真のジャンル */}
           <div>
             <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.genre')}</p>
