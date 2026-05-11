@@ -38,6 +38,7 @@ import {
   MODERATION_STATUS_PENDING_REVIEW,
 } from '../utils/codeConstants'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
+import { useSwipeDirectionHistory } from '../hooks/useSwipeDirectionHistory'
 
 // API Endpoints
 // Issue#112: スポット写真ID一覧は POST /spots/photos に統一（複数スポット横断 + ページネーション）
@@ -48,8 +49,8 @@ const API_PHOTOS = `${API_V1_URL}/photos`
 const PHOTO_PAGE_SIZE = 30
 const PHOTO_PAGE_PRELOAD_THRESHOLD = 5
 
-// Issue#122: 写真詳細ダイアログで現在表示中の写真の前後 radius 枚を先読みする
-const PHOTO_PREFETCH_RADIUS = 2
+// Issue#122 / Issue#128: 写真詳細ダイアログの prefetch ロジックは useSwipeDirectionHistory に集約
+// 中立時の枚数（左右各 2 枚）と進行方向偏重時の枚数（forward=3 / backward=1）は同 hook の定数を参照
 
 // Issue#122 Cycle2: 写真切り替え時の cross-fade 用 Tailwind v4 クラス
 // `key={photoId}` と組み合わせて使うことで、新しい <img> がマウントされた瞬間に
@@ -650,12 +651,18 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   }, [t])
 
   // カルーセル操作
+  // Issue#128: ボタンクリック経路でも currentIndex を即時更新する。
+  // Embla の select イベントは jsdom で発火しないケースがあるため、
+  // emblaApi.scrollPrev/scrollNext と setCurrentIndex を併用する。
+  // ドラッグスワイプ時は onSelect 経由で setCurrentIndex が同じ値で再呼び出しされるが、
+  // React の state 更新は同値の場合 no-op なので問題ない。
   const scrollPrev = useCallback(() => {
     if (!emblaApi) return
     emblaApi.scrollPrev()
     const prevIndex = currentIndex - 1
     if (prevIndex >= 0) {
       fetchPhotoDetail(photoIds[prevIndex])
+      setCurrentIndex(prevIndex)
     }
   }, [emblaApi, currentIndex, photoIds, fetchPhotoDetail])
 
@@ -665,6 +672,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     const nextIndex = currentIndex + 1
     if (nextIndex < photoIds.length) {
       fetchPhotoDetail(photoIds[nextIndex])
+      setCurrentIndex(nextIndex)
     }
   }, [emblaApi, currentIndex, photoIds, fetchPhotoDetail])
 
@@ -683,6 +691,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }
   }, [emblaApi])
 
+  // Issue#128: スワイプ方向に応じた非対称 prefetch
+  // currentIndex 変化を監視して履歴を管理し、現在の進行方向に応じた forward / backward の枚数を返す
+  const { forwardCount, backwardCount } = useSwipeDirectionHistory(currentIndex)
+
   const currentPhotoId = photoIds[currentIndex]
   const currentPhoto = currentPhotoId ? photoDetails.get(currentPhotoId) : null
 
@@ -700,16 +712,20 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       onPhotoViewed?.(currentPhotoId)
     }
     // Issue#122 Cycle3: 前後 PHOTO_PREFETCH_RADIUS 枚をバッチエンドポイントでまとめて取得
+    // Issue#128: 履歴の方向偏重に応じて forward / backward の枚数を非対称化（useSwipeDirectionHistory 経由）
     const idsToPrefetch: number[] = []
-    for (let offset = -PHOTO_PREFETCH_RADIUS; offset <= PHOTO_PREFETCH_RADIUS; offset++) {
-      if (offset === 0) continue
+    for (let offset = 1; offset <= forwardCount; offset++) {
       const id = photoIds[currentIndex + offset]
+      if (id) idsToPrefetch.push(id)
+    }
+    for (let offset = 1; offset <= backwardCount; offset++) {
+      const id = photoIds[currentIndex - offset]
       if (id) idsToPrefetch.push(id)
     }
     if (idsToPrefetch.length > 0) {
       fetchPhotoDetailsBatch(idsToPrefetch)
     }
-  }, [currentPhotoId, currentIndex, photoIds, fetchPhotoDetail, fetchPhotoDetailsBatch, onPhotoViewed])
+  }, [currentPhotoId, currentIndex, photoIds, fetchPhotoDetail, fetchPhotoDetailsBatch, onPhotoViewed, forwardCount, backwardCount])
 
   // Issue#112: 末尾 PHOTO_PAGE_PRELOAD_THRESHOLD 枚以内に近づいたら次ページを裏で取得
   useEffect(() => {
@@ -1090,7 +1106,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4 z-10"
+            className="absolute top-4 right-4 z-10 bg-gray-500/40 hover:bg-gray-500/60"
             onClick={onClose}
             aria-label={t('common.close')}
           >
@@ -1170,7 +1186,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute left-4 top-1/2 -translate-y-1/2"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-gray-500/40 hover:bg-gray-500/60"
                         onClick={scrollPrev}
                         aria-label={t('photo.prevPhoto')}
                       >
@@ -1181,7 +1197,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute right-4 top-1/2 -translate-y-1/2"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-gray-500/40 hover:bg-gray-500/60"
                         onClick={scrollNext}
                         aria-label={t('photo.nextPhoto')}
                       >

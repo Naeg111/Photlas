@@ -672,6 +672,125 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
+  // Issue#128: スワイプ方向に応じた非対称 prefetch
+  describe('Issue#128 - スワイプ方向に応じた非対称 prefetch', () => {
+    it('連続して次へ 2 回押下後、進行方向側 (forward=3) の prefetch に currentIndex+3 が含まれる', async () => {
+      // 7 枚で開始。currentIndex=0 → 次へ 2 回 → currentIndex=2
+      // 履歴 = [+1, +1], sum=2 → forward 偏重: forward 3 / backward 1
+      // 対称 (2:2) なら index 5 (id 106) は prefetch されないが、forward 偏重では含まれる。
+      const ids = [101, 102, 103, 104, 105, 106, 107]
+      const detailMap = new Map<number, ReturnType<typeof createMockPhotoDetail>>()
+      ids.forEach(id => {
+        detailMap.set(id, createMockPhotoDetail({
+          photoId: id,
+          imageUrls: {
+            thumbnail: `https://example.com/i128-thumb${id}.jpg`,
+            standard: `https://example.com/i128-std${id}.jpg`,
+          },
+          user: { userId: TEST_USER_ID, username: TEST_USERNAME },
+          spot: { spotId: TEST_SPOT_ID },
+        }))
+      })
+
+      const mockFetch = setupBatchAwareMockFetch(ids, detailMap)
+
+      const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+      Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+      const user = userEvent.setup()
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      // 初期描画完了を待つ
+      await waitFor(() => {
+        expect(screen.getByLabelText('次の写真')).toBeInTheDocument()
+      })
+
+      const nextButton = screen.getByLabelText('次の写真')
+      await user.click(nextButton)
+      await user.click(nextButton)
+
+      // batch 呼び出しで id 106 (= currentIndex+3) が含まれることを確認
+      await waitFor(() => {
+        const batchedIds = new Set<number>()
+        mockFetch.mock.calls.forEach((call: unknown[]) => {
+          const url = call[0]
+          const options = call[1] as RequestInit | undefined
+          if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
+            const body = JSON.parse(String(options.body ?? '{}'))
+            const arr = body.photoIds as number[] | undefined
+            if (Array.isArray(arr)) arr.forEach(id => batchedIds.add(id))
+          }
+        })
+        expect(batchedIds.has(106)).toBe(true)
+      })
+    })
+
+    it('Issue#128 - 履歴リセットタイマー (3 秒) 経過後は対称 prefetch (2:2) に戻り、currentIndex+3 は prefetch されない', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        // 7 枚で次へ 2 回 → currentIndex=2、forward 偏重状態
+        // → 3 秒経過で履歴クリア → 次の次へで currentIndex=3、履歴 [+1] のみ = 中立 → 対称
+        // 対称 (currentIndex=3) なら prefetch range = [1, 2, 4, 5] のみ。
+        // index 6 (id 107) は含まれない。
+        const ids = [101, 102, 103, 104, 105, 106, 107]
+        const detailMap = new Map<number, ReturnType<typeof createMockPhotoDetail>>()
+        ids.forEach(id => {
+          detailMap.set(id, createMockPhotoDetail({
+            photoId: id,
+            imageUrls: {
+              thumbnail: `https://example.com/i128r-thumb${id}.jpg`,
+              standard: `https://example.com/i128r-std${id}.jpg`,
+            },
+            user: { userId: TEST_USER_ID, username: TEST_USERNAME },
+            spot: { spotId: TEST_SPOT_ID },
+          }))
+        })
+
+        const mockFetch = setupBatchAwareMockFetch(ids, detailMap)
+
+        const { rerender } = render(<PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+        Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+        await waitFor(() => {
+          expect(screen.getByLabelText('次の写真')).toBeInTheDocument()
+        })
+
+        const nextButton = screen.getByLabelText('次の写真')
+        await user.click(nextButton)
+        await user.click(nextButton)
+        // ここまでで forward 偏重状態
+
+        // 3.5 秒経過させて履歴リセット
+        await vi.advanceTimersByTimeAsync(3500)
+
+        // mockFetch の呼び出し履歴をリセットして以降の呼び出しだけ観察
+        const callCountBefore = mockFetch.mock.calls.length
+
+        await user.click(nextButton) // currentIndex=3 へ、リセット後なので履歴 [+1] のみ = 中立
+
+        await waitFor(() => {
+          const newCalls = mockFetch.mock.calls.slice(callCountBefore)
+          const batchedIds = new Set<number>()
+          newCalls.forEach((call: unknown[]) => {
+            const url = call[0]
+            const options = call[1] as RequestInit | undefined
+            if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
+              const body = JSON.parse(String(options.body ?? '{}'))
+              const arr = body.photoIds as number[] | undefined
+              if (Array.isArray(arr)) arr.forEach(id => batchedIds.add(id))
+            }
+          })
+          // 対称 (2:2) なので currentIndex=3 から前後 2 = indices [1, 2, 4, 5] のみ
+          // index 6 (id 107) は forward 偏重時にしか含まれないので、対称では含まれない
+          expect(batchedIds.has(107)).toBe(false)
+        })
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+  })
+
   describe('ローディングとエラーハンドリング', () => {
     it('写真読み込み中はローディングスピナーが表示される', async () => {
       const mockFetch = vi.fn().mockImplementation(() =>
