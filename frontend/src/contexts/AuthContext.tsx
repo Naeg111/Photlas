@@ -5,7 +5,7 @@
  * Issue#118: ログイン成功時に登録壁の閲覧履歴をクリア
  */
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
-import i18n from '../i18n'
+import i18n, { loadLanguageResource } from '../i18n'
 import { type SupportedLanguage, SUPPORTED_LANGUAGES } from '../i18n'
 import { clearViewedPhotoIds } from '../utils/registrationWall'
 
@@ -109,7 +109,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Issue#93: ログイン時にDBの言語設定をi18nとlocalStorageに反映
     if (userData.language && SUPPORTED_LANGUAGES.includes(userData.language as SupportedLanguage)) {
-      i18n.changeLanguage(userData.language)
+      // Issue#130: 言語リソースは動的 import なので、changeLanguage 前にロードを発火
+      const lng = userData.language as SupportedLanguage
+      void loadLanguageResource(lng).then(() => i18n.changeLanguage(lng))
       localStorage.setItem('photlas-language', userData.language)
     }
 
@@ -154,7 +156,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * i18n、localStorage、ログイン中はAPIも更新する
    */
   const changeLanguage = useCallback(async (language: SupportedLanguage) => {
-    i18n.changeLanguage(language)
+    // Issue#130: 言語リソースは動的 import なので、changeLanguage 前にロードを完了させる
+    await loadLanguageResource(language)
+    await i18n.changeLanguage(language)
     localStorage.setItem('photlas-language', language)
 
     if (isAuthenticated) {

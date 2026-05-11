@@ -1,12 +1,8 @@
 import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
-import i18n from '../i18n'
 
-// Issue#93: テスト環境でi18nを日本語に設定
-i18n.changeLanguage('ja')
-
-// localStorage のモック
+// localStorage のモック（i18n 初期化が localStorage を参照するため先に設定）
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
@@ -82,6 +78,16 @@ global.ResizeObserver = class ResizeObserver {
 vi.mock('heic2any', () => ({
   default: vi.fn()
 }))
+
+// Issue#93 + Issue#130: テスト環境では i18n を非同期で初期化（動的 import 化に対応）
+// 本番では言語ごとに動的ロードだが、テスト環境では多言語表示テスト（韓国語/中国語等）を
+// シンプルに保つため、全言語を事前ロードする
+const { default: i18n, initI18n, loadLanguageResource, SUPPORTED_LANGUAGES } = await import('../i18n')
+await initI18n()
+for (const lng of SUPPORTED_LANGUAGES) {
+  await loadLanguageResource(lng)
+}
+await i18n.changeLanguage('ja')
 
 // 各テスト後にDOMクリーンアップを実行
 afterEach(() => {

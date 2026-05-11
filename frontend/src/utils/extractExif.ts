@@ -4,9 +4,10 @@
  *
  * exifrライブラリを使用して、画像ファイルからEXIF情報を抽出する。
  * JPEG/HEIC形式に対応。PNG等EXIF非対応の形式ではnullを返す。
+ *
+ * Issue#130: exifr (≈数十KB) は写真投稿時にしか使われないため、initial bundle から
+ * 除外するために動的 import に変更。`formatLocalDateTime` は同期で使えるよう同モジュールに残す。
  */
-
-import exifr from 'exifr'
 
 /** DateオブジェクトをローカルISO形式の文字列に変換（UTC変換しない） */
 export function formatLocalDateTime(date: Date): string {
@@ -134,6 +135,8 @@ function mapRawToExif(raw: any): ExifData {
 
 export async function extractExif(file: File): Promise<ExifData | null> {
   try {
+    // Issue#130: exifr は写真投稿時のみ必要なため動的 import で initial bundle から除外
+    const { default: exifr } = await import('exifr')
     const raw = await exifr.parse(file, {
       pick: [
         'DateTimeOriginal',
