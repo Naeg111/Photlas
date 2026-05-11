@@ -34,21 +34,11 @@ export async function cropImageToBlob(
 }
 
 /**
- * AI 解析（analyze API）専用。常に長辺 2000px・quality=0.85 で書き出す。
+ * AI 解析（analyze API）用。長辺 2000px・quality=0.85 で全体画像を書き出す。
  * Rekognition 側で更に 1280px へ縮小されるため、ここでの縮小は精度に影響しない。
- */
-export async function cropImageToBlobForAnalyze(imageSrc: string, area: Area): Promise<Blob> {
-  return cropImageToBlob(imageSrc, area, {
-    maxDimension: ANALYZE_MAX_DIMENSION_PX,
-    quality: ANALYZE_OUTPUT_QUALITY,
-  })
-}
-
-/**
- * Issue#119（仕様変更）: AI 解析対象を「トリミング前の画像全体」に変更したため、
- * クロップを伴わずに画像全体を解析用にリサイズする関数を追加。
  *
- * 出力サイズ・品質は cropImageToBlobForAnalyze と同じ（長辺 2000px、quality=0.85）。
+ * Issue#119（仕様変更）: 解析対象は「トリミング前の画像全体」とするため、
+ * area は撮らずに画像全体を出力する。
  */
 export async function resizeImageToBlobForAnalyze(imageSrc: string): Promise<Blob> {
   const image = await loadImage(imageSrc)

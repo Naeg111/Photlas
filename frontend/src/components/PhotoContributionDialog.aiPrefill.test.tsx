@@ -85,21 +85,17 @@ const mockCropImageToBlob = vi.fn()
 const mockResizeImageToBlobForAnalyze = vi.fn()
 vi.mock('../utils/cropImageToBlob', () => ({
   cropImageToBlob: (...args: unknown[]) => mockCropImageToBlob(...args),
-  cropImageToBlobForAnalyze: (...args: unknown[]) => mockCropImageToBlob(...args),
   cropImageToBlobForUpload: (...args: unknown[]) => mockCropImageToBlob(...args),
   resizeImageToBlobForAnalyze: (...args: unknown[]) => mockResizeImageToBlobForAnalyze(...args),
 }))
 
-const DEBOUNCE_MS = 1000
-
-async function selectFileAndTriggerCrop(user: ReturnType<typeof userEvent.setup>) {
+async function selectFile(user: ReturnType<typeof userEvent.setup>) {
   const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
   const input = document.querySelector('input[type="file"]') as HTMLInputElement
   await user.upload(input, file)
   await waitFor(() => {
     expect(screen.getByTestId('cropper-component')).toBeInTheDocument()
   })
-  await user.click(screen.getByTestId('mock-crop-trigger'))
 }
 
 describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () => {
@@ -161,8 +157,8 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
       expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
     })
 
-    // 全体画像版が使われ、トリミング版（cropImageToBlobForAnalyze→mockCropImageToBlob）は
-    // analyze 目的で呼ばれていないことを確認
+    // 全体画像版が使われていることと、トリミング版（cropImageToBlob）が
+    // analyze 目的では呼ばれていないことを確認
     expect(mockResizeImageToBlobForAnalyze).toHaveBeenCalled()
     expect(mockCropImageToBlob).not.toHaveBeenCalled()
   })
@@ -201,11 +197,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
+    await selectFile(user)
     await waitFor(() => {
       // 自然風景(201) と 夜景(204) のチェックボックスが選択されている
       const natureCheckbox = screen.getByLabelText('自然風景') as HTMLInputElement
@@ -219,11 +211,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
+    await selectFile(user)
     await waitFor(() => {
       expect(screen.getByTestId('ai-prefill-banner')).toBeInTheDocument()
     })
@@ -239,11 +227,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
+    await selectFile(user)
     await waitFor(() => {
       expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
     })
@@ -264,11 +248,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
+    await selectFile(user)
     await waitFor(() => {
       expect(screen.getByTestId('ai-analyzing-categories')).toBeInTheDocument()
       expect(screen.getByTestId('ai-analyzing-weather')).toBeInTheDocument()
@@ -295,10 +275,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     render(<PhotoContributionDialog {...defaultProps} onSubmit={onSubmit} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
+    await selectFile(user)
     // analyze 完了を待つ
     await waitFor(() => {
       expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
@@ -331,10 +308,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     const { rerender } = render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
+    await selectFile(user)
     await waitFor(() => {
       expect(abortSignal).toBeDefined()
     })
@@ -352,11 +326,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
+    await selectFile(user)
     await waitFor(() => {
       expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
     })
@@ -371,11 +341,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
+    await selectFile(user)
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalled()
     })
@@ -392,11 +358,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
+    await selectFile(user)
     await waitFor(() => {
       expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
     })
@@ -409,11 +371,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
+    await selectFile(user)
     await waitFor(() => {
       // categories=[201, 204], weather=401（beforeEach の mockAnalyzePhoto 設定値）
       expect(mockTrackAiPrefillEvent).toHaveBeenCalledWith('ai_prefill_shown', {
@@ -433,11 +391,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
+    await selectFile(user)
     await waitFor(() => {
       expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
     })
@@ -452,11 +406,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
+    await selectFile(user)
     await waitFor(() => {
       expect(mockTrackAiPrefillEvent).toHaveBeenCalledWith(
         'ai_prefill_failed',
@@ -471,11 +421,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
-    await selectFileAndTriggerCrop(user)
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
+    await selectFile(user)
     await waitFor(() => {
       expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
     })
