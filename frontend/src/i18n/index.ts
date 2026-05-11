@@ -53,7 +53,7 @@ export async function loadLanguageResource(lng: SupportedLanguage): Promise<void
  * localStorage / navigator.language から初期言語を決定する。
  * SUPPORTED_LANGUAGES に含まれない場合は FALLBACK_LANGUAGE を返す。
  */
-function detectInitialLanguage(): SupportedLanguage {
+export function detectInitialLanguage(): SupportedLanguage {
   if (typeof window === 'undefined') return FALLBACK_LANGUAGE
   const stored = localStorage.getItem('photlas-language')
   if (stored && (SUPPORTED_LANGUAGES as readonly string[]).includes(stored)) {
