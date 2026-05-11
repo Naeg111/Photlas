@@ -57,9 +57,12 @@ vi.mock('../utils/extractExif', () => ({
 // テストから検証できるようにする
 // Issue#131（モバイル枠表示修正）: cropSize と onMediaLoaded をテストから
 // 検証・発火できるように拡張
+// Issue#131（z-index 修正）: style.cropAreaStyle も捕捉し、iOS Safari の
+// GPU compositing 順を上書きするための zIndex 指定をテストで検証
 let lastCropperCropSize: { width: number; height: number } | undefined
+let lastCropperStyle: { cropAreaStyle?: Record<string, unknown> } | undefined
 vi.mock('react-easy-crop', () => ({
-  default: ({ onCropComplete, onMediaLoaded, zoom, objectFit, cropSize }: {
+  default: ({ onCropComplete, onMediaLoaded, zoom, objectFit, cropSize, style }: {
     onCropComplete: (croppedArea: unknown, croppedAreaPixels: unknown) => void
     onMediaLoaded?: (mediaSize: {
       width: number
@@ -70,8 +73,10 @@ vi.mock('react-easy-crop', () => ({
     zoom: number
     objectFit?: string
     cropSize?: { width: number; height: number }
+    style?: { cropAreaStyle?: Record<string, unknown> }
   }) => {
     lastCropperCropSize = cropSize
+    lastCropperStyle = style
     return (
       <div
         data-testid="cropper-component"
@@ -986,6 +991,36 @@ describe('PhotoContributionDialog', () => {
 
       // onMediaLoaded はまだ発火していない
       expect(lastCropperCropSize).toBeUndefined()
+    })
+  })
+
+  // ============================================================
+  // Issue#131（z-index 修正・iOS Safari GPU compositing 対策）:
+  // 画像（will-change: transform）が GPU 合成レイヤーに昇格して
+  // 枠を上書きする事象。枠側にも明示的な z-index を立てることで
+  // ブラウザのヒューリスティック判断に依存せず、必ず枠が画像の
+  // 上に来るようにする。
+  // ============================================================
+  describe('Issue#131: cropAreaStyle.zIndex 指定（iOS Safari 合成順上書き）', () => {
+    it('Cropper の cropAreaStyle に zIndex が設定されている（画像の compositing 層より上に固定するため）', async () => {
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('cropper-component')).toBeInTheDocument()
+      })
+
+      expect(lastCropperStyle).toBeDefined()
+      expect(lastCropperStyle?.cropAreaStyle).toBeDefined()
+
+      // zIndex が数値として設定され、画像 (z-index: auto = 0) より大きいこと
+      const zIndex = lastCropperStyle?.cropAreaStyle?.zIndex
+      expect(typeof zIndex).toBe('number')
+      expect(zIndex as number).toBeGreaterThan(0)
     })
   })
 })
