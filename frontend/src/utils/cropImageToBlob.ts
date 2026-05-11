@@ -45,6 +45,23 @@ export async function cropImageToBlobForAnalyze(imageSrc: string, area: Area): P
 }
 
 /**
+ * Issue#119（仕様変更）: AI 解析対象を「トリミング前の画像全体」に変更したため、
+ * クロップを伴わずに画像全体を解析用にリサイズする関数を追加。
+ *
+ * 出力サイズ・品質は cropImageToBlobForAnalyze と同じ（長辺 2000px、quality=0.85）。
+ */
+export async function resizeImageToBlobForAnalyze(imageSrc: string): Promise<Blob> {
+  const image = await loadImage(imageSrc)
+  const fullArea: Area = {
+    x: 0,
+    y: 0,
+    width: image.naturalWidth,
+    height: image.naturalHeight,
+  }
+  return drawCroppedToBlob(image, fullArea, ANALYZE_MAX_DIMENSION_PX, ANALYZE_OUTPUT_QUALITY)
+}
+
+/**
  * 投稿（S3 保存）用。ネイティブ解像度・品質 0.92 で書き出すが、50MB 超になった場合のみ
  * 長辺 4000px にダウンスケールする保険を入れている（multipart 上限超過の防止）。
  */
