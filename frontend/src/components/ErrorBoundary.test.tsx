@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ErrorBoundary } from './ErrorBoundary'
+import { ErrorBoundary, isChunkLoadError } from './ErrorBoundary'
 
 // Sentryモック
 vi.mock('@sentry/react', () => ({
@@ -180,6 +180,46 @@ describe('ErrorBoundary', () => {
 
       expect(reloadMock).not.toHaveBeenCalled()
       expect(screen.getByText('エラーが発生しました')).toBeInTheDocument()
+    })
+
+    it('ChunkLoadError 自動リロード時は Sentry に通知しない', async () => {
+      const { captureException } = await import('@sentry/react')
+      vi.mocked(captureException).mockClear()
+
+      render(
+        <ErrorBoundary>
+          <ThrowSpecificError message="boom" name="ChunkLoadError" />
+        </ErrorBoundary>
+      )
+
+      expect(reloadMock).toHaveBeenCalled()
+      expect(captureException).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Issue#130 - isChunkLoadError ヘルパー', () => {
+    it('name が ChunkLoadError ならば true', () => {
+      const error = new Error('any message')
+      error.name = 'ChunkLoadError'
+      expect(isChunkLoadError(error)).toBe(true)
+    })
+
+    it('"Loading chunk N failed" メッセージなら true', () => {
+      expect(isChunkLoadError(new Error('Loading chunk 42 failed.'))).toBe(true)
+    })
+
+    it('"Failed to fetch dynamically imported module" メッセージなら true', () => {
+      expect(
+        isChunkLoadError(new Error('Failed to fetch dynamically imported module: /a.js'))
+      ).toBe(true)
+    })
+
+    it('通常のエラーメッセージなら false', () => {
+      expect(isChunkLoadError(new Error('Cannot read property of undefined'))).toBe(false)
+    })
+
+    it('大文字小文字を区別せず判定する', () => {
+      expect(isChunkLoadError(new Error('LOADING CHUNK 7 FAILED'))).toBe(true)
     })
   })
 })

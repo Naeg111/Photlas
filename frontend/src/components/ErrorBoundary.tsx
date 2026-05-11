@@ -14,7 +14,11 @@ interface ErrorBoundaryState {
 /** Issue#130: 動的 import の chunk ロード失敗時に同一セッションで複数回リロードしないためのフラグ */
 const CHUNK_RELOAD_FLAG_KEY = 'photlas:chunk-error-reloaded'
 
-function isChunkLoadError(error: Error): boolean {
+/**
+ * Issue#130: 動的 import の chunk ロード失敗を検出する。
+ * デプロイ後の旧 index.html → 新 chunk 不整合や、ネットワーク断による chunk fetch 失敗が該当。
+ */
+export function isChunkLoadError(error: Error): boolean {
   return (
     error.name === 'ChunkLoadError' ||
     /Loading chunk \d+ failed/i.test(error.message) ||
