@@ -69,6 +69,51 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         @Param("maxAgeCutoff") LocalDateTime maxAgeCutoff);
 
     /**
+     * Issue#127: 認証ユーザー本人の PENDING_REVIEW を含めて取得するバージョン。
+     *
+     * PUBLISHED に加え、moderation_status = 1001 かつ user_id = :viewerUserId の写真も結果に含める。
+     * 他人の PENDING は除外され、プライバシーは保たれる。
+     *
+     * 並び順・退会済みユーザー除外・maxAgeCutoff の挙動は {@link #findPhotoIdsBySpotsPaged} と同一。
+     */
+    @Query(value =
+        "SELECT p.photo_id FROM photos p " +
+        "INNER JOIN users u ON p.user_id = u.id " +
+        "WHERE p.spot_id IN (:spotIds) " +
+        "  AND ( p.moderation_status = :publishedStatus " +
+        "        OR (p.moderation_status = :pendingStatus AND p.user_id = :viewerUserId) ) " +
+        "  AND u.deleted_at IS NULL " +
+        "  AND (CAST(:maxAgeCutoff AS timestamp) IS NULL OR p.shot_at IS NULL OR p.shot_at >= :maxAgeCutoff) " +
+        "ORDER BY p.shot_at DESC NULLS LAST, p.photo_id DESC " +
+        "LIMIT :limit OFFSET :offset",
+        nativeQuery = true)
+    List<Long> findPhotoIdsBySpotsPagedWithViewer(
+        @Param("spotIds") List<Long> spotIds,
+        @Param("publishedStatus") Integer publishedStatus,
+        @Param("pendingStatus") Integer pendingStatus,
+        @Param("viewerUserId") Long viewerUserId,
+        @Param("maxAgeCutoff") LocalDateTime maxAgeCutoff,
+        @Param("limit") int limit,
+        @Param("offset") int offset);
+
+    /** Issue#127: {@link #findPhotoIdsBySpotsPagedWithViewer} と同条件の総件数取得 */
+    @Query(value =
+        "SELECT COUNT(*) FROM photos p " +
+        "INNER JOIN users u ON p.user_id = u.id " +
+        "WHERE p.spot_id IN (:spotIds) " +
+        "  AND ( p.moderation_status = :publishedStatus " +
+        "        OR (p.moderation_status = :pendingStatus AND p.user_id = :viewerUserId) ) " +
+        "  AND u.deleted_at IS NULL " +
+        "  AND (CAST(:maxAgeCutoff AS timestamp) IS NULL OR p.shot_at IS NULL OR p.shot_at >= :maxAgeCutoff)",
+        nativeQuery = true)
+    long countPhotosBySpotsWithViewer(
+        @Param("spotIds") List<Long> spotIds,
+        @Param("publishedStatus") Integer publishedStatus,
+        @Param("pendingStatus") Integer pendingStatus,
+        @Param("viewerUserId") Long viewerUserId,
+        @Param("maxAgeCutoff") LocalDateTime maxAgeCutoff);
+
+    /**
      * Issue#54: モデレーションステータスで写真を検索
      */
     List<Photo> findByModerationStatus(Integer moderationStatus);

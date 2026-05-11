@@ -131,15 +131,27 @@ public class SpotController {
      */
     @PostMapping("/photos")
     public ResponseEntity<SpotPhotosResponse> getSpotPhotos(
-            @Valid @RequestBody SpotPhotosRequest request) {
-        logger.info("POST /api/v1/spots/photos - spotIds={}, limit={}, offset={}, maxAgeDays={}",
-                request.getSpotIds(), request.getLimit(), request.getOffset(), request.getMaxAgeDays());
+            @Valid @RequestBody SpotPhotosRequest request,
+            Authentication authentication) {
+        // Issue#127: 認証済みユーザーは自分の PENDING_REVIEW 投稿も結果に含める。
+        // 未認証は従来通り PUBLISHED のみ。/spots/photos は permitAll のため authentication は null になり得る。
+        Long viewerUserId = null;
+        if (authentication != null && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getPrincipal())) {
+            String email = authentication.getName();
+            viewerUserId = userRepository.findByEmail(email)
+                    .map(User::getId)
+                    .orElse(null);
+        }
+
+        logger.info("POST /api/v1/spots/photos - spotIds={}, limit={}, offset={}, maxAgeDays={}, viewerUserId={}",
+                request.getSpotIds(), request.getLimit(), request.getOffset(), request.getMaxAgeDays(), viewerUserId);
 
         int limit = request.getLimit() != null ? request.getLimit() : DEFAULT_PHOTO_PAGE_SIZE;
         int offset = request.getOffset() != null ? request.getOffset() : DEFAULT_PHOTO_PAGE_OFFSET;
 
         SpotPhotosResponse response = spotService.getSpotPhotos(
-                request.getSpotIds(), limit, offset, request.getMaxAgeDays());
+                request.getSpotIds(), limit, offset, request.getMaxAgeDays(), viewerUserId);
 
         return ResponseEntity.ok(response);
     }
