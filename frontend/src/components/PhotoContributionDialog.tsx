@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { analyzePhoto, type PhotoAnalyzeResponse } from '../utils/photoAnalyzeApi'
-import { cropImageToBlobForAnalyze } from '../utils/cropImageToBlob'
+import { resizeImageToBlobForAnalyze } from '../utils/cropImageToBlob'
 import { resizeImageFile } from '../utils/resizeImageFile'
 import { CATEGORY_LABELS } from '../utils/codeConstants'
 import { trackAiPrefillEvent, compareAiPrefill } from '../utils/aiPrefillAnalytics'
@@ -241,33 +241,21 @@ export function PhotoContributionDialog({
     }
   }, [open])
 
-  // Issue#119: トリミング領域が確定したら debounce で AI 解析を呼び出す（Phase 8）
-  // 1秒 debounce: ユーザーがトリミング調整を止めた頃に analyze を実行する
+  // Issue#119（仕様変更）: AI 解析対象を「トリミング前の画像全体」に変更したため、
+  // トリミング操作（cropComplete）では解析を発火させず、ファイル選択直後の 1 回だけ実行する。
   useEffect(() => {
-    if (!previewUrl || !croppedArea) return
-
-    // 既存の debounce タイマーを破棄（連続 cropComplete に対応）
-    if (analyzeDebounceRef.current) {
-      clearTimeout(analyzeDebounceRef.current)
-    }
-
-    analyzeDebounceRef.current = setTimeout(() => {
-      runAnalyze(previewUrl, croppedArea)
-    }, ANALYZE_DEBOUNCE_MS)
-
-    return () => {
-      if (analyzeDebounceRef.current) {
-        clearTimeout(analyzeDebounceRef.current)
-      }
-    }
+    if (!previewUrl) return
+    runAnalyze(previewUrl)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewUrl, croppedArea])
+  }, [previewUrl])
 
   /**
    * AI 解析を実行する。進行中の analyze は AbortController でキャンセル。
    * 失敗時は黙って続行（Phase 9 でトースト追加予定）。
+   *
+   * Issue#119（仕様変更）: 解析対象はトリミング前の全体画像。area 引数は廃止。
    */
-  const runAnalyze = useCallback(async (imageSrc: string, area: Area) => {
+  const runAnalyze = useCallback(async (imageSrc: string) => {
     // 進行中の analyze をキャンセル
     if (analyzeAbortRef.current) {
       analyzeAbortRef.current.abort()
@@ -277,7 +265,7 @@ export function PhotoContributionDialog({
 
     setIsAnalyzing(true)
     try {
-      const blob = await cropImageToBlobForAnalyze(imageSrc, area)
+      const blob = await resizeImageToBlobForAnalyze(imageSrc)
       if (controller.signal.aborted) return
 
       const response = await analyzePhoto(blob, { signal: controller.signal })

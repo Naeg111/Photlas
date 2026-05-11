@@ -195,41 +195,6 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
   })
 
-  // ========== 解析呼び出し ==========
-
-  it('Issue#119 - cropComplete から 1 秒後に analyzePhoto が呼ばれる', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    render(<PhotoContributionDialog {...defaultProps} />)
-
-    await selectFileAndTriggerCrop(user)
-    expect(mockAnalyzePhoto).not.toHaveBeenCalled()
-
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
-    await waitFor(() => {
-      expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
-    })
-  })
-
-  it('Issue#119 - 連続 cropComplete でも debounce で analyzePhoto は1回のみ', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    render(<PhotoContributionDialog {...defaultProps} />)
-
-    await selectFileAndTriggerCrop(user)
-    await user.click(screen.getByTestId('mock-crop-trigger'))
-    await user.click(screen.getByTestId('mock-crop-trigger'))
-
-    await act(async () => {
-      vi.advanceTimersByTime(DEBOUNCE_MS)
-    })
-
-    await waitFor(() => {
-      expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
-    })
-  })
-
   // ========== プリフィル ==========
 
   it('Issue#119 - analyze 成功時にカテゴリがプリフィルされる', async () => {
