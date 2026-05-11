@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Avatar, AvatarFallback } from './ui/avatar'
@@ -29,7 +29,9 @@ import { useAuth } from '../contexts/AuthContext'
 import { ApiError, getAuthHeaders } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
 import { notifyIfRateLimited } from '../utils/notifyIfRateLimited'
-import ProfileImageCropper from './ProfileImageCropper'
+
+// Issue#130: react-easy-crop 依存を初回バンドルから除外（プロフィール画像トリミング時のみロード）
+const ProfileImageCropper = lazy(() => import('./ProfileImageCropper'))
 import { ReportDialog } from './ReportDialog'
 import { SnsLinkEditDialog } from './SnsLinkEditDialog'
 import { ProtectedImage } from './figma/ProtectedImage'
@@ -843,12 +845,15 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         </Tabs>
 
         {/* Issue#35: トリミングモーダル */}
+        {/* Issue#130: lazy 化したコンポーネントを Suspense でラップ */}
         {isCropperOpen && (
-          <ProfileImageCropper
-            imageSrc={cropperImageSrc}
-            onCropComplete={handleCropComplete}
-            onCancel={handleCropCancel}
-          />
+          <Suspense fallback={null}>
+            <ProfileImageCropper
+              imageSrc={cropperImageSrc}
+              onCropComplete={handleCropComplete}
+              onCancel={handleCropCancel}
+            />
+          </Suspense>
         )}
 
         {/* SNSリンク編集ダイアログ */}

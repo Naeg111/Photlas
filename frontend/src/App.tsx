@@ -1,20 +1,23 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom'
 import { AnimatePresence } from 'motion/react'
 import { SplashScreen } from './components/SplashScreen'
 import PasswordRecommendationBanner from './components/PasswordRecommendationBanner'
+import { RouteFallback } from './components/RouteFallback'
 import NotFoundPage from './pages/NotFoundPage'
 import EmailVerificationPage from './pages/EmailVerificationPage'
-import AdminModerationPage from './pages/AdminModerationPage'
-import AdminDeletedUsersPage from './pages/AdminDeletedUsersPage'
-import AdminDeletedUserDetailPage from './pages/AdminDeletedUserDetailPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
-import ReviewLocationPage from './pages/ReviewLocationPage'
 import ConfirmEmailChangePage from './pages/ConfirmEmailChangePage'
 import OAuthCallbackPage from './pages/OAuthCallbackPage'
 import AboutPage from './pages/AboutPage'
 import PrivacyPolicyStandalonePage from './pages/PrivacyPolicyStandalonePage'
 import TermsOfServiceStandalonePage from './pages/TermsOfServiceStandalonePage'
+
+// Issue#130: 管理者・指摘ページは通常ユーザーが到達しないため lazy 化して初回バンドルから除外
+const AdminModerationPage = lazy(() => import('./pages/AdminModerationPage'))
+const AdminDeletedUsersPage = lazy(() => import('./pages/AdminDeletedUsersPage'))
+const AdminDeletedUserDetailPage = lazy(() => import('./pages/AdminDeletedUserDetailPage'))
+const ReviewLocationPage = lazy(() => import('./pages/ReviewLocationPage'))
 import { CookieConsentBanner } from './components/CookieConsentBanner'
 import { formatLocalDateTime } from './utils/extractExif'
 import { FilterPanel } from './components/FilterPanel'
@@ -31,10 +34,33 @@ import TermsAgreementDialog from './components/TermsAgreementDialog'
 import { TermsOfServicePage } from './components/TermsOfServicePage'
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage'
 import PasswordResetRequestModal from './components/PasswordResetRequestModal'
-import { PhotoContributionDialog } from './components/PhotoContributionDialog'
-import { AccountSettingsDialog } from './components/AccountSettingsDialog'
 import ProfileDialog from './components/ProfileDialog'
-import PhotoDetailDialog from './components/PhotoDetailDialog'
+import { lazyOrStatic } from './utils/lazyOrStatic'
+// Issue#130: Vitest 環境では React.lazy + Suspense の解決サイクルが既存テストと相性が悪いため、
+// テスト時は静的 import 側を、本番時は lazy() 側を使う（lazyOrStatic ヘルパーで切り替え）。
+import { PhotoContributionDialog as PhotoContributionDialogStatic } from './components/PhotoContributionDialog'
+import { AccountSettingsDialog as AccountSettingsDialogStatic } from './components/AccountSettingsDialog'
+import PhotoDetailDialogStatic from './components/PhotoDetailDialog'
+
+// Issue#130: 重いダイアログは open のときだけマウントすることで初回バンドルから除外
+const PhotoContributionDialog = lazyOrStatic(
+  () =>
+    import('./components/PhotoContributionDialog').then((m) => ({
+      default: m.PhotoContributionDialog,
+    })),
+  PhotoContributionDialogStatic
+)
+const AccountSettingsDialog = lazyOrStatic(
+  () =>
+    import('./components/AccountSettingsDialog').then((m) => ({
+      default: m.AccountSettingsDialog,
+    })),
+  AccountSettingsDialogStatic
+)
+const PhotoDetailDialog = lazyOrStatic(
+  () => import('./components/PhotoDetailDialog'),
+  PhotoDetailDialogStatic
+)
 // import { WantToGoListDialog } from './components/WantToGoListDialog' // 行きたい場所リスト（一時非表示）
 import { AboutDialog } from './components/AboutDialog'
 import { HowToUseDialog } from './components/HowToUseDialog'
@@ -951,24 +977,32 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
         onShowLogin={() => dialog.open('login')}
       />
 
-      <PhotoContributionDialog
-        {...dialog.getProps('photoContribution')}
-        onSubmit={handlePhotoSubmit}
-        onOpenChange={(open) => {
-          dialog.getProps('photoContribution').onOpenChange(open)
-          if (!open) mapRef.current?.refreshSpots({ bypassCache: true })
-        }}
-      />
+      {/* Issue#130: 開いた瞬間にロード（lazy chunk + react-easy-crop + heic2any/exifr の重い依存を含む） */}
+      {dialog.isOpen('photoContribution') && (
+        <Suspense fallback={null}>
+          <PhotoContributionDialog
+            {...dialog.getProps('photoContribution')}
+            onSubmit={handlePhotoSubmit}
+            onOpenChange={(open) => {
+              dialog.getProps('photoContribution').onOpenChange(open)
+              if (!open) mapRef.current?.refreshSpots({ bypassCache: true })
+            }}
+          />
+        </Suspense>
+      )}
 
       {/* 行きたい場所リスト（一時非表示）
       <WantToGoListDialog {...dialog.getProps('wantToGoList')} />
       */}
 
-      {user && (
-        <AccountSettingsDialog
-          {...dialog.getProps('accountSettings')}
-          currentEmail={user.email}
-        />
+      {/* Issue#130: ログイン中かつダイアログ open のときだけマウント */}
+      {user && dialog.isOpen('accountSettings') && (
+        <Suspense fallback={null}>
+          <AccountSettingsDialog
+            {...dialog.getProps('accountSettings')}
+            currentEmail={user.email}
+          />
+        </Suspense>
       )}
 
       {/* ProfileDialog - ユーザープロフィール表示 */}
@@ -1002,42 +1036,45 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
       )}
 
       {/* PhotoDetailDialog - 写真詳細表示 */}
+      {/* Issue#130: 元々条件付きマウントだったため、Suspense でラップするだけで lazy 化対応 */}
       {(selectedSpotIds !== null || deepLinkPhotoId || profilePhotoId) && (
-        <PhotoDetailDialog
-          open={dialog.isOpen('photoDetail')}
-          spotIds={selectedSpotIds ?? []}
-          singlePhotoId={deepLinkPhotoId || profilePhotoId}
-          onClose={() => {
-            // プレビューモード中はダイアログを閉じない（Radix flushSync対策）
-            if (isInPreviewRef.current) return
-            dialog.close('photoDetail')
-            setSelectedSpotIds(null)
-            setShootingLocationPreview(null)
-            mapRef.current?.clearShootingLocationPin()
-            setProfilePhotoId(undefined)
-            setProfileSlideDown(false)
-            setIsPhotoFromProfile(false)
-            // Radix DismissableLayerのフォーカス復帰処理完了後にrefクリア
-            setTimeout(() => { isPhotoFromProfileRef.current = false }, 300)
-            // Issue#58: ディープリンクから閉じた場合はトップページに遷移
-            if (deepLinkPhotoId) {
-              setDeepLinkPhotoId(undefined)
-              navigate('/', { replace: true })
-            }
-          }}
-          onUserClick={handleUserClick}
-          onImageClick={handleShowLightbox}
-          isLightboxOpen={dialog.isOpen('lightbox')}
-          onMinimapClick={handleMinimapClick}
-          isSlideDown={!!shootingLocationPreview}
-          isDeletable={isPhotoFromProfile}
-          onPhotoDeleted={() => {
-            setRefreshPhotosKey(prev => prev + 1)
-            mapRef.current?.refreshSpots({ bypassCache: true })
-          }}
-          filterMaxAgeDays={mapFilterParams?.max_age_days}
-          onPhotoViewed={registrationWall.recordPhotoView}
-        />
+        <Suspense fallback={null}>
+          <PhotoDetailDialog
+            open={dialog.isOpen('photoDetail')}
+            spotIds={selectedSpotIds ?? []}
+            singlePhotoId={deepLinkPhotoId || profilePhotoId}
+            onClose={() => {
+              // プレビューモード中はダイアログを閉じない（Radix flushSync対策）
+              if (isInPreviewRef.current) return
+              dialog.close('photoDetail')
+              setSelectedSpotIds(null)
+              setShootingLocationPreview(null)
+              mapRef.current?.clearShootingLocationPin()
+              setProfilePhotoId(undefined)
+              setProfileSlideDown(false)
+              setIsPhotoFromProfile(false)
+              // Radix DismissableLayerのフォーカス復帰処理完了後にrefクリア
+              setTimeout(() => { isPhotoFromProfileRef.current = false }, 300)
+              // Issue#58: ディープリンクから閉じた場合はトップページに遷移
+              if (deepLinkPhotoId) {
+                setDeepLinkPhotoId(undefined)
+                navigate('/', { replace: true })
+              }
+            }}
+            onUserClick={handleUserClick}
+            onImageClick={handleShowLightbox}
+            isLightboxOpen={dialog.isOpen('lightbox')}
+            onMinimapClick={handleMinimapClick}
+            isSlideDown={!!shootingLocationPreview}
+            isDeletable={isPhotoFromProfile}
+            onPhotoDeleted={() => {
+              setRefreshPhotosKey(prev => prev + 1)
+              mapRef.current?.refreshSpots({ bypassCache: true })
+            }}
+            filterMaxAgeDays={mapFilterParams?.max_age_days}
+            onPhotoViewed={registrationWall.recordPhotoView}
+          />
+        </Suspense>
       )}
 
       {/* PhotoLightbox - 写真拡大表示 */}
@@ -1131,22 +1168,25 @@ function MainApp() {
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route path="/" element={<MainApp />} />
-        <Route path="/verify-email" element={<EmailVerificationPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/review-location" element={<ReviewLocationPage />} />
-        <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
-        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicyStandalonePage />} />
-        <Route path="/terms-of-service" element={<TermsOfServiceStandalonePage />} />
-        <Route path="/photo-viewer/:photoId" element={<MainApp />} />
-        <Route path="/manage/moderation" element={<AdminModerationPage />} />
-        <Route path="/manage/deleted-users" element={<AdminDeletedUsersPage />} />
-        <Route path="/manage/deleted-users/:userId" element={<AdminDeletedUserDetailPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+      {/* Issue#130: lazy 化したページの読み込み中は RouteFallback を表示 */}
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/" element={<MainApp />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/review-location" element={<ReviewLocationPage />} />
+          <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
+          <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyStandalonePage />} />
+          <Route path="/terms-of-service" element={<TermsOfServiceStandalonePage />} />
+          <Route path="/photo-viewer/:photoId" element={<MainApp />} />
+          <Route path="/manage/moderation" element={<AdminModerationPage />} />
+          <Route path="/manage/deleted-users" element={<AdminDeletedUsersPage />} />
+          <Route path="/manage/deleted-users/:userId" element={<AdminDeletedUserDetailPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
     </AuthProvider>
   )
 }
