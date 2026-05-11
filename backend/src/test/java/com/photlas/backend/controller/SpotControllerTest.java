@@ -1510,4 +1510,120 @@ public class SpotControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
     }
+
+    // ============================================================
+    // Issue#127: 投稿者本人へ自分の審査中投稿を即時反映するため、
+    // 認証ユーザーの PENDING 投稿だけをスポット集計して返す
+    // 新規エンドポイント `/api/v1/spots/mine-pending`。
+    // CloudFront キャッシュ可能な /api/v1/spots とは別経路にすることで、
+    // 共有キャッシュを汚さず本人差分だけを軽量に取得する。
+    // ============================================================
+
+    private static final String SPOTS_MINE_PENDING_ENDPOINT = "/api/v1/spots/mine-pending";
+
+    @Test
+    @DisplayName("Issue#127 - /spots/mine-pending は認証なしでは 401")
+    void testMinePending_WithoutAuth_Returns401() throws Exception {
+        mockMvc.perform(get(SPOTS_MINE_PENDING_ENDPOINT)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Issue#127 - 自分の PENDING 投稿があるスポットだけが返る")
+    void testMinePending_ReturnsOwnPendingSpots() throws Exception {
+        Spot spot = new Spot();
+        spot.setLatitude(TEST_LATITUDE);
+        spot.setLongitude(TEST_LONGITUDE);
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-pending-" + System.nanoTime());
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setShotAt(TEST_SHOT_AT);
+        photo.setWeather(WEATHER_SUNNY);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
+        photoRepository.save(photo);
+
+        mockMvc.perform(get(SPOTS_MINE_PENDING_ENDPOINT)
+                        .header("Authorization", "Bearer " + token)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot.getSpotId().intValue())));
+    }
+
+    @Test
+    @DisplayName("Issue#127 - 他人の PENDING 投稿は表示されない（プライバシー保護）")
+    void testMinePending_ExcludesOthersPending() throws Exception {
+        // 別ユーザーを作成
+        User otherUser = new User();
+        otherUser.setUsername("otheruser");
+        otherUser.setEmail("other@example.com");
+        otherUser.setPasswordHash(TEST_PASSWORD_HASH);
+        otherUser.setRole(CodeConstants.ROLE_USER);
+        otherUser = userRepository.save(otherUser);
+
+        // 他人の PENDING 投稿があるスポット
+        Spot spot = new Spot();
+        spot.setLatitude(TEST_LATITUDE);
+        spot.setLongitude(TEST_LONGITUDE);
+        spot.setCreatedByUserId(otherUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-other-pending-" + System.nanoTime());
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(otherUser.getId());
+        photo.setShotAt(TEST_SHOT_AT);
+        photo.setWeather(WEATHER_SUNNY);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
+        photoRepository.save(photo);
+
+        // testUser として呼び出した結果に、他人の pending は含まれないこと
+        mockMvc.perform(get(SPOTS_MINE_PENDING_ENDPOINT)
+                        .header("Authorization", "Bearer " + token)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("Issue#127 - 自分の PUBLISHED 写真しかない場合は返らない（PENDING 専用）")
+    void testMinePending_ExcludesOwnPublished() throws Exception {
+        Spot spot = new Spot();
+        spot.setLatitude(TEST_LATITUDE);
+        spot.setLongitude(TEST_LONGITUDE);
+        spot.setCreatedByUserId(testUser.getId());
+        spot = spotRepository.save(spot);
+
+        Photo photo = new Photo();
+        photo.setS3ObjectKey(TEST_S3_OBJECT_KEY + "-own-published-" + System.nanoTime());
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setShotAt(TEST_SHOT_AT);
+        photo.setWeather(WEATHER_SUNNY);
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
+        photoRepository.save(photo);
+
+        mockMvc.perform(get(SPOTS_MINE_PENDING_ENDPOINT)
+                        .header("Authorization", "Bearer " + token)
+                        .param(PARAM_NORTH, BOUND_NORTH)
+                        .param(PARAM_SOUTH, BOUND_SOUTH)
+                        .param(PARAM_EAST, BOUND_EAST)
+                        .param(PARAM_WEST, BOUND_WEST))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
 }
