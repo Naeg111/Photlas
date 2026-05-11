@@ -55,14 +55,30 @@ vi.mock('../utils/extractExif', () => ({
 // react-easy-crop のモック（Issue#49）
 // Issue#131 Cycle2: 渡された objectFit を data 属性に記録して
 // テストから検証できるようにする
+// Issue#131（モバイル枠表示修正）: cropSize と onMediaLoaded をテストから
+// 検証・発火できるように拡張
+let lastCropperCropSize: { width: number; height: number } | undefined
 vi.mock('react-easy-crop', () => ({
-  default: ({ onCropComplete, zoom, objectFit }: {
+  default: ({ onCropComplete, onMediaLoaded, zoom, objectFit, cropSize }: {
     onCropComplete: (croppedArea: unknown, croppedAreaPixels: unknown) => void
+    onMediaLoaded?: (mediaSize: {
+      width: number
+      height: number
+      naturalWidth: number
+      naturalHeight: number
+    }) => void
     zoom: number
     objectFit?: string
+    cropSize?: { width: number; height: number }
   }) => {
+    lastCropperCropSize = cropSize
     return (
-      <div data-testid="cropper-component" data-object-fit={objectFit ?? ''}>
+      <div
+        data-testid="cropper-component"
+        data-object-fit={objectFit ?? ''}
+        data-crop-size-width={cropSize?.width ?? ''}
+        data-crop-size-height={cropSize?.height ?? ''}
+      >
         <button
           data-testid="mock-crop-trigger"
           onClick={() =>
@@ -73,6 +89,21 @@ vi.mock('react-easy-crop', () => ({
           }
         >
           Mock Crop
+        </button>
+        <button
+          data-testid="mock-media-loaded"
+          onClick={() =>
+            onMediaLoaded?.({
+              // モバイル想定: コンテナ 327×320 にポートレート画像が
+              // contain で描画されたケース。短辺 = 240.5 → 端数あり。
+              width: 240.5,
+              height: 320,
+              naturalWidth: 3000,
+              naturalHeight: 4000,
+            })
+          }
+        >
+          Mock Media Loaded
         </button>
         <span data-testid="crop-zoom">{zoom}</span>
       </div>
@@ -905,6 +936,56 @@ describe('PhotoContributionDialog', () => {
 
       const cropper = screen.getByTestId('cropper-component')
       expect(cropper.getAttribute('data-object-fit')).not.toBe('cover')
+    })
+  })
+
+  // ============================================================
+  // Issue#131（モバイル枠表示バグ修正）:
+  // contain モードで auto-computed の cropSize は短辺と端数を含む
+  // 浮動小数になりやすく、retina + iOS Safari でアンチエイリアスにより
+  // 枠線がほぼ視認できない事象が起きる。
+  // 対策として onMediaLoaded で取得した mediaSize の短辺を整数値に
+  // 切り捨てて cropSize プロパティへ明示指定する。
+  // これによりサブピクセル要因が消え、PC と同じ視認性が得られる。
+  // ============================================================
+  describe('Issue#131: 明示的 cropSize 設定（モバイル枠表示修正）', () => {
+    it('onMediaLoaded 発火後、Cropper の cropSize は短辺の整数値（floor）で設定される', async () => {
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('cropper-component')).toBeInTheDocument()
+      })
+
+      // mediaSize: { width: 240.5, height: 320 } を Cropper モックが通知
+      await user.click(screen.getByTestId('mock-media-loaded'))
+
+      await waitFor(() => {
+        expect(lastCropperCropSize).toBeDefined()
+      })
+
+      // 短辺 240.5 を floor して 240、正方形
+      expect(lastCropperCropSize).toEqual({ width: 240, height: 240 })
+    })
+
+    it('onMediaLoaded 発火前は cropSize 未指定（react-easy-crop の自動計算に委ねる）', async () => {
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('cropper-component')).toBeInTheDocument()
+      })
+
+      // onMediaLoaded はまだ発火していない
+      expect(lastCropperCropSize).toBeUndefined()
     })
   })
 })
