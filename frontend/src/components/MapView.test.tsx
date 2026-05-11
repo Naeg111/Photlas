@@ -283,6 +283,104 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
+  describe('Issue#127: 投稿者本人の PENDING ピン即時反映', () => {
+    /**
+     * URL ごとに異なるレスポンスを返せる fetch モック。
+     * - /spots は通常スポット配列
+     * - /spots/mine-pending は本人 PENDING のスポット配列
+     */
+    function setupFetchMockByUrl(opts: {
+      spots: typeof TEST_SPOT[]
+      minePending?: typeof TEST_SPOT[]
+    }) {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/spots/mine-pending')) {
+          return Promise.resolve({ ok: true, json: async () => opts.minePending ?? [] })
+        }
+        return Promise.resolve({ ok: true, json: async () => opts.spots })
+      })
+      global.fetch = mockFetch
+      return mockFetch
+    }
+
+    const MINE_PENDING_SPOT = {
+      spotId: 999,
+      latitude: 35.6588,
+      longitude: 139.7458,
+      pinColor: 'Green' as const,
+      thumbnailUrl: 'https://example.com/mine-pending-thumb.jpg',
+      photoCount: 1,
+    }
+
+    afterEach(() => {
+      // localStorage の auth_token をクリーンアップ
+      ;(localStorage.getItem as any).mockReset?.()
+    })
+
+    it('未認証ユーザーでは /spots/mine-pending を呼ばない', async () => {
+      ;(localStorage.getItem as any).mockReturnValue(null)
+      const mockFetch = setupFetchMockByUrl({ spots: [TEST_SPOT] })
+
+      render(<MapView />)
+
+      // 通常の /spots は呼ばれる
+      await waitFor(() => {
+        expect(
+          mockFetch.mock.calls.some(([url]) => typeof url === 'string' && /\/spots\?/.test(url))
+        ).toBe(true)
+      })
+
+      // mine-pending は呼ばれない
+      const minePendingCalled = mockFetch.mock.calls.some(
+        ([url]) => typeof url === 'string' && url.includes('/spots/mine-pending')
+      )
+      expect(minePendingCalled).toBe(false)
+    })
+
+    it('認証ユーザーでは /spots/mine-pending を Authorization 付きで呼ぶ', async () => {
+      ;(localStorage.getItem as any).mockImplementation((key: string) =>
+        key === 'auth_token' ? 'fake-token-127' : null
+      )
+      const mockFetch = setupFetchMockByUrl({
+        spots: [TEST_SPOT],
+        minePending: [MINE_PENDING_SPOT],
+      })
+
+      render(<MapView />)
+
+      await waitFor(() => {
+        const minePendingCall = mockFetch.mock.calls.find(
+          ([url]) => typeof url === 'string' && url.includes('/spots/mine-pending')
+        )
+        expect(minePendingCall).toBeDefined()
+        // 第 2 引数の headers に Authorization が入っていること
+        const init = minePendingCall![1] as RequestInit | undefined
+        const headers = (init?.headers ?? {}) as Record<string, string>
+        expect(headers.Authorization).toBe('Bearer fake-token-127')
+      })
+    })
+
+    it('認証ユーザー: /spots と /spots/mine-pending の両方のピンが表示用 GeoJSON にマージされる', async () => {
+      ;(localStorage.getItem as any).mockImplementation((key: string) =>
+        key === 'auth_token' ? 'fake-token-127' : null
+      )
+      setupFetchMockByUrl({
+        spots: [TEST_SPOT],
+        minePending: [MINE_PENDING_SPOT],
+      })
+
+      render(<MapView />)
+
+      await waitFor(() => {
+        const features = mockSourceData.lastSetData?.features ?? []
+        // /spots の 1 件 + mine-pending の 1 件 = 計 2 件
+        const ids = features.map((f: any) => f.properties?.spotId)
+        expect(ids).toContain(TEST_SPOT.spotId)
+        expect(ids).toContain(MINE_PENDING_SPOT.spotId)
+      })
+    })
+  })
+
   describe('パフォーマンス最適化', () => {
     it('同じスポットデータで再取得してもGeoJSONのsetDataが増加しない（メモ化）', async () => {
       const spots = [TEST_SPOT]
