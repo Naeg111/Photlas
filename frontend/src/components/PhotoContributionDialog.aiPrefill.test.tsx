@@ -82,10 +82,12 @@ vi.mock('../utils/photoAnalyzeApi', () => ({
 }))
 
 const mockCropImageToBlob = vi.fn()
+const mockResizeImageToBlobForAnalyze = vi.fn()
 vi.mock('../utils/cropImageToBlob', () => ({
   cropImageToBlob: (...args: unknown[]) => mockCropImageToBlob(...args),
   cropImageToBlobForAnalyze: (...args: unknown[]) => mockCropImageToBlob(...args),
   cropImageToBlobForUpload: (...args: unknown[]) => mockCropImageToBlob(...args),
+  resizeImageToBlobForAnalyze: (...args: unknown[]) => mockResizeImageToBlobForAnalyze(...args),
 }))
 
 const DEBOUNCE_MS = 1000
@@ -111,6 +113,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     vi.useFakeTimers({ shouldAdvanceTime: true })
     vi.clearAllMocks()
     mockCropImageToBlob.mockResolvedValue(new Blob(['cropped'], { type: 'image/jpeg' }))
+    mockResizeImageToBlobForAnalyze.mockResolvedValue(new Blob(['full-image'], { type: 'image/jpeg' }))
     mockAnalyzePhoto.mockResolvedValue({
       categories: [201, 204],
       weather: 401,
@@ -121,6 +124,75 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  // ========== Issue#119 仕様変更: トリミング前の全体画像を解析対象とする ==========
+
+  it('Issue#119 - ファイル選択のみで（cropComplete 不要で）analyzePhoto が呼ばれる', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    // ファイル選択のみ。cropComplete は意図的に発火させない。
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(input, file)
+    await waitFor(() => {
+      expect(screen.getByTestId('cropper-component')).toBeInTheDocument()
+    })
+
+    // cropComplete を発火させずに analyzePhoto が呼ばれるはず（新仕様）
+    await waitFor(() => {
+      expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('Issue#119 - 解析対象はトリミング後ではなく全体画像（resizeImageToBlobForAnalyze 使用）', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(input, file)
+    await waitFor(() => {
+      expect(screen.getByTestId('cropper-component')).toBeInTheDocument()
+    })
+
+    await waitFor(() => {
+      expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
+    })
+
+    // 全体画像版が使われ、トリミング版（cropImageToBlobForAnalyze→mockCropImageToBlob）は
+    // analyze 目的で呼ばれていないことを確認
+    expect(mockResizeImageToBlobForAnalyze).toHaveBeenCalled()
+    expect(mockCropImageToBlob).not.toHaveBeenCalled()
+  })
+
+  it('Issue#119 - cropComplete を複数回起こしても analyzePhoto は 1 回のみ', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(input, file)
+    await waitFor(() => {
+      expect(screen.getByTestId('cropper-component')).toBeInTheDocument()
+    })
+
+    // 解析完了（または開始）を待つ
+    await waitFor(() => {
+      expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
+    })
+
+    // 解析完了後に cropComplete を複数回起こしても、追加で analyzePhoto は呼ばれない
+    await user.click(screen.getByTestId('mock-crop-trigger'))
+    await user.click(screen.getByTestId('mock-crop-trigger'))
+    await user.click(screen.getByTestId('mock-crop-trigger'))
+
+    // 念のため debounce 相当の時間を進めても、依然として 1 回のみ
+    await act(async () => {
+      vi.advanceTimersByTime(2000)
+    })
+    expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
   })
 
   // ========== 解析呼び出し ==========
