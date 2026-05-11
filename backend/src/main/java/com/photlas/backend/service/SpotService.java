@@ -179,6 +179,30 @@ public class SpotService {
         return new SpotPhotosResponse(ids, total);
     }
 
+    /**
+     * Issue#127: 認証ユーザー本人の PENDING_REVIEW 投稿だけを集計してスポット一覧で返す。
+     * /api/v1/spots とは別の軽量経路。CloudFront キャッシュ対象外。
+     */
+    @Transactional(readOnly = true)
+    public List<SpotResponse> getMinePendingSpots(BigDecimal north, BigDecimal south,
+                                                  BigDecimal east, BigDecimal west,
+                                                  Long viewerUserId) {
+        logger.info("Getting mine-pending spots within bounds for user {}", viewerUserId);
+
+        List<Object[]> results = spotRepository.findMinePendingSpots(
+                north, south, east, west, viewerUserId);
+
+        List<SpotResponse> spotResponses = results.stream()
+                .map(this::convertToSpotResponse)
+                .collect(Collectors.toList());
+
+        if (spotResponses.size() > MAX_SPOTS_LIMIT) {
+            spotResponses = spotResponses.subList(0, MAX_SPOTS_LIMIT);
+        }
+
+        return spotResponses;
+    }
+
     /** null/空リストをセンチネル値（-1）に変換 */
     private List<Integer> safeIntList(List<Integer> list) {
         return (list == null || list.isEmpty()) ? List.of(-1) : list;

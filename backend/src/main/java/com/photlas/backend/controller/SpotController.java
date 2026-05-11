@@ -3,11 +3,15 @@ package com.photlas.backend.controller;
 import com.photlas.backend.dto.SpotPhotosRequest;
 import com.photlas.backend.dto.SpotPhotosResponse;
 import com.photlas.backend.dto.SpotResponse;
+import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.UserNotFoundException;
+import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.SpotService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -23,9 +27,11 @@ public class SpotController {
     private static final Logger logger = LoggerFactory.getLogger(SpotController.class);
 
     private final SpotService spotService;
+    private final UserRepository userRepository;
 
-    public SpotController(SpotService spotService) {
+    public SpotController(SpotService spotService, UserRepository userRepository) {
         this.spotService = spotService;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -76,6 +82,36 @@ public class SpotController {
         List<SpotResponse> spots = spotService.getSpots(north, south, east, west, subjectCategories, months, timesOfDay, weathers,
                 minResolution, deviceTypes, maxAgeDays, aspectRatios, focalLengthRanges, maxIso);
 
+        return ResponseEntity.ok(spots);
+    }
+
+    /**
+     * Issue#127: 認証ユーザー本人の PENDING_REVIEW（審査中）投稿だけをスポット一覧で返す。
+     *
+     * /api/v1/spots は CloudFront 共有キャッシュで PUBLISHED のみを返すため、
+     * 投稿直後の本人がモデレーション完了前に自分の投稿を地図上で確認できない。
+     * 本エンドポイントは認証必須・キャッシュ不可で、他人の PENDING は返さない
+     * （プライバシー保護）。フロント側で /spots レスポンスとマージして表示する。
+     *
+     * @param authentication 認証情報（必須。未認証なら Security 層で 401）
+     * @return 自分の PENDING 投稿だけを集計したスポット一覧
+     */
+    @GetMapping("/mine-pending")
+    public ResponseEntity<List<SpotResponse>> getMinePendingSpots(
+            @RequestParam BigDecimal north,
+            @RequestParam BigDecimal south,
+            @RequestParam BigDecimal east,
+            @RequestParam BigDecimal west,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
+
+        logger.info("GET /api/v1/spots/mine-pending - viewerUserId={}, north={}, south={}, east={}, west={}",
+                user.getId(), north, south, east, west);
+
+        List<SpotResponse> spots = spotService.getMinePendingSpots(north, south, east, west, user.getId());
         return ResponseEntity.ok(spots);
     }
 

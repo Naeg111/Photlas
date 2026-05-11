@@ -235,4 +235,50 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("focalLengthRanges") List<String> focalLengthRanges,
         @Param("maxIso") int maxIso
     );
+
+    /**
+     * Issue#127: 認証ユーザー本人の PENDING_REVIEW（=1001）投稿だけを集計してスポット一覧を返す。
+     *
+     * 通常の /api/v1/spots は CloudFront 共有キャッシュ前提で PUBLISHED のみを返すため、
+     * 投稿直後の本人が自分の審査中投稿をすぐに地図上で確認できない。本クエリは
+     * 「自分の PENDING 投稿があるスポット」だけを軽量に取得して、フロント側で
+     * 既存の /spots レスポンスとマージするためのもの。
+     *
+     * 戻り値カラムは {@link #findSpotsWithAdvancedFilters} と同じ並びで
+     * SpotService.convertToSpotResponse で再利用できる:
+     * [0] spot_id, [1] latitude, [2] longitude, [3] photo_count, [4] total_photo_count, [5] thumbnail_url
+     *
+     * 他人の PENDING / QUARANTINED 投稿は user_id の絞り込みにより自然に除外される。
+     */
+    @Query(value = """
+        SELECT
+            s.spot_id,
+            s.latitude,
+            s.longitude,
+            COUNT(DISTINCT p.photo_id) as photo_count,
+            COUNT(DISTINCT p.photo_id) as total_photo_count,
+            (
+                SELECT p2.s3_object_key
+                FROM photos p2
+                WHERE p2.spot_id = s.spot_id
+                  AND p2.moderation_status = 1001
+                  AND p2.user_id = :viewerUserId
+                ORDER BY p2.shot_at DESC NULLS LAST, p2.photo_id DESC
+                LIMIT 1
+            ) as thumbnail_url
+        FROM spots s
+        INNER JOIN photos p ON s.spot_id = p.spot_id
+        WHERE s.latitude BETWEEN :south AND :north
+          AND s.longitude BETWEEN :west AND :east
+          AND p.moderation_status = 1001
+          AND p.user_id = :viewerUserId
+        GROUP BY s.spot_id, s.latitude, s.longitude
+        """, nativeQuery = true)
+    List<Object[]> findMinePendingSpots(
+        @Param("north") BigDecimal north,
+        @Param("south") BigDecimal south,
+        @Param("east") BigDecimal east,
+        @Param("west") BigDecimal west,
+        @Param("viewerUserId") Long viewerUserId
+    );
 }
