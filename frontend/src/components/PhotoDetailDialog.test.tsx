@@ -2105,8 +2105,14 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(screen.getByText('otheruser')).toBeInTheDocument()
       })
 
-      // 指摘ボタンが表示されない
-      expect(screen.queryByTestId('location-suggestion-button')).not.toBeInTheDocument()
+      // 指摘ボタンが表示されないこと（hasSuggested=true 反映後）。
+      // 写真詳細 API と指摘ステータス API が並列に走るため、写真詳細だけ
+      // 完了したタイミングでは一瞬ボタンが出ている可能性がある。
+      // waitFor でステータス反映後の非表示状態を待つことで race condition
+      // による flaky を防ぐ。
+      await waitFor(() => {
+        expect(screen.queryByTestId('location-suggestion-button')).not.toBeInTheDocument()
+      })
     })
   })
 
