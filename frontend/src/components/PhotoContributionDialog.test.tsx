@@ -59,8 +59,13 @@ vi.mock('../utils/extractExif', () => ({
 // 検証・発火できるように拡張
 // Issue#131（z-index 修正）: style.cropAreaStyle も捕捉し、iOS Safari の
 // GPU compositing 順を上書きするための zIndex 指定をテストで検証
+// Issue#131（will-change 解除）: style.mediaStyle も捕捉し、画像の GPU
+// レイヤー昇格を抑止するための willChange='auto' 指定をテストで検証
 let lastCropperCropSize: { width: number; height: number } | undefined
-let lastCropperStyle: { cropAreaStyle?: Record<string, unknown> } | undefined
+let lastCropperStyle: {
+  cropAreaStyle?: Record<string, unknown>
+  mediaStyle?: Record<string, unknown>
+} | undefined
 vi.mock('react-easy-crop', () => ({
   default: ({ onCropComplete, onMediaLoaded, zoom, objectFit, cropSize, style }: {
     onCropComplete: (croppedArea: unknown, croppedAreaPixels: unknown) => void
@@ -73,7 +78,10 @@ vi.mock('react-easy-crop', () => ({
     zoom: number
     objectFit?: string
     cropSize?: { width: number; height: number }
-    style?: { cropAreaStyle?: Record<string, unknown> }
+    style?: {
+      cropAreaStyle?: Record<string, unknown>
+      mediaStyle?: Record<string, unknown>
+    }
   }) => {
     lastCropperCropSize = cropSize
     lastCropperStyle = style
@@ -1021,6 +1029,32 @@ describe('PhotoContributionDialog', () => {
       const zIndex = lastCropperStyle?.cropAreaStyle?.zIndex
       expect(typeof zIndex).toBe('number')
       expect(zIndex as number).toBeGreaterThan(0)
+    })
+  })
+
+  // ============================================================
+  // Issue#131（will-change 解除・iOS Safari GPU 昇格抑止）:
+  // z-index だけでは iOS Safari の GPU レイヤー前後関係を上書きできない
+  // ことがあるため、画像側に `will-change: auto` をインラインで指定して
+  // そもそも GPU レイヤーへの昇格自体を防ぐ。
+  // インラインスタイルはクラスより優先されるため、react-easy-crop の
+  // `.reactEasyCrop_Image { will-change: transform; }` を打ち消せる。
+  // ============================================================
+  describe('Issue#131: mediaStyle.willChange="auto" 指定（画像 GPU 昇格抑止）', () => {
+    it('Cropper の mediaStyle.willChange が "auto" に設定されている（画像の GPU レイヤー昇格を抑止）', async () => {
+      const user = userEvent.setup()
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(input, file)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('cropper-component')).toBeInTheDocument()
+      })
+
+      expect(lastCropperStyle?.mediaStyle).toBeDefined()
+      expect(lastCropperStyle?.mediaStyle?.willChange).toBe('auto')
     })
   })
 })
