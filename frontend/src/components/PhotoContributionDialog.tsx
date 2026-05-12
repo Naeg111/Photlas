@@ -685,13 +685,19 @@ export function PhotoContributionDialog({
                         style={{
                           cropAreaStyle: {
                             border: '3px solid rgba(255, 255, 255, 0.5)',
-                            // Issue#131（モバイル枠表示修正・本命）: iOS Safari は
-                            // will-change: transform が付いた画像 (.reactEasyCrop_Image)
-                            // を GPU 合成レイヤーへ昇格させ、枠 (.reactEasyCrop_CropArea)
-                            // の上に合成してしまう。z-index を明示することで
-                            // CSS の合成順を W3C 仕様レベルで固定し、枠を常に
-                            // 画像より上に保つ。
+                            // Issue#131: 二重防御の片方。下記 mediaStyle で画像の GPU 昇格を
+                            // 抑止するのが本命だが、ブラウザの将来挙動変化に備えて z-index も明示。
                             zIndex: 1,
+                          },
+                          // Issue#131（モバイル枠表示修正・本命）: react-easy-crop の
+                          // 既定 CSS `.reactEasyCrop_Image { will-change: transform; }` を
+                          // インラインスタイル `willChange: 'auto'` で打ち消す。
+                          // iOS Safari は will-change: transform で画像を GPU 合成レイヤーへ
+                          // 昇格させ、z-index を無視して枠の上に描画してしまうことがある。
+                          // GPU 昇格自体を抑止すれば DOM 順通り（画像 → 枠）の合成順となり、
+                          // 枠が確実に画像の上に来る。
+                          mediaStyle: {
+                            willChange: 'auto',
                           },
                         }}
                       />
