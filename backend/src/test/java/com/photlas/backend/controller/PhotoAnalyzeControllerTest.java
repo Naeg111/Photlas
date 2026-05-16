@@ -74,6 +74,7 @@ class PhotoAnalyzeControllerTest {
                         Map.of("201", 92.5f, "401", 85.0f),
                         "analyze-token-uuid",
                         List.of(),
+                        List.of(),
                         List.of()
                 ));
 

@@ -3,6 +3,7 @@ package com.photlas.backend.service;
 import com.photlas.backend.dto.ExifData;
 import com.photlas.backend.dto.LabelMappingResult;
 import com.photlas.backend.dto.PhotoAnalyzeResponse;
+import com.photlas.backend.dto.TagSuggestion;
 import net.coobird.thumbnailator.Thumbnails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -60,17 +62,20 @@ public class PhotoAnalyzeService {
     private final AiPredictionCacheService cacheService;
     private final ExifReader exifReader;
     private final ExifBasedCategoryHints exifHints;
+    private final TagService tagService;
 
     public PhotoAnalyzeService(
             RekognitionClient rekognitionClient,
             RekognitionLabelMapper labelMapper,
             ExifReader exifReader,
             ExifBasedCategoryHints exifHints,
+            TagService tagService,
             AiPredictionCacheService cacheService) {
         this.rekognitionClient = rekognitionClient;
         this.labelMapper = labelMapper;
         this.exifReader = exifReader;
         this.exifHints = exifHints;
+        this.tagService = tagService;
         this.cacheService = cacheService;
     }
 
@@ -108,11 +113,13 @@ public class PhotoAnalyzeService {
     /**
      * Rekognition のレスポンスをマッピング → EXIF 補正 → キャッシュ → DTO 構築まで一気通貫で行う。
      * Issue#132: 親フォールバック・EXIF ルール発火イベントをレスポンスに含める。
+     * Issue#135: AI 提案キーワード (suggestedTags) も併せて取得・含める。
      */
     private PhotoAnalyzeResponse mapAndCache(DetectLabelsResponse rekognitionResponse, ExifData exif) {
         RekognitionLabelMapper.MappingResult mapping = labelMapper.mapWithEvents(rekognitionResponse.labels());
         ExifBasedCategoryHints.Applied applied = exifHints.apply(mapping.result(), exif);
         LabelMappingResult finalResult = applied.result();
+        List<TagSuggestion> suggestedTags = tagService.extractSuggestions(rekognitionResponse.labels());
         String token = cacheService.save(finalResult);
         return new PhotoAnalyzeResponse(
                 finalResult.categories(),
@@ -120,7 +127,8 @@ public class PhotoAnalyzeService {
                 finalResult.confidence(),
                 token,
                 mapping.parentFallbacks(),
-                applied.rulesFired()
+                applied.rulesFired(),
+                suggestedTags
         );
     }
 
