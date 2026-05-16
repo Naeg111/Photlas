@@ -54,7 +54,7 @@
         <!-- 写真グリッド -->
         <div th:if="${photoCount > 0}" class="photo-grid">
             <a th:each="photo : ${photos}"
-               th:href="@{'/photo-viewer/' + ${photo.id}}">
+               th:href="@{'/photo-viewer/' + ${photo.photoId}}">
                 <img th:src="${photo.thumbnailUrl}" th:alt="${tag.displayName}" loading="lazy" />
             </a>
         </div>
