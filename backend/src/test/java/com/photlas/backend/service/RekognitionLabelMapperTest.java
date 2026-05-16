@@ -6,10 +6,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.rekognition.model.Label;
+import software.amazon.awssdk.services.rekognition.model.Parent;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.offset;
 
 /**
  * Issue#119 - {@link RekognitionLabelMapper} の単体テスト。
@@ -30,6 +32,14 @@ class RekognitionLabelMapperTest {
 
     private Label label(String name, float confidence) {
         return Label.builder().name(name).confidence(confidence).build();
+    }
+
+    /** Issue#132: 親ラベルを持つ Rekognition Label を構築するヘルパー。 */
+    private Label labelWithParents(String name, float confidence, String... parentNames) {
+        List<Parent> parents = java.util.Arrays.stream(parentNames)
+                .map(p -> Parent.builder().name(p).build())
+                .toList();
+        return Label.builder().name(name).confidence(confidence).parents(parents).build();
     }
 
     // ========== カテゴリマッピング ==========
@@ -498,5 +508,172 @@ class RekognitionLabelMapperTest {
                     .as("ラベル '%s' は夜景 (204) にマッピングされるべき", name)
                     .containsExactly(CodeConstants.CATEGORY_NIGHT_VIEW);
         }
+    }
+
+    // ========== Issue#132 親子ラベル フォールバック ==========
+
+    @Test
+    @DisplayName("Issue#132 - 親子フォールバック: 子ラベル未マッチ + 親 Dog で 207 にマッピングされる")
+    void parentFallbackFromUnknownChildToDog() {
+        // Husky は辞書に無い。親に Dog があり Dog は 207 へマッピング。
+        Label husky = labelWithParents("Husky", 90f, "Dog", "Mammal", "Animal");
+
+        LabelMappingResult result = mapper.map(List.of(husky));
+
+        assertThat(result.categories()).contains(CodeConstants.CATEGORY_ANIMALS);
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 親子フォールバック: 親経由の信頼度は子ラベルの 0.8 倍に減衰される")
+    void parentFallbackConfidenceIsDecayedByPointEight() {
+        Label husky = labelWithParents("Husky", 90f, "Dog", "Mammal", "Animal");
+
+        LabelMappingResult result = mapper.map(List.of(husky));
+
+        Float conf = result.confidence().get(String.valueOf(CodeConstants.CATEGORY_ANIMALS));
+        assertThat(conf).isNotNull();
+        // 90 × 0.8 = 72
+        assertThat(conf).isCloseTo(72.0f, offset(0.01f));
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 親子フォールバック: 子ラベルが辞書ヒットしたら親は使わない（従来動作維持）")
+    void parentFallbackSkippedWhenChildMatches() {
+        // Dog 自体が辞書にある。Dog が直接マッチして信頼度はそのまま採用される。
+        Label dog = labelWithParents("Dog", 90f, "Mammal", "Animal");
+
+        LabelMappingResult result = mapper.map(List.of(dog));
+
+        assertThat(result.categories()).contains(CodeConstants.CATEGORY_ANIMALS);
+        Float conf = result.confidence().get(String.valueOf(CodeConstants.CATEGORY_ANIMALS));
+        // 子マッチなので 90% がそのまま。0.8 倍されない。
+        assertThat(conf).isCloseTo(90.0f, offset(0.01f));
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 親子フォールバック: 親なしの未マッチ子ラベルは無視される")
+    void unknownChildWithoutParentsIsIgnored() {
+        Label unknownLabel = label("Unobtainium", 95f);
+
+        LabelMappingResult result = mapper.map(List.of(unknownLabel));
+
+        assertThat(result.categories()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 親子フォールバック: 親リストにマッチが無い場合は無視される")
+    void unknownChildWithUnknownParentsIsIgnored() {
+        Label label = labelWithParents("MysteryThing", 95f, "FooParent", "BarParent");
+
+        LabelMappingResult result = mapper.map(List.of(label));
+
+        assertThat(result.categories()).isEmpty();
+    }
+
+    // ========== Issue#132 ブラックリスト親ラベル ==========
+
+    @Test
+    @DisplayName("Issue#132 - ブラックリスト: 親 Mammal は辞書に存在するが、親としては BL でスキップされる")
+    void mammalAsParentIsBlacklistedEvenWhenInDictionary() {
+        // 「mammal」は辞書に登録されており、直接ラベルなら 207 へマッピング (Issue#119 互換)。
+        // しかし「親」として現れた場合は BL でスキップされ、フォールバックは発動しない。
+        // 他の親が無いので結果は空になる。
+        Label labelObj = labelWithParents("UnknownFurryThing", 95f, "Mammal");
+
+        LabelMappingResult result = mapper.map(List.of(labelObj));
+
+        assertThat(result.categories()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#132 - ブラックリスト: Person/Human/Adult/People/Face/Portrait は親としてスキップ")
+    void humanRelatedParentsAreBlacklisted() {
+        // 子は辞書に無く、親も Person 系のみ → カテゴリは付かない
+        for (String human : List.of("Person", "Human", "Adult", "People", "Face", "Portrait")) {
+            Label labelObj = labelWithParents("Someone", 95f, human);
+
+            LabelMappingResult result = mapper.map(List.of(labelObj));
+
+            assertThat(result.categories())
+                    .as("親 '%s' はブラックリストで親フォールバック不可", human)
+                    .isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - ブラックリスト: Outdoors/Nature/Object/Indoors などの広すぎる親はスキップ")
+    void broadParentsAreBlacklisted() {
+        for (String broad : List.of("Outdoors", "Nature", "Object", "Indoors", "Living Thing",
+                "Organism", "Creature", "Vertebrate")) {
+            Label labelObj = labelWithParents("UnknownThing", 95f, broad);
+
+            LabelMappingResult result = mapper.map(List.of(labelObj));
+
+            assertThat(result.categories())
+                    .as("親 '%s' はブラックリストで親フォールバック不可", broad)
+                    .isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - ブラックリスト: Accessories/Apparel/Clothing もスキップ")
+    void apparelParentsAreBlacklisted() {
+        for (String apparel : List.of("Accessories", "Apparel", "Clothing")) {
+            Label labelObj = labelWithParents("UnknownThing", 95f, apparel);
+
+            LabelMappingResult result = mapper.map(List.of(labelObj));
+
+            assertThat(result.categories())
+                    .as("親 '%s' はブラックリストで親フォールバック不可", apparel)
+                    .isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - ブラックリスト: Wildlife は除外しない（親として有効、動物 207 へ）")
+    void wildlifeAsParentIsNotBlacklisted() {
+        // 子は辞書に無し。親 Wildlife は除外されず、Wildlife は 207 へマッピング。
+        Label labelObj = labelWithParents("UnknownBird", 90f, "Wildlife");
+
+        LabelMappingResult result = mapper.map(List.of(labelObj));
+
+        assertThat(result.categories()).contains(CodeConstants.CATEGORY_ANIMALS);
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 親フォールバック: 親順で最初のヒットを採用する")
+    void parentFallbackPicksFirstHitInOrder() {
+        // 親順: [Mammal (BL), Dog (HIT 207), Animal (HIT 207)] → Dog が採用される
+        Label labelObj = labelWithParents("Beagle", 90f, "Mammal", "Dog", "Animal");
+
+        LabelMappingResult result = mapper.map(List.of(labelObj));
+
+        assertThat(result.categories()).contains(CodeConstants.CATEGORY_ANIMALS);
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 親フォールバック: 信頼度80%未満の子ラベルは親フォールバック対象外")
+    void belowThresholdLabelDoesNotTriggerParentFallback() {
+        // 79% は閾値未満。親があっても親フォールバックは発動しない。
+        Label labelObj = labelWithParents("Husky", 79f, "Dog");
+
+        LabelMappingResult result = mapper.map(List.of(labelObj));
+
+        assertThat(result.categories()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 親フォールバック: 複数の子から同じ親経由カテゴリが派生した場合は最大信頼度を採用")
+    void parentFallbackMergesByMaxConfidence() {
+        // 2 つの未マッチ子。両方とも親 Dog 経由で 207 にマップ。
+        Label child1 = labelWithParents("Beagle", 90f, "Dog");
+        Label child2 = labelWithParents("Husky", 85f, "Dog");
+
+        LabelMappingResult result = mapper.map(List.of(child1, child2));
+
+        Float conf = result.confidence().get(String.valueOf(CodeConstants.CATEGORY_ANIMALS));
+        assertThat(conf).isNotNull();
+        // 90 × 0.8 = 72 と 85 × 0.8 = 68 のうち最大の 72 が採用される
+        assertThat(conf).isCloseTo(72.0f, offset(0.01f));
     }
 }
