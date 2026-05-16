@@ -955,6 +955,7 @@ export function PhotoContributionDialog({
               <Label className="text-base">
                 {t('keyword.sectionLabel', { defaultValue: 'キーワード（任意）' })}
               </Label>
+              {/* Issue#141 Q2: 投稿フォームでは autoSelectByCategoryMode を渡さない (default false) */}
               <KeywordSection
                 allTags={allTags}
                 aiSuggestions={aiSuggestedTags}
@@ -964,7 +965,6 @@ export function PhotoContributionDialog({
                 selectedTagIds={selectedTagIds}
                 onSelectionChange={setSelectedTagIds}
                 maxSelections={20}
-                autoSelectByCategoryMode
               />
             </div>
 
