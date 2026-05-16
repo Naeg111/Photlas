@@ -64,6 +64,22 @@ public class SpotService {
                                        List<Integer> timesOfDay, List<Integer> weathers,
                                        Integer minResolution, List<Integer> deviceTypes, Integer maxAgeDays,
                                        List<String> aspectRatios, List<String> focalLengthRanges, Integer maxIso) {
+        // Issue#141: tagIds 未対応の旧シグネチャ。新規実装側は tagIds 受け取り版を呼ぶこと
+        return getSpots(north, south, east, west, subjectCategories, months, timesOfDay, weathers,
+                minResolution, deviceTypes, maxAgeDays, aspectRatios, focalLengthRanges, maxIso, null);
+    }
+
+    /**
+     * Issue#141 Phase 1: tagIds でも絞り込めるバージョン。
+     * Phase 1 では Red 用 stub として旧版に委譲する (tagIds 無視)。Green で本実装に置換。
+     */
+    @Transactional(readOnly = true)
+    public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
+                                       List<Integer> subjectCategories, List<Integer> months,
+                                       List<Integer> timesOfDay, List<Integer> weathers,
+                                       Integer minResolution, List<Integer> deviceTypes, Integer maxAgeDays,
+                                       List<String> aspectRatios, List<String> focalLengthRanges, Integer maxIso,
+                                       List<Long> tagIds) {
         logger.info("Getting spots within bounds: north={}, south={}, east={}, west={}", north, south, east, west);
 
         // null/空リストをセンチネル値に変換
