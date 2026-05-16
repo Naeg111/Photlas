@@ -11,6 +11,7 @@ import { ProtectedImage } from './figma/ProtectedImage'
 import { LqipPlaceholder } from './LqipPlaceholder'
 import { getAuthHeaders } from '../utils/apiClient'
 import { buildRateLimitApiError, notifyIfRateLimited } from '../utils/notifyIfRateLimited'
+import { fetchPhotoTags, type PhotoTagDisplay } from '../utils/tagsApi'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { useAuth } from '../contexts/AuthContext'
@@ -488,6 +489,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const [favoriteCount, setFavoriteCount] = useState(0)
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false)
 
+  // Issue#135: 写真ごとのキーワード（ミニマップと件数表示の間に表示）
+  // useEffect 本体は displayedPhoto の宣言後に置く（前方参照エラー回避のため）
+  const [photoTags, setPhotoTags] = useState<PhotoTagDisplay[]>([])
+
   // Issue#54: 通報状態管理
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isReportLoading, setIsReportLoading] = useState(false)
@@ -543,6 +548,22 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
   // 最後に表示した写真情報を保持（点滅防止）
   const [displayedPhoto, setDisplayedPhoto] = useState<PhotoDetail | null>(null)
+
+  // Issue#135: 表示写真が変わるたびにキーワードを再フェッチ
+  useEffect(() => {
+    if (!displayedPhoto?.photoId) {
+      setPhotoTags([])
+      return
+    }
+    const controller = new AbortController()
+    fetchPhotoTags(displayedPhoto.photoId, i18n.language, { signal: controller.signal })
+      .then((res) => setPhotoTags(Array.isArray(res?.tags) ? res.tags : []))
+      .catch(() => {
+        setPhotoTags([])
+      })
+    return () => controller.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedPhoto?.photoId, i18n.language])
 
   // スポットの写真ID一覧を取得（Issue#112: ページネーション対応）
   useEffect(() => {
@@ -1457,6 +1478,21 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       lng: displayedPhoto.longitude ?? displayedPhoto.spot.longitude,
                     }) : undefined}
                   />
+
+                  {/* Issue#135: キーワードチップ（ランディングページへ遷移、SEO 内部リンク） */}
+                  {photoTags.length > 0 && (
+                    <div data-testid="photo-detail-tags" className="flex flex-wrap gap-2 pt-2">
+                      {photoTags.map((tag) => (
+                        <a
+                          key={tag.tagId}
+                          href={`/tags/${tag.slug}?lang=${encodeURIComponent(i18n.language)}`}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-xs border border-gray-300 bg-gray-50 text-gray-800 hover:bg-gray-100"
+                        >
+                          {tag.displayName}
+                        </a>
+                      ))}
+                    </div>
+                  )}
 
                   {/* 写真枚数インジケーター（Issue#112: total を使用） */}
                   {totalPhotoCount > 1 && (

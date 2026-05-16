@@ -159,6 +159,24 @@ public class TagService {
     }
 
     /**
+     * Issue#135: 指定写真に紐づく is_active=TRUE のタグを言語別表示名つきで返す。
+     * 並び順は sort_order 昇順 + alphabetical（slug 基準）。
+     */
+    @Transactional(readOnly = true)
+    public List<TagDisplay> findActiveTagsForPhoto(Long photoId, String lang) {
+        List<Long> tagIds = photoTagRepository.findByPhotoId(photoId).stream()
+                .map(pt -> pt.getTagId())
+                .toList();
+        if (tagIds.isEmpty()) {
+            return List.of();
+        }
+        return tagRepository.findActiveByIdIn(tagIds).stream()
+                .sorted(Comparator.comparingInt(Tag::getSortOrder).thenComparing(Tag::getSlug))
+                .map(t -> new TagDisplay(t.getId(), t.getSlug(), pickDisplayName(t, lang)))
+                .toList();
+    }
+
+    /**
      * Issue#135: 全アクティブタグを取得し、カテゴリ紐付け付きで返す。
      * フロントは KeywordSection の文脈連動表示・アコーディオン・検索 BOX で使う。
      */

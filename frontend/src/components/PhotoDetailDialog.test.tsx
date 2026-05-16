@@ -947,6 +947,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Issue#135: photoTags
         .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
         .mockImplementationOnce(() => new Promise(() => {})) // 永続的にpending
 
@@ -980,6 +981,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Issue#135: photoTags
         .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
         .mockResolvedValueOnce({ ok: true }) // POST /favorite
 
@@ -2320,6 +2322,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: photoIds, total: photoIds.length }) })
         // 2. photo 0 詳細取得（成功）
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail1 })
+        // 2.5 Issue#135: photoTags (photo 0)
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) })
         // 3. プリフェッチ対象の photo 1 詳細取得（429）
         .mockResolvedValueOnce(
           new Response('Too many requests', {
@@ -2355,6 +2359,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Issue#135: photoTags
         .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
         .mockResolvedValueOnce(
           new Response('Too many requests', {
