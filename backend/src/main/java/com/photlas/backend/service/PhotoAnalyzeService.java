@@ -120,7 +120,9 @@ public class PhotoAnalyzeService {
         ExifBasedCategoryHints.Applied applied = exifHints.apply(mapping.result(), exif);
         LabelMappingResult finalResult = applied.result();
         List<TagSuggestion> suggestedTags = tagService.extractSuggestions(rekognitionResponse.labels());
-        String token = cacheService.save(finalResult);
+        // Issue#136 Q10: labelMapping と suggestedTags を一括キャッシュ（ai_confidence 補完用）
+        String token = cacheService.save(
+                new com.photlas.backend.dto.CachedAnalyzeResult(finalResult, suggestedTags));
         return new PhotoAnalyzeResponse(
                 finalResult.categories(),
                 finalResult.weather(),

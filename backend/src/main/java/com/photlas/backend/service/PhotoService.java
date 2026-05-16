@@ -795,14 +795,16 @@ public class PhotoService {
      * @param userCategories ユーザー選択カテゴリの実体（{@code user_diff_flag} 計算に使用）
      */
     private void savePhotoAiPrediction(Long photoId, CreatePhotoRequest request, List<Category> userCategories) {
-        Optional<LabelMappingResult> aiResult = aiPredictionCacheService.findValid(request.getAnalyzeToken());
-        if (aiResult.isEmpty()) {
+        Optional<com.photlas.backend.dto.CachedAnalyzeResult> cached =
+                aiPredictionCacheService.findValid(request.getAnalyzeToken());
+        if (cached.isEmpty()) {
             logger.info("analyzeToken は期限切れまたは不存在のため AI 予測結果の保存をスキップ: photoId={}",
                     photoId);
             return;
         }
 
-        LabelMappingResult ai = aiResult.get();
+        // Q10: findValid は CachedAnalyzeResult を返すため labelMapping を 1 段挟む
+        LabelMappingResult ai = cached.get().labelMapping();
         Set<Integer> userCategoryIds = userCategories.stream()
                 .map(Category::getCategoryId)
                 .collect(Collectors.toSet());
