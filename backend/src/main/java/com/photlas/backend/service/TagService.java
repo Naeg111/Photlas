@@ -1,6 +1,7 @@
 package com.photlas.backend.service;
 
 import com.photlas.backend.dto.TagDisplay;
+import com.photlas.backend.dto.TagListItem;
 import com.photlas.backend.dto.TagSuggestion;
 import com.photlas.backend.entity.PhotoTag;
 import com.photlas.backend.entity.Tag;
@@ -155,6 +156,36 @@ public class TagService {
     public Optional<TagDisplay> findActiveBySlugForDisplay(String slug, String lang) {
         return tagRepository.findActiveBySlug(slug)
                 .map(t -> new TagDisplay(t.getId(), t.getSlug(), pickDisplayName(t, lang)));
+    }
+
+    /**
+     * Issue#135: 全アクティブタグを取得し、カテゴリ紐付け付きで返す。
+     * フロントは KeywordSection の文脈連動表示・アコーディオン・検索 BOX で使う。
+     */
+    @Transactional(readOnly = true)
+    public List<TagListItem> listAllActiveTags(String lang) {
+        List<Tag> tags = tagRepository.findAll().stream()
+                .filter(t -> Boolean.TRUE.equals(t.getIsActive()))
+                .toList();
+        if (tags.isEmpty()) {
+            return List.of();
+        }
+        List<Long> ids = tags.stream().map(Tag::getId).toList();
+        // tag_id → カテゴリコード一覧
+        Map<Long, List<Integer>> categoriesByTagId = new java.util.LinkedHashMap<>();
+        for (var tc : tagCategoryRepository.findByTagIdIn(ids)) {
+            categoriesByTagId.computeIfAbsent(tc.getTagId(), k -> new ArrayList<>())
+                    .add(tc.getCategoryCode());
+        }
+        return tags.stream()
+                .sorted(Comparator.comparingInt(Tag::getSortOrder).thenComparing(Tag::getSlug))
+                .map(t -> new TagListItem(
+                        t.getId(),
+                        t.getSlug(),
+                        pickDisplayName(t, lang),
+                        categoriesByTagId.getOrDefault(t.getId(), List.of()),
+                        t.getSortOrder()))
+                .toList();
     }
 
     /**

@@ -48,6 +48,8 @@ public class SecurityConfig {
     // Issue#127: 本人の PENDING_REVIEW 投稿だけを返すため認証必須。共有キャッシュ対象外。
     private static final String SPOTS_MINE_PENDING_ENDPOINT = "/api/v1/spots/mine-pending";
     private static final String CATEGORIES_ENDPOINT = "/api/v1/categories";
+    /** Issue#135: キーワード一覧（公開・SEO のため認証不要）。 */
+    private static final String TAGS_ENDPOINT = "/api/v1/tags";
     private static final String PHOTOS_ENDPOINT_PATTERN = "/api/v1/photos/**";
     private static final String USER_PROFILE_PATTERN = "/api/v1/users/\\d+";
     private static final String USER_PHOTOS_PATTERN = "/api/v1/users/\\d+/photos.*";
@@ -123,6 +125,7 @@ public class SecurityConfig {
                 .requestMatchers(SPOTS_MINE_PENDING_ENDPOINT).authenticated()
                 .requestMatchers(SPOTS_ENDPOINT, SPOTS_ENDPOINT_PATTERN).permitAll()  // スポット関連（一覧・詳細）
                 .requestMatchers(CATEGORIES_ENDPOINT).permitAll()        // カテゴリ一覧
+                .requestMatchers(TAGS_ENDPOINT).permitAll()              // Issue#135: キーワード一覧
                 .requestMatchers("/api/v1/ogp/**").permitAll()              // OGPメタタグ
                 .requestMatchers("/api/v1/sitemap.xml").permitAll()         // サイトマップインデックス
                 .requestMatchers("/api/v1/sitemap-static.xml").permitAll()   // 静的サイトマップ
