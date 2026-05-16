@@ -182,8 +182,8 @@ export function KeywordSection({
         onClick={() => setIsMoreOpen((v) => !v)}
       >
         {isMoreOpen
-          ? t('keyword.moreClose', { defaultValue: '— 閉じる' })
-          : t('keyword.moreOpen', { defaultValue: '+ もっと細かく（上級者向け）' })}
+          ? t('keyword.moreClose', { defaultValue: '— キーワード一覧を閉じる' })
+          : t('keyword.moreOpen', { defaultValue: '+ もっと細かく（キーワード一覧）' })}
       </button>
 
       {/* 「もっと細かく」展開部 */}
