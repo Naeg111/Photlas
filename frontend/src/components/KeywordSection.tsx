@@ -88,6 +88,11 @@ export function KeywordSection({
 
   useEffect(() => {
     if (!autoSelectByCategoryMode) return
+    // Phase 7 (Q-new-2): allTags 未取得中はスキップして、取得後の re-effect で
+    // 遡及して auto-select する。previousCodesRef もここで更新しないことで
+    // 次回 effect (allTags 取得後) で全カテゴリが「added」として再評価される。
+    if (allTags.length === 0) return
+
     const previousCodes = previousCodesRef.current
     const added = selectedCategoryCodes.filter((c) => !previousCodes.includes(c))
     const removed = previousCodes.filter((c) => !selectedCategoryCodes.includes(c))
