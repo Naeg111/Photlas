@@ -233,7 +233,25 @@ public class SpotService {
     public List<SpotResponse> getMinePendingSpots(BigDecimal north, BigDecimal south,
                                                   BigDecimal east, BigDecimal west,
                                                   Long viewerUserId) {
-        logger.info("Getting mine-pending spots within bounds for user {}", viewerUserId);
+        // Issue#141: フィルタ未対応の旧シグネチャ。新実装側は filter 受け取り版を呼ぶこと
+        return getMinePendingSpots(north, south, east, west, viewerUserId,
+                null, null, null, null, null, null, null, null, null, null, null);
+    }
+
+    /**
+     * Issue#141 Phase 3 (Q-new-5/7): 全フィルタを受け取れる本人 PENDING 版。
+     * Phase 3 では Red 用 stub として旧版に委譲する (フィルタ無視)。Green で本実装に置換。
+     */
+    @Transactional(readOnly = true)
+    public List<SpotResponse> getMinePendingSpots(BigDecimal north, BigDecimal south,
+                                                  BigDecimal east, BigDecimal west,
+                                                  Long viewerUserId,
+                                                  List<Integer> subjectCategories, List<Integer> months,
+                                                  List<Integer> timesOfDay, List<Integer> weathers,
+                                                  Integer minResolution, List<Integer> deviceTypes, Integer maxAgeDays,
+                                                  List<String> aspectRatios, List<String> focalLengthRanges,
+                                                  Integer maxIso, List<Long> tagIds) {
+        logger.info("Getting mine-pending spots within bounds for user {}, tagIds={}", viewerUserId, tagIds);
 
         List<Object[]> results = spotRepository.findMinePendingSpots(
                 north, south, east, west, viewerUserId);
