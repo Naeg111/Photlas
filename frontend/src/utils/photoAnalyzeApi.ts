@@ -16,14 +16,15 @@ import type { ExifRuleFire, ParentFallback } from './aiPrefillAnalytics'
  * `POST /api/v1/photos/analyze` のレスポンス。
  * バックエンドの `PhotoAnalyzeResponse` (Java DTO) と1対1対応。
  *
- * AI 解析が失敗した場合（Rekognition エラー等）は全フィールドが空・null になる:
- * - categories: 空配列
- * - weather: null
- * - confidence: 空オブジェクト
- * - analyzeToken: null
- * - parentFallbacks: 空配列 (Issue#132)
- * - exifRulesFired: 空配列 (Issue#132)
+ * AI 解析が失敗した場合（Rekognition エラー等）は全フィールドが空・null になる。
  */
+export interface SuggestedTag {
+  tagId: number
+  slug: string
+  displayName: string
+  confidence: number
+}
+
 export interface PhotoAnalyzeResponse {
   categories: number[]
   weather: number | null
@@ -33,6 +34,8 @@ export interface PhotoAnalyzeResponse {
   parentFallbacks: ParentFallback[]
   /** Issue#132: EXIF ベースの補正ルール R1〜R5 の発火イベント一覧 */
   exifRulesFired: ExifRuleFire[]
+  /** Issue#135: AI 提案キーワード（直接マッチのみ、最大 10 件） */
+  suggestedTags: SuggestedTag[]
 }
 
 export interface AnalyzePhotoOptions {
