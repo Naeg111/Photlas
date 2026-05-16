@@ -1620,11 +1620,11 @@ public class PhotoServiceTest {
         List<PhotoTag> tags = photoTagRepository.findByPhotoId(response.getPhoto().getPhotoId());
         assertThat(tags).hasSize(2);
         // t1 は cache の confidence、t2 は NULL
-        Map<Long, Double> confByTag = tags.stream()
-                .collect(java.util.stream.Collectors.toMap(
-                        PhotoTag::getTagId,
-                        pt -> pt.getAiConfidence()  // Double or null
-                        , (a, b) -> a));
+        // Collectors.toMap は null 値非対応のため HashMap で手動構築
+        java.util.HashMap<Long, Double> confByTag = new java.util.HashMap<>();
+        for (PhotoTag pt : tags) {
+            confByTag.put(pt.getTagId(), pt.getAiConfidence());
+        }
         assertThat(confByTag.get(t1.getId())).isEqualTo(90.0);
         assertThat(confByTag.get(t2.getId())).isNull();
     }

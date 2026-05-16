@@ -186,13 +186,27 @@ public class PhotoService {
         logger.info("写真を投稿しました: photoId={}, userId={}, spotId={}",
                    savedPhoto.getPhotoId(), user.getId(), spot.getSpotId());
 
-        // Issue#119: analyzeToken が指定されていれば AI 予測結果を保存
+        // Issue#136 §4.4.2: cache を一度だけ取得して両処理で共有
+        // （savePhotoAiPrediction が中で delete してしまうと savePhotoTags が
+        //  ai_confidence を引けず、常に NULL になるバグを防ぐ）
+        Optional<com.photlas.backend.dto.CachedAnalyzeResult> cached = Optional.empty();
         if (request.getAnalyzeToken() != null) {
-            savePhotoAiPrediction(savedPhoto.getPhotoId(), request, categories);
+            cached = aiPredictionCacheService.findValid(request.getAnalyzeToken());
         }
 
-        // Issue#135: ユーザーが選択したキーワードを photo_tags に保存
-        savePhotoTags(savedPhoto.getPhotoId(), request);
+        // Issue#119: photo_ai_predictions 保存（pre-fetched 値を渡す）
+        cached.ifPresent(c ->
+                savePhotoAiPrediction(savedPhoto.getPhotoId(), request, categories, c.labelMapping()));
+
+        // Issue#135 + #136: photo_tags 保存（suggestedTags は cache 不在時は空リスト）
+        List<com.photlas.backend.dto.TagSuggestion> suggestedTags =
+                cached.map(com.photlas.backend.dto.CachedAnalyzeResult::suggestedTags).orElse(List.of());
+        savePhotoTags(savedPhoto.getPhotoId(), request, suggestedTags);
+
+        // 使い切り削除: 両処理が完了してから一度だけ
+        if (cached.isPresent()) {
+            aiPredictionCacheService.delete(request.getAnalyzeToken());
+        }
 
         // Issue#100: サムネイルのタグもベストエフォートで registered に更新する。
         // Lambda が先にサムネイルを生成済みであれば即座に追従し、まだ未生成なら本処理は失敗するが
@@ -794,17 +808,13 @@ public class PhotoService {
      * @param request        投稿リクエスト（analyzeToken を含む）
      * @param userCategories ユーザー選択カテゴリの実体（{@code user_diff_flag} 計算に使用）
      */
-    private void savePhotoAiPrediction(Long photoId, CreatePhotoRequest request, List<Category> userCategories) {
-        Optional<com.photlas.backend.dto.CachedAnalyzeResult> cached =
-                aiPredictionCacheService.findValid(request.getAnalyzeToken());
-        if (cached.isEmpty()) {
-            logger.info("analyzeToken は期限切れまたは不存在のため AI 予測結果の保存をスキップ: photoId={}",
-                    photoId);
-            return;
-        }
-
-        // Q10: findValid は CachedAnalyzeResult を返すため labelMapping を 1 段挟む
-        LabelMappingResult ai = cached.get().labelMapping();
+    /**
+     * Issue#119 + Issue#136 §4.4.2/§4.4.3: photo_ai_predictions に AI 予測結果を保存する。
+     * cache の取得・削除は {@link #createPhoto} 側で一元化し、本メソッドは引数で受け取った
+     * {@link LabelMappingResult} を使うだけにする。
+     */
+    private void savePhotoAiPrediction(Long photoId, CreatePhotoRequest request,
+                                       List<Category> userCategories, LabelMappingResult ai) {
         Set<Integer> userCategoryIds = userCategories.stream()
                 .map(Category::getCategoryId)
                 .collect(Collectors.toSet());
@@ -819,17 +829,18 @@ public class PhotoService {
         prediction.setUserDiffFlag(diffFlag);
         prediction.setCreatedAt(LocalDateTime.now());
         photoAiPredictionRepository.save(prediction);
-
-        // 使い切り: キャッシュから該当トークンを削除
-        aiPredictionCacheService.delete(request.getAnalyzeToken());
     }
 
     /**
-     * Issue#135: リクエストの tagIds を photo_tags へ保存する。
+     * Issue#135 + Issue#136 §4.4.4: リクエストの tagIds を photo_tags へ保存する。
      * aiOriginatedTagIds に含まれる tag_id は {@code assigned_by='AI'}、それ以外は 'USER'。
-     * Phase 1 では ai_confidence は NULL（将来 AiPredictionCache 経由で補完予定）。
+     *
+     * <p>Issue#136: {@code suggestedTags} を引数で受け取り、AI 由来 tagId に対して
+     * cache 由来の {@code ai_confidence} を付ける。cache に含まれない AI tagId は NULL のまま。
+     * USER 由来は常に NULL。</p>
      */
-    private void savePhotoTags(Long photoId, CreatePhotoRequest request) {
+    private void savePhotoTags(Long photoId, CreatePhotoRequest request,
+                                List<com.photlas.backend.dto.TagSuggestion> suggestedTags) {
         List<Long> tagIds = request.getTagIds();
         if (tagIds == null || tagIds.isEmpty()) {
             return;
@@ -847,8 +858,14 @@ public class PhotoService {
                 userTagIds.add(tagId);
             }
         }
+        // Issue#136 §4.4.4: suggestedTags から AI tagId 用 confidence マップを作る
+        Map<Long, Double> confidenceByTagId = suggestedTags.stream()
+                .collect(Collectors.toMap(
+                        com.photlas.backend.dto.TagSuggestion::tagId,
+                        s -> s.confidence().doubleValue(),
+                        (a, b) -> a));
         if (!aiTagIds.isEmpty()) {
-            tagService.assignTagsToPhoto(photoId, aiTagIds, PhotoTag.ASSIGNED_BY_AI, Map.of());
+            tagService.assignTagsToPhoto(photoId, aiTagIds, PhotoTag.ASSIGNED_BY_AI, confidenceByTagId);
         }
         if (!userTagIds.isEmpty()) {
             tagService.assignTagsToPhoto(photoId, userTagIds, PhotoTag.ASSIGNED_BY_USER, Map.of());
