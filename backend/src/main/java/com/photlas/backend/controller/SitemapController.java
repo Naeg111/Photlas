@@ -2,7 +2,9 @@ package com.photlas.backend.controller;
 
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
+import com.photlas.backend.entity.Tag;
 import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.TagRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,10 +32,16 @@ public class SitemapController {
     @Value("${app.backend-url:https://api.photlas.jp}")
     private String backendUrl;
 
-    private final PhotoRepository photoRepository;
+    /** Issue#135: キーワードランディングページのサポート言語。 */
+    private static final java.util.List<String> TAG_PAGE_SUPPORTED_LANGS =
+            java.util.List.of("en", "ja", "zh", "ko", "es");
 
-    public SitemapController(PhotoRepository photoRepository) {
+    private final PhotoRepository photoRepository;
+    private final TagRepository tagRepository;
+
+    public SitemapController(PhotoRepository photoRepository, TagRepository tagRepository) {
         this.photoRepository = photoRepository;
+        this.tagRepository = tagRepository;
     }
 
     /**
@@ -63,7 +71,41 @@ public class SitemapController {
             sb.append("  </sitemap>\n");
         }
 
+        // Issue#135: キーワードランディングページのサイトマップ
+        sb.append("  <sitemap>\n");
+        sb.append("    <loc>").append(frontendUrl).append("/api/v1/sitemap-tags.xml</loc>\n");
+        sb.append("  </sitemap>\n");
+
         sb.append("</sitemapindex>");
+        return ResponseEntity.ok(sb.toString());
+    }
+
+    /**
+     * Issue#135: キーワードランディングページのサイトマップ。
+     *
+     * <p>{@code is_active=TRUE} のキーワード × 5 言語のすべての URL を含める
+     * （写真 0 件のキーワードも含む）。</p>
+     */
+    @GetMapping(value = "/api/v1/sitemap-tags.xml", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<String> getTagsSitemap() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+
+        for (Tag tag : tagRepository.findAll()) {
+            if (!Boolean.TRUE.equals(tag.getIsActive())) {
+                continue;
+            }
+            for (String lang : TAG_PAGE_SUPPORTED_LANGS) {
+                appendUrl(
+                        sb,
+                        frontendUrl + "/tags/" + tag.getSlug() + "?lang=" + lang,
+                        "weekly",
+                        "0.5");
+            }
+        }
+
+        sb.append("</urlset>");
         return ResponseEntity.ok(sb.toString());
     }
 
