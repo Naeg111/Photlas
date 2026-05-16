@@ -76,6 +76,15 @@ public class TagService {
     }
 
     /**
+     * Issue#136 Phase 8: SSR ランディング 0 件時の関連キーワード取得。
+     * Phase 8 では Red を通すための空実装。Green で本実装に置換。
+     */
+    @Transactional(readOnly = true)
+    public List<TagDisplay> findRelatedActiveTags(Long tagId, int limit, String lang) {
+        return List.of();
+    }
+
+    /**
      * Rekognition ラベル群から AI 提案キーワードを抽出する。
      *
      * <p>Issue#135 3.4.1 仕様:</p>

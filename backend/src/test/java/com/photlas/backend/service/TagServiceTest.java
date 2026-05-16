@@ -335,4 +335,126 @@ class TagServiceTest {
         photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         return photoRepository.saveAndFlush(photo);
     }
+
+    // ========== Issue#136 Phase 8: findRelatedActiveTags ==========
+
+    @Test
+    @DisplayName("Issue#136 - findRelatedActiveTags: 同カテゴリの別タグを返し、自分自身は除外")
+    void findRelatedActiveTags_returnsOthersInSameCategory() {
+        Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
+        Tag tulip = saveTag("Tulip", "tulip", "チューリップ", "Tulip");
+        Tag rose = saveTag("Rose", "rose", "薔薇", "Rose");
+        linkCategory(cherry.getId(), CodeConstants.CATEGORY_PLANTS);
+        linkCategory(tulip.getId(), CodeConstants.CATEGORY_PLANTS);
+        linkCategory(rose.getId(), CodeConstants.CATEGORY_PLANTS);
+
+        List<TagDisplay> related = tagService.findRelatedActiveTags(cherry.getId(), 10, "ja");
+
+        assertThat(related).extracting(TagDisplay::slug)
+                .containsExactlyInAnyOrder("tulip", "rose");
+    }
+
+    @Test
+    @DisplayName("Issue#136 - findRelatedActiveTags: 多カテゴリ重複時は distinct で重複排除")
+    void findRelatedActiveTags_deduplicatesAcrossCategories() {
+        Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
+        Tag tulip = saveTag("Tulip", "tulip", "チューリップ", "Tulip");
+        // cherry は 2 カテゴリに所属
+        linkCategory(cherry.getId(), CodeConstants.CATEGORY_PLANTS);
+        linkCategory(cherry.getId(), CodeConstants.CATEGORY_NATURE);
+        // tulip も同じ 2 カテゴリに所属（多対多で重複ヒットする）
+        linkCategory(tulip.getId(), CodeConstants.CATEGORY_PLANTS);
+        linkCategory(tulip.getId(), CodeConstants.CATEGORY_NATURE);
+
+        List<TagDisplay> related = tagService.findRelatedActiveTags(cherry.getId(), 10, "ja");
+
+        // tulip が 1 回だけ含まれる
+        assertThat(related).extracting(TagDisplay::slug).containsExactly("tulip");
+    }
+
+    @Test
+    @DisplayName("Issue#136 - findRelatedActiveTags: is_active=FALSE のタグは除外")
+    void findRelatedActiveTags_excludesInactiveTags() {
+        Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
+        Tag tulip = saveTag("Tulip", "tulip", "チューリップ", "Tulip");
+        tulip.setIsActive(false);
+        tagRepository.saveAndFlush(tulip);
+        linkCategory(cherry.getId(), CodeConstants.CATEGORY_PLANTS);
+        linkCategory(tulip.getId(), CodeConstants.CATEGORY_PLANTS);
+
+        List<TagDisplay> related = tagService.findRelatedActiveTags(cherry.getId(), 10, "ja");
+
+        assertThat(related).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#136 - findRelatedActiveTags: sort_order 昇順 + slug 二次ソート")
+    void findRelatedActiveTags_sortedBySortOrderThenSlug() {
+        Tag base = saveTag("Base", "base", "基準", "Base");
+        Tag a = saveTag("AAA", "aaa", "A", "AAA"); a.setSortOrder(20); tagRepository.saveAndFlush(a);
+        Tag b = saveTag("BBB", "bbb", "B", "BBB"); b.setSortOrder(10); tagRepository.saveAndFlush(b);
+        Tag c = saveTag("CCC", "ccc", "C", "CCC"); c.setSortOrder(10); tagRepository.saveAndFlush(c);
+        linkCategory(base.getId(), CodeConstants.CATEGORY_OTHER);
+        linkCategory(a.getId(), CodeConstants.CATEGORY_OTHER);
+        linkCategory(b.getId(), CodeConstants.CATEGORY_OTHER);
+        linkCategory(c.getId(), CodeConstants.CATEGORY_OTHER);
+
+        List<TagDisplay> related = tagService.findRelatedActiveTags(base.getId(), 10, "ja");
+
+        // b(10,bbb) → c(10,ccc) → a(20,aaa)
+        assertThat(related).extracting(TagDisplay::slug).containsExactly("bbb", "ccc", "aaa");
+    }
+
+    @Test
+    @DisplayName("Issue#136 - findRelatedActiveTags: limit が尊重される")
+    void findRelatedActiveTags_respectsLimit() {
+        Tag base = saveTag("Base", "base", "基準", "Base");
+        linkCategory(base.getId(), CodeConstants.CATEGORY_OTHER);
+        for (int i = 0; i < 15; i++) {
+            Tag t = saveTag("L" + i, "l-" + i, "ラベル" + i, "L" + i);
+            t.setSortOrder(i);
+            tagRepository.saveAndFlush(t);
+            linkCategory(t.getId(), CodeConstants.CATEGORY_OTHER);
+        }
+
+        List<TagDisplay> related = tagService.findRelatedActiveTags(base.getId(), 10, "ja");
+
+        assertThat(related).hasSize(10);
+    }
+
+    @Test
+    @DisplayName("Issue#136 - findRelatedActiveTags: カテゴリ未紐付け tag は空リスト")
+    void findRelatedActiveTags_noCategoriesReturnsEmpty() {
+        Tag lone = saveTag("Lone", "lone", "孤独", "Lone");
+
+        List<TagDisplay> related = tagService.findRelatedActiveTags(lone.getId(), 10, "ja");
+
+        assertThat(related).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#136 - findRelatedActiveTags: 関連 0 件のとき空リスト")
+    void findRelatedActiveTags_noPeersReturnsEmpty() {
+        Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
+        linkCategory(cherry.getId(), CodeConstants.CATEGORY_PLANTS);
+
+        List<TagDisplay> related = tagService.findRelatedActiveTags(cherry.getId(), 10, "ja");
+
+        assertThat(related).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#136 - findRelatedActiveTags: 言語別表示名でフォールバック")
+    void findRelatedActiveTags_displayNamePickedByLang() {
+        Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
+        Tag tulip = saveTag("Tulip", "tulip", "チューリップ", "Tulip");
+        linkCategory(cherry.getId(), CodeConstants.CATEGORY_PLANTS);
+        linkCategory(tulip.getId(), CodeConstants.CATEGORY_PLANTS);
+
+        List<TagDisplay> ja = tagService.findRelatedActiveTags(cherry.getId(), 10, "ja");
+        assertThat(ja).extracting(TagDisplay::displayName).containsExactly("チューリップ");
+
+        List<TagDisplay> en = tagService.findRelatedActiveTags(cherry.getId(), 10, "en");
+        assertThat(en).extracting(TagDisplay::displayName).containsExactly("Tulip");
+    }
 }
