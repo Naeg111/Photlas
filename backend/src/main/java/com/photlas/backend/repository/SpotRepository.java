@@ -182,6 +182,11 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                        OR ('SUPER_TELEPHOTO' IN (:focalLengthRanges) AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 300)
                   )
                   AND (:maxIso = -1 OR (p2.iso IS NOT NULL AND p2.iso <= :maxIso))
+                  AND (-1 IN (:tagIds) OR EXISTS (
+                      SELECT 1 FROM photo_tags pt2
+                      WHERE pt2.photo_id = p2.photo_id
+                        AND pt2.tag_id IN (:tagIds)
+                  ))
                 ORDER BY p2.shot_at DESC
                 LIMIT 1
             ) as thumbnail_url
@@ -215,6 +220,11 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                OR ('SUPER_TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 300)
           )
           AND (:maxIso = -1 OR (p.iso IS NOT NULL AND p.iso <= :maxIso))
+          AND (-1 IN (:tagIds) OR EXISTS (
+              SELECT 1 FROM photo_tags pt
+              WHERE pt.photo_id = p.photo_id
+                AND pt.tag_id IN (:tagIds)
+          ))
         GROUP BY s.spot_id, s.latitude, s.longitude
         HAVING COUNT(DISTINCT p.photo_id) > 0
         ORDER BY total_photo_count DESC
@@ -233,7 +243,8 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("maxAgeDate") LocalDateTime maxAgeDate,
         @Param("aspectRatios") List<String> aspectRatios,
         @Param("focalLengthRanges") List<String> focalLengthRanges,
-        @Param("maxIso") int maxIso
+        @Param("maxIso") int maxIso,
+        @Param("tagIds") List<Long> tagIds
     );
 
     /**

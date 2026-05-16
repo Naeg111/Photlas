@@ -70,8 +70,8 @@ public class SpotService {
     }
 
     /**
-     * Issue#141 Phase 1: tagIds でも絞り込めるバージョン。
-     * Phase 1 では Red 用 stub として旧版に委譲する (tagIds 無視)。Green で本実装に置換。
+     * Issue#141 Phase 1: tagIds でも絞り込めるバージョン (Q-new-1 で本実装に切替)。
+     * tagIds が null/空のときはセンチネル {@code [-1L]} を渡し、SQL 側で全件通過する。
      */
     @Transactional(readOnly = true)
     public List<SpotResponse> getSpots(BigDecimal north, BigDecimal south, BigDecimal east, BigDecimal west,
@@ -80,7 +80,8 @@ public class SpotService {
                                        Integer minResolution, List<Integer> deviceTypes, Integer maxAgeDays,
                                        List<String> aspectRatios, List<String> focalLengthRanges, Integer maxIso,
                                        List<Long> tagIds) {
-        logger.info("Getting spots within bounds: north={}, south={}, east={}, west={}", north, south, east, west);
+        logger.info("Getting spots within bounds: north={}, south={}, east={}, west={}, tagIds={}",
+                north, south, east, west, tagIds);
 
         // null/空リストをセンチネル値に変換
         List<Integer> safeSubjectCategories = safeIntList(subjectCategories);
@@ -95,12 +96,13 @@ public class SpotService {
         List<String> safeAspectRatios = safeStringList(aspectRatios);
         List<String> safeFocalLengthRanges = safeStringList(focalLengthRanges);
         int safeMaxIso = (maxIso != null) ? maxIso : -1;
+        List<Long> safeTagIds = safeLongList(tagIds);
 
         // リポジトリから集計結果を取得
         List<Object[]> results = spotRepository.findSpotsWithAdvancedFilters(
                 north, south, east, west, safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
                 safeMinResolution, safeDeviceTypes,
-                safeMaxAgeDate, safeAspectRatios, safeFocalLengthRanges, safeMaxIso
+                safeMaxAgeDate, safeAspectRatios, safeFocalLengthRanges, safeMaxIso, safeTagIds
         );
 
         logger.info("Found {} spots", results.size());
@@ -255,5 +257,10 @@ public class SpotService {
     /** null/空リストをセンチネル値（"__NONE__"）に変換 */
     private List<String> safeStringList(List<String> list) {
         return (list == null || list.isEmpty()) ? List.of("__NONE__") : list;
+    }
+
+    /** Issue#141: null/空リストをセンチネル値（-1L）に変換 (tagIds 用) */
+    private List<Long> safeLongList(List<Long> list) {
+        return (list == null || list.isEmpty()) ? List.of(-1L) : list;
     }
 }
