@@ -103,16 +103,29 @@ public class SpotController {
             @RequestParam BigDecimal south,
             @RequestParam BigDecimal east,
             @RequestParam BigDecimal west,
+            @RequestParam(name = "subject_categories", required = false) List<Integer> subjectCategories,
+            @RequestParam(required = false) List<Integer> months,
+            @RequestParam(name = "times_of_day", required = false) List<Integer> timesOfDay,
+            @RequestParam(required = false) List<Integer> weathers,
+            @RequestParam(name = "min_resolution", required = false) Integer minResolution,
+            @RequestParam(name = "device_types", required = false) List<Integer> deviceTypes,
+            @RequestParam(name = "max_age_days", required = false) Integer maxAgeDays,
+            @RequestParam(name = "aspect_ratios", required = false) List<String> aspectRatios,
+            @RequestParam(name = "focal_length_ranges", required = false) List<String> focalLengthRanges,
+            @RequestParam(name = "max_iso", required = false) Integer maxIso,
+            @RequestParam(name = "tag_ids", required = false) List<Long> tagIds,
             Authentication authentication) {
 
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
-        logger.info("GET /api/v1/spots/mine-pending - viewerUserId={}, north={}, south={}, east={}, west={}",
-                user.getId(), north, south, east, west);
+        logger.info("GET /api/v1/spots/mine-pending - viewerUserId={}, north={}, south={}, east={}, west={}, tagIds={}",
+                user.getId(), north, south, east, west, tagIds);
 
-        List<SpotResponse> spots = spotService.getMinePendingSpots(north, south, east, west, user.getId());
+        List<SpotResponse> spots = spotService.getMinePendingSpots(north, south, east, west, user.getId(),
+                subjectCategories, months, timesOfDay, weathers, minResolution, deviceTypes,
+                maxAgeDays, aspectRatios, focalLengthRanges, maxIso, tagIds);
         return ResponseEntity.ok(spots);
     }
 

@@ -240,7 +240,7 @@ public class SpotService {
 
     /**
      * Issue#141 Phase 3 (Q-new-5/7): 全フィルタを受け取れる本人 PENDING 版。
-     * Phase 3 では Red 用 stub として旧版に委譲する (フィルタ無視)。Green で本実装に置換。
+     * フィルタロジックは {@link #getSpots} (15 引数版) と同等。
      */
     @Transactional(readOnly = true)
     public List<SpotResponse> getMinePendingSpots(BigDecimal north, BigDecimal south,
@@ -253,8 +253,26 @@ public class SpotService {
                                                   Integer maxIso, List<Long> tagIds) {
         logger.info("Getting mine-pending spots within bounds for user {}, tagIds={}", viewerUserId, tagIds);
 
+        // null/空リストをセンチネル値に変換 (getSpots 15 引数版と同じパターン)
+        List<Integer> safeSubjectCategories = safeIntList(subjectCategories);
+        List<Integer> safeMonths = safeIntList(months);
+        List<Integer> safeTimesOfDay = safeIntList(timesOfDay);
+        List<Integer> safeWeathers = safeIntList(weathers);
+        int safeMinResolution = (minResolution != null) ? minResolution : -1;
+        List<Integer> safeDeviceTypes = safeIntList(deviceTypes);
+        LocalDateTime safeMaxAgeDate = (maxAgeDays != null)
+            ? LocalDateTime.now(ZoneId.of("Asia/Tokyo")).minusDays(maxAgeDays)
+            : LocalDateTime.of(1900, 1, 1, 0, 0);
+        List<String> safeAspectRatios = safeStringList(aspectRatios);
+        List<String> safeFocalLengthRanges = safeStringList(focalLengthRanges);
+        int safeMaxIso = (maxIso != null) ? maxIso : -1;
+        List<Long> safeTagIds = safeLongList(tagIds);
+
         List<Object[]> results = spotRepository.findMinePendingSpots(
-                north, south, east, west, viewerUserId);
+                north, south, east, west, viewerUserId,
+                safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
+                safeMinResolution, safeDeviceTypes, safeMaxAgeDate,
+                safeAspectRatios, safeFocalLengthRanges, safeMaxIso, safeTagIds);
 
         List<SpotResponse> spotResponses = results.stream()
                 .map(this::convertToSpotResponse)

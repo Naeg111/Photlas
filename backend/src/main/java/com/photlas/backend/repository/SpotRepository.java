@@ -274,6 +274,34 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
                 WHERE p2.spot_id = s.spot_id
                   AND p2.moderation_status = 1001
                   AND p2.user_id = :viewerUserId
+                  AND (-1 IN (:months) OR EXTRACT(MONTH FROM p2.shot_at) IN (:months))
+                  AND (-1 IN (:timesOfDay) OR p2.time_of_day IN (:timesOfDay))
+                  AND (-1 IN (:weathers) OR p2.weather IN (:weathers))
+                  AND (-1 IN (:subjectCategories) OR EXISTS (
+                      SELECT 1 FROM photo_categories pc2
+                      WHERE pc2.photo_id = p2.photo_id
+                        AND pc2.category_id IN (:subjectCategories)
+                  ))
+                  AND (:minResolution = -1 OR (p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND GREATEST(p2.image_width, p2.image_height) >= :minResolution))
+                  AND (-1 IN (:deviceTypes) OR p2.device_type IN (:deviceTypes))
+                  AND (p2.shot_at IS NULL OR p2.shot_at >= :maxAgeDate)
+                  AND ('__NONE__' IN (:aspectRatios)
+                       OR ('HORIZONTAL' IN (:aspectRatios) AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width > p2.image_height)
+                       OR ('VERTICAL' IN (:aspectRatios) AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND p2.image_width < p2.image_height)
+                       OR ('SQUARE' IN (:aspectRatios) AND p2.image_width IS NOT NULL AND p2.image_height IS NOT NULL AND ABS(p2.image_width - p2.image_height) <= GREATEST(p2.image_width, p2.image_height) * 0.05)
+                  )
+                  AND ('__NONE__' IN (:focalLengthRanges)
+                       OR ('WIDE' IN (:focalLengthRanges) AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm < 24)
+                       OR ('STANDARD' IN (:focalLengthRanges) AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm >= 24 AND p2.focal_length_35mm <= 70)
+                       OR ('TELEPHOTO' IN (:focalLengthRanges) AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 70 AND p2.focal_length_35mm <= 300)
+                       OR ('SUPER_TELEPHOTO' IN (:focalLengthRanges) AND p2.focal_length_35mm IS NOT NULL AND p2.focal_length_35mm > 300)
+                  )
+                  AND (:maxIso = -1 OR (p2.iso IS NOT NULL AND p2.iso <= :maxIso))
+                  AND (-1 IN (:tagIds) OR EXISTS (
+                      SELECT 1 FROM photo_tags pt2
+                      WHERE pt2.photo_id = p2.photo_id
+                        AND pt2.tag_id IN (:tagIds)
+                  ))
                 ORDER BY p2.shot_at DESC NULLS LAST, p2.photo_id DESC
                 LIMIT 1
             ) as thumbnail_url
@@ -283,6 +311,34 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
           AND s.longitude BETWEEN :west AND :east
           AND p.moderation_status = 1001
           AND p.user_id = :viewerUserId
+          AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months))
+          AND (-1 IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay))
+          AND (-1 IN (:weathers) OR p.weather IN (:weathers))
+          AND (-1 IN (:subjectCategories) OR EXISTS (
+              SELECT 1 FROM photo_categories pc
+              WHERE pc.photo_id = p.photo_id
+                AND pc.category_id IN (:subjectCategories)
+          ))
+          AND (:minResolution = -1 OR (p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND GREATEST(p.image_width, p.image_height) >= :minResolution))
+          AND (-1 IN (:deviceTypes) OR p.device_type IN (:deviceTypes))
+          AND (p.shot_at IS NULL OR p.shot_at >= :maxAgeDate)
+          AND ('__NONE__' IN (:aspectRatios)
+               OR ('HORIZONTAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width > p.image_height)
+               OR ('VERTICAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width < p.image_height)
+               OR ('SQUARE' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND ABS(p.image_width - p.image_height) <= GREATEST(p.image_width, p.image_height) * 0.05)
+          )
+          AND ('__NONE__' IN (:focalLengthRanges)
+               OR ('WIDE' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm < 24)
+               OR ('STANDARD' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm >= 24 AND p.focal_length_35mm <= 70)
+               OR ('TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 70 AND p.focal_length_35mm <= 300)
+               OR ('SUPER_TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 300)
+          )
+          AND (:maxIso = -1 OR (p.iso IS NOT NULL AND p.iso <= :maxIso))
+          AND (-1 IN (:tagIds) OR EXISTS (
+              SELECT 1 FROM photo_tags pt
+              WHERE pt.photo_id = p.photo_id
+                AND pt.tag_id IN (:tagIds)
+          ))
         GROUP BY s.spot_id, s.latitude, s.longitude
         """, nativeQuery = true)
     List<Object[]> findMinePendingSpots(
@@ -290,6 +346,17 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
         @Param("south") BigDecimal south,
         @Param("east") BigDecimal east,
         @Param("west") BigDecimal west,
-        @Param("viewerUserId") Long viewerUserId
+        @Param("viewerUserId") Long viewerUserId,
+        @Param("subjectCategories") List<Integer> subjectCategories,
+        @Param("months") List<Integer> months,
+        @Param("timesOfDay") List<Integer> timesOfDay,
+        @Param("weathers") List<Integer> weathers,
+        @Param("minResolution") int minResolution,
+        @Param("deviceTypes") List<Integer> deviceTypes,
+        @Param("maxAgeDate") LocalDateTime maxAgeDate,
+        @Param("aspectRatios") List<String> aspectRatios,
+        @Param("focalLengthRanges") List<String> focalLengthRanges,
+        @Param("maxIso") int maxIso,
+        @Param("tagIds") List<Long> tagIds
     );
 }
