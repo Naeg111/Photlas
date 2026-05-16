@@ -6,6 +6,14 @@ import { CategoryIcon } from "./CategoryIcon"
 import { MonthIcons, TimeIcons, WeatherIcons, OrientationIcons } from "./FilterIcons"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { PHOTO_CATEGORIES } from "../utils/constants"
+import { fetchTags } from "../utils/tagsApi"
+import { KeywordSection, type KeywordTag } from "./KeywordSection"
+import { CATEGORY_LABELS } from "../utils/codeConstants"
+
+/** Issue#135: 検索フィルタで選択された日本語カテゴリ名 → カテゴリコードへ変換するマップ。 */
+const CATEGORY_NAME_TO_FILTER_CODE: Record<string, number> = Object.fromEntries(
+  Object.entries(CATEGORY_LABELS).map(([code, name]) => [name, Number(code)])
+)
 
 
 const MONTHS_NEED_INVERT = new Set(["1月", "2月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]);
@@ -109,6 +117,8 @@ export interface FilterConditions {
   deviceTypes?: string[]
   focalLengthRanges?: string[]
   maxIso?: number
+  /** Issue#135: 検索フィルタのキーワード ID（AND 検索、最大 10 件） */
+  tagIds?: number[]
 }
 
 interface FilterPanelProps {
@@ -143,7 +153,7 @@ function FilterButton({ selected, onPointerDown, className, children }: Readonly
 }
 
 export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPanelProps>) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   // 基本フィルターの状態
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
@@ -158,6 +168,22 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
   const [selectedDeviceTypes, setSelectedDeviceTypes] = useState<string[]>([])
   const [selectedFocalLengthRanges, setSelectedFocalLengthRanges] = useState<string[]>([])
   const [selectedMaxIso, setSelectedMaxIso] = useState<number | undefined>(undefined)
+
+  // Issue#135: キーワードフィルタの状態（最大 10 件の AND 検索）
+  const [allTags, setAllTags] = useState<KeywordTag[]>([])
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
+
+  // パネルを開いたタイミングで全アクティブタグを取得
+  useEffect(() => {
+    if (!open) return
+    const controller = new AbortController()
+    fetchTags(i18n.language, { signal: controller.signal })
+      .then((res) => setAllTags(res.tags))
+      .catch(() => {
+        // 取得失敗は静かに無視（フィルタの他項目だけでも動作する）
+      })
+    return () => controller.abort()
+  }, [open, i18n.language])
 
   // スクロール時の選択取り消し機構
   const lastToggleRef = useRef<(() => void) | null>(null)
@@ -216,6 +242,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
     setSelectedDeviceTypes([])
     setSelectedFocalLengthRanges([])
     setSelectedMaxIso(undefined)
+    setSelectedTagIds([])
 
     onApply?.({
       categories: [],
@@ -227,6 +254,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
       deviceTypes: [],
       focalLengthRanges: [],
       maxIso: undefined,
+      tagIds: [],
     })
   }
 
@@ -239,7 +267,8 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
     selectedAspectRatios.length > 0 ||
     selectedDeviceTypes.length > 0 ||
     selectedFocalLengthRanges.length > 0 ||
-    selectedMaxIso !== undefined
+    selectedMaxIso !== undefined ||
+    selectedTagIds.length > 0
 
   // フィルター条件がすべて解除されたら自動でonApplyを呼ぶ
   const hadFilterRef = useRef(false)
@@ -255,6 +284,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
         deviceTypes: [],
         focalLengthRanges: [],
         maxIso: undefined,
+        tagIds: [],
       })
     }
     hadFilterRef.current = hasAnyFilter
@@ -272,6 +302,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
         deviceTypes: selectedDeviceTypes,
         focalLengthRanges: selectedFocalLengthRanges,
         maxIso: selectedMaxIso,
+        tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
       });
     }
     onOpenChange(false);
@@ -309,6 +340,23 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
                 );
               })}
             </div>
+          </div>
+
+          {/* Issue#135: キーワードフィルタ (カテゴリと投稿時期の間に配置) */}
+          <div>
+            <p className="text-sm font-medium mb-2 text-muted-foreground">
+              {t('filter.keywords', { defaultValue: 'キーワード' })}
+            </p>
+            <KeywordSection
+              allTags={allTags}
+              aiSuggestions={[]}
+              selectedCategoryCodes={selectedCategories
+                .map((name) => CATEGORY_NAME_TO_FILTER_CODE[name])
+                .filter((id): id is number => typeof id === 'number')}
+              selectedTagIds={selectedTagIds}
+              onSelectionChange={setSelectedTagIds}
+              maxSelections={10}
+            />
           </div>
 
           {/* Issue#63: 投稿時期（通常フィルターに移動） */}
