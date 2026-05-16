@@ -176,6 +176,22 @@ public class SpotService {
     }
 
     /**
+     * Issue#141 Phase 4 (Q-new-6/7): tagIds + 既存全フィルタを受け取る /spots/photos 版。
+     * Phase 4 では Red 用 stub として旧版に委譲する (新フィルタ無視)。Green で本実装に置換。
+     */
+    @Transactional(readOnly = true)
+    public SpotPhotosResponse getSpotPhotos(List<Long> spotIds, int limit, int offset,
+                                            List<Integer> subjectCategories, List<Integer> months,
+                                            List<Integer> timesOfDay, List<Integer> weathers,
+                                            Integer minResolution, List<Integer> deviceTypes,
+                                            Integer maxAgeDays,
+                                            List<String> aspectRatios, List<String> focalLengthRanges,
+                                            Integer maxIso, List<Long> tagIds,
+                                            Long viewerUserId) {
+        return getSpotPhotos(spotIds, limit, offset, maxAgeDays, viewerUserId);
+    }
+
+    /**
      * Issue#127: 認証ユーザー本人の PENDING_REVIEW 投稿も結果に含めるバージョン。
      * viewerUserId が null（未認証）の場合は従来通り PUBLISHED のみを返す。
      */
