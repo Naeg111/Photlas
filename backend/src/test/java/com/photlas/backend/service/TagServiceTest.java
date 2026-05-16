@@ -267,6 +267,42 @@ class TagServiceTest {
         assertThat(tagService.findActiveBySlugForDisplay("mountain", "ja")).isEmpty();
     }
 
+    // ========== Issue#136 Phase 4: findPhotosForTag ==========
+
+    @Test
+    @DisplayName("Issue#136 - findPhotosForTag: 該当タグの PUBLISHED 写真を Page で返す")
+    void findPhotosForTagReturnsPublishedPhotos() {
+        Tag tag = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
+
+        Photo p1 = createPublishedPhoto();
+        Photo p2 = createPublishedPhoto();
+        PhotoTag pt1 = new PhotoTag(p1.getPhotoId(), tag.getId());
+        pt1.setAssignedBy(PhotoTag.ASSIGNED_BY_AI);
+        photoTagRepository.saveAndFlush(pt1);
+        PhotoTag pt2 = new PhotoTag(p2.getPhotoId(), tag.getId());
+        pt2.setAssignedBy(PhotoTag.ASSIGNED_BY_USER);
+        photoTagRepository.saveAndFlush(pt2);
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                0, 48,
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")
+                        .and(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "photoId")));
+        org.springframework.data.domain.Page<Photo> page = tagService.findPhotosForTag(tag.getId(), pageable);
+
+        assertThat(page.getContent()).hasSize(2);
+        assertThat(page.getTotalElements()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Issue#136 - findPhotosForTag: 該当タグが無ければ空ページ")
+    void findPhotosForTagReturnsEmptyForUnknownTag() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 48);
+        org.springframework.data.domain.Page<Photo> page = tagService.findPhotosForTag(99999L, pageable);
+
+        assertThat(page.getContent()).isEmpty();
+        assertThat(page.getTotalElements()).isZero();
+    }
+
     // ========== ヘルパー ==========
 
     private Photo createPhoto() {
@@ -275,5 +311,14 @@ class TagServiceTest {
         photo.setUserId(1L);
         photo.setS3ObjectKey("test/" + System.nanoTime() + ".jpg");
         return photoRepository.save(photo);
+    }
+
+    private Photo createPublishedPhoto() {
+        Photo photo = new Photo();
+        photo.setSpotId(1L);
+        photo.setUserId(1L);
+        photo.setS3ObjectKey("tagsrv/" + System.nanoTime() + "-" + Math.random() + ".jpg");
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
+        return photoRepository.saveAndFlush(photo);
     }
 }
