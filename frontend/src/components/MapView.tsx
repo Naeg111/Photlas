@@ -68,7 +68,7 @@ interface SpotResponse {
   photoCount: number
 }
 
-// フィルター条件の型定義（Issue#16, Issue#46, Issue#87）
+// フィルター条件の型定義（Issue#16, Issue#46, Issue#87, Issue#141）
 export interface MapViewFilterParams {
   subject_categories?: number[]
   months?: number[]
@@ -79,6 +79,8 @@ export interface MapViewFilterParams {
   aspect_ratios?: string[]
   focal_length_ranges?: string[]
   max_iso?: number
+  /** Issue#141: キーワードフィルタ (Q-new-1 でバックエンド配線済) */
+  tag_ids?: number[]
 }
 
 // 地図の初期設定
@@ -675,6 +677,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         appendArrayParams(params, 'aspect_ratios', filterParams.aspect_ratios)
         appendArrayParams(params, 'focal_length_ranges', filterParams.focal_length_ranges)
         appendScalarParam(params, 'max_iso', filterParams.max_iso)
+        // Issue#141 Phase 5: tag_ids も送る
+        appendArrayParams(params, 'tag_ids', filterParams.tag_ids)
       }
 
       // Issue#127: 投稿直後の自分自身向けに使い捨てクエリパラメータで CloudFront キャッシュをバイパス
@@ -708,12 +712,25 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       if (isAuthenticated) {
         // bounds と filter は /spots と完全に同じ条件で取りに行く
         // （ただしモデレーション状態と本人 user_id でさらに絞られる）
+        // Issue#141 Phase 5: 全フィルタを mine-pending にも転送 (UX 一貫性, Q-new-5/7)
         const mineParams = new URLSearchParams({
           north: bounds.getNorth().toString(),
           south: bounds.getSouth().toString(),
           east: bounds.getEast().toString(),
           west: bounds.getWest().toString(),
         })
+        if (filterParams) {
+          appendArrayParams(mineParams, 'subject_categories', filterParams.subject_categories)
+          appendArrayParams(mineParams, 'months', filterParams.months)
+          appendArrayParams(mineParams, 'times_of_day', filterParams.times_of_day)
+          appendArrayParams(mineParams, 'weathers', filterParams.weathers)
+          appendArrayParams(mineParams, 'device_types', filterParams.device_types)
+          appendScalarParam(mineParams, 'max_age_days', filterParams.max_age_days)
+          appendArrayParams(mineParams, 'aspect_ratios', filterParams.aspect_ratios)
+          appendArrayParams(mineParams, 'focal_length_ranges', filterParams.focal_length_ranges)
+          appendScalarParam(mineParams, 'max_iso', filterParams.max_iso)
+          appendArrayParams(mineParams, 'tag_ids', filterParams.tag_ids)
+        }
         try {
           const mineResponse = await fetch(`${API_V1_URL}/spots/mine-pending?${mineParams}`, {
             method: 'GET',

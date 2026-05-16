@@ -93,6 +93,11 @@ interface PhotoDetailDialogProps {
   /** フィルター条件（スポット写真ID取得時に適用） */
   filterMaxAgeDays?: number
   /**
+   * Issue#141 Phase 5 (Q-new-6/7): フィルター条件全部 (subject_categories ～ tag_ids) を /spots/photos に転送。
+   * 既存の filterMaxAgeDays とは独立して動く (互換性維持)。
+   */
+  filterParams?: import('./MapView').MapViewFilterParams
+  /**
    * Issue#118: 写真詳細を開いた / 別の写真に切り替えた瞬間に呼ばれる。
    * 未ログインユーザーの登録壁トリガーとして閲覧履歴に photoId を記録するために使用する。
    * ログイン済みユーザーが渡しても安全（呼び出し側が冪等性と未ログイン判定を担当）。
@@ -261,6 +266,7 @@ async function fetchPhotoIdsPage(
   limit: number,
   offset: number,
   maxAgeDays?: number,
+  filterParams?: import('./MapView').MapViewFilterParams,
 ): Promise<SpotPhotosResponse> {
   const body: Record<string, unknown> = {
     spotIds,
@@ -269,6 +275,18 @@ async function fetchPhotoIdsPage(
   }
   if (maxAgeDays != null) {
     body.maxAgeDays = maxAgeDays
+  }
+  // Issue#141 Phase 5 (Q-new-6/7): 全フィルタを Body に詰めて転送
+  if (filterParams) {
+    if (filterParams.subject_categories?.length) body.subjectCategories = filterParams.subject_categories
+    if (filterParams.months?.length) body.months = filterParams.months
+    if (filterParams.times_of_day?.length) body.timesOfDay = filterParams.times_of_day
+    if (filterParams.weathers?.length) body.weathers = filterParams.weathers
+    if (filterParams.device_types?.length) body.deviceTypes = filterParams.device_types
+    if (filterParams.aspect_ratios?.length) body.aspectRatios = filterParams.aspect_ratios
+    if (filterParams.focal_length_ranges?.length) body.focalLengthRanges = filterParams.focal_length_ranges
+    if (filterParams.max_iso != null) body.maxIso = filterParams.max_iso
+    if (filterParams.tag_ids?.length) body.tagIds = filterParams.tag_ids
   }
 
   const response = await fetch(API_SPOTS_PHOTOS_LIST, {
@@ -452,7 +470,7 @@ const DetailMiniMap = React.memo(function DetailMiniMap({
   )
 })
 
-export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted, singlePhotoId, filterMaxAgeDays, onPhotoViewed }: Readonly<PhotoDetailDialogProps>) {
+export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick, onImageClick, isLightboxOpen, onMinimapClick, isSlideDown, isDeletable = false, onPhotoDeleted, singlePhotoId, filterMaxAgeDays, filterParams, onPhotoViewed }: Readonly<PhotoDetailDialogProps>) {
   const { t, i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const { isAuthenticated, user } = useAuth()
@@ -600,7 +618,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         }
 
         // Issue#112: 1ページ目（30件）を取得
-        const page = await fetchPhotoIdsPage(spotIds, PHOTO_PAGE_SIZE, 0, filterMaxAgeDays)
+        const page = await fetchPhotoIdsPage(spotIds, PHOTO_PAGE_SIZE, 0, filterMaxAgeDays, filterParams)
         setPhotoIds(page.ids)
         setTotalPhotoCount(page.total)
         setCurrentIndex(0)
@@ -760,7 +778,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
     isFetchingNextPageRef.current = true
     const offset = photoIds.length
-    fetchPhotoIdsPage(spotIds, PHOTO_PAGE_SIZE, offset, filterMaxAgeDays)
+    fetchPhotoIdsPage(spotIds, PHOTO_PAGE_SIZE, offset, filterMaxAgeDays, filterParams)
       .then((page) => {
         // ダイアログが閉じている、または前提が変わった場合は捨てる
         setPhotoIds((prev) => {
@@ -777,7 +795,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       .finally(() => {
         isFetchingNextPageRef.current = false
       })
-  }, [currentIndex, photoIds, totalPhotoCount, spotIds, filterMaxAgeDays, singlePhotoId, t])
+  }, [currentIndex, photoIds, totalPhotoCount, spotIds, filterMaxAgeDays, filterParams, singlePhotoId, t])
 
   // 表示用の写真情報を更新 + お気に入り状態を同期（1つのuseEffectで再レンダリング削減: #9）
   useEffect(() => {
