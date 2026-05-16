@@ -263,4 +263,98 @@ class TagPageControllerTest {
                 .andExpect(model().attribute("photos", hasSize(3)))
                 .andExpect(model().attributeExists("pagination"));
     }
+
+    // ===== Issue#136 Phase 6: title / description の MessageSource 多言語化 (Q15) =====
+
+    @Test
+    @DisplayName("Issue#136 - Phase6: ja の <title> が『桜 - 1 ページ目 - Photlas』")
+    void titleJa_pageOne() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<title>桜 - 1 ページ目 - Photlas</title>")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase6: en の <title> が『Cherry Blossom - Page 1 - Photlas』")
+    void titleEn_pageOne() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<title>Cherry Blossom - Page 1 - Photlas</title>")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase6: zh の <title> が『樱花 - 第 1 页 - Photlas』")
+    void titleZh_pageOne() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "zh"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<title>樱花 - 第 1 页 - Photlas</title>")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase6: ko の <title> が『벚꽃 - 1 페이지 - Photlas』")
+    void titleKo_pageOne() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ko"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<title>벚꽃 - 1 페이지 - Photlas</title>")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase6: es の <title> が『Flor de cerezo - Página 1 - Photlas』")
+    void titleEs_pageOne() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "es"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<title>Flor de cerezo - Página 1 - Photlas</title>")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase6: 2 ページ目で <title> が『桜 - 2 ページ目 - Photlas』")
+    void titleJa_pageTwo() throws Exception {
+        for (int i = 0; i < 49; i++) {
+            link(createPublishedPhoto(), cherry);
+        }
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja").param("page", "2"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<title>桜 - 2 ページ目 - Photlas</title>")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase6: en の <meta description> がページ番号と件数を含む")
+    void descriptionEn_includesPageAndCount() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            link(createPublishedPhoto(), cherry);
+        }
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("name=\"description\"")))
+                .andExpect(content().string(containsString("Cherry Blossom")))
+                .andExpect(content().string(containsString("3 photos")))
+                .andExpect(content().string(containsString("Page 1")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase6: ja の <meta description> がページ番号と件数を含む")
+    void descriptionJa_includesPageAndCount() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            link(createPublishedPhoto(), cherry);
+        }
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("name=\"description\"")))
+                .andExpect(content().string(containsString("3 枚")))
+                .andExpect(content().string(containsString("1 ページ目")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase6: og:title と og:description が <title>/<meta description> と同じ Model 属性を使う")
+    void ogTitleAndDescriptionMatch() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                // og:title content が title と一致
+                .andExpect(content().string(containsString(
+                        "property=\"og:title\" content=\"桜 - 1 ページ目 - Photlas\"")))
+                // og:description content にも 1 ページ目 表記が含まれる（description と一致）
+                .andExpect(content().string(containsString("property=\"og:description\"")))
+                .andExpect(model().attributeExists("title"))
+                .andExpect(model().attributeExists("description"));
+    }
 }
