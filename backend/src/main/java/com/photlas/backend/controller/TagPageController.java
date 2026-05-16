@@ -11,6 +11,7 @@ import com.photlas.backend.repository.PhotoTagRepository;
 import com.photlas.backend.repository.TagRepository;
 import com.photlas.backend.service.S3Service;
 import com.photlas.backend.service.TagService;
+import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ import org.springframework.web.servlet.view.RedirectView;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -65,16 +67,19 @@ public class TagPageController {
     private final TagRepository tagRepository;
     private final PhotoTagRepository photoTagRepository;
     private final S3Service s3Service;
+    private final MessageSource messageSource;
 
     public TagPageController(
             TagService tagService,
             TagRepository tagRepository,
             PhotoTagRepository photoTagRepository,
-            S3Service s3Service) {
+            S3Service s3Service,
+            MessageSource messageSource) {
         this.tagService = tagService;
         this.tagRepository = tagRepository;
         this.photoTagRepository = photoTagRepository;
         this.s3Service = s3Service;
+        this.messageSource = messageSource;
     }
 
     @GetMapping("/{slug}")
@@ -137,6 +142,17 @@ public class TagPageController {
 
         TagPagePagination pagination = TagPagePagination.of(canonicalPage, totalPages);
 
+        // Q15: <title> / <meta description> / og:* を MessageSource で多言語化
+        Locale locale = Locale.of(canonicalLang);
+        String title = messageSource.getMessage(
+                "tag.page.title",
+                new Object[]{displayName, canonicalPage, photoCount},
+                locale);
+        String description = messageSource.getMessage(
+                "tag.page.description",
+                new Object[]{displayName, canonicalPage, photoCount},
+                locale);
+
         model.addAttribute("tag", display);
         model.addAttribute("lang", canonicalLang);
         model.addAttribute("photoCount", photoCount);
@@ -146,6 +162,8 @@ public class TagPageController {
         model.addAttribute("currentPage", canonicalPage);
         model.addAttribute("pageSize", PAGE_SIZE);
         model.addAttribute("pagination", pagination);
+        model.addAttribute("title", title);
+        model.addAttribute("description", description);
 
         return "tag-page";
     }

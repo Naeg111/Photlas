@@ -7,9 +7,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title th:text="${tag.displayName + ' - Photlas'}">Keyword Photos - Photlas</title>
-    <meta name="description"
-          th:content="${tag.displayName + ' の撮影スポットと作例を Photlas で探そう。' + photoCount + ' 枚'}" />
+    <title th:text="${title}">Keyword Photos - Photlas</title>
+    <meta name="description" th:content="${description}" />
 
     <!-- canonical -->
     <link rel="canonical" th:href="${canonicalUrl}" />
@@ -21,9 +20,8 @@
           th:href="${entry.value}" />
 
     <!-- OGP -->
-    <meta property="og:title" th:content="${tag.displayName + ' - Photlas'}" />
-    <meta property="og:description"
-          th:content="${tag.displayName + ' の撮影スポットと作例を Photlas で探そう。' + photoCount + ' 枚'}" />
+    <meta property="og:title" th:content="${title}" />
+    <meta property="og:description" th:content="${description}" />
     <meta property="og:type" content="website" />
 
     <style>
