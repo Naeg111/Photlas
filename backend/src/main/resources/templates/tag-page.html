@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<!--
+  Issue#135 Phase 13: キーワードランディングページ (SSR)。
+-->
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${lang}">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title th:text="${tag.displayName + ' - Photlas'}">Keyword Photos - Photlas</title>
+    <meta name="description"
+          th:content="${tag.displayName + ' の撮影スポットと作例を Photlas で探そう。' + photoCount + ' 枚'}" />
+
+    <!-- canonical -->
+    <link rel="canonical" th:href="${canonicalUrl}" />
+
+    <!-- hreflang メタタグ 5 言語 + x-default -->
+    <link th:each="entry : ${hreflangs}"
+          rel="alternate"
+          th:hreflang="${entry.key}"
+          th:href="${entry.value}" />
+
+    <!-- OGP -->
+    <meta property="og:title" th:content="${tag.displayName + ' - Photlas'}" />
+    <meta property="og:description"
+          th:content="${tag.displayName + ' の撮影スポットと作例を Photlas で探そう。' + photoCount + ' 枚'}" />
+    <meta property="og:type" content="website" />
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .count { color: #666; margin-bottom: 1.5rem; }
+        .empty { background: #f5f5f5; padding: 2rem; border-radius: 8px; text-align: center; color: #666; }
+        .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+        .photo-grid a { display: block; aspect-ratio: 1; background: #eee; border-radius: 4px; overflow: hidden; }
+        .photo-grid img { width: 100%; height: 100%; object-fit: cover; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 th:text="${tag.displayName}">Keyword</h1>
+        <p class="count">
+            <span th:text="${photoCount}">0</span> 枚
+        </p>
+    </header>
+
+    <main>
+        <!-- 写真 0 件のキーワードページ: 案内文 (Issue#135 3.6) -->
+        <div th:if="${photoCount == 0}" class="empty">
+            <p>まだこのキーワードの写真がありません。</p>
+            <p><a href="/">トップへ戻る</a></p>
+        </div>
+
+        <!-- 写真グリッド -->
+        <div th:if="${photoCount > 0}" class="photo-grid">
+            <a th:each="photo : ${photos}"
+               th:href="@{'/photo-viewer/' + ${photo.id}}">
+                <img th:src="${photo.thumbnailUrl}" th:alt="${tag.displayName}" loading="lazy" />
+            </a>
+        </div>
+    </main>
+
+    <footer style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem;">
+        <p>
+            <a href="/">Photlas - 撮影スポット共有</a>
+        </p>
+    </footer>
+</body>
+</html>

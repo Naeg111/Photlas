@@ -16,8 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -75,7 +74,7 @@ class TagPageControllerTest {
     void getTagPage_noLang_redirectsToEnglish() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom"))
                 .andExpect(status().isMovedPermanently())
-                .andExpect(redirectedUrlPattern("**/tags/cherry-blossom?lang=en"));
+                .andExpect(redirectedUrl("/tags/cherry-blossom?lang=en"));
     }
 
     @Test
