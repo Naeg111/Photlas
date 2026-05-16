@@ -9,6 +9,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   trackAiPrefillEvent,
   compareAiPrefill,
+  trackParentFallbackEvents,
+  trackExifRuleFiredEvents,
 } from './aiPrefillAnalytics'
 
 describe('trackAiPrefillEvent', () => {
@@ -166,5 +168,99 @@ describe('compareAiPrefill', () => {
       userWeather: null,
     })
     expect(result.userDiffFlag).toBe(false)
+  })
+})
+
+describe('Issue#132 - trackParentFallbackEvents', () => {
+  let mockGtag: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    mockGtag = vi.fn()
+    vi.stubGlobal('gtag', mockGtag)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('Issue#132 - 各 ParentFallback につき ai_parent_fallback_used を 1 回ずつ送信', () => {
+    trackParentFallbackEvents([
+      { childLabel: 'Husky', parentLabel: 'Dog', categoryCode: 207 },
+      { childLabel: 'MysteryBird', parentLabel: 'Sparrow', categoryCode: 208 },
+    ])
+
+    expect(mockGtag).toHaveBeenCalledTimes(2)
+    expect(mockGtag).toHaveBeenNthCalledWith(1, 'event', 'ai_parent_fallback_used', {
+      child_label: 'Husky',
+      parent_label: 'Dog',
+      category_code: 207,
+    })
+    expect(mockGtag).toHaveBeenNthCalledWith(2, 'event', 'ai_parent_fallback_used', {
+      child_label: 'MysteryBird',
+      parent_label: 'Sparrow',
+      category_code: 208,
+    })
+  })
+
+  it('Issue#132 - 空配列なら gtag を呼ばない', () => {
+    trackParentFallbackEvents([])
+    expect(mockGtag).not.toHaveBeenCalled()
+  })
+
+  it('Issue#132 - gtag が未定義でもクラッシュしない', () => {
+    vi.unstubAllGlobals()
+    vi.stubGlobal('gtag', undefined)
+    expect(() =>
+      trackParentFallbackEvents([{ childLabel: 'X', parentLabel: 'Y', categoryCode: 1 }])
+    ).not.toThrow()
+  })
+})
+
+describe('Issue#132 - trackExifRuleFiredEvents', () => {
+  let mockGtag: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    mockGtag = vi.fn()
+    vi.stubGlobal('gtag', mockGtag)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('Issue#132 - 各 ExifRuleFire につき ai_exif_rule_fired を 1 回ずつ送信', () => {
+    trackExifRuleFiredEvents([
+      { rule: 'R1', categoryCode: 213, boostValue: 30, createdNewCandidate: true },
+      { rule: 'R3', categoryCode: 207, boostValue: 10, createdNewCandidate: false },
+    ])
+
+    expect(mockGtag).toHaveBeenCalledTimes(2)
+    expect(mockGtag).toHaveBeenNthCalledWith(1, 'event', 'ai_exif_rule_fired', {
+      rule: 'R1',
+      category_code: 213,
+      boost_value: 30,
+      created_new_candidate: true,
+    })
+    expect(mockGtag).toHaveBeenNthCalledWith(2, 'event', 'ai_exif_rule_fired', {
+      rule: 'R3',
+      category_code: 207,
+      boost_value: 10,
+      created_new_candidate: false,
+    })
+  })
+
+  it('Issue#132 - 空配列なら gtag を呼ばない', () => {
+    trackExifRuleFiredEvents([])
+    expect(mockGtag).not.toHaveBeenCalled()
+  })
+
+  it('Issue#132 - gtag が未定義でもクラッシュしない', () => {
+    vi.unstubAllGlobals()
+    vi.stubGlobal('gtag', undefined)
+    expect(() =>
+      trackExifRuleFiredEvents([
+        { rule: 'R1', categoryCode: 213, boostValue: 30, createdNewCandidate: true },
+      ])
+    ).not.toThrow()
   })
 })
