@@ -20,4 +20,10 @@ public interface TagCategoryRepository extends JpaRepository<TagCategory, TagCat
 
     /** 複数 tag_id に対応する関連を一括取得（写真詳細・検索カード等で利用）。 */
     List<TagCategory> findByTagIdIn(List<Long> tagIds);
+
+    /**
+     * Issue#136 Phase 8: 複数カテゴリに紐づく全 tag_id を一括取得（関連キーワード抽出用）。
+     * 多対多で同じ tag_id が複数回ヒットしうるので、呼び出し側で distinct すること。
+     */
+    List<TagCategory> findByCategoryCodeIn(List<Integer> categoryCodes);
 }
