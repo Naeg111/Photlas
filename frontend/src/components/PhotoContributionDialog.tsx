@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { analyzePhoto, type PhotoAnalyzeResponse } from '../utils/photoAnalyzeApi'
+import { fetchTags } from '../utils/tagsApi'
+import { KeywordSection, type KeywordTag, type KeywordSuggestion } from './KeywordSection'
 import { resizeImageToBlobForAnalyze } from '../utils/cropImageToBlob'
 import { resizeImageFile } from '../utils/resizeImageFile'
 import { CATEGORY_LABELS } from '../utils/codeConstants'
@@ -132,6 +134,10 @@ interface PhotoContributionDialogProps {
     cropZoom?: number
     /** Issue#119: AI 解析で発行された analyzeToken（任意）。バックエンドが photo_ai_predictions に紐づける */
     analyzeToken?: string
+    /** Issue#135: 最終的にユーザーが選んだキーワード ID 全件（AI + 手動の両方） */
+    tagIds?: number[]
+    /** Issue#135: tagIds のうち元々 AI 提案だった subset。assigned_by 判定に使う */
+    aiOriginatedTagIds?: number[]
   }) => Promise<void>
 }
 
@@ -177,6 +183,12 @@ export function PhotoContributionDialog({
   const [aiPrefillApplied, setAiPrefillApplied] = useState(false)
   // Issue#119: GA4 accepted/modified 判定用に AI 元結果を保持
   const aiOriginalResponseRef = useRef<PhotoAnalyzeResponse | null>(null)
+  // Issue#135: キーワード関連
+  const [allTags, setAllTags] = useState<KeywordTag[]>([])
+  const [aiSuggestedTags, setAiSuggestedTags] = useState<KeywordSuggestion[]>([])
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
+  // AI 提案として元々付いていた tag_id（後で assigned_by 判定に使う）
+  const aiSuggestedTagIdsRef = useRef<Set<number>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -243,6 +255,18 @@ export function PhotoContributionDialog({
       }
     }
   }, [open])
+
+  // Issue#135: ダイアログを開いたタイミングで全アクティブタグを取得（KeywordSection 用）
+  useEffect(() => {
+    if (!open) return
+    const controller = new AbortController()
+    fetchTags(i18n.language, { signal: controller.signal })
+      .then((res) => setAllTags(res.tags))
+      .catch(() => {
+        // 取得失敗は静かに無視（キーワードセクションは AI 提案だけでも動作する）
+      })
+    return () => controller.abort()
+  }, [open, i18n.language])
 
   // Issue#119（仕様変更）: AI 解析対象を「トリミング前の画像全体」に変更したため、
   // トリミング操作（cropComplete）では解析を発火させず、ファイル選択直後の 1 回だけ実行する。
@@ -331,6 +355,20 @@ export function PhotoContributionDialog({
     // Issue#132: 観測イベント（親フォールバック / EXIF ルール発火）を GA4 へ送信
     trackParentFallbackEvents(response.parentFallbacks)
     trackExifRuleFiredEvents(response.exifRulesFired)
+
+    // Issue#135: AI 提案キーワードを KeywordSection の AI チップに反映し、
+    //           デフォルトで全て選択済みにする
+    const suggested = response.suggestedTags ?? []
+    setAiSuggestedTags(suggested)
+    if (suggested.length > 0) {
+      const suggestedIds = suggested.map((s) => s.tagId)
+      aiSuggestedTagIdsRef.current = new Set(suggestedIds)
+      setSelectedTagIds((prev) => {
+        // 既存ユーザー選択を尊重しつつ AI 提案を追加（重複排除）
+        const merged = new Set([...prev, ...suggestedIds])
+        return Array.from(merged)
+      })
+    }
   }, [])
 
   // ダイアログ表示時にスクロール位置を先頭にリセット
@@ -536,6 +574,10 @@ export function PhotoContributionDialog({
           cropCenterY: croppedArea ? (croppedArea.y + croppedArea.height / 2) / 100 : 0.5,
           cropZoom,
           analyzeToken: analyzeToken ?? undefined,
+          tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
+          aiOriginatedTagIds: selectedTagIds.length > 0
+            ? selectedTagIds.filter((id) => aiSuggestedTagIdsRef.current.has(id))
+            : undefined,
         })
       }
 
@@ -907,6 +949,23 @@ export function PhotoContributionDialog({
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Issue#135: キーワード選択（カテゴリと機材種別の間に配置） */}
+            <div className="space-y-3">
+              <Label className="text-base">
+                {t('keyword.sectionLabel', { defaultValue: 'キーワード（任意）' })}
+              </Label>
+              <KeywordSection
+                allTags={allTags}
+                aiSuggestions={aiSuggestedTags}
+                selectedCategoryCodes={selectedCategories
+                  .map((name) => CATEGORY_NAME_TO_ID[name])
+                  .filter((id): id is number => typeof id === 'number')}
+                selectedTagIds={selectedTagIds}
+                onSelectionChange={setSelectedTagIds}
+                maxSelections={20}
+              />
             </div>
 
             {/* 機材種別選択 */}
