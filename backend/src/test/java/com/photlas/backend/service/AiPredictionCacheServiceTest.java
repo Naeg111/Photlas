@@ -52,12 +52,17 @@ class AiPredictionCacheServiceTest {
         );
     }
 
+    /** Issue#136 Phase 10: 既存テストの最小修正用ヘルパー (LabelMappingResult を CachedAnalyzeResult で包んで保存)。 */
+    private String save(LabelMappingResult result) {
+        return service.save(new CachedAnalyzeResult(result, List.of()));
+    }
+
     // ========== save ==========
 
     @Test
     @DisplayName("Issue#119 - save: 非 null の UUID 文字列を返す")
     void saveReturnsNonNullUuidToken() {
-        String token = service.save(sampleResult());
+        String token = save(sampleResult());
 
         assertThat(token).isNotNull();
         assertThat(token).hasSize(36); // UUID v4 文字列
@@ -67,8 +72,8 @@ class AiPredictionCacheServiceTest {
     @Test
     @DisplayName("Issue#119 - save: 各回ユニークなトークンを返す")
     void saveReturnsUniqueTokens() {
-        String token1 = service.save(sampleResult());
-        String token2 = service.save(sampleResult());
+        String token1 = save(sampleResult());
+        String token2 = save(sampleResult());
 
         assertThat(token1).isNotEqualTo(token2);
     }
@@ -76,7 +81,7 @@ class AiPredictionCacheServiceTest {
     @Test
     @DisplayName("Issue#119 - save: ai_prediction_cache テーブルにエントリを永続化する")
     void savePersistsEntry() {
-        String token = service.save(sampleResult());
+        String token = save(sampleResult());
 
         Optional<AiPredictionCache> entity = repository.findById(token);
         assertThat(entity).isPresent();
@@ -87,7 +92,7 @@ class AiPredictionCacheServiceTest {
     @DisplayName("Issue#119 - save: expires_at を現在時刻 + 15分の前後に設定する")
     void saveSetsExpiresAtFifteenMinutesAhead() {
         Date before = new Date();
-        String token = service.save(sampleResult());
+        String token = save(sampleResult());
         Date after = new Date();
 
         AiPredictionCache entity = repository.findById(token).orElseThrow();
@@ -105,21 +110,21 @@ class AiPredictionCacheServiceTest {
     @DisplayName("Issue#119 - findValid: 有効なトークンに対して保存した結果を返す")
     void findValidReturnsResultForValidToken() {
         LabelMappingResult original = sampleResult();
-        String token = service.save(original);
+        String token = save(original);
 
-        Optional<LabelMappingResult> found = service.findValid(token);
+        Optional<CachedAnalyzeResult> found = service.findValid(token);
 
         assertThat(found).isPresent();
-        assertThat(found.get().categories())
+        assertThat(found.get().labelMapping().categories())
                 .containsExactlyInAnyOrderElementsOf(original.categories());
-        assertThat(found.get().weather()).isEqualTo(original.weather());
-        assertThat(found.get().confidence()).isEqualTo(original.confidence());
+        assertThat(found.get().labelMapping().weather()).isEqualTo(original.weather());
+        assertThat(found.get().labelMapping().confidence()).isEqualTo(original.confidence());
     }
 
     @Test
     @DisplayName("Issue#119 - findValid: 存在しないトークンに対して空を返す")
     void findValidReturnsEmptyForUnknownToken() {
-        Optional<LabelMappingResult> found = service.findValid(UUID.randomUUID().toString());
+        Optional<CachedAnalyzeResult> found = service.findValid(UUID.randomUUID().toString());
 
         assertThat(found).isEmpty();
     }
@@ -127,7 +132,7 @@ class AiPredictionCacheServiceTest {
     @Test
     @DisplayName("Issue#119 - findValid: 期限切れトークンに対して空を返す")
     void findValidReturnsEmptyForExpiredToken() {
-        // 期限切れエントリを直接 repository に保存
+        // 期限切れエントリを直接 repository に保存（旧形式 JSON でも互換読み取りされる）
         String expiredToken = UUID.randomUUID().toString();
         Date past = Date.from(Instant.now().minus(Duration.ofMinutes(1)));
         AiPredictionCache expired = new AiPredictionCache(
@@ -138,7 +143,7 @@ class AiPredictionCacheServiceTest {
         );
         repository.save(expired);
 
-        Optional<LabelMappingResult> found = service.findValid(expiredToken);
+        Optional<CachedAnalyzeResult> found = service.findValid(expiredToken);
 
         assertThat(found).isEmpty();
     }
@@ -148,7 +153,7 @@ class AiPredictionCacheServiceTest {
     @Test
     @DisplayName("Issue#119 - delete: 指定トークンのエントリを削除する")
     void deleteRemovesEntry() {
-        String token = service.save(sampleResult());
+        String token = save(sampleResult());
         assertThat(repository.findById(token)).isPresent();
 
         service.delete(token);
@@ -169,7 +174,7 @@ class AiPredictionCacheServiceTest {
     @DisplayName("Issue#119 - cleanupExpired: 期限切れエントリだけを削除し、有効なものは残す")
     void cleanupExpiredRemovesOnlyExpiredEntries() {
         // 有効: now + 15min（save() 経由）
-        String validToken = service.save(sampleResult());
+        String validToken = save(sampleResult());
 
         // 期限切れ: now - 1min（直接 repository）
         String expiredToken = UUID.randomUUID().toString();
@@ -190,7 +195,7 @@ class AiPredictionCacheServiceTest {
     @Test
     @DisplayName("Issue#119 - cleanupExpired: 期限切れがない場合は何もしない（例外も出さない）")
     void cleanupExpiredHandlesEmptyState() {
-        service.save(sampleResult()); // 有効なエントリのみ
+        save(sampleResult()); // 有効なエントリのみ
 
         service.cleanupExpired(); // 例外が出ないこと
     }
@@ -201,14 +206,14 @@ class AiPredictionCacheServiceTest {
     @DisplayName("Issue#119 - JSON ラウンドトリップ: weather=null と空 confidence でも壊れない")
     void roundTripHandlesNullWeatherAndEmptyConfidence() {
         LabelMappingResult original = new LabelMappingResult(List.of(), null, Map.of());
-        String token = service.save(original);
+        String token = save(original);
 
-        Optional<LabelMappingResult> found = service.findValid(token);
+        Optional<CachedAnalyzeResult> found = service.findValid(token);
 
         assertThat(found).isPresent();
-        assertThat(found.get().categories()).isEmpty();
-        assertThat(found.get().weather()).isNull();
-        assertThat(found.get().confidence()).isEmpty();
+        assertThat(found.get().labelMapping().categories()).isEmpty();
+        assertThat(found.get().labelMapping().weather()).isNull();
+        assertThat(found.get().labelMapping().confidence()).isEmpty();
     }
 
     @Test
@@ -219,12 +224,12 @@ class AiPredictionCacheServiceTest {
                 null,
                 Map.of(String.valueOf(CodeConstants.CATEGORY_NATURE), 92.5f)
         );
-        String token = service.save(original);
+        String token = save(original);
 
-        Optional<LabelMappingResult> found = service.findValid(token);
+        Optional<CachedAnalyzeResult> found = service.findValid(token);
 
         assertThat(found).isPresent();
-        assertThat(found.get().confidence().get(String.valueOf(CodeConstants.CATEGORY_NATURE)))
+        assertThat(found.get().labelMapping().confidence().get(String.valueOf(CodeConstants.CATEGORY_NATURE)))
                 .isEqualTo(92.5f);
     }
 
@@ -245,7 +250,7 @@ class AiPredictionCacheServiceTest {
         Date future = Date.from(Instant.now().plus(Duration.ofMinutes(10)));
         repository.save(new AiPredictionCache(token, newJson, future, new Date()));
 
-        Optional<CachedAnalyzeResult> found = service.findValidCached(token);
+        Optional<CachedAnalyzeResult> found = service.findValid(token);
 
         assertThat(found).isPresent();
         assertThat(found.get().labelMapping().categories()).containsExactly(201, 204);
@@ -266,7 +271,7 @@ class AiPredictionCacheServiceTest {
         Date future = Date.from(Instant.now().plus(Duration.ofMinutes(10)));
         repository.save(new AiPredictionCache(token, oldJson, future, new Date()));
 
-        Optional<CachedAnalyzeResult> found = service.findValidCached(token);
+        Optional<CachedAnalyzeResult> found = service.findValid(token);
 
         assertThat(found).isPresent();
         // labelMapping 部分は旧 JSON を素直に復元
@@ -279,7 +284,7 @@ class AiPredictionCacheServiceTest {
     @Test
     @DisplayName("Issue#136 - findValidCached: 存在しないトークンに対して空を返す")
     void findValidCached_emptyForUnknownToken() {
-        Optional<CachedAnalyzeResult> found = service.findValidCached(UUID.randomUUID().toString());
+        Optional<CachedAnalyzeResult> found = service.findValid(UUID.randomUUID().toString());
 
         assertThat(found).isEmpty();
     }
@@ -297,7 +302,7 @@ class AiPredictionCacheServiceTest {
         );
         repository.save(expired);
 
-        Optional<CachedAnalyzeResult> found = service.findValidCached(expiredToken);
+        Optional<CachedAnalyzeResult> found = service.findValid(expiredToken);
 
         assertThat(found).isEmpty();
     }

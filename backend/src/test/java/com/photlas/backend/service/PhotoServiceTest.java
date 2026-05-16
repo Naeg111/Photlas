@@ -12,6 +12,7 @@ import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.AccountSuspendedException;
 import com.photlas.backend.exception.CategoryNotFoundException;
 import com.photlas.backend.exception.PhotoNotFoundException;
+import com.photlas.backend.dto.CachedAnalyzeResult;
 import com.photlas.backend.dto.LabelMappingResult;
 import com.photlas.backend.entity.PhotoAiPrediction;
 import com.photlas.backend.repository.AccountSanctionRepository;
@@ -1264,6 +1265,11 @@ public class PhotoServiceTest {
         return request;
     }
 
+    /** Issue#136 Phase 10: 既存テストのため LabelMappingResult を CachedAnalyzeResult で包んで保存。 */
+    private String saveAiCache(LabelMappingResult result) {
+        return aiPredictionCacheService.save(new CachedAnalyzeResult(result, java.util.List.of()));
+    }
+
     private LabelMappingResult aiResult(List<Integer> categories, Integer weather) {
         Map<String, Float> confidence = new java.util.HashMap<>();
         for (Integer c : categories) {
@@ -1290,7 +1296,7 @@ public class PhotoServiceTest {
     @Test
     @DisplayName("Issue#119 - createPhoto: 有効な analyzeToken で AI 予測結果が photo_ai_predictions に保存される")
     void createPhoto_withValidAnalyzeToken_savesPrediction() {
-        String token = aiPredictionCacheService.save(
+        String token = saveAiCache(
                 aiResult(List.of(CodeConstants.CATEGORY_NATURE), CodeConstants.WEATHER_SUNNY)
         );
         CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/with-token.jpg");
@@ -1312,7 +1318,7 @@ public class PhotoServiceTest {
     @DisplayName("Issue#119 - createPhoto: AI 予測カテゴリとユーザー選択が重複ゼロなら user_diff_flag=true")
     void createPhoto_categoriesNoOverlap_setsUserDiffFlagTrue() {
         // AI=自然風景(201), ユーザー=都市(202) → 重複ゼロ
-        String token = aiPredictionCacheService.save(
+        String token = saveAiCache(
                 aiResult(List.of(CodeConstants.CATEGORY_NATURE), null)
         );
         CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/diff.jpg");
@@ -1328,7 +1334,7 @@ public class PhotoServiceTest {
     @Test
     @DisplayName("Issue#119 - createPhoto: AI 予測カテゴリが空ならユーザー選択にかかわらず user_diff_flag=false")
     void createPhoto_aiPredictedEmpty_userDiffFlagFalse() {
-        String token = aiPredictionCacheService.save(aiResult(List.of(), null));
+        String token = saveAiCache(aiResult(List.of(), null));
         CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/empty-ai.jpg");
         request.setCategories(List.of("風景"));
         request.setAnalyzeToken(token);
@@ -1358,7 +1364,7 @@ public class PhotoServiceTest {
     @Test
     @DisplayName("Issue#119 - createPhoto: AI 予測結果保存後、analyzeToken はキャッシュから削除される（使い切り）")
     void createPhoto_consumesAnalyzeToken() {
-        String token = aiPredictionCacheService.save(
+        String token = saveAiCache(
                 aiResult(List.of(CodeConstants.CATEGORY_NATURE), null)
         );
         assertThat(aiPredictionCacheService.findValid(token)).isPresent();
@@ -1385,7 +1391,7 @@ public class PhotoServiceTest {
                 CodeConstants.WEATHER_SUNNY,
                 conf
         );
-        String token = aiPredictionCacheService.save(ai);
+        String token = saveAiCache(ai);
 
         CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/json.jpg");
         request.setCategories(List.of("風景"));
