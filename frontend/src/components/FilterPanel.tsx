@@ -356,6 +356,8 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
               selectedTagIds={selectedTagIds}
               onSelectionChange={setSelectedTagIds}
               maxSelections={10}
+              // Issue#141 Phase 8: フィルタ画面ではカテゴリ選択で配下キーワードを自動選択
+              autoSelectByCategoryMode
             />
           </div>
 
