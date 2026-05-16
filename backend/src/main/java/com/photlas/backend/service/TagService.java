@@ -76,12 +76,39 @@ public class TagService {
     }
 
     /**
-     * Issue#136 Phase 8: SSR ランディング 0 件時の関連キーワード取得。
-     * Phase 8 では Red を通すための空実装。Green で本実装に置換。
+     * Issue#136 Phase 8: SSR ランディング 0 件時の関連キーワード取得 (Q5)。
+     *
+     * <p>挙動:</p>
+     * <ol>
+     *   <li>{@code tagId} のカテゴリ集合を取得</li>
+     *   <li>それらカテゴリに紐づく他 tag (多対多重複は distinct で排除、自分自身も除外)</li>
+     *   <li>{@code is_active=TRUE} のみ、{@code sort_order 昇順 + slug 二次ソート}、{@code limit} 適用</li>
+     * </ol>
+     *
+     * <p>カテゴリ未紐付け、または関連 0 件の場合は空リストを返す。</p>
      */
     @Transactional(readOnly = true)
     public List<TagDisplay> findRelatedActiveTags(Long tagId, int limit, String lang) {
-        return List.of();
+        List<Integer> categoryCodes = tagCategoryRepository.findByTagId(tagId).stream()
+                .map(tc -> tc.getCategoryCode())
+                .distinct()
+                .toList();
+        if (categoryCodes.isEmpty()) {
+            return List.of();
+        }
+        List<Long> peerTagIds = tagCategoryRepository.findByCategoryCodeIn(categoryCodes).stream()
+                .map(tc -> tc.getTagId())
+                .filter(id -> !id.equals(tagId))
+                .distinct()
+                .toList();
+        if (peerTagIds.isEmpty()) {
+            return List.of();
+        }
+        return tagRepository.findActiveByIdIn(peerTagIds).stream()
+                .sorted(Comparator.comparingInt(Tag::getSortOrder).thenComparing(Tag::getSlug))
+                .limit(limit)
+                .map(t -> new TagDisplay(t.getId(), t.getSlug(), pickDisplayName(t, lang)))
+                .toList();
     }
 
     /**
