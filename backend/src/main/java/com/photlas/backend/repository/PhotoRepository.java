@@ -42,6 +42,29 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         "  AND p.moderation_status = :moderationStatus " +
         "  AND u.deleted_at IS NULL " +
         "  AND (CAST(:maxAgeCutoff AS timestamp) IS NULL OR p.shot_at IS NULL OR p.shot_at >= :maxAgeCutoff) " +
+        "  AND (-1 IN (:subjectCategories) OR EXISTS (" +
+        "      SELECT 1 FROM photo_categories pc WHERE pc.photo_id = p.photo_id AND pc.category_id IN (:subjectCategories)" +
+        "  )) " +
+        "  AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months)) " +
+        "  AND (-1 IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay)) " +
+        "  AND (-1 IN (:weathers) OR p.weather IN (:weathers)) " +
+        "  AND (:minResolution = -1 OR (p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND GREATEST(p.image_width, p.image_height) >= :minResolution)) " +
+        "  AND (-1 IN (:deviceTypes) OR p.device_type IN (:deviceTypes)) " +
+        "  AND ('__NONE__' IN (:aspectRatios) " +
+        "       OR ('HORIZONTAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width > p.image_height) " +
+        "       OR ('VERTICAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width < p.image_height) " +
+        "       OR ('SQUARE' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND ABS(p.image_width - p.image_height) <= GREATEST(p.image_width, p.image_height) * 0.05) " +
+        "  ) " +
+        "  AND ('__NONE__' IN (:focalLengthRanges) " +
+        "       OR ('WIDE' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm < 24) " +
+        "       OR ('STANDARD' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm >= 24 AND p.focal_length_35mm <= 70) " +
+        "       OR ('TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 70 AND p.focal_length_35mm <= 300) " +
+        "       OR ('SUPER_TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 300) " +
+        "  ) " +
+        "  AND (:maxIso = -1 OR (p.iso IS NOT NULL AND p.iso <= :maxIso)) " +
+        "  AND (-1 IN (:tagIds) OR EXISTS (" +
+        "      SELECT 1 FROM photo_tags pt WHERE pt.photo_id = p.photo_id AND pt.tag_id IN (:tagIds)" +
+        "  )) " +
         "ORDER BY p.shot_at DESC NULLS LAST, p.photo_id DESC " +
         "LIMIT :limit OFFSET :offset",
         nativeQuery = true)
@@ -49,11 +72,21 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         @Param("spotIds") List<Long> spotIds,
         @Param("moderationStatus") Integer moderationStatus,
         @Param("maxAgeCutoff") LocalDateTime maxAgeCutoff,
+        @Param("subjectCategories") List<Integer> subjectCategories,
+        @Param("months") List<Integer> months,
+        @Param("timesOfDay") List<Integer> timesOfDay,
+        @Param("weathers") List<Integer> weathers,
+        @Param("minResolution") int minResolution,
+        @Param("deviceTypes") List<Integer> deviceTypes,
+        @Param("aspectRatios") List<String> aspectRatios,
+        @Param("focalLengthRanges") List<String> focalLengthRanges,
+        @Param("maxIso") int maxIso,
+        @Param("tagIds") List<Long> tagIds,
         @Param("limit") int limit,
         @Param("offset") int offset);
 
     /**
-     * Issue#112: 上記と同条件の総件数取得
+     * Issue#112 + Issue#141: 上記と同条件の総件数取得
      */
     @Query(value =
         "SELECT COUNT(*) FROM photos p " +
@@ -61,12 +94,45 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         "WHERE p.spot_id IN (:spotIds) " +
         "  AND p.moderation_status = :moderationStatus " +
         "  AND u.deleted_at IS NULL " +
-        "  AND (CAST(:maxAgeCutoff AS timestamp) IS NULL OR p.shot_at IS NULL OR p.shot_at >= :maxAgeCutoff)",
+        "  AND (CAST(:maxAgeCutoff AS timestamp) IS NULL OR p.shot_at IS NULL OR p.shot_at >= :maxAgeCutoff) " +
+        "  AND (-1 IN (:subjectCategories) OR EXISTS (" +
+        "      SELECT 1 FROM photo_categories pc WHERE pc.photo_id = p.photo_id AND pc.category_id IN (:subjectCategories)" +
+        "  )) " +
+        "  AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months)) " +
+        "  AND (-1 IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay)) " +
+        "  AND (-1 IN (:weathers) OR p.weather IN (:weathers)) " +
+        "  AND (:minResolution = -1 OR (p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND GREATEST(p.image_width, p.image_height) >= :minResolution)) " +
+        "  AND (-1 IN (:deviceTypes) OR p.device_type IN (:deviceTypes)) " +
+        "  AND ('__NONE__' IN (:aspectRatios) " +
+        "       OR ('HORIZONTAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width > p.image_height) " +
+        "       OR ('VERTICAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width < p.image_height) " +
+        "       OR ('SQUARE' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND ABS(p.image_width - p.image_height) <= GREATEST(p.image_width, p.image_height) * 0.05) " +
+        "  ) " +
+        "  AND ('__NONE__' IN (:focalLengthRanges) " +
+        "       OR ('WIDE' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm < 24) " +
+        "       OR ('STANDARD' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm >= 24 AND p.focal_length_35mm <= 70) " +
+        "       OR ('TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 70 AND p.focal_length_35mm <= 300) " +
+        "       OR ('SUPER_TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 300) " +
+        "  ) " +
+        "  AND (:maxIso = -1 OR (p.iso IS NOT NULL AND p.iso <= :maxIso)) " +
+        "  AND (-1 IN (:tagIds) OR EXISTS (" +
+        "      SELECT 1 FROM photo_tags pt WHERE pt.photo_id = p.photo_id AND pt.tag_id IN (:tagIds)" +
+        "  ))",
         nativeQuery = true)
     long countPhotosBySpots(
         @Param("spotIds") List<Long> spotIds,
         @Param("moderationStatus") Integer moderationStatus,
-        @Param("maxAgeCutoff") LocalDateTime maxAgeCutoff);
+        @Param("maxAgeCutoff") LocalDateTime maxAgeCutoff,
+        @Param("subjectCategories") List<Integer> subjectCategories,
+        @Param("months") List<Integer> months,
+        @Param("timesOfDay") List<Integer> timesOfDay,
+        @Param("weathers") List<Integer> weathers,
+        @Param("minResolution") int minResolution,
+        @Param("deviceTypes") List<Integer> deviceTypes,
+        @Param("aspectRatios") List<String> aspectRatios,
+        @Param("focalLengthRanges") List<String> focalLengthRanges,
+        @Param("maxIso") int maxIso,
+        @Param("tagIds") List<Long> tagIds);
 
     /**
      * Issue#127: 認証ユーザー本人の PENDING_REVIEW を含めて取得するバージョン。
@@ -84,6 +150,29 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         "        OR (p.moderation_status = :pendingStatus AND p.user_id = :viewerUserId) ) " +
         "  AND u.deleted_at IS NULL " +
         "  AND (CAST(:maxAgeCutoff AS timestamp) IS NULL OR p.shot_at IS NULL OR p.shot_at >= :maxAgeCutoff) " +
+        "  AND (-1 IN (:subjectCategories) OR EXISTS (" +
+        "      SELECT 1 FROM photo_categories pc WHERE pc.photo_id = p.photo_id AND pc.category_id IN (:subjectCategories)" +
+        "  )) " +
+        "  AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months)) " +
+        "  AND (-1 IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay)) " +
+        "  AND (-1 IN (:weathers) OR p.weather IN (:weathers)) " +
+        "  AND (:minResolution = -1 OR (p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND GREATEST(p.image_width, p.image_height) >= :minResolution)) " +
+        "  AND (-1 IN (:deviceTypes) OR p.device_type IN (:deviceTypes)) " +
+        "  AND ('__NONE__' IN (:aspectRatios) " +
+        "       OR ('HORIZONTAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width > p.image_height) " +
+        "       OR ('VERTICAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width < p.image_height) " +
+        "       OR ('SQUARE' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND ABS(p.image_width - p.image_height) <= GREATEST(p.image_width, p.image_height) * 0.05) " +
+        "  ) " +
+        "  AND ('__NONE__' IN (:focalLengthRanges) " +
+        "       OR ('WIDE' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm < 24) " +
+        "       OR ('STANDARD' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm >= 24 AND p.focal_length_35mm <= 70) " +
+        "       OR ('TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 70 AND p.focal_length_35mm <= 300) " +
+        "       OR ('SUPER_TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 300) " +
+        "  ) " +
+        "  AND (:maxIso = -1 OR (p.iso IS NOT NULL AND p.iso <= :maxIso)) " +
+        "  AND (-1 IN (:tagIds) OR EXISTS (" +
+        "      SELECT 1 FROM photo_tags pt WHERE pt.photo_id = p.photo_id AND pt.tag_id IN (:tagIds)" +
+        "  )) " +
         "ORDER BY p.shot_at DESC NULLS LAST, p.photo_id DESC " +
         "LIMIT :limit OFFSET :offset",
         nativeQuery = true)
@@ -93,10 +182,20 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         @Param("pendingStatus") Integer pendingStatus,
         @Param("viewerUserId") Long viewerUserId,
         @Param("maxAgeCutoff") LocalDateTime maxAgeCutoff,
+        @Param("subjectCategories") List<Integer> subjectCategories,
+        @Param("months") List<Integer> months,
+        @Param("timesOfDay") List<Integer> timesOfDay,
+        @Param("weathers") List<Integer> weathers,
+        @Param("minResolution") int minResolution,
+        @Param("deviceTypes") List<Integer> deviceTypes,
+        @Param("aspectRatios") List<String> aspectRatios,
+        @Param("focalLengthRanges") List<String> focalLengthRanges,
+        @Param("maxIso") int maxIso,
+        @Param("tagIds") List<Long> tagIds,
         @Param("limit") int limit,
         @Param("offset") int offset);
 
-    /** Issue#127: {@link #findPhotoIdsBySpotsPagedWithViewer} と同条件の総件数取得 */
+    /** Issue#127 + Issue#141: {@link #findPhotoIdsBySpotsPagedWithViewer} と同条件の総件数取得 */
     @Query(value =
         "SELECT COUNT(*) FROM photos p " +
         "INNER JOIN users u ON p.user_id = u.id " +
@@ -104,14 +203,47 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         "  AND ( p.moderation_status = :publishedStatus " +
         "        OR (p.moderation_status = :pendingStatus AND p.user_id = :viewerUserId) ) " +
         "  AND u.deleted_at IS NULL " +
-        "  AND (CAST(:maxAgeCutoff AS timestamp) IS NULL OR p.shot_at IS NULL OR p.shot_at >= :maxAgeCutoff)",
+        "  AND (CAST(:maxAgeCutoff AS timestamp) IS NULL OR p.shot_at IS NULL OR p.shot_at >= :maxAgeCutoff) " +
+        "  AND (-1 IN (:subjectCategories) OR EXISTS (" +
+        "      SELECT 1 FROM photo_categories pc WHERE pc.photo_id = p.photo_id AND pc.category_id IN (:subjectCategories)" +
+        "  )) " +
+        "  AND (-1 IN (:months) OR EXTRACT(MONTH FROM p.shot_at) IN (:months)) " +
+        "  AND (-1 IN (:timesOfDay) OR p.time_of_day IN (:timesOfDay)) " +
+        "  AND (-1 IN (:weathers) OR p.weather IN (:weathers)) " +
+        "  AND (:minResolution = -1 OR (p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND GREATEST(p.image_width, p.image_height) >= :minResolution)) " +
+        "  AND (-1 IN (:deviceTypes) OR p.device_type IN (:deviceTypes)) " +
+        "  AND ('__NONE__' IN (:aspectRatios) " +
+        "       OR ('HORIZONTAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width > p.image_height) " +
+        "       OR ('VERTICAL' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND p.image_width < p.image_height) " +
+        "       OR ('SQUARE' IN (:aspectRatios) AND p.image_width IS NOT NULL AND p.image_height IS NOT NULL AND ABS(p.image_width - p.image_height) <= GREATEST(p.image_width, p.image_height) * 0.05) " +
+        "  ) " +
+        "  AND ('__NONE__' IN (:focalLengthRanges) " +
+        "       OR ('WIDE' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm < 24) " +
+        "       OR ('STANDARD' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm >= 24 AND p.focal_length_35mm <= 70) " +
+        "       OR ('TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 70 AND p.focal_length_35mm <= 300) " +
+        "       OR ('SUPER_TELEPHOTO' IN (:focalLengthRanges) AND p.focal_length_35mm IS NOT NULL AND p.focal_length_35mm > 300) " +
+        "  ) " +
+        "  AND (:maxIso = -1 OR (p.iso IS NOT NULL AND p.iso <= :maxIso)) " +
+        "  AND (-1 IN (:tagIds) OR EXISTS (" +
+        "      SELECT 1 FROM photo_tags pt WHERE pt.photo_id = p.photo_id AND pt.tag_id IN (:tagIds)" +
+        "  ))",
         nativeQuery = true)
     long countPhotosBySpotsWithViewer(
         @Param("spotIds") List<Long> spotIds,
         @Param("publishedStatus") Integer publishedStatus,
         @Param("pendingStatus") Integer pendingStatus,
         @Param("viewerUserId") Long viewerUserId,
-        @Param("maxAgeCutoff") LocalDateTime maxAgeCutoff);
+        @Param("maxAgeCutoff") LocalDateTime maxAgeCutoff,
+        @Param("subjectCategories") List<Integer> subjectCategories,
+        @Param("months") List<Integer> months,
+        @Param("timesOfDay") List<Integer> timesOfDay,
+        @Param("weathers") List<Integer> weathers,
+        @Param("minResolution") int minResolution,
+        @Param("deviceTypes") List<Integer> deviceTypes,
+        @Param("aspectRatios") List<String> aspectRatios,
+        @Param("focalLengthRanges") List<String> focalLengthRanges,
+        @Param("maxIso") int maxIso,
+        @Param("tagIds") List<Long> tagIds);
 
     /**
      * Issue#54: モデレーションステータスで写真を検索

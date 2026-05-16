@@ -158,14 +158,21 @@ public class SpotController {
                     .orElse(null);
         }
 
-        logger.info("POST /api/v1/spots/photos - spotIds={}, limit={}, offset={}, maxAgeDays={}, viewerUserId={}",
-                request.getSpotIds(), request.getLimit(), request.getOffset(), request.getMaxAgeDays(), viewerUserId);
+        logger.info("POST /api/v1/spots/photos - spotIds={}, limit={}, offset={}, maxAgeDays={}, viewerUserId={}, tagIds={}",
+                request.getSpotIds(), request.getLimit(), request.getOffset(), request.getMaxAgeDays(), viewerUserId,
+                request.getTagIds());
 
         int limit = request.getLimit() != null ? request.getLimit() : DEFAULT_PHOTO_PAGE_SIZE;
         int offset = request.getOffset() != null ? request.getOffset() : DEFAULT_PHOTO_PAGE_OFFSET;
 
         SpotPhotosResponse response = spotService.getSpotPhotos(
-                request.getSpotIds(), limit, offset, request.getMaxAgeDays(), viewerUserId);
+                request.getSpotIds(), limit, offset,
+                request.getSubjectCategories(), request.getMonths(), request.getTimesOfDay(),
+                request.getWeathers(), request.getMinResolution(), request.getDeviceTypes(),
+                request.getMaxAgeDays(),
+                request.getAspectRatios(), request.getFocalLengthRanges(), request.getMaxIso(),
+                request.getTagIds(),
+                viewerUserId);
 
         return ResponseEntity.ok(response);
     }
