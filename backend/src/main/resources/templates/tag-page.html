@@ -54,6 +54,18 @@
             <p><a href="/" th:text="#{tag.page.empty.back}">Back to home</a></p>
         </div>
 
+        <!-- Phase 9: 0 件時の関連キーワード導線 (§3.6 / Q5) -->
+        <section th:if="${photoCount == 0 and !relatedTags.isEmpty()}" class="related-tags" style="margin-top: 2rem;">
+            <h2 style="font-size: 1.2rem; margin-bottom: 0.8rem;" th:text="#{tag.page.related.label}">Related keywords</h2>
+            <ul style="list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                <li th:each="related : ${relatedTags}">
+                    <a th:href="@{|/tags/${related.slug}|(lang=${lang})}"
+                       th:text="${related.displayName}"
+                       style="display: inline-block; padding: 0.4rem 0.8rem; background: #eef2ff; color: #2563eb; border-radius: 4px; text-decoration: none;">Related tag</a>
+                </li>
+            </ul>
+        </section>
+
         <!-- 写真グリッド -->
         <div th:if="${photoCount > 0}" class="photo-grid">
             <a th:each="photo : ${photos}"
