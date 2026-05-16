@@ -491,6 +491,8 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
       aspect_ratios: conditions.aspectRatios && conditions.aspectRatios.length > 0 ? conditions.aspectRatios : undefined,
       focal_length_ranges: conditions.focalLengthRanges && conditions.focalLengthRanges.length > 0 ? conditions.focalLengthRanges : undefined,
       max_iso: conditions.maxIso,
+      // Issue#141 Phase 5 (Q-new-1): キーワードフィルタをバックエンドに転送
+      tag_ids: conditions.tagIds && conditions.tagIds.length > 0 ? conditions.tagIds : undefined,
     }
 
     setMapFilterParams(apiParams)
@@ -1072,6 +1074,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
               mapRef.current?.refreshSpots({ bypassCache: true })
             }}
             filterMaxAgeDays={mapFilterParams?.max_age_days}
+            filterParams={mapFilterParams}
             onPhotoViewed={registrationWall.recordPhotoView}
           />
         </Suspense>
