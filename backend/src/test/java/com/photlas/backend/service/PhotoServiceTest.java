@@ -20,6 +20,11 @@ import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoAiPredictionRepository;
 import com.photlas.backend.repository.PhotoCategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.PhotoTagRepository;
+import com.photlas.backend.repository.TagRepository;
+import com.photlas.backend.dto.TagSuggestion;
+import com.photlas.backend.entity.PhotoTag;
+import com.photlas.backend.entity.Tag;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -76,6 +81,12 @@ public class PhotoServiceTest {
 
     @Autowired
     private PhotoAiPredictionRepository photoAiPredictionRepository;
+
+    @Autowired
+    private TagRepository tagRepository;
+
+    @Autowired
+    private PhotoTagRepository photoTagRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -1471,5 +1482,150 @@ public class PhotoServiceTest {
                 List.of(), testUser.getEmail());
 
         assertThat(result).isEmpty();
+    }
+
+    // ========== Issue#136 Phase 12: createPhoto orchestration + ai_confidence 反映 ==========
+
+    /** Phase 12 ヘルパー: テスト用 Tag を作成。 */
+    private Tag createTestTag(String slug, String ja, String en) {
+        Tag t = new Tag();
+        t.setRekognitionLabel(en);
+        t.setSlug(slug);
+        t.setDisplayNameJa(ja);
+        t.setDisplayNameEn(en);
+        t.setIsActive(true);
+        t.setSortOrder(100);
+        return tagRepository.saveAndFlush(t);
+    }
+
+    /** Phase 12 ヘルパー: cache に suggestedTags 付きで保存。 */
+    private String saveCacheWithSuggestions(LabelMappingResult ai, List<TagSuggestion> suggestions) {
+        return aiPredictionCacheService.save(new CachedAnalyzeResult(ai, suggestions));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase12: AI 由来 tagId は suggestedTags の confidence が ai_confidence に入る")
+    void createPhoto_aiOriginatedTag_setsAiConfidence() {
+        Tag cherry = createTestTag("cherry-blossom-p12", "桜", "Cherry Blossom");
+        String token = saveCacheWithSuggestions(
+                aiResult(List.of(CodeConstants.CATEGORY_PLANTS), null),
+                List.of(new TagSuggestion(cherry.getId(), cherry.getSlug(), "桜", 92.5f))
+        );
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/p12-ai.jpg");
+        request.setCategories(List.of("風景"));
+        request.setAnalyzeToken(token);
+        request.setTagIds(List.of(cherry.getId()));
+        request.setAiOriginatedTagIds(List.of(cherry.getId()));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        List<PhotoTag> tags = photoTagRepository.findByPhotoId(response.getPhoto().getPhotoId());
+        assertThat(tags).hasSize(1);
+        assertThat(tags.get(0).getAssignedBy()).isEqualTo(PhotoTag.ASSIGNED_BY_AI);
+        assertThat(tags.get(0).getAiConfidence()).isEqualTo(92.5);
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase12: USER 由来 tagId は ai_confidence が NULL")
+    void createPhoto_userOriginatedTag_aiConfidenceIsNull() {
+        Tag mountain = createTestTag("mountain-p12", "山", "Mountain");
+        // cache に同じ tag が suggestedTags として含まれていても、USER 由来なら NULL
+        String token = saveCacheWithSuggestions(
+                aiResult(List.of(CodeConstants.CATEGORY_NATURE), null),
+                List.of(new TagSuggestion(mountain.getId(), mountain.getSlug(), "山", 88.0f))
+        );
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/p12-user.jpg");
+        request.setCategories(List.of("風景"));
+        request.setAnalyzeToken(token);
+        request.setTagIds(List.of(mountain.getId()));
+        // aiOriginatedTagIds に含めない → USER 由来扱い
+        request.setAiOriginatedTagIds(List.of());
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        List<PhotoTag> tags = photoTagRepository.findByPhotoId(response.getPhoto().getPhotoId());
+        assertThat(tags).hasSize(1);
+        assertThat(tags.get(0).getAssignedBy()).isEqualTo(PhotoTag.ASSIGNED_BY_USER);
+        assertThat(tags.get(0).getAiConfidence()).isNull();
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase12: analyzeToken なしで AI 由来 tag は ai_confidence が NULL")
+    void createPhoto_noAnalyzeToken_aiConfidenceIsNull() {
+        Tag tulip = createTestTag("tulip-p12", "チューリップ", "Tulip");
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/p12-notoken.jpg");
+        request.setCategories(List.of("風景"));
+        // analyzeToken 未設定
+        request.setTagIds(List.of(tulip.getId()));
+        request.setAiOriginatedTagIds(List.of(tulip.getId()));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        List<PhotoTag> tags = photoTagRepository.findByPhotoId(response.getPhoto().getPhotoId());
+        assertThat(tags).hasSize(1);
+        assertThat(tags.get(0).getAssignedBy()).isEqualTo(PhotoTag.ASSIGNED_BY_AI);
+        assertThat(tags.get(0).getAiConfidence()).isNull();
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase12 §4.4.2 回帰: savePhotoAiPrediction と savePhotoTags の両方が同一 cache を消費できる")
+    void createPhoto_phase12_4_4_2_regression_bothConsumersWork() {
+        Tag rose = createTestTag("rose-p12", "薔薇", "Rose");
+        String token = saveCacheWithSuggestions(
+                aiResult(List.of(CodeConstants.CATEGORY_PLANTS), CodeConstants.WEATHER_SUNNY),
+                List.of(new TagSuggestion(rose.getId(), rose.getSlug(), "薔薇", 85.5f))
+        );
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/p12-regress.jpg");
+        request.setCategories(List.of("風景"));
+        request.setAnalyzeToken(token);
+        request.setTagIds(List.of(rose.getId()));
+        request.setAiOriginatedTagIds(List.of(rose.getId()));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        // (a) savePhotoAiPrediction が動作: photo_ai_predictions 行が出来ている
+        List<PhotoAiPrediction> predictions = photoAiPredictionRepository.findAll();
+        assertThat(predictions).hasSize(1);
+        assertThat(predictions.get(0).getPredictedWeather()).isEqualTo(CodeConstants.WEATHER_SUNNY);
+
+        // (b) savePhotoTags が動作: photo_tags の ai_confidence に suggestedTags の値が入っている
+        //     ← §4.4.2 のバグだとここが NULL になる
+        List<PhotoTag> tags = photoTagRepository.findByPhotoId(response.getPhoto().getPhotoId());
+        assertThat(tags).hasSize(1);
+        assertThat(tags.get(0).getAiConfidence()).isEqualTo(85.5);
+
+        // (c) cache.delete は処理完了後に一度だけ → トークンが消えている
+        assertThat(aiPredictionCacheService.findValid(token)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase12: suggestedTags に無い AI tag は ai_confidence が NULL")
+    void createPhoto_aiTagNotInSuggestions_aiConfidenceIsNull() {
+        Tag t1 = createTestTag("t1-p12", "T1", "T1");
+        Tag t2 = createTestTag("t2-p12", "T2", "T2");
+        // suggestedTags には t1 のみ含む
+        String token = saveCacheWithSuggestions(
+                aiResult(List.of(CodeConstants.CATEGORY_OTHER), null),
+                List.of(new TagSuggestion(t1.getId(), t1.getSlug(), "T1", 90.0f))
+        );
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/p12-partial.jpg");
+        request.setCategories(List.of("風景"));
+        request.setAnalyzeToken(token);
+        // AI 由来として t1 と t2 を投稿（だが suggestedTags には t2 なし）
+        request.setTagIds(List.of(t1.getId(), t2.getId()));
+        request.setAiOriginatedTagIds(List.of(t1.getId(), t2.getId()));
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        List<PhotoTag> tags = photoTagRepository.findByPhotoId(response.getPhoto().getPhotoId());
+        assertThat(tags).hasSize(2);
+        // t1 は cache の confidence、t2 は NULL
+        Map<Long, Double> confByTag = tags.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        PhotoTag::getTagId,
+                        pt -> pt.getAiConfidence()  // Double or null
+                        , (a, b) -> a));
+        assertThat(confByTag.get(t1.getId())).isEqualTo(90.0);
+        assertThat(confByTag.get(t2.getId())).isNull();
     }
 }
