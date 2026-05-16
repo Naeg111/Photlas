@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.CachedAnalyzeResult;
 import com.photlas.backend.dto.ExifData;
 import com.photlas.backend.dto.LabelMappingResult;
 import com.photlas.backend.dto.PhotoAnalyzeResponse;
@@ -121,8 +122,7 @@ public class PhotoAnalyzeService {
         LabelMappingResult finalResult = applied.result();
         List<TagSuggestion> suggestedTags = tagService.extractSuggestions(rekognitionResponse.labels());
         // Issue#136 Q10/§4.4: labelMapping と suggestedTags を一括キャッシュ（ai_confidence 補完用）
-        String token = cacheService.save(
-                new com.photlas.backend.dto.CachedAnalyzeResult(finalResult, suggestedTags));
+        String token = cacheService.save(new CachedAnalyzeResult(finalResult, suggestedTags));
         return new PhotoAnalyzeResponse(
                 finalResult.categories(),
                 finalResult.weather(),

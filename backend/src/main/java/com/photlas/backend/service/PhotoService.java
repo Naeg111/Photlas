@@ -2,10 +2,12 @@ package com.photlas.backend.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.photlas.backend.dto.CachedAnalyzeResult;
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.dto.LabelMappingResult;
 import com.photlas.backend.dto.PhotoDetailResponse;
 import com.photlas.backend.dto.PhotoResponse;
+import com.photlas.backend.dto.TagSuggestion;
 import com.photlas.backend.dto.UpdatePhotoRequest;
 import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
@@ -189,7 +191,7 @@ public class PhotoService {
         // Issue#136 §4.4.2: cache を一度だけ取得して両処理で共有
         // （savePhotoAiPrediction が中で delete してしまうと savePhotoTags が
         //  ai_confidence を引けず、常に NULL になるバグを防ぐ）
-        Optional<com.photlas.backend.dto.CachedAnalyzeResult> cached = Optional.empty();
+        Optional<CachedAnalyzeResult> cached = Optional.empty();
         if (request.getAnalyzeToken() != null) {
             cached = aiPredictionCacheService.findValid(request.getAnalyzeToken());
         }
@@ -199,8 +201,8 @@ public class PhotoService {
                 savePhotoAiPrediction(savedPhoto.getPhotoId(), request, categories, c.labelMapping()));
 
         // Issue#135 + #136: photo_tags 保存（suggestedTags は cache 不在時は空リスト）
-        List<com.photlas.backend.dto.TagSuggestion> suggestedTags =
-                cached.map(com.photlas.backend.dto.CachedAnalyzeResult::suggestedTags).orElse(List.of());
+        List<TagSuggestion> suggestedTags =
+                cached.map(CachedAnalyzeResult::suggestedTags).orElse(List.of());
         savePhotoTags(savedPhoto.getPhotoId(), request, suggestedTags);
 
         // 使い切り削除: 両処理が完了してから一度だけ
@@ -840,7 +842,7 @@ public class PhotoService {
      * USER 由来は常に NULL。</p>
      */
     private void savePhotoTags(Long photoId, CreatePhotoRequest request,
-                                List<com.photlas.backend.dto.TagSuggestion> suggestedTags) {
+                                List<TagSuggestion> suggestedTags) {
         List<Long> tagIds = request.getTagIds();
         if (tagIds == null || tagIds.isEmpty()) {
             return;
@@ -861,7 +863,7 @@ public class PhotoService {
         // Issue#136 §4.4.4: suggestedTags から AI tagId 用 confidence マップを作る
         Map<Long, Double> confidenceByTagId = suggestedTags.stream()
                 .collect(Collectors.toMap(
-                        com.photlas.backend.dto.TagSuggestion::tagId,
+                        TagSuggestion::tagId,
                         s -> s.confidence().doubleValue(),
                         (a, b) -> a));
         if (!aiTagIds.isEmpty()) {

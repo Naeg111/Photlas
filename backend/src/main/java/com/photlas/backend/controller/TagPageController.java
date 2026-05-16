@@ -11,6 +11,7 @@ import com.photlas.backend.repository.PhotoTagRepository;
 import com.photlas.backend.repository.TagRepository;
 import com.photlas.backend.service.S3Service;
 import com.photlas.backend.service.TagService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -60,6 +61,9 @@ public class TagPageController {
     /** Phase 9 (Q5): 0 件時に表示する関連キーワードの上限。 */
     private static final int RELATED_TAGS_LIMIT = 10;
 
+    /** Q18: SSR ランディングページの HTTP キャッシュ有効秒数（5 分）。 */
+    private static final String CACHE_CONTROL_VALUE = "public, max-age=300";
+
     /** デフォルト言語。 */
     private static final String DEFAULT_LANG = "en";
 
@@ -90,7 +94,8 @@ public class TagPageController {
             @PathVariable String slug,
             @RequestParam(name = "lang", required = false) String rawLang,
             @RequestParam(name = "page", required = false) String rawPageStr,
-            Model model) {
+            Model model,
+            HttpServletResponse response) {
 
         // §4.2.2 ステップ 1: tag 存在確認（404 を先に出してリダイレクトループを防ぐ）
         Tag tag = tagRepository.findActiveBySlug(slug).orElseThrow(() ->
@@ -190,6 +195,9 @@ public class TagPageController {
         model.addAttribute("title", title);
         model.addAttribute("description", description);
         model.addAttribute("relatedTags", relatedTags);
+
+        // Q18: SEO クローラー大量巡回時の EC2/DB 負荷軽減のため 5 分キャッシュ
+        response.setHeader("Cache-Control", CACHE_CONTROL_VALUE);
 
         return "tag-page";
     }
