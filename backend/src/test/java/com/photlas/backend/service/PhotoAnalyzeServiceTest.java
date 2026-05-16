@@ -1,5 +1,8 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.ExifData;
+import com.photlas.backend.dto.ExifRuleFire;
+import com.photlas.backend.dto.ParentFallback;
 import com.photlas.backend.dto.PhotoAnalyzeResponse;
 import com.photlas.backend.entity.CodeConstants;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +19,10 @@ import software.amazon.awssdk.services.rekognition.RekognitionClient;
 import software.amazon.awssdk.services.rekognition.model.DetectLabelsRequest;
 import software.amazon.awssdk.services.rekognition.model.DetectLabelsResponse;
 import software.amazon.awssdk.services.rekognition.model.Label;
+import software.amazon.awssdk.services.rekognition.model.Parent;
 import software.amazon.awssdk.services.rekognition.model.RekognitionException;
+
+import java.time.LocalDateTime;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;
@@ -57,8 +63,14 @@ class PhotoAnalyzeServiceTest {
     @Mock
     private AiPredictionCacheService cacheService;
 
+    @Mock
+    private ExifReader exifReader;
+
     @Spy
     private RekognitionLabelMapper labelMapper = new RekognitionLabelMapper();
+
+    @Spy
+    private ExifBasedCategoryHints exifHints = new ExifBasedCategoryHints();
 
     @InjectMocks
     private PhotoAnalyzeService service;
@@ -66,6 +78,9 @@ class PhotoAnalyzeServiceTest {
     @BeforeEach
     void setUp() {
         // 各テストで cacheService.save() は固定 token を返すようにする（必要なテストでのみ stub）
+        // ExifReader はデフォルトで空 EXIF を返す（必要なテストでのみ上書き）
+        org.mockito.Mockito.lenient().when(exifReader.read(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(ExifData.empty());
     }
 
     // ========== 正常系: Rekognition 呼び出しとマッピング ==========
@@ -252,6 +267,102 @@ class PhotoAnalyzeServiceTest {
         service.analyze(createJpeg(640, 480), JPEG);
 
         verify(cacheService, never()).save(any());
+    }
+
+    // ========== Issue#132: 親子フォールバック・EXIF 連携 ==========
+
+    @Test
+    @DisplayName("Issue#132 - analyze: 親フォールバックが発火した場合、response.parentFallbacks に記録される")
+    void analyze_parentFallback_isTrackedInResponse() throws IOException {
+        Label husky = Label.builder()
+                .name("Husky").confidence(90f)
+                .parents(List.of(Parent.builder().name("Dog").build()))
+                .build();
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenReturn(DetectLabelsResponse.builder().labels(List.of(husky)).build());
+        when(cacheService.save(any())).thenReturn("token");
+
+        PhotoAnalyzeResponse response = service.analyze(createJpeg(640, 480), JPEG);
+
+        assertThat(response.parentFallbacks())
+                .extracting(ParentFallback::childLabel, ParentFallback::parentLabel,
+                        ParentFallback::categoryCode)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("Husky", "Dog", CodeConstants.CATEGORY_ANIMALS));
+        // カテゴリ自体も正しくマッピングされる
+        assertThat(response.categories()).contains(CodeConstants.CATEGORY_ANIMALS);
+    }
+
+    @Test
+    @DisplayName("Issue#132 - analyze: EXIF R1 (星空) が発火した場合、response.exifRulesFired と categories に反映される")
+    void analyze_exifRuleR1_isTrackedInResponse() throws IOException {
+        ExifData starrySky = ExifData.builder()
+                .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 22, 0))
+                .exposureTimeSeconds(15.0)
+                .iso(1600)
+                .build();
+        when(exifReader.read(any())).thenReturn(starrySky);
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
+        when(cacheService.save(any())).thenReturn("token");
+
+        PhotoAnalyzeResponse response = service.analyze(createJpeg(640, 480), JPEG);
+
+        assertThat(response.exifRulesFired())
+                .extracting(ExifRuleFire::rule)
+                .contains("R1");
+        assertThat(response.categories()).contains(CodeConstants.CATEGORY_STARRY_SKY);
+    }
+
+    @Test
+    @DisplayName("Issue#132 - analyze: 発火なしの場合、parentFallbacks/exifRulesFired は空配列")
+    void analyze_noFallbackOrExifRule_returnsEmptyArrays() throws IOException {
+        Label dog = Label.builder().name("Dog").confidence(90f).build();
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenReturn(DetectLabelsResponse.builder().labels(List.of(dog)).build());
+        when(cacheService.save(any())).thenReturn("token");
+
+        PhotoAnalyzeResponse response = service.analyze(createJpeg(640, 480), JPEG);
+
+        assertThat(response.parentFallbacks()).isEmpty();
+        assertThat(response.exifRulesFired()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#132 - analyze: Rekognition 失敗時の empty レスポンスでも新規フィールドは空配列")
+    void analyze_rekognitionError_hasEmptyNewArrays() throws IOException {
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenThrow(RekognitionException.builder().message("AWS down").build());
+
+        PhotoAnalyzeResponse response = service.analyze(createJpeg(640, 480), JPEG);
+
+        assertThat(response.parentFallbacks()).isEmpty();
+        assertThat(response.exifRulesFired()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#132 - analyze: EXIF はリサイズ前の元画像から読み取る")
+    void analyze_exifIsReadFromOriginalBytesBeforeResize() throws IOException {
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
+        when(cacheService.save(any())).thenReturn("token");
+
+        byte[] largeJpeg = createJpeg(2560, 1920);
+        service.analyze(largeJpeg, JPEG);
+
+        // ExifReader は元の画像バイト列で呼ばれる（縮小前）
+        ArgumentCaptor<byte[]> captor = ArgumentCaptor.forClass(byte[].class);
+        verify(exifReader).read(captor.capture());
+        assertThat(captor.getValue()).isEqualTo(largeJpeg);
+    }
+
+    @Test
+    @DisplayName("Issue#132 - PhotoAnalyzeResponse.empty(): 新規フィールドも空配列で返す")
+    void emptyResponse_hasEmptyNewArrays() {
+        PhotoAnalyzeResponse empty = PhotoAnalyzeResponse.empty();
+
+        assertThat(empty.parentFallbacks()).isEmpty();
+        assertThat(empty.exifRulesFired()).isEmpty();
     }
 
     // ========== ヘルパー ==========
