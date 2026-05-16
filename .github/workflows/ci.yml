@@ -145,6 +145,16 @@ jobs:
         fi
         node --test "${files[@]}"
 
+    - name: Run Node.js tests for translate-tags script (Issue#135)
+      run: |
+        shopt -s nullglob
+        files=(scripts/translate-tags/__tests__/*.test.js)
+        if [ ${#files[@]} -eq 0 ]; then
+          echo "No translate-tags tests to run."
+          exit 0
+        fi
+        node --test "${files[@]}"
+
   tdd-status:
     name: TDD Status Check
     runs-on: ubuntu-latest
