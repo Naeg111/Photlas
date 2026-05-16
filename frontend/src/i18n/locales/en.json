@@ -149,10 +149,10 @@
   },
   "filter": {
     "title": "Photo Filter",
-    "description": "Filter by genre, period, time, and weather",
+    "description": "Filter by category, period, time, and weather",
     "openFilter": "Open photo filter",
     "filterDescription": "Set photo filtering conditions",
-    "genre": "Genre",
+    "genre": "Category",
     "postDate": "Post Date",
     "shootingPeriod": "Season",
     "timeOfDay": "Time of Day",
