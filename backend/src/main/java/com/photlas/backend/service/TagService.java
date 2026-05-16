@@ -3,13 +3,18 @@ package com.photlas.backend.service;
 import com.photlas.backend.dto.TagDisplay;
 import com.photlas.backend.dto.TagListItem;
 import com.photlas.backend.dto.TagSuggestion;
+import com.photlas.backend.entity.CodeConstants;
+import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.PhotoTag;
 import com.photlas.backend.entity.Tag;
+import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.PhotoTagRepository;
 import com.photlas.backend.repository.TagCategoryRepository;
 import com.photlas.backend.repository.TagRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.rekognition.model.Label;
@@ -47,14 +52,27 @@ public class TagService {
     private final TagRepository tagRepository;
     private final TagCategoryRepository tagCategoryRepository;
     private final PhotoTagRepository photoTagRepository;
+    private final PhotoRepository photoRepository;
 
     public TagService(
             TagRepository tagRepository,
             TagCategoryRepository tagCategoryRepository,
-            PhotoTagRepository photoTagRepository) {
+            PhotoTagRepository photoTagRepository,
+            PhotoRepository photoRepository) {
         this.tagRepository = tagRepository;
         this.tagCategoryRepository = tagCategoryRepository;
         this.photoTagRepository = photoTagRepository;
+        this.photoRepository = photoRepository;
+    }
+
+    /**
+     * Issue#136 Phase 4: SSR ランディングページ用にタグ別 PUBLISHED 写真を Page で返す。
+     * フィルタ条件 (PUBLISHED + 退会済みユーザー除外) は {@link PhotoRepository} 側で実装済み。
+     */
+    @Transactional(readOnly = true)
+    public Page<Photo> findPhotosForTag(Long tagId, Pageable pageable) {
+        return photoRepository.findActivePublishedByTagId(
+                tagId, CodeConstants.MODERATION_STATUS_PUBLISHED, pageable);
     }
 
     /**
