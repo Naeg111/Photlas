@@ -177,7 +177,7 @@ public class SpotService {
 
     /**
      * Issue#141 Phase 4 (Q-new-6/7): tagIds + 既存全フィルタを受け取る /spots/photos 版。
-     * Phase 4 では Red 用 stub として旧版に委譲する (新フィルタ無視)。Green で本実装に置換。
+     * フィルタロジックは {@link #getSpots} (15 引数版) と同等。
      */
     @Transactional(readOnly = true)
     public SpotPhotosResponse getSpotPhotos(List<Long> spotIds, int limit, int offset,
@@ -188,23 +188,25 @@ public class SpotService {
                                             List<String> aspectRatios, List<String> focalLengthRanges,
                                             Integer maxIso, List<Long> tagIds,
                                             Long viewerUserId) {
-        return getSpotPhotos(spotIds, limit, offset, maxAgeDays, viewerUserId);
-    }
-
-    /**
-     * Issue#127: 認証ユーザー本人の PENDING_REVIEW 投稿も結果に含めるバージョン。
-     * viewerUserId が null（未認証）の場合は従来通り PUBLISHED のみを返す。
-     */
-    @Transactional(readOnly = true)
-    public SpotPhotosResponse getSpotPhotos(List<Long> spotIds, int limit, int offset,
-                                            Integer maxAgeDays, Long viewerUserId) {
-        logger.info("Getting paged photos: spotIds={}, limit={}, offset={}, maxAgeDays={}, viewerUserId={}",
-                spotIds, limit, offset, maxAgeDays, viewerUserId);
+        logger.info("Getting paged photos: spotIds={}, limit={}, offset={}, maxAgeDays={}, viewerUserId={}, tagIds={}",
+                spotIds, limit, offset, maxAgeDays, viewerUserId, tagIds);
 
         LocalDateTime maxAgeCutoff = null;
         if (maxAgeDays != null) {
             maxAgeCutoff = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).minusDays(maxAgeDays);
         }
+
+        // null/空リストをセンチネル値に変換 (getSpots 15 引数版と同じパターン)
+        List<Integer> safeSubjectCategories = safeIntList(subjectCategories);
+        List<Integer> safeMonths = safeIntList(months);
+        List<Integer> safeTimesOfDay = safeIntList(timesOfDay);
+        List<Integer> safeWeathers = safeIntList(weathers);
+        int safeMinResolution = (minResolution != null) ? minResolution : -1;
+        List<Integer> safeDeviceTypes = safeIntList(deviceTypes);
+        List<String> safeAspectRatios = safeStringList(aspectRatios);
+        List<String> safeFocalLengthRanges = safeStringList(focalLengthRanges);
+        int safeMaxIso = (maxIso != null) ? maxIso : -1;
+        List<Long> safeTagIds = safeLongList(tagIds);
 
         List<Long> ids;
         long total;
@@ -215,6 +217,9 @@ public class SpotService {
                     CodeConstants.MODERATION_STATUS_PENDING_REVIEW,
                     viewerUserId,
                     maxAgeCutoff,
+                    safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
+                    safeMinResolution, safeDeviceTypes,
+                    safeAspectRatios, safeFocalLengthRanges, safeMaxIso, safeTagIds,
                     limit,
                     offset);
             total = photoRepository.countPhotosBySpotsWithViewer(
@@ -222,23 +227,44 @@ public class SpotService {
                     CodeConstants.MODERATION_STATUS_PUBLISHED,
                     CodeConstants.MODERATION_STATUS_PENDING_REVIEW,
                     viewerUserId,
-                    maxAgeCutoff);
+                    maxAgeCutoff,
+                    safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
+                    safeMinResolution, safeDeviceTypes,
+                    safeAspectRatios, safeFocalLengthRanges, safeMaxIso, safeTagIds);
         } else {
             ids = photoRepository.findPhotoIdsBySpotsPaged(
                     spotIds,
                     CodeConstants.MODERATION_STATUS_PUBLISHED,
                     maxAgeCutoff,
+                    safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
+                    safeMinResolution, safeDeviceTypes,
+                    safeAspectRatios, safeFocalLengthRanges, safeMaxIso, safeTagIds,
                     limit,
                     offset);
             total = photoRepository.countPhotosBySpots(
                     spotIds,
                     CodeConstants.MODERATION_STATUS_PUBLISHED,
-                    maxAgeCutoff);
+                    maxAgeCutoff,
+                    safeSubjectCategories, safeMonths, safeTimesOfDay, safeWeathers,
+                    safeMinResolution, safeDeviceTypes,
+                    safeAspectRatios, safeFocalLengthRanges, safeMaxIso, safeTagIds);
         }
 
         logger.info("Found {} photo ids out of {} total", ids.size(), total);
 
         return new SpotPhotosResponse(ids, total);
+    }
+
+    /**
+     * Issue#127: 認証ユーザー本人の PENDING_REVIEW 投稿も結果に含めるバージョン (旧シグネチャ)。
+     * Issue#141: 新版に filter=null で委譲する形に変更。
+     */
+    @Transactional(readOnly = true)
+    public SpotPhotosResponse getSpotPhotos(List<Long> spotIds, int limit, int offset,
+                                            Integer maxAgeDays, Long viewerUserId) {
+        return getSpotPhotos(spotIds, limit, offset,
+                null, null, null, null, null, null, maxAgeDays,
+                null, null, null, null, viewerUserId);
     }
 
     /**

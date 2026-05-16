@@ -8,10 +8,13 @@ import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
 /**
- * Issue#112: スポット写真ID一覧取得リクエスト DTO（ページネーション対応）
+ * Issue#112 + Issue#141: スポット写真ID一覧取得リクエスト DTO（ページネーション対応）
  *
  * POST /api/v1/spots/photos のリクエスト Body。
  * 複数スポットを横断して撮影日時降順でマージしたページを返す。
+ *
+ * <p>Issue#141: tag_ids + 既存全フィルタを追加 (Q-new-6/7)。フィルタはフロントの
+ * FilterPanel と同じ条件を引き継ぐ。null/未指定は「フィルタ無し」として扱われる。</p>
  */
 public class SpotPhotosRequest {
 
@@ -31,6 +34,37 @@ public class SpotPhotosRequest {
     @Min(value = 0, message = "maxAgeDays は0以上にしてください")
     @JsonProperty("maxAgeDays")
     private Integer maxAgeDays;
+
+    // Issue#141: 既存フィルタ全部 (null/空なら「フィルタ無し」扱い)
+    @JsonProperty("subjectCategories")
+    private List<Integer> subjectCategories;
+
+    @JsonProperty("months")
+    private List<Integer> months;
+
+    @JsonProperty("timesOfDay")
+    private List<Integer> timesOfDay;
+
+    @JsonProperty("weathers")
+    private List<Integer> weathers;
+
+    @JsonProperty("minResolution")
+    private Integer minResolution;
+
+    @JsonProperty("deviceTypes")
+    private List<Integer> deviceTypes;
+
+    @JsonProperty("aspectRatios")
+    private List<String> aspectRatios;
+
+    @JsonProperty("focalLengthRanges")
+    private List<String> focalLengthRanges;
+
+    @JsonProperty("maxIso")
+    private Integer maxIso;
+
+    @JsonProperty("tagIds")
+    private List<Long> tagIds;
 
     public SpotPhotosRequest() {}
 
@@ -65,4 +99,34 @@ public class SpotPhotosRequest {
     public void setMaxAgeDays(Integer maxAgeDays) {
         this.maxAgeDays = maxAgeDays;
     }
+
+    public List<Integer> getSubjectCategories() { return subjectCategories; }
+    public void setSubjectCategories(List<Integer> subjectCategories) { this.subjectCategories = subjectCategories; }
+
+    public List<Integer> getMonths() { return months; }
+    public void setMonths(List<Integer> months) { this.months = months; }
+
+    public List<Integer> getTimesOfDay() { return timesOfDay; }
+    public void setTimesOfDay(List<Integer> timesOfDay) { this.timesOfDay = timesOfDay; }
+
+    public List<Integer> getWeathers() { return weathers; }
+    public void setWeathers(List<Integer> weathers) { this.weathers = weathers; }
+
+    public Integer getMinResolution() { return minResolution; }
+    public void setMinResolution(Integer minResolution) { this.minResolution = minResolution; }
+
+    public List<Integer> getDeviceTypes() { return deviceTypes; }
+    public void setDeviceTypes(List<Integer> deviceTypes) { this.deviceTypes = deviceTypes; }
+
+    public List<String> getAspectRatios() { return aspectRatios; }
+    public void setAspectRatios(List<String> aspectRatios) { this.aspectRatios = aspectRatios; }
+
+    public List<String> getFocalLengthRanges() { return focalLengthRanges; }
+    public void setFocalLengthRanges(List<String> focalLengthRanges) { this.focalLengthRanges = focalLengthRanges; }
+
+    public Integer getMaxIso() { return maxIso; }
+    public void setMaxIso(Integer maxIso) { this.maxIso = maxIso; }
+
+    public List<Long> getTagIds() { return tagIds; }
+    public void setTagIds(List<Long> tagIds) { this.tagIds = tagIds; }
 }
