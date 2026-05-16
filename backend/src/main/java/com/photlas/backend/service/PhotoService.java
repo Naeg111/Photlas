@@ -10,6 +10,7 @@ import com.photlas.backend.dto.UpdatePhotoRequest;
 import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.PhotoAiPrediction;
+import com.photlas.backend.entity.PhotoTag;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.AccountSanction;
@@ -80,6 +81,7 @@ public class PhotoService {
     private final PhotoAiPredictionRepository photoAiPredictionRepository;
     private final AiPredictionCacheService aiPredictionCacheService;
     private final ObjectMapper objectMapper;
+    private final TagService tagService;
 
     public PhotoService(
             PhotoRepository photoRepository,
@@ -94,6 +96,7 @@ public class PhotoService {
             ModerationDetailRepository moderationDetailRepository,
             PhotoAiPredictionRepository photoAiPredictionRepository,
             AiPredictionCacheService aiPredictionCacheService,
+            TagService tagService,
             ObjectMapper objectMapper
     ) {
         this.photoRepository = photoRepository;
@@ -108,6 +111,7 @@ public class PhotoService {
         this.moderationDetailRepository = moderationDetailRepository;
         this.photoAiPredictionRepository = photoAiPredictionRepository;
         this.aiPredictionCacheService = aiPredictionCacheService;
+        this.tagService = tagService;
         this.objectMapper = objectMapper;
     }
 
@@ -186,6 +190,9 @@ public class PhotoService {
         if (request.getAnalyzeToken() != null) {
             savePhotoAiPrediction(savedPhoto.getPhotoId(), request, categories);
         }
+
+        // Issue#135: ユーザーが選択したキーワードを photo_tags に保存
+        savePhotoTags(savedPhoto.getPhotoId(), request);
 
         // Issue#100: サムネイルのタグもベストエフォートで registered に更新する。
         // Lambda が先にサムネイルを生成済みであれば即座に追従し、まだ未生成なら本処理は失敗するが
@@ -813,6 +820,37 @@ public class PhotoService {
 
         // 使い切り: キャッシュから該当トークンを削除
         aiPredictionCacheService.delete(request.getAnalyzeToken());
+    }
+
+    /**
+     * Issue#135: リクエストの tagIds を photo_tags へ保存する。
+     * aiOriginatedTagIds に含まれる tag_id は {@code assigned_by='AI'}、それ以外は 'USER'。
+     * Phase 1 では ai_confidence は NULL（将来 AiPredictionCache 経由で補完予定）。
+     */
+    private void savePhotoTags(Long photoId, CreatePhotoRequest request) {
+        List<Long> tagIds = request.getTagIds();
+        if (tagIds == null || tagIds.isEmpty()) {
+            return;
+        }
+        Set<Long> aiOriginated = request.getAiOriginatedTagIds() == null
+                ? Set.of()
+                : new HashSet<>(request.getAiOriginatedTagIds());
+
+        List<Long> aiTagIds = new ArrayList<>();
+        List<Long> userTagIds = new ArrayList<>();
+        for (Long tagId : tagIds) {
+            if (aiOriginated.contains(tagId)) {
+                aiTagIds.add(tagId);
+            } else {
+                userTagIds.add(tagId);
+            }
+        }
+        if (!aiTagIds.isEmpty()) {
+            tagService.assignTagsToPhoto(photoId, aiTagIds, PhotoTag.ASSIGNED_BY_AI, Map.of());
+        }
+        if (!userTagIds.isEmpty()) {
+            tagService.assignTagsToPhoto(photoId, userTagIds, PhotoTag.ASSIGNED_BY_USER, Map.of());
+        }
     }
 
     /**
