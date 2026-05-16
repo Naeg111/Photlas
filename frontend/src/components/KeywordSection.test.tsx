@@ -187,3 +187,223 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 })
+
+// ========== Issue#141 Phase 6: autoSelectByCategoryMode ==========
+
+describe('KeywordSection - Issue#141 Phase 6: autoSelectByCategoryMode', () => {
+  it('autoSelectByCategoryMode=true でカテゴリ追加時、配下キーワードが selectedTagIds に自動追加される', async () => {
+    const onChange = vi.fn()
+    const { rerender } = render(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [],
+          selectedTagIds: [],
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    // カテゴリ 207 (動物: dog/bird) を追加
+    rerender(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [207],
+          selectedTagIds: [],
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    // onChange が動物配下の tag (dog=5, bird=6) で呼ばれる
+    expect(onChange).toHaveBeenCalled()
+    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+    expect(lastCall).toEqual(expect.arrayContaining([5, 6]))
+  })
+
+  it('autoSelectByCategoryMode=true でカテゴリ解除時、配下キーワードが selectedTagIds から自動除外される (Q3: 巻き込み)', () => {
+    const onChange = vi.fn()
+    // 既に 207 が選択中、selectedTagIds に dog/bird が入っている状態
+    const { rerender } = render(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [207],
+          selectedTagIds: [5, 6, 7], // dog, bird, sushi (sushi はカテゴリ無関係)
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    onChange.mockClear()
+    // カテゴリ 207 を解除
+    rerender(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [],
+          selectedTagIds: [5, 6, 7],
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    expect(onChange).toHaveBeenCalled()
+    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+    // dog/bird は外れ、sushi だけ残る
+    expect(lastCall).not.toContain(5)
+    expect(lastCall).not.toContain(6)
+    expect(lastCall).toContain(7)
+  })
+
+  it('autoSelectByCategoryMode=true で多対多: 両方のカテゴリ選択中なら片方解除しても tag は残る (Q5)', () => {
+    const onChange = vi.fn()
+    // bird (tagId=6) は 207 と 208 に属する
+    const { rerender } = render(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [207, 208],
+          selectedTagIds: [6], // bird
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    onChange.mockClear()
+    // 208 だけ解除
+    rerender(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [207],
+          selectedTagIds: [6],
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    if (onChange.mock.calls.length > 0) {
+      const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+      // bird は 207 にもまだ属するため残る
+      expect(lastCall).toContain(6)
+    }
+  })
+
+  it('autoSelectByCategoryMode=true で 42 件配下があっても maxSelections に縛られず全件追加できる (Q1)', () => {
+    // 動物カテゴリ 42 件想定。手動上限 (maxSelections=10) を超えて auto-select で追加する
+    const manyAnimals = Array.from({ length: 42 }, (_, i) => ({
+      tagId: 100 + i,
+      slug: `animal-${i}`,
+      displayName: `動物${i}`,
+      categoryCodes: [207],
+      sortOrder: 100,
+    }))
+    const onChange = vi.fn()
+    const { rerender } = render(
+      <KeywordSection
+        {...defaultProps({
+          allTags: manyAnimals,
+          selectedCategoryCodes: [],
+          selectedTagIds: [],
+          maxSelections: 10, // 手動制限は 10
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    rerender(
+      <KeywordSection
+        {...defaultProps({
+          allTags: manyAnimals,
+          selectedCategoryCodes: [207],
+          selectedTagIds: [],
+          maxSelections: 10,
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+    // 42 件全部入る
+    expect(lastCall).toHaveLength(42)
+  })
+
+  it('autoSelectByCategoryMode=true (フィルタ画面) では maxSelections を超えていても手動追加 OK (Q1)', () => {
+    const onChange = vi.fn()
+    render(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [207],
+          selectedTagIds: [5, 6], // 既に 2 件
+          maxSelections: 2, // 手動上限到達
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    // 上限到達でも、autoSelect モードでは手動追加 OK
+    const ctx = screen.getByTestId('keyword-section-contextual')
+    // dog (tagId=5) を再クリック → 解除（追加ではないので無条件）
+    fireEvent.click(within(ctx).getByText('犬'))
+    expect(onChange).toHaveBeenCalled()
+  })
+
+  it('autoSelectByCategoryMode=false (投稿フォーム互換) ではカテゴリ変化で自動追加されない (Q2)', () => {
+    const onChange = vi.fn()
+    const { rerender } = render(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [],
+          selectedTagIds: [],
+          onSelectionChange: onChange,
+          // autoSelectByCategoryMode 省略 (= false)
+        })}
+      />
+    )
+    rerender(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [207],
+          selectedTagIds: [],
+          onSelectionChange: onChange,
+        })}
+      />
+    )
+    // 投稿フォーム互換: カテゴリ追加で onChange は呼ばれない
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('autoSelectByCategoryMode=true で onChange が無限ループしない', () => {
+    const onChange = vi.fn()
+    const { rerender } = render(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [207],
+          selectedTagIds: [5, 6], // 既に dog/bird (= auto-select 後の状態)
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    // 同じ props で rerender (state 変化なし)
+    rerender(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [207],
+          selectedTagIds: [5, 6],
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    // diff が無いので onChange は呼ばれない (無限ループ防止)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+})
