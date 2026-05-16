@@ -7,10 +7,12 @@ import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.PhotoTag;
 import com.photlas.backend.entity.Tag;
 import com.photlas.backend.entity.TagCategory;
+import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.PhotoTagRepository;
 import com.photlas.backend.repository.TagCategoryRepository;
 import com.photlas.backend.repository.TagRepository;
+import com.photlas.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,7 @@ class TagServiceTest {
     @Autowired private TagCategoryRepository tagCategoryRepository;
     @Autowired private PhotoTagRepository photoTagRepository;
     @Autowired private PhotoRepository photoRepository;
+    @Autowired private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
@@ -314,9 +317,20 @@ class TagServiceTest {
     }
 
     private Photo createPublishedPhoto() {
+        // findActivePublishedByTagId は users.deleted_at IS NULL の JOIN を含むため、
+        // 実在のアクティブユーザーが必要
+        // username は 2-12 文字制約。System.nanoTime() の下 8 桁で短く生成
+        String shortId = String.valueOf(System.nanoTime()).substring(0, 9);
+        User user = new User();
+        user.setUsername("u" + shortId);
+        user.setEmail("u" + shortId + "@example.com");
+        user.setPasswordHash("dummy");
+        user.setRole(CodeConstants.ROLE_USER);
+        user = userRepository.save(user);
+
         Photo photo = new Photo();
         photo.setSpotId(1L);
-        photo.setUserId(1L);
+        photo.setUserId(user.getId());
         photo.setS3ObjectKey("tagsrv/" + System.nanoTime() + "-" + Math.random() + ".jpg");
         photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
         return photoRepository.saveAndFlush(photo);
