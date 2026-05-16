@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
-  Issue#135 Phase 13: キーワードランディングページ (SSR)。
+  Issue#135 Phase 13 + Issue#136 Phase 7: キーワードランディングページ (SSR)。
+  i18n: messages*.properties + TagPageQueryLocaleResolver による request-scoped Locale。
 -->
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${lang}">
 <head>
@@ -32,21 +33,25 @@
         .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
         .photo-grid a { display: block; aspect-ratio: 1; background: #eee; border-radius: 4px; overflow: hidden; }
         .photo-grid img { width: 100%; height: 100%; object-fit: cover; }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 2rem; flex-wrap: wrap; }
+        .pagination a, .pagination .current, .pagination .ellipsis { padding: 0.4rem 0.7rem; border-radius: 4px; }
+        .pagination a { color: #2563eb; text-decoration: none; border: 1px solid #ddd; }
+        .pagination a:hover { background: #f1f5f9; }
+        .pagination .current { background: #2563eb; color: white; }
+        .pagination .ellipsis { color: #999; }
     </style>
 </head>
 <body>
     <header>
         <h1 th:text="${tag.displayName}">Keyword</h1>
-        <p class="count">
-            <span th:text="${photoCount}">0</span> 枚
-        </p>
+        <p class="count" th:text="#{tag.page.unit.photos(${photoCount})}">0 photos</p>
     </header>
 
     <main>
         <!-- 写真 0 件のキーワードページ: 案内文 (Issue#135 3.6) -->
         <div th:if="${photoCount == 0}" class="empty">
-            <p>まだこのキーワードの写真がありません。</p>
-            <p><a href="/">トップへ戻る</a></p>
+            <p th:text="#{tag.page.empty.message}">No photos for this keyword yet.</p>
+            <p><a href="/" th:text="#{tag.page.empty.back}">Back to home</a></p>
         </div>
 
         <!-- 写真グリッド -->
@@ -56,11 +61,22 @@
                 <img th:src="${photo.thumbnailUrl}" th:alt="${tag.displayName}" loading="lazy" />
             </a>
         </div>
+
+        <!-- 省略付きページネーション (Q8 / §4.9) -->
+        <nav class="pagination" th:if="${pagination.total > 1}" aria-label="pagination">
+            <a th:if="${pagination.hasPrev}" th:href="${prevUrl}" rel="prev" th:text="#{tag.page.pagination.prev}">Previous</a>
+            <th:block th:each="p : ${pagination.displayPages}">
+                <span th:if="${p == 0}" class="ellipsis">…</span>
+                <span th:if="${p != 0 and p == pagination.current}" class="current" th:text="${p}">N</span>
+                <a th:if="${p != 0 and p != pagination.current}" th:href="${pageUrls.get(p)}" th:text="${p}">N</a>
+            </th:block>
+            <a th:if="${pagination.hasNext}" th:href="${nextUrl}" rel="next" th:text="#{tag.page.pagination.next}">Next</a>
+        </nav>
     </main>
 
     <footer style="margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem;">
         <p>
-            <a href="/">Photlas - 撮影スポット共有</a>
+            <a href="/" th:text="#{tag.page.footer.tagline}">Photlas - Photo spot sharing</a>
         </p>
     </footer>
 </body>

@@ -153,6 +153,20 @@ public class TagPageController {
                 new Object[]{displayName, canonicalPage, photoCount},
                 locale);
 
+        // Phase 7: ページネーションリンク URL を Controller 側で組み立て（テンプレに正規化ロジックを漏らさない）
+        Map<Integer, String> pageUrls = new java.util.LinkedHashMap<>();
+        for (Integer p : pagination.displayPages()) {
+            if (p != TagPagePagination.ELLIPSIS && !pageUrls.containsKey(p)) {
+                pageUrls.put(p, canonicalUrlFor(slug, canonicalLang, p));
+            }
+        }
+        String prevUrl = pagination.hasPrev()
+                ? canonicalUrlFor(slug, canonicalLang, canonicalPage - 1)
+                : null;
+        String nextUrl = pagination.hasNext()
+                ? canonicalUrlFor(slug, canonicalLang, canonicalPage + 1)
+                : null;
+
         model.addAttribute("tag", display);
         model.addAttribute("lang", canonicalLang);
         model.addAttribute("photoCount", photoCount);
@@ -162,6 +176,9 @@ public class TagPageController {
         model.addAttribute("currentPage", canonicalPage);
         model.addAttribute("pageSize", PAGE_SIZE);
         model.addAttribute("pagination", pagination);
+        model.addAttribute("pageUrls", pageUrls);
+        model.addAttribute("prevUrl", prevUrl);
+        model.addAttribute("nextUrl", nextUrl);
         model.addAttribute("title", title);
         model.addAttribute("description", description);
 
