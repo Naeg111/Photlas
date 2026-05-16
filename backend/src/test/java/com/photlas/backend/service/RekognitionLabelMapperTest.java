@@ -676,4 +676,58 @@ class RekognitionLabelMapperTest {
         // 90 × 0.8 = 72 と 85 × 0.8 = 68 のうち最大の 72 が採用される
         assertThat(conf).isCloseTo(72.0f, offset(0.01f));
     }
+
+    // ========== Issue#132 mapWithEvents: 親フォールバック発火イベントの追跡 ==========
+
+    @Test
+    @DisplayName("Issue#132 mapWithEvents - 親フォールバック発火時に ParentFallback イベントを返す")
+    void mapWithEventsReturnsParentFallbackEvents() {
+        Label husky = labelWithParents("Husky", 90f, "Dog");
+
+        RekognitionLabelMapper.MappingResult result = mapper.mapWithEvents(List.of(husky));
+
+        assertThat(result.parentFallbacks())
+                .extracting(com.photlas.backend.dto.ParentFallback::childLabel,
+                        com.photlas.backend.dto.ParentFallback::parentLabel,
+                        com.photlas.backend.dto.ParentFallback::categoryCode)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("Husky", "Dog", CodeConstants.CATEGORY_ANIMALS));
+        assertThat(result.result().categories()).contains(CodeConstants.CATEGORY_ANIMALS);
+    }
+
+    @Test
+    @DisplayName("Issue#132 mapWithEvents - 子ラベルが直接マッチした場合は parentFallbacks は空")
+    void mapWithEventsEmptyWhenChildDirectlyMatches() {
+        Label dog = labelWithParents("Dog", 90f, "Mammal", "Animal");
+
+        RekognitionLabelMapper.MappingResult result = mapper.mapWithEvents(List.of(dog));
+
+        assertThat(result.parentFallbacks()).isEmpty();
+        assertThat(result.result().categories()).contains(CodeConstants.CATEGORY_ANIMALS);
+    }
+
+    @Test
+    @DisplayName("Issue#132 mapWithEvents - 親フォールバック発火イベントの categoryCode は複数カテゴリ全て")
+    void mapWithEventsEmitsOneEventPerMappedCategory() {
+        // Sparrow は辞書に 207 + 208 をマップする。
+        // ここでは子未マッチの Robin' で親に Sparrow → 2 つのカテゴリイベントが期待される。
+        // ※既存辞書では sparrow → [207, 208] なので、子未マッチの "MysteryBird" を使う。
+        Label mysteryBird = labelWithParents("MysteryBird", 90f, "Sparrow");
+
+        RekognitionLabelMapper.MappingResult result = mapper.mapWithEvents(List.of(mysteryBird));
+
+        assertThat(result.parentFallbacks())
+                .extracting(com.photlas.backend.dto.ParentFallback::categoryCode)
+                .containsExactlyInAnyOrder(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS);
+    }
+
+    @Test
+    @DisplayName("Issue#132 mapWithEvents - BL の親はスキップされ、parentFallbacks にも記録されない")
+    void mapWithEventsSkipsBlacklistedParents() {
+        Label labelObj = labelWithParents("UnknownThing", 95f, "Mammal");
+
+        RekognitionLabelMapper.MappingResult result = mapper.mapWithEvents(List.of(labelObj));
+
+        assertThat(result.parentFallbacks()).isEmpty();
+    }
 }
