@@ -357,4 +357,108 @@ class TagPageControllerTest {
                 .andExpect(model().attributeExists("title"))
                 .andExpect(model().attributeExists("description"));
     }
+
+    // ===== Issue#136 Phase 7: body i18n + 省略付きページネーション =====
+
+    @Test
+    @DisplayName("Issue#136 - Phase7: ja の本文に『3 枚』が表示される")
+    void bodyUnitPhotos_ja() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            link(createPublishedPhoto(), cherry);
+        }
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("3 枚")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase7: en の本文に『3 photos』が表示される")
+    void bodyUnitPhotos_en() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            link(createPublishedPhoto(), cherry);
+        }
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("3 photos")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase7: ja の 0 件案内文が日本語表記")
+    void emptyMessage_ja() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("まだこのキーワードの写真がありません")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase7: en の 0 件案内文が英語表記")
+    void emptyMessage_en() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("No photos for this keyword yet")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase7: ko の 0 件案内文が韓国語表記")
+    void emptyMessage_ko() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ko"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("이 키워드의 사진이 아직 없습니다")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase7: 1 ページのみのときページネーションが描画されない")
+    void noPagination_singlePage() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            link(createPublishedPhoto(), cherry);
+        }
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                // ?page=2 等への遷移リンクは出ない
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        containsString("?lang=ja&page=2"))));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase7: 2 ページ目への next link href が含まれる")
+    void paginationNextLink_pageOne() throws Exception {
+        // PAGE_SIZE=48 → 49 枚で 2 ページ
+        for (int i = 0; i < 49; i++) {
+            link(createPublishedPhoto(), cherry);
+        }
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                // 「次へ」リンクの href が ?lang=ja&page=2
+                .andExpect(content().string(containsString("?lang=ja&amp;page=2")))
+                // 「次へ」テキスト
+                .andExpect(content().string(containsString("次へ")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase7: 2 ページ目から 1 ページ目への prev link が含まれる（page=1 は無印）")
+    void paginationPrevLink_pageTwo() throws Exception {
+        for (int i = 0; i < 49; i++) {
+            link(createPublishedPhoto(), cherry);
+        }
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja").param("page", "2"))
+                .andExpect(status().isOk())
+                // 「前へ」テキスト
+                .andExpect(content().string(containsString("前へ")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase7: footer タグライン ja『Photlas - 撮影スポット共有』")
+    void footerTagline_ja() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Photlas - 撮影スポット共有")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase7: footer タグライン en『Photlas - Photo spot sharing』")
+    void footerTagline_en() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Photlas - Photo spot sharing")));
+    }
 }
