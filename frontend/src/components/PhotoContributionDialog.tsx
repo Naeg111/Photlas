@@ -964,6 +964,7 @@ export function PhotoContributionDialog({
                 selectedTagIds={selectedTagIds}
                 onSelectionChange={setSelectedTagIds}
                 maxSelections={20}
+                autoSelectByCategoryMode
               />
             </div>
 
