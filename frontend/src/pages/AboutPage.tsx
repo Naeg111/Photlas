@@ -60,7 +60,7 @@ export default function AboutPage() {
             </li>
             <li>
               <strong className="text-gray-900">写真の条件で投稿を絞り込み:</strong>{' '}
-              ジャンル・季節・時間帯・天候などの条件で絞り込んで、自分好みの投稿を探せます。
+              カテゴリ・季節・時間帯・天候などの条件で絞り込んで、自分好みの投稿を探せます。
             </li>
             <li>
               <strong className="text-gray-900">撮影情報の共有:</strong>{' '}
