@@ -24,6 +24,9 @@ describe('analyzePhoto', () => {
     weather: 401,
     confidence: { '201': 92.5, '204': 78.0, '401': 85.0 },
     analyzeToken: 'token-uuid-1234',
+    // Issue#132: 新規フィールドを含む（発火なし時は空配列）
+    parentFallbacks: [],
+    exifRulesFired: [],
   }
 
   function mockOk(body: unknown) {
@@ -167,5 +170,31 @@ describe('analyzePhoto', () => {
       name: 'ApiError',
       status: 500,
     })
+  })
+
+  // ========== Issue#132: 拡張フィールド ==========
+
+  it('Issue#132 - レスポンスに parentFallbacks / exifRulesFired が含まれてもパースできる', async () => {
+    const bodyWithIssue132 = {
+      categories: [207],
+      weather: null,
+      confidence: { '207': 80 },
+      analyzeToken: 'token',
+      parentFallbacks: [{ childLabel: 'Husky', parentLabel: 'Dog', categoryCode: 207 }],
+      exifRulesFired: [
+        { rule: 'R1', categoryCode: 213, boostValue: 30, createdNewCandidate: true },
+      ],
+    }
+    mockOk(bodyWithIssue132)
+    const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
+
+    const response = await analyzePhoto(file)
+
+    expect(response.parentFallbacks).toEqual([
+      { childLabel: 'Husky', parentLabel: 'Dog', categoryCode: 207 },
+    ])
+    expect(response.exifRulesFired).toEqual([
+      { rule: 'R1', categoryCode: 213, boostValue: 30, createdNewCandidate: true },
+    ])
   })
 })

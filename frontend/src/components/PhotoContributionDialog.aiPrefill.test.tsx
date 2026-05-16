@@ -11,8 +11,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { toast } from 'sonner'
 import { PhotoContributionDialog } from './PhotoContributionDialog'
 
-// trackAiPrefillEvent のモック
+// trackAiPrefillEvent / Issue#132 拡張イベント送信ヘルパーのモック
 const mockTrackAiPrefillEvent = vi.fn()
+const mockTrackParentFallbackEvents = vi.fn()
+const mockTrackExifRuleFiredEvents = vi.fn()
 vi.mock('../utils/aiPrefillAnalytics', async () => {
   const actual = await vi.importActual<typeof import('../utils/aiPrefillAnalytics')>(
     '../utils/aiPrefillAnalytics'
@@ -20,6 +22,8 @@ vi.mock('../utils/aiPrefillAnalytics', async () => {
   return {
     ...actual,
     trackAiPrefillEvent: (...args: unknown[]) => mockTrackAiPrefillEvent(...args),
+    trackParentFallbackEvents: (...args: unknown[]) => mockTrackParentFallbackEvents(...args),
+    trackExifRuleFiredEvents: (...args: unknown[]) => mockTrackExifRuleFiredEvents(...args),
   }
 })
 
@@ -115,6 +119,9 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
       weather: 401,
       confidence: { '201': 92, '204': 78, '401': 85 },
       analyzeToken: 'token-uuid-1234',
+      // Issue#132: 新規フィールド（発火なし時は空配列）
+      parentFallbacks: [],
+      exifRulesFired: [],
     })
   })
 
@@ -429,5 +436,63 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
       'ai_prefill_failed',
       expect.anything()
     )
+  })
+
+  // ========== Issue#132: 親フォールバック / EXIF ルール のイベント送信 ==========
+
+  it('Issue#132 - parentFallbacks があれば trackParentFallbackEvents に渡される', async () => {
+    mockAnalyzePhoto.mockResolvedValue({
+      categories: [207],
+      weather: null,
+      confidence: { '207': 80 },
+      analyzeToken: 'token',
+      parentFallbacks: [{ childLabel: 'Husky', parentLabel: 'Dog', categoryCode: 207 }],
+      exifRulesFired: [],
+    })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    await selectFile(user)
+    await waitFor(() => {
+      expect(mockTrackParentFallbackEvents).toHaveBeenCalledWith([
+        { childLabel: 'Husky', parentLabel: 'Dog', categoryCode: 207 },
+      ])
+    })
+  })
+
+  it('Issue#132 - exifRulesFired があれば trackExifRuleFiredEvents に渡される', async () => {
+    mockAnalyzePhoto.mockResolvedValue({
+      categories: [213],
+      weather: null,
+      confidence: { '213': 100 },
+      analyzeToken: 'token',
+      parentFallbacks: [],
+      exifRulesFired: [
+        { rule: 'R1', categoryCode: 213, boostValue: 30, createdNewCandidate: true },
+      ],
+    })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    await selectFile(user)
+    await waitFor(() => {
+      expect(mockTrackExifRuleFiredEvents).toHaveBeenCalledWith([
+        { rule: 'R1', categoryCode: 213, boostValue: 30, createdNewCandidate: true },
+      ])
+    })
+  })
+
+  it('Issue#132 - 両方とも空配列なら trackParentFallbackEvents/trackExifRuleFiredEvents は空配列で呼ばれる', async () => {
+    // beforeEach の mockAnalyzePhoto は parentFallbacks/exifRulesFired を空配列で返す
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(<PhotoContributionDialog {...defaultProps} />)
+
+    await selectFile(user)
+    await waitFor(() => {
+      expect(mockAnalyzePhoto).toHaveBeenCalledTimes(1)
+    })
+    // 呼び出し自体はあり、引数は空配列
+    expect(mockTrackParentFallbackEvents).toHaveBeenCalledWith([])
+    expect(mockTrackExifRuleFiredEvents).toHaveBeenCalledWith([])
   })
 })
