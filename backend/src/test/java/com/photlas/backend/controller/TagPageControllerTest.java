@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -464,6 +465,16 @@ class TagPageControllerTest {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Photlas - Photo spot sharing")));
+    }
+
+    // ===== Issue#136 Phase 13 (Q18): HTTP キャッシュヘッダ =====
+
+    @Test
+    @DisplayName("Issue#136 - Phase13/Q18: 200 レスポンスに Cache-Control: public, max-age=300")
+    void cacheControlHeader_setOn200() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "public, max-age=300"));
     }
 
     // ===== Issue#136 Phase 9: 0 件時の関連キーワード描画 =====
