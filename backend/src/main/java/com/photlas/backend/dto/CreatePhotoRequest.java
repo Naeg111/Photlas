@@ -71,6 +71,19 @@ public class CreatePhotoRequest {
      */
     private String analyzeToken;
 
+    /**
+     * Issue#135: ユーザーが投稿時に選んだ全キーワードの tag_id 一覧（任意）。
+     * AI 提案を残したもの + 手動追加したもの両方を含む。null/空は「キーワードなし投稿」扱い。
+     */
+    private List<Long> tagIds;
+
+    /**
+     * Issue#135: 上記 {@code tagIds} のうち、元々 AI 提案だったタグの subset。
+     * ここに含まれる tag_id は {@code photo_tags.assigned_by='AI'} で保存される。
+     * それ以外の tag_id は {@code assigned_by='USER'} 扱い。
+     */
+    private List<Long> aiOriginatedTagIds;
+
     // Getters and Setters
     public String getPlaceName() {
         return placeName;
@@ -230,5 +243,21 @@ public class CreatePhotoRequest {
 
     public void setAnalyzeToken(String analyzeToken) {
         this.analyzeToken = analyzeToken;
+    }
+
+    public List<Long> getTagIds() {
+        return tagIds;
+    }
+
+    public void setTagIds(List<Long> tagIds) {
+        this.tagIds = tagIds;
+    }
+
+    public List<Long> getAiOriginatedTagIds() {
+        return aiOriginatedTagIds;
+    }
+
+    public void setAiOriginatedTagIds(List<Long> aiOriginatedTagIds) {
+        this.aiOriginatedTagIds = aiOriginatedTagIds;
     }
 }

@@ -81,7 +81,7 @@ class PhotoServiceTagAssignmentTest {
         CreatePhotoRequest req = baseRequest();
         req.setTagIds(List.of(tagCherry.getId(), tagSushi.getId()));
 
-        Long photoId = photoService.createPhoto(req, user.getEmail()).getPhotoId();
+        Long photoId = photoService.createPhoto(req, user.getEmail()).getPhoto().getPhotoId();
 
         List<PhotoTag> saved = photoTagRepository.findByPhotoId(photoId);
         assertThat(saved)
@@ -98,7 +98,7 @@ class PhotoServiceTagAssignmentTest {
         // AI 由来は cherry と sushi。maple はユーザー手動
         req.setAiOriginatedTagIds(List.of(tagCherry.getId(), tagSushi.getId()));
 
-        Long photoId = photoService.createPhoto(req, user.getEmail()).getPhotoId();
+        Long photoId = photoService.createPhoto(req, user.getEmail()).getPhoto().getPhotoId();
 
         List<PhotoTag> saved = photoTagRepository.findByPhotoId(photoId);
         assertThat(saved).hasSize(3);
@@ -117,7 +117,7 @@ class PhotoServiceTagAssignmentTest {
         CreatePhotoRequest req = baseRequest();
         // tagIds は未設定（null）
 
-        Long photoId = photoService.createPhoto(req, user.getEmail()).getPhotoId();
+        Long photoId = photoService.createPhoto(req, user.getEmail()).getPhoto().getPhotoId();
 
         assertThat(photoTagRepository.findByPhotoId(photoId)).isEmpty();
     }
@@ -129,7 +129,7 @@ class PhotoServiceTagAssignmentTest {
         req.setTagIds(List.of(tagMaple.getId()));
         // aiOriginatedTagIds 未指定
 
-        Long photoId = photoService.createPhoto(req, user.getEmail()).getPhotoId();
+        Long photoId = photoService.createPhoto(req, user.getEmail()).getPhoto().getPhotoId();
 
         List<PhotoTag> saved = photoTagRepository.findByPhotoId(photoId);
         assertThat(saved).hasSize(1);
