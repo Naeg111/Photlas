@@ -10,6 +10,7 @@
 
 import { API_V1_URL } from '../config/api'
 import { fetchJson } from './fetchJson'
+import type { ExifRuleFire, ParentFallback } from './aiPrefillAnalytics'
 
 /**
  * `POST /api/v1/photos/analyze` のレスポンス。
@@ -20,12 +21,18 @@ import { fetchJson } from './fetchJson'
  * - weather: null
  * - confidence: 空オブジェクト
  * - analyzeToken: null
+ * - parentFallbacks: 空配列 (Issue#132)
+ * - exifRulesFired: 空配列 (Issue#132)
  */
 export interface PhotoAnalyzeResponse {
   categories: number[]
   weather: number | null
   confidence: Record<string, number>
   analyzeToken: string | null
+  /** Issue#132: 親ラベル経由でマッピングが成立した発火イベント一覧 */
+  parentFallbacks: ParentFallback[]
+  /** Issue#132: EXIF ベースの補正ルール R1〜R5 の発火イベント一覧 */
+  exifRulesFired: ExifRuleFire[]
 }
 
 export interface AnalyzePhotoOptions {

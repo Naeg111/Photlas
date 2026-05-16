@@ -3,7 +3,12 @@ import { analyzePhoto, type PhotoAnalyzeResponse } from '../utils/photoAnalyzeAp
 import { resizeImageToBlobForAnalyze } from '../utils/cropImageToBlob'
 import { resizeImageFile } from '../utils/resizeImageFile'
 import { CATEGORY_LABELS } from '../utils/codeConstants'
-import { trackAiPrefillEvent, compareAiPrefill } from '../utils/aiPrefillAnalytics'
+import {
+  trackAiPrefillEvent,
+  compareAiPrefill,
+  trackParentFallbackEvents,
+  trackExifRuleFiredEvents,
+} from '../utils/aiPrefillAnalytics'
 
 /** カテゴリ名 → ID の逆引きマップ（CATEGORY_LABELS の逆） */
 const CATEGORY_NAME_TO_ID: Record<string, number> = Object.fromEntries(
@@ -322,6 +327,10 @@ export function PhotoContributionDialog({
         weather_filled: response.weather !== null,
       })
     }
+
+    // Issue#132: 観測イベント（親フォールバック / EXIF ルール発火）を GA4 へ送信
+    trackParentFallbackEvents(response.parentFallbacks)
+    trackExifRuleFiredEvents(response.exifRulesFired)
   }, [])
 
   // ダイアログ表示時にスクロール位置を先頭にリセット
