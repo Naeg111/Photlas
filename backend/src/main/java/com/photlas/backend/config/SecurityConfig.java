@@ -127,6 +127,7 @@ public class SecurityConfig {
                 .requestMatchers(CATEGORIES_ENDPOINT).permitAll()        // カテゴリ一覧
                 .requestMatchers(TAGS_ENDPOINT).permitAll()              // Issue#135: キーワード一覧
                 .requestMatchers(HttpMethod.GET, "/api/v1/photos/*/tags").permitAll() // Issue#135: 写真ごとのキーワード（公開）
+                .requestMatchers(HttpMethod.GET, "/tags/**").permitAll()  // Issue#135: /tags/{slug} SSR ランディング
                 .requestMatchers("/api/v1/ogp/**").permitAll()              // OGPメタタグ
                 .requestMatchers("/api/v1/sitemap.xml").permitAll()         // サイトマップインデックス
                 .requestMatchers("/api/v1/sitemap-static.xml").permitAll()   // 静的サイトマップ
