@@ -373,4 +373,130 @@ class RekognitionLabelMapperTest {
 
         assertThat(result.categories()).containsExactly(CodeConstants.CATEGORY_NATURE);
     }
+
+    // ========== Issue#132 辞書拡充: 各カテゴリの追加ラベル ==========
+
+    @Test
+    @DisplayName("Issue#132 - 自然風景: 拡充ラベル (Waterfall/Cliff/Beach/Valley/Lake/Coast/Pond/Glacier/Canyon/Desert/Field/Meadow/Hill) は 201 を返す")
+    void natureFromExpandedLabels() {
+        for (String name : List.of("Waterfall", "Cliff", "Beach", "Valley", "Lake", "Coast",
+                "Pond", "Glacier", "Canyon", "Desert", "Field", "Meadow", "Hill")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は自然風景 (201) にマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_NATURE);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 街並み: 拡充ラベル (Downtown/Town/Metropolis/Neighborhood/Street) は 202 を返す")
+    void cityscapeFromExpandedLabels() {
+        for (String name : List.of("Downtown", "Town", "Metropolis", "Neighborhood", "Street")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は街並み (202) にマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_CITYSCAPE);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 建造物: 拡充ラベル (Castle/Temple/Shrine/Church/Tunnel/Lighthouse/Stadium/Arena) は 203 を返す")
+    void architectureFromExpandedLabels() {
+        for (String name : List.of("Castle", "Temple", "Shrine", "Church", "Tunnel",
+                "Lighthouse", "Stadium", "Arena")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は建造物 (203) にマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_ARCHITECTURE);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - グルメ: 拡充ラベル (Bread/Cake/Coffee/Sushi/Ramen/Dessert/Beverage/Fruit/Vegetable/Pasta/Pizza/Sandwich) は 205 を返す")
+    void gourmetFromExpandedLabels() {
+        for (String name : List.of("Bread", "Cake", "Coffee", "Sushi", "Ramen", "Dessert",
+                "Beverage", "Fruit", "Vegetable", "Pasta", "Pizza", "Sandwich")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' はグルメ (205) にマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_GOURMET);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 植物: 拡充ラベル (Leaf/Petal/Branch/Vegetation/Moss/Bush/Vineyard) は 206 を返す")
+    void plantsFromExpandedLabels() {
+        for (String name : List.of("Leaf", "Petal", "Branch", "Vegetation", "Moss", "Bush", "Vineyard")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は植物 (206) にマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_PLANTS);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 動物: 拡充ラベル (Wildlife/Pet/Fox/Bear/Deer/Squirrel/Rabbit/Lion/Tiger) は 207 を返す")
+    void animalsFromExpandedLabels() {
+        for (String name : List.of("Wildlife", "Pet", "Fox", "Bear", "Deer", "Squirrel",
+                "Rabbit", "Lion", "Tiger")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は動物 (207) にマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_ANIMALS);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 野鳥: 拡充ラベル (Sparrow/Eagle/Hawk/Owl/Crow/Heron/Crane) は 207 + 208 を返す")
+    void wildBirdsFromExpandedLabels() {
+        for (String name : List.of("Sparrow", "Eagle", "Hawk", "Owl", "Crow", "Heron", "Crane")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は動物 (207) + 野鳥 (208) にマッピングされるべき", name)
+                    .containsExactlyInAnyOrder(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 自動車: 拡充ラベル (Sedan/Suv/Truck/Sports Car) は 209 を返す")
+    void carsFromExpandedLabels() {
+        for (String name : List.of("Sedan", "Suv", "Truck", "Sports Car")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は自動車 (209) にマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_CARS);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 鉄道: 拡充ラベル (Tram/Cable Car/Monorail) は 211 を返す")
+    void railwaysFromExpandedLabels() {
+        for (String name : List.of("Tram", "Cable Car", "Monorail")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は鉄道 (211) にマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_RAILWAYS);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 飛行機: 拡充ラベル (Jet/Airliner/Biplane) は 212 を返す")
+    void aircraftFromExpandedLabels() {
+        for (String name : List.of("Jet", "Airliner", "Biplane")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は飛行機 (212) にマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_AIRCRAFT);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 星空: 拡充ラベル (Galaxy/Constellation/Nebula/Astronomy) は 213 を返す")
+    void starrySkyFromExpandedLabels() {
+        for (String name : List.of("Galaxy", "Constellation", "Nebula", "Astronomy")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は星空 (213) にマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_STARRY_SKY);
+        }
+    }
+
+    @Test
+    @DisplayName("Issue#132 - 夜景: 拡充ラベル (Lighting/Illumination/Nightlife) は単独で 204 を返す")
+    void nightViewFromExpandedLabels() {
+        for (String name : List.of("Lighting", "Illumination", "Nightlife")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は夜景 (204) にマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_NIGHT_VIEW);
+        }
+    }
 }
