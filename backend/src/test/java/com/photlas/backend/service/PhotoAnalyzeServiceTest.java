@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.CachedAnalyzeResult;
 import com.photlas.backend.dto.ExifData;
 import com.photlas.backend.dto.ExifRuleFire;
 import com.photlas.backend.dto.ParentFallback;
@@ -439,5 +440,65 @@ class PhotoAnalyzeServiceTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(img, "PNG", baos);
         return baos.toByteArray();
+    }
+
+    // ========== Issue#136 Phase 11: CachedAnalyzeResult への切替検証 ==========
+
+    @Test
+    @DisplayName("Issue#136 - analyze: cacheService.save に CachedAnalyzeResult が渡され、suggestedTags が含まれる")
+    void analyze_savesCachedAnalyzeResultWithSuggestedTags() throws IOException {
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenReturn(DetectLabelsResponse.builder()
+                        .labels(List.of(Label.builder().name("Cherry Blossom").confidence(92f).build()))
+                        .build());
+        List<TagSuggestion> suggestions = List.of(
+                new TagSuggestion(1L, "cherry-blossom", "桜", 92.0f)
+        );
+        when(tagService.extractSuggestions(any())).thenReturn(suggestions);
+        when(cacheService.save(any(CachedAnalyzeResult.class))).thenReturn("token-uuid");
+
+        service.analyze(createJpeg(640, 480), JPEG);
+
+        ArgumentCaptor<CachedAnalyzeResult> captor = ArgumentCaptor.forClass(CachedAnalyzeResult.class);
+        verify(cacheService).save(captor.capture());
+        CachedAnalyzeResult saved = captor.getValue();
+        assertThat(saved.suggestedTags()).hasSize(1);
+        assertThat(saved.suggestedTags().get(0).slug()).isEqualTo("cherry-blossom");
+        assertThat(saved.suggestedTags().get(0).confidence()).isEqualTo(92.0f);
+    }
+
+    @Test
+    @DisplayName("Issue#136 - analyze: cacheService.save の labelMapping が PhotoAnalyzeResponse と一致")
+    void analyze_savesLabelMappingMatchingResponse() throws IOException {
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenReturn(DetectLabelsResponse.builder()
+                        .labels(List.of(Label.builder().name("Mountain").confidence(85f).build()))
+                        .build());
+        when(cacheService.save(any(CachedAnalyzeResult.class))).thenReturn("token");
+
+        PhotoAnalyzeResponse response = service.analyze(createJpeg(640, 480), JPEG);
+
+        ArgumentCaptor<CachedAnalyzeResult> captor = ArgumentCaptor.forClass(CachedAnalyzeResult.class);
+        verify(cacheService).save(captor.capture());
+        CachedAnalyzeResult saved = captor.getValue();
+        assertThat(saved.labelMapping().categories())
+                .containsExactlyElementsOf(response.categories());
+        assertThat(saved.labelMapping().weather()).isEqualTo(response.weather());
+        assertThat(saved.labelMapping().confidence()).isEqualTo(response.confidence());
+    }
+
+    @Test
+    @DisplayName("Issue#136 - analyze: 空 suggestedTags のときも CachedAnalyzeResult.suggestedTags は空リスト")
+    void analyze_emptySuggestedTags_savesEmptyList() throws IOException {
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
+        // tagService.extractSuggestions はデフォルト stub で List.of() を返す
+        when(cacheService.save(any(CachedAnalyzeResult.class))).thenReturn("token");
+
+        service.analyze(createJpeg(640, 480), JPEG);
+
+        ArgumentCaptor<CachedAnalyzeResult> captor = ArgumentCaptor.forClass(CachedAnalyzeResult.class);
+        verify(cacheService).save(captor.capture());
+        assertThat(captor.getValue().suggestedTags()).isEmpty();
     }
 }
