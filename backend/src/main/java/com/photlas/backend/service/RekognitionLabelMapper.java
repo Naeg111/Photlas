@@ -1,6 +1,7 @@
 package com.photlas.backend.service;
 
 import com.photlas.backend.dto.LabelMappingResult;
+import com.photlas.backend.dto.ParentFallback;
 import com.photlas.backend.entity.CodeConstants;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.rekognition.model.Label;
@@ -421,16 +422,34 @@ public class RekognitionLabelMapper {
     );
 
     /**
-     * Rekognition のラベル一覧を Photlas のカテゴリ・天候へマッピングする。
+     * Rekognition のラベル一覧を Photlas のカテゴリ・天候へマッピングする（イベント追跡なし）。
      *
      * @param labels Rekognition {@code DetectLabels} API の戻り値（{@code response.labels()}）
-     * @return マッピング結果。信頼度70%未満のラベルは除外される。
+     * @return マッピング結果。信頼度80%未満のラベルは除外される。
      */
     public LabelMappingResult map(List<Label> labels) {
+        return mapWithEvents(labels).result();
+    }
+
+    /**
+     * Issue#132: マッピング結果に加え、親フォールバック発火イベントも返す。
+     * GA4 への送信用イベント情報を必要とする呼び出し元はこちらを使う。
+     */
+    public MappingResult mapWithEvents(List<Label> labels) {
         List<Label> qualified = filterByConfidence(labels);
-        CategoryMapping categoryMapping = mapCategories(qualified);
+        List<ParentFallback> parentFallbacks = new ArrayList<>();
+        CategoryMapping categoryMapping = mapCategories(qualified, parentFallbacks);
         WeatherMapping weatherMapping = mapWeather(qualified);
-        return combine(categoryMapping, weatherMapping);
+        return new MappingResult(combine(categoryMapping, weatherMapping), parentFallbacks);
+    }
+
+    /**
+     * Issue#132: {@link #mapWithEvents} の戻り値。
+     *
+     * @param result          従来のカテゴリ・天候マッピング結果
+     * @param parentFallbacks 親ラベル経由でマッピングが成立した発火イベント一覧
+     */
+    public record MappingResult(LabelMappingResult result, List<ParentFallback> parentFallbacks) {
     }
 
     private static List<Label> filterByConfidence(List<Label> labels) {
@@ -443,8 +462,12 @@ public class RekognitionLabelMapper {
         return labelName.toLowerCase(Locale.ROOT);
     }
 
-    /** ラベル群からカテゴリ群を構築する（夜景の組合せ判定と Issue#132 親フォールバックを含む）。 */
-    private static CategoryMapping mapCategories(List<Label> qualified) {
+    /**
+     * ラベル群からカテゴリ群を構築する（夜景の組合せ判定と Issue#132 親フォールバックを含む）。
+     * 親フォールバックの発火は引数 {@code parentFallbacks} に追記する。
+     */
+    private static CategoryMapping mapCategories(
+            List<Label> qualified, List<ParentFallback> parentFallbacks) {
         Set<Integer> codes = new LinkedHashSet<>();
         Map<String, Float> confidence = new LinkedHashMap<>();
         NightViewState nightViewState = new NightViewState();
@@ -468,8 +491,13 @@ public class RekognitionLabelMapper {
             }
 
             // Issue#132 3.2: 子ラベル未マッチ → 親ラベルを順に検索（最初のヒットを採用）
-            findParentFallbackCodes(label).ifPresent(parentHit ->
-                    applyCodes(codes, confidence, parentHit.codes(), conf * PARENT_FALLBACK_DECAY));
+            findParentFallbackCodes(label).ifPresent(parentHit -> {
+                applyCodes(codes, confidence, parentHit.codes(), conf * PARENT_FALLBACK_DECAY);
+                // Issue#132 3.4.1: 1 つの子から複数カテゴリへマッピングされる場合は各カテゴリで別イベント
+                for (Integer code : parentHit.codes()) {
+                    parentFallbacks.add(new ParentFallback(label.name(), parentHit.parentDisplayName(), code));
+                }
+            });
         }
 
         nightViewState.applyTo(codes, confidence);
@@ -504,14 +532,15 @@ public class RekognitionLabelMapper {
             }
             List<Integer> parentMapped = LABEL_TO_CATEGORIES.get(parentName);
             if (parentMapped != null) {
-                return Optional.of(new ParentHit(parentName, parentMapped));
+                // parentDisplayName は元の大文字小文字をそのまま返す（GA4 イベント用）
+                return Optional.of(new ParentHit(parentName, parent.name(), parentMapped));
             }
         }
         return Optional.empty();
     }
 
     /** 親フォールバックで採用された親ラベル名とマッピング先カテゴリ群。 */
-    private record ParentHit(String parentName, List<Integer> codes) {
+    private record ParentHit(String parentName, String parentDisplayName, List<Integer> codes) {
     }
 
     /** ラベル群から信頼度最高の天候を選定する。該当なしなら code = null。 */
