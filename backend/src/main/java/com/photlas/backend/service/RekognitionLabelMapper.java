@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -39,6 +40,29 @@ public class RekognitionLabelMapper {
     /** 「夜景」と組み合わせて 204 を成立させる相棒ラベル群。 */
     private static final Set<String> NIGHT_VIEW_PARTNER_LABELS = Set.of(
             "city", "building", "architecture"
+    );
+
+    /**
+     * Issue#132 3.2: 親ラベル経由マッピングの信頼度減衰係数。
+     * 親は子より広い概念なので不確実性が高いため 0.8 倍する。
+     */
+    private static final float PARENT_FALLBACK_DECAY = 0.8f;
+
+    /**
+     * Issue#132 3.2: 親ラベル検索の対象外とする「広すぎる」「人間を含む」ラベル群（小文字）。
+     *
+     * <p>人間が含まれる概念や、ほぼ全ての屋外写真にヒットしてしまう汎用ラベルを除外することで、
+     * 親フォールバックによる誤マッピング（例: 人物写真に動物カテゴリが付く）を防ぐ。</p>
+     *
+     * <p>{@code Wildlife} は人間を含まず動物と強く結びつくため、ここには含めない。</p>
+     */
+    private static final Set<String> BLACKLISTED_PARENTS = Set.of(
+            // 人間が含まれる概念
+            "mammal", "vertebrate", "person", "human", "adult", "people", "face", "portrait",
+            // 広すぎる概念
+            "living thing", "organism", "creature", "object", "indoors", "outdoors", "nature",
+            // 無関係な汎用概念
+            "accessories", "apparel", "clothing"
     );
 
     /**
@@ -419,7 +443,7 @@ public class RekognitionLabelMapper {
         return labelName.toLowerCase(Locale.ROOT);
     }
 
-    /** ラベル群からカテゴリ群を構築する（夜景の組合せ判定を含む）。 */
+    /** ラベル群からカテゴリ群を構築する（夜景の組合せ判定と Issue#132 親フォールバックを含む）。 */
     private static CategoryMapping mapCategories(List<Label> qualified) {
         Set<Integer> codes = new LinkedHashSet<>();
         Map<String, Float> confidence = new LinkedHashMap<>();
@@ -439,15 +463,55 @@ public class RekognitionLabelMapper {
 
             List<Integer> mapped = LABEL_TO_CATEGORIES.get(name);
             if (mapped != null) {
-                for (Integer code : mapped) {
-                    codes.add(code);
-                    confidence.merge(String.valueOf(code), conf, Math::max);
-                }
+                applyCodes(codes, confidence, mapped, conf);
+                continue;
             }
+
+            // Issue#132 3.2: 子ラベル未マッチ → 親ラベルを順に検索（最初のヒットを採用）
+            findParentFallbackCodes(label).ifPresent(parentHit ->
+                    applyCodes(codes, confidence, parentHit.codes(), conf * PARENT_FALLBACK_DECAY));
         }
 
         nightViewState.applyTo(codes, confidence);
         return new CategoryMapping(codes, confidence);
+    }
+
+    /** カテゴリ群と信頼度マップに、与えられたコード群を追加する（既存値とは最大値マージ）。 */
+    private static void applyCodes(
+            Set<Integer> codes, Map<String, Float> confidence,
+            List<Integer> mapped, float conf) {
+        for (Integer code : mapped) {
+            codes.add(code);
+            confidence.merge(String.valueOf(code), conf, Math::max);
+        }
+    }
+
+    /**
+     * Issue#132 3.2: 親ラベルを順に検索し、ブラックリストでない最初のヒットを返す。
+     * 該当なしなら空 Optional。
+     */
+    private static Optional<ParentHit> findParentFallbackCodes(Label label) {
+        if (label.parents() == null) {
+            return Optional.empty();
+        }
+        for (var parent : label.parents()) {
+            if (parent.name() == null) {
+                continue;
+            }
+            String parentName = normalize(parent.name());
+            if (BLACKLISTED_PARENTS.contains(parentName)) {
+                continue;
+            }
+            List<Integer> parentMapped = LABEL_TO_CATEGORIES.get(parentName);
+            if (parentMapped != null) {
+                return Optional.of(new ParentHit(parentName, parentMapped));
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** 親フォールバックで採用された親ラベル名とマッピング先カテゴリ群。 */
+    private record ParentHit(String parentName, List<Integer> codes) {
     }
 
     /** ラベル群から信頼度最高の天候を選定する。該当なしなら code = null。 */
