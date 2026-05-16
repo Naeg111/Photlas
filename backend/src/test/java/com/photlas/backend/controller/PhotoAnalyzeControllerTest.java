@@ -72,7 +72,9 @@ class PhotoAnalyzeControllerTest {
                         List.of(CodeConstants.CATEGORY_NATURE),
                         CodeConstants.WEATHER_SUNNY,
                         Map.of("201", 92.5f, "401", 85.0f),
-                        "analyze-token-uuid"
+                        "analyze-token-uuid",
+                        List.of(),
+                        List.of()
                 ));
 
         mockMvc.perform(multipart("/api/v1/photos/analyze").file(jpegFile()))

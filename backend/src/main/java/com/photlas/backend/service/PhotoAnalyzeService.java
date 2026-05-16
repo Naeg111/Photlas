@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.ExifData;
 import com.photlas.backend.dto.LabelMappingResult;
 import com.photlas.backend.dto.PhotoAnalyzeResponse;
 import net.coobird.thumbnailator.Thumbnails;
@@ -57,13 +58,19 @@ public class PhotoAnalyzeService {
     private final RekognitionClient rekognitionClient;
     private final RekognitionLabelMapper labelMapper;
     private final AiPredictionCacheService cacheService;
+    private final ExifReader exifReader;
+    private final ExifBasedCategoryHints exifHints;
 
     public PhotoAnalyzeService(
             RekognitionClient rekognitionClient,
             RekognitionLabelMapper labelMapper,
+            ExifReader exifReader,
+            ExifBasedCategoryHints exifHints,
             AiPredictionCacheService cacheService) {
         this.rekognitionClient = rekognitionClient;
         this.labelMapper = labelMapper;
+        this.exifReader = exifReader;
+        this.exifHints = exifHints;
         this.cacheService = cacheService;
     }
 
@@ -77,9 +84,11 @@ public class PhotoAnalyzeService {
      */
     public PhotoAnalyzeResponse analyze(byte[] imageBytes, String contentType) {
         validateContentType(contentType);
+        // Issue#132: EXIF はリサイズで失われる可能性があるため必ず元のバイト列から読む
+        ExifData exif = exifReader.read(imageBytes);
         byte[] resized = resizeForRekognition(imageBytes);
         return callRekognitionSafely(resized)
-                .map(this::mapAndCache)
+                .map(rekResp -> mapAndCache(rekResp, exif))
                 .orElseGet(PhotoAnalyzeResponse::empty);
     }
 
@@ -96,11 +105,23 @@ public class PhotoAnalyzeService {
         }
     }
 
-    /** Rekognition のレスポンスをマッピング → キャッシュ → DTO 構築まで一気通貫で行う。 */
-    private PhotoAnalyzeResponse mapAndCache(DetectLabelsResponse rekognitionResponse) {
-        LabelMappingResult mapped = labelMapper.map(rekognitionResponse.labels());
-        String token = cacheService.save(mapped);
-        return new PhotoAnalyzeResponse(mapped.categories(), mapped.weather(), mapped.confidence(), token);
+    /**
+     * Rekognition のレスポンスをマッピング → EXIF 補正 → キャッシュ → DTO 構築まで一気通貫で行う。
+     * Issue#132: 親フォールバック・EXIF ルール発火イベントをレスポンスに含める。
+     */
+    private PhotoAnalyzeResponse mapAndCache(DetectLabelsResponse rekognitionResponse, ExifData exif) {
+        RekognitionLabelMapper.MappingResult mapping = labelMapper.mapWithEvents(rekognitionResponse.labels());
+        ExifBasedCategoryHints.Applied applied = exifHints.apply(mapping.result(), exif);
+        LabelMappingResult finalResult = applied.result();
+        String token = cacheService.save(finalResult);
+        return new PhotoAnalyzeResponse(
+                finalResult.categories(),
+                finalResult.weather(),
+                finalResult.confidence(),
+                token,
+                mapping.parentFallbacks(),
+                applied.rulesFired()
+        );
     }
 
     private void validateContentType(String contentType) {
