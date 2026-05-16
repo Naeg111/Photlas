@@ -378,6 +378,41 @@ describe('KeywordSection - Issue#141 Phase 6: autoSelectByCategoryMode', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  it('Phase 7: allTags 未取得中 (空) でカテゴリ選択 → 取得後に遡及して auto-select される', () => {
+    const onChange = vi.fn()
+    // 1. allTags 未取得 (空)、selectedCategoryCodes=[207] で render
+    const { rerender } = render(
+      <KeywordSection
+        {...defaultProps({
+          allTags: [],
+          selectedCategoryCodes: [207],
+          selectedTagIds: [],
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    // allTags が空なので何もしない
+    expect(onChange).not.toHaveBeenCalled()
+
+    // 2. allTags が遅れて到着
+    rerender(
+      <KeywordSection
+        {...defaultProps({
+          allTags: TAGS_FIXTURE,
+          selectedCategoryCodes: [207],
+          selectedTagIds: [],
+          onSelectionChange: onChange,
+          autoSelectByCategoryMode: true,
+        })}
+      />
+    )
+    // 遡及して dog/bird が auto-select される
+    expect(onChange).toHaveBeenCalled()
+    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+    expect(lastCall).toEqual(expect.arrayContaining([5, 6]))
+  })
+
   it('autoSelectByCategoryMode=true で onChange が無限ループしない', () => {
     const onChange = vi.fn()
     const { rerender } = render(
