@@ -1,6 +1,9 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.CachedAnalyzeResult;
 import com.photlas.backend.dto.CreatePhotoRequest;
+import com.photlas.backend.dto.LabelMappingResult;
+import com.photlas.backend.dto.TagSuggestion;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.PhotoTag;
 import com.photlas.backend.entity.Tag;
@@ -22,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,6 +45,7 @@ class PhotoServiceTagAssignmentTest {
     @Autowired private TagRepository tagRepository;
     @Autowired private TagCategoryRepository tagCategoryRepository;
     @Autowired private PhotoTagRepository photoTagRepository;
+    @Autowired private AiPredictionCacheService aiPredictionCacheService;
 
     @MockBean private S3Service s3Service;
 
@@ -155,5 +160,31 @@ class PhotoServiceTagAssignmentTest {
         req.setLatitude(new BigDecimal("35.658581"));
         req.setLongitude(new BigDecimal("139.745433"));
         return req;
+    }
+
+    // ========== Issue#136 §3.5: AI 由来 tag_id の ai_confidence が NULL でなく実数値 ==========
+
+    @Test
+    @DisplayName("Issue#136 - createPhoto: AI 由来 tag は cache の suggestedTags から ai_confidence が入る")
+    void createPhoto_aiOriginatedTag_setsAiConfidenceFromCache() {
+        // cache に Cherry を suggestedTags として保存（confidence=92.5）
+        String token = aiPredictionCacheService.save(new CachedAnalyzeResult(
+                new LabelMappingResult(List.of(CodeConstants.CATEGORY_PLANTS), null, java.util.Map.of()),
+                List.of(new TagSuggestion(tagCherry.getId(), tagCherry.getSlug(), "桜", 92.5f))
+        ));
+
+        CreatePhotoRequest req = baseRequest();
+        // 既存テストに倣ってカテゴリは設定しない（カテゴリ seed が不要）
+        req.setAnalyzeToken(token);
+        req.setTagIds(List.of(tagCherry.getId()));
+        req.setAiOriginatedTagIds(List.of(tagCherry.getId()));
+
+        var response = photoService.createPhoto(req, user.getEmail());
+
+        List<PhotoTag> tags = photoTagRepository.findByPhotoId(response.getPhoto().getPhotoId());
+        assertThat(tags).hasSize(1);
+        assertThat(tags.get(0).getAssignedBy()).isEqualTo(PhotoTag.ASSIGNED_BY_AI);
+        // §3.5 要件: ai_confidence が NULL でなく実数値
+        assertThat(tags.get(0).getAiConfidence()).isEqualTo(92.5);
     }
 }
