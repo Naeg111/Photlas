@@ -135,6 +135,32 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     long countPublishedPhotosExcludingDeletedUsers(@Param("status") Integer status);
 
     /**
+     * Issue#136 Phase 2: タグ別キーワードランディングページ用。
+     * 指定タグに紐づく PUBLISHED な写真を、退会済みユーザー除外で取得する。
+     *
+     * <p>並び順は Pageable で指定（通常 {@code created_at DESC, photo_id DESC} の決定的ソート）。</p>
+     *
+     * <p>{@code countQuery} を明示することで Spring の自動派生 (複雑な EXISTS で
+     * 失敗・非効率になりやすい) を避ける。</p>
+     */
+    @Query(value =
+            "SELECT p FROM Photo p " +
+            "JOIN User u ON p.userId = u.id " +
+            "WHERE u.deletedAt IS NULL " +
+            "  AND p.moderationStatus = :publishedStatus " +
+            "  AND EXISTS (SELECT 1 FROM PhotoTag pt WHERE pt.photoId = p.photoId AND pt.tagId = :tagId)",
+            countQuery =
+            "SELECT COUNT(p) FROM Photo p " +
+            "JOIN User u ON p.userId = u.id " +
+            "WHERE u.deletedAt IS NULL " +
+            "  AND p.moderationStatus = :publishedStatus " +
+            "  AND EXISTS (SELECT 1 FROM PhotoTag pt WHERE pt.photoId = p.photoId AND pt.tagId = :tagId)")
+    Page<Photo> findActivePublishedByTagId(
+            @Param("tagId") Long tagId,
+            @Param("publishedStatus") Integer publishedStatus,
+            Pageable pageable);
+
+    /**
      * ユーザーIDで写真を検索し、作成日時の新しい順で返す（ページネーション対応）
      *
      * @param userId ユーザーID
