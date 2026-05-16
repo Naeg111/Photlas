@@ -4,6 +4,7 @@ import com.photlas.backend.dto.ExifData;
 import com.photlas.backend.dto.ExifRuleFire;
 import com.photlas.backend.dto.ParentFallback;
 import com.photlas.backend.dto.PhotoAnalyzeResponse;
+import com.photlas.backend.dto.TagSuggestion;
 import com.photlas.backend.entity.CodeConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -66,6 +67,9 @@ class PhotoAnalyzeServiceTest {
     @Mock
     private ExifReader exifReader;
 
+    @Mock
+    private TagService tagService;
+
     @Spy
     private RekognitionLabelMapper labelMapper = new RekognitionLabelMapper();
 
@@ -81,6 +85,9 @@ class PhotoAnalyzeServiceTest {
         // ExifReader はデフォルトで空 EXIF を返す（必要なテストでのみ上書き）
         org.mockito.Mockito.lenient().when(exifReader.read(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(ExifData.empty());
+        // Issue#135: TagService.extractSuggestions はデフォルトで空配列
+        org.mockito.Mockito.lenient().when(tagService.extractSuggestions(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(List.of());
     }
 
     // ========== 正常系: Rekognition 呼び出しとマッピング ==========
@@ -363,6 +370,49 @@ class PhotoAnalyzeServiceTest {
 
         assertThat(empty.parentFallbacks()).isEmpty();
         assertThat(empty.exifRulesFired()).isEmpty();
+        assertThat(empty.suggestedTags()).isEmpty();
+    }
+
+    // ========== Issue#135: AI キーワード提案 ==========
+
+    @Test
+    @DisplayName("Issue#135 - analyze: TagService から取得した suggestedTags をレスポンスに含める")
+    void analyze_suggestedTags_areIncludedInResponse() throws IOException {
+        Label cherryLabel = Label.builder().name("Cherry Blossom").confidence(92.0f).build();
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenReturn(DetectLabelsResponse.builder().labels(List.of(cherryLabel)).build());
+        when(cacheService.save(any())).thenReturn("token");
+        when(tagService.extractSuggestions(any()))
+                .thenReturn(List.of(new TagSuggestion(7L, "cherry-blossom", "Cherry Blossom", 92.0f)));
+
+        PhotoAnalyzeResponse response = service.analyze(createJpeg(640, 480), JPEG);
+
+        assertThat(response.suggestedTags()).hasSize(1);
+        assertThat(response.suggestedTags().get(0).slug()).isEqualTo("cherry-blossom");
+        assertThat(response.suggestedTags().get(0).tagId()).isEqualTo(7L);
+    }
+
+    @Test
+    @DisplayName("Issue#135 - analyze: TagService が空配列を返したら suggestedTags も空配列")
+    void analyze_emptySuggestions_isReturnedAsEmptyArray() throws IOException {
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
+        when(cacheService.save(any())).thenReturn("token");
+
+        PhotoAnalyzeResponse response = service.analyze(createJpeg(640, 480), JPEG);
+
+        assertThat(response.suggestedTags()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#135 - analyze: Rekognition 失敗時の empty レスポンスでも suggestedTags は空配列")
+    void analyze_rekognitionError_hasEmptySuggestedTags() throws IOException {
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenThrow(RekognitionException.builder().message("AWS down").build());
+
+        PhotoAnalyzeResponse response = service.analyze(createJpeg(640, 480), JPEG);
+
+        assertThat(response.suggestedTags()).isEmpty();
     }
 
     // ========== ヘルパー ==========
