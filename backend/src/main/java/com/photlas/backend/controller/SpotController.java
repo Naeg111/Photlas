@@ -68,10 +68,11 @@ public class SpotController {
             @RequestParam(name = "max_age_days", required = false) Integer maxAgeDays,
             @RequestParam(name = "aspect_ratios", required = false) List<String> aspectRatios,
             @RequestParam(name = "focal_length_ranges", required = false) List<String> focalLengthRanges,
-            @RequestParam(name = "max_iso", required = false) Integer maxIso) {
+            @RequestParam(name = "max_iso", required = false) Integer maxIso,
+            @RequestParam(name = "tag_ids", required = false) List<Long> tagIds) {
 
-        logger.info("GET /api/v1/spots - north={}, south={}, east={}, west={}, subjectCategories={}, months={}, timesOfDay={}, weathers={}, minResolution={}, deviceTypes={}, maxAgeDays={}, aspectRatios={}, focalLengthRanges={}, maxIso={}",
-                north, south, east, west, subjectCategories, months, timesOfDay, weathers, minResolution, deviceTypes, maxAgeDays, aspectRatios, focalLengthRanges, maxIso);
+        logger.info("GET /api/v1/spots - north={}, south={}, east={}, west={}, subjectCategories={}, months={}, timesOfDay={}, weathers={}, minResolution={}, deviceTypes={}, maxAgeDays={}, aspectRatios={}, focalLengthRanges={}, maxIso={}, tagIds={}",
+                north, south, east, west, subjectCategories, months, timesOfDay, weathers, minResolution, deviceTypes, maxAgeDays, aspectRatios, focalLengthRanges, maxIso, tagIds);
 
         // 範囲パラメータのバリデーション
         if (north == null || south == null || east == null || west == null) {
@@ -80,7 +81,7 @@ public class SpotController {
         }
 
         List<SpotResponse> spots = spotService.getSpots(north, south, east, west, subjectCategories, months, timesOfDay, weathers,
-                minResolution, deviceTypes, maxAgeDays, aspectRatios, focalLengthRanges, maxIso);
+                minResolution, deviceTypes, maxAgeDays, aspectRatios, focalLengthRanges, maxIso, tagIds);
 
         return ResponseEntity.ok(spots);
     }
