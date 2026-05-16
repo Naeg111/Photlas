@@ -132,6 +132,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/sitemap.xml").permitAll()         // サイトマップインデックス
                 .requestMatchers("/api/v1/sitemap-static.xml").permitAll()   // 静的サイトマップ
                 .requestMatchers("/api/v1/sitemap-photos-*.xml").permitAll() // 写真サイトマップ
+                .requestMatchers("/api/v1/sitemap-tags.xml").permitAll()      // Issue#135: キーワードサイトマップ
                 .requestMatchers("/api/v1/internal/**").permitAll()         // Issue#54: 内部API（APIキー認証）
                 .requestMatchers(GEO_ENDPOINT_PATTERN).permitAll()          // Issue#106: IP国判定エンドポイント
                 .requestMatchers(HttpMethod.GET, PHOTOS_ENDPOINT_PATTERN).permitAll()  // 写真閲覧
