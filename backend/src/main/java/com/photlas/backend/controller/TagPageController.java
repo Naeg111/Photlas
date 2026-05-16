@@ -57,6 +57,9 @@ public class TagPageController {
     /** 1 ページあたりの写真件数 (Issue#135 3.6)。 */
     private static final int PAGE_SIZE = 48;
 
+    /** Phase 9 (Q5): 0 件時に表示する関連キーワードの上限。 */
+    private static final int RELATED_TAGS_LIMIT = 10;
+
     /** デフォルト言語。 */
     private static final String DEFAULT_LANG = "en";
 
@@ -153,6 +156,11 @@ public class TagPageController {
                 new Object[]{displayName, canonicalPage, photoCount},
                 locale);
 
+        // Phase 9: 0 件時のみ関連キーワードを取得（DB アクセスを節約）
+        List<TagDisplay> relatedTags = (photoCount == 0)
+                ? tagService.findRelatedActiveTags(tag.getId(), RELATED_TAGS_LIMIT, canonicalLang)
+                : List.of();
+
         // Phase 7: ページネーションリンク URL を Controller 側で組み立て（テンプレに正規化ロジックを漏らさない）
         Map<Integer, String> pageUrls = new java.util.LinkedHashMap<>();
         for (Integer p : pagination.displayPages()) {
@@ -181,6 +189,7 @@ public class TagPageController {
         model.addAttribute("nextUrl", nextUrl);
         model.addAttribute("title", title);
         model.addAttribute("description", description);
+        model.addAttribute("relatedTags", relatedTags);
 
         return "tag-page";
     }
