@@ -12,6 +12,9 @@ export type AiPrefillEvent =
   | 'ai_prefill_accepted'
   | 'ai_prefill_modified'
   | 'ai_prefill_failed'
+  // Issue#132: AI 解析の観測イベント
+  | 'ai_parent_fallback_used'
+  | 'ai_exif_rule_fired'
 
 export type AiPrefillModificationType = 'category' | 'weather' | 'both'
 
@@ -93,4 +96,63 @@ export function compareAiPrefill(input: AiPrefillComparisonInput): AiPrefillComp
   }
 
   return { isModified: true, modificationType, userDiffFlag }
+}
+
+// ========== Issue#132: AI 解析の観測イベント ==========
+
+/**
+ * Issue#132: 親ラベル経由でカテゴリマッピングが成立した発火イベント。
+ * バックエンドの ParentFallback DTO と1対1対応。
+ */
+export interface ParentFallback {
+  /** 辞書未マッチだった子ラベル名（例: "Husky"） */
+  childLabel: string
+  /** 親フォールバックで採用された親ラベル名（例: "Dog"） */
+  parentLabel: string
+  /** マッピング先 Photlas カテゴリコード（例: 207） */
+  categoryCode: number
+}
+
+/**
+ * Issue#132: EXIF ベースのスコア補正ルール (R1〜R5) 発火イベント。
+ * バックエンドの ExifRuleFire DTO と1対1対応。
+ */
+export interface ExifRuleFire {
+  /** "R1" 〜 "R5" のいずれか */
+  rule: string
+  /** 加算対象カテゴリコード */
+  categoryCode: number
+  /** 加算値（例: R1=30, R3=10） */
+  boostValue: number
+  /** Rekognition 未検出カテゴリに新規候補として追加した場合 true */
+  createdNewCandidate: boolean
+}
+
+/**
+ * バックエンドが返した parentFallbacks 配列を走査し、各イベントを GA4 へ送信する。
+ * 空配列の場合は何もしない。
+ */
+export function trackParentFallbackEvents(parentFallbacks: ParentFallback[]): void {
+  for (const fb of parentFallbacks) {
+    trackAiPrefillEvent('ai_parent_fallback_used', {
+      child_label: fb.childLabel,
+      parent_label: fb.parentLabel,
+      category_code: fb.categoryCode,
+    })
+  }
+}
+
+/**
+ * バックエンドが返した exifRulesFired 配列を走査し、各イベントを GA4 へ送信する。
+ * 空配列の場合は何もしない。
+ */
+export function trackExifRuleFiredEvents(exifRulesFired: ExifRuleFire[]): void {
+  for (const fire of exifRulesFired) {
+    trackAiPrefillEvent('ai_exif_rule_fired', {
+      rule: fire.rule,
+      category_code: fire.categoryCode,
+      boost_value: fire.boostValue,
+      created_new_candidate: fire.createdNewCandidate,
+    })
+  }
 }
