@@ -2,6 +2,7 @@ package com.photlas.backend.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.photlas.backend.dto.CachedAnalyzeResult;
 import com.photlas.backend.dto.LabelMappingResult;
 import com.photlas.backend.entity.AiPredictionCache;
 import com.photlas.backend.repository.AiPredictionCacheRepository;
@@ -58,6 +59,15 @@ public class AiPredictionCacheService {
         Date expiresAt = Date.from(now.toInstant().plus(TTL));
         repository.save(new AiPredictionCache(token, serialize(result), expiresAt, now));
         return token;
+    }
+
+    /**
+     * Issue#136 Phase 10 (Q10): トークンに対応する {@link CachedAnalyzeResult} を取得する。
+     * Phase 10 では Red 用 stub として {@link Optional#empty()} を返す。Green で本実装に置換。
+     */
+    @Transactional(readOnly = true)
+    public Optional<CachedAnalyzeResult> findValidCached(String analyzeToken) {
+        return Optional.empty();
     }
 
     /**

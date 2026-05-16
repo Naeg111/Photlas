@@ -1,6 +1,8 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.CachedAnalyzeResult;
 import com.photlas.backend.dto.LabelMappingResult;
+import com.photlas.backend.dto.TagSuggestion;
 import com.photlas.backend.entity.AiPredictionCache;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.repository.AiPredictionCacheRepository;
@@ -224,5 +226,79 @@ class AiPredictionCacheServiceTest {
         assertThat(found).isPresent();
         assertThat(found.get().confidence().get(String.valueOf(CodeConstants.CATEGORY_NATURE)))
                 .isEqualTo(92.5f);
+    }
+
+    // ========== Issue#136 Phase 10: CachedAnalyzeResult 拡張と後方互換 ==========
+
+    @Test
+    @DisplayName("Issue#136 - findValidCached: 新形式 (labelMapping + suggestedTags) JSON を正しく復元")
+    void findValidCached_newFormatRoundTrip() {
+        // labelMapping キーを持つ新形式 JSON を直接 repository に保存
+        String newJson = "{"
+                + "\"labelMapping\":{\"categories\":[201,204],\"weather\":401,\"confidence\":{\"201\":92.5,\"204\":78.0}},"
+                + "\"suggestedTags\":["
+                + "{\"tagId\":101,\"slug\":\"cherry-blossom\",\"displayName\":\"桜\",\"confidence\":92.5},"
+                + "{\"tagId\":102,\"slug\":\"mountain\",\"displayName\":\"山\",\"confidence\":88.0}"
+                + "]"
+                + "}";
+        String token = UUID.randomUUID().toString();
+        Date future = Date.from(Instant.now().plus(Duration.ofMinutes(10)));
+        repository.save(new AiPredictionCache(token, newJson, future, new Date()));
+
+        Optional<CachedAnalyzeResult> found = service.findValidCached(token);
+
+        assertThat(found).isPresent();
+        assertThat(found.get().labelMapping().categories()).containsExactly(201, 204);
+        assertThat(found.get().labelMapping().weather()).isEqualTo(401);
+        assertThat(found.get().suggestedTags()).hasSize(2);
+        assertThat(found.get().suggestedTags()).extracting(TagSuggestion::slug)
+                .containsExactly("cherry-blossom", "mountain");
+        assertThat(found.get().suggestedTags()).extracting(TagSuggestion::confidence)
+                .containsExactly(92.5f, 88.0f);
+    }
+
+    @Test
+    @DisplayName("Issue#136 - 後方互換 (Q11): 旧形式 (LabelMappingResult 単体 JSON) は suggestedTags=[] で復元")
+    void backwardCompat_oldFormatReturnsEmptySuggestedTags() {
+        // 旧形式 JSON を直接 repository に保存（labelMapping キーを含まない）
+        String oldJson = "{\"categories\":[201,204],\"weather\":401,\"confidence\":{\"201\":92.5,\"204\":78.0}}";
+        String token = UUID.randomUUID().toString();
+        Date future = Date.from(Instant.now().plus(Duration.ofMinutes(10)));
+        repository.save(new AiPredictionCache(token, oldJson, future, new Date()));
+
+        Optional<CachedAnalyzeResult> found = service.findValidCached(token);
+
+        assertThat(found).isPresent();
+        // labelMapping 部分は旧 JSON を素直に復元
+        assertThat(found.get().labelMapping().categories()).containsExactly(201, 204);
+        assertThat(found.get().labelMapping().weather()).isEqualTo(401);
+        // suggestedTags は空リスト（旧形式に無いため）
+        assertThat(found.get().suggestedTags()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#136 - findValidCached: 存在しないトークンに対して空を返す")
+    void findValidCached_emptyForUnknownToken() {
+        Optional<CachedAnalyzeResult> found = service.findValidCached(UUID.randomUUID().toString());
+
+        assertThat(found).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#136 - findValidCached: 期限切れトークンに対して空を返す")
+    void findValidCached_emptyForExpiredToken() {
+        String expiredToken = UUID.randomUUID().toString();
+        Date past = Date.from(Instant.now().minus(Duration.ofMinutes(1)));
+        AiPredictionCache expired = new AiPredictionCache(
+                expiredToken,
+                "{\"labelMapping\":{\"categories\":[],\"weather\":null,\"confidence\":{}},\"suggestedTags\":[]}",
+                past,
+                new Date()
+        );
+        repository.save(expired);
+
+        Optional<CachedAnalyzeResult> found = service.findValidCached(expiredToken);
+
+        assertThat(found).isEmpty();
     }
 }
