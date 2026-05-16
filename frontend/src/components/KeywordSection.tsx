@@ -14,7 +14,7 @@
  * 詳細仕様は Issue#135 3.4.2 / 3.5 / Q31〜Q34 参照。
  */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CATEGORY_LABELS } from '../utils/codeConstants'
 
@@ -48,6 +48,16 @@ export interface KeywordSectionProps {
   maxSelections: number
   /** 文脈連動エリアでカテゴリごとに表示する最大件数（デフォルト 10） */
   contextualTopN?: number
+  /**
+   * Issue#141 Phase 6: カテゴリ選択時に配下キーワードを自動選択するモード。
+   * フィルタ画面で true、投稿フォームで false（デフォルト）。
+   * true のときは:
+   *   - selectedCategoryCodes の追加で配下 tag を selectedTagIds に自動追加 (Q1: maxSelections 無視)
+   *   - selectedCategoryCodes の解除で配下 tag を selectedTagIds から自動除外 (Q3: 手動分も巻き込み)
+   *   - 他のまだ選択中のカテゴリにも属する tag は残す (Q5: 多対多整合)
+   *   - 手動 handleToggle の maxSelections チェックも無効化 (フィルタ画面は実質無制限, Q1)
+   */
+  autoSelectByCategoryMode?: boolean
 }
 
 const DEFAULT_CONTEXTUAL_TOP_N = 10
@@ -60,6 +70,7 @@ export function KeywordSection({
   onSelectionChange,
   maxSelections,
   contextualTopN = DEFAULT_CONTEXTUAL_TOP_N,
+  autoSelectByCategoryMode = false,
 }: Readonly<KeywordSectionProps>) {
   const { t } = useTranslation()
   const [isMoreOpen, setIsMoreOpen] = useState(false)
@@ -67,6 +78,44 @@ export function KeywordSection({
   const [searchQuery, setSearchQuery] = useState('')
 
   const selectedSet = useMemo(() => new Set(selectedTagIds), [selectedTagIds])
+
+  // Issue#141 Phase 6: カテゴリ変化 diff で配下 tag を自動追加/除外
+  // useRef で前回 codes と最新 selectedTagIds を保持し、依存配列に
+  // selectedTagIds / onSelectionChange を入れない (無限ループ防止)
+  const previousCodesRef = useRef<number[]>([])
+  const selectedTagIdsRef = useRef(selectedTagIds)
+  selectedTagIdsRef.current = selectedTagIds
+
+  useEffect(() => {
+    if (!autoSelectByCategoryMode) return
+    const previousCodes = previousCodesRef.current
+    const added = selectedCategoryCodes.filter((c) => !previousCodes.includes(c))
+    const removed = previousCodes.filter((c) => !selectedCategoryCodes.includes(c))
+    previousCodesRef.current = [...selectedCategoryCodes]
+
+    if (added.length === 0 && removed.length === 0) return
+
+    // added カテゴリ配下の tag を追加（maxSelections 無視, Q1）
+    const tagsToAdd = allTags
+      .filter((t) => t.categoryCodes.some((c) => added.includes(c)))
+      .map((t) => t.tagId)
+
+    // removed カテゴリ「のみ」に属する tag を除外（Q5: 他カテゴリにまだ属するなら残す）
+    const tagsToRemove = allTags
+      .filter((t) => t.categoryCodes.some((c) => removed.includes(c)))
+      .filter((t) => !t.categoryCodes.some((c) => selectedCategoryCodes.includes(c)))
+      .map((t) => t.tagId)
+
+    const current = selectedTagIdsRef.current
+    const next = Array.from(new Set([
+      ...current.filter((id) => !tagsToRemove.includes(id)),
+      ...tagsToAdd,
+    ]))
+
+    // 差分が無いなら onChange を呼ばない（不要な再 render 回避、無限ループ防止）
+    if (next.length === current.length && next.every((id, i) => id === current[i])) return
+    onSelectionChange(next)
+  }, [autoSelectByCategoryMode, selectedCategoryCodes, allTags, onSelectionChange])
 
   // 文脈連動表示の対象：選択カテゴリ毎に topN（sort_order 昇順 + alphabetical）
   const contextualByCategory = useMemo(() => {
@@ -109,7 +158,8 @@ export function KeywordSection({
       onSelectionChange(selectedTagIds.filter((id) => id !== tagId))
     } else {
       // 追加（上限チェック）
-      if (selectedTagIds.length >= maxSelections) return
+      // Issue#141 Q1: autoSelectByCategoryMode 中は上限を無視（フィルタ画面は実質無制限）
+      if (!autoSelectByCategoryMode && selectedTagIds.length >= maxSelections) return
       onSelectionChange([...selectedTagIds, tagId])
     }
   }
