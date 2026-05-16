@@ -4,9 +4,11 @@ import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.PhotoTag;
 import com.photlas.backend.entity.Tag;
+import com.photlas.backend.entity.TagCategory;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.PhotoTagRepository;
+import com.photlas.backend.repository.TagCategoryRepository;
 import com.photlas.backend.repository.TagRepository;
 import com.photlas.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +47,7 @@ class TagPageControllerTest {
     @Autowired private TagRepository tagRepository;
     @Autowired private PhotoRepository photoRepository;
     @Autowired private PhotoTagRepository photoTagRepository;
+    @Autowired private TagCategoryRepository tagCategoryRepository;
     @Autowired private UserRepository userRepository;
 
     private Tag cherry;
@@ -53,6 +56,7 @@ class TagPageControllerTest {
     @BeforeEach
     void setUp() {
         photoTagRepository.deleteAll();
+        tagCategoryRepository.deleteAll();
         tagRepository.deleteAll();
 
         cherry = new Tag();
@@ -460,5 +464,99 @@ class TagPageControllerTest {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Photlas - Photo spot sharing")));
+    }
+
+    // ===== Issue#136 Phase 9: 0 件時の関連キーワード描画 =====
+
+    /** Phase 9 用: cherry に同カテゴリの仲間 (tulip, rose) を作る。 */
+    private void seedRelatedTags() {
+        tagCategoryRepository.saveAndFlush(new TagCategory(cherry.getId(), CodeConstants.CATEGORY_PLANTS));
+
+        Tag tulip = new Tag();
+        tulip.setRekognitionLabel("Tulip");
+        tulip.setSlug("tulip");
+        tulip.setDisplayNameJa("チューリップ");
+        tulip.setDisplayNameEn("Tulip");
+        tulip.setIsActive(true);
+        tulip.setSortOrder(10);
+        tulip = tagRepository.saveAndFlush(tulip);
+        tagCategoryRepository.saveAndFlush(new TagCategory(tulip.getId(), CodeConstants.CATEGORY_PLANTS));
+
+        Tag rose = new Tag();
+        rose.setRekognitionLabel("Rose");
+        rose.setSlug("rose");
+        rose.setDisplayNameJa("薔薇");
+        rose.setDisplayNameEn("Rose");
+        rose.setIsActive(true);
+        rose.setSortOrder(20);
+        rose = tagRepository.saveAndFlush(rose);
+        tagCategoryRepository.saveAndFlush(new TagCategory(rose.getId(), CodeConstants.CATEGORY_PLANTS));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase9: 0 件タグで ja の関連キーワードラベルとリンクが描画される")
+    void relatedKeywords_renderedWhenEmpty_ja() throws Exception {
+        seedRelatedTags();
+
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                // ラベル表示
+                .andExpect(content().string(containsString("関連するキーワード")))
+                // 関連 tag の表示名
+                .andExpect(content().string(containsString("チューリップ")))
+                .andExpect(content().string(containsString("薔薇")))
+                // 関連 tag の URL (lang は引き継ぐ)
+                .andExpect(content().string(containsString("/tags/tulip?lang=ja")))
+                .andExpect(content().string(containsString("/tags/rose?lang=ja")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase9: 0 件タグで en の関連キーワードラベルが英語")
+    void relatedKeywords_renderedWhenEmpty_en() throws Exception {
+        seedRelatedTags();
+
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Related keywords")))
+                .andExpect(content().string(containsString("Tulip")))
+                // en では英語の URL
+                .andExpect(content().string(containsString("/tags/tulip?lang=en")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase9: 写真ありのときは関連キーワードセクションを描画しない")
+    void relatedKeywords_notRenderedWhenNotEmpty() throws Exception {
+        seedRelatedTags();
+        // 写真 1 枚以上付与
+        link(createPublishedPhoto(), cherry);
+
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                // 関連ラベルは出ない
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        containsString("関連するキーワード"))));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase9: 関連 0 件 (孤立 tag) では関連セクションが描画されない")
+    void relatedKeywords_notRenderedWhenNoPeers() throws Exception {
+        // cherry にはカテゴリ・仲間が無い
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                // 0 件案内は出る
+                .andExpect(content().string(containsString("まだこのキーワードの写真がありません")))
+                // 関連ラベルは出ない
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        containsString("関連するキーワード"))));
+    }
+
+    @Test
+    @DisplayName("Issue#136 - Phase9: relatedTags が Model に常に存在する（0 件時は空リスト）")
+    void relatedTags_alwaysPresentInModel() throws Exception {
+        seedRelatedTags();
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("relatedTags"))
+                .andExpect(model().attribute("relatedTags", hasSize(2)));
     }
 }
