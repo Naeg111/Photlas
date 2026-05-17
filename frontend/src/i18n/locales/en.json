@@ -176,7 +176,17 @@
     "iso400": "ISO ≤400",
     "iso1600": "ISO ≤1600",
     "iso6400": "ISO ≤6400",
-    "iso12800": "ISO ≤12800"
+    "iso12800": "ISO ≤12800",
+    "keywords": "Category Details"
+  },
+  "keyword": {
+    "sectionLabel": "Category Details (optional)",
+    "aiSuggestions": "AI Suggested Category Details",
+    "contextual": "Category Details of Selected Category",
+    "moreOpen": "+ Show further details (Category Details List)",
+    "moreClose": "— Close Category Details List",
+    "searchPlaceholder": "Search category details",
+    "selectionCount": "{{count}} / {{max}} selected"
   },
   "photo": {
     "contributeTitle": "Post Photo",

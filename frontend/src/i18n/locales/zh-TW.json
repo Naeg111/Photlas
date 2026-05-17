@@ -147,7 +147,17 @@
     "iso400": "ISO ≤400",
     "iso1600": "ISO ≤1600",
     "iso6400": "ISO ≤6400",
-    "iso12800": "ISO ≤12800"
+    "iso12800": "ISO ≤12800",
+    "keywords": "類別詳情"
+  },
+  "keyword": {
+    "sectionLabel": "類別詳情（選填）",
+    "aiSuggestions": "AI 推薦類別詳情",
+    "contextual": "所選類別的詳情",
+    "moreOpen": "+ 更進一步細分（類別詳情列表）",
+    "moreClose": "— 關閉類別詳情列表",
+    "searchPlaceholder": "搜尋類別詳情",
+    "selectionCount": "已選 {{count}} / {{max}}"
   },
   "photo": {
     "contributeTitle": "發布照片",
