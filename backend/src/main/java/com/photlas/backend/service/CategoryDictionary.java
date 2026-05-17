@@ -159,10 +159,13 @@ final class CategoryDictionary {
             Map.entry("coffee", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("sushi", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("ramen", List.of(CodeConstants.CATEGORY_GOURMET)),
+            // Issue#141 後追い (#5): udon / soba を追加（Rekognition 標準ラベル想定）
+            Map.entry("udon", List.of(CodeConstants.CATEGORY_GOURMET)),
+            Map.entry("soba", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("dessert", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("beverage", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("fruit", List.of(CodeConstants.CATEGORY_GOURMET)),
-            Map.entry("vegetable", List.of(CodeConstants.CATEGORY_GOURMET)),
+            // Issue#141 後追い (#5): vegetable は削除
             Map.entry("pasta", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("pizza", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("sandwich", List.of(CodeConstants.CATEGORY_GOURMET)),
@@ -174,9 +177,8 @@ final class CategoryDictionary {
             Map.entry("pancake", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("waffle", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("salad", List.of(CodeConstants.CATEGORY_GOURMET)),
-            Map.entry("soup", List.of(CodeConstants.CATEGORY_GOURMET)),
+            // Issue#141 後追い (#5): soup / noodle は削除
             Map.entry("curry", List.of(CodeConstants.CATEGORY_GOURMET)),
-            Map.entry("noodle", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("rice", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("cheese", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("sausage", List.of(CodeConstants.CATEGORY_GOURMET)),
