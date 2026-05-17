@@ -323,7 +323,7 @@
     "exploreSpots": "Explore Spots",
     "exploreSpotsText": "Move the map and tap pins in areas that interest you. You can view photos with camera details. Use the place search to find a place name or facility and move the map there. The shooting location of a photo can be enlarged on the map by tapping the minimap, making it easier to see how it relates to the surroundings.",
     "filterPhotos": "Filter Photos",
-    "filterPhotosText": "Use the filter button at the top left to narrow down by genre, season, time of day, weather, and more. For experienced photographers, you can also filter by device type, focal length, and ISO sensitivity.",
+    "filterPhotosText": "Use the filter button at the top left to narrow down by main category, season, time of day, weather, and more. For experienced photographers, you can also filter by device type, focal length, and ISO sensitivity.",
     "mapControls": "Map Controls",
     "mapControlsText": "You can change the orientation and tilt of the map by dragging with two fingers, or by holding the right mouse button and moving in any direction.",
     "compassReset": "Compass Reset Button",
@@ -373,7 +373,7 @@
     "feature2Title": "Quickly see where each photo was taken",
     "feature2Text": "For every photo, you can check the shooting location on the map. \"Where was this photo taken?\" — instantly answered.",
     "feature3Title": "Find photos you'll love with filters",
-    "feature3Text": "Narrow down photos by genre, season, time of day, weather, and more. You can also search by camera type and shooting settings.",
+    "feature3Text": "Narrow down photos by main category, season, time of day, weather, and more. You can also search by camera type and shooting settings.",
     "feature4Title": "Save photos to favorites",
     "feature4Text": "Add photos you like to your favorites and revisit them later in one place. Useful for planning your next trip too.",
     "feature5Title": "Show off your SNS via your profile",
@@ -481,7 +481,7 @@
   "aiPrefill": {
     "banner": "Some fields were auto-filled by AI. Please review the content.",
     "analyzing": "Analyzing with AI...",
-    "error": "Auto-fill failed. Please select categories and weather conditions manually."
+    "error": "Auto-fill failed. Please select main category and weather conditions manually."
   },
   "weather": {
     "sunny": "Sunny",
