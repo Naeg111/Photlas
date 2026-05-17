@@ -154,7 +154,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 動物: Animal / Dog / Cat / Mammal は 207 を返す")
+    @DisplayName("Issue#119 + Issue#141 後追い - 動物: Animal / Dog / Cat は 207 を返す (Mammal は削除済)")
     void animalsFromAnimalLabels() {
         assertThat(mapper.map(List.of(label("Animal", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_ANIMALS);
@@ -162,26 +162,27 @@ class RekognitionLabelMapperTest {
                 .containsExactly(CodeConstants.CATEGORY_ANIMALS);
         assertThat(mapper.map(List.of(label("Cat", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_ANIMALS);
-        assertThat(mapper.map(List.of(label("Mammal", 80f))).categories())
-                .containsExactly(CodeConstants.CATEGORY_ANIMALS);
+        // Issue#141 後追い: Mammal は「動物全般」に含めるため CategoryDictionary から削除
+        assertThat(mapper.map(List.of(label("Mammal", 80f))).categories()).isEmpty();
     }
 
     @Test
-    @DisplayName("Issue#119 - 野鳥: Bird は 207 と 208 の両方を候補として返す")
-    void birdMapsToBothAnimalsAndWildBirds() {
+    @DisplayName("Issue#119 + Issue#141 後追い - 野鳥: Bird は 208 のみを返す (207 動物からは外した)")
+    void birdMapsToWildBirdsOnly() {
         LabelMappingResult result = mapper.map(List.of(label("Bird", 80f)));
 
+        // Issue#141 後追い (#3): bird は野鳥カテゴリのみへ。動物カテゴリからは外した
         assertThat(result.categories())
-                .containsExactlyInAnyOrder(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS);
+                .containsExactly(CodeConstants.CATEGORY_WILD_BIRDS);
     }
 
     @Test
-    @DisplayName("Issue#119 - 自動車: Car / Vehicle / Automobile は 209 を返す")
+    @DisplayName("Issue#119 + Issue#141 後追い - 自動車: Car / Automobile は 209 を返す (Vehicle は削除済)")
     void carsFromCarLabels() {
         assertThat(mapper.map(List.of(label("Car", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_CARS);
-        assertThat(mapper.map(List.of(label("Vehicle", 80f))).categories())
-                .containsExactly(CodeConstants.CATEGORY_CARS);
+        // Issue#141 後追い: Vehicle は削除済
+        assertThat(mapper.map(List.of(label("Vehicle", 80f))).categories()).isEmpty();
         assertThat(mapper.map(List.of(label("Automobile", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_CARS);
     }
@@ -440,34 +441,48 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 動物: 拡充ラベル (Wildlife/Pet/Fox/Bear/Deer/Squirrel/Rabbit/Lion/Tiger) は 207 を返す")
+    @DisplayName("Issue#132 + Issue#141 後追い - 動物: 拡充ラベル (Fox/Bear/Deer/Squirrel/Rabbit/Lion/Tiger) は 207 を返す (Wildlife/Pet は削除済)")
     void animalsFromExpandedLabels() {
-        for (String name : List.of("Wildlife", "Pet", "Fox", "Bear", "Deer", "Squirrel",
+        // Issue#141 後追い (#3): Wildlife/Pet は「動物全般」に含めるため削除済
+        for (String name : List.of("Fox", "Bear", "Deer", "Squirrel",
                 "Rabbit", "Lion", "Tiger")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
                     .as("ラベル '%s' は動物 (207) にマッピングされるべき", name)
                     .containsExactly(CodeConstants.CATEGORY_ANIMALS);
         }
-    }
-
-    @Test
-    @DisplayName("Issue#132 - 野鳥: 拡充ラベル (Sparrow/Eagle/Hawk/Owl/Crow/Heron/Crane) は 207 + 208 を返す")
-    void wildBirdsFromExpandedLabels() {
-        for (String name : List.of("Sparrow", "Eagle", "Hawk", "Owl", "Crow", "Heron", "Crane")) {
-            assertThat(mapper.map(List.of(label(name, 80f))).categories())
-                    .as("ラベル '%s' は動物 (207) + 野鳥 (208) にマッピングされるべき", name)
-                    .containsExactlyInAnyOrder(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS);
+        for (String removed : List.of("Wildlife", "Pet")) {
+            assertThat(mapper.map(List.of(label(removed, 80f))).categories())
+                    .as("削除済ラベル '%s' は空", removed)
+                    .isEmpty();
         }
     }
 
     @Test
-    @DisplayName("Issue#132 - 自動車: 拡充ラベル (Sedan/Suv/Truck/Sports Car) は 209 を返す")
+    @DisplayName("Issue#132 + Issue#141 後追い - 野鳥: 拡充ラベル (Sparrow/Eagle/Hawk/Heron/Crane) は 208 のみを返す (Owl は 207 へ移動、Crow は削除済)")
+    void wildBirdsFromExpandedLabels() {
+        // Issue#141 後追い (#3): 207 から外して 208 のみへ
+        for (String name : List.of("Sparrow", "Eagle", "Hawk", "Heron", "Crane")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("ラベル '%s' は野鳥 (208) のみにマッピングされるべき", name)
+                    .containsExactly(CodeConstants.CATEGORY_WILD_BIRDS);
+        }
+        // Owl は動物 (207) のみへ移動
+        assertThat(mapper.map(List.of(label("Owl", 80f))).categories())
+                .containsExactly(CodeConstants.CATEGORY_ANIMALS);
+        // Crow は削除済
+        assertThat(mapper.map(List.of(label("Crow", 80f))).categories()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#132 + Issue#141 後追い - 自動車: 拡充ラベル (Suv/Truck/Sports Car) は 209 を返す (Sedan は削除済)")
     void carsFromExpandedLabels() {
-        for (String name : List.of("Sedan", "Suv", "Truck", "Sports Car")) {
+        // Issue#141 後追い (#3): Sedan は削除済
+        for (String name : List.of("Suv", "Truck", "Sports Car")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
                     .as("ラベル '%s' は自動車 (209) にマッピングされるべき", name)
                     .containsExactly(CodeConstants.CATEGORY_CARS);
         }
+        assertThat(mapper.map(List.of(label("Sedan", 80f))).categories()).isEmpty();
     }
 
     @Test
@@ -491,13 +506,15 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 星空: 拡充ラベル (Galaxy/Constellation/Nebula/Astronomy) は 213 を返す")
+    @DisplayName("Issue#132 + Issue#141 後追い - 星空: 拡充ラベル (Galaxy/Constellation/Nebula) は 213 を返す (Astronomy は削除済)")
     void starrySkyFromExpandedLabels() {
-        for (String name : List.of("Galaxy", "Constellation", "Nebula", "Astronomy")) {
+        // Issue#141 後追い (#3): Astronomy は削除済
+        for (String name : List.of("Galaxy", "Constellation", "Nebula")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
                     .as("ラベル '%s' は星空 (213) にマッピングされるべき", name)
                     .containsExactly(CodeConstants.CATEGORY_STARRY_SKY);
         }
+        assertThat(mapper.map(List.of(label("Astronomy", 80f))).categories()).isEmpty();
     }
 
     @Test
@@ -630,14 +647,15 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - ブラックリスト: Wildlife は除外しない（親として有効、動物 207 へ）")
+    @DisplayName("Issue#132 + Issue#141 後追い - 親 Wildlife は CategoryDictionary から削除済 (親フォールバック不可)")
     void wildlifeAsParentIsNotBlacklisted() {
-        // 子は辞書に無し。親 Wildlife は除外されず、Wildlife は 207 へマッピング。
+        // Issue#141 後追い (#3): Wildlife は「動物全般」に含めるため CategoryDictionary から削除。
+        // 親フォールバックでも 207 にマッピングされなくなる。
         Label labelObj = labelWithParents("UnknownBird", 90f, "Wildlife");
 
         LabelMappingResult result = mapper.map(List.of(labelObj));
 
-        assertThat(result.categories()).contains(CodeConstants.CATEGORY_ANIMALS);
+        assertThat(result.categories()).isEmpty();
     }
 
     @Test
@@ -707,18 +725,17 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 mapWithEvents - 親フォールバック発火イベントの categoryCode は複数カテゴリ全て")
+    @DisplayName("Issue#132 + Issue#141 後追い mapWithEvents - 親フォールバック発火イベント (Sparrow は 208 のみ)")
     void mapWithEventsEmitsOneEventPerMappedCategory() {
-        // Sparrow は辞書に 207 + 208 をマップする。
-        // ここでは子未マッチの Robin' で親に Sparrow → 2 つのカテゴリイベントが期待される。
-        // ※既存辞書では sparrow → [207, 208] なので、子未マッチの "MysteryBird" を使う。
+        // Issue#141 後追い (#3): Sparrow は 207 から外して 208 のみ。
+        // 子未マッチの "MysteryBird" の親に Sparrow を置く → 1 つのカテゴリイベントが期待される。
         Label mysteryBird = labelWithParents("MysteryBird", 90f, "Sparrow");
 
         RekognitionLabelMapper.MappingResult result = mapper.mapWithEvents(List.of(mysteryBird));
 
         assertThat(result.parentFallbacks())
                 .extracting(com.photlas.backend.dto.ParentFallback::categoryCode)
-                .containsExactlyInAnyOrder(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS);
+                .containsExactly(CodeConstants.CATEGORY_WILD_BIRDS);
     }
 
     @Test

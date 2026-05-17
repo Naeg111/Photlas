@@ -245,13 +245,16 @@ final class CategoryDictionary {
             Map.entry("foliage", List.of(CodeConstants.CATEGORY_PLANTS)),
             // 動物 (207)
             Map.entry("animal", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            // Issue#141 後追い (#3): owl/peacock/flamingo/penguin は野鳥 (208) → 動物 (207) のみに移動
+            Map.entry("owl", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            Map.entry("peacock", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            Map.entry("flamingo", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            Map.entry("penguin", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("dog", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("cat", List.of(CodeConstants.CATEGORY_ANIMALS)),
             // mammal: 直接ラベルとしては 207 にマッピングする（Issue#119 互換）。
             // Issue#132 では「親ラベル」としての mammal を BLACKLISTED_PARENTS で除外する。
-            Map.entry("mammal", List.of(CodeConstants.CATEGORY_ANIMALS)),
-            Map.entry("wildlife", List.of(CodeConstants.CATEGORY_ANIMALS)),
-            Map.entry("pet", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            // Issue#141 後追い (#3): mammal/wildlife/pet は「動物全般 (animal)」に含めるため削除
             Map.entry("fox", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("bear", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("deer", List.of(CodeConstants.CATEGORY_ANIMALS)),
@@ -286,53 +289,43 @@ final class CategoryDictionary {
             Map.entry("alligator", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("frog", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("insect", List.of(CodeConstants.CATEGORY_ANIMALS)),
-            Map.entry("butterfly", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            // Issue#141 後追い (#3): butterfly は削除
             Map.entry("bee", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("dragonfly", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("puppy", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("kitten", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("parrot", List.of(CodeConstants.CATEGORY_ANIMALS)),
-            // 動物 + 野鳥 (207 + 208) - Bird 系は二重候補
-            Map.entry("bird", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("sparrow", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("eagle", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("hawk", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("owl", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("crow", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("heron", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("crane", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("falcon", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("pelican", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("hummingbird", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("woodpecker", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("robin", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("flamingo", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("stork", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("pheasant", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("kingfisher", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("swan", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("goose", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("pigeon", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("dove", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("seagull", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("duck", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            Map.entry("penguin", List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
-            // 自動車 (209)
+            // 野鳥 (208) - Issue#141 後追い (#3): 207 (動物) を外して 208 のみへ
+            // owl/peacock/flamingo/penguin は上の動物セクションへ移動 (CATEGORY_ANIMALS のみ)
+            // crow/goose/duck/seagull/pigeon は tag 削除に合わせて削除
+            Map.entry("bird", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("sparrow", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("eagle", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("hawk", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("heron", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("crane", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("falcon", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("pelican", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("hummingbird", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("woodpecker", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("robin", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("stork", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("pheasant", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("kingfisher", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("swan", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("dove", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            // 自動車 (209) - Issue#141 後追い (#3): vehicle/sedan/convertible/taxi は削除
             Map.entry("car", List.of(CodeConstants.CATEGORY_CARS)),
-            Map.entry("vehicle", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("automobile", List.of(CodeConstants.CATEGORY_CARS)),
-            Map.entry("sedan", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("suv", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("truck", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("sports car", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("pickup truck", List.of(CodeConstants.CATEGORY_CARS)),
-            Map.entry("convertible", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("minivan", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("hatchback", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("coupe", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("van", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("bus", List.of(CodeConstants.CATEGORY_CARS)),
-            Map.entry("taxi", List.of(CodeConstants.CATEGORY_CARS)),
             // バイク (210)
             Map.entry("motorcycle", List.of(CodeConstants.CATEGORY_MOTORCYCLES)),
             Map.entry("scooter", List.of(CodeConstants.CATEGORY_MOTORCYCLES)),
@@ -348,7 +341,8 @@ final class CategoryDictionary {
             Map.entry("bullet train", List.of(CodeConstants.CATEGORY_RAILWAYS)),
             Map.entry("streetcar", List.of(CodeConstants.CATEGORY_RAILWAYS)),
             Map.entry("trolley", List.of(CodeConstants.CATEGORY_RAILWAYS)),
-            // 飛行機 (212)
+            // 飛行機 (212) - Issue#141 後追い (#3): aircraft tag は削除済だが、
+            // Rekognition の "Aircraft" ラベルは引き続き 212 に判定する (「飛行機全般に含める」の意図)
             Map.entry("aircraft", List.of(CodeConstants.CATEGORY_AIRCRAFT)),
             Map.entry("airplane", List.of(CodeConstants.CATEGORY_AIRCRAFT)),
             Map.entry("helicopter", List.of(CodeConstants.CATEGORY_AIRCRAFT)),
@@ -364,7 +358,7 @@ final class CategoryDictionary {
             Map.entry("galaxy", List.of(CodeConstants.CATEGORY_STARRY_SKY)),
             Map.entry("constellation", List.of(CodeConstants.CATEGORY_STARRY_SKY)),
             Map.entry("nebula", List.of(CodeConstants.CATEGORY_STARRY_SKY)),
-            Map.entry("astronomy", List.of(CodeConstants.CATEGORY_STARRY_SKY)),
+            // Issue#141 後追い (#3): astronomy は削除
             Map.entry("aurora", List.of(CodeConstants.CATEGORY_STARRY_SKY))
     );
 
