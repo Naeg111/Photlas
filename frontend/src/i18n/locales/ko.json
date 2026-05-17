@@ -120,10 +120,10 @@
   },
   "filter": {
     "title": "사진 필터",
-    "description": "카테고리, 기간, 시간대, 날씨로 필터링",
+    "description": "대분류, 기간, 시간대, 날씨로 필터링",
     "openFilter": "사진 필터 열기",
     "filterDescription": "사진 필터링 조건 설정",
-    "genre": "카테고리",
+    "genre": "대분류",
     "postDate": "게시 날짜",
     "shootingPeriod": "계절",
     "timeOfDay": "시간대",
@@ -148,15 +148,15 @@
     "iso1600": "ISO ≤1600",
     "iso6400": "ISO ≤6400",
     "iso12800": "ISO ≤12800",
-    "keywords": "카테고리 세부 정보"
+    "keywords": "소분류"
   },
   "keyword": {
-    "sectionLabel": "카테고리 세부 정보 (선택 사항)",
-    "aiSuggestions": "AI 추천 카테고리 세부 정보",
-    "contextual": "선택한 카테고리의 세부 정보",
-    "moreOpen": "+ 더욱 세분화 (카테고리 세부 정보 목록)",
-    "moreClose": "— 카테고리 세부 정보 목록 닫기",
-    "searchPlaceholder": "카테고리 세부 정보 검색",
+    "sectionLabel": "소분류 (선택 사항)",
+    "aiSuggestions": "AI 추천 소분류",
+    "contextual": "선택한 대분류의 소분류",
+    "moreOpen": "+ 더욱 세분화 (소분류 목록)",
+    "moreClose": "— 소분류 목록 닫기",
+    "searchPlaceholder": "소분류 검색",
     "selectionCount": "{{count}} / {{max}} 선택됨"
   },
   "photo": {
@@ -183,7 +183,7 @@
     "locationError": "위치를 설정해 주세요.",
     "locationName": "장소 이름",
     "locationNamePlaceholder": "예: 남산타워, 한라산",
-    "categoryRequired": "카테고리 (필수, 1개 이상 선택)",
+    "categoryRequired": "대분류 (필수, 1개 이상 선택)",
     "deviceTypeRequired": "기기 (필수)",
     "weatherLabel": "날씨",
     "post": "게시",
