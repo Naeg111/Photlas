@@ -208,22 +208,14 @@ final class CategoryDictionary {
             Map.entry("grape", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("strawberry", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("lemon", List.of(CodeConstants.CATEGORY_GOURMET)),
-            // 植物 (206)
+            // 植物 (206) - Issue#141 後追い (#4):
+            //   - 削除: tree/leaf/petal/vegetation/moss/bush/grass/lawn/blossom/bamboo/fern (11 件)
+            //   - vineyard は 206 → 214 (その他) へ移動
             Map.entry("flower", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("plant", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("tree", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("garden", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("leaf", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("petal", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("branch", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("vegetation", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("moss", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("bush", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("vineyard", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("grass", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("lawn", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("shrub", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("blossom", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("rose", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("tulip", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("cherry blossom", List.of(CodeConstants.CATEGORY_PLANTS)),
@@ -233,8 +225,6 @@ final class CategoryDictionary {
             Map.entry("daisy", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("lavender", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("cactus", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("bamboo", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("fern", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("vine", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("ivy", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("jungle", List.of(CodeConstants.CATEGORY_PLANTS)),
@@ -243,6 +233,8 @@ final class CategoryDictionary {
             Map.entry("sprout", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("hedge", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("foliage", List.of(CodeConstants.CATEGORY_PLANTS)),
+            // ぶどう畑は植物ではなく「その他」(214) に移動
+            Map.entry("vineyard", List.of(CodeConstants.CATEGORY_OTHER)),
             // 動物 (207)
             Map.entry("animal", List.of(CodeConstants.CATEGORY_ANIMALS)),
             // Issue#141 後追い (#3): owl/peacock/flamingo/penguin は野鳥 (208) → 動物 (207) のみに移動

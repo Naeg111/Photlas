@@ -141,14 +141,14 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 植物: Flower / Plant / Tree / Garden は 206 を返す")
+    @DisplayName("Issue#119 + Issue#141 後追い - 植物: Flower / Plant / Garden は 206 を返す (Tree は削除済)")
     void plantsFromPlantLabels() {
         assertThat(mapper.map(List.of(label("Flower", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_PLANTS);
         assertThat(mapper.map(List.of(label("Plant", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_PLANTS);
-        assertThat(mapper.map(List.of(label("Tree", 80f))).categories())
-                .containsExactly(CodeConstants.CATEGORY_PLANTS);
+        // Issue#141 後追い (#4): Tree は削除済
+        assertThat(mapper.map(List.of(label("Tree", 80f))).categories()).isEmpty();
         assertThat(mapper.map(List.of(label("Garden", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_PLANTS);
     }
@@ -431,13 +431,18 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 植物: 拡充ラベル (Leaf/Petal/Branch/Vegetation/Moss/Bush/Vineyard) は 206 を返す")
+    @DisplayName("Issue#132 + Issue#141 後追い - 植物: 拡充ラベル (Branch) は 206 を返す (Leaf/Petal 等は削除済、Vineyard は 214 へ移動)")
     void plantsFromExpandedLabels() {
-        for (String name : List.of("Leaf", "Petal", "Branch", "Vegetation", "Moss", "Bush", "Vineyard")) {
-            assertThat(mapper.map(List.of(label(name, 80f))).categories())
-                    .as("ラベル '%s' は植物 (206) にマッピングされるべき", name)
-                    .containsExactly(CodeConstants.CATEGORY_PLANTS);
+        // Issue#141 後追い (#4): Leaf/Petal/Vegetation/Moss/Bush は削除済
+        assertThat(mapper.map(List.of(label("Branch", 80f))).categories())
+                .containsExactly(CodeConstants.CATEGORY_PLANTS);
+        for (String removed : List.of("Leaf", "Petal", "Vegetation", "Moss", "Bush")) {
+            assertThat(mapper.map(List.of(label(removed, 80f))).categories())
+                    .as("削除済ラベル '%s' は空", removed).isEmpty();
         }
+        // Vineyard は 206 (植物) ではなく 214 (その他) へ移動
+        assertThat(mapper.map(List.of(label("Vineyard", 80f))).categories())
+                .containsExactly(CodeConstants.CATEGORY_OTHER);
     }
 
     @Test
