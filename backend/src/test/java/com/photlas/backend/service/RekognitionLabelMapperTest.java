@@ -420,14 +420,19 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - グルメ: 拡充ラベル (Bread/Cake/Coffee/Sushi/Ramen/Dessert/Beverage/Fruit/Vegetable/Pasta/Pizza/Sandwich) は 205 を返す")
+    @DisplayName("Issue#132 + Issue#141 後追い - グルメ: 拡充ラベル (Bread/Cake/Coffee/.../Beverage) は 205 を返す (Vegetable は削除済、Udon/Soba は追加)")
     void gourmetFromExpandedLabels() {
+        // Issue#141 後追い (#5): Vegetable は削除済。Beverage は「グルメ全般」に含める意図で CategoryDictionary 維持。
+        // Udon / Soba を追加。
         for (String name : List.of("Bread", "Cake", "Coffee", "Sushi", "Ramen", "Dessert",
-                "Beverage", "Fruit", "Vegetable", "Pasta", "Pizza", "Sandwich")) {
+                "Beverage", "Fruit", "Pasta", "Pizza", "Sandwich",
+                "Udon", "Soba")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
                     .as("ラベル '%s' はグルメ (205) にマッピングされるべき", name)
                     .containsExactly(CodeConstants.CATEGORY_GOURMET);
         }
+        // Vegetable は削除済
+        assertThat(mapper.map(List.of(label("Vegetable", 80f))).categories()).isEmpty();
     }
 
     @Test
