@@ -953,7 +953,7 @@ export function PhotoContributionDialog({
             {/* Issue#135: キーワード選択（カテゴリと機材種別の間に配置） */}
             <div className="space-y-3">
               <Label className="text-base">
-                {t('keyword.sectionLabel', { defaultValue: 'キーワード（任意）' })}
+                {t('keyword.sectionLabel', { defaultValue: 'カテゴリの詳細（任意）' })}
               </Label>
               {/* Issue#141 Q2: 投稿フォームでは autoSelectByCategoryMode を渡さない (default false) */}
               <KeywordSection

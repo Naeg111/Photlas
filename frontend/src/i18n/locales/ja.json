@@ -176,7 +176,17 @@
     "iso400": "ISO 400以下",
     "iso1600": "ISO 1600以下",
     "iso6400": "ISO 6400以下",
-    "iso12800": "ISO 12800以下"
+    "iso12800": "ISO 12800以下",
+    "keywords": "カテゴリの詳細"
+  },
+  "keyword": {
+    "sectionLabel": "カテゴリの詳細（任意）",
+    "aiSuggestions": "AI 提案カテゴリの詳細",
+    "contextual": "選択中カテゴリの詳細",
+    "moreOpen": "+ さらに細かく（カテゴリの詳細一覧）",
+    "moreClose": "— カテゴリの詳細一覧を閉じる",
+    "searchPlaceholder": "カテゴリの詳細を検索",
+    "selectionCount": "{{count}} / {{max}} 件選択中"
   },
   "photo": {
     "contributeTitle": "写真を投稿",
