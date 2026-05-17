@@ -209,7 +209,7 @@ export function KeywordSection({
       {aiSuggestions.length > 0 && (
         <section data-testid="keyword-section-ai-suggestions">
           <h3 className="text-sm font-semibold mb-2">
-            {t('keyword.aiSuggestions', { defaultValue: 'AI 提案カテゴリの詳細' })}
+            {t('keyword.aiSuggestions', { defaultValue: 'AI 提案小カテゴリー' })}
           </h3>
           <div className="flex flex-wrap">
             {aiSuggestions.map((s) => {
@@ -234,7 +234,7 @@ export function KeywordSection({
       {contextualByCategory.size > 0 && (
         <section data-testid="keyword-section-contextual">
           <h3 className="text-sm font-semibold mb-2">
-            {t('keyword.contextual', { defaultValue: '選択中カテゴリの詳細' })}
+            {t('keyword.contextual', { defaultValue: '選択中の小カテゴリー' })}
           </h3>
           {[...contextualByCategory.entries()].map(([code, tags]) => (
             <div key={code} className="mb-2">
@@ -268,8 +268,8 @@ export function KeywordSection({
         onClick={() => setIsMoreOpen((v) => !v)}
       >
         {isMoreOpen
-          ? t('keyword.moreClose', { defaultValue: '— カテゴリの詳細一覧を閉じる' })
-          : t('keyword.moreOpen', { defaultValue: '+ さらに細かく（カテゴリの詳細一覧）' })}
+          ? t('keyword.moreClose', { defaultValue: '— 小カテゴリー一覧を閉じる' })
+          : t('keyword.moreOpen', { defaultValue: '+ さらに細かく（小カテゴリー一覧）' })}
       </button>
 
       {/* 「もっと細かく」展開部 */}
@@ -278,7 +278,7 @@ export function KeywordSection({
           <input
             type="search"
             data-testid="keyword-section-search-input"
-            placeholder={t('keyword.searchPlaceholder', { defaultValue: 'カテゴリの詳細を検索' })}
+            placeholder={t('keyword.searchPlaceholder', { defaultValue: '小カテゴリーを検索' })}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded text-sm"

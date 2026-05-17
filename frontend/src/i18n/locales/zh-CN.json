@@ -120,10 +120,10 @@
   },
   "filter": {
     "title": "照片筛选",
-    "description": "按类别、时间、时段和天气筛选",
+    "description": "按主分类、时间、时段和天气筛选",
     "openFilter": "打开照片筛选",
     "filterDescription": "设置照片筛选条件",
-    "genre": "类别",
+    "genre": "主分类",
     "postDate": "发布日期",
     "shootingPeriod": "季节",
     "timeOfDay": "拍摄时段",
@@ -148,15 +148,15 @@
     "iso1600": "ISO ≤1600",
     "iso6400": "ISO ≤6400",
     "iso12800": "ISO ≤12800",
-    "keywords": "类别详情"
+    "keywords": "子分类"
   },
   "keyword": {
-    "sectionLabel": "类别详情（可选）",
-    "aiSuggestions": "AI 推荐类别详情",
-    "contextual": "所选类别的详情",
-    "moreOpen": "+ 更进一步细分（类别详情列表）",
-    "moreClose": "— 关闭类别详情列表",
-    "searchPlaceholder": "搜索类别详情",
+    "sectionLabel": "子分类（可选）",
+    "aiSuggestions": "AI 推荐子分类",
+    "contextual": "所选主分类的子分类",
+    "moreOpen": "+ 更进一步细分（子分类列表）",
+    "moreClose": "— 关闭子分类列表",
+    "searchPlaceholder": "搜索子分类",
     "selectionCount": "已选 {{count}} / {{max}}"
   },
   "photo": {
@@ -183,7 +183,7 @@
     "locationError": "请设置拍摄位置。",
     "locationName": "地点名称",
     "locationNamePlaceholder": "例：东京晴空塔、富士山",
-    "categoryRequired": "分类（必填，至少选1个）",
+    "categoryRequired": "主分类（必填，至少选1个）",
     "deviceTypeRequired": "设备（必填）",
     "weatherLabel": "天气",
     "post": "发布",

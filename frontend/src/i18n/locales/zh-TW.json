@@ -120,10 +120,10 @@
   },
   "filter": {
     "title": "照片篩選",
-    "description": "依類別、時期、時段、天氣篩選",
+    "description": "依主分類、時期、時段、天氣篩選",
     "openFilter": "開啟照片篩選",
     "filterDescription": "設定照片篩選條件",
-    "genre": "類別",
+    "genre": "主分類",
     "postDate": "發布日期",
     "shootingPeriod": "季節",
     "timeOfDay": "時段",
@@ -148,15 +148,15 @@
     "iso1600": "ISO ≤1600",
     "iso6400": "ISO ≤6400",
     "iso12800": "ISO ≤12800",
-    "keywords": "類別詳情"
+    "keywords": "子分類"
   },
   "keyword": {
-    "sectionLabel": "類別詳情（選填）",
-    "aiSuggestions": "AI 推薦類別詳情",
-    "contextual": "所選類別的詳情",
-    "moreOpen": "+ 更進一步細分（類別詳情列表）",
-    "moreClose": "— 關閉類別詳情列表",
-    "searchPlaceholder": "搜尋類別詳情",
+    "sectionLabel": "子分類（選填）",
+    "aiSuggestions": "AI 推薦子分類",
+    "contextual": "所選主分類的子分類",
+    "moreOpen": "+ 更進一步細分（子分類列表）",
+    "moreClose": "— 關閉子分類列表",
+    "searchPlaceholder": "搜尋子分類",
     "selectionCount": "已選 {{count}} / {{max}}"
   },
   "photo": {
@@ -183,7 +183,7 @@
     "locationError": "請設定位置。",
     "locationName": "地點名稱",
     "locationNamePlaceholder": "例：台北101、玉山",
-    "categoryRequired": "分類（必填，可多選）",
+    "categoryRequired": "主分類（必填，可多選）",
     "deviceTypeRequired": "裝置（必填）",
     "weatherLabel": "天氣",
     "post": "發布",
