@@ -38,4 +38,19 @@ public interface PhotoTagRepository extends JpaRepository<PhotoTag, PhotoTag.Pho
     long countActivePublishedByTagId(
             @Param("tagId") Long tagId,
             @Param("publishedStatus") Integer publishedStatus);
+
+    /**
+     * Issue#141 後追い: 全 tag の PUBLISHED + 退会済除外フィルタ済写真数を 1 本のクエリで取得。
+     * {@code GET /api/v1/tags} レスポンスに photoCount を含めるための N+1 回避用。
+     * 戻り値の各 Object[] は [Long tagId, Long photoCount]。
+     */
+    @Query("SELECT pt.tagId, COUNT(pt) FROM PhotoTag pt " +
+            "WHERE EXISTS (SELECT 1 FROM Photo p " +
+            "              JOIN User u ON p.userId = u.id " +
+            "              WHERE p.photoId = pt.photoId " +
+            "                AND p.moderationStatus = :publishedStatus " +
+            "                AND u.deletedAt IS NULL) " +
+            "GROUP BY pt.tagId")
+    List<Object[]> countActivePublishedGroupedByTagId(
+            @Param("publishedStatus") Integer publishedStatus);
 }

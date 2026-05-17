@@ -24,6 +24,8 @@ export interface KeywordTag {
   displayName: string
   categoryCodes: number[]
   sortOrder: number
+  /** Issue#141 後追い: 投稿数 (PUBLISHED + 退会済除外)。0 ならフィルタ画面で非活性表示。 */
+  photoCount?: number
 }
 
 export interface KeywordSuggestion {
@@ -101,8 +103,10 @@ export function KeywordSection({
     if (added.length === 0 && removed.length === 0) return
 
     // added カテゴリ配下の tag を追加（maxSelections 無視, Q1）
+    // Issue#141 後追い: photoCount=0 の tag は auto-select でも追加しない (非活性チップ扱い)
     const tagsToAdd = allTags
       .filter((t) => t.categoryCodes.some((c) => added.includes(c)))
+      .filter((t) => t.photoCount !== 0)
       .map((t) => t.tagId)
 
     // removed カテゴリ「のみ」に属する tag を除外（Q5: 他カテゴリにまだ属するなら残す）
@@ -152,12 +156,27 @@ export function KeywordSection({
             || tag.slug.toLowerCase().includes(q)
         )
       }
+      // Issue#141 後追い: 配下タグが 0 件のカテゴリ (例: 「その他」214) はアコーディオン枠ごと非表示
+      if (list.length === 0) continue
       map.set(code, list)
     }
     return map
   }, [allTags, searchQuery])
 
+  // Issue#141 後追い: 0 件タグの集合 (フィルタ画面のみ非活性扱い)。
+  // photoCount 未定義 (投稿フォーム用) は非活性化しない。
+  const disabledTagIdSet = useMemo(() => {
+    if (!autoSelectByCategoryMode) return new Set<number>()
+    const s = new Set<number>()
+    for (const t of allTags) {
+      if (t.photoCount === 0) s.add(t.tagId)
+    }
+    return s
+  }, [allTags, autoSelectByCategoryMode])
+
   function handleToggle(tagId: number) {
+    // Issue#141 後追い: 非活性 (投稿 0 件) のチップはクリック不可
+    if (disabledTagIdSet.has(tagId)) return
     if (selectedSet.has(tagId)) {
       // 解除
       onSelectionChange(selectedTagIds.filter((id) => id !== tagId))
@@ -173,11 +192,15 @@ export function KeywordSection({
     setOpenAccordionCode((cur) => (cur === code ? null : code))
   }
 
-  function chipClass(selected: boolean): string {
-    const base = 'inline-flex items-center px-3 py-1 rounded-full border text-sm cursor-pointer select-none mr-2 mb-2'
+  function chipClass(selected: boolean, disabled = false): string {
+    const base = 'inline-flex items-center px-3 py-1 rounded-full border text-sm select-none mr-2 mb-2'
+    if (disabled) {
+      // Issue#141 後追い: 投稿 0 件タグは非活性表示（クリック不可、グレーアウト、選択中でも黒くしない）
+      return `${base} bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed`
+    }
     return selected
-      ? `${base} bg-gray-900 text-white border-gray-900`
-      : `${base} bg-white text-gray-800 border-gray-300 hover:border-gray-500`
+      ? `${base} bg-gray-900 text-white border-gray-900 cursor-pointer`
+      : `${base} bg-white text-gray-800 border-gray-300 hover:border-gray-500 cursor-pointer`
   }
 
   return (
@@ -189,16 +212,20 @@ export function KeywordSection({
             {t('keyword.aiSuggestions', { defaultValue: 'AI 提案カテゴリの詳細' })}
           </h3>
           <div className="flex flex-wrap">
-            {aiSuggestions.map((s) => (
-              <button
-                key={s.tagId}
-                type="button"
-                className={chipClass(selectedSet.has(s.tagId))}
-                onClick={() => handleToggle(s.tagId)}
-              >
-                {s.displayName}
-              </button>
-            ))}
+            {aiSuggestions.map((s) => {
+              const isDisabled = disabledTagIdSet.has(s.tagId)
+              return (
+                <button
+                  key={s.tagId}
+                  type="button"
+                  className={chipClass(selectedSet.has(s.tagId), isDisabled)}
+                  onClick={() => handleToggle(s.tagId)}
+                  disabled={isDisabled}
+                >
+                  {s.displayName}
+                </button>
+              )
+            })}
           </div>
         </section>
       )}
@@ -213,16 +240,20 @@ export function KeywordSection({
             <div key={code} className="mb-2">
               <div className="text-xs text-gray-500 mb-1">{CATEGORY_LABELS[code]}</div>
               <div className="flex flex-wrap">
-                {tags.map((tag) => (
-                  <button
-                    key={`${code}-${tag.tagId}`}
-                    type="button"
-                    className={chipClass(selectedSet.has(tag.tagId))}
-                    onClick={() => handleToggle(tag.tagId)}
-                  >
-                    {tag.displayName}
-                  </button>
-                ))}
+                {tags.map((tag) => {
+                  const isDisabled = disabledTagIdSet.has(tag.tagId)
+                  return (
+                    <button
+                      key={`${code}-${tag.tagId}`}
+                      type="button"
+                      className={chipClass(selectedSet.has(tag.tagId), isDisabled)}
+                      onClick={() => handleToggle(tag.tagId)}
+                      disabled={isDisabled}
+                    >
+                      {tag.displayName}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           ))}
@@ -259,6 +290,7 @@ export function KeywordSection({
               selectedSet={selectedSet}
               chipClass={chipClass}
               onToggle={handleToggle}
+              disabledTagIdSet={disabledTagIdSet}
             />
           ) : null}
           {[...accordionByCategory.entries()].map(([code, tags]) => {
@@ -282,16 +314,20 @@ export function KeywordSection({
                 </button>
                 {isOpen && (
                   <div className="px-3 pb-3 flex flex-wrap">
-                    {tags.map((tag) => (
-                      <button
-                        key={`${code}-acc-${tag.tagId}`}
-                        type="button"
-                        className={chipClass(selectedSet.has(tag.tagId))}
-                        onClick={() => handleToggle(tag.tagId)}
-                      >
-                        {tag.displayName}
-                      </button>
-                    ))}
+                    {tags.map((tag) => {
+                      const isDisabled = disabledTagIdSet.has(tag.tagId)
+                      return (
+                        <button
+                          key={`${code}-acc-${tag.tagId}`}
+                          type="button"
+                          className={chipClass(selectedSet.has(tag.tagId), isDisabled)}
+                          onClick={() => handleToggle(tag.tagId)}
+                          disabled={isDisabled}
+                        >
+                          {tag.displayName}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -318,11 +354,13 @@ function SearchResultList({
   selectedSet,
   chipClass,
   onToggle,
+  disabledTagIdSet,
 }: Readonly<{
   accordionByCategory: Map<number, KeywordTag[]>
   selectedSet: Set<number>
-  chipClass: (selected: boolean) => string
+  chipClass: (selected: boolean, disabled?: boolean) => string
   onToggle: (tagId: number) => void
+  disabledTagIdSet: Set<number>
 }>) {
   // 同じ tag が複数カテゴリにあっても重複させて表示（チェック状態は selectedSet で連動）
   const items: { code: number; tag: KeywordTag }[] = []
@@ -332,16 +370,20 @@ function SearchResultList({
   if (items.length === 0) return null
   return (
     <div data-testid="keyword-section-search-results" className="flex flex-wrap">
-      {items.map(({ code, tag }) => (
-        <button
-          key={`search-${code}-${tag.tagId}`}
-          type="button"
-          className={chipClass(selectedSet.has(tag.tagId))}
-          onClick={() => onToggle(tag.tagId)}
-        >
-          {tag.displayName}
-        </button>
-      ))}
+      {items.map(({ code, tag }) => {
+        const isDisabled = disabledTagIdSet.has(tag.tagId)
+        return (
+          <button
+            key={`search-${code}-${tag.tagId}`}
+            type="button"
+            className={chipClass(selectedSet.has(tag.tagId), isDisabled)}
+            onClick={() => onToggle(tag.tagId)}
+            disabled={isDisabled}
+          >
+            {tag.displayName}
+          </button>
+        )
+      })}
     </div>
   )
 }
