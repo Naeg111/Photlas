@@ -140,6 +140,8 @@ final class CategoryDictionary {
             Map.entry("gate", List.of(CodeConstants.CATEGORY_ARCHITECTURE)),
             Map.entry("torii", List.of(CodeConstants.CATEGORY_ARCHITECTURE)),
             Map.entry("fence", List.of(CodeConstants.CATEGORY_ARCHITECTURE)),
+            // Issue#141 後追い: 「駅」は鉄道カテゴリではなく建造物カテゴリで判定する
+            Map.entry("train station", List.of(CodeConstants.CATEGORY_ARCHITECTURE)),
             // 夜景 (204) - Issue#132: 単独で 204 を成立させるラベル
             Map.entry("lighting", List.of(CodeConstants.CATEGORY_NIGHT_VIEW)),
             Map.entry("illumination", List.of(CodeConstants.CATEGORY_NIGHT_VIEW)),

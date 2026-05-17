@@ -231,8 +231,9 @@ public class TagService {
     }
 
     /**
-     * Issue#135: 全アクティブタグを取得し、カテゴリ紐付け付きで返す。
+     * Issue#135 + Issue#141 後追い: 全アクティブタグを取得し、カテゴリ紐付け + photoCount 付きで返す。
      * フロントは KeywordSection の文脈連動表示・アコーディオン・検索 BOX で使う。
+     * photoCount=0 のタグはフィルタ画面で非活性表示される。
      */
     @Transactional(readOnly = true)
     public List<TagListItem> listAllActiveTags(String lang) {
@@ -249,6 +250,13 @@ public class TagService {
             categoriesByTagId.computeIfAbsent(tc.getTagId(), k -> new ArrayList<>())
                     .add(tc.getCategoryCode());
         }
+        // Issue#141 後追い: tag_id → photoCount (PUBLISHED + 退会済除外)。
+        // 1 本のクエリで一括取得して N+1 を回避。0 件 tag は countMap に登場しないため getOrDefault(0L)
+        Map<Long, Long> countByTagId = new java.util.HashMap<>();
+        for (var row : photoTagRepository.countActivePublishedGroupedByTagId(
+                CodeConstants.MODERATION_STATUS_PUBLISHED)) {
+            countByTagId.put((Long) row[0], (Long) row[1]);
+        }
         return tags.stream()
                 .sorted(Comparator.comparingInt(Tag::getSortOrder).thenComparing(Tag::getSlug))
                 .map(t -> new TagListItem(
@@ -256,7 +264,8 @@ public class TagService {
                         t.getSlug(),
                         pickDisplayName(t, lang),
                         categoriesByTagId.getOrDefault(t.getId(), List.of()),
-                        t.getSortOrder()))
+                        t.getSortOrder(),
+                        countByTagId.getOrDefault(t.getId(), 0L)))
                 .toList();
     }
 
