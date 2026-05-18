@@ -64,6 +64,18 @@ export interface KeywordSectionProps {
 
 const DEFAULT_CONTEXTUAL_TOP_N = 10
 
+/**
+ * チップ表示用に displayName 末尾の「全般」サフィックスを除去する。
+ * 裏側のデータ (slug / tagId) は変えず、見た目だけ短縮する。
+ * 単独「全般」（2 文字ぴったり）は除去しない（空文字を避けるため）。
+ */
+function formatTagDisplayName(displayName: string): string {
+  if (displayName.length > 2 && displayName.endsWith('全般')) {
+    return displayName.slice(0, -2)
+  }
+  return displayName
+}
+
 export function KeywordSection({
   allTags,
   aiSuggestions,
@@ -222,7 +234,7 @@ export function KeywordSection({
                   onClick={() => handleToggle(s.tagId)}
                   disabled={isDisabled}
                 >
-                  {s.displayName}
+                  {formatTagDisplayName(s.displayName)}
                 </button>
               )
             })}
@@ -250,7 +262,7 @@ export function KeywordSection({
                       onClick={() => handleToggle(tag.tagId)}
                       disabled={isDisabled}
                     >
-                      {tag.displayName}
+                      {formatTagDisplayName(tag.displayName)}
                     </button>
                   )
                 })}
@@ -324,7 +336,7 @@ export function KeywordSection({
                           onClick={() => handleToggle(tag.tagId)}
                           disabled={isDisabled}
                         >
-                          {tag.displayName}
+                          {formatTagDisplayName(tag.displayName)}
                         </button>
                       )
                     })}
@@ -380,7 +392,7 @@ function SearchResultList({
             onClick={() => onToggle(tag.tagId)}
             disabled={isDisabled}
           >
-            {tag.displayName}
+            {formatTagDisplayName(tag.displayName)}
           </button>
         )
       })}
