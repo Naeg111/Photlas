@@ -8,6 +8,7 @@ import {
   PHOTO_CACHE_MAX_ENTRIES,
   PHOTO_CACHE_MAX_AGE_SECONDS,
   PHOTO_CACHEABLE_STATUSES,
+  NAVIGATE_FALLBACK_DENYLIST,
 } from './src/config/serviceWorkerCache'
 
 // https://vite.dev/config/
@@ -25,6 +26,9 @@ export default defineConfig({
         clientsClaim: true,
         cleanupOutdatedCaches: true,
         navigateFallback: '/index.html',
+        // Issue#99: /api/* への navigation を SW が乗っ取ると OAuth 認可エンドポイントが
+        // 404 化するため除外。詳細は serviceWorkerCache.ts の NAVIGATE_FALLBACK_DENYLIST 参照。
+        navigateFallbackDenylist: [...NAVIGATE_FALLBACK_DENYLIST],
         runtimeCaching: [
           {
             urlPattern: PHOTO_CACHE_URL_PATTERN,
