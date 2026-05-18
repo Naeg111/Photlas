@@ -26,7 +26,6 @@ const TAGS_FIXTURE = [
 function defaultProps(overrides: Partial<KeywordSectionProps> = {}): KeywordSectionProps {
   return {
     allTags: TAGS_FIXTURE,
-    aiSuggestions: [],
     selectedCategoryCodes: [],
     selectedTagIds: [],
     onSelectionChange: vi.fn(),
@@ -39,26 +38,18 @@ function defaultProps(overrides: Partial<KeywordSectionProps> = {}): KeywordSect
 describe('KeywordSection - Issue#135 Phase 9', () => {
   // ========== AI 提案エリア廃止 (旧「AI 提案小カテゴリー」エリアは「選択中の小カテゴリー」に統合) ==========
 
-  it('AI 提案エリア (keyword-section-ai-suggestions) は廃止され、いかなる props でも存在しない', () => {
-    render(
-      <KeywordSection
-        {...defaultProps({
-          aiSuggestions: [
-            { tagId: 3, slug: 'cherry-blossom', displayName: '桜', confidence: 92 },
-          ],
-        })}
-      />
-    )
+  it('AI 提案エリア (keyword-section-ai-suggestions) は廃止され存在しない', () => {
+    render(<KeywordSection {...defaultProps()} />)
     expect(screen.queryByTestId('keyword-section-ai-suggestions')).not.toBeInTheDocument()
   })
 
   it('AI 提案 tag は selectedTagIds に既に入っており、親カテゴリ選択中であれば「選択中の小カテゴリー」に表示される', () => {
+    // 投稿フローでは applyAiPrefill (PhotoContributionDialog 側) が
+    // suggestedTags を selectedTagIds に流し込み、親 category も自動選択する。
+    // KeywordSection 側はそれを受けて文脈連動エリアに表示するだけ。
     render(
       <KeywordSection
         {...defaultProps({
-          aiSuggestions: [
-            { tagId: 3, slug: 'cherry-blossom', displayName: '桜', confidence: 92 },
-          ],
           selectedTagIds: [3],
           selectedCategoryCodes: [206], // 植物
         })}
@@ -66,7 +57,6 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
     )
     const ctx = screen.getByTestId('keyword-section-contextual')
     expect(within(ctx).getByText('桜')).toBeInTheDocument()
-    // AI 提案エリアではなく文脈連動エリアにあること
     expect(screen.queryByTestId('keyword-section-ai-suggestions')).not.toBeInTheDocument()
   })
 
@@ -212,9 +202,6 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
             allTags: SUFFIX_TAGS,
             selectedCategoryCodes: [207],
             selectedTagIds: [100],
-            aiSuggestions: [
-              { tagId: 100, slug: 'bird', displayName: '野鳥全般', confidence: 92 },
-            ],
           })}
         />
       )

@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { analyzePhoto, type PhotoAnalyzeResponse } from '../utils/photoAnalyzeApi'
 import { fetchTags } from '../utils/tagsApi'
-import { KeywordSection, type KeywordTag, type KeywordSuggestion } from './KeywordSection'
+import { KeywordSection, type KeywordTag } from './KeywordSection'
 import { resizeImageToBlobForAnalyze } from '../utils/cropImageToBlob'
 import { resizeImageFile } from '../utils/resizeImageFile'
 import { CATEGORY_LABELS } from '../utils/codeConstants'
@@ -185,7 +185,6 @@ export function PhotoContributionDialog({
   const aiOriginalResponseRef = useRef<PhotoAnalyzeResponse | null>(null)
   // Issue#135: キーワード関連
   const [allTags, setAllTags] = useState<KeywordTag[]>([])
-  const [aiSuggestedTags, setAiSuggestedTags] = useState<KeywordSuggestion[]>([])
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
   // AI 提案として元々付いていた tag_id（後で assigned_by 判定に使う）
   const aiSuggestedTagIdsRef = useRef<Set<number>>(new Set())
@@ -356,15 +355,14 @@ export function PhotoContributionDialog({
     trackParentFallbackEvents(response.parentFallbacks)
     trackExifRuleFiredEvents(response.exifRulesFired)
 
-    // Issue#135: AI 提案キーワードを KeywordSection の AI チップに反映し、
-    //           デフォルトで全て選択済みにする
+    // AI 提案キーワードをデフォルトで「選択中の小カテゴリー」に追加する
+    // (旧: AI 提案エリアに別表示していたが、エリアを廃止して選択中に統合)
     const suggested = response.suggestedTags ?? []
-    setAiSuggestedTags(suggested)
     if (suggested.length > 0) {
       const suggestedIds = suggested.map((s) => s.tagId)
+      // assigned_by 判定 (Issue#132 telemetry) に AI 提案 ID を記録
       aiSuggestedTagIdsRef.current = new Set(suggestedIds)
       setSelectedTagIds((prev) => {
-        // 既存ユーザー選択を尊重しつつ AI 提案を追加（重複排除）
         const merged = new Set([...prev, ...suggestedIds])
         return Array.from(merged)
       })
@@ -958,7 +956,6 @@ export function PhotoContributionDialog({
               {/* Issue#141 Q2: 投稿フォームでは autoSelectByCategoryMode を渡さない (default false) */}
               <KeywordSection
                 allTags={allTags}
-                aiSuggestions={aiSuggestedTags}
                 selectedCategoryCodes={selectedCategories
                   .map((name) => CATEGORY_NAME_TO_ID[name])
                   .filter((id): id is number => typeof id === 'number')}

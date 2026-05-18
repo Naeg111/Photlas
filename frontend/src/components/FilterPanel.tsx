@@ -349,7 +349,6 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
             </p>
             <KeywordSection
               allTags={allTags}
-              aiSuggestions={[]}
               selectedCategoryCodes={selectedCategories
                 .map((name) => CATEGORY_NAME_TO_FILTER_CODE[name])
                 .filter((id): id is number => typeof id === 'number')}

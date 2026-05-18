@@ -39,8 +39,6 @@ export interface KeywordSuggestion {
 export interface KeywordSectionProps {
   /** 全アクティブタグ（GET /api/v1/tags の結果） */
   allTags: KeywordTag[]
-  /** AI 提案キーワード（PhotoAnalyzeResponse.suggestedTags）。空なら AI エリア非表示 */
-  aiSuggestions: KeywordSuggestion[]
   /** 文脈連動表示の起点となるカテゴリコード配列 */
   selectedCategoryCodes: number[]
   /** 現在チェック中のタグ ID 配列 */
@@ -67,7 +65,6 @@ const DEFAULT_CONTEXTUAL_TOP_N = 10
 
 export function KeywordSection({
   allTags,
-  aiSuggestions,
   selectedCategoryCodes,
   selectedTagIds,
   onSelectionChange,
