@@ -6,7 +6,7 @@ import { MapPin, Calendar } from 'lucide-react'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { PinSvg } from '../components/PinSvg'
 import { LoginDialog } from '../components/LoginDialog'
-import { Dialog, DialogContent } from '../components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Button } from '../components/ui/button'
 import { useAuth } from '../contexts/AuthContext'
 import { ApiError, getAuthHeaders } from '../utils/apiClient'
@@ -134,25 +134,38 @@ export default function ReviewLocationPage() {
     )
   }
 
-  // 未ログイン
+  // 未ログイン (#9: shadcn Dialog で他画面と統一、閉じ手段は全て封じる)
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-lg">{t('auth.loginRequired')}</p>
-        <p className="text-sm text-gray-600">{t('reviewLocation.loginRequired')}</p>
-        <button
-          className="px-4 py-2 bg-black text-white rounded-full"
-          onClick={() => setIsLoginDialogOpen(true)}
-        >
-          {t('common.login')}
-        </button>
+      <>
+        <Dialog open>
+          <DialogContent
+            hideCloseButton
+            onEscapeKeyDown={(e) => e.preventDefault()}
+            onPointerDownOutside={(e) => e.preventDefault()}
+            onInteractOutside={(e) => e.preventDefault()}
+          >
+            <DialogHeader>
+              <DialogTitle>{t('reviewLocation.confirmTitle')}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-lg">{t('auth.loginRequired')}</p>
+              <p className="text-sm text-gray-600">{t('reviewLocation.loginRequired')}</p>
+              <div className="flex justify-end">
+                <Button onClick={() => setIsLoginDialogOpen(true)}>
+                  {t('common.login')}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
         <LoginDialog
           open={isLoginDialogOpen}
           onOpenChange={setIsLoginDialogOpen}
           onShowSignUp={() => setIsLoginDialogOpen(false)}
           onShowPasswordReset={() => setIsLoginDialogOpen(false)}
         />
-      </div>
+      </>
     )
   }
 

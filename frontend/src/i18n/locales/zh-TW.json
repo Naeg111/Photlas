@@ -517,7 +517,8 @@
     "processFailed": "處理失敗",
     "accept": "接受",
     "reject": "拒絕",
-    "loginRequired": "請登入以進行審核。",
+    "confirmTitle": "拍攝地點指摘確認",
+    "loginRequired": "請登入後確認。",
     "photoAlt": "待審核的照片",
     "accepted": "已接受拍攝地點建議。",
     "rejected": "已拒絕拍攝地點建議。"

@@ -517,7 +517,8 @@
     "processFailed": "처리에 실패했습니다",
     "accept": "수락",
     "reject": "거부",
-    "loginRequired": "리뷰를 진행하려면 로그인해 주세요.",
+    "confirmTitle": "촬영 장소 지적 확인",
+    "loginRequired": "확인하려면 로그인해 주세요.",
     "photoAlt": "검토 대상 사진",
     "accepted": "촬영 장소 제안을 수락했습니다.",
     "rejected": "촬영 장소 제안을 거부했습니다."

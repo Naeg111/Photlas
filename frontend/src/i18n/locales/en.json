@@ -542,7 +542,8 @@
     "processFailed": "Processing failed",
     "accept": "Accept",
     "reject": "Reject",
-    "loginRequired": "Please log in to perform a review.",
+    "confirmTitle": "Location suggestion review",
+    "loginRequired": "Please log in to review.",
     "photoAlt": "Photo under review",
     "accepted": "The location suggestion has been accepted.",
     "rejected": "The location suggestion has been rejected."
