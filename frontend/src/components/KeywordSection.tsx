@@ -206,31 +206,6 @@ export function KeywordSection({
 
   return (
     <div data-testid="keyword-section" className="flex flex-col gap-4">
-      {/* AI 提案エリア（空配列なら非表示） */}
-      {aiSuggestions.length > 0 && (
-        <section data-testid="keyword-section-ai-suggestions">
-          <h3 className="text-sm font-semibold mb-2">
-            {t('keyword.aiSuggestions', { defaultValue: 'AI 提案小カテゴリー' })}
-          </h3>
-          <div className="flex flex-wrap">
-            {aiSuggestions.map((s) => {
-              const isDisabled = disabledTagIdSet.has(s.tagId)
-              return (
-                <button
-                  key={s.tagId}
-                  type="button"
-                  className={chipClass(selectedSet.has(s.tagId), isDisabled)}
-                  onClick={() => handleToggle(s.tagId)}
-                  disabled={isDisabled}
-                >
-                  {formatTagDisplayName(s.displayName)}
-                </button>
-              )
-            })}
-          </div>
-        </section>
-      )}
-
       {/* 文脈連動表示エリア（選択カテゴリ未指定なら非表示） */}
       {contextualByCategory.size > 0 && (
         <section data-testid="keyword-section-contextual">
