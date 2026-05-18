@@ -12,6 +12,7 @@ import { LqipPlaceholder } from './LqipPlaceholder'
 import { getAuthHeaders } from '../utils/apiClient'
 import { buildRateLimitApiError, notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { fetchPhotoTags, type PhotoTagDisplay } from '../utils/tagsApi'
+import { formatTagDisplayName } from '../utils/formatTagDisplayName'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { useAuth } from '../contexts/AuthContext'
@@ -1506,7 +1507,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                           href={`/tags/${tag.slug}?lang=${encodeURIComponent(i18n.language)}`}
                           className="inline-flex items-center px-3 py-1 rounded-full text-xs border border-gray-300 bg-gray-50 text-gray-800 hover:bg-gray-100"
                         >
-                          {tag.displayName}
+                          {formatTagDisplayName(tag.displayName)}
                         </a>
                       ))}
                     </div>
