@@ -6,6 +6,8 @@ import { MapPin, Calendar } from 'lucide-react'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
 import { PinSvg } from '../components/PinSvg'
 import { LoginDialog } from '../components/LoginDialog'
+import { Dialog, DialogContent } from '../components/ui/dialog'
+import { Button } from '../components/ui/button'
 import { useAuth } from '../contexts/AuthContext'
 import { ApiError, getAuthHeaders } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
@@ -202,20 +204,19 @@ export default function ReviewLocationPage() {
     )
   }
 
-  // 解決済み
+  // 解決済み (#11 受け入れ後 / #12 拒否後) - shadcn Dialog で他ダイアログと統一
   if (isResolved) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black/50">
-        <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+      <Dialog open onOpenChange={(open) => { if (!open) handleClose() }}>
+        <DialogContent hideCloseButton className="text-center">
           <p className="text-lg mb-6">{resolvedMessage}</p>
-          <button
-            className="px-6 py-2 bg-white text-black border border-black rounded-full"
-            onClick={handleClose}
-          >
-            {t('common.close')}
-          </button>
-        </div>
-      </div>
+          <div className="flex justify-center">
+            <Button variant="outline" onClick={handleClose}>
+              {t('common.close')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     )
   }
 
