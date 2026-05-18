@@ -108,7 +108,7 @@
       },
       "linkConfirm": {
         "title": "Link with existing account",
-        "description": "A Photlas account already exists with this email. Would you like to link {{provider}} and sign in?",
+        "description": "An account already exists with this email. Would you like to link {{provider}} and sign in?",
         "link": "Link",
         "cancel": "Cancel"
       },
