@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CATEGORY_LABELS } from '../utils/codeConstants'
+import { formatTagDisplayName } from '../utils/formatTagDisplayName'
 
 export interface KeywordTag {
   tagId: number
@@ -63,18 +64,6 @@ export interface KeywordSectionProps {
 }
 
 const DEFAULT_CONTEXTUAL_TOP_N = 10
-
-/**
- * チップ表示用に displayName 末尾の「全般」サフィックスを除去する。
- * 裏側のデータ (slug / tagId) は変えず、見た目だけ短縮する。
- * 単独「全般」（2 文字ぴったり）は除去しない（空文字を避けるため）。
- */
-function formatTagDisplayName(displayName: string): string {
-  if (displayName.length > 2 && displayName.endsWith('全般')) {
-    return displayName.slice(0, -2)
-  }
-  return displayName
-}
 
 export function KeywordSection({
   allTags,
