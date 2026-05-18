@@ -37,9 +37,9 @@ function defaultProps(overrides: Partial<KeywordSectionProps> = {}): KeywordSect
 }
 
 describe('KeywordSection - Issue#135 Phase 9', () => {
-  // ========== AI 提案 ==========
+  // ========== AI 提案エリア廃止 (旧「AI 提案小カテゴリー」エリアは「選択中の小カテゴリー」に統合) ==========
 
-  it('AI 提案チップが渡されていれば常時表示される', () => {
+  it('AI 提案エリア (keyword-section-ai-suggestions) は廃止され、いかなる props でも存在しない', () => {
     render(
       <KeywordSection
         {...defaultProps({
@@ -49,12 +49,24 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
         })}
       />
     )
-    expect(screen.getByTestId('keyword-section-ai-suggestions')).toBeInTheDocument()
-    expect(screen.getByText('桜')).toBeInTheDocument()
+    expect(screen.queryByTestId('keyword-section-ai-suggestions')).not.toBeInTheDocument()
   })
 
-  it('AI 提案が 0 件の場合は AI 提案エリアごと非表示', () => {
-    render(<KeywordSection {...defaultProps({ aiSuggestions: [] })} />)
+  it('AI 提案 tag は selectedTagIds に既に入っており、親カテゴリ選択中であれば「選択中の小カテゴリー」に表示される', () => {
+    render(
+      <KeywordSection
+        {...defaultProps({
+          aiSuggestions: [
+            { tagId: 3, slug: 'cherry-blossom', displayName: '桜', confidence: 92 },
+          ],
+          selectedTagIds: [3],
+          selectedCategoryCodes: [206], // 植物
+        })}
+      />
+    )
+    const ctx = screen.getByTestId('keyword-section-contextual')
+    expect(within(ctx).getByText('桜')).toBeInTheDocument()
+    // AI 提案エリアではなく文脈連動エリアにあること
     expect(screen.queryByTestId('keyword-section-ai-suggestions')).not.toBeInTheDocument()
   })
 
@@ -139,15 +151,13 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
     render(
       <KeywordSection
         {...defaultProps({
-          aiSuggestions: [
-            { tagId: 3, slug: 'cherry-blossom', displayName: '桜', confidence: 92 },
-          ],
+          selectedCategoryCodes: [206], // 植物カテゴリ → 桜(tagId=3)が文脈連動エリアに表示
           onSelectionChange: onChange,
         })}
       />
     )
-    // 桜のチップをクリック
-    fireEvent.click(screen.getByText('桜'))
+    const ctx = screen.getByTestId('keyword-section-contextual')
+    fireEvent.click(within(ctx).getByText('桜'))
     expect(onChange).toHaveBeenCalledWith([3])
   })
 
@@ -156,15 +166,14 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
     render(
       <KeywordSection
         {...defaultProps({
-          aiSuggestions: [
-            { tagId: 3, slug: 'cherry-blossom', displayName: '桜', confidence: 92 },
-          ],
+          selectedCategoryCodes: [206],
           selectedTagIds: [3],
           onSelectionChange: onChange,
         })}
       />
     )
-    fireEvent.click(screen.getByText('桜'))
+    const ctx = screen.getByTestId('keyword-section-contextual')
+    fireEvent.click(within(ctx).getByText('桜'))
     expect(onChange).toHaveBeenCalledWith([])
   })
 
@@ -196,20 +205,22 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
       { tagId: 102, slug: 'general', displayName: '全般', categoryCodes: [207], sortOrder: 30 },
     ]
 
-    it('AI 提案チップで「野鳥全般」→「野鳥」と表示される', () => {
+    it('AI 提案 tag が「選択中」に流れたとき、文脈連動エリアで「野鳥全般」→「野鳥」と表示される', () => {
       render(
         <KeywordSection
           {...defaultProps({
             allTags: SUFFIX_TAGS,
+            selectedCategoryCodes: [207],
+            selectedTagIds: [100],
             aiSuggestions: [
               { tagId: 100, slug: 'bird', displayName: '野鳥全般', confidence: 92 },
             ],
           })}
         />
       )
-      const ai = screen.getByTestId('keyword-section-ai-suggestions')
-      expect(within(ai).getByText('野鳥')).toBeInTheDocument()
-      expect(within(ai).queryByText('野鳥全般')).not.toBeInTheDocument()
+      const ctx = screen.getByTestId('keyword-section-contextual')
+      expect(within(ctx).getByText('野鳥')).toBeInTheDocument()
+      expect(within(ctx).queryByText('野鳥全般')).not.toBeInTheDocument()
     })
 
     it('文脈連動チップで「野鳥全般」→「野鳥」と表示される', () => {
@@ -281,14 +292,13 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
         <KeywordSection
           {...defaultProps({
             allTags: SUFFIX_TAGS,
-            aiSuggestions: [
-              { tagId: 100, slug: 'bird', displayName: '野鳥全般', confidence: 92 },
-            ],
+            selectedCategoryCodes: [207],
             onSelectionChange: onChange,
           })}
         />
       )
-      fireEvent.click(screen.getByText('野鳥'))
+      const ctx = screen.getByTestId('keyword-section-contextual')
+      fireEvent.click(within(ctx).getByText('野鳥'))
       expect(onChange).toHaveBeenCalledWith([100])
     })
   })
