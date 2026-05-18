@@ -285,6 +285,42 @@ describe('ReviewLocationPage', () => {
 
       expect(mockFetch).not.toHaveBeenCalled()
     })
+
+    // #9: 未ログイン画面をダイアログ化
+    describe('#9 ダイアログ化・タイトル・閉じ手段', () => {
+      it('未ログイン時の画面が shadcn Dialog (role="dialog") で表示される', () => {
+        renderWithToken('valid-token')
+        const dialog = screen.getByRole('dialog')
+        expect(dialog).toBeInTheDocument()
+        expect(dialog.className).toMatch(/sm:max-w-/)
+      })
+
+      it('ダイアログタイトルに「撮影場所指摘の確認」が表示される', () => {
+        renderWithToken('valid-token')
+        expect(screen.getByText('撮影場所指摘の確認')).toBeInTheDocument()
+      })
+
+      it('案内文言が「確認するにはログインしてください。」に統一されている', () => {
+        renderWithToken('valid-token')
+        expect(screen.getByText('確認するにはログインしてください。')).toBeInTheDocument()
+        // 旧文言が消えていること
+        expect(screen.queryByText('レビューを行うにはログインしてください。')).not.toBeInTheDocument()
+      })
+
+      it('ログインボタンが shadcn Button (rounded-md・rounded-full は無し) で表示される', () => {
+        renderWithToken('valid-token')
+        const btn = screen.getByRole('button', { name: 'ログイン' })
+        expect(btn.className).toContain('rounded-md')
+        expect(btn.className).not.toContain('rounded-full')
+      })
+
+      it('閉じる手段がない: 右上 X ボタンが存在しない', () => {
+        renderWithToken('valid-token')
+        // shadcn Dialog の組込み close は accessible name "Close" を持つ。
+        // hideCloseButton 有効化でこの要素自体が存在しないことを期待。
+        expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument()
+      })
+    })
   })
 
   // Issue#96 PR2c: 429 レート制限ハンドリング（パターンA: インラインメッセージ + ボタンcooldown）
