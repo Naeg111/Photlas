@@ -22,7 +22,7 @@ function NotFoundPage() {
         </p>
         <Link
           to="/"
-          className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 inline-block"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 px-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary inline-block"
         >
           {t('pages.backToHome')}
         </Link>
