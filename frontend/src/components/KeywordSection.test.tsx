@@ -186,6 +186,112 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
     fireEvent.click(within(ctx).getByText('桜'))
     expect(onChange).not.toHaveBeenCalled()
   })
+
+  // ========== 「〜全般」表示削除（裏側は維持） ==========
+
+  describe('「〜全般」サフィックス表示削除', () => {
+    const SUFFIX_TAGS = [
+      { tagId: 100, slug: 'bird', displayName: '野鳥全般', categoryCodes: [207], sortOrder: 10 },
+      { tagId: 101, slug: 'kingfisher', displayName: 'カワセミ', categoryCodes: [207], sortOrder: 20 },
+      { tagId: 102, slug: 'general', displayName: '全般', categoryCodes: [207], sortOrder: 30 },
+    ]
+
+    it('AI 提案チップで「野鳥全般」→「野鳥」と表示される', () => {
+      render(
+        <KeywordSection
+          {...defaultProps({
+            allTags: SUFFIX_TAGS,
+            aiSuggestions: [
+              { tagId: 100, slug: 'bird', displayName: '野鳥全般', confidence: 92 },
+            ],
+          })}
+        />
+      )
+      const ai = screen.getByTestId('keyword-section-ai-suggestions')
+      expect(within(ai).getByText('野鳥')).toBeInTheDocument()
+      expect(within(ai).queryByText('野鳥全般')).not.toBeInTheDocument()
+    })
+
+    it('文脈連動チップで「野鳥全般」→「野鳥」と表示される', () => {
+      render(
+        <KeywordSection
+          {...defaultProps({
+            allTags: SUFFIX_TAGS,
+            selectedCategoryCodes: [207],
+          })}
+        />
+      )
+      const ctx = screen.getByTestId('keyword-section-contextual')
+      expect(within(ctx).getByText('野鳥')).toBeInTheDocument()
+      expect(within(ctx).queryByText('野鳥全般')).not.toBeInTheDocument()
+      // 別タグ「カワセミ」は変化なし
+      expect(within(ctx).getByText('カワセミ')).toBeInTheDocument()
+    })
+
+    it('アコーディオン展開時のチップでも「野鳥全般」→「野鳥」と表示される', () => {
+      render(<KeywordSection {...defaultProps({ allTags: SUFFIX_TAGS })} />)
+      fireEvent.click(screen.getByTestId('keyword-section-more-toggle'))
+      // 207 アコーディオンを開く
+      const accordion = screen.getByTestId('keyword-accordion-207')
+      fireEvent.click(within(accordion).getByRole('button'))
+      expect(within(accordion).getByText('野鳥')).toBeInTheDocument()
+      expect(within(accordion).queryByText('野鳥全般')).not.toBeInTheDocument()
+    })
+
+    it('検索結果一覧でも「野鳥全般」→「野鳥」と表示される', () => {
+      render(<KeywordSection {...defaultProps({ allTags: SUFFIX_TAGS })} />)
+      fireEvent.click(screen.getByTestId('keyword-section-more-toggle'))
+      const input = screen.getByTestId('keyword-section-search-input') as HTMLInputElement
+      // slug 'bird' でヒット（displayName は表示後でないと検索できないが slug でもヒット）
+      fireEvent.change(input, { target: { value: 'bird' } })
+      const results = screen.getByTestId('keyword-section-search-results')
+      expect(within(results).getByText('野鳥')).toBeInTheDocument()
+      expect(within(results).queryByText('野鳥全般')).not.toBeInTheDocument()
+    })
+
+    it('「全般」サフィックスを持たないタグは表示が変わらない', () => {
+      render(
+        <KeywordSection
+          {...defaultProps({
+            allTags: SUFFIX_TAGS,
+            selectedCategoryCodes: [207],
+          })}
+        />
+      )
+      const ctx = screen.getByTestId('keyword-section-contextual')
+      expect(within(ctx).getByText('カワセミ')).toBeInTheDocument()
+    })
+
+    it('単独「全般」のみの displayName は除去せず元のまま表示する（空文字回避）', () => {
+      render(
+        <KeywordSection
+          {...defaultProps({
+            allTags: SUFFIX_TAGS,
+            selectedCategoryCodes: [207],
+          })}
+        />
+      )
+      const ctx = screen.getByTestId('keyword-section-contextual')
+      expect(within(ctx).getByText('全般')).toBeInTheDocument()
+    })
+
+    it('裏側の onSelectionChange は元の tagId を維持する（表示削除しても ID は不変）', () => {
+      const onChange = vi.fn()
+      render(
+        <KeywordSection
+          {...defaultProps({
+            allTags: SUFFIX_TAGS,
+            aiSuggestions: [
+              { tagId: 100, slug: 'bird', displayName: '野鳥全般', confidence: 92 },
+            ],
+            onSelectionChange: onChange,
+          })}
+        />
+      )
+      fireEvent.click(screen.getByText('野鳥'))
+      expect(onChange).toHaveBeenCalledWith([100])
+    })
+  })
 })
 
 // ========== Issue#141 Phase 6: autoSelectByCategoryMode ==========
