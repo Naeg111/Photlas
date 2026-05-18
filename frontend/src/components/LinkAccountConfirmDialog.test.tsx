@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import LinkAccountConfirmDialog from './LinkAccountConfirmDialog'
+import i18nInstance from '../i18n/index'
 
 const mockFetch = vi.fn()
 
@@ -94,5 +95,34 @@ describe('LinkAccountConfirmDialog', () => {
     expect(onClose).toHaveBeenCalled()
     expect(onLinked).not.toHaveBeenCalled()
     expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  describe('文言修正 (Photlas 表記削除・provider 前後スペース調整)', () => {
+    it('ja の説明文は「Photlas」を含まない', () => {
+      const bundle = i18nInstance.getResourceBundle('ja', 'translation')
+      expect(bundle.auth.oauth.linkConfirm.description).not.toContain('Photlas')
+    })
+
+    it('ja の説明文は新仕様の文言と一致する', () => {
+      const bundle = i18nInstance.getResourceBundle('ja', 'translation')
+      expect(bundle.auth.oauth.linkConfirm.description).toBe(
+        'このメールアドレスで登録されたアカウントが既に存在します。{{provider}}と連携してログインしますか？'
+      )
+    })
+
+    it('en の説明文は「Photlas」を含まない', () => {
+      const bundle = i18nInstance.getResourceBundle('en', 'translation')
+      expect(bundle.auth.oauth.linkConfirm.description).not.toContain('Photlas')
+    })
+
+    it('zh-CN / zh-TW / ko にも linkConfirm キーが定義済みで非空である', () => {
+      for (const lng of ['zh-CN', 'zh-TW', 'ko']) {
+        const bundle = i18nInstance.getResourceBundle(lng, 'translation')
+        expect(bundle?.auth?.oauth?.linkConfirm?.title, `${lng}: title`).toBeTruthy()
+        expect(bundle?.auth?.oauth?.linkConfirm?.description, `${lng}: description`).toBeTruthy()
+        expect(bundle?.auth?.oauth?.linkConfirm?.link, `${lng}: link`).toBeTruthy()
+        expect(bundle?.auth?.oauth?.linkConfirm?.cancel, `${lng}: cancel`).toBeTruthy()
+      }
+    })
   })
 })
