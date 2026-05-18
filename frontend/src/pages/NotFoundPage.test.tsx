@@ -43,4 +43,18 @@ describe('NotFoundPage', () => {
 
     expect(document.title).toBe('ページが見つかりません - Photlas')
   })
+
+  it('「トップページへ戻る」ボタンが Photlas プライマリ配色（背景黒・文字白）を採用している', () => {
+    render(
+      <MemoryRouter>
+        <NotFoundPage />
+      </MemoryRouter>
+    )
+
+    const link = screen.getByText('トップページへ戻る').closest('a')
+    expect(link).not.toBeNull()
+    expect(link?.className).toContain('bg-primary')
+    expect(link?.className).toContain('text-primary-foreground')
+    expect(link?.className).not.toContain('bg-blue-500')
+  })
 })
