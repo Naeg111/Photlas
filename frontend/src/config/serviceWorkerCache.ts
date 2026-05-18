@@ -56,3 +56,28 @@ export const PHOTO_CACHE_MAX_AGE_SECONDS = SECONDS_PER_DAY * 30
  * どちらも許容する。
  */
 export const PHOTO_CACHEABLE_STATUSES: readonly number[] = [0, 200]
+
+/**
+ * Issue#99 (2026-05-18): Workbox `navigateFallback` から除外するパスのパターン。
+ *
+ * 背景:
+ * Workbox の `navigateFallback: '/index.html'` は同一オリジンの navigation request
+ * （ブラウザのアドレスバー遷移、`window.location.href = ...` 等）をすべて拾って
+ * `/index.html` を返す。これは SPA のクライアントサイドルーティング向けの仕組み。
+ *
+ * 問題:
+ * OAuth ログインボタンは `window.location.href = '/api/v1/auth/oauth2/authorization/google'`
+ * のようにバックエンドの認可エンドポイントへ navigate するが、これも navigation request
+ * のため Service Worker が乗っ取って `/index.html` を返してしまう。
+ * SPA は当該パスにマッチするルートを持たないため NotFoundPage を表示し、
+ * 「ボタンを押した瞬間 404」というユーザー体験になる（本番投入時に判明）。
+ *
+ * 対策:
+ * `/api/` 配下を denylist に入れて Service Worker をバイパスさせ、
+ * バックエンドの 302 リダイレクトをブラウザに直接返す。
+ *
+ * 注意:
+ * `/^\/api\//` は `/api/...` のみマッチし、`/api-docs` のような SPA ルート名は
+ * マッチしない（`/api` の直後に `/` が必要）。
+ */
+export const NAVIGATE_FALLBACK_DENYLIST: readonly RegExp[] = [/^\/api\//]

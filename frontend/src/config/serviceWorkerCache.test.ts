@@ -12,6 +12,7 @@ import {
   PHOTO_CACHE_MAX_ENTRIES,
   PHOTO_CACHE_MAX_AGE_SECONDS,
   PHOTO_CACHEABLE_STATUSES,
+  NAVIGATE_FALLBACK_DENYLIST,
 } from './serviceWorkerCache'
 
 describe('PHOTO_CACHE_URL_PATTERN', () => {
@@ -102,5 +103,44 @@ describe('PHOTO_CACHEABLE_STATUSES', () => {
   it('Issue#129 - エラーレスポンスはキャッシュしない（404 / 500 等を含めない）', () => {
     expect(PHOTO_CACHEABLE_STATUSES).not.toContain(404)
     expect(PHOTO_CACHEABLE_STATUSES).not.toContain(500)
+  })
+})
+
+describe('NAVIGATE_FALLBACK_DENYLIST', () => {
+  // Workbox の navigateFallback は同一オリジンの navigation request を
+  // すべて index.html にすり替える。/api/ 配下を denylist で除外しないと
+  // window.location.href = '/api/v1/auth/oauth2/authorization/google' のような
+  // バックエンド向けの遷移まで SPA が乗っ取って NotFoundPage を表示してしまう。
+
+  const matches = (path: string): boolean =>
+    NAVIGATE_FALLBACK_DENYLIST.some((pattern) => pattern.test(path))
+
+  describe('Issue#99 - SW がバイパスすべき（バックエンドへ素通しする）パス', () => {
+    it.each([
+      ['Google OAuth 認可', '/api/v1/auth/oauth2/authorization/google'],
+      ['LINE OAuth 認可', '/api/v1/auth/oauth2/authorization/line'],
+      ['Google OAuth コールバック', '/api/v1/auth/oauth2/callback/google'],
+      ['LINE OAuth コールバック', '/api/v1/auth/oauth2/callback/line'],
+      ['通常 API', '/api/v1/spots'],
+      ['ヘルスチェック', '/api/v1/health'],
+    ])('%s: %s', (_label, path) => {
+      expect(matches(path)).toBe(true)
+    })
+  })
+
+  describe('Issue#99 - SW がフォールバックすべき（index.html を返す）SPA ルート', () => {
+    it.each([
+      ['トップ', '/'],
+      ['OAuth コールバック画面', '/oauth/callback'],
+      ['About', '/about'],
+      ['プライバシーポリシー', '/privacy-policy'],
+      ['利用規約', '/terms-of-service'],
+      ['パスワードリセット', '/reset-password'],
+      ['メール認証', '/verify-email'],
+      ['写真ビューア', '/photo-viewer/123'],
+      ['ApiKey 名前空間を含むが SPA ルート', '/api-docs'],
+    ])('%s: %s', (_label, path) => {
+      expect(matches(path)).toBe(false)
+    })
   })
 })
