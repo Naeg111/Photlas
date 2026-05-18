@@ -88,7 +88,13 @@
       "continueWithGoogle": "使用 Google 繼續",
       "continueWithLine": "使用 LINE 繼續",
       "consentNotice": "選擇即表示您同意服務條款和隱私政策",
-      "dividerOr": "或"
+      "dividerOr": "或",
+      "linkConfirm": {
+        "title": "與現有帳號連結",
+        "description": "已存在使用此電子郵件註冊的帳號。是否要連結{{provider}}並登入？",
+        "link": "連結",
+        "cancel": "取消"
+      }
     },
     "privacyPolicy": "隱私政策",
     "ageConfirmation": "我已年滿13歲",

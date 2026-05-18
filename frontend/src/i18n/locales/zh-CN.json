@@ -88,7 +88,13 @@
       "continueWithGoogle": "使用 Google 继续",
       "continueWithLine": "使用 LINE 继续",
       "consentNotice": "选择即表示您同意服务条款和隐私政策",
-      "dividerOr": "或"
+      "dividerOr": "或",
+      "linkConfirm": {
+        "title": "与现有账户关联",
+        "description": "已存在使用此邮箱注册的账户。是否要关联{{provider}}并登录？",
+        "link": "关联",
+        "cancel": "取消"
+      }
     },
     "privacyPolicy": "隐私政策",
     "ageConfirmation": "我已年满 13 周岁",
