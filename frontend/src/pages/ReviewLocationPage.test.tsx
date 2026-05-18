@@ -187,6 +187,66 @@ describe('ReviewLocationPage', () => {
     expect(screen.getByRole('button', { name: '閉じる' })).toBeInTheDocument()
   })
 
+  // #11+#12: 受け入れ/拒否完了ダイアログのスタイル統一
+  describe('受け入れ/拒否完了ダイアログのスタイル統一 (shadcn DialogContent + Button)', () => {
+    it('受け入れダイアログは shadcn Dialog (role="dialog") で実装され、既定幅 sm:max-w-[552px] を持つ', async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => mockReviewData })
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ message: 'ok' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        )
+      renderWithToken('valid-token')
+      const user = userEvent.setup()
+      await user.click(await screen.findByRole('button', { name: '受け入れる' }))
+      // shadcn Dialog は role="dialog" を持つ
+      const dialog = await screen.findByRole('dialog')
+      expect(dialog).toBeInTheDocument()
+      // 他ダイアログと同じ 552px 既定幅 (sm: ブレイクポイント)
+      expect(dialog.className).toMatch(/sm:max-w-/)
+    })
+
+    it('受け入れダイアログの「閉じる」ボタンは shadcn Button (rounded-md) を採用する', async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => mockReviewData })
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ message: 'ok' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        )
+      renderWithToken('valid-token')
+      const user = userEvent.setup()
+      await user.click(await screen.findByRole('button', { name: '受け入れる' }))
+      const closeBtn = await screen.findByRole('button', { name: '閉じる' })
+      // shadcn Button の基本クラス
+      expect(closeBtn.className).toContain('rounded-md')
+      // 旧スタイルの rounded-full は削除されている
+      expect(closeBtn.className).not.toContain('rounded-full')
+    })
+
+    it('拒否ダイアログも同様に shadcn Dialog + rounded-md ボタンを採用する', async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => mockReviewData })
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ message: 'ok' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        )
+      renderWithToken('valid-token')
+      const user = userEvent.setup()
+      await user.click(await screen.findByRole('button', { name: '拒否する' }))
+      const dialog = await screen.findByRole('dialog')
+      expect(dialog.className).toMatch(/sm:max-w-/)
+      const closeBtn = await screen.findByRole('button', { name: '閉じる' })
+      expect(closeBtn.className).toContain('rounded-md')
+      expect(closeBtn.className).not.toContain('rounded-full')
+    })
+  })
+
   // ============================================================
   // 未ログイン時のログイン案内テスト
   // ============================================================
