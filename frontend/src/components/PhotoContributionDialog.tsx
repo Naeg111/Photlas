@@ -718,10 +718,9 @@ export function PhotoContributionDialog({
                         crop={crop}
                         zoom={cropZoom}
                         aspect={1}
-                        // Issue#131 Cycle2: 画像が常にコンテナを覆うように cover 指定。
-                        // 既定の contain だとモバイルで画像が縮小表示され、
-                        // クロップ枠線が画像の外側に来て視認できなくなる
-                        objectFit="cover"
+                        // Issue#131 Cycle4: cover を撤回し既定の contain に戻す。
+                        // コンテナ内に画像全体がスクロールなしで収まり、
+                        // クロップ枠は画像の中に収まる形で表示される。
                         showGrid
                         // Issue#131（モバイル枠表示修正）: onMediaLoaded で得た mediaSize の
                         // 短辺を整数値に切り捨てて cropSize へ明示指定する（後述 onMediaLoaded 参照）。
@@ -769,7 +768,7 @@ export function PhotoContributionDialog({
                     <Button
                       variant="destructive"
                       size="icon"
-                      className="absolute top-2 right-2 z-10"
+                      className="absolute top-2 right-2 z-20"
                       onClick={handleRemovePhoto}
                       aria-label={t('common.delete')}
                     >
