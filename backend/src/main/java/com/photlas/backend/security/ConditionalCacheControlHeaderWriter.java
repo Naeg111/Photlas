@@ -75,6 +75,10 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
             new CacheableRule(Pattern.compile("/api/v1/sitemap\\.xml"), 3600),
             new CacheableRule(Pattern.compile("/api/v1/sitemap-static\\.xml"), 3600),
             new CacheableRule(Pattern.compile("/api/v1/sitemap-photos-[^/]+\\.xml"), 3600),
+            // GSC「サイトマップ: 一時的な処理エラー」対策: 131KB / 965 URL のため
+            // キャッシュ無しではクローラ取得時にタイムアウトしうる。他サイトマップと
+            // 同じ 3600 秒キャッシュに揃える (Issue#127 から追加漏れていた)。
+            new CacheableRule(Pattern.compile("/api/v1/sitemap-tags\\.xml"), 3600),
             new CacheableRule(Pattern.compile("/api/v1/users/\\d+"), 60),
             new CacheableRule(Pattern.compile("/api/v1/users/\\d+/photos"), 60)
     );
