@@ -703,62 +703,67 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
       const publishedSpots = await response.json()
 
+      // 緊急対応: /spots 結果は即座に画面反映し、mine-pending の完走は待たない。
+      // 旧実装は mine-pending が ALB idle timeout (60 秒) で hang するとピン表示も
+      // 60 秒遅延していた。published を先出ししてから mine-pending を背景で取得し、
+      // 完了次第マージする方式に変更。
+      setSpots(publishedSpots)
+
       // Issue#127: 認証済みユーザーは自分の PENDING 投稿があるスポットを別 API で取得して
       // マージする。重い /spots は CloudFront 共有キャッシュを保ちつつ、本人差分だけを
       // 軽量に取得する（他人の PENDING はバックエンドで除外されるためここでは何もしない）。
       const auth = getAuthHeaders()
       const isAuthenticated = 'Authorization' in auth
-      let merged = publishedSpots
-      if (isAuthenticated) {
-        // bounds と filter は /spots と完全に同じ条件で取りに行く
-        // （ただしモデレーション状態と本人 user_id でさらに絞られる）
-        // Issue#141 Phase 5: 全フィルタを mine-pending にも転送 (UX 一貫性, Q-new-5/7)
-        const mineParams = new URLSearchParams({
-          north: bounds.getNorth().toString(),
-          south: bounds.getSouth().toString(),
-          east: bounds.getEast().toString(),
-          west: bounds.getWest().toString(),
-        })
-        if (filterParams) {
-          appendArrayParams(mineParams, 'subject_categories', filterParams.subject_categories)
-          appendArrayParams(mineParams, 'months', filterParams.months)
-          appendArrayParams(mineParams, 'times_of_day', filterParams.times_of_day)
-          appendArrayParams(mineParams, 'weathers', filterParams.weathers)
-          appendArrayParams(mineParams, 'device_types', filterParams.device_types)
-          appendScalarParam(mineParams, 'max_age_days', filterParams.max_age_days)
-          appendArrayParams(mineParams, 'aspect_ratios', filterParams.aspect_ratios)
-          appendArrayParams(mineParams, 'focal_length_ranges', filterParams.focal_length_ranges)
-          appendScalarParam(mineParams, 'max_iso', filterParams.max_iso)
-          appendArrayParams(mineParams, 'tag_ids', filterParams.tag_ids)
-        }
-        try {
-          const mineResponse = await fetch(`${API_V1_URL}/spots/mine-pending?${mineParams}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              ...auth,
-            },
-          })
-          if (mineResponse.ok) {
-            const minePending = await mineResponse.json()
-            if (Array.isArray(minePending) && minePending.length > 0) {
-              // spotId 衝突時は published を優先（既に公開済みのものに重ねない）。
-              // mine-pending 専用の spot（新規投稿でまだ他に PUBLISHED 写真がない場所）
-              // だけが新しく追加される。
-              const publishedIds = new Set(publishedSpots.map((s: { spotId: number }) => s.spotId))
-              const additions = minePending.filter(
-                (s: { spotId: number }) => !publishedIds.has(s.spotId)
-              )
-              merged = [...publishedSpots, ...additions]
-            }
-          }
-          // mine-pending 失敗（401/5xx 等）は無視して published 結果だけ表示する
-        } catch {
-          // ネットワーク等の例外も同様に無視
-        }
+      if (!isAuthenticated) return
+
+      // bounds と filter は /spots と完全に同じ条件で取りに行く
+      // （ただしモデレーション状態と本人 user_id でさらに絞られる）
+      // Issue#141 Phase 5: 全フィルタを mine-pending にも転送 (UX 一貫性, Q-new-5/7)
+      const mineParams = new URLSearchParams({
+        north: bounds.getNorth().toString(),
+        south: bounds.getSouth().toString(),
+        east: bounds.getEast().toString(),
+        west: bounds.getWest().toString(),
+      })
+      if (filterParams) {
+        appendArrayParams(mineParams, 'subject_categories', filterParams.subject_categories)
+        appendArrayParams(mineParams, 'months', filterParams.months)
+        appendArrayParams(mineParams, 'times_of_day', filterParams.times_of_day)
+        appendArrayParams(mineParams, 'weathers', filterParams.weathers)
+        appendArrayParams(mineParams, 'device_types', filterParams.device_types)
+        appendScalarParam(mineParams, 'max_age_days', filterParams.max_age_days)
+        appendArrayParams(mineParams, 'aspect_ratios', filterParams.aspect_ratios)
+        appendArrayParams(mineParams, 'focal_length_ranges', filterParams.focal_length_ranges)
+        appendScalarParam(mineParams, 'max_iso', filterParams.max_iso)
+        appendArrayParams(mineParams, 'tag_ids', filterParams.tag_ids)
       }
 
-      setSpots(merged)
+      // 背景で mine-pending を取得 → 完了次第 spots にマージ。失敗・hang は無視する。
+      fetch(`${API_V1_URL}/spots/mine-pending?${mineParams}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...auth,
+        },
+      })
+        .then(async (mineResponse) => {
+          if (!mineResponse.ok) return
+          const minePending = await mineResponse.json()
+          if (!Array.isArray(minePending) || minePending.length === 0) return
+          // spotId 衝突時は published を優先（既に公開済みのものに重ねない）。
+          // mine-pending 専用の spot（新規投稿でまだ他に PUBLISHED 写真がない場所）
+          // だけが新しく追加される。
+          const publishedIds = new Set(publishedSpots.map((s: { spotId: number }) => s.spotId))
+          const additions = minePending.filter(
+            (s: { spotId: number }) => !publishedIds.has(s.spotId)
+          )
+          if (additions.length > 0) {
+            setSpots([...publishedSpots, ...additions])
+          }
+        })
+        .catch(() => {
+          // mine-pending 失敗 / hang はピン表示に影響させない
+        })
     } catch {
       setShowToast(true)
       setTimeout(() => setShowToast(false), TOAST_DURATION_MS)
