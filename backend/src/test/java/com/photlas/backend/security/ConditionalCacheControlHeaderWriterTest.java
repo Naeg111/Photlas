@@ -87,6 +87,17 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
+    @DisplayName("[緊急] GSC サイトマップ処理エラー対策 - GET /api/v1/sitemap-tags.xml も max-age=3600 でキャッシュ可能化")
+    void sitemapTagsGet200ShouldBeCacheable3600() throws Exception {
+        MockHttpServletResponse res = invokeForGet("/api/v1/sitemap-tags.xml", 200);
+
+        assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=3600");
+        // Pragma/Expires も空に上書きされている (CloudFront キャッシュ阻害回避)
+        assertThat(res.getHeader(HttpHeaders.PRAGMA)).isEmpty();
+        assertThat(res.getHeader(HttpHeaders.EXPIRES)).isEmpty();
+    }
+
+    @Test
     @DisplayName("Issue#127 (g) - GET /api/v1/users/{userId} は max-age=60 でキャッシュ可能化")
     void usersByIdGet200ShouldBeCacheable60() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/users/123", 200);
