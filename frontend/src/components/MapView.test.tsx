@@ -379,6 +379,40 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(ids).toContain(MINE_PENDING_SPOT.spotId)
       })
     })
+
+    /**
+     * 緊急対応: mine-pending が遅延 (ALB idle timeout = 約 60 秒) しても、
+     * /spots の published ピンはそれを待たずに先に表示されるべき。
+     * 直列 await により mine-pending の完了まで setSpots が呼ばれない
+     * 旧実装ではこのテストは waitFor タイムアウトで失敗する。
+     */
+    it('mine-pending が hang しても /spots のピンは先に表示される (1 分遅延の回帰防止)', async () => {
+      ;(localStorage.getItem as any).mockImplementation((key: string) =>
+        key === 'auth_token' ? 'fake-token-127' : null
+      )
+      // mine-pending は永遠に resolve しない Promise を返す (hang 状態を模擬)
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/spots/mine-pending')) {
+          return new Promise(() => {
+            // never resolves / rejects
+          })
+        }
+        return Promise.resolve({ ok: true, json: async () => [TEST_SPOT] })
+      })
+      global.fetch = mockFetch
+
+      render(<MapView />)
+
+      // mine-pending を待たずに、/spots の 1 件のピンが setData されること
+      await waitFor(
+        () => {
+          const features = mockSourceData.lastSetData?.features ?? []
+          const ids = features.map((f: any) => f.properties?.spotId)
+          expect(ids).toContain(TEST_SPOT.spotId)
+        },
+        { timeout: 3000 } // 旧実装の 60 秒 hang 前に到達することを担保
+      )
+    })
   })
 
   describe('パフォーマンス最適化', () => {
