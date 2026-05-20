@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -50,6 +51,7 @@ class TagPageControllerTest {
     @Autowired private PhotoTagRepository photoTagRepository;
     @Autowired private TagCategoryRepository tagCategoryRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private com.photlas.backend.service.S3Service s3Service;
 
     private Tag cherry;
     private User activeUser;
@@ -569,5 +571,67 @@ class TagPageControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(model().attributeExists("relatedTags"))
                 .andExpect(model().attribute("relatedTags", hasSize(2)));
+    }
+
+    // ===== Issue#136 §9: 絶対 URL 化（hreflang/canonical）＋ OGP 補完 =====
+
+    @Test
+    @DisplayName("Issue#136 §9 - canonicalUrl が絶対 URL（app.frontend-url 前置）")
+    void canonicalUrl_isAbsolute() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute(
+                        "canonicalUrl", "https://photlas.jp/tags/cherry-blossom?lang=ja"));
+    }
+
+    @Test
+    @DisplayName("Issue#136 §9 - hreflang が絶対 URL（Google は hreflang に絶対 URL を要求）")
+    void hreflang_isAbsolute() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("hreflangs",
+                        hasEntry("ja", "https://photlas.jp/tags/cherry-blossom?lang=ja")))
+                .andExpect(model().attribute("hreflangs",
+                        hasEntry("en", "https://photlas.jp/tags/cherry-blossom?lang=en")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 §9 - og:url が絶対 canonical URL として出力される")
+    void ogUrl_isAbsoluteCanonical() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(
+                        "property=\"og:url\" content=\"https://photlas.jp/tags/cherry-blossom?lang=ja\"")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 §9 - 写真ありタグの og:image は先頭写真のサムネ")
+    void ogImage_isFirstPhotoThumbnail() throws Exception {
+        Photo p = createPublishedPhoto();
+        link(p, cherry);
+        String expected = s3Service.generateThumbnailCdnUrl(p.getS3ObjectKey());
+
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("ogImage", expected));
+    }
+
+    @Test
+    @DisplayName("Issue#136 §9 - 写真0件タグの og:image はブランドロゴ og-image.png にフォールバック")
+    void ogImage_fallsBackToOgImagePngWhenEmpty() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("ogImage", "https://photlas.jp/og-image.png"))
+                .andExpect(content().string(containsString(
+                        "property=\"og:image\" content=\"https://photlas.jp/og-image.png\"")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 §9 - twitter:card は summary_large_image（横長カード）")
+    void twitterCard_isSummaryLargeImage() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(
+                        "name=\"twitter:card\" content=\"summary_large_image\"")));
     }
 }
