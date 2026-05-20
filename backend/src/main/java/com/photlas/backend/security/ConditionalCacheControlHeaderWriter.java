@@ -80,7 +80,11 @@ public class ConditionalCacheControlHeaderWriter extends OncePerRequestFilter {
             // 同じ 3600 秒キャッシュに揃える (Issue#127 から追加漏れていた)。
             new CacheableRule(Pattern.compile("/api/v1/sitemap-tags\\.xml"), 3600),
             new CacheableRule(Pattern.compile("/api/v1/users/\\d+"), 60),
-            new CacheableRule(Pattern.compile("/api/v1/users/\\d+/photos"), 60)
+            new CacheableRule(Pattern.compile("/api/v1/users/\\d+/photos"), 60),
+            // Issue#136 §9: /tags/{slug} SSR ランディング（Spring Security の no-cache を上書きして CDN キャッシュ可能化）
+            new CacheableRule(Pattern.compile("/tags/[^/]+"), 300),
+            // Issue#58 §6: /photo-viewer/{id} OGP 差し込みページ
+            new CacheableRule(Pattern.compile("/photo-viewer/[^/]+"), 300)
     );
 
     @Override

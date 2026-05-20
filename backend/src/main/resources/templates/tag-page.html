@@ -20,10 +20,18 @@
           th:hreflang="${entry.key}"
           th:href="${entry.value}" />
 
-    <!-- OGP -->
+    <!-- OGP (Issue#136 §9: og:url/og:image 補完。og:image=先頭写真 or og-image.png) -->
     <meta property="og:title" th:content="${title}" />
     <meta property="og:description" th:content="${description}" />
     <meta property="og:type" content="website" />
+    <meta property="og:url" th:content="${canonicalUrl}" />
+    <meta property="og:image" th:content="${ogImage}" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" th:content="${title}" />
+    <meta name="twitter:description" th:content="${description}" />
+    <meta name="twitter:image" th:content="${ogImage}" />
 
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
