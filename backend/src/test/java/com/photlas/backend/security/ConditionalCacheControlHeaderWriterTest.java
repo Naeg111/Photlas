@@ -113,6 +113,26 @@ class ConditionalCacheControlHeaderWriterTest {
         assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=60");
     }
 
+    @Test
+    @DisplayName("Issue#136 §9 - GET /tags/{slug} (SSR ランディング) は max-age=300 でキャッシュ可能化")
+    void tagPageGet200ShouldBeCacheable300() throws Exception {
+        MockHttpServletResponse res = invokeForGet("/tags/cherry-blossom", 200);
+
+        assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=300");
+        assertThat(res.getHeader(HttpHeaders.PRAGMA)).isEmpty();
+        assertThat(res.getHeader(HttpHeaders.EXPIRES)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#58 §6 - GET /photo-viewer/{id} (OGP/SPA) は max-age=300 でキャッシュ可能化")
+    void photoViewerGet200ShouldBeCacheable300() throws Exception {
+        MockHttpServletResponse res = invokeForGet("/photo-viewer/123", 200);
+
+        assertThat(res.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("public, max-age=300");
+        assertThat(res.getHeader(HttpHeaders.PRAGMA)).isEmpty();
+        assertThat(res.getHeader(HttpHeaders.EXPIRES)).isEmpty();
+    }
+
     // ============================================================
     // (i)〜(m) キャッシュしない（no-cache のまま）
     // ============================================================
