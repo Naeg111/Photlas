@@ -66,37 +66,10 @@ services:
         tag: "{{.Name}}"
         awslogs-create-group: "true"
 
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:1.25-alpine
-    container_name: photlas-nginx-prod
-    restart: unless-stopped
-    mem_limit: 256m
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-    depends_on:
-      frontend:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-    networks:
-      - photlas-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    logging:
-      driver: awslogs
-      options:
-        awslogs-region: ${AWS_REGION:-ap-northeast-1}
-        awslogs-group: /photlas/prod/nginx
-        tag: "{{.Name}}"
-        awslogs-create-group: "true"
+  # Issue#136 §9.3.5 / #58 §6.3: リバースプロキシ nginx は撤去。
+  # 配信は CloudFront -> S3（静的）/ ALB -> backend:8080（/api,/tags,/photo-viewer）。
+  # nginx には CloudFront/ALB のどちらからもトラフィックが届かないため死蔵だった。
+  # TLS も CloudFront の ACM 証明書で終端するため Let's Encrypt/certbot も不要。
 
 networks:
   photlas-network:
