@@ -366,6 +366,18 @@ jobs:
         [ "$COUNT" -ge 5 ] || { echo "FAIL: /tags が SSR を返していません（S3 殻の疑い）"; exit 1; }
         echo "/tags SSR smoke OK"
 
+    # Issue#58 §6: /photo-viewer の個別 OGP 差し込み（backend 到達）の再発防止スモーク。
+    # 公開写真 1 件で og:url が /photo-viewer/{id} に差し替わっているか検証（S3 殻なら site root のまま）。
+    - name: OGP smoke test (/photo-viewer)
+      run: |
+        PID=$(curl -s https://test.photlas.jp/api/v1/sitemap-photos-0.xml | grep -o '/photo-viewer/[0-9]*' | head -1 | grep -o '[0-9]*' || true)
+        echo "smoke photo id: ${PID:-(none)}"
+        if [ -z "$PID" ]; then echo "公開写真が無いためスキップ"; exit 0; fi
+        OGURL=$(curl -s "https://test.photlas.jp/photo-viewer/$PID" | grep -o '<meta property="og:url" content="[^"]*"' | head -1)
+        echo "og:url -> ${OGURL:-(none)}"
+        echo "$OGURL" | grep -q "/photo-viewer/$PID\"" || { echo "FAIL: /photo-viewer に個別OGPが差し込まれていません（S3 殻の疑い）"; exit 1; }
+        echo "/photo-viewer OGP smoke OK"
+
   # 本番環境へデプロイ (main branch)
   deploy-production:
     name: Deploy to Production
@@ -630,3 +642,14 @@ jobs:
         echo "hreflang count: $COUNT (>=5 expected)"
         [ "$COUNT" -ge 5 ] || { echo "FAIL: /tags が SSR を返していません（S3 殻の疑い）"; exit 1; }
         echo "/tags SSR smoke OK"
+
+    # Issue#58 §6: 本番 /photo-viewer 個別 OGP スモーク（本番 CloudFront/ALB の /photo-viewer 振り分け適用後に有効）。
+    - name: OGP smoke test (/photo-viewer)
+      run: |
+        PID=$(curl -s https://photlas.jp/api/v1/sitemap-photos-0.xml | grep -o '/photo-viewer/[0-9]*' | head -1 | grep -o '[0-9]*' || true)
+        echo "smoke photo id: ${PID:-(none)}"
+        if [ -z "$PID" ]; then echo "公開写真が無いためスキップ"; exit 0; fi
+        OGURL=$(curl -s "https://photlas.jp/photo-viewer/$PID" | grep -o '<meta property="og:url" content="[^"]*"' | head -1)
+        echo "og:url -> ${OGURL:-(none)}"
+        echo "$OGURL" | grep -q "/photo-viewer/$PID\"" || { echo "FAIL: /photo-viewer に個別OGPが差し込まれていません（S3 殻の疑い）"; exit 1; }
+        echo "/photo-viewer OGP smoke OK"
