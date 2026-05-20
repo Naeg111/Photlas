@@ -354,6 +354,18 @@ jobs:
         curl -f https://test.photlas.jp/api/v1/health || exit 1
         echo "Staging deployment successful!"
 
+    # Issue#136 §9: /tags SSR が backend に到達して配信されているかの再発防止スモークテスト。
+    # sitemap-tags から実在 slug を 1 件取り、SSR の証拠 hreflang が出るか検証（S3 殻なら 0）。
+    - name: SSR smoke test (/tags)
+      run: |
+        SLUG=$(curl -s https://test.photlas.jp/api/v1/sitemap-tags.xml | grep -o '/tags/[^?<]*' | head -1 | sed 's#/tags/##')
+        echo "smoke slug: ${SLUG:-(none)}"
+        if [ -z "$SLUG" ]; then echo "アクティブなタグが無いためスキップ"; exit 0; fi
+        COUNT=$(curl -s "https://test.photlas.jp/tags/$SLUG?lang=ja" | grep -c 'hreflang=' || true)
+        echo "hreflang count: $COUNT (>=5 expected)"
+        [ "$COUNT" -ge 5 ] || { echo "FAIL: /tags が SSR を返していません（S3 殻の疑い）"; exit 1; }
+        echo "/tags SSR smoke OK"
+
   # 本番環境へデプロイ (main branch)
   deploy-production:
     name: Deploy to Production
@@ -607,3 +619,14 @@ jobs:
         sleep 30
         curl -f https://photlas.jp/api/v1/health || exit 1
         echo "Production deployment successful!"
+
+    # Issue#136 §9: 本番 /tags SSR スモーク（本番 CloudFront/ALB の /tags 振り分け適用後に有効）。
+    - name: SSR smoke test (/tags)
+      run: |
+        SLUG=$(curl -s https://photlas.jp/api/v1/sitemap-tags.xml | grep -o '/tags/[^?<]*' | head -1 | sed 's#/tags/##')
+        echo "smoke slug: ${SLUG:-(none)}"
+        if [ -z "$SLUG" ]; then echo "アクティブなタグが無いためスキップ"; exit 0; fi
+        COUNT=$(curl -s "https://photlas.jp/tags/$SLUG?lang=ja" | grep -c 'hreflang=' || true)
+        echo "hreflang count: $COUNT (>=5 expected)"
+        [ "$COUNT" -ge 5 ] || { echo "FAIL: /tags が SSR を返していません（S3 殻の疑い）"; exit 1; }
+        echo "/tags SSR smoke OK"
