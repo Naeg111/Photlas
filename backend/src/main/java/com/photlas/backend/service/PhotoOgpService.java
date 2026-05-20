@@ -46,7 +46,33 @@ public class PhotoOgpService {
      * @return 公開済み・オーナー有効なら OGP メタ、そうでなければ空
      */
     public Optional<PhotoOgpMeta> buildForPhoto(Long photoId) {
-        // TODO(Green): 実装する
-        return Optional.empty();
+        Optional<Photo> photoOpt = photoRepository.findById(photoId);
+        if (photoOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        Photo photo = photoOpt.get();
+
+        // 非公開写真は対象外（OgpController と同基準）
+        if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
+            return Optional.empty();
+        }
+        // 退会済み・永久停止ユーザーの写真は対象外
+        User owner = userRepository.findById(photo.getUserId()).orElse(null);
+        if (owner == null
+                || owner.getDeletedAt() != null
+                || Integer.valueOf(CodeConstants.ROLE_SUSPENDED).equals(owner.getRole())) {
+            return Optional.empty();
+        }
+
+        // クローラ向けにサムネイル URL を使用（元画像は大きくタイムアウトしうるため）
+        String thumbnailUrl = s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey());
+        String imageUrl = thumbnailUrl != null ? thumbnailUrl : s3Service.generateCdnUrl(photo.getS3ObjectKey());
+        String title = photo.getPlaceName() != null
+                ? photo.getPlaceName() + " - " + SITE_NAME
+                : SITE_NAME;
+        String description = owner.getUsername() + "さんが撮影した写真 - " + SITE_NAME;
+        String pageUrl = frontendUrl + "/photo-viewer/" + photoId;
+
+        return Optional.of(new PhotoOgpMeta(title, description, imageUrl, pageUrl));
     }
 }
