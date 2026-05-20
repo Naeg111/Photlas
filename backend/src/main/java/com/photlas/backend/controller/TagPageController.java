@@ -12,6 +12,7 @@ import com.photlas.backend.repository.TagRepository;
 import com.photlas.backend.service.S3Service;
 import com.photlas.backend.service.TagService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -76,17 +77,22 @@ public class TagPageController {
     private final S3Service s3Service;
     private final MessageSource messageSource;
 
+    /** Issue#136 §9: canonical/hreflang/og:url を絶対 URL 化するためのサイトベース URL（prod=https://photlas.jp / staging=https://test.photlas.jp）。 */
+    private final String frontendUrl;
+
     public TagPageController(
             TagService tagService,
             TagRepository tagRepository,
             PhotoTagRepository photoTagRepository,
             S3Service s3Service,
-            MessageSource messageSource) {
+            MessageSource messageSource,
+            @Value("${app.frontend-url}") String frontendUrl) {
         this.tagService = tagService;
         this.tagRepository = tagRepository;
         this.photoTagRepository = photoTagRepository;
         this.s3Service = s3Service;
         this.messageSource = messageSource;
+        this.frontendUrl = frontendUrl;
     }
 
     @GetMapping("/{slug}")
@@ -195,6 +201,12 @@ public class TagPageController {
         model.addAttribute("title", title);
         model.addAttribute("description", description);
         model.addAttribute("relatedTags", relatedTags);
+        // Issue#136 §9: og:image は先頭（最新）写真のサムネ。写真 0 件はブランドロゴ og-image.png にフォールバック
+        // （既定 og-image.svg は SVG で SNS が描画しないため使わない）。
+        String ogImage = photos.isEmpty()
+                ? frontendUrl + "/og-image.png"
+                : photos.get(0).thumbnailUrl();
+        model.addAttribute("ogImage", ogImage);
 
         // Q18: SEO クローラー大量巡回時の EC2/DB 負荷軽減のため 5 分キャッシュ
         response.setHeader("Cache-Control", CACHE_CONTROL_VALUE);
@@ -233,9 +245,13 @@ public class TagPageController {
         return map;
     }
 
-    /** canonical URL を組み立てる。page=1 のときは {@code ?page=} を付けない (Q14)。 */
+    /**
+     * canonical URL を組み立てる。page=1 のときは {@code ?page=} を付けない (Q14)。
+     * Issue#136 §9: hreflang は Google が絶対 URL を要求するため、{@code app.frontend-url} を前置して絶対化する
+     * （canonical / og:url にも同じ値を使う）。
+     */
     private String canonicalUrlFor(String slug, String lang, int page) {
-        String base = "/tags/" + URLEncoder.encode(slug, StandardCharsets.UTF_8) + "?lang=" + lang;
+        String base = frontendUrl + "/tags/" + URLEncoder.encode(slug, StandardCharsets.UTF_8) + "?lang=" + lang;
         return page > 1 ? base + "&page=" + page : base;
     }
 }
