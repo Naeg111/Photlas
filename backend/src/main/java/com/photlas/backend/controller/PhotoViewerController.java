@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Issue#58 §6 (B2): {@code GET /photo-viewer/{id}}。
@@ -47,9 +49,8 @@ public class PhotoViewerController {
         Long photoId = parseLongOrNull(id);
         if (photoId != null) {
             Optional<PhotoOgpMeta> meta = photoOgpService.buildForPhoto(photoId);
-            // TODO(Green): meta があれば html に写真個別 OGP を差し込む
             if (meta.isPresent()) {
-                // placeholder
+                html = injectOgp(html, meta.get());
             }
         }
         return ResponseEntity.ok(html);
@@ -61,6 +62,46 @@ public class PhotoViewerController {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    /** index.html の汎用 OGP/Twitter/description を写真個別の値に置換する。 */
+    private String injectOgp(String html, PhotoOgpMeta m) {
+        html = replaceMetaContent(html, "name", "description", m.description());
+        html = replaceMetaContent(html, "property", "og:title", m.title());
+        html = replaceMetaContent(html, "property", "og:description", m.description());
+        html = replaceMetaContent(html, "property", "og:url", m.pageUrl());
+        html = replaceMetaContent(html, "property", "og:image", m.imageUrl());
+        html = replaceMetaContent(html, "property", "og:type", "article");
+        html = replaceMetaContent(html, "name", "twitter:card", "summary_large_image");
+        html = replaceMetaContent(html, "name", "twitter:title", m.title());
+        html = replaceMetaContent(html, "name", "twitter:description", m.description());
+        html = replaceMetaContent(html, "name", "twitter:image", m.imageUrl());
+        return html;
+    }
+
+    /**
+     * {@code <meta (property|name)="ATTR" content="...">} の content を差し替える（最初の 1 件）。
+     * 該当 meta が無ければ html をそのまま返す。
+     */
+    private static String replaceMetaContent(String html, String attrType, String attrName, String content) {
+        Pattern pattern = Pattern.compile(
+                "(<meta\\s+" + attrType + "=\"" + Pattern.quote(attrName) + "\"\\s+content=\")[^\"]*(\")");
+        Matcher matcher = pattern.matcher(html);
+        if (matcher.find()) {
+            String replacement = "$1" + Matcher.quoteReplacement(escapeHtmlAttr(content)) + "$2";
+            return matcher.replaceFirst(replacement);
+        }
+        return html;
+    }
+
+    private static String escapeHtmlAttr(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
     /** index.html を取得できなかった場合の縮退フォールバック（フロント配信障害時のみ）。 */
