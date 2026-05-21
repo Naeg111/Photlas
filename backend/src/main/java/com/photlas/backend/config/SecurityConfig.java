@@ -128,7 +128,9 @@ public class SecurityConfig {
                 .requestMatchers(TAGS_ENDPOINT).permitAll()              // Issue#135: キーワード一覧
                 .requestMatchers(HttpMethod.GET, "/api/v1/photos/*/tags").permitAll() // Issue#135: 写真ごとのキーワード（公開）
                 .requestMatchers(HttpMethod.GET, "/tags/**").permitAll()  // Issue#135: /tags/{slug} SSR ランディング
+                .requestMatchers(HttpMethod.HEAD, "/tags/**").permitAll() // Issue#136 §9: HEAD も許可（リンクチェッカー/検証ツール対応）
                 .requestMatchers(HttpMethod.GET, "/photo-viewer/**").permitAll() // Issue#58 §6: /photo-viewer/{id} OGP差し込みページ
+                .requestMatchers(HttpMethod.HEAD, "/photo-viewer/**").permitAll() // Issue#136 §9: HEAD も許可
                 .requestMatchers("/api/v1/ogp/**").permitAll()              // OGPメタタグ
                 .requestMatchers("/api/v1/sitemap.xml").permitAll()         // サイトマップインデックス
                 .requestMatchers("/api/v1/sitemap-static.xml").permitAll()   // 静的サイトマップ
