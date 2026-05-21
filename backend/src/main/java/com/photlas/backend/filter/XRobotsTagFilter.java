@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,12 @@ public class XRobotsTagFilter extends OncePerRequestFilter {
 
     private static final String HEADER_NAME = "X-Robots-Tag";
     private static final String HEADER_VALUE = "noindex, nofollow";
+
+    private final String frontendUrl;
+
+    public XRobotsTagFilter(@Value("${app.frontend-url}") String frontendUrl) {
+        this.frontendUrl = frontendUrl;
+    }
 
     @Override
     protected void doFilterInternal(

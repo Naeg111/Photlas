@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -106,6 +107,22 @@ class TagPageControllerTest {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("桜")));
+    }
+
+    @Test
+    @DisplayName("Issue#136 §9 - 本番では GET /tags/{slug} に X-Robots-Tag(noindex) を付けない")
+    void getTagPage_prod_hasNoXRobotsTagNoindex() throws Exception {
+        // app.frontend-url は test プロファイルでも既定 https://photlas.jp（本番扱い）
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(header().doesNotExist("X-Robots-Tag"));
+    }
+
+    @Test
+    @DisplayName("Issue#136 §9 - HEAD /tags/{slug} は 401 ではなく 200（GET と同様に許可）")
+    void headTagPage_isAllowed() throws Exception {
+        mockMvc.perform(head("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk());
     }
 
     @Test
