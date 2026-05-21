@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
+# Issue#136 §9: サイトマップは /api/v1/sitemap*.xml に存在する。最長一致で Allow が
+# Disallow より優先されるため、サイトマップだけクロール可能にし、他の /api/ は禁止のまま。
+Allow: /api/v1/sitemap
 Disallow: /api/
 
 Sitemap: https://photlas.jp/api/v1/sitemap.xml
