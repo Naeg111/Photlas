@@ -58,7 +58,9 @@ export default function TermsAgreementDialog({
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
-      toast(t('auth.loginSuccess'))
+      // Issue#144: 「ログインしました」トーストはここでは出さない。
+      // OAuth 新規フローでは規約同意の後にユーザー名登録ダイアログが続くため、
+      // オンボーディング最後のダイアログ閉鎖時に App.tsx 側でまとめて発火させる。
       onAgreed()
     } catch {
       toast(t('auth.errorOccurred'))
