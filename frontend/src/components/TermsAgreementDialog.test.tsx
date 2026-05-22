@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { toast } from 'sonner'
 import TermsAgreementDialog from './TermsAgreementDialog'
 
 /**
@@ -67,6 +68,26 @@ describe('TermsAgreementDialog', () => {
       await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
 
       expect(screen.getByRole('button', { name: '利用を開始する' })).toBeEnabled()
+    })
+  })
+
+  describe('Issue#144 - 規約同意では「ログインしました」トーストを出さない', () => {
+    it('「利用を開始する」押下で onAgreed は呼ぶが「ログインしました」トーストは出さない', async () => {
+      const user = userEvent.setup()
+      const onAgreed = vi.fn()
+      mockFetch.mockResolvedValue({ ok: true, status: 204, json: () => Promise.resolve({}) })
+
+      render(<TermsAgreementDialog {...defaultProps} onAgreed={onAgreed} />)
+
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
+      await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
+      await user.click(screen.getByRole('button', { name: '利用を開始する' }))
+
+      // 同意完了コールバックは呼ばれる（発火責務は App.tsx の coordinator に移譲）
+      await waitFor(() => expect(onAgreed).toHaveBeenCalled())
+      // 「ログインしました」トーストはこのダイアログからは出さない
+      expect(toast).not.toHaveBeenCalledWith('ログインしました')
     })
   })
 })
