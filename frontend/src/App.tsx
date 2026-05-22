@@ -79,7 +79,7 @@ import { EMAIL_JUST_VERIFIED_KEY } from './pages/EmailVerificationPage'
 import { EMAIL_JUST_CHANGED_KEY } from './pages/ConfirmEmailChangePage'
 import { MODERATION_STATUS_PUBLISHED, MODERATION_STATUS_QUARANTINED, ROLE_ADMIN } from './utils/codeConstants'
 import { stripExif } from './utils/stripExif'
-import { SPLASH_SCREEN_DURATION_MS } from './config/app'
+import { SPLASH_SCREEN_DURATION_MS, OAUTH_LOGIN_TOAST_FLAG_KEY } from './config/app'
 import { useCanonicalUrl } from './hooks/useCanonicalUrl'
 import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed, Search } from 'lucide-react'
 import { CompassIcon } from './components/CompassIcon'
@@ -210,6 +210,13 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
 
   // Issue#104: 利用規約同意ダイアログ表示制御（マウント時 /users/me チェックで requiresTermsAgreement=true なら表示）
   const [showTermsDialog, setShowTermsDialog] = useState(false)
+
+  // Issue#144: OAuth ログイン操作直後に「ログインしました」トーストを出すための保留フラグ。
+  // /users/me チェックで OAuth ログインフラグを検出した場合に true にする。
+  // useEffect の再評価に乗せる必要があるため useState（ref では再レンダーされず effect が再走しない）。
+  const [pendingLoginToast, setPendingLoginToast] = useState(false)
+  // React 18 Strict Mode の二重実行で同じトーストが2回出ないようにするガード。
+  const loginToastFiredRef = useRef(false)
 
   // フィルター関連の状態
   const [mapFilterParams, setMapFilterParams] = useState<MapViewFilterParams | undefined>(undefined)
@@ -381,6 +388,8 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
     if (!token) return
 
     const checkUserStatus = async () => {
+      // Issue#144: OAuth ログイン操作直後かどうか。成功時のみ消費し、失敗時は残して再試行に備える。
+      const oauthJustLoggedIn = sessionStorage.getItem(OAUTH_LOGIN_TOAST_FLAG_KEY) === '1'
       try {
         const response = await fetch(`${API_V1_URL}/users/me`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -388,11 +397,14 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
         if (!response.ok) {
           if (response.status === 401) {
             // §4.17: 401 はセッション切れ → 自動ログアウト
+            // Issue#144: ログインは成立していないのでフラグ・保留トーストを破棄
+            sessionStorage.removeItem(OAUTH_LOGIN_TOAST_FLAG_KEY)
+            setPendingLoginToast(false)
             toast(t('auth.sessionExpired'))
             logout()
             return
           }
-          // §4.17: 5xx 等は再試行可能
+          // §4.17: 5xx 等は再試行可能（Issue#144: フラグは消さず残し、再試行成功時に発火）
           toast.error(t('errors.userInfoFetchFailed'), {
             action: {
               label: t('common.retry'),
@@ -402,6 +414,12 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
           return
         }
         const userData = await response.json()
+        // Issue#144: OAuth ログイン操作直後なら、トースト保留フラグを立ててフラグを消費する。
+        // 実際の発火はオンボーディングのダイアログが全て閉じ、かつスプラッシュ解除後（§4.3 の useEffect）。
+        if (oauthJustLoggedIn) {
+          sessionStorage.removeItem(OAUTH_LOGIN_TOAST_FLAG_KEY)
+          setPendingLoginToast(true)
+        }
         if (userData.requiresTermsAgreement) {
           setShowTermsDialog(true)
           // §4.16: 同意ダイアログ表示時はホームに強制リダイレクト
@@ -425,6 +443,26 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated])  // 認証状態が確定したら 1 度だけ実行（usersMeCheckedRef で多重実行防止）
 
+  // Issue#144: OAuth ログイン完了トーストの単一発火判定。
+  // 既存ユーザー（ダイアログ無し）／新規ユーザー（規約→ユーザー名）を分岐せず、
+  // 「保留中 かつ オンボーディングのダイアログが全て閉じ かつ スプラッシュ解除後」を満たした
+  // 瞬間に 1 度だけ発火する。isSplashClosed を条件に含めることで、
+  // (1) スプラッシュ裏で消えるのを防ぎ、(2) checkUserStatus の await をまたいだ
+  // 中間レンダーでの早期発火も防ぐ（スプラッシュ表示中は発火しない）。
+  useEffect(() => {
+    if (
+      pendingLoginToast &&
+      !showTermsDialog &&
+      !showUsernameDialog &&
+      isSplashClosed &&
+      !loginToastFiredRef.current
+    ) {
+      loginToastFiredRef.current = true
+      setPendingLoginToast(false)
+      toast(t('auth.loginSuccess'))
+    }
+  }, [pendingLoginToast, showTermsDialog, showUsernameDialog, isSplashClosed, t])
+
   // Issue#99: リンク確認成功時のハンドラ。
   // ダイアログから受け取った token + email で /users/me を取得し、auth.login で認証状態を反映する。
   const handleLinked = useCallback(async (token: string, email: string) => {
@@ -443,7 +481,8 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
         role: userData.role,
         language: userData.language,
       }, token, true)
-      toast.success('アカウントを連携しました')
+      // Issue#144: 連携フローは「ログインしました」を別途出さず、この1トーストに集約する
+      toast.success('アカウントを連携し、ログインしました。')
     } catch {
       toast.error('連携後のユーザー情報取得に失敗しました')
     } finally {
@@ -961,7 +1000,14 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
       <TermsAgreementDialog
         open={showTermsDialog}
         onAgreed={() => setShowTermsDialog(false)}
-        onCancelled={() => setShowTermsDialog(false)}
+        onCancelled={() => {
+          // Issue#144: 規約キャンセル（アカウント削除＋ログアウト）はログイン不成立。
+          // 保留トーストと OAuth フラグを破棄し、未確定のユーザー名ダイアログも閉じる。
+          setShowTermsDialog(false)
+          setShowUsernameDialog(false)
+          setPendingLoginToast(false)
+          sessionStorage.removeItem(OAUTH_LOGIN_TOAST_FLAG_KEY)
+        }}
         onShowTerms={() => dialog.open('terms')}
         onShowPrivacyPolicy={() => dialog.open('privacy')}
       />

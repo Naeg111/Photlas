@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AUTH_CHANGED_EVENT } from '../contexts/AuthContext'
+import { OAUTH_LOGIN_TOAST_FLAG_KEY } from '../config/app'
 
 /**
  * Issue#81 Phase 5a - OAuth コールバックページ。
@@ -151,6 +152,13 @@ async function completeLogin(
     role: userData.role,
     language: userData.language,
   }))
+
+  // Issue#144: OAuth ログイン操作が「今」完了したことを示すフラグをセットする。
+  // App.tsx（MainContent）の /users/me チェックがこれを読み、受動的な起動と区別して
+  // 「ログインしました」トーストを出す。AUTH_CHANGED_EVENT が App 側の checkUserStatus を
+  // 起動するため、必ず dispatch の前にセットする。連携経路（link_confirmation_token）は
+  // completeLogin を通らないためフラグはセットされず、連携時はログイントーストが出ない。
+  sessionStorage.setItem(OAUTH_LOGIN_TOAST_FLAG_KEY, '1')
 
   // AuthProvider にストレージ更新を通知して state を再読させる。
   // 過去は window.location.reload() で AuthProvider の初回 useEffect を再走させていたが、
