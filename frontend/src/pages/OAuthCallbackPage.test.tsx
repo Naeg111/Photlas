@@ -213,6 +213,45 @@ describe('OAuthCallbackPage', () => {
       })
     })
 
+    it('Issue#144: access_token 成功時に OAuth ログイン完了フラグを sessionStorage にセットする', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(USER_PROFILE), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+      window.location.hash = '#access_token=jwt-flag'
+      render(
+        <MemoryRouter>
+          <OAuthCallbackPage />
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(sessionStorage.setItem).toHaveBeenCalledWith(
+          'photlas_oauth_login_just_completed',
+          '1'
+        )
+      })
+    })
+
+    it('Issue#144: link_confirmation_token 経路ではフラグをセットしない（連携時はログイントーストを出さないため）', async () => {
+      window.location.hash = '#link_confirmation_token=tok&provider=GOOGLE'
+      render(
+        <MemoryRouter>
+          <OAuthCallbackPage />
+        </MemoryRouter>
+      )
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalled()
+      })
+      expect(sessionStorage.setItem).not.toHaveBeenCalledWith(
+        'photlas_oauth_login_just_completed',
+        '1'
+      )
+    })
+
     it('/users/me が失敗したらエラー画面を表示', async () => {
       mockFetch.mockResolvedValueOnce(
         new Response('unauthorized', { status: 401 })

@@ -2,6 +2,7 @@ import { render, screen, cleanup, act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
+import { toast } from 'sonner'
 import App from './App'
 import { SPLASH_SCREEN_DURATION_MS } from './config/app'
 
@@ -79,6 +80,18 @@ vi.mock('@mapbox/search-js-core', () => ({
     forward: vi.fn(),
   })),
   SessionToken: vi.fn(),
+}))
+
+// sonner (toast) のモック（Issue#144: ログイン完了トーストの発火を検証するため）
+// App.tsx は toast(...) / toast.success / toast.error / toast.info を使うため callable + サブメソッドにする。
+// ui/sonner ラッパーが 'sonner' の Toaster を参照するため Toaster も提供する。
+vi.mock('sonner', () => ({
+  toast: Object.assign(vi.fn(), {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  }),
+  Toaster: () => null,
 }))
 
 // fetch APIのモック
@@ -1004,6 +1017,158 @@ describe('App - Issue#28: App.tsx再構築', () => {
       await waitFor(() => {
         expect(mockGetCurrentPosition).toHaveBeenCalled()
       }, { timeout: 1500 })
+    })
+  })
+
+  /**
+   * Issue#144: OAuth ログイン完了トーストの発火タイミング。
+   *
+   * - 既存ユーザー（ダイアログ無し）: OAuthフラグあり + スプラッシュ解除後に「ログインしました」
+   * - 新規ユーザー（ユーザー名ダイアログ）: ダイアログを閉じた時に1回だけ
+   * - 再訪/後回し（OAuthフラグ無し）: 誤発火しない
+   */
+  describe('Issue#144: OAuth ログイン完了トースト', () => {
+    const OAUTH_FLAG = 'photlas_oauth_login_just_completed'
+
+    function setAuthenticatedUser() {
+      localStorageMock.getItem.mockImplementation((key: string) => {
+        if (key === 'auth_token') return 'test-jwt-token'
+        if (key === 'auth_user') {
+          return JSON.stringify({
+            userId: 1,
+            username: 'user_abc1234',
+            email: 'oauth@example.com',
+            role: 'USER',
+            language: 'ja',
+          })
+        }
+        return null
+      })
+    }
+
+    function mockUsersMe(body: Record<string, unknown>) {
+      ;(global.fetch as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
+        if (typeof url === 'string' && url.includes('/users/me')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(body),
+          } as Response)
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) } as Response)
+      })
+    }
+
+    function setOAuthFlag(present: boolean) {
+      sessionStorageMock.getItem.mockImplementation((key: string) =>
+        present && key === OAUTH_FLAG ? '1' : null
+      )
+    }
+
+    function loginSuccessCallCount() {
+      return (toast as unknown as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (c: unknown[]) => c[0] === 'ログインしました'
+      ).length
+    }
+
+    it('既存ユーザー: OAuthフラグあり + ダイアログ無し → スプラッシュ解除後に「ログインしました」が出る', async () => {
+      setAuthenticatedUser()
+      setOAuthFlag(true)
+      mockUsersMe({ userId: 1, requiresTermsAgreement: false, usernameTemporary: false })
+
+      renderApp()
+      skipSplashScreen()
+      vi.useRealTimers()
+
+      await waitFor(() => expect(toast).toHaveBeenCalledWith('ログインしました'))
+    })
+
+    it('既存ユーザー: スプラッシュ表示中は出さず、解除後に出す', async () => {
+      setAuthenticatedUser()
+      setOAuthFlag(true)
+      mockUsersMe({ userId: 1, requiresTermsAgreement: false, usernameTemporary: false })
+
+      renderApp()
+      // /users/me を解決させる（スプラッシュは未解除のまま）
+      await waitFor(() =>
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/users/me'),
+          expect.anything()
+        )
+      )
+      // スプラッシュ表示中はまだ出ない
+      expect(toast).not.toHaveBeenCalledWith('ログインしました')
+
+      // スプラッシュ解除 → 発火
+      skipSplashScreen()
+      vi.useRealTimers()
+      await waitFor(() => expect(toast).toHaveBeenCalledWith('ログインしました'))
+    })
+
+    it('再訪ユーザー: OAuthフラグ無し + ダイアログ無し → トーストを出さない', async () => {
+      setAuthenticatedUser()
+      setOAuthFlag(false)
+      mockUsersMe({ userId: 1, requiresTermsAgreement: false, usernameTemporary: false })
+
+      renderApp()
+      skipSplashScreen()
+      vi.useRealTimers()
+      await waitFor(() =>
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/users/me'),
+          expect.anything()
+        )
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(toast).not.toHaveBeenCalledWith('ログインしました')
+    })
+
+    it('新規ユーザー: フラグあり + ユーザー名ダイアログ → 閉じるまで出ず、閉じたら1回だけ出る', async () => {
+      setAuthenticatedUser()
+      setOAuthFlag(true)
+      mockUsersMe({
+        userId: 1,
+        username: 'user_abc1234',
+        requiresTermsAgreement: false,
+        usernameTemporary: true,
+      })
+
+      renderApp()
+      skipSplashScreen()
+      const user = switchToRealTimers()
+
+      // ユーザー名ダイアログが表示される
+      await waitFor(() => expect(screen.getByText('表示名を設定')).toBeInTheDocument())
+      // この時点ではまだ出ない
+      expect(toast).not.toHaveBeenCalledWith('ログインしました')
+
+      // 「後で設定する」で閉じる
+      await user.click(screen.getByRole('button', { name: '後で設定する' }))
+
+      await waitFor(() => expect(toast).toHaveBeenCalledWith('ログインしました'))
+      // 二重発火しない
+      expect(loginSuccessCallCount()).toBe(1)
+    })
+
+    it('後回しユーザー再訪: フラグ無し + ユーザー名ダイアログ → 閉じてもトーストを出さない', async () => {
+      setAuthenticatedUser()
+      setOAuthFlag(false)
+      mockUsersMe({
+        userId: 1,
+        username: 'user_abc1234',
+        requiresTermsAgreement: false,
+        usernameTemporary: true,
+      })
+
+      renderApp()
+      skipSplashScreen()
+      const user = switchToRealTimers()
+
+      await waitFor(() => expect(screen.getByText('表示名を設定')).toBeInTheDocument())
+      await user.click(screen.getByRole('button', { name: '後で設定する' }))
+
+      await new Promise((r) => setTimeout(r, 50))
+      expect(toast).not.toHaveBeenCalledWith('ログインしました')
     })
   })
 })
