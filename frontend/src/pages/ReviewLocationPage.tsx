@@ -39,6 +39,18 @@ interface ReviewData {
   cropZoom: number | null
 }
 
+// Issue#145: ピンの配色（形状・サイズは共通で色のみ差別化）
+const ORIGINAL_PIN = { fill: '#ffffff', stroke: '#000000' } // 元の登録位置（白黒・投稿詳細と同じ）
+const SUGGESTED_PIN = { fill: '#EF4444', stroke: '#B91C1C' } // 指摘位置（赤）
+// ピン寸法（ミニマップ／全画面プレビュー）
+const MINIMAP_PIN_SIZE = { width: 24, height: 28 }
+const PREVIEW_PIN_SIZE = { width: 32, height: 38 }
+// 2 ピンを内包する自動フィット設定（maxZoom で過度な拡大を防ぐ）
+const MINIMAP_FIT_OPTIONS = { padding: 40, maxZoom: 16 }
+const PREVIEW_FIT_OPTIONS = { padding: 60, maxZoom: 16 }
+// Dialog 開閉アニメ中の Marker 位置ずれ回避用の遅延（DetailMiniMap と同値）
+const MAP_READY_DELAY_MS = 500
+
 /**
  * Issue#145: 元位置（白黒ピン）と指摘位置（赤ピン）の 2 ピンを描画する。
  * 形状・サイズは同一で色だけ差別化し、赤（指摘）を後に描画して手前に重ねる。
@@ -62,15 +74,15 @@ function ReviewMarkers({
       {/* 元の登録位置（白黒・投稿詳細のミニマップと同じ） */}
       <Marker latitude={currentLatitude} longitude={currentLongitude} anchor="bottom">
         <div style={{ width: pinSize.width, height: pinSize.height, pointerEvents: 'none' }}>
-          <PinSvg fill="#ffffff" stroke="#000000" strokeWidth={2} strokeLinejoin="round">
-            <circle cx="16" cy="14" r="6" fill="#000000" stroke="#000000" strokeWidth="1" />
+          <PinSvg fill={ORIGINAL_PIN.fill} stroke={ORIGINAL_PIN.stroke} strokeWidth={2} strokeLinejoin="round">
+            <circle cx="16" cy="14" r="6" fill={ORIGINAL_PIN.stroke} stroke={ORIGINAL_PIN.stroke} strokeWidth="1" />
           </PinSvg>
         </div>
       </Marker>
       {/* 指摘位置（赤・形状は白黒ピンと同一、色のみ差別化） */}
       <Marker latitude={suggestedLatitude} longitude={suggestedLongitude} anchor="bottom">
         <div style={{ width: pinSize.width, height: pinSize.height, pointerEvents: 'none' }}>
-          <PinSvg fill="#EF4444" stroke="#B91C1C" strokeWidth={2} strokeLinejoin="round" />
+          <PinSvg fill={SUGGESTED_PIN.fill} stroke={SUGGESTED_PIN.stroke} strokeWidth={2} strokeLinejoin="round" />
         </div>
       </Marker>
     </>
@@ -100,7 +112,7 @@ function ReviewMiniMap({
 }>) {
   const [isMapReady, setIsMapReady] = useState(false)
   useEffect(() => {
-    const timer = setTimeout(() => setIsMapReady(true), 500)
+    const timer = setTimeout(() => setIsMapReady(true), MAP_READY_DELAY_MS)
     return () => clearTimeout(timer)
   }, [])
 
@@ -118,7 +130,7 @@ function ReviewMiniMap({
       {isMapReady ? (
         <Map
           mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
-          initialViewState={{ bounds, fitBoundsOptions: { padding: 40, maxZoom: 16 } }}
+          initialViewState={{ bounds, fitBoundsOptions: MINIMAP_FIT_OPTIONS }}
           mapStyle={MAPBOX_STYLE}
           language={mapboxLang}
           interactive={false}
@@ -129,7 +141,7 @@ function ReviewMiniMap({
             currentLongitude={currentLongitude}
             suggestedLatitude={suggestedLatitude}
             suggestedLongitude={suggestedLongitude}
-            pinSize={{ width: 24, height: 28 }}
+            pinSize={MINIMAP_PIN_SIZE}
           />
         </Map>
       ) : (
@@ -288,7 +300,7 @@ export default function ReviewLocationPage() {
       >
         <Map
           mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
-          initialViewState={{ bounds: previewBounds, fitBoundsOptions: { padding: 60, maxZoom: 16 } }}
+          initialViewState={{ bounds: previewBounds, fitBoundsOptions: PREVIEW_FIT_OPTIONS }}
           mapStyle={MAPBOX_STYLE}
           language={mapboxLang}
           style={{ width: '100%', height: '100%' }}
@@ -298,7 +310,7 @@ export default function ReviewLocationPage() {
             currentLongitude={reviewData.currentLongitude}
             suggestedLatitude={reviewData.suggestedLatitude}
             suggestedLongitude={reviewData.suggestedLongitude}
-            pinSize={{ width: 32, height: 38 }}
+            pinSize={PREVIEW_PIN_SIZE}
           />
         </Map>
       </div>
