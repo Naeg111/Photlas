@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Map, { Marker } from 'react-map-gl'
-import { MapPin, Calendar } from 'lucide-react'
+import { MapPin, Calendar, User } from 'lucide-react'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
+import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 import { PinSvg } from '../components/PinSvg'
 import { LoginDialog } from '../components/LoginDialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog'
@@ -12,10 +13,12 @@ import { useAuth } from '../contexts/AuthContext'
 import { ApiError, getAuthHeaders } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
 import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
+import { computeBoundsForPins } from '../utils/geoBounds'
 import { API_V1_URL } from '../config/api'
 
 /**
  * Issue#65, Issue#54: 位置情報修正のレビューページ（ダイアログスタイル）
+ * Issue#145: 共通 Dialog 化・正方形サムネ・投稿者アイコン・地図言語・白黒/赤ピン・自動フィット・共通 Button
  */
 
 interface ReviewData {
@@ -28,6 +31,7 @@ interface ReviewData {
   imageUrl: string
   thumbnailUrl: string
   username: string
+  profileImageUrl?: string | null
   placeName: string
   shotAt: string
   cropCenterX: number | null
@@ -35,10 +39,111 @@ interface ReviewData {
   cropZoom: number | null
 }
 
+/**
+ * Issue#145: 元位置（白黒ピン）と指摘位置（赤ピン）の 2 ピンを描画する。
+ * 形状・サイズは同一で色だけ差別化し、赤（指摘）を後に描画して手前に重ねる。
+ * ミニマップと全画面プレビューで共通利用する。
+ */
+function ReviewMarkers({
+  currentLatitude,
+  currentLongitude,
+  suggestedLatitude,
+  suggestedLongitude,
+  pinSize,
+}: Readonly<{
+  currentLatitude: number
+  currentLongitude: number
+  suggestedLatitude: number
+  suggestedLongitude: number
+  pinSize: { width: number; height: number }
+}>) {
+  return (
+    <>
+      {/* 元の登録位置（白黒・投稿詳細のミニマップと同じ） */}
+      <Marker latitude={currentLatitude} longitude={currentLongitude} anchor="bottom">
+        <div style={{ width: pinSize.width, height: pinSize.height, pointerEvents: 'none' }}>
+          <PinSvg fill="#ffffff" stroke="#000000" strokeWidth={2} strokeLinejoin="round">
+            <circle cx="16" cy="14" r="6" fill="#000000" stroke="#000000" strokeWidth="1" />
+          </PinSvg>
+        </div>
+      </Marker>
+      {/* 指摘位置（赤・形状は白黒ピンと同一、色のみ差別化） */}
+      <Marker latitude={suggestedLatitude} longitude={suggestedLongitude} anchor="bottom">
+        <div style={{ width: pinSize.width, height: pinSize.height, pointerEvents: 'none' }}>
+          <PinSvg fill="#EF4444" stroke="#B91C1C" strokeWidth={2} strokeLinejoin="round" />
+        </div>
+      </Marker>
+    </>
+  )
+}
+
+/**
+ * Issue#145: 確認画面のミニマップ。
+ * - 2 ピンが必ず収まるよう bounds で自動フィット
+ * - ユーザー言語で地名ラベル表示（language）
+ * - Dialog 開閉アニメーション中の Marker 位置ずれを防ぐため 500ms 遅延描画（DetailMiniMap と同じ）
+ */
+function ReviewMiniMap({
+  currentLatitude,
+  currentLongitude,
+  suggestedLatitude,
+  suggestedLongitude,
+  mapboxLang,
+  onClick,
+}: Readonly<{
+  currentLatitude: number
+  currentLongitude: number
+  suggestedLatitude: number
+  suggestedLongitude: number
+  mapboxLang: string
+  onClick: () => void
+}>) {
+  const [isMapReady, setIsMapReady] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setIsMapReady(true), 500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const bounds = computeBoundsForPins(
+    { lng: currentLongitude, lat: currentLatitude },
+    { lng: suggestedLongitude, lat: suggestedLatitude },
+  )
+
+  return (
+    <div
+      className="w-full h-[200px] rounded-lg overflow-hidden mb-[26px] cursor-pointer"
+      onClick={onClick}
+      data-testid="review-minimap"
+    >
+      {isMapReady ? (
+        <Map
+          mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+          initialViewState={{ bounds, fitBoundsOptions: { padding: 40, maxZoom: 16 } }}
+          mapStyle={MAPBOX_STYLE}
+          language={mapboxLang}
+          interactive={false}
+          style={{ width: '100%', height: '100%' }}
+        >
+          <ReviewMarkers
+            currentLatitude={currentLatitude}
+            currentLongitude={currentLongitude}
+            suggestedLatitude={suggestedLatitude}
+            suggestedLongitude={suggestedLongitude}
+            pinSize={{ width: 24, height: 28 }}
+          />
+        </Map>
+      ) : (
+        <div className="w-full h-full bg-gray-200 animate-pulse" />
+      )}
+    </div>
+  )
+}
+
 export default function ReviewLocationPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const token = searchParams.get('token')
   const { user } = useAuth()
 
@@ -169,8 +274,12 @@ export default function ReviewLocationPage() {
     )
   }
 
-  // フルスクリーンマップ（撮影場所プレビュー）
+  // フルスクリーンマップ（撮影場所プレビュー）— 2 ピンを自動フィットで両方表示
   if (isSpotPreview && reviewData) {
+    const previewBounds = computeBoundsForPins(
+      { lng: reviewData.currentLongitude, lat: reviewData.currentLatitude },
+      { lng: reviewData.suggestedLongitude, lat: reviewData.suggestedLatitude },
+    )
     return (
       <div
         className="fixed inset-0 z-50"
@@ -179,22 +288,18 @@ export default function ReviewLocationPage() {
       >
         <Map
           mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
-          initialViewState={{
-            latitude: reviewData.suggestedLatitude,
-            longitude: reviewData.suggestedLongitude,
-            zoom: 16,
-          }}
+          initialViewState={{ bounds: previewBounds, fitBoundsOptions: { padding: 60, maxZoom: 16 } }}
           mapStyle={MAPBOX_STYLE}
+          language={mapboxLang}
           style={{ width: '100%', height: '100%' }}
         >
-          {/* 現在の撮影地点（赤） */}
-          <Marker latitude={reviewData.currentLatitude} longitude={reviewData.currentLongitude}>
-            <div style={{ width: 32, height: 38 }}><PinSvg fill="#EF4444" stroke="#B91C1C" /></div>
-          </Marker>
-          {/* 指摘された地点（青） */}
-          <Marker latitude={reviewData.suggestedLatitude} longitude={reviewData.suggestedLongitude}>
-            <div style={{ width: 32, height: 38 }}><PinSvg fill="#3B82F6" stroke="#1D4ED8" /></div>
-          </Marker>
+          <ReviewMarkers
+            currentLatitude={reviewData.currentLatitude}
+            currentLongitude={reviewData.currentLongitude}
+            suggestedLatitude={reviewData.suggestedLatitude}
+            suggestedLongitude={reviewData.suggestedLongitude}
+            pinSize={{ width: 32, height: 38 }}
+          />
         </Map>
       </div>
     )
@@ -206,12 +311,9 @@ export default function ReviewLocationPage() {
       <div className="flex items-center justify-center min-h-screen bg-black/50">
         <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
           <p className="text-lg text-red-600 mb-6">{error}</p>
-          <button
-            className="px-6 py-2 bg-white text-black border border-black rounded-full"
-            onClick={handleClose}
-          >
+          <Button variant="outline" onClick={handleClose}>
             {t('common.close')}
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -242,36 +344,52 @@ export default function ReviewLocationPage() {
     )
   }
 
-  // メインレビュー画面（ダイアログスタイル）
-  const imageStyle: React.CSSProperties = {}
-  if (reviewData.cropCenterX != null && reviewData.cropCenterY != null) {
-    imageStyle.objectPosition = `${reviewData.cropCenterX * 100}% ${reviewData.cropCenterY * 100}%`
-  }
-  if (reviewData.cropZoom != null && reviewData.cropZoom > 1) {
-    imageStyle.transform = `scale(${reviewData.cropZoom})`
-  }
-
+  // メインレビュー画面（shadcn Dialog で他ダイアログと統一・中央表示・閉じ手段なし）
   return (
-    <div className="fixed inset-0 z-40 bg-black/50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full sm:max-w-md sm:rounded-lg overflow-hidden max-h-[90dvh] flex flex-col">
-        {/* 写真 */}
-        <div className="relative w-full aspect-[4/3] overflow-hidden flex-shrink-0">
+    <Dialog open>
+      <DialogContent
+        hideCloseButton
+        className="p-0 gap-0 overflow-hidden max-h-[90dvh] flex flex-col"
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <DialogTitle className="sr-only">{t('reviewLocation.confirmTitle')}</DialogTitle>
+
+        {/* 写真（投稿詳細と同じ正方形クロップ・クロップ済みサムネをそのまま表示） */}
+        <div className="relative w-full aspect-square overflow-hidden flex-shrink-0">
           <img
-            src={reviewData.imageUrl}
+            src={reviewData.thumbnailUrl}
             alt={t('reviewLocation.photoAlt')}
             loading="eager"
             className="w-full h-full object-cover"
-            style={imageStyle}
             data-testid="review-photo"
           />
         </div>
 
         {/* スクロール可能コンテンツ */}
         <div className="overflow-y-auto px-6 pt-4 pb-6 flex-1">
-          {/* 表示名 */}
-          <p className="text-sm font-medium mb-2" data-testid="review-username">
-            {reviewData.username}
-          </p>
+          {/* 投稿者アイコン + 表示名 */}
+          <div className="flex items-center gap-2 mb-2">
+            {reviewData.profileImageUrl ? (
+              <img
+                data-testid="review-avatar"
+                src={reviewData.profileImageUrl}
+                alt={reviewData.username}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : (
+              <div
+                data-testid="review-avatar-placeholder"
+                className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center"
+              >
+                <User className="w-5 h-5 text-gray-500" />
+              </div>
+            )}
+            <p className="text-sm font-medium" data-testid="review-username">
+              {reviewData.username}
+            </p>
+          </div>
 
           {/* メタデータ */}
           <div className="flex flex-col gap-1 mb-4 text-sm text-gray-600">
@@ -289,51 +407,36 @@ export default function ReviewLocationPage() {
             )}
           </div>
 
-          {/* ミニマップ（2ピン） */}
-          <div
-            className="w-full h-[200px] rounded-lg overflow-hidden mb-4 cursor-pointer"
+          {/* ミニマップ（白黒=元位置 / 赤=指摘位置、自動フィット） */}
+          <ReviewMiniMap
+            currentLatitude={reviewData.currentLatitude}
+            currentLongitude={reviewData.currentLongitude}
+            suggestedLatitude={reviewData.suggestedLatitude}
+            suggestedLongitude={reviewData.suggestedLongitude}
+            mapboxLang={mapboxLang}
             onClick={() => setIsSpotPreview(true)}
-            data-testid="review-minimap"
-          >
-            <Map
-              mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
-              initialViewState={{
-                latitude: reviewData.suggestedLatitude,
-                longitude: reviewData.suggestedLongitude,
-                zoom: 15,
-              }}
-              mapStyle={MAPBOX_STYLE}
-              interactive={false}
-              style={{ width: '100%', height: '100%' }}
-            >
-              <Marker latitude={reviewData.currentLatitude} longitude={reviewData.currentLongitude}>
-                <div style={{ width: 24, height: 28 }}><PinSvg fill="#EF4444" stroke="#B91C1C" /></div>
-              </Marker>
-              <Marker latitude={reviewData.suggestedLatitude} longitude={reviewData.suggestedLongitude}>
-                <div style={{ width: 24, height: 28 }}><PinSvg fill="#3B82F6" stroke="#1D4ED8" /></div>
-              </Marker>
-            </Map>
-          </div>
+          />
 
-          {/* アクションボタン */}
+          {/* アクションボタン（左=拒否 / 右=受け入れ、共通 Button） */}
           <div className="flex gap-3">
-            <button
-              className="flex-1 py-2.5 bg-black text-white rounded-full text-sm font-medium disabled:opacity-50"
-              onClick={() => handleAction('accept')}
-              disabled={isLoading}
-            >
-              {t('reviewLocation.accept')}
-            </button>
-            <button
-              className="flex-1 py-2.5 bg-white text-black border border-black rounded-full text-sm font-medium disabled:opacity-50"
+            <Button
+              variant="outline"
+              className="flex-1"
               onClick={() => handleAction('reject')}
               disabled={isLoading}
             >
               {t('reviewLocation.reject')}
-            </button>
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={() => handleAction('accept')}
+              disabled={isLoading}
+            >
+              {t('reviewLocation.accept')}
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

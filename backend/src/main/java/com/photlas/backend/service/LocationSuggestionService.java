@@ -229,6 +229,10 @@ public class LocationSuggestionService {
             User photoOwner = userRepository.findById(photo.getUserId()).orElse(null);
             if (photoOwner != null) {
                 response.setUsername(photoOwner.getUsername());
+                // Issue#145: 確認画面に投稿者アイコンを表示するため、プロフィール画像URLを返す
+                if (photoOwner.getProfileImageS3Key() != null) {
+                    response.setProfileImageUrl(s3Service.generateCdnUrl(photoOwner.getProfileImageS3Key()));
+                }
             }
         }
         return response;
