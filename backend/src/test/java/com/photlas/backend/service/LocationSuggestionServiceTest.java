@@ -529,6 +529,51 @@ public class LocationSuggestionServiceTest {
         assertThat(response.getShotAt()).isNotNull();
     }
 
+    @Test
+    @DisplayName("Issue#145 - getReviewResponse: 投稿者のプロフィール画像URLが含まれる")
+    void testGetReviewResponse_IncludesProfileImageUrl() {
+        LocationSuggestion suggestion = createMockSuggestion();
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setS3ObjectKey("uploads/1/test.jpg");
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+        owner.setProfileImageS3Key("profiles/1/avatar.jpg");
+        Spot spot = createMockSpot(SPOT_ID, ORIGINAL_LAT, ORIGINAL_LNG);
+
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(spotRepository.findById(SPOT_ID)).thenReturn(Optional.of(spot));
+        when(s3Service.generateCdnUrl("uploads/1/test.jpg")).thenReturn("https://cdn/uploads/1/test.jpg");
+        when(s3Service.generateThumbnailCdnUrl("uploads/1/test.jpg")).thenReturn("https://cdn/thumbnails/uploads/1/test.webp");
+        when(s3Service.generateCdnUrl("profiles/1/avatar.jpg")).thenReturn("https://cdn/profiles/1/avatar.jpg");
+
+        LocationSuggestionReviewResponse response = service.getReviewResponse(REVIEW_TOKEN, OWNER_EMAIL);
+
+        assertThat(response.getProfileImageUrl()).isEqualTo("https://cdn/profiles/1/avatar.jpg");
+    }
+
+    @Test
+    @DisplayName("Issue#145 - getReviewResponse: プロフィール画像未設定なら profileImageUrl は null")
+    void testGetReviewResponse_NullProfileImageUrl() {
+        LocationSuggestion suggestion = createMockSuggestion();
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setS3ObjectKey("uploads/1/test.jpg");
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+        // profileImageS3Key は未設定
+        Spot spot = createMockSpot(SPOT_ID, ORIGINAL_LAT, ORIGINAL_LNG);
+
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+        when(locationSuggestionRepository.findByReviewToken(REVIEW_TOKEN)).thenReturn(Optional.of(suggestion));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(spotRepository.findById(SPOT_ID)).thenReturn(Optional.of(spot));
+
+        LocationSuggestionReviewResponse response = service.getReviewResponse(REVIEW_TOKEN, OWNER_EMAIL);
+
+        assertThat(response.getProfileImageUrl()).isNull();
+    }
+
     // ========================================
     // Issue#90: 指摘承認通知メール
     // ========================================

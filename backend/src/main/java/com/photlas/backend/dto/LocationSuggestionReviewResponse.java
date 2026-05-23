@@ -16,6 +16,7 @@ public class LocationSuggestionReviewResponse {
     private String imageUrl;
     private String thumbnailUrl;
     private String username;
+    private String profileImageUrl;
     private String placeName;
     private String shotAt;
     private Double cropCenterX;
@@ -48,6 +49,9 @@ public class LocationSuggestionReviewResponse {
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
+
+    public String getProfileImageUrl() { return profileImageUrl; }
+    public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
 
     public String getPlaceName() { return placeName; }
     public void setPlaceName(String placeName) { this.placeName = placeName; }

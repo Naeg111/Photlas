@@ -17,17 +17,26 @@ import ReviewLocationPage from './ReviewLocationPage'
  */
 
 // react-map-glのモック
-vi.mock('react-map-gl', () => ({
-  default: ({ children }: { children?: React.ReactNode }) => (
-    <div data-testid="mapbox-map">{children}</div>
-  ),
-  Map: ({ children }: { children?: React.ReactNode }) => (
-    <div data-testid="mapbox-map">{children}</div>
-  ),
-  Marker: ({ children }: { children?: React.ReactNode }) => (
-    <div data-testid="map-marker">{children}</div>
-  ),
-}))
+// Issue#145: language と initialViewState.bounds を data 属性で公開し、
+// 言語切替・自動フィットの assert を可能にする。
+vi.mock('react-map-gl', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const MapMock = ({ children, language, initialViewState }: any) => (
+    <div
+      data-testid="mapbox-map"
+      data-language={language}
+      data-bounds={initialViewState && initialViewState.bounds ? JSON.stringify(initialViewState.bounds) : undefined}
+    >
+      {children}
+    </div>
+  )
+  return {
+    default: MapMock,
+    Map: MapMock,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Marker: ({ children }: any) => <div data-testid="map-marker">{children}</div>,
+  }
+})
 
 // Mapbox設定のモック
 vi.mock('../config/mapbox', () => ({
@@ -56,6 +65,7 @@ vi.mock('../components/LoginDialog', () => ({
 vi.mock('lucide-react', () => ({
   MapPin: () => <span data-testid="icon-map-pin" />,
   Calendar: () => <span data-testid="icon-calendar" />,
+  User: () => <span data-testid="icon-user" />,
 }))
 
 // APIモック
@@ -71,6 +81,7 @@ const mockReviewData = {
   imageUrl: 'https://cdn/uploads/1/test.jpg',
   thumbnailUrl: 'https://cdn/thumbnails/uploads/1/test.webp',
   username: 'テストユーザー',
+  profileImageUrl: 'https://cdn/profiles/1/avatar.webp',
   placeName: '東京タワー',
   shotAt: '2026-03-01T12:00:00',
   cropCenterX: null,
@@ -365,6 +376,96 @@ describe('ReviewLocationPage', () => {
       expect(
         await screen.findByText('リクエストが多すぎます。60 秒後に再度お試しください。')
       ).toBeInTheDocument()
+    })
+  })
+
+  // ============================================================
+  // Issue#145: 確認画面 UI 改修
+  // ============================================================
+  describe('Issue#145 - 確認画面 UI 改修', () => {
+    const loadReview = async () => {
+      mockFetch.mockResolvedValue({ ok: true, json: async () => mockReviewData })
+      renderWithToken('valid-token')
+      await screen.findByTestId('review-photo')
+    }
+
+    it('メイン確認画面が shadcn Dialog (role="dialog") で表示され、既定幅 sm:max-w- を持つ', async () => {
+      await loadReview()
+      const dialog = await screen.findByRole('dialog')
+      expect(dialog).toBeInTheDocument()
+      expect(dialog.className).toMatch(/sm:max-w-/)
+    })
+
+    it('メイン確認画面に閉じる手段 (Close ボタン) が無い', async () => {
+      await loadReview()
+      expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument()
+    })
+
+    it('写真はクロップ済みサムネ (thumbnailUrl) を src に使い、正方形・object-cover で表示する', async () => {
+      await loadReview()
+      const photo = screen.getByTestId('review-photo')
+      expect(photo).toHaveAttribute('src', mockReviewData.thumbnailUrl)
+      expect(photo.className).toContain('object-cover')
+      expect(photo.closest('.aspect-square')).not.toBeNull()
+    })
+
+    it('ユーザー名の左に投稿者アイコンを表示し、クリック不可（button/a で包まない）', async () => {
+      await loadReview()
+      const avatar = screen.getByTestId('review-avatar')
+      expect(avatar).toHaveAttribute('src', mockReviewData.profileImageUrl)
+      expect(avatar.className).toContain('rounded-full')
+      expect(avatar.closest('button')).toBeNull()
+      expect(avatar.closest('a')).toBeNull()
+    })
+
+    it('プロフィール画像が無い場合はプレースホルダ（User アイコン）を表示する', async () => {
+      mockFetch.mockResolvedValue({ ok: true, json: async () => ({ ...mockReviewData, profileImageUrl: null }) })
+      renderWithToken('valid-token')
+      await screen.findByTestId('review-photo')
+      expect(screen.queryByTestId('review-avatar')).not.toBeInTheDocument()
+      expect(screen.getByTestId('review-avatar-placeholder')).toBeInTheDocument()
+    })
+
+    it('ミニマップに language が渡される（地名ラベルの言語切替）', async () => {
+      await loadReview()
+      const map = await screen.findByTestId('mapbox-map')
+      expect(map).toHaveAttribute('data-language')
+      expect(map.getAttribute('data-language')).toBeTruthy()
+    })
+
+    it('ミニマップに自動フィット用の bounds が渡される（両ピンが収まる）', async () => {
+      await loadReview()
+      const map = await screen.findByTestId('mapbox-map')
+      expect(map).toHaveAttribute('data-bounds')
+      const bounds = JSON.parse(map.getAttribute('data-bounds') as string)
+      expect(Array.isArray(bounds)).toBe(true)
+      expect(bounds).toHaveLength(2)
+    })
+
+    it('元位置は白黒ピン・指摘位置は赤ピンで描画し、青ピンは使わない', async () => {
+      await loadReview()
+      const map = await screen.findByTestId('mapbox-map')
+      // 白黒ピン（元位置）
+      expect(map.querySelector('path[fill="#ffffff"]')).not.toBeNull()
+      // 赤ピン（指摘位置）
+      expect(map.querySelector('path[fill="#EF4444"]')).not.toBeNull()
+      // 旧・青ピンは廃止
+      expect(map.querySelector('path[fill="#3B82F6"]')).toBeNull()
+    })
+
+    it('アクションボタンは共通 Button (rounded-md) で、右が受け入れ・左が拒否', async () => {
+      await loadReview()
+      const accept = screen.getByRole('button', { name: '受け入れる' })
+      const reject = screen.getByRole('button', { name: '拒否する' })
+      expect(accept.className).toContain('rounded-md')
+      expect(accept.className).not.toContain('rounded-full')
+      expect(reject.className).toContain('rounded-md')
+      expect(reject.className).not.toContain('rounded-full')
+      // 受け入れ＝primary 配色
+      expect(accept.className).toContain('bg-primary')
+      // DOM 順で reject(左) が accept(右) より前に来る
+      // eslint-disable-next-line no-bitwise
+      expect(reject.compareDocumentPosition(accept) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     })
   })
 })
