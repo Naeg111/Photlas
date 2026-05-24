@@ -182,6 +182,8 @@ public class PhotoService {
         photo.setCropCenterX(request.getCropCenterX());
         photo.setCropCenterY(request.getCropCenterY());
         photo.setCropZoom(request.getCropZoom());
+        // Issue#146: 撮影場所が EXIF GPS 由来かどうか（null は false 扱い）
+        photo.setLocationFromExif(Boolean.TRUE.equals(request.getLocationFromExif()));
 
         Photo savedPhoto = photoRepository.save(photo);
 
@@ -744,6 +746,8 @@ public class PhotoService {
         response.setCropCenterY(photo.getCropCenterY());
         response.setCropZoom(photo.getCropZoom());
         response.setModerationStatus(photo.getModerationStatus());
+        // Issue#146: 指摘ダイアログが上限 1km 判定に使う
+        response.setLocationFromExif(photo.getLocationFromExif());
 
         if (photo.getCategories() != null && !photo.getCategories().isEmpty()) {
             response.setCategories(

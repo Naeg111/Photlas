@@ -137,6 +137,8 @@ interface PhotoApiResponse {
   cropCenterY?: number | null
   cropZoom?: number | null
   moderationStatus?: number | null
+  /** Issue#146: 撮影場所が EXIF GPS 由来か。指摘ダイアログの上限 1km 判定に使う */
+  locationFromExif?: boolean | null
   categories?: string[]
   user: {
     userId: number
@@ -180,6 +182,8 @@ interface PhotoDetail {
   cropCenterY?: number | null
   cropZoom?: number | null
   moderationStatus?: number | null
+  /** Issue#146: 撮影場所が EXIF GPS 由来か。指摘ダイアログの上限 1km 判定に使う */
+  locationFromExif?: boolean | null
   categories?: string[]
   user: {
     userId: number
@@ -243,6 +247,7 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
     cropCenterY: response.cropCenterY,
     cropZoom: response.cropZoom,
     moderationStatus: response.moderationStatus,
+    locationFromExif: response.locationFromExif,
     categories: response.categories,
     user: {
       userId: response.user.userId,
@@ -1620,6 +1625,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       photoId={currentPhoto.photoId}
                       currentLatitude={currentPhoto.spot.latitude}
                       currentLongitude={currentPhoto.spot.longitude}
+                      locationFromExif={currentPhoto.locationFromExif ?? false}
                       onSubmit={handleLocationSuggestion}
                     />
                   )}

@@ -19,9 +19,9 @@ describe('geoDistance', () => {
     expect(d).toBeCloseTo(111.19, 1)
   })
 
-  it('赤道上で経度のみ 0.001 度離れた点は約 111.32m', () => {
+  it('赤道上で経度のみ 0.001 度離れた点は約 111.19m（球体 6371000m 基準）', () => {
     const d = geoDistance(0, 0, 0, 0.001)
-    expect(d).toBeCloseTo(111.32, 1)
+    expect(d).toBeCloseTo(111.19, 1)
   })
 
   it('緯度を約 1000m 分ずらした点は約 1000m を返す', () => {

@@ -209,6 +209,8 @@
     "locationRequired": "Location (required)",
     "locationInstruction": "Drag the map to place the pin at the shooting location",
     "locationAutoHint": "Auto-detected from photo GPS data if available",
+    "gpsLocationHint": "The location was set automatically from the photo's GPS. You can fine-tune it within 1km.",
+    "gpsTooFarError": "Please set the shooting location within 1km of the GPS position.",
     "locationError": "Please set the location.",
     "locationName": "Location Name",
     "locationNamePlaceholder": "e.g. Tokyo Skytree, Mt. Fuji",
@@ -348,7 +350,7 @@
     "languageSwitch": "Switch Language",
     "languageSwitchText": "From the language switcher at the bottom of the menu, you can switch between 5 languages: Japanese, English, Korean, and Chinese (Simplified and Traditional).",
     "suggestLocation": "Suggest a Shooting Location",
-    "suggestLocationText": "If you find a photo whose shooting location appears wrong, you can suggest the correct one on the map. Your suggestion helps share more accurate information with the community.",
+    "suggestLocationText": "For a photo with a wrong shooting location, you can suggest a correct spot at least 30m away from the original. For photos with GPS location data, suggestions must be within 1km of the original location.",
     "report": "Report Inappropriate Posts",
     "reportText1": "From the photo detail screen, you can report inappropriate content or problematic posts. Reports are reviewed by our team.",
     "reportText2": "Note that we automatically detect inappropriate content at the time of posting and block likely violations in advance, though some may slip through."
@@ -392,6 +394,8 @@
     "suggestionTitle": "Report Location",
     "suggestionDescription": "Suggest a location correction",
     "suggestionInstruction": "Move the map to place the blue pin at the correct shooting location.",
+    "suggestionTooClose": "Too close. Please choose a spot at least 30m from the original shooting location.",
+    "suggestionTooFar": "Too far. Please choose a spot within 1km of the original shooting location.",
     "suggestLocation": "Report Location"
   },
   "cookie": {

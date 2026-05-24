@@ -547,6 +547,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
     cropCenterX?: number
     cropCenterY?: number
     cropZoom?: number
+    locationFromExif?: boolean
     exif?: {
       cameraBody?: string
       cameraLens?: string
@@ -616,6 +617,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
         cropCenterX: data.cropCenterX,
         cropCenterY: data.cropCenterY,
         cropZoom: data.cropZoom,
+        locationFromExif: data.locationFromExif,
       })
 
       // 5. マップ更新

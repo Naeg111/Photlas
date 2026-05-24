@@ -38,6 +38,13 @@ public class LocationSuggestionService {
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
     private static final String ERROR_PHOTO_NOT_FOUND = "写真が見つかりません";
 
+    // Issue#146: 撮影場所指摘の距離制限（SpotRepository の haversine と同じ地球半径を使用）
+    private static final double EARTH_RADIUS_METERS = 6371000.0;
+    /** 指摘の下限距離（これ未満は近すぎる誤差レベルの指摘として拒否）。全写真共通。 */
+    private static final double SUGGESTION_MIN_DISTANCE_METERS = 30.0;
+    /** GPS 由来写真の指摘の上限距離（これ超は離れすぎとして拒否）。 */
+    private static final double SUGGESTION_MAX_DISTANCE_METERS = 1000.0;
+
     private final LocationSuggestionRepository locationSuggestionRepository;
     private final PhotoRepository photoRepository;
     private final SpotRepository spotRepository;
@@ -102,6 +109,10 @@ public class LocationSuggestionService {
         if (locationSuggestionRepository.existsByPhotoIdAndSuggesterId(photoId, suggester.getId())) {
             throw new IllegalStateException("この写真に対して既に撮影場所の指摘を行っています");
         }
+
+        // Issue#146: 指摘の距離バリデーション（フロントをすり抜けても弾く安全網）。
+        // 基準点は写真のスポット座標（指摘ダイアログが赤マーカーで表示している座標と一致させる）。
+        validateSuggestionDistance(photo, latitude, longitude);
 
         LocationSuggestion suggestion = new LocationSuggestion();
         suggestion.setPhotoId(photoId);
@@ -286,6 +297,49 @@ public class LocationSuggestionService {
         }
 
         return suggestion;
+    }
+
+    /**
+     * Issue#146: 指摘地点の距離をバリデーションする。
+     *
+     * <p>基準点は写真のスポット座標（指摘ダイアログの赤マーカー＝写真の現在位置）。
+     * 元の場所から 30m 未満（近すぎ）は全写真で拒否し、GPS 由来写真は 1km 超（離れすぎ）も
+     * 拒否する。GPS なし写真は距離上限なし。スポットが見つからない場合は判定をスキップする。</p>
+     *
+     * @param photo 指摘対象の写真
+     * @param latitude 指摘地点の緯度
+     * @param longitude 指摘地点の経度
+     */
+    private void validateSuggestionDistance(Photo photo, BigDecimal latitude, BigDecimal longitude) {
+        Spot spot = spotRepository.findById(photo.getSpotId()).orElse(null);
+        if (spot == null || spot.getLatitude() == null || spot.getLongitude() == null) {
+            return;
+        }
+
+        double meters = haversineMeters(
+                spot.getLatitude().doubleValue(), spot.getLongitude().doubleValue(),
+                latitude.doubleValue(), longitude.doubleValue());
+
+        if (meters < SUGGESTION_MIN_DISTANCE_METERS) {
+            throw new IllegalStateException("元の撮影場所から 30m 以上離れた場所を指定してください");
+        }
+        if (Boolean.TRUE.equals(photo.getLocationFromExif()) && meters > SUGGESTION_MAX_DISTANCE_METERS) {
+            throw new IllegalStateException(
+                    "この写真は GPS の位置情報が設定されているため、元の撮影場所から 1km 以内で指定してください");
+        }
+    }
+
+    /**
+     * Haversine 公式で 2 点間の距離をメートルで返す。
+     * SpotRepository の検索クエリと同じ地球半径 6371000m を用いる。
+     */
+    private static double haversineMeters(double lat1, double lng1, double lat2, double lng2) {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.pow(Math.sin(dLat / 2), 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.pow(Math.sin(dLng / 2), 2);
+        return EARTH_RADIUS_METERS * 2 * Math.asin(Math.sqrt(a));
     }
 
     private Spot findOrCreateSpot(BigDecimal latitude, BigDecimal longitude) {

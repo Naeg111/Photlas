@@ -54,6 +54,7 @@ import {
   DEVICE_TYPE_OTHER,
 } from '../utils/codeConstants'
 import { extractExif, type ExifData } from '../utils/extractExif'
+import { geoDistance } from '../utils/geoDistance'
 import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
 import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
 import { sortSuggestionsByRelevance } from '../utils/sortSuggestions'
@@ -108,6 +109,9 @@ interface PlaceNameSuggestion {
 // 施設名検索のデバウンス時間
 const PLACE_NAME_DEBOUNCE_MS = 300
 
+// Issue#146: GPS 写真でピンを動かせる上限距離（GPS 地点からの半径・メートル）
+const MAX_GPS_ADJUST_DISTANCE_METERS = 1000
+
 interface PhotoContributionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -132,6 +136,8 @@ interface PhotoContributionDialogProps {
     cropCenterX?: number
     cropCenterY?: number
     cropZoom?: number
+    /** Issue#146: 撮影場所が EXIF GPS 由来か（EXIF に GPS があり初期配置に使った場合 true） */
+    locationFromExif?: boolean
     /** Issue#119: AI 解析で発行された analyzeToken（任意）。バックエンドが photo_ai_predictions に紐づける */
     analyzeToken?: string
     /** Issue#135: 最終的にユーザーが選んだキーワード ID 全件（AI + 手動の両方） */
@@ -571,6 +577,7 @@ export function PhotoContributionDialog({
           cropCenterX: croppedArea ? (croppedArea.x + croppedArea.width / 2) / 100 : 0.5,
           cropCenterY: croppedArea ? (croppedArea.y + croppedArea.height / 2) / 100 : 0.5,
           cropZoom,
+          locationFromExif,
           analyzeToken: analyzeToken ?? undefined,
           tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
           aiOriginatedTagIds: selectedTagIds.length > 0
@@ -651,7 +658,16 @@ export function PhotoContributionDialog({
     }
   }
 
-  const canSubmit = selectedFile && pinPosition && selectedCategories.length > 0 && selectedDeviceType !== ''
+  // Issue#146: 撮影場所が EXIF GPS 由来か（EXIF に GPS があり初期配置に使った場合）
+  const locationFromExif = exifData?.latitude != null && exifData?.longitude != null
+  // GPS 写真はピンを GPS 地点から 1km 以内に制限する（検索・現在地ボタンでのすり抜けも弾く）
+  const distanceFromGps = locationFromExif && pinPosition
+    ? geoDistance(exifData!.latitude!, exifData!.longitude!, pinPosition.lat, pinPosition.lng)
+    : null
+  const tooFarFromGps = distanceFromGps !== null && distanceFromGps > MAX_GPS_ADJUST_DISTANCE_METERS
+
+  const canSubmit = selectedFile && pinPosition && selectedCategories.length > 0
+    && selectedDeviceType !== '' && !tooFarFromGps
 
   const hasExifInfo = exifData && (
     exifData.cameraBody || exifData.cameraLens || exifData.focalLength35mm ||
@@ -866,6 +882,12 @@ export function PhotoContributionDialog({
                 <p className="text-sm text-gray-500">
                   {t('photo.locationAutoHint')}
                 </p>
+                {/* Issue#146: GPS 写真は GPS 地点から 1km 以内で微調整できる旨を案内 */}
+                {locationFromExif && (
+                  <p className="text-sm text-gray-500">
+                    {t('photo.gpsLocationHint')}
+                  </p>
+                )}
               </div>
               <div className="border rounded-lg overflow-hidden h-[333px]">
                 <InlineMapPicker
@@ -873,6 +895,12 @@ export function PhotoContributionDialog({
                   onPositionChange={setPinPosition}
                 />
               </div>
+              {/* Issue#146: GPS 地点から 1km を超えると投稿不可（エラー表示） */}
+              {tooFarFromGps && (
+                <p className="text-sm text-red-600" data-testid="gps-too-far-error">
+                  {t('photo.gpsTooFarError')}
+                </p>
+              )}
             </div>
 
             {/* 施設名・店名 */}
