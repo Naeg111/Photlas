@@ -186,6 +186,8 @@
     "locationRequired": "위치 (필수)",
     "locationInstruction": "지도를 드래그해 핀을 촬영 위치에 맞춰 주세요",
     "locationAutoHint": "사진에 GPS 데이터가 있으면 자동으로 감지됩니다",
+    "gpsLocationHint": "위치 정보는 사진의 GPS에서 자동으로 설정되었습니다. 1km 이내에서 미세 조정할 수 있습니다",
+    "gpsTooFarError": "촬영 장소는 GPS 위치에서 1km 이내로 지정해 주세요",
     "locationError": "위치를 설정해 주세요.",
     "locationName": "장소 이름",
     "locationNamePlaceholder": "예: 남산타워, 한라산",
@@ -325,7 +327,7 @@
     "languageSwitch": "언어 전환",
     "languageSwitchText": "메뉴 하단의 언어 스위치에서 일본어, 영어, 한국어, 중국어(간체, 번체)의 5개 언어를 전환할 수 있습니다.",
     "suggestLocation": "촬영 장소 지적",
-    "suggestLocationText": "촬영 지점이 잘못 표시된 사진을 발견하면, 올바른 장소를 맵에서 지적할 수 있습니다. 여러분의 지적을 통해 더 정확한 정보가 커뮤니티에 공유됩니다.",
+    "suggestLocationText": "촬영 지점이 잘못된 사진은 원래 장소에서 30m 이상 떨어진 올바른 장소를 지적할 수 있습니다. GPS 위치 정보가 있는 사진은 원래 장소에서 1km 이내 범위로 지적할 수 있습니다.",
     "report": "부적절한 게시물 신고",
     "reportText1": "사진의 상세 화면에서 부적절한 콘텐츠나 문제 있는 게시물을 신고할 수 있습니다. 신고 내용은 운영진이 확인합니다.",
     "reportText2": "참고로, 게시 시 자동 감지를 실시하고 있어 부적절하다고 판단되는 사진은 미리 차단하고 있지만, 빠져나갈 가능성이 있습니다."
@@ -369,6 +371,8 @@
     "suggestionTitle": "위치 제보",
     "suggestionDescription": "위치 수정 제안",
     "suggestionInstruction": "파란 핀을 올바른 촬영 위치에 맞게 지도를 이동해 주세요.",
+    "suggestionTooClose": "너무 가깝습니다. 원래 촬영 장소에서 30m 이상 떨어진 곳을 지정해 주세요",
+    "suggestionTooFar": "너무 멉니다. 원래 촬영 장소에서 1km 이내로 지정해 주세요",
     "suggestLocation": "위치 제보"
   },
   "cookie": {

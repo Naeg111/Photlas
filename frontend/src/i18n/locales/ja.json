@@ -209,6 +209,8 @@
     "locationRequired": "撮影場所（必須）",
     "locationInstruction": "マップをドラッグして撮影場所にピンを合わせてください",
     "locationAutoHint": "写真に位置情報が登録されている場合は自動で設定されます",
+    "gpsLocationHint": "位置情報は写真のGPSから自動設定されています。1km以内で微調整できます",
+    "gpsTooFarError": "撮影場所はGPSの位置から1km以内で指定してください",
     "locationError": "位置情報を設定してください。",
     "locationName": "場所の名前",
     "locationNamePlaceholder": "例：東京スカイツリー、富士山",
@@ -348,7 +350,7 @@
     "languageSwitch": "言語の切り替え",
     "languageSwitchText": "メニュー下部の言語スイッチから、日本語・英語・韓国語・中国語（簡体字・繁体字）の5言語を切り替えられます。",
     "suggestLocation": "撮影場所の指摘",
-    "suggestLocationText": "撮影地点が誤って表示されている写真を見つけたら、正しい場所をマップ上で指摘できます。あなたの指摘によって、より正確な情報がコミュニティに共有されます。",
+    "suggestLocationText": "撮影地点が誤っている写真は、元の場所から30m以上離れた正しい場所を指摘できます。GPSの位置情報が付いている写真は、元の場所から1km以内の範囲で指摘できます。",
     "report": "不適切な投稿の通報",
     "reportText1": "写真の詳細画面から、不適切なコンテンツや問題のある投稿を通報できます。通報内容は運営にて確認させていただきます。",
     "reportText2": "なお、投稿時に自動検知を行っており、不適切と思われる写真はあらかじめブロックしていますが、すり抜ける可能性があります。"
@@ -392,6 +394,8 @@
     "suggestionTitle": "撮影場所の指摘",
     "suggestionDescription": "撮影場所の修正を指摘する",
     "suggestionInstruction": "マップを動かして、正しいと思われる撮影場所を青いピンに合わせてください。",
+    "suggestionTooClose": "近すぎます。元の撮影場所から30m以上離れた場所を指定してください",
+    "suggestionTooFar": "離れすぎです。元の撮影場所から1km以内で指定してください",
     "suggestLocation": "撮影場所の指摘"
   },
   "cookie": {

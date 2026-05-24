@@ -223,6 +223,8 @@ export interface CreatePhotoRequest {
   cropCenterX?: number
   cropCenterY?: number
   cropZoom?: number
+  /** Issue#146: 撮影場所が EXIF GPS 由来か（既定 false）。指摘の距離上限判定に使う */
+  locationFromExif?: boolean
 }
 
 /**

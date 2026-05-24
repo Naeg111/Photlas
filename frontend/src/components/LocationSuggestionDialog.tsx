@@ -9,11 +9,17 @@ import {
 } from './ui/dialog'
 import { Button } from './ui/button'
 import { InlineMapPicker } from './InlineMapPicker'
+import { geoDistance } from '../utils/geoDistance'
 
 /**
  * Issue#65: 位置情報修正の指摘ダイアログ
  * Issue#76: 固定ピン方式に変更
+ * Issue#146: 距離バリデーション（30m 下限・GPS 写真は 1km 上限）を追加
  */
+
+// Issue#146: 指摘の距離制限（バックエンドの安全網と同じ閾値）
+const MIN_SUGGESTION_DISTANCE_METERS = 30
+const MAX_SUGGESTION_DISTANCE_METERS = 1000
 
 interface LocationSuggestionDialogProps {
   open: boolean
@@ -21,6 +27,8 @@ interface LocationSuggestionDialogProps {
   photoId: number
   currentLatitude: number
   currentLongitude: number
+  /** Issue#146: 写真が GPS 由来かどうか。true の場合は上限 1km を適用する */
+  locationFromExif?: boolean
   onSubmit?: (latitude: number, longitude: number) => void | Promise<void>
 }
 
@@ -29,6 +37,7 @@ export function LocationSuggestionDialog({
   onOpenChange,
   currentLatitude,
   currentLongitude,
+  locationFromExif = false,
   onSubmit,
 }: Readonly<LocationSuggestionDialogProps>) {
   const { t } = useTranslation()
@@ -40,6 +49,18 @@ export function LocationSuggestionDialog({
     setSuggestedLat(position.lat)
     setSuggestedLng(position.lng)
   }, [])
+
+  // Issue#146: 「元の撮影場所」から指摘地点までの距離で送信可否を判定する
+  const distance = (suggestedLat !== null && suggestedLng !== null)
+    ? geoDistance(currentLatitude, currentLongitude, suggestedLat, suggestedLng)
+    : null
+  const tooClose = distance !== null && distance < MIN_SUGGESTION_DISTANCE_METERS
+  const tooFar = locationFromExif && distance !== null && distance > MAX_SUGGESTION_DISTANCE_METERS
+  const distanceError = tooClose
+    ? t('location.suggestionTooClose')
+    : tooFar
+      ? t('location.suggestionTooFar')
+      : null
 
   const handleSubmit = async () => {
     if (suggestedLat !== null && suggestedLng !== null && onSubmit) {
@@ -82,13 +103,19 @@ export function LocationSuggestionDialog({
           />
         </div>
 
+        {distanceError && (
+          <p className="text-sm text-red-600 mt-2" data-testid="suggestion-distance-error">
+            {distanceError}
+          </p>
+        )}
+
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={suggestedLat === null || isSubmitting}
+            disabled={suggestedLat === null || isSubmitting || tooClose || tooFar}
           >
             {t('common.submit')}
           </Button>

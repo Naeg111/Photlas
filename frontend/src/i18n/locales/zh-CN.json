@@ -186,6 +186,8 @@
     "locationRequired": "位置（必填）",
     "locationInstruction": "拖动地图将图钉放置在拍摄地点",
     "locationAutoHint": "如有GPS数据，将自动从照片中读取",
+    "gpsLocationHint": "位置信息已根据照片的GPS自动设置。可在1km范围内微调",
+    "gpsTooFarError": "请将拍摄位置设置在GPS位置1km以内",
     "locationError": "请设置拍摄位置。",
     "locationName": "地点名称",
     "locationNamePlaceholder": "例：东京晴空塔、富士山",
@@ -325,7 +327,7 @@
     "languageSwitch": "切换语言",
     "languageSwitchText": "通过菜单底部的语言切换器,可在日语、英语、韩语、中文(简体、繁体)5种语言之间切换。",
     "suggestLocation": "拍摄位置纠正",
-    "suggestLocationText": "若发现照片的拍摄位置标记错误,可在地图上指出正确位置。您的指出将帮助社区共享更准确的信息。",
+    "suggestLocationText": "拍摄地点有误的照片，可指出距原位置30m以上的正确地点。带有GPS位置信息的照片，只能在距原位置1km以内的范围内指出。",
     "report": "举报不当内容",
     "reportText1": "可通过照片详情页面举报不当内容或有问题的发布。举报内容将由运营方审核。",
     "reportText2": "另外,我们在发布时会自动检测,提前屏蔽可能不当的照片,但仍可能有遗漏。"
@@ -369,6 +371,8 @@
     "suggestionTitle": "举报位置",
     "suggestionDescription": "建议位置更正",
     "suggestionInstruction": "移动地图，将蓝色图钉放置在正确的拍摄位置。",
+    "suggestionTooClose": "太近了。请指定距原拍摄位置30m以上的地点",
+    "suggestionTooFar": "太远了。请在距原拍摄位置1km以内指定",
     "suggestLocation": "举报位置"
   },
   "cookie": {

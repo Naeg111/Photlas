@@ -186,6 +186,8 @@
     "locationRequired": "位置（必填）",
     "locationInstruction": "拖曳地圖，將圖釘移至拍攝地點",
     "locationAutoHint": "若照片含有 GPS 資料，將自動偵測位置",
+    "gpsLocationHint": "位置資訊已依照片的 GPS 自動設定。可在 1km 範圍內微調",
+    "gpsTooFarError": "請將拍攝地點設定在 GPS 位置 1km 以內",
     "locationError": "請設定位置。",
     "locationName": "地點名稱",
     "locationNamePlaceholder": "例：台北101、玉山",
@@ -325,7 +327,7 @@
     "languageSwitch": "切換語言",
     "languageSwitchText": "從選單下方的語言切換器,可在日文、英文、韓文、中文(簡體、繁體)5 種語言之間切換。",
     "suggestLocation": "拍攝地點修正建議",
-    "suggestLocationText": "若發現照片的拍攝地點顯示有誤,可在地圖上指出正確位置。您的建議將有助於將更準確的資訊分享給社群。",
+    "suggestLocationText": "拍攝地點有誤的照片，可指出距原地點 30m 以上的正確位置。帶有 GPS 位置資訊的照片，只能在距原地點 1km 以內的範圍內指出。",
     "report": "檢舉不當貼文",
     "reportText1": "從照片詳細畫面,可檢舉不當內容或有問題的貼文。檢舉內容將由營運方進行確認。",
     "reportText2": "另外,我們在發布時會進行自動偵測,可能不當的照片會事先封鎖,但仍可能有遺漏。"
@@ -369,6 +371,8 @@
     "suggestionTitle": "回報位置",
     "suggestionDescription": "建議位置修正",
     "suggestionInstruction": "移動地圖，將藍色圖釘移至正確的拍攝地點。",
+    "suggestionTooClose": "太近了。請指定距原拍攝地點 30m 以上的位置",
+    "suggestionTooFar": "太遠了。請在距原拍攝地點 1km 以內指定",
     "suggestLocation": "回報位置"
   },
   "cookie": {
