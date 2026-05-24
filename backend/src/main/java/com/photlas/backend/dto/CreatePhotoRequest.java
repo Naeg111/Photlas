@@ -64,6 +64,13 @@ public class CreatePhotoRequest {
     private Double cropZoom;
 
     /**
+     * Issue#146: 撮影場所が写真の EXIF GPS 由来かどうか（任意・既定 false）。
+     * フロントは EXIF に GPS があり、その座標を初期配置に使った場合に true を送る。
+     * バックエンドはこの値を {@code Photo.location_from_exif} に保存し、指摘の距離上限判定に使う。
+     */
+    private Boolean locationFromExif;
+
+    /**
      * Issue#119: AI 解析で発行された analyzeToken（任意）。
      * フロントが {@code POST /api/v1/photos/analyze} で受け取り、投稿時にそのまま送信する。
      * 本フィールドが設定されている場合、バックエンドは {@code ai_prediction_cache} から
@@ -235,6 +242,14 @@ public class CreatePhotoRequest {
 
     public void setCropZoom(Double cropZoom) {
         this.cropZoom = cropZoom;
+    }
+
+    public Boolean getLocationFromExif() {
+        return locationFromExif;
+    }
+
+    public void setLocationFromExif(Boolean locationFromExif) {
+        this.locationFromExif = locationFromExif;
     }
 
     public String getAnalyzeToken() {

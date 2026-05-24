@@ -664,6 +664,156 @@ public class LocationSuggestionServiceTest {
     }
 
     // ========================================
+    // Issue#146: 指摘の距離バリデーション（安全網）
+    // ========================================
+
+    @Test
+    @DisplayName("Issue#146 - 指摘作成: 元の場所から30m未満（近すぎ）はエラー")
+    void testCreateSuggestion_TooClose_ThrowsException() {
+        User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        Spot spot = createMockSpot(SPOT_ID, ORIGINAL_LAT, ORIGINAL_LNG);
+        // 元の場所から約10m（30m未満）
+        BigDecimal nearLat = latOffsetMeters(ORIGINAL_LAT, 10.0);
+
+        when(userRepository.findByEmail(SUGGESTER_EMAIL)).thenReturn(Optional.of(suggester));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(locationSuggestionRepository.existsByPhotoIdAndSuggesterId(PHOTO_ID, SUGGESTER_ID)).thenReturn(false);
+        when(spotRepository.findById(SPOT_ID)).thenReturn(Optional.of(spot));
+
+        assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, nearLat, ORIGINAL_LNG))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("30m");
+    }
+
+    @Test
+    @DisplayName("Issue#146 - 指摘作成: 境界値 29m はエラー（30m未満）")
+    void testCreateSuggestion_29m_ThrowsException() {
+        User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        Spot spot = createMockSpot(SPOT_ID, ORIGINAL_LAT, ORIGINAL_LNG);
+        BigDecimal lat29 = latOffsetMeters(ORIGINAL_LAT, 29.0);
+
+        when(userRepository.findByEmail(SUGGESTER_EMAIL)).thenReturn(Optional.of(suggester));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(locationSuggestionRepository.existsByPhotoIdAndSuggesterId(PHOTO_ID, SUGGESTER_ID)).thenReturn(false);
+        when(spotRepository.findById(SPOT_ID)).thenReturn(Optional.of(spot));
+
+        assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, lat29, ORIGINAL_LNG))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("30m");
+    }
+
+    @Test
+    @DisplayName("Issue#146 - 指摘作成: 境界値 31m は成功（30m以上）")
+    void testCreateSuggestion_31m_Success() {
+        BigDecimal lat31 = latOffsetMeters(ORIGINAL_LAT, 31.0);
+        mockSuccessfulSuggestion(false);
+
+        LocationSuggestion result = service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, lat31, ORIGINAL_LNG);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo(CodeConstants.SUGGESTION_STATUS_PENDING);
+    }
+
+    @Test
+    @DisplayName("Issue#146 - 指摘作成: GPS写真は1km超（離れすぎ）はエラー")
+    void testCreateSuggestion_ExifPhoto_TooFar_ThrowsException() {
+        User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setLocationFromExif(true);
+        Spot spot = createMockSpot(SPOT_ID, ORIGINAL_LAT, ORIGINAL_LNG);
+        // 元の場所から約1500m（1km超）
+        BigDecimal farLat = latOffsetMeters(ORIGINAL_LAT, 1500.0);
+
+        when(userRepository.findByEmail(SUGGESTER_EMAIL)).thenReturn(Optional.of(suggester));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(locationSuggestionRepository.existsByPhotoIdAndSuggesterId(PHOTO_ID, SUGGESTER_ID)).thenReturn(false);
+        when(spotRepository.findById(SPOT_ID)).thenReturn(Optional.of(spot));
+
+        assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, farLat, ORIGINAL_LNG))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("1km");
+    }
+
+    @Test
+    @DisplayName("Issue#146 - 指摘作成: GPS写真の境界値 1001m はエラー（1km超）")
+    void testCreateSuggestion_ExifPhoto_1001m_ThrowsException() {
+        User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setLocationFromExif(true);
+        Spot spot = createMockSpot(SPOT_ID, ORIGINAL_LAT, ORIGINAL_LNG);
+        BigDecimal lat1001 = latOffsetMeters(ORIGINAL_LAT, 1001.0);
+
+        when(userRepository.findByEmail(SUGGESTER_EMAIL)).thenReturn(Optional.of(suggester));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(locationSuggestionRepository.existsByPhotoIdAndSuggesterId(PHOTO_ID, SUGGESTER_ID)).thenReturn(false);
+        when(spotRepository.findById(SPOT_ID)).thenReturn(Optional.of(spot));
+
+        assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, lat1001, ORIGINAL_LNG))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("1km");
+    }
+
+    @Test
+    @DisplayName("Issue#146 - 指摘作成: GPS写真の境界値 999m は成功（1km以内）")
+    void testCreateSuggestion_ExifPhoto_999m_Success() {
+        BigDecimal lat999 = latOffsetMeters(ORIGINAL_LAT, 999.0);
+        mockSuccessfulSuggestion(true);
+
+        LocationSuggestion result = service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, lat999, ORIGINAL_LNG);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo(CodeConstants.SUGGESTION_STATUS_PENDING);
+    }
+
+    @Test
+    @DisplayName("Issue#146 - 指摘作成: GPSなし写真は1km超でも成功（上限なし）")
+    void testCreateSuggestion_NonExifPhoto_FarAway_Success() {
+        // 元の場所から約5000m（GPSなし写真なので上限なし）
+        BigDecimal farLat = latOffsetMeters(ORIGINAL_LAT, 5000.0);
+        mockSuccessfulSuggestion(false);
+
+        LocationSuggestion result = service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, farLat, ORIGINAL_LNG);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo(CodeConstants.SUGGESTION_STATUS_PENDING);
+    }
+
+    /**
+     * 距離ガードを通過する正常な指摘作成のモック設定（メール送信まで実行される）。
+     *
+     * @param locationFromExif 対象写真が GPS 由来かどうか
+     */
+    private void mockSuccessfulSuggestion(boolean locationFromExif) {
+        User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
+        User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
+        Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
+        photo.setLocationFromExif(locationFromExif);
+        Spot spot = createMockSpot(SPOT_ID, ORIGINAL_LAT, ORIGINAL_LNG);
+
+        when(userRepository.findByEmail(SUGGESTER_EMAIL)).thenReturn(Optional.of(suggester));
+        when(photoRepository.findById(PHOTO_ID)).thenReturn(Optional.of(photo));
+        when(userRepository.findById(OWNER_ID)).thenReturn(Optional.of(owner));
+        when(spotRepository.findById(SPOT_ID)).thenReturn(Optional.of(spot));
+        when(locationSuggestionRepository.existsByPhotoIdAndSuggesterId(PHOTO_ID, SUGGESTER_ID)).thenReturn(false);
+        when(locationSuggestionRepository.existsByPhotoIdAndStatusAndEmailSent(
+                PHOTO_ID, CodeConstants.SUGGESTION_STATUS_PENDING, true)).thenReturn(false);
+        when(locationSuggestionRepository.save(any(LocationSuggestion.class))).thenAnswer(i -> i.getArgument(0));
+    }
+
+    /**
+     * 緯度のみを指定メートル分ずらした座標を返すテストヘルパー。
+     * 経度が同じ 2 点間の haversine 距離は緯度差にほぼ比例するため、
+     * これで「元の場所から meters メートル離れた点」を生成できる。
+     */
+    private static BigDecimal latOffsetMeters(BigDecimal baseLat, double meters) {
+        // 6371000 * PI / 180 = 緯度 1 度あたりのメートル数
+        double metersPerDegree = 6371000.0 * Math.PI / 180.0;
+        return baseLat.add(BigDecimal.valueOf(meters / metersPerDegree));
+    }
+
+    // ========================================
     // ヘルパーメソッド
     // ========================================
 

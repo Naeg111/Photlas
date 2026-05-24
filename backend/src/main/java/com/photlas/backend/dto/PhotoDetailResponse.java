@@ -53,6 +53,13 @@ public class PhotoDetailResponse {
     @JsonProperty("moderationStatus")
     private Integer moderationStatus;
 
+    /**
+     * Issue#146: 撮影場所が写真の EXIF GPS 由来かどうか。
+     * 指摘ダイアログがこの値で「上限 1km」を適用するか判定する。
+     */
+    @JsonProperty("locationFromExif")
+    private Boolean locationFromExif;
+
     @JsonProperty("categories")
     private List<String> categories;
 
@@ -281,6 +288,8 @@ public class PhotoDetailResponse {
     public void setCropZoom(Double cropZoom) { this.cropZoom = cropZoom; }
     public Integer getModerationStatus() { return moderationStatus; }
     public void setModerationStatus(Integer moderationStatus) { this.moderationStatus = moderationStatus; }
+    public Boolean getLocationFromExif() { return locationFromExif; }
+    public void setLocationFromExif(Boolean locationFromExif) { this.locationFromExif = locationFromExif; }
     public List<String> getCategories() { return categories; }
     public void setCategories(List<String> categories) { this.categories = categories; }
     public Integer getTimeOfDay() { return timeOfDay; }
