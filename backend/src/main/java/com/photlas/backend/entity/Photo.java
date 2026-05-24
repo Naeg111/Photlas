@@ -91,6 +91,14 @@ public class Photo {
     private Integer moderationStatus = 1001;
 
     /**
+     * Issue#146: 撮影場所が写真の EXIF GPS 由来かどうか。
+     * true の場合、撮影場所指摘は元の場所から 1km 以内に制限される（GPS 写真は位置がおおむね正しいため）。
+     * false（既定値・GPS なし写真）の場合は指摘の距離上限なし。
+     */
+    @Column(name = "location_from_exif", nullable = false)
+    private Boolean locationFromExif = false;
+
+    /**
      * Issue#125: LQIP（低品質プレースホルダー）の data URL 形式（data:image/webp;base64,...）。
      * サムネイル Lambda がコールバックで書き込む。NULL の場合はフロントが従来挙動にフォールバック。
      */
@@ -329,6 +337,14 @@ public class Photo {
 
     public void setLqipDataUrl(String lqipDataUrl) {
         this.lqipDataUrl = lqipDataUrl;
+    }
+
+    public Boolean getLocationFromExif() {
+        return locationFromExif;
+    }
+
+    public void setLocationFromExif(Boolean locationFromExif) {
+        this.locationFromExif = locationFromExif;
     }
 
     public List<Category> getCategories() {

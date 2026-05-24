@@ -41,11 +41,15 @@ vi.mock('sonner', () => ({
 // Issue#65: LocationSuggestionDialogのモック
 const TEST_SUGGESTED_LAT = 35.68
 const TEST_SUGGESTED_LNG = 139.76
-const { MockLocationSuggestionDialog } = vi.hoisted(() => {
-  const MockLocationSuggestionDialog = ({ open, onSubmit }: {
+// Issue#146: locationFromExif の受け渡しを検証するためプロパティを記録する
+const { MockLocationSuggestionDialog, locationSuggestionProps } = vi.hoisted(() => {
+  const locationSuggestionProps: { current: { locationFromExif?: boolean } } = { current: {} }
+  const MockLocationSuggestionDialog = ({ open, onSubmit, locationFromExif }: {
     open: boolean
     onSubmit?: (lat: number, lng: number) => void
+    locationFromExif?: boolean
   }) => {
+    locationSuggestionProps.current = { locationFromExif }
     if (!open) return null
     return (
       <div data-testid="location-suggestion-dialog">
@@ -58,7 +62,7 @@ const { MockLocationSuggestionDialog } = vi.hoisted(() => {
       </div>
     )
   }
-  return { MockLocationSuggestionDialog }
+  return { MockLocationSuggestionDialog, locationSuggestionProps }
 })
 vi.mock('./LocationSuggestionDialog', () => ({
   LocationSuggestionDialog: MockLocationSuggestionDialog,
@@ -1998,6 +2002,22 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
       return user
     }
+
+    it('Issue#146 - locationFromExif=true が指摘ダイアログに渡される', async () => {
+      const photoDetail = { ...createMockApiResponse({ userId: 999, username: 'otheruser' }), locationFromExif: true }
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/spots/') && url.includes('/photos')) {
+          return Promise.resolve({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
+        }
+        if (url.includes(`/photos/${TEST_PHOTO_ID_1}`)) {
+          return Promise.resolve({ ok: true, json: async () => photoDetail })
+        }
+        return Promise.resolve({ ok: false, status: 404, json: async () => ({}) })
+      })
+      await renderAndOpenSuggestionDialog(mockFetch)
+
+      expect(locationSuggestionProps.current.locationFromExif).toBe(true)
+    })
 
     it('指摘送信時にAPIにPOSTリクエストが送信される', async () => {
       const mockFetch = createLocationSuggestionMockFetch({ ok: true, status: 201, body: { id: 1 } })

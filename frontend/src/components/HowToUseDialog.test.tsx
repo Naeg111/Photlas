@@ -99,6 +99,16 @@ describe('HowToUseDialog', () => {
     })
   })
 
+  // Issue#146: 撮影場所の指摘説明を距離ルールに書き換え
+  describe('Issue#146 - 撮影場所の指摘説明が距離ルールになっている', () => {
+    it('「その他の機能」を開くと指摘の距離ルール（30m以上・1km以内）が表示される', () => {
+      render(<HowToUseDialog open={true} onOpenChange={mockOnOpenChange} />)
+      fireEvent.click(screen.getByText('その他の機能'))
+      expect(screen.getByText(/30m以上/)).toBeInTheDocument()
+      expect(screen.getByText(/1km以内/)).toBeInTheDocument()
+    })
+  })
+
   describe('1つだけ開くアコーディオン', () => {
     it('別カテゴリを開くと、前に開いていたカテゴリは閉じる', () => {
       render(<HowToUseDialog open={true} onOpenChange={mockOnOpenChange} />)

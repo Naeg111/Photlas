@@ -1628,4 +1628,51 @@ public class PhotoServiceTest {
         assertThat(confByTag.get(t1.getId())).isEqualTo(90.0);
         assertThat(confByTag.get(t2.getId())).isNull();
     }
+
+    // ===== Issue#146: 撮影場所が EXIF GPS 由来かどうかの記録 =====
+
+    @Test
+    @DisplayName("Issue#146 - 投稿: locationFromExif=true が写真に保存される")
+    void testCreatePhoto_LocationFromExifTrue_Saved() {
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/exif-gps.jpg");
+        request.setCategories(List.of("風景"));
+        request.setLocationFromExif(true);
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        Photo saved = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(saved.getLocationFromExif()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Issue#146 - 投稿: locationFromExif 未指定なら false で保存される")
+    void testCreatePhoto_LocationFromExifNull_DefaultsFalse() {
+        CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/no-gps.jpg");
+        request.setCategories(List.of("風景"));
+        // locationFromExif は未設定（null）
+
+        PhotoResponse response = photoService.createPhoto(request, testUser.getEmail());
+
+        Photo saved = photoRepository.findById(response.getPhoto().getPhotoId()).orElseThrow();
+        assertThat(saved.getLocationFromExif()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Issue#146 - 写真詳細: locationFromExif がレスポンスに含まれる")
+    void testGetPhotoDetail_ReturnsLocationFromExif() {
+        Spot spot = createSpot("35.658581", "139.745433");
+        Photo photo = new Photo();
+        photo.setSpotId(spot.getSpotId());
+        photo.setUserId(testUser.getId());
+        photo.setS3ObjectKey("uploads/" + testUser.getId() + "/detail-gps.jpg");
+        photo.setShotAt(java.time.LocalDateTime.of(2026, 1, 15, 10, 0));
+        photo.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
+        photo.setCategories(new java.util.ArrayList<>(List.of(landscapeCategory)));
+        photo.setLocationFromExif(true);
+        Photo saved = photoRepository.save(photo);
+
+        PhotoDetailResponse response = photoService.getPhotoDetail(saved.getPhotoId(), testUser.getEmail());
+
+        assertThat(response.getLocationFromExif()).isTrue();
+    }
 }
