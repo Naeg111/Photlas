@@ -54,7 +54,7 @@ import {
   DEVICE_TYPE_OTHER,
 } from '../utils/codeConstants'
 import { extractExif, type ExifData } from '../utils/extractExif'
-import { geoDistance } from '../utils/geoDistance'
+import { geoDistance, MAX_GPS_DISTANCE_METERS } from '../utils/geoDistance'
 import { SearchBoxCore, SessionToken } from '@mapbox/search-js-core'
 import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
 import { sortSuggestionsByRelevance } from '../utils/sortSuggestions'
@@ -108,9 +108,6 @@ interface PlaceNameSuggestion {
 
 // 施設名検索のデバウンス時間
 const PLACE_NAME_DEBOUNCE_MS = 300
-
-// Issue#146: GPS 写真でピンを動かせる上限距離（GPS 地点からの半径・メートル）
-const MAX_GPS_ADJUST_DISTANCE_METERS = 1000
 
 interface PhotoContributionDialogProps {
   open: boolean
@@ -664,7 +661,7 @@ export function PhotoContributionDialog({
   const distanceFromGps = locationFromExif && pinPosition
     ? geoDistance(exifData!.latitude!, exifData!.longitude!, pinPosition.lat, pinPosition.lng)
     : null
-  const tooFarFromGps = distanceFromGps !== null && distanceFromGps > MAX_GPS_ADJUST_DISTANCE_METERS
+  const tooFarFromGps = distanceFromGps !== null && distanceFromGps > MAX_GPS_DISTANCE_METERS
 
   const canSubmit = selectedFile && pinPosition && selectedCategories.length > 0
     && selectedDeviceType !== '' && !tooFarFromGps

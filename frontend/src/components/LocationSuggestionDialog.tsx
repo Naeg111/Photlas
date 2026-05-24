@@ -9,17 +9,17 @@ import {
 } from './ui/dialog'
 import { Button } from './ui/button'
 import { InlineMapPicker } from './InlineMapPicker'
-import { geoDistance } from '../utils/geoDistance'
+import {
+  geoDistance,
+  MIN_SUGGESTION_DISTANCE_METERS,
+  MAX_GPS_DISTANCE_METERS,
+} from '../utils/geoDistance'
 
 /**
  * Issue#65: 位置情報修正の指摘ダイアログ
  * Issue#76: 固定ピン方式に変更
  * Issue#146: 距離バリデーション（30m 下限・GPS 写真は 1km 上限）を追加
  */
-
-// Issue#146: 指摘の距離制限（バックエンドの安全網と同じ閾値）
-const MIN_SUGGESTION_DISTANCE_METERS = 30
-const MAX_SUGGESTION_DISTANCE_METERS = 1000
 
 interface LocationSuggestionDialogProps {
   open: boolean
@@ -55,7 +55,7 @@ export function LocationSuggestionDialog({
     ? geoDistance(currentLatitude, currentLongitude, suggestedLat, suggestedLng)
     : null
   const tooClose = distance !== null && distance < MIN_SUGGESTION_DISTANCE_METERS
-  const tooFar = locationFromExif && distance !== null && distance > MAX_SUGGESTION_DISTANCE_METERS
+  const tooFar = locationFromExif && distance !== null && distance > MAX_GPS_DISTANCE_METERS
   const distanceError = tooClose
     ? t('location.suggestionTooClose')
     : tooFar

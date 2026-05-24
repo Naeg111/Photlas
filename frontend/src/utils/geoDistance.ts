@@ -8,6 +8,21 @@
  */
 const EARTH_RADIUS_METERS = 6371000
 
+/**
+ * Issue#146: 撮影場所指摘の下限距離（メートル）。
+ * 元の撮影場所からこれ未満は「近すぎる誤差レベルの指摘」として全写真で拒否する。
+ * バックエンドの安全網（LocationSuggestionService）と同じ閾値。
+ */
+export const MIN_SUGGESTION_DISTANCE_METERS = 30
+
+/**
+ * Issue#146: GPS 由来写真に適用する上限距離（メートル）。
+ * - 指摘: GPS 写真は元の撮影場所からこれを超える指摘を拒否する。
+ * - アップロード: GPS 写真はピンを GPS 地点からこの半径内に制限する。
+ * いずれも「GPS 写真は位置がおおむね正しい」前提に基づく同一ルール。
+ */
+export const MAX_GPS_DISTANCE_METERS = 1000
+
 const toRadians = (degrees: number): number => (degrees * Math.PI) / 180
 
 export function geoDistance(
