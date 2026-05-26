@@ -76,6 +76,12 @@ jobs:
       with:
         gradle-home-cache-cleanup: true
 
+    # Issue#120: テストは PostgreSQL(+PostGIS) で実行する。
+    # docker-compose の db サービスを起動して再利用（max_connections やテスト用 DB(photlas_test)
+    # の作成など、ローカルと完全に同一の設定で立ち上がる）。--wait でヘルスチェック通過まで待機。
+    - name: Start PostgreSQL (PostGIS)
+      run: docker compose up -d --wait db
+
     - name: Make gradlew executable
       run: |
         cd backend

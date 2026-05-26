@@ -39,15 +39,17 @@ dependencies {
 	implementation 'com.maxmind.geoip2:geoip2:4.2.0'  // Issue#106: IPアドレスからの国判定
 	implementation 'org.flywaydb:flyway-core'
 	implementation 'org.flywaydb:flyway-database-postgresql'
-	runtimeOnly 'com.h2database:h2'
+	// Issue#120: テスト/ローカルも PostgreSQL(+PostGIS) に統一。H2 は廃止。
 	runtimeOnly 'org.postgresql:postgresql'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-	testImplementation 'org.testcontainers:junit-jupiter'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// Issue#120: 全テストを test プロファイル(PostgreSQL+PostGIS / application-test.properties)で実行する。
+	// @ActiveProfiles("test") を付けていないテスト(コンテキストロード等)が、既定プロファイルの
+	// 旧 H2 設定や開発用 DB(photlas_dev)に流れないようにするための明示指定。
+	systemProperty 'spring.profiles.active', 'test'
 }
