@@ -27,7 +27,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * セキュリティ強化の統合テスト
  * Issue#23: Production Security Hardening
  *
- * JWT認証、環境変数化、H2コンソール本番無効化の動作確認テスト
+ * JWT認証・環境変数化の動作確認テスト
+ * （Issue#120 で H2 を廃止したため「H2コンソール本番無効化」の確認は対象外）
  *
  * 注: CSRF保護はJWT認証（stateless）を使用しているため無効化されている。
  * JWTはlocalStorageに保存され、リクエストごとに明示的にAuthorizationヘッダーで

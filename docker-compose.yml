@@ -15,7 +15,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/photlas_dev
       - SPRING_DATASOURCE_USERNAME=photlas_user
       - SPRING_DATASOURCE_PASSWORD=photlas_password
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
       - JWT_SECRET=local-development-jwt-secret-key-for-docker-environment-only
     depends_on:
       db:
@@ -29,10 +29,15 @@ services:
       retries: 3
       start_period: 40s
 
-  # PostgreSQL 17データベースサービス
+  # PostgreSQL 17 + PostGIS データベースサービス
+  # Issue#120: テスト/ローカル開発を本番(PostgreSQL+PostGIS)に統一。
+  # PostGIS 同梱イメージにすることで Issue#149 の空間検索もローカル/テストで動かせる。
   db:
-    image: postgres:17-alpine
+    image: postgis/postgis:17-3.5
     container_name: photlas-db
+    # Issue#120: テストは多数の ApplicationContext がそれぞれコネクションプールを持つため、
+    # 既定の max_connections=100 では不足する。テスト実行時の "too many clients" を防ぐため引き上げる。
+    command: postgres -c max_connections=300
     ports:
       - "5432:5432"
     environment:

@@ -26,6 +26,11 @@ jobs:
       with:
         gradle-home-cache-cleanup: true
 
+    # Issue#120: ローカル/テスト/E2E とも PostgreSQL(+PostGIS) に統一。
+    # bootRun(既定プロファイル)は localhost:5432/photlas_dev に接続するため、DB を先に起動する。
+    - name: Start PostgreSQL (PostGIS)
+      run: docker compose up -d --wait db
+
     - name: Build backend
       run: |
         cd backend

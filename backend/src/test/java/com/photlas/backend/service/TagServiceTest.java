@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Issue#135 Phase 5: {@link TagService} の統合テスト。
  *
- * <p>Spring と H2 を起動し、{@link TagRepository} 等と連携した
+ * <p>Spring と PostgreSQL(+PostGIS) を起動し、{@link TagRepository} 等と連携した
  * 振る舞いを検証する。</p>
  */
 @SpringBootTest
