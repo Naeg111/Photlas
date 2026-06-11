@@ -27,8 +27,8 @@ import java.util.Set;
  * <ul>
  *   <li>R1 星空判定: 露光 ≥10s + ISO ≥800 + 夜間 → 213 +30、単独候補化 ✅</li>
  *   <li>R2 夜景判定: (a) 露光 ≥5s + ISO ≥800 + 夜間 / (b) ISO ≥2400 + 夜間 → 204 +20、単独候補化 ✅</li>
- *   <li>R3 望遠ヒント: 35mm 換算焦点距離 ≥200mm → 207/208/211/212 +10、単独候補化 ❌</li>
- *   <li>R4 超望遠ヒント: 35mm 換算焦点距離 ≥400mm → 208 +20、単独候補化 ❌</li>
+ *   <li>R3 望遠ヒント: 35mm 換算焦点距離 ≥200mm → 208/211/212 +10、単独候補化 ❌（Issue#142 で 207 を除外）</li>
+ *   <li>R3.5 焦点距離振り分け: 208 候補時、≥300mm は 208 を加点 / &lt;300mm・欠落は 207 を加点し 208 を除去（Issue#142、R4 を置換）</li>
  *   <li>R5 山岳ヒント: GPS 標高 ≥1000m → 201 +10、単独候補化 ❌</li>
  * </ul>
  *
@@ -48,9 +48,8 @@ public class ExifBasedCategoryHints {
     /** Issue#132 3.4: 信頼度の上限。 */
     private static final float MAX_CONFIDENCE = 100f;
 
-    /** Issue#132 R3 が +10 を加算する対象カテゴリ。 */
+    /** Issue#132 R3 が +10 を加算する対象カテゴリ（Issue#142 で 207 動物を除外。望遠＝遠距離＝野生寄りの方針に合わせる）。 */
     private static final Set<Integer> R3_TARGET_CATEGORIES = Set.of(
-            CodeConstants.CATEGORY_ANIMALS,
             CodeConstants.CATEGORY_WILD_BIRDS,
             CodeConstants.CATEGORY_RAILWAYS,
             CodeConstants.CATEGORY_AIRCRAFT
@@ -60,7 +59,7 @@ public class ExifBasedCategoryHints {
     private static final int R1_BOOST = 30;
     private static final int R2_BOOST = 20;
     private static final int R3_BOOST = 10;
-    private static final int R4_BOOST = 20;
+    private static final int R3_5_BOOST = 20;
     private static final int R5_BOOST = 10;
 
     // 各ルールの閾値
@@ -70,7 +69,8 @@ public class ExifBasedCategoryHints {
     private static final int R2A_MIN_ISO = 800;
     private static final int R2B_MIN_ISO = 2400;
     private static final int R3_MIN_FOCAL_35MM = 200;
-    private static final int R4_MIN_FOCAL_35MM = 400;
+    /** R3.5 の閾値。Issue#142: {@link TagService#extractSuggestions} の小カテゴリーリマップと同一閾値を共有する（同パッケージから参照）。 */
+    static final int R3_5_MIN_FOCAL_35MM = 300;
     private static final double R5_MIN_ALTITUDE = 1000.0;
 
     // 夜間判定の境界（19:00:00 ≤ t OR t < 05:00:00）
@@ -93,7 +93,7 @@ public class ExifBasedCategoryHints {
         applyR1(codes, confidence, exif, fires);
         applyR2(codes, confidence, exif, fires);
         applyR3(codes, confidence, exif, fires);
-        applyR4(codes, confidence, exif, fires);
+        applyR3_5(codes, confidence, exif, fires);
         applyR5(codes, confidence, exif, fires);
 
         LabelMappingResult result = new LabelMappingResult(codes, mapped.weather(), confidence);
@@ -159,19 +159,34 @@ public class ExifBasedCategoryHints {
         }
     }
 
-    // ========== R4 超望遠 ==========
-    private void applyR4(List<Integer> codes, Map<String, Float> confidence,
-                         ExifData exif, List<ExifRuleFire> fires) {
-        if (exif.focalLength35mm().filter(f -> f >= R4_MIN_FOCAL_35MM).isEmpty()) {
+    // ========== R3.5 焦点距離による野鳥/動物の振り分け（Issue#142、R4 を置換） ==========
+    // 発火条件は「208(野鳥) が候補」のときだけ（= 鳥が検出された印）。207 単独では発火させない
+    // （望遠で撮った犬等を野鳥へ誤分類しないため）。
+    //   - 焦点距離 ≥300mm        : 野鳥(208) を加点する（除去はしない。混在写真の動物を消さないため）
+    //   - 焦点距離 <300mm / 欠落 : 動物(207) を加点（未候補なら新規追加）し、野鳥(208) を候補から除去する
+    private void applyR3_5(List<Integer> codes, Map<String, Float> confidence,
+                           ExifData exif, List<ExifRuleFire> fires) {
+        if (!confidence.containsKey(String.valueOf(CodeConstants.CATEGORY_WILD_BIRDS))) {
             return;
         }
-        int target = CodeConstants.CATEGORY_WILD_BIRDS;
-        if (!confidence.containsKey(String.valueOf(target))) {
-            return;
+        boolean isWild = exif.focalLength35mm().filter(f -> f >= R3_5_MIN_FOCAL_35MM).isPresent();
+
+        if (isWild) {
+            boostOrAdd(codes, confidence, CodeConstants.CATEGORY_WILD_BIRDS, R3_5_BOOST, false);
+            fires.add(new ExifRuleFire("R3.5", CodeConstants.CATEGORY_WILD_BIRDS, R3_5_BOOST, false));
+            logger.debug("EXIF ルール発火: rule=R3.5(野鳥), category=208, boost=+{}", R3_5_BOOST);
+        } else {
+            boolean created = boostOrAdd(codes, confidence, CodeConstants.CATEGORY_ANIMALS, R3_5_BOOST, true);
+            removeCategory(codes, confidence, CodeConstants.CATEGORY_WILD_BIRDS);
+            fires.add(new ExifRuleFire("R3.5", CodeConstants.CATEGORY_ANIMALS, R3_5_BOOST, created));
+            logger.debug("EXIF ルール発火: rule=R3.5(動物), category=207 加点/追加 + 208 除去, boost=+{}", R3_5_BOOST);
         }
-        boostOrAdd(codes, confidence, target, R4_BOOST, false);
-        fires.add(new ExifRuleFire("R4", target, R4_BOOST, false));
-        logger.debug("EXIF ルール発火: rule=R4, category={}, boost=+{}", target, R4_BOOST);
+    }
+
+    /** codes と confidence の両方からカテゴリを除去する（R3.5 の排他振り分け用に新設）。 */
+    private void removeCategory(List<Integer> codes, Map<String, Float> confidence, int categoryCode) {
+        codes.remove(Integer.valueOf(categoryCode));
+        confidence.remove(String.valueOf(categoryCode));
     }
 
     // ========== R5 山岳 ==========

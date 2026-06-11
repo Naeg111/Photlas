@@ -309,23 +309,39 @@ class ExifBasedCategoryHintsTest {
                 .contains("R1", "R2");
     }
 
-    // ========== R3: 望遠ヒント ==========
+    // ========== R3: 望遠ヒント（Issue#142: 207 を加点対象から除外） ==========
 
     @Test
-    @DisplayName("Issue#132 R3 - 焦点距離 200mm 以上で 207/208/211/212 検出済み候補に +10 ブースト")
+    @DisplayName("Issue#132/#142 R3 - 焦点距離 200mm 以上で 208/211/212 検出済み候補に +10（207 は対象外）")
     void r3BoostsExistingTelephotoCandidates() {
-        // 207 だけ検出済み
-        LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_ANIMALS, 60f);
+        // 211(鉄道) 検出済み。R3.5 は 208 候補時のみ発火するため、211 では R3 のみが効く
+        LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_RAILWAYS, 60f);
         ExifData exif = ExifData.builder().focalLength35mm(200).build();
 
         ExifBasedCategoryHints.Applied applied = hints.apply(base, exif);
 
-        Float conf = applied.result().confidence().get(String.valueOf(CodeConstants.CATEGORY_ANIMALS));
-        assertThat(conf).isCloseTo(70.0f, offset(0.01f));
+        Float conf = applied.result().confidence().get(String.valueOf(CodeConstants.CATEGORY_RAILWAYS));
+        assertThat(conf).isCloseTo(70.0f, offset(0.01f)); // 60 + 10
         assertThat(applied.rulesFired())
                 .extracting(ExifRuleFire::rule, ExifRuleFire::categoryCode,
                         ExifRuleFire::boostValue, ExifRuleFire::createdNewCandidate)
-                .contains(tuple("R3", CodeConstants.CATEGORY_ANIMALS, 10, false));
+                .contains(tuple("R3", CodeConstants.CATEGORY_RAILWAYS, 10, false));
+    }
+
+    @Test
+    @DisplayName("Issue#142 R3 - 207(動物) は R3 の加点対象から除外（望遠でも加点しない）")
+    void r3DoesNotBoostAnimals() {
+        // 207 のみ候補・250mm。208 が無いので R3.5 も発火せず、207 は据え置き
+        LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_ANIMALS, 60f);
+        ExifData exif = ExifData.builder().focalLength35mm(250).build();
+
+        ExifBasedCategoryHints.Applied applied = hints.apply(base, exif);
+
+        Float conf = applied.result().confidence().get(String.valueOf(CodeConstants.CATEGORY_ANIMALS));
+        assertThat(conf).isCloseTo(60.0f, offset(0.01f)); // 加点されない
+        assertThat(applied.rulesFired())
+                .extracting(ExifRuleFire::rule, ExifRuleFire::categoryCode)
+                .doesNotContain(tuple("R3", CodeConstants.CATEGORY_ANIMALS));
     }
 
     @Test
@@ -335,9 +351,7 @@ class ExifBasedCategoryHintsTest {
 
         ExifBasedCategoryHints.Applied applied = hints.apply(empty(), exif);
 
-        // 207/208/211/212 のいずれもカテゴリ候補に追加されない
         assertThat(applied.result().categories()).isEmpty();
-        // R3 はルール発火していない (作用対象が無いため発火イベントも出ない)
         assertThat(applied.rulesFired())
                 .extracting(ExifRuleFire::rule)
                 .doesNotContain("R3");
@@ -346,44 +360,133 @@ class ExifBasedCategoryHintsTest {
     @Test
     @DisplayName("Issue#132 R3 境界 - 焦点距離 199mm では発火しない")
     void r3DoesNotFireBelow200mm() {
-        LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_ANIMALS, 60f);
+        LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_RAILWAYS, 60f);
         ExifData exif = ExifData.builder().focalLength35mm(199).build();
 
         ExifBasedCategoryHints.Applied applied = hints.apply(base, exif);
 
-        Float conf = applied.result().confidence().get(String.valueOf(CodeConstants.CATEGORY_ANIMALS));
+        Float conf = applied.result().confidence().get(String.valueOf(CodeConstants.CATEGORY_RAILWAYS));
         assertThat(conf).isCloseTo(60.0f, offset(0.01f));
     }
 
-    // ========== R4: 超望遠ヒント ==========
+    // ========== R3.5: 焦点距離による野鳥/動物の振り分け（Issue#142、R4 を置換） ==========
 
     @Test
-    @DisplayName("Issue#132 R4 - 焦点距離 400mm 以上で 208 検出済み候補に +20 ブースト")
-    void r4BoostsExistingWildBirdCandidate() {
+    @DisplayName("Issue#142 R3.5 - 鳥 × 300mm 以上: 208(野鳥) を加点し 207 は触らない")
+    void r3_5BoostsWildBirdAt300OrMore() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_WILD_BIRDS, 50f);
         ExifData exif = ExifData.builder().focalLength35mm(400).build();
 
         ExifBasedCategoryHints.Applied applied = hints.apply(base, exif);
 
+        // R3(+10) + R3.5(+20) = +30 → 50 + 30 = 80
         Float conf = applied.result().confidence().get(String.valueOf(CodeConstants.CATEGORY_WILD_BIRDS));
-        // R3 +10 + R4 +20 = +30 → 50 + 30 = 80
         assertThat(conf).isCloseTo(80.0f, offset(0.01f));
+        assertThat(applied.result().categories())
+                .contains(CodeConstants.CATEGORY_WILD_BIRDS)
+                .doesNotContain(CodeConstants.CATEGORY_ANIMALS);
         assertThat(applied.rulesFired())
                 .extracting(ExifRuleFire::rule, ExifRuleFire::categoryCode, ExifRuleFire::boostValue)
                 .contains(
                         tuple("R3", CodeConstants.CATEGORY_WILD_BIRDS, 10),
-                        tuple("R4", CodeConstants.CATEGORY_WILD_BIRDS, 20)
+                        tuple("R3.5", CodeConstants.CATEGORY_WILD_BIRDS, 20)
                 );
     }
 
     @Test
-    @DisplayName("Issue#132 R4 - 208 が未検出なら何も追加しない")
-    void r4DoesNotCreateNewCandidatesWhenNotDetected() {
-        ExifData exif = ExifData.builder().focalLength35mm(500).build();
+    @DisplayName("Issue#142 R3.5 - 鳥 × 300mm 未満: 207 を新規追加し 208 を除去")
+    void r3_5RemapsToAnimalBelow300() {
+        LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_WILD_BIRDS, 80f);
+        ExifData exif = ExifData.builder().focalLength35mm(50).build();
 
-        ExifBasedCategoryHints.Applied applied = hints.apply(empty(), exif);
+        ExifBasedCategoryHints.Applied applied = hints.apply(base, exif);
 
-        assertThat(applied.result().categories()).isEmpty();
+        assertThat(applied.result().categories())
+                .contains(CodeConstants.CATEGORY_ANIMALS)
+                .doesNotContain(CodeConstants.CATEGORY_WILD_BIRDS);
+        assertThat(applied.result().confidence())
+                .doesNotContainKey(String.valueOf(CodeConstants.CATEGORY_WILD_BIRDS));
+        Float conf = applied.result().confidence().get(String.valueOf(CodeConstants.CATEGORY_ANIMALS));
+        assertThat(conf).isCloseTo(90.0f, offset(0.01f)); // 70 + 20（新規追加）
+        assertThat(applied.rulesFired())
+                .extracting(ExifRuleFire::rule, ExifRuleFire::categoryCode, ExifRuleFire::createdNewCandidate)
+                .contains(tuple("R3.5", CodeConstants.CATEGORY_ANIMALS, true));
+    }
+
+    @Test
+    @DisplayName("Issue#142 R3.5 - 鳥 × 焦点距離欠落: <300mm と同じ（207 追加・208 除去）")
+    void r3_5RemapsToAnimalWhenFocalMissing() {
+        LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_WILD_BIRDS, 80f);
+        ExifData exif = ExifData.empty(); // focalLength35mm = empty
+
+        ExifBasedCategoryHints.Applied applied = hints.apply(base, exif);
+
+        assertThat(applied.result().categories())
+                .contains(CodeConstants.CATEGORY_ANIMALS)
+                .doesNotContain(CodeConstants.CATEGORY_WILD_BIRDS);
+    }
+
+    @Test
+    @DisplayName("Issue#142 R3.5 境界 - 焦点距離 300mm ちょうどは野鳥側（≥300）")
+    void r3_5BoundaryAt300IsWild() {
+        LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_WILD_BIRDS, 50f);
+        ExifData exif = ExifData.builder().focalLength35mm(300).build();
+
+        ExifBasedCategoryHints.Applied applied = hints.apply(base, exif);
+
+        assertThat(applied.result().categories())
+                .contains(CodeConstants.CATEGORY_WILD_BIRDS)
+                .doesNotContain(CodeConstants.CATEGORY_ANIMALS);
+        assertThat(applied.rulesFired())
+                .extracting(ExifRuleFire::rule, ExifRuleFire::categoryCode)
+                .contains(tuple("R3.5", CodeConstants.CATEGORY_WILD_BIRDS));
+    }
+
+    @Test
+    @DisplayName("Issue#142 R3.5 - 鳥＋動物の混在 × 300mm 以上: 208 加点・207 は残す")
+    void r3_5MixedBirdAnimalAt300OrMore() {
+        Map<String, Float> confidence = new LinkedHashMap<>();
+        confidence.put(String.valueOf(CodeConstants.CATEGORY_ANIMALS), 70f);
+        confidence.put(String.valueOf(CodeConstants.CATEGORY_WILD_BIRDS), 60f);
+        LabelMappingResult base = new LabelMappingResult(
+                new ArrayList<>(List.of(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS)),
+                null, confidence);
+        ExifData exif = ExifData.builder().focalLength35mm(400).build();
+
+        ExifBasedCategoryHints.Applied applied = hints.apply(base, exif);
+
+        assertThat(applied.result().categories())
+                .contains(CodeConstants.CATEGORY_ANIMALS, CodeConstants.CATEGORY_WILD_BIRDS);
+    }
+
+    @Test
+    @DisplayName("Issue#142 R3.5 - バグ回帰: 動物のみ × 望遠は発火せず 208 を作らない")
+    void r3_5DoesNotFireForAnimalOnlyTelephoto() {
+        LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_ANIMALS, 70f);
+        ExifData exif = ExifData.builder().focalLength35mm(400).build();
+
+        ExifBasedCategoryHints.Applied applied = hints.apply(base, exif);
+
+        assertThat(applied.result().categories())
+                .contains(CodeConstants.CATEGORY_ANIMALS)
+                .doesNotContain(CodeConstants.CATEGORY_WILD_BIRDS);
+        assertThat(applied.rulesFired())
+                .extracting(ExifRuleFire::rule)
+                .doesNotContain("R3.5");
+    }
+
+    @Test
+    @DisplayName("Issue#142 R3.5 - 鳥以外（山）では発火しない")
+    void r3_5DoesNotFireForNonBird() {
+        LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_NATURE, 60f);
+        ExifData exif = ExifData.builder().focalLength35mm(400).build();
+
+        ExifBasedCategoryHints.Applied applied = hints.apply(base, exif);
+
+        assertThat(applied.result().categories()).containsExactly(CodeConstants.CATEGORY_NATURE);
+        assertThat(applied.rulesFired())
+                .extracting(ExifRuleFire::rule)
+                .doesNotContain("R3.5");
     }
 
     // ========== R5: 山岳ヒント ==========
