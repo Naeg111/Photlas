@@ -10,11 +10,20 @@ import {
   PHOTO_CACHEABLE_STATUSES,
   NAVIGATE_FALLBACK_DENYLIST,
 } from './src/config/serviceWorkerCache'
+import { injectSiteNoindex } from './src/utils/siteNoindex'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    // Issue#143: staging ビルド (VITE_NOINDEX_SITE=true) のときだけ index.html へ
+    // サイト全体 noindex メタを静的注入する（本番ビルドには注入しない）。
+    {
+      name: 'inject-staging-noindex',
+      transformIndexHtml(html: string) {
+        return injectSiteNoindex(html, process.env.VITE_NOINDEX_SITE === 'true')
+      },
+    },
     // Issue#129: Service Worker による写真画像キャッシュ
     VitePWA({
       registerType: 'autoUpdate',

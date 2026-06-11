@@ -128,6 +128,9 @@ jobs:
         VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
         # Issue#81: OAuth ボタンの表示制御（GitHub Actions Variables で制御）
         VITE_OAUTH_ENABLED: ${{ vars.VITE_OAUTH_ENABLED_STAGING || 'false' }}
+        # Issue#143: staging はサイト全体を noindex（本番の複製がインデックスされる重複コンテンツを防ぐ）。
+        # 本番(deploy-production)の Build frontend には設定しないこと。
+        VITE_NOINDEX_SITE: 'true'
       run: pnpm build
 
     - name: Configure AWS credentials
