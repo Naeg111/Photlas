@@ -28,6 +28,10 @@ export interface ExifData {
   fValue?: string
   iso?: number
   shutterSpeed?: string
+  /** Issue#142: 露光時間の生の秒数（解析API送信用。表示は shutterSpeed を使う）。 */
+  exposureTimeSeconds?: number
+  /** Issue#142: GPS 標高（メートル。解析API送信用。R5 山岳判定に使う）。 */
+  gpsAltitude?: number
   imageWidth?: number
   imageHeight?: number
   isSmartphone?: boolean
@@ -125,6 +129,10 @@ function mapRawToExif(raw: any): ExifData {
   if (raw.ISO != null) result.iso = raw.ISO
   const shutterSpeed = formatShutterSpeed(raw.ExposureTime)
   if (shutterSpeed) result.shutterSpeed = shutterSpeed
+  // Issue#142: 解析API（EXIFルール R1/R2）用に露光時間の生の秒数を保持
+  if (raw.ExposureTime != null) result.exposureTimeSeconds = raw.ExposureTime
+  // Issue#142: 解析API（R5 山岳判定）用に GPS 標高を保持
+  if (raw.GPSAltitude != null) result.gpsAltitude = raw.GPSAltitude
 
   // 画像サイズ
   if (raw.ImageWidth != null) result.imageWidth = raw.ImageWidth
@@ -143,7 +151,7 @@ export async function extractExif(file: File): Promise<ExifData | null> {
         'GPSLatitude', 'GPSLongitude', 'latitude', 'longitude',
         'Make', 'Model', 'LensModel',
         'FocalLengthIn35mmFilm', 'FNumber', 'ISO',
-        'ExposureTime', 'ImageWidth', 'ImageHeight',
+        'ExposureTime', 'GPSAltitude', 'ImageWidth', 'ImageHeight',
       ],
     })
 

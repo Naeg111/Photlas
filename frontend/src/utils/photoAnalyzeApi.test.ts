@@ -197,4 +197,56 @@ describe('analyzePhoto', () => {
       { rule: 'R1', categoryCode: 213, boostValue: 30, createdNewCandidate: true },
     ])
   })
+
+  // ========== Issue#142: EXIF 別送 ==========
+
+  it('Issue#142 - options.exif の値が FormData に EXIF フィールドとして付与される', async () => {
+    mockOk(validResponseBody)
+    const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
+
+    await analyzePhoto(file, {
+      exif: {
+        focalLength35mm: 400,
+        iso: 1600,
+        exposureTimeSeconds: 15,
+        dateTimeOriginal: '2026-05-16T22:30:15',
+        gpsAltitude: 1500,
+      },
+    })
+
+    const [, init] = fetchMock.mock.calls[0]
+    const formData = (init as RequestInit).body as FormData
+    expect(formData.get('focalLength35mm')).toBe('400')
+    expect(formData.get('iso')).toBe('1600')
+    expect(formData.get('exposureTimeSeconds')).toBe('15')
+    expect(formData.get('dateTimeOriginal')).toBe('2026-05-16T22:30:15')
+    expect(formData.get('gpsAltitude')).toBe('1500')
+  })
+
+  it('Issue#142 - exif 未指定なら EXIF フィールドは付与されない / GPS 緯度経度も送らない', async () => {
+    mockOk(validResponseBody)
+    const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
+
+    await analyzePhoto(file)
+
+    const [, init] = fetchMock.mock.calls[0]
+    const formData = (init as RequestInit).body as FormData
+    expect(formData.get('focalLength35mm')).toBeNull()
+    expect(formData.get('gpsAltitude')).toBeNull()
+    expect(formData.get('latitude')).toBeNull()
+    expect(formData.get('longitude')).toBeNull()
+  })
+
+  it('Issue#142 - null/未指定のフィールドは省略される', async () => {
+    mockOk(validResponseBody)
+    const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
+
+    await analyzePhoto(file, { exif: { focalLength35mm: 200 } })
+
+    const [, init] = fetchMock.mock.calls[0]
+    const formData = (init as RequestInit).body as FormData
+    expect(formData.get('focalLength35mm')).toBe('200')
+    expect(formData.get('iso')).toBeNull()
+    expect(formData.get('dateTimeOriginal')).toBeNull()
+  })
 })
