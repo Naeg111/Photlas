@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useRobotsNoindex } from '../hooks/useRobotsNoindex'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -22,6 +23,7 @@ const CARD_CLASS = 'max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8'
  * 新しいパスワードを入力してリセットを完了する。
  */
 export default function ResetPasswordPage() {
+  useRobotsNoindex()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { t } = useTranslation()

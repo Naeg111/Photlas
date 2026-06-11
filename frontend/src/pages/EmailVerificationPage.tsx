@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useRobotsNoindex } from '../hooks/useRobotsNoindex'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { API_V1_URL } from '../config/api'
@@ -27,6 +28,7 @@ export const EMAIL_JUST_VERIFIED_KEY = 'email_just_verified'
  * - アプリ内ブラウザでは「Photlasを開く」「ホーム」リンクを非表示にする（メインブラウザでの利用を促す）
  */
 export default function EmailVerificationPage() {
+  useRobotsNoindex()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { t } = useTranslation()

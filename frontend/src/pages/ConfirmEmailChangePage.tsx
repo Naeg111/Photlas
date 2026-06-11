@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useRobotsNoindex } from '../hooks/useRobotsNoindex'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
@@ -26,6 +27,7 @@ export const EMAIL_JUST_CHANGED_KEY = 'email_just_changed'
  * - アプリ内ブラウザでは「Photlasを開く」「ホーム」リンクを非表示にする
  */
 export default function ConfirmEmailChangePage() {
+  useRobotsNoindex()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { t } = useTranslation()

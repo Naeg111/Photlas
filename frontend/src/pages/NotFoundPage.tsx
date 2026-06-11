@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useRobotsNoindex } from '../hooks/useRobotsNoindex'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
@@ -7,6 +8,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
  * 存在しないURLにアクセスした際に表示する404ページ
  */
 function NotFoundPage() {
+  useRobotsNoindex()
   const { t } = useTranslation()
   useDocumentTitle('ページが見つかりません - Photlas')
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useRobotsNoindex } from '../hooks/useRobotsNoindex'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Search, UserX } from 'lucide-react'
 import { Button } from '../components/ui/button'
@@ -19,6 +20,7 @@ interface DeletedUser {
  * Issue#73: 退会済みユーザー管理ページ
  */
 export default function AdminDeletedUsersPage() {
+  useRobotsNoindex()
   const navigate = useNavigate()
   const { getAuthToken } = useAuth()
   const [users, setUsers] = useState<DeletedUser[]>([])

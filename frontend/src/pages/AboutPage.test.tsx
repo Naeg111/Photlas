@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import AboutPage from './AboutPage'
@@ -12,6 +12,10 @@ import AboutPage from './AboutPage'
  * を満たすことを検証する。
  */
 describe('AboutPage', () => {
+  beforeEach(() => {
+    document.querySelectorAll('meta[name="robots"]').forEach((el) => el.remove())
+  })
+
   function renderPage() {
     return render(
       <MemoryRouter>
@@ -19,6 +23,11 @@ describe('AboutPage', () => {
       </MemoryRouter>
     )
   }
+
+  it('Issue#143 - コンテンツページなので noindex メタは付与されない', () => {
+    renderPage()
+    expect(document.querySelector('meta[name="robots"]')).toBeNull()
+  })
 
   it('「Photlas」がアプリ名として h1 で表示される', () => {
     renderPage()

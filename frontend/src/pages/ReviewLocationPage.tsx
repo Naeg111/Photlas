@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useRobotsNoindex } from '../hooks/useRobotsNoindex'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Map, { Marker } from 'react-map-gl'
@@ -152,6 +153,7 @@ function ReviewMiniMap({
 }
 
 export default function ReviewLocationPage() {
+  useRobotsNoindex()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useRobotsNoindex } from '../hooks/useRobotsNoindex'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
@@ -38,6 +39,7 @@ interface ModerationQueueResponse {
 const PAGE_SIZE = 20
 
 export default function AdminModerationPage() {
+  useRobotsNoindex()
   const { user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const { t } = useTranslation()

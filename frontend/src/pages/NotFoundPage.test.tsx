@@ -8,6 +8,19 @@ describe('NotFoundPage', () => {
 
   afterEach(() => {
     document.title = originalTitle
+    document.querySelectorAll('meta[name="robots"]').forEach((el) => el.remove())
+  })
+
+  it('Issue#143 - 非コンテンツページなので noindex メタが付与される', () => {
+    render(
+      <MemoryRouter>
+        <NotFoundPage />
+      </MemoryRouter>
+    )
+
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+    expect(meta).not.toBeNull()
+    expect(meta?.content).toBe('noindex, follow')
   })
 
   it('404メッセージが表示される', () => {

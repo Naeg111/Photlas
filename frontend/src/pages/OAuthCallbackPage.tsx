@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useRobotsNoindex } from '../hooks/useRobotsNoindex'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AUTH_CHANGED_EVENT } from '../contexts/AuthContext'
@@ -19,6 +20,7 @@ import { OAUTH_LOGIN_TOAST_FLAG_KEY } from '../config/app'
  * React Strict Mode の二重マウント対策で {@code processedRef} を使う。
  */
 export default function OAuthCallbackPage() {
+  useRobotsNoindex()
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [status, setStatus] = useState<'loading' | 'error'>('loading')
