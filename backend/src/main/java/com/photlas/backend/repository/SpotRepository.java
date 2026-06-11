@@ -18,12 +18,15 @@ import java.util.List;
 public interface SpotRepository extends JpaRepository<Spot, Long> {
 
     /**
-     * 指定された緯度経度から半径200m以内のスポットを検索し、距離が近い順に返す
+     * 指定された緯度経度から半径200m以内のスポットを検索し、距離が近い順に返す。
      *
-     * Haversine公式を使用して2点間の距離を計算します:
-     * - 地球の半径: 6371000m (平均半径)
-     * - 円周率: 3.14159265358979323846 (π)
-     * - 検索範囲: 200m
+     * <p>Issue#149: PostGIS（geography + GiST 空間インデックス）で実装。
+     * {@code ST_DWithin(geom, point, 200)} が GiST 索引（{@code idx_spots_geom}）を使い
+     * 半径 200m 判定を、{@code geom <-> point}（KNN）が近い順を、いずれも索引付きで行う
+     * （旧 Haversine 全件スキャンを解消）。</p>
+     *
+     * <p>{@code spots.geom} は {@code latitude/longitude} から自動生成される
+     * {@code geography(Point,4326)} カラム（V44 で追加）。引数・戻り値は従来どおり。</p>
      *
      * @param latitude 緯度
      * @param longitude 経度
@@ -31,20 +34,16 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
      */
     @Query(value = """
         SELECT s.* FROM spots s
-        WHERE (
-            6371000 * 2 * ASIN(SQRT(
-                POWER(SIN(((:latitude - s.latitude) * 3.14159265358979323846 / 180) / 2), 2) +
-                COS(:latitude * 3.14159265358979323846 / 180) * COS(s.latitude * 3.14159265358979323846 / 180) *
-                POWER(SIN(((:longitude - s.longitude) * 3.14159265358979323846 / 180) / 2), 2)
-            ))
-        ) <= 200
-        ORDER BY (
-            6371000 * 2 * ASIN(SQRT(
-                POWER(SIN(((:latitude - s.latitude) * 3.14159265358979323846 / 180) / 2), 2) +
-                COS(:latitude * 3.14159265358979323846 / 180) * COS(s.latitude * 3.14159265358979323846 / 180) *
-                POWER(SIN(((:longitude - s.longitude) * 3.14159265358979323846 / 180) / 2), 2)
-            ))
-        )
+        WHERE ST_DWithin(
+                s.geom,
+                CAST(ST_SetSRID(ST_MakePoint(
+                    CAST(:longitude AS double precision),
+                    CAST(:latitude AS double precision)), 4326) AS geography),
+                200
+              )
+        ORDER BY s.geom <-> CAST(ST_SetSRID(ST_MakePoint(
+                    CAST(:longitude AS double precision),
+                    CAST(:latitude AS double precision)), 4326) AS geography)
         """, nativeQuery = true)
     List<Spot> findSpotsWithin200m(
         @Param("latitude") BigDecimal latitude,
