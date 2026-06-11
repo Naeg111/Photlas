@@ -191,6 +191,11 @@ export function PhotoContributionDialog({
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
   // AI 提案として元々付いていた tag_id（後で assigned_by 判定に使う）
   const aiSuggestedTagIdsRef = useRef<Set<number>>(new Set())
+  // Issue#142: 解析(runAnalyze)は previewUrl 変化で発火し、extractExif の完了と順序保証が無い。
+  // EXIF を state 経由で渡すと未設定のまま解析が走る恐れがあるため、ref 経由で直接渡す（競合回避）。
+  const exifForAnalyzeRef = useRef<ExifData | null>(null)
+  // Issue#142: applyAiPrefill の sortOrder タイブレーク用に最新の allTags を ref で参照する。
+  const allTagsRef = useRef<KeywordTag[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -270,6 +275,11 @@ export function PhotoContributionDialog({
     return () => controller.abort()
   }, [open, i18n.language])
 
+  // Issue#142: applyAiPrefill が常に最新の allTags を参照できるよう ref に同期する。
+  useEffect(() => {
+    allTagsRef.current = allTags
+  }, [allTags])
+
   // Issue#119（仕様変更）: AI 解析対象を「トリミング前の画像全体」に変更したため、
   // トリミング操作（cropComplete）では解析を発火させず、ファイル選択直後の 1 回だけ実行する。
   useEffect(() => {
@@ -297,7 +307,20 @@ export function PhotoContributionDialog({
       const blob = await resizeImageToBlobForAnalyze(imageSrc)
       if (controller.signal.aborted) return
 
-      const response = await analyzePhoto(blob, { signal: controller.signal })
+      // Issue#142: ref 経由で保持した EXIF をフォーム値として送る（dateTimeOriginal は takenAt）
+      const exif = exifForAnalyzeRef.current
+      const response = await analyzePhoto(blob, {
+        signal: controller.signal,
+        exif: exif
+          ? {
+              focalLength35mm: exif.focalLength35mm,
+              iso: exif.iso,
+              exposureTimeSeconds: exif.exposureTimeSeconds,
+              dateTimeOriginal: exif.takenAt,
+              gpsAltitude: exif.gpsAltitude,
+            }
+          : undefined,
+      })
       if (controller.signal.aborted) return
 
       applyAiPrefill(response)
@@ -362,13 +385,19 @@ export function PhotoContributionDialog({
     // (旧: AI 提案エリアに別表示していたが、エリアを廃止して選択中に統合)
     const suggested = response.suggestedTags ?? []
     if (suggested.length > 0) {
-      const suggestedIds = suggested.map((s) => s.tagId)
-      // assigned_by 判定 (Issue#132 telemetry) に AI 提案 ID を記録
-      aiSuggestedTagIdsRef.current = new Set(suggestedIds)
-      setSelectedTagIds((prev) => {
-        const merged = new Set([...prev, ...suggestedIds])
-        return Array.from(merged)
+      // Issue#142: AI 提案を confidence 降順 → sortOrder 昇順 → slug 昇順でソートし、上位 3 件のみ採用
+      const tagMetaById = new Map(allTagsRef.current.map((tg) => [tg.tagId, tg]))
+      const sorted = [...suggested].sort((a, b) => {
+        if (a.confidence !== b.confidence) return b.confidence - a.confidence
+        const aOrder = tagMetaById.get(a.tagId)?.sortOrder ?? 9999
+        const bOrder = tagMetaById.get(b.tagId)?.sortOrder ?? 9999
+        if (aOrder !== bOrder) return aOrder - bOrder
+        return a.slug.localeCompare(b.slug)
       })
+      const top3Ids = sorted.slice(0, 3).map((s) => s.tagId)
+      // assigned_by 判定 (Issue#132 telemetry) に AI 提案 ID を記録
+      aiSuggestedTagIdsRef.current = new Set(top3Ids)
+      setSelectedTagIds((prev) => Array.from(new Set([...prev, ...top3Ids])).slice(0, 3))
     }
   }, [])
 
@@ -412,12 +441,12 @@ export function PhotoContributionDialog({
       }
 
       setSelectedFile(file)
-      const url = URL.createObjectURL(file)
-      setPreviewUrl(url)
 
-      // EXIF情報を抽出
+      // Issue#142: 解析に EXIF を渡すため、preview を出す前に抽出して ref に保持する。
+      // （runAnalyze は previewUrl 変化で発火するため、state 経由だと未設定のまま走る恐れがある）
       const exif = await extractExif(file)
       setExifData(exif)
+      exifForAnalyzeRef.current = exif
 
       // Issue#46: スマートフォン判定時に機材種別を自動選択
       if (exif?.isSmartphone) {
@@ -431,6 +460,9 @@ export function PhotoContributionDialog({
         setPinPosition({ lat: 35.6812, lng: 139.7671 })
       }
 
+      // EXIF 抽出後に preview を設定 → runAnalyze が発火し exifForAnalyzeRef を読む
+      const url = URL.createObjectURL(file)
+      setPreviewUrl(url)
     }
   }
 
@@ -986,7 +1018,7 @@ export function PhotoContributionDialog({
                   .filter((id): id is number => typeof id === 'number')}
                 selectedTagIds={selectedTagIds}
                 onSelectionChange={setSelectedTagIds}
-                maxSelections={20}
+                maxSelections={3}
               />
             </div>
 
