@@ -67,7 +67,7 @@ class PhotoAnalyzeControllerTest {
     @DisplayName("Issue#119 - POST /analyze: 認証済み + JPEG で 200、レスポンス JSON が期待構造")
     @WithMockUser
     void analyze_authenticatedJpeg_returns200WithBody() throws Exception {
-        when(photoAnalyzeService.analyze(any(byte[].class), eq("image/jpeg")))
+        when(photoAnalyzeService.analyze(any(byte[].class), eq("image/jpeg"), any()))
                 .thenReturn(new PhotoAnalyzeResponse(
                         List.of(CodeConstants.CATEGORY_NATURE),
                         CodeConstants.WEATHER_SUNNY,
@@ -90,20 +90,20 @@ class PhotoAnalyzeControllerTest {
     @DisplayName("Issue#119 - POST /analyze: PNG も受け付ける")
     @WithMockUser
     void analyze_pngAlsoAccepted() throws Exception {
-        when(photoAnalyzeService.analyze(any(byte[].class), eq("image/png")))
+        when(photoAnalyzeService.analyze(any(byte[].class), eq("image/png"), any()))
                 .thenReturn(PhotoAnalyzeResponse.empty());
 
         mockMvc.perform(multipart("/api/v1/photos/analyze").file(pngFile()))
                 .andExpect(status().isOk());
 
-        verify(photoAnalyzeService).analyze(any(byte[].class), eq("image/png"));
+        verify(photoAnalyzeService).analyze(any(byte[].class), eq("image/png"), any());
     }
 
     @Test
     @DisplayName("Issue#119 - POST /analyze: Rekognition エラーで空レスポンスでも 200 を返す")
     @WithMockUser
     void analyze_emptyResponseStillReturns200() throws Exception {
-        when(photoAnalyzeService.analyze(any(byte[].class), any()))
+        when(photoAnalyzeService.analyze(any(byte[].class), any(), any()))
                 .thenReturn(PhotoAnalyzeResponse.empty());
 
         mockMvc.perform(multipart("/api/v1/photos/analyze").file(jpegFile()))
@@ -136,7 +136,7 @@ class PhotoAnalyzeControllerTest {
     @DisplayName("Issue#119 - POST /analyze: サービスが IllegalArgumentException を投げたら 400")
     @WithMockUser
     void analyze_serviceThrowsIllegalArgument_returns400() throws Exception {
-        when(photoAnalyzeService.analyze(any(byte[].class), any()))
+        when(photoAnalyzeService.analyze(any(byte[].class), any(), any()))
                 .thenThrow(new IllegalArgumentException("不正な画像"));
 
         mockMvc.perform(multipart("/api/v1/photos/analyze").file(jpegFile()))

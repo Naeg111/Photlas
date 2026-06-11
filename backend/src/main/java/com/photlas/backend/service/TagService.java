@@ -7,6 +7,7 @@ import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.PhotoTag;
 import com.photlas.backend.entity.Tag;
+import com.photlas.backend.entity.TagCategory;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.PhotoTagRepository;
 import com.photlas.backend.repository.TagCategoryRepository;
@@ -21,9 +22,12 @@ import software.amazon.awssdk.services.rekognition.model.Label;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Issue#135: キーワード機能の業務ロジックを担うサービス。
@@ -45,6 +49,9 @@ public class TagService {
 
     /** Issue#135 3.4.1: AI 提案キーワードの最大数。 */
     private static final int MAX_SUGGESTIONS = 10;
+
+    /** Issue#142: 動物(207)配下の中立な鳥タグ「鳥」の slug（焦点距離リマップで注入）。 */
+    private static final String COMPANION_BIRD_SLUG = "companion-bird";
 
     /** デフォルト言語（フォールバックチェーンの中継）。 */
     private static final String DEFAULT_LANG = "en";
@@ -112,18 +119,36 @@ public class TagService {
     }
 
     /**
-     * Rekognition ラベル群から AI 提案キーワードを抽出する。
+     * Rekognition ラベル群から AI 提案キーワードを抽出する（Issue#142: 焦点距離リマップ付き）。
      *
-     * <p>Issue#135 3.4.1 仕様:</p>
+     * <p>Issue#135 3.4.1 のベース抽出に加え、Issue#142 で焦点距離による後処理リマップを行う:</p>
      * <ul>
-     *   <li>直接マッチのみ（親フォールバックは Phase 1 では未使用）</li>
-     *   <li>信頼度 {@value #CONFIDENCE_THRESHOLD}% 以上</li>
-     *   <li>{@code is_active=TRUE} のタグのみ</li>
-     *   <li>最大 {@value #MAX_SUGGESTIONS} 件、信頼度上位を採用</li>
+     *   <li>{@code focalLength35mm ≥ 300mm}: 従来どおり（野鳥全般＋種別タグをそのまま提案）</li>
+     *   <li>{@code <300mm} または欠落: 候補のうち 208(野鳥)のみに属する野鳥系タグを除去し、
+     *       中立な「鳥」({@code companion-bird}, 207) を 1 件注入する
+     *       （confidence は除去した野鳥系タグの最大値を引き継ぐ）</li>
      * </ul>
+     * <p>閾値 300mm は {@link ExifBasedCategoryHints#R3_5_MIN_FOCAL_35MM} と共有する。</p>
+     *
+     * @param labels          Rekognition ラベル
+     * @param focalLength35mm 35mm 換算焦点距離（解析リクエストで渡される。欠落時 {@link Optional#empty()}）
      */
     @Transactional(readOnly = true)
-    public List<TagSuggestion> extractSuggestions(List<Label> labels) {
+    public List<TagSuggestion> extractSuggestions(List<Label> labels, Optional<Integer> focalLength35mm) {
+        List<TagSuggestion> base = extractBaseSuggestions(labels);
+        // ≥300mm は従来どおり（野鳥全般＋種別を維持）
+        if (focalLength35mm.filter(f -> f >= ExifBasedCategoryHints.R3_5_MIN_FOCAL_35MM).isPresent()) {
+            return base;
+        }
+        // <300mm または欠落: 野鳥専用タグを companion-bird(207) にリマップ
+        return remapWildBirdToCompanion(base);
+    }
+
+    /**
+     * Issue#135 3.4.1: 直接マッチのみ・信頼度 {@value #CONFIDENCE_THRESHOLD}% 以上・
+     * {@code is_active=TRUE} のタグのみ・最大 {@value #MAX_SUGGESTIONS} 件（信頼度上位）。
+     */
+    private List<TagSuggestion> extractBaseSuggestions(List<Label> labels) {
         if (labels == null || labels.isEmpty()) {
             return List.of();
         }
@@ -152,6 +177,56 @@ public class TagService {
                 .sorted(Comparator.comparing(TagSuggestion::confidence).reversed())
                 .limit(MAX_SUGGESTIONS)
                 .toList();
+    }
+
+    /**
+     * Issue#142: 候補のうち「208(野鳥)に属し 207(動物)に属さない」野鳥専用タグを除去し、
+     * 中立な「鳥」({@code companion-bird}, 207) を 1 件注入する。野鳥専用候補が無ければ何もしない。
+     * companion-bird が未投入（通常は V43 で存在）なら安全側で base をそのまま返す。
+     */
+    private List<TagSuggestion> remapWildBirdToCompanion(List<TagSuggestion> base) {
+        if (base.isEmpty()) {
+            return base;
+        }
+        List<Long> ids = new ArrayList<>();
+        for (TagSuggestion s : base) {
+            ids.add(s.tagId());
+        }
+        // tag_id → 所属カテゴリ集合（1 クエリで一括取得）
+        Map<Long, Set<Integer>> catsByTag = new HashMap<>();
+        for (TagCategory tc : tagCategoryRepository.findByTagIdIn(ids)) {
+            catsByTag.computeIfAbsent(tc.getTagId(), k -> new HashSet<>()).add(tc.getCategoryCode());
+        }
+        // 208(野鳥)に属し 207(動物)に属さない＝野鳥専用タグ
+        Set<Long> wildBirdOnlyIds = new HashSet<>();
+        for (TagSuggestion s : base) {
+            Set<Integer> cats = catsByTag.getOrDefault(s.tagId(), Set.of());
+            if (cats.contains(CodeConstants.CATEGORY_WILD_BIRDS)
+                    && !cats.contains(CodeConstants.CATEGORY_ANIMALS)) {
+                wildBirdOnlyIds.add(s.tagId());
+            }
+        }
+        if (wildBirdOnlyIds.isEmpty()) {
+            return base; // 野鳥専用候補が無ければリマップ不要
+        }
+        Optional<Tag> companion = tagRepository.findActiveBySlug(COMPANION_BIRD_SLUG);
+        if (companion.isEmpty()) {
+            return base; // companion-bird 未投入（通常は V43 で存在）。安全側で従来どおり
+        }
+        // 除去する野鳥専用タグの最大 confidence を companion-bird に引き継ぐ
+        float maxConf = 0f;
+        List<TagSuggestion> kept = new ArrayList<>();
+        for (TagSuggestion s : base) {
+            if (wildBirdOnlyIds.contains(s.tagId())) {
+                maxConf = Math.max(maxConf, s.confidence());
+            } else {
+                kept.add(s);
+            }
+        }
+        Tag c = companion.get();
+        kept.add(new TagSuggestion(c.getId(), c.getSlug(), pickDisplayName(c, null), maxConf));
+        kept.sort(Comparator.comparing(TagSuggestion::confidence).reversed());
+        return kept;
     }
 
     /**

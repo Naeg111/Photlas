@@ -4,6 +4,7 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.GpsDirectory;
 import com.drew.lang.Rational;
+import com.photlas.backend.dto.AnalyzeExifInput;
 import com.photlas.backend.dto.ExifData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +29,45 @@ class ExifReaderTest {
     @BeforeEach
     void setUp() {
         reader = new ExifReader();
+    }
+
+    // ========== fromClientValues（Issue#142: クライアント送信 EXIF の検証） ==========
+
+    @Test
+    @DisplayName("Issue#142 - fromClientValues: 妥当な値はそのまま ExifData に入る")
+    void fromClientValuesAcceptsValidValues() {
+        AnalyzeExifInput input = new AnalyzeExifInput(
+                400, 1600, 15.0, "2026-05-16T22:30:15", 1500.0);
+
+        ExifData result = reader.fromClientValues(input);
+
+        assertThat(result.focalLength35mm()).contains(400);
+        assertThat(result.iso()).contains(1600);
+        assertThat(result.exposureTimeSeconds()).contains(15.0);
+        assertThat(result.dateTimeOriginal()).contains(LocalDateTime.of(2026, 5, 16, 22, 30, 15));
+        assertThat(result.gpsAltitude()).contains(1500.0);
+    }
+
+    @Test
+    @DisplayName("Issue#142 - fromClientValues: 範囲外/不正値は Optional.empty に落とす（read と同じ閾値）")
+    void fromClientValuesRejectsOutOfRange() {
+        AnalyzeExifInput input = new AnalyzeExifInput(
+                0,            // focal ≤ 0
+                -100,         // iso ≤ 0
+                3600.1,       // 露光 > 3600
+                "not-a-date", // パース不能
+                20000.0);     // |alt| > 10000
+
+        ExifData result = reader.fromClientValues(input);
+
+        assertThat(result).isEqualTo(ExifData.empty());
+    }
+
+    @Test
+    @DisplayName("Issue#142 - fromClientValues: null / 空入力は ExifData.empty()")
+    void fromClientValuesNullReturnsEmpty() {
+        assertThat(reader.fromClientValues(null)).isEqualTo(ExifData.empty());
+        assertThat(reader.fromClientValues(AnalyzeExifInput.empty())).isEqualTo(ExifData.empty());
     }
 
     // ========== 不正バイト列 ==========

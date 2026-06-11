@@ -7,6 +7,7 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.GpsDirectory;
+import com.photlas.backend.dto.AnalyzeExifInput;
 import com.photlas.backend.dto.ExifData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +63,56 @@ public class ExifReader {
             logger.warn("EXIF 読み取りに失敗（解析は継続）: {}", e.getMessage());
             return ExifData.empty();
         }
+    }
+
+    /**
+     * Issue#142: クライアントが解析リクエストで別送した EXIF 値を、{@link #read} と同じ妥当性
+     * チェックを適用して {@link ExifData} に変換する（解析画像は EXIF が剥がされているため別送が必要）。
+     *
+     * <p>値はクライアント由来＝信頼しない前提で、範囲外・パース不能は {@link Optional#empty()} に落とす。
+     * 日時は ISO8601 ローカル日時（例 "2026-05-16T22:30:15"）としてパースする。</p>
+     *
+     * @param input クライアント送信の EXIF 値（null 可）
+     * @return 検証済み {@link ExifData}（input が null/空なら全フィールド空）
+     */
+    public ExifData fromClientValues(AnalyzeExifInput input) {
+        if (input == null) {
+            return ExifData.empty();
+        }
+        return new ExifData(
+                parseClientDateTime(input.dateTimeOriginal()),
+                validExposureSeconds(input.exposureTimeSeconds()),
+                validPositiveInt(input.iso()),
+                validPositiveInt(input.focalLength35mm()),
+                validAltitude(input.gpsAltitude())
+        );
+    }
+
+    /** ISO8601 ローカル日時文字列を LocalDateTime にパースする。null/空/パース不能は empty。 */
+    private static Optional<LocalDateTime> parseClientDateTime(String iso) {
+        if (iso == null || iso.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(LocalDateTime.parse(iso)); // ISO_LOCAL_DATE_TIME
+        } catch (DateTimeParseException e) {
+            return Optional.empty();
+        }
+    }
+
+    /** 露光時間（秒）: 0 < t ≤ {@value #EXPOSURE_TIME_MAX_SECONDS} のみ有効。 */
+    private static Optional<Double> validExposureSeconds(Double t) {
+        return (t != null && t > 0.0 && t <= EXPOSURE_TIME_MAX_SECONDS) ? Optional.of(t) : Optional.empty();
+    }
+
+    /** ISO / 焦点距離: 正の値のみ有効。 */
+    private static Optional<Integer> validPositiveInt(Integer v) {
+        return (v != null && v > 0) ? Optional.of(v) : Optional.empty();
+    }
+
+    /** GPS 標高: |alt| ≤ {@value #GPS_ALTITUDE_ABS_MAX} のみ有効。 */
+    private static Optional<Double> validAltitude(Double alt) {
+        return (alt != null && Math.abs(alt) <= GPS_ALTITUDE_ABS_MAX) ? Optional.of(alt) : Optional.empty();
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.AnalyzeExifInput;
 import com.photlas.backend.dto.CachedAnalyzeResult;
 import com.photlas.backend.dto.ExifData;
 import com.photlas.backend.dto.LabelMappingResult;
@@ -89,9 +90,29 @@ public class PhotoAnalyzeService {
      * @throws IllegalArgumentException 受信画像が JPEG/PNG 以外の場合、または画像として読み込めない場合
      */
     public PhotoAnalyzeResponse analyze(byte[] imageBytes, String contentType) {
+        return analyze(imageBytes, contentType, AnalyzeExifInput.empty());
+    }
+
+    /**
+     * Issue#142: クライアントが別送した EXIF 値（{@code exifInput}）を用いて解析する。
+     *
+     * <p>解析用画像はフロントの canvas 再エンコードで EXIF が剥がされているため、フォーム値由来の
+     * EXIF を優先する。{@code exifInput} が空（EXIF 無し写真 / 後方互換の 2 引数呼び出し）の場合のみ、
+     * 元バイト列から読む（通常は空）。受け取った EXIF 値は解析中のみ使用し保存しない。</p>
+     *
+     * @param imageBytes  画像バイナリ
+     * @param contentType MIME タイプ（{@code image/jpeg} または {@code image/png}）
+     * @param exifInput   クライアント送信の EXIF 値（null/空可）
+     * @return 解析結果。Rekognition 失敗時は {@link PhotoAnalyzeResponse#empty()}
+     * @throws IllegalArgumentException 受信画像が JPEG/PNG 以外の場合、または画像として読み込めない場合
+     */
+    public PhotoAnalyzeResponse analyze(byte[] imageBytes, String contentType, AnalyzeExifInput exifInput) {
         validateContentType(contentType);
-        // Issue#132: EXIF はリサイズで失われる可能性があるため必ず元のバイト列から読む
-        ExifData exif = exifReader.read(imageBytes);
+        // Issue#142: 解析画像は EXIF が剥がされているため、別送された EXIF 値を優先して使う。
+        // 別送が無い（空）場合のみ後方互換でバイト列から読む（通常は空）。
+        ExifData exif = (exifInput == null || exifInput.isEmpty())
+                ? exifReader.read(imageBytes)
+                : exifReader.fromClientValues(exifInput);
         byte[] resized = resizeForRekognition(imageBytes);
         return callRekognitionSafely(resized)
                 .map(rekResp -> mapAndCache(rekResp, exif))
@@ -120,7 +141,8 @@ public class PhotoAnalyzeService {
         RekognitionLabelMapper.MappingResult mapping = labelMapper.mapWithEvents(rekognitionResponse.labels());
         ExifBasedCategoryHints.Applied applied = exifHints.apply(mapping.result(), exif);
         LabelMappingResult finalResult = applied.result();
-        List<TagSuggestion> suggestedTags = tagService.extractSuggestions(rekognitionResponse.labels());
+        List<TagSuggestion> suggestedTags =
+                tagService.extractSuggestions(rekognitionResponse.labels(), exif.focalLength35mm());
         // Issue#136 Q10/§4.4: labelMapping と suggestedTags を一括キャッシュ（ai_confidence 補完用）
         String token = cacheService.save(new CachedAnalyzeResult(finalResult, suggestedTags));
         return new PhotoAnalyzeResponse(

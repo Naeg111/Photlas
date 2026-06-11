@@ -78,7 +78,7 @@ class TagServiceTest {
 
         List<TagSuggestion> result = tagService.extractSuggestions(List.of(
                 Label.builder().name("Cherry Blossom").confidence(92.0f).build()
-        ));
+        ), Optional.empty());
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).tagId()).isEqualTo(cherry.getId());
@@ -93,7 +93,7 @@ class TagServiceTest {
 
         List<TagSuggestion> result = tagService.extractSuggestions(List.of(
                 Label.builder().name("Mountain").confidence(79.9f).build()
-        ));
+        ), Optional.empty());
 
         assertThat(result).isEmpty();
     }
@@ -108,7 +108,7 @@ class TagServiceTest {
                 software.amazon.awssdk.services.rekognition.model.Parent.builder().name("Dog").build();
         Label husky = Label.builder().name("Husky").confidence(95f).parents(dogParent).build();
 
-        List<TagSuggestion> result = tagService.extractSuggestions(List.of(husky));
+        List<TagSuggestion> result = tagService.extractSuggestions(List.of(husky), Optional.empty());
 
         // 親に Dog があっても Husky 自体は辞書にないので候補に出ない
         assertThat(result).isEmpty();
@@ -123,7 +123,7 @@ class TagServiceTest {
 
         List<TagSuggestion> result = tagService.extractSuggestions(List.of(
                 Label.builder().name("Mountain").confidence(95f).build()
-        ));
+        ), Optional.empty());
 
         assertThat(result).isEmpty();
     }
@@ -141,11 +141,104 @@ class TagServiceTest {
             labels.add(Label.builder().name("Label" + i).confidence(80f + i).build());
         }
 
-        List<TagSuggestion> result = tagService.extractSuggestions(labels);
+        List<TagSuggestion> result = tagService.extractSuggestions(labels, Optional.empty());
 
         assertThat(result).hasSize(10);
         // 上位 10 件 = 信頼度 82〜91 (= Label2〜Label11)
         assertThat(result).allSatisfy(s -> assertThat(s.confidence()).isGreaterThanOrEqualTo(82f));
+    }
+
+    // ========== extractSuggestions: 焦点距離リマップ (Issue#142) ==========
+
+    /** companion-bird(207 のみ) を投入するヘルパー。 */
+    private Tag saveCompanionBird() {
+        Tag c = saveTag("CompanionBird", "companion-bird", "鳥", "Bird");
+        linkCategory(c.getId(), CodeConstants.CATEGORY_ANIMALS);
+        return c;
+    }
+
+    @Test
+    @DisplayName("Issue#142 - <300mm の鳥: 208専用タグを除去し companion-bird を注入（confidence 引き継ぎ）")
+    void remapBelow300ReplacesWildBirdWithCompanion() {
+        Tag companion = saveCompanionBird();
+        Tag hawk = saveTag("Hawk", "hawk", "タカ", "Hawk");
+        linkCategory(hawk.getId(), CodeConstants.CATEGORY_WILD_BIRDS); // 208 のみ（V39 後の実態）
+
+        List<TagSuggestion> result = tagService.extractSuggestions(
+                List.of(Label.builder().name("Hawk").confidence(95f).build()),
+                Optional.of(50));
+
+        assertThat(result).extracting(TagSuggestion::slug)
+                .contains("companion-bird")
+                .doesNotContain("hawk");
+        TagSuggestion injected = result.stream()
+                .filter(s -> s.slug().equals("companion-bird")).findFirst().orElseThrow();
+        assertThat(injected.confidence()).isEqualTo(95f); // 除去した野鳥系タグの最大値
+        assertThat(injected.tagId()).isEqualTo(companion.getId());
+    }
+
+    @Test
+    @DisplayName("Issue#142 - ≥300mm の鳥: 野鳥タグをそのまま提案し companion-bird は注入しない")
+    void remapAt300OrMoreKeepsWildBird() {
+        saveCompanionBird();
+        Tag hawk = saveTag("Hawk", "hawk", "タカ", "Hawk");
+        linkCategory(hawk.getId(), CodeConstants.CATEGORY_WILD_BIRDS);
+
+        List<TagSuggestion> result = tagService.extractSuggestions(
+                List.of(Label.builder().name("Hawk").confidence(95f).build()),
+                Optional.of(400));
+
+        assertThat(result).extracting(TagSuggestion::slug)
+                .contains("hawk")
+                .doesNotContain("companion-bird");
+    }
+
+    @Test
+    @DisplayName("Issue#142 - 焦点距離欠落の鳥: <300mm と同じ（companion-bird に置換）")
+    void remapMissingFocalReplacesWildBird() {
+        saveCompanionBird();
+        Tag eagle = saveTag("Eagle", "eagle", "鷲", "Eagle");
+        linkCategory(eagle.getId(), CodeConstants.CATEGORY_WILD_BIRDS);
+
+        List<TagSuggestion> result = tagService.extractSuggestions(
+                List.of(Label.builder().name("Eagle").confidence(88f).build()),
+                Optional.empty());
+
+        assertThat(result).extracting(TagSuggestion::slug)
+                .contains("companion-bird")
+                .doesNotContain("eagle");
+    }
+
+    @Test
+    @DisplayName("Issue#142 - 非鳥タグは <300mm でもリマップされない")
+    void remapDoesNotAffectNonBird() {
+        saveCompanionBird();
+        Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
+        linkCategory(cherry.getId(), CodeConstants.CATEGORY_PLANTS);
+
+        List<TagSuggestion> result = tagService.extractSuggestions(
+                List.of(Label.builder().name("Cherry Blossom").confidence(92f).build()),
+                Optional.of(50));
+
+        assertThat(result).extracting(TagSuggestion::slug)
+                .containsExactly("cherry-blossom"); // companion-bird は注入されない
+    }
+
+    @Test
+    @DisplayName("Issue#142 - 207+208 二重所属の鳥は除去対象外（208 専用のみリマップ）")
+    void remapKeepsDualMembershipBird() {
+        saveCompanionBird();
+        Tag duck = saveTag("Duck", "duck", "カモ", "Duck");
+        linkCategory(duck.getId(), CodeConstants.CATEGORY_ANIMALS);    // 207
+        linkCategory(duck.getId(), CodeConstants.CATEGORY_WILD_BIRDS); // 208 → 二重所属
+
+        List<TagSuggestion> result = tagService.extractSuggestions(
+                List.of(Label.builder().name("Duck").confidence(90f).build()),
+                Optional.of(50));
+
+        assertThat(result).extracting(TagSuggestion::slug)
+                .contains("duck")
+                .doesNotContain("companion-bird"); // 二重所属は残し companion も注入しない
     }
 
     // ========== assignTagsToPhoto ==========

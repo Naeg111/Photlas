@@ -1,5 +1,6 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.dto.AnalyzeExifInput;
 import com.photlas.backend.dto.PhotoAnalyzeResponse;
 import com.photlas.backend.service.PhotoAnalyzeService;
 import org.springframework.http.MediaType;
@@ -31,12 +32,27 @@ public class PhotoAnalyzeController {
         this.photoAnalyzeService = photoAnalyzeService;
     }
 
+    /**
+     * 画像を解析する。Issue#142: カテゴリ判定の EXIF ルール用に、フロントが抽出した EXIF 値を
+     * 任意の追加フォーム値として受け取る（解析画像は EXIF が剥がされているため別送が必要）。
+     * GPS 緯度経度は受け取らない。受け取った値は解析中のみ使用し保存しない。
+     */
     @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<PhotoAnalyzeResponse> analyze(@RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<PhotoAnalyzeResponse> analyze(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "focalLength35mm", required = false) Integer focalLength35mm,
+            @RequestParam(value = "iso", required = false) Integer iso,
+            @RequestParam(value = "exposureTimeSeconds", required = false) Double exposureTimeSeconds,
+            @RequestParam(value = "dateTimeOriginal", required = false) String dateTimeOriginal,
+            @RequestParam(value = "gpsAltitude", required = false) Double gpsAltitude
+    ) throws IOException {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("ファイルが空です");
         }
-        PhotoAnalyzeResponse response = photoAnalyzeService.analyze(file.getBytes(), file.getContentType());
+        AnalyzeExifInput exifInput = new AnalyzeExifInput(
+                focalLength35mm, iso, exposureTimeSeconds, dateTimeOriginal, gpsAltitude);
+        PhotoAnalyzeResponse response =
+                photoAnalyzeService.analyze(file.getBytes(), file.getContentType(), exifInput);
         return ResponseEntity.ok(response);
     }
 }

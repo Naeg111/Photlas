@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.dto.AnalyzeExifInput;
 import com.photlas.backend.dto.CachedAnalyzeResult;
 import com.photlas.backend.dto.ExifData;
 import com.photlas.backend.dto.ExifRuleFire;
@@ -86,8 +87,12 @@ class PhotoAnalyzeServiceTest {
         // ExifReader はデフォルトで空 EXIF を返す（必要なテストでのみ上書き）
         org.mockito.Mockito.lenient().when(exifReader.read(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(ExifData.empty());
+        // Issue#142: クライアント EXIF はデフォルトで空（必要なテストでのみ上書き）
+        org.mockito.Mockito.lenient().when(exifReader.fromClientValues(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(ExifData.empty());
         // Issue#135: TagService.extractSuggestions はデフォルトで空配列
-        org.mockito.Mockito.lenient().when(tagService.extractSuggestions(org.mockito.ArgumentMatchers.any()))
+        org.mockito.Mockito.lenient().when(tagService.extractSuggestions(
+                        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(List.of());
     }
 
@@ -323,6 +328,28 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
+    @DisplayName("Issue#142 - analyze: クライアント送信 EXIF（非空）は fromClientValues 経由で適用される")
+    void analyze_clientExif_isAppliedViaFromClientValues() throws IOException {
+        ExifData starrySky = ExifData.builder()
+                .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 22, 0))
+                .exposureTimeSeconds(15.0)
+                .iso(1600)
+                .build();
+        when(exifReader.fromClientValues(any())).thenReturn(starrySky);
+        when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
+                .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
+        when(cacheService.save(any())).thenReturn("token");
+
+        AnalyzeExifInput input = new AnalyzeExifInput(null, 1600, 15.0, "2026-05-16T22:00:00", null);
+        PhotoAnalyzeResponse response = service.analyze(createJpeg(640, 480), JPEG, input);
+
+        assertThat(response.exifRulesFired()).extracting(ExifRuleFire::rule).contains("R1");
+        assertThat(response.categories()).contains(CodeConstants.CATEGORY_STARRY_SKY);
+        // 非空入力では read(bytes) ではなく fromClientValues を使う
+        org.mockito.Mockito.verify(exifReader, org.mockito.Mockito.never()).read(any());
+    }
+
+    @Test
     @DisplayName("Issue#132 - analyze: 発火なしの場合、parentFallbacks/exifRulesFired は空配列")
     void analyze_noFallbackOrExifRule_returnsEmptyArrays() throws IOException {
         Label dog = Label.builder().name("Dog").confidence(90f).build();
@@ -383,7 +410,7 @@ class PhotoAnalyzeServiceTest {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder().labels(List.of(cherryLabel)).build());
         when(cacheService.save(any())).thenReturn("token");
-        when(tagService.extractSuggestions(any()))
+        when(tagService.extractSuggestions(any(), any()))
                 .thenReturn(List.of(new TagSuggestion(7L, "cherry-blossom", "Cherry Blossom", 92.0f)));
 
         PhotoAnalyzeResponse response = service.analyze(createJpeg(640, 480), JPEG);
@@ -454,7 +481,7 @@ class PhotoAnalyzeServiceTest {
         List<TagSuggestion> suggestions = List.of(
                 new TagSuggestion(1L, "cherry-blossom", "桜", 92.0f)
         );
-        when(tagService.extractSuggestions(any())).thenReturn(suggestions);
+        when(tagService.extractSuggestions(any(), any())).thenReturn(suggestions);
         when(cacheService.save(any(CachedAnalyzeResult.class))).thenReturn("token-uuid");
 
         service.analyze(createJpeg(640, 480), JPEG);
