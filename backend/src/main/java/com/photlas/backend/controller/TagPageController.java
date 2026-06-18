@@ -59,6 +59,16 @@ public class TagPageController {
     /** 1 ページあたりの写真件数 (Issue#135 3.6)。 */
     private static final int PAGE_SIZE = 48;
 
+    /**
+     * Issue#150: SEO 上インデックス対象とする最小公開写真数。
+     *
+     * <p>これ未満（= 写真 0 件）のタグページは {@code <meta name="robots" content="noindex,follow">} を
+     * 出力し、{@link SitemapController} のキーワードサイトマップからも除外する。写真 0 件の空ページは
+     * Google に「ソフト404 / 薄いコンテンツ」と判定され、サイト全体のクロール評価を下げるため。
+     * 写真が増えれば自動的にインデックス対象へ復帰する。{@link SitemapController} も本定数を参照する。</p>
+     */
+    public static final int MIN_INDEXABLE_PHOTO_COUNT = 1;
+
     /** Phase 9 (Q5): 0 件時に表示する関連キーワードの上限。 */
     private static final int RELATED_TAGS_LIMIT = 10;
 
@@ -189,6 +199,8 @@ public class TagPageController {
         model.addAttribute("tag", display);
         model.addAttribute("lang", canonicalLang);
         model.addAttribute("photoCount", photoCount);
+        // Issue#150: 写真が少ないページは noindex（テンプレートが !indexable で robots メタを出力）
+        model.addAttribute("indexable", photoCount >= MIN_INDEXABLE_PHOTO_COUNT);
         model.addAttribute("hreflangs", buildHreflangs(slug));
         model.addAttribute("canonicalUrl", canonicalUrlFor(slug, canonicalLang, canonicalPage));
         model.addAttribute("photos", photos);

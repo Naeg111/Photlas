@@ -4,6 +4,7 @@ import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Tag;
 import com.photlas.backend.repository.PhotoRepository;
+import com.photlas.backend.repository.PhotoTagRepository;
 import com.photlas.backend.repository.TagRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -38,10 +39,15 @@ public class SitemapController {
 
     private final PhotoRepository photoRepository;
     private final TagRepository tagRepository;
+    private final PhotoTagRepository photoTagRepository;
 
-    public SitemapController(PhotoRepository photoRepository, TagRepository tagRepository) {
+    public SitemapController(
+            PhotoRepository photoRepository,
+            TagRepository tagRepository,
+            PhotoTagRepository photoTagRepository) {
         this.photoRepository = photoRepository;
         this.tagRepository = tagRepository;
+        this.photoTagRepository = photoTagRepository;
     }
 
     /**
@@ -83,17 +89,33 @@ public class SitemapController {
     /**
      * Issue#135: キーワードランディングページのサイトマップ。
      *
-     * <p>{@code is_active=TRUE} のキーワード × 5 言語のすべての URL を含める
-     * （写真 0 件のキーワードも含む）。</p>
+     * <p>{@code is_active=TRUE} かつ公開写真が
+     * {@link TagPageController#MIN_INDEXABLE_PHOTO_COUNT} 枚以上あるキーワード × 5 言語の URL を含める。</p>
+     *
+     * <p>Issue#150: 写真 0 件のキーワードは除外する。空ページを大量に申告すると Google に
+     * 「ソフト404 / 薄いコンテンツ」と判定され、サイト全体のクロール評価が下がるため
+     * （タグページ側でも同じしきい値で {@code noindex} を出力する）。写真件数は
+     * {@link PhotoTagRepository#countActivePublishedGroupedByTagId} で 1 クエリ取得し N+1 を避ける。</p>
      */
     @GetMapping(value = "/api/v1/sitemap-tags.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> getTagsSitemap() {
+        // tagId → 公開写真数（写真 0 件のタグはキーに現れない）
+        java.util.Map<Long, Long> photoCountByTagId = new java.util.HashMap<>();
+        for (Object[] row : photoTagRepository.countActivePublishedGroupedByTagId(
+                CodeConstants.MODERATION_STATUS_PUBLISHED)) {
+            photoCountByTagId.put((Long) row[0], (Long) row[1]);
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
 
         for (Tag tag : tagRepository.findAll()) {
             if (!Boolean.TRUE.equals(tag.getIsActive())) {
+                continue;
+            }
+            long photoCount = photoCountByTagId.getOrDefault(tag.getId(), 0L);
+            if (photoCount < TagPageController.MIN_INDEXABLE_PHOTO_COUNT) {
                 continue;
             }
             for (String lang : TAG_PAGE_SUPPORTED_LANGS) {

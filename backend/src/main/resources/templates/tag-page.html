@@ -8,6 +8,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <!-- Issue#150: 写真が少ない（0 件）ページは検索結果に載せない。リンクは辿らせる(follow)。
+         写真が増えれば indexable=true になり自動的にインデックス対象へ復帰する。 -->
+    <meta th:if="${!indexable}" name="robots" content="noindex,follow" />
+
     <title th:text="${title}">Keyword Photos - Photlas</title>
     <meta name="description" th:content="${description}" />
 

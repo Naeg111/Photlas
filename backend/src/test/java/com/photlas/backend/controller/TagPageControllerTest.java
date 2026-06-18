@@ -651,4 +651,28 @@ class TagPageControllerTest {
                 .andExpect(content().string(containsString(
                         "name=\"twitter:card\" content=\"summary_large_image\"")));
     }
+
+    // ===== Issue#150: 写真不足ページの noindex 出力 =====
+
+    @Test
+    @DisplayName("Issue#150 - 写真 0 件タグは indexable=false かつ robots noindex メタを出力する")
+    void emptyTag_isNotIndexable_andRendersNoindexMeta() throws Exception {
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("indexable", false))
+                .andExpect(content().string(containsString(
+                        "name=\"robots\" content=\"noindex,follow\"")));
+    }
+
+    @Test
+    @DisplayName("Issue#150 - 写真 1 枚以上のタグは indexable=true かつ noindex メタを出力しない")
+    void tagWithPhoto_isIndexable_andHasNoNoindexMeta() throws Exception {
+        link(createPublishedPhoto(), cherry);
+
+        mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("indexable", true))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        containsString("noindex"))));
+    }
 }
