@@ -1,0 +1,55 @@
+# VPC フローログ（shared）。VPC の全トラフィックを CloudWatch Logs に記録する。
+# 実体は稼働中（fl-0e8f...）。専用 IAM ロール＋ロググループも import して IaC 化する。
+
+resource "aws_iam_role" "vpc_flow_logs" {
+  name        = "photlas-vpc-flow-logs-role"
+  description = "Role for Photlas VPC Flow Logs"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "vpc-flow-logs.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "vpc_flow_logs" {
+  name = "photlas-vpc-flow-logs-policy"
+  role = aws_iam_role.vpc_flow_logs.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+      ]
+      Resource = "*"
+    }]
+  })
+}
+
+resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
+  name = "/aws/vpc/flowlogs/photlas-vpc"
+  # retention 無期限（実構成に合わせる）
+  retention_in_days = 0
+}
+
+resource "aws_flow_log" "main" {
+  vpc_id                   = aws_vpc.main.id
+  traffic_type             = "ALL"
+  log_destination_type     = "cloud-watch-logs"
+  log_destination          = aws_cloudwatch_log_group.vpc_flow_logs.arn
+  iam_role_arn             = aws_iam_role.vpc_flow_logs.arn
+  max_aggregation_interval = 600
+
+  tags = {
+    Name = "photlas-vpc-flow-log"
+  }
+}
