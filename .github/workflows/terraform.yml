@@ -1,0 +1,140 @@
+# Terraform CI（Issue#147 決定 F / §5.5：ハイブリッド運用）
+#
+# - PR で infra/terraform/ 配下が変わると、4 つの env(shared/prod/staging/dns-email)について
+#   fmt -check / validate / plan を実行し、plan 結果を PR にコメントする（差分レビュー）。
+# - apply は CI では行わない（手元=ローカルで `terraform apply` を実行する方針）。
+# - AWS 認証は GitHub OIDC（長期アクセスキー不使用）。plan は読み取り専用ロール
+#   PhotlasTerraformPlanRole（ReadOnlyAccess のみ・書き込みのデプロイロールとは分離）を引き受ける。
+#   plan は -lock=false で状態を書かないため書き込み権限は不要（shared/github_oidc.tf）。
+#
+# 必要な GitHub 設定（Settings → Secrets and variables → Actions）:
+#   Secrets（いずれも deploy.yml 用に既存・再利用）:
+#     AWS_ACCOUNT_ID                 … state バケット名・OIDC ロール ARN の組み立てに使用。
+#     PRODUCTION_MODERATION_API_KEY  … prod Lambda env の実値（無いと prod plan に sensitive の見かけ差分）。
+#     STAGING_MODERATION_API_KEY     … staging 同上。
+#   Variables:
+#     STAGING_SHARED_S3_OAC_ID       … 共有 OAC photlas-s3-oac の ID（例 E1DACVZUUBYKQQ）。staging plan 用。
+
+name: Terraform
+
+on:
+  pull_request:
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform.yml"
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write # OIDC でロールを引き受ける
+  contents: read
+  pull-requests: write # plan 結果を PR にコメント
+
+env:
+  AWS_REGION: ap-northeast-1
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  terraform:
+    name: plan (${{ matrix.env }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env: shared
+          - env: prod
+          - env: staging
+          - env: dns-email
+    defaults:
+      run:
+        working-directory: infra/terraform/envs/${{ matrix.env }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.6"
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # 読み取り専用ロール（書き込み権限のあるデプロイロールとは分離・github_oidc.tf）
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/PhotlasTerraformPlanRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform fmt check
+        id: fmt
+        run: terraform fmt -check -diff
+        continue-on-error: true
+
+      - name: Terraform init
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=photlas-terraform-state-${{ secrets.AWS_ACCOUNT_ID }}" \
+            -backend-config="key=${{ matrix.env }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Terraform validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform plan
+        id: plan
+        # -lock=false: plan は状態を書かないのでロック不要（ReadOnlyAccess で実行可能）
+        # prod/staging は tfvars が Git 管理外のため TF_VAR_* で注入する。
+        # db_password は ignore_changes で plan に影響しないためダミーで可。
+        run: |
+          terraform plan -input=false -lock=false -no-color -out=tfplan 2>&1 | tee plan_output.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        env:
+          TF_VAR_state_bucket: photlas-terraform-state-${{ secrets.AWS_ACCOUNT_ID }}
+          TF_VAR_db_password: ci-plan-placeholder
+          TF_VAR_moderation_api_key: ${{ matrix.env == 'prod' && secrets.PRODUCTION_MODERATION_API_KEY || matrix.env == 'staging' && secrets.STAGING_MODERATION_API_KEY || 'unused' }}
+          TF_VAR_shared_s3_oac_id: ${{ vars.STAGING_SHARED_S3_OAC_ID }}
+
+      - name: Comment plan on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          # 値は env 経由で渡し、スクリプト本文への直接展開（インジェクション経路）を避ける
+          TF_ENV: ${{ matrix.env }}
+          FMT_OUTCOME: ${{ steps.fmt.outcome }}
+          VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const env = process.env.TF_ENV;
+            const fmt = process.env.FMT_OUTCOME;
+            const validate = process.env.VALIDATE_OUTCOME;
+            let plan = '';
+            try { plan = fs.readFileSync('infra/terraform/envs/' + env + '/plan_output.txt', 'utf8'); } catch (e) { plan = '(plan 出力なし)'; }
+            // PR コメントの本文を 60000 文字以内に収める
+            const MAX = 60000;
+            if (plan.length > MAX) plan = plan.slice(0, MAX) + '\n... (truncated)';
+            const body = [
+              '### Terraform plan — `' + env + '`',
+              '',
+              '| step | result |',
+              '|---|---|',
+              '| fmt -check | `' + fmt + '` |',
+              '| validate | `' + validate + '` |',
+              '',
+              '<details><summary>plan output</summary>',
+              '',
+              '```',
+              plan.trim(),
+              '```',
+              '',
+              '</details>',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
