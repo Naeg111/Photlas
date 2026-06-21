@@ -21,3 +21,9 @@ variable "moderation_api_key" {
   type        = string
   sensitive   = true
 }
+
+variable "db_password" {
+  description = "RDS マスターパスワード。冬眠スナップショットから復元するため ignore_changes で無視（プレースホルダで可）。実値は staging.tfvars（Git 管理外）。"
+  type        = string
+  sensitive   = true
+}
