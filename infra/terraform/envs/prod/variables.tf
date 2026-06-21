@@ -14,3 +14,9 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+
+variable "moderation_api_key" {
+  description = "Lambda が backend を呼ぶための API キー（機密）。実値は prod.tfvars（Git 管理外）で渡す。"
+  type        = string
+  sensitive   = true
+}
