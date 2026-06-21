@@ -8,12 +8,12 @@
 #   plan は -lock=false で状態を書かないため書き込み権限は不要（shared/github_oidc.tf）。
 #
 # 必要な GitHub 設定（Settings → Secrets and variables → Actions）:
-#   Secrets:
-#     AWS_ACCOUNT_ID               … 既存。state バケット名・OIDC ロール ARN の組み立てに使用。
-#     PROD_MODERATION_API_KEY      … prod Lambda env の実値（無いと prod plan に sensitive の見かけ差分が出る）。
-#     STAGING_MODERATION_API_KEY   … staging 同上。
+#   Secrets（いずれも deploy.yml 用に既存・再利用）:
+#     AWS_ACCOUNT_ID                 … state バケット名・OIDC ロール ARN の組み立てに使用。
+#     PRODUCTION_MODERATION_API_KEY  … prod Lambda env の実値（無いと prod plan に sensitive の見かけ差分）。
+#     STAGING_MODERATION_API_KEY     … staging 同上。
 #   Variables:
-#     STAGING_SHARED_S3_OAC_ID     … 共有 OAC photlas-s3-oac の ID（例 E1DACVZUUBYKQQ）。staging plan 用。
+#     STAGING_SHARED_S3_OAC_ID       … 共有 OAC photlas-s3-oac の ID（例 E1DACVZUUBYKQQ）。staging plan 用。
 
 name: Terraform
 
@@ -94,7 +94,7 @@ jobs:
         env:
           TF_VAR_state_bucket: photlas-terraform-state-${{ secrets.AWS_ACCOUNT_ID }}
           TF_VAR_db_password: ci-plan-placeholder
-          TF_VAR_moderation_api_key: ${{ matrix.env == 'prod' && secrets.PROD_MODERATION_API_KEY || matrix.env == 'staging' && secrets.STAGING_MODERATION_API_KEY || 'unused' }}
+          TF_VAR_moderation_api_key: ${{ matrix.env == 'prod' && secrets.PRODUCTION_MODERATION_API_KEY || matrix.env == 'staging' && secrets.STAGING_MODERATION_API_KEY || 'unused' }}
           TF_VAR_shared_s3_oac_id: ${{ vars.STAGING_SHARED_S3_OAC_ID }}
 
       - name: Comment plan on PR
