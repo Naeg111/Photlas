@@ -51,6 +51,21 @@ terraform plan
 
 > import/plan/バケット作成など AWS に触れる操作は、本リポジトリの運用ルール（Issue#147）に従い段階承認で実行する。
 
+## 新しい公開ルートを足すとき（再発防止・必須レビュー観点）
+
+本 Issue の発端は「公開ルートを足したのに CloudFront ビヘイビア＋ALB ルールの追加が漏れ、SEO/OGP が
+サイレント未配信になった」事故（`/tags`=#136・`/photo-viewer`=#58）。**コード上で 1 セット**にして再発を防ぐ。
+
+backend に新しい SSR/OGP 公開ルート（例 `/foo/*`）を足すときは、**同じ PR で必ず以下を全部**書く:
+
+1. `envs/prod/cloudfront.tf` と `envs/staging/cloudfront.tf` に `/foo/*` の `ordered_cache_behavior`
+   （ALB オリジン向け）を追加。
+2. `envs/prod/alb_rules.tf` と `envs/staging/alb_rules.tf` に host+path のリスナールール（`/foo/*` → tg）を追加。
+3. 必要なら `frontend` のサイトマップ/プリレンダ対象にも追加。
+
+> 二重の番犬: 上記に加え、`deploy.yml` のデプロイ後スモークテスト（`/tags` の SSR・`/photo-viewer` の
+> 個別 OGP を検証）が配信レイヤーの退化を毎デプロイで検知する（#136 §9 / #58 §6 で実装済）。
+
 ## CI（GitHub Actions・決定 F）
 
 `.github/workflows/terraform.yml` が PR で `fmt-check` / `validate` / `plan` を 4 env 分実行し、
