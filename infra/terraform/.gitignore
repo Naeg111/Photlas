@@ -1,0 +1,27 @@
+# Terraform（Issue#147 決定 E：汎用 .tf は公開・具体値/state は Git 管理外）
+
+# プロバイダプラグイン・作業ディレクトリ
+**/.terraform/
+
+# state（機密が平文で載るため絶対にコミットしない）
+*.tfstate
+*.tfstate.*
+
+# 具体値（VPC ID / dist ID / ARN / account ID 等）
+*.tfvars
+*.tfvars.json
+
+# 部分バックエンド設定（account ID を含むバケット名など）
+backend.hcl
+
+# クラッシュログ・上書き
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# 注: .terraform.lock.hcl は「再現性重視でコミット」する（決定 E）。意図的に ignore しない。
