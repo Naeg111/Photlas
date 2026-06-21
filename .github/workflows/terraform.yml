@@ -3,8 +3,9 @@
 # - PR で infra/terraform/ 配下が変わると、4 つの env(shared/prod/staging/dns-email)について
 #   fmt -check / validate / plan を実行し、plan 結果を PR にコメントする（差分レビュー）。
 # - apply は CI では行わない（手元=ローカルで `terraform apply` を実行する方針）。
-# - AWS 認証は GitHub OIDC（長期アクセスキー不使用）。plan は -lock=false で状態を書かないため
-#   ロールは ReadOnlyAccess のみで足りる（shared/github_oidc.tf）。
+# - AWS 認証は GitHub OIDC（長期アクセスキー不使用）。plan は読み取り専用ロール
+#   PhotlasTerraformPlanRole（ReadOnlyAccess のみ・書き込みのデプロイロールとは分離）を引き受ける。
+#   plan は -lock=false で状態を書かないため書き込み権限は不要（shared/github_oidc.tf）。
 #
 # 必要な GitHub 設定（Settings → Secrets and variables → Actions）:
 #   Secrets:
@@ -60,7 +61,8 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/PhotlasGitHubActionsRole
+          # 読み取り専用ロール（書き込み権限のあるデプロイロールとは分離・github_oidc.tf）
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/PhotlasTerraformPlanRole
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform fmt check
