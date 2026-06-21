@@ -15,3 +15,9 @@ variable "shared_s3_oac_id" {
   description = "共有 OAC photlas-s3-oac の ID（staging frontend が参照）。具体値は staging.tfvars（Git 管理外）。"
   type        = string
 }
+
+variable "moderation_api_key" {
+  description = "Lambda が backend を呼ぶための API キー（機密）。実値は staging.tfvars（Git 管理外）で渡す。"
+  type        = string
+  sensitive   = true
+}
