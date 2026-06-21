@@ -6,7 +6,7 @@ resource "aws_cloudwatch_metric_alarm" "prod_status_check_failed" {
   alarm_name          = "photlas-prod-status-check-failed"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   dimensions = {
-    InstanceId = "i-083e8c40050732b8f"
+    InstanceId = aws_instance.prod.id
   }
   evaluation_periods        = 2
   extended_statistic        = null
@@ -253,7 +253,7 @@ resource "aws_cloudwatch_metric_alarm" "prod_cpu_high" {
   alarm_name          = "photlas-prod-cpu-high"
   comparison_operator = "GreaterThanThreshold"
   dimensions = {
-    InstanceId = "i-083e8c40050732b8f"
+    InstanceId = aws_instance.prod.id
   }
   evaluation_periods        = 2
   extended_statistic        = null
