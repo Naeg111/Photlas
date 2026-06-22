@@ -66,7 +66,10 @@ SCRIPT="$SCRIPTS_DIR/setup-app-ratelimit-alarm.sh"
   assert_contains "$SCRIPT" 'photlas-app-ratelimit-exceeded-filter'
 }
 
-@test "setup-app-ratelimit-alarm.sh: filter pattern matches レート制限超過 log message" {
+# NOTE(Issue#148): @test 名は ASCII のみにする。テスト名に日本語（マルチバイト）が
+# 含まれると bats 1.13 がそのテストを取りこぼし、ディレクトリ実行が exit 1 になるため。
+# 検証対象の日本語ログ文言（レート制限超過）は下の assert 側でそのまま確認する。
+@test "setup-app-ratelimit-alarm.sh: filter pattern matches the rate-limit-exceeded log message" {
   assert_contains "$SCRIPT" 'レート制限超過'
 }
 
