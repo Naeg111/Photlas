@@ -415,6 +415,99 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
+  describe('Issue#156: スプラッシュ裏ピン先読み・bounds正規化・stale応答ガード', () => {
+    it('初回フェッチは固定の全世界 bounds (north=90/south=-90/east=180/west=-180) を送る', async () => {
+      const mockFetch = setupFetchMock([TEST_SPOT])
+
+      render(<MapView />)
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/v1/spots'),
+          expect.any(Object)
+        )
+      })
+
+      // 初回フェッチ（1本目）は canonical bounds を使う（実ビューポート 35.7 ではない）
+      const firstCallUrl = mockFetch.mock.calls[0][0] as string
+      expect(firstCallUrl).toContain('north=90')
+      expect(firstCallUrl).toContain('south=-90')
+      expect(firstCallUrl).toContain('east=180')
+      expect(firstCallUrl).toContain('west=-180')
+    })
+
+    it('moveend 後のフェッチは実ビューポートの bounds を送る（初回だけ正規化）', async () => {
+      const mockFetch = setupFetchMock([TEST_SPOT])
+
+      render(<MapView />)
+
+      // 初回(canonical) + moveend(実bounds) の 2 本
+      await waitFor(
+        () => {
+          expect(mockFetch).toHaveBeenCalledTimes(2)
+        },
+        { timeout: 1500 }
+      )
+
+      const moveEndUrl = mockFetch.mock.calls[1][0] as string
+      // mockMap.getBounds() は north=35.7 を返す
+      expect(moveEndUrl).toContain('north=35.7')
+      expect(moveEndUrl).not.toContain('north=90')
+    })
+
+    it('初回フェッチ完了時に onInitialSpotsLoaded が呼ばれる', async () => {
+      setupFetchMock([TEST_SPOT])
+      const onInitialSpotsLoaded = vi.fn()
+
+      render(<MapView onInitialSpotsLoaded={onInitialSpotsLoaded} />)
+
+      await waitFor(() => {
+        expect(onInitialSpotsLoaded).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    it('stale応答ガード: 後発(moveend)の結果が先発(初回)の遅延応答で上書きされない', async () => {
+      const CANONICAL_SPOT = { ...TEST_SPOT, spotId: 111 }
+      const MOVEEND_SPOT = { ...TEST_SPOT, spotId: 222 }
+
+      // 初回(canonical, north=90)の応答は手動で後から resolve する
+      let resolveCanonical: (v: unknown) => void = () => {}
+      const canonicalPromise = new Promise((resolve) => { resolveCanonical = resolve })
+
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
+        if (typeof url === 'string' && url.includes('north=90')) {
+          // 初回 canonical: すぐには resolve しない
+          return canonicalPromise.then(() => ({ ok: true, json: async () => [CANONICAL_SPOT] }))
+        }
+        // moveend(実bounds): 即 resolve
+        return Promise.resolve({ ok: true, json: async () => [MOVEEND_SPOT] })
+      })
+      global.fetch = mockFetch as unknown as typeof fetch
+
+      render(<MapView />)
+
+      // moveend の結果（222）が先に反映される
+      await waitFor(
+        () => {
+          const ids = (mockSourceData.lastSetData?.features ?? []).map((f: any) => f.properties?.spotId)
+          expect(ids).toContain(MOVEEND_SPOT.spotId)
+        },
+        { timeout: 2000 }
+      )
+
+      // ここで初回 canonical の遅延応答を resolve（stale）
+      await act(async () => {
+        resolveCanonical(undefined)
+        await Promise.resolve()
+      })
+
+      // stale な canonical(111) で上書きされず、moveend(222) のままであること
+      const ids = (mockSourceData.lastSetData?.features ?? []).map((f: any) => f.properties?.spotId)
+      expect(ids).toContain(MOVEEND_SPOT.spotId)
+      expect(ids).not.toContain(CANONICAL_SPOT.spotId)
+    })
+  })
+
   describe('パフォーマンス最適化', () => {
     it('同じスポットデータで再取得してもGeoJSONのsetDataが増加しない（メモ化）', async () => {
       const spots = [TEST_SPOT]

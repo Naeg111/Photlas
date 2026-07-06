@@ -3,8 +3,16 @@
  * Issue#25: SplashScreen関連の定数
  */
 
-/** SplashScreen表示時間（ミリ秒） */
+/** SplashScreen表示時間（ミリ秒）＝最低表示時間 */
 export const SPLASH_SCREEN_DURATION_MS = 2000
+
+/**
+ * Issue#156: スプラッシュ裏の初回ピン取得を待つ上限（ミリ秒）。
+ * スプラッシュはピン取得完了まで待つが、取得が遅い/固まった場合でもこの時間で
+ * 「ピン待ち」を打ち切ってスプラッシュを解除する（地図ロード完了は別途必須）。
+ * 結果としてスプラッシュ表示は最短 SPLASH_SCREEN_DURATION_MS 〜最長この値になる。
+ */
+export const INITIAL_SPOTS_SPLASH_TIMEOUT_MS = 10000
 
 /**
  * Issue#144: OAuth ログイン操作が「今」完了したことを示す sessionStorage フラグのキー。

@@ -79,7 +79,7 @@ import { EMAIL_JUST_VERIFIED_KEY } from './pages/EmailVerificationPage'
 import { EMAIL_JUST_CHANGED_KEY } from './pages/ConfirmEmailChangePage'
 import { MODERATION_STATUS_PUBLISHED, MODERATION_STATUS_QUARANTINED, ROLE_ADMIN } from './utils/codeConstants'
 import { stripExif } from './utils/stripExif'
-import { SPLASH_SCREEN_DURATION_MS } from './config/app'
+import { SPLASH_SCREEN_DURATION_MS, INITIAL_SPOTS_SPLASH_TIMEOUT_MS } from './config/app'
 import { useOAuthLoginToast } from './hooks/useOAuthLoginToast'
 import { useCanonicalUrl } from './hooks/useCanonicalUrl'
 import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed, Search } from 'lucide-react'
@@ -109,6 +109,8 @@ const FLOATING_BUTTON_STYLES = {
 
 interface MainContentProps {
   onMapReady?: () => void
+  /** Issue#156: 初回ピン取得の試行完了時に呼ばれる（スプラッシュ解除ゲート用） */
+  onInitialSpotsLoaded?: () => void
   /** Issue#106: スプラッシュ画面が閉じたタイミングで autoCenter をトリガーするためのフラグ */
   isSplashClosed?: boolean
 }
@@ -117,7 +119,7 @@ interface MainContentProps {
  * MainContent コンポーネント
  * useAuthを使用するためAuthProvider内で使用
  */
-function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>) {
+function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Readonly<MainContentProps>) {
   const { user, login, logout, isAuthenticated, getAuthToken } = useAuth()
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -753,6 +755,7 @@ function MainContent({ onMapReady, isSplashClosed }: Readonly<MainContentProps>)
           onClusterClick={handleClusterClick}
           onMapClick={handleReturnFromPreview}
           onMapReady={handleMapReadyInternal}
+          onInitialSpotsLoaded={onInitialSpotsLoaded}
           // Issue#111-followup §8: 投稿詳細ダイアログ表示中は地球儀回転を停止する
           isPhotoDialogOpen={dialog.isOpen('photoDetail')}
           // Issue#115: 方角インジケーター
@@ -1154,15 +1157,24 @@ function MainApp() {
   const [isLoading, setIsLoading] = useState(true)
   const isMapReadyRef = useRef(false)
   const isMinDurationPassedRef = useRef(false)
+  // Issue#156: 初回ピン取得の試行完了フラグ。スプラッシュ解除の第3条件。
+  const arePinsFetchedRef = useRef(false)
 
   const tryDismissSplash = useCallback(() => {
-    if (isMapReadyRef.current && isMinDurationPassedRef.current) {
+    // Issue#156: 地図ロード完了・最低表示時間・初回ピン取得完了の3条件が揃ったら解除。
+    if (isMapReadyRef.current && isMinDurationPassedRef.current && arePinsFetchedRef.current) {
       setIsLoading(false)
     }
   }, [])
 
   const handleMapReady = useCallback(() => {
     isMapReadyRef.current = true
+    tryDismissSplash()
+  }, [tryDismissSplash])
+
+  // Issue#156: 初回ピン取得（成功/失敗問わず試行完了）でゲートの1条件を満たす。
+  const handleInitialSpotsLoaded = useCallback(() => {
+    arePinsFetchedRef.current = true
     tryDismissSplash()
   }, [tryDismissSplash])
 
@@ -1174,6 +1186,17 @@ function MainApp() {
     return () => clearTimeout(timer)
   }, [tryDismissSplash])
 
+  // Issue#156: ピン取得が遅い/固まった場合の待ち上限。ここで強制するのは arePinsFetchedRef のみで、
+  // 地図ロード完了(isMapReadyRef)は必須のまま残す（未ロードの真っ白な地図を見せない安全側）。
+  // よって地図ロードが極端に遅い場合はスプラッシュがこの上限を超えることがある。
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      arePinsFetchedRef.current = true
+      tryDismissSplash()
+    }, INITIAL_SPOTS_SPLASH_TIMEOUT_MS)
+    return () => clearTimeout(timer)
+  }, [tryDismissSplash])
+
   return (
     <>
       <AnimatePresence>
@@ -1181,7 +1204,11 @@ function MainApp() {
       </AnimatePresence>
       {/* Issue#81 Phase 5e: OAuth のみユーザー向けパスワード設定推奨バナー */}
       <PasswordRecommendationBanner />
-      <MainContent onMapReady={handleMapReady} isSplashClosed={!isLoading} />
+      <MainContent
+        onMapReady={handleMapReady}
+        onInitialSpotsLoaded={handleInitialSpotsLoaded}
+        isSplashClosed={!isLoading}
+      />
       <Toaster />
     </>
   )
