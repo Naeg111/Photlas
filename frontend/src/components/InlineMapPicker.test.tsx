@@ -16,22 +16,26 @@ import i18n from '../i18n'
  */
 
 // Mapbox GL JS (react-map-gl) のモック
-const { mockMap, MapMock, mockSuggest, mockRetrieve, mockForward, getCapturedOnMoveEnd, resetCapturedOnMoveEnd } = vi.hoisted(() => {
+const { mockMap, MapMock, mockSuggest, mockRetrieve, mockForward, getCapturedOnMoveEnd, resetCapturedOnMoveEnd, getCapturedOnDragEnd, resetCapturedOnDragEnd } = vi.hoisted(() => {
   let _capturedOnMoveEnd: ((e: any) => void) | null = null
+  let _capturedOnDragEnd: ((e: any) => void) | null = null
 
   const mockMap = {
     getCenter: vi.fn(() => ({ lng: 139.6503, lat: 35.6762 })),
     flyTo: vi.fn(),
+    jumpTo: vi.fn(),
+    once: vi.fn(),
     setLanguage: vi.fn(),
     getZoom: vi.fn(() => 15),
   }
 
-  const MapMock = ({ children, onLoad, onMoveEnd }: any) => {
+  const MapMock = ({ children, onLoad, onMoveEnd, onDragEnd }: any) => {
     if (onLoad) {
       onLoad({ target: mockMap })
     }
-    // onMoveEnd を後からシミュレートできるようキャプチャ
+    // onMoveEnd / onDragEnd を後からシミュレートできるようキャプチャ
     _capturedOnMoveEnd = onMoveEnd
+    _capturedOnDragEnd = onDragEnd
     return (
       <div data-testid="mapbox-map">
         {children}
@@ -45,8 +49,10 @@ const { mockMap, MapMock, mockSuggest, mockRetrieve, mockForward, getCapturedOnM
 
   const getCapturedOnMoveEnd = () => _capturedOnMoveEnd
   const resetCapturedOnMoveEnd = () => { _capturedOnMoveEnd = null }
+  const getCapturedOnDragEnd = () => _capturedOnDragEnd
+  const resetCapturedOnDragEnd = () => { _capturedOnDragEnd = null }
 
-  return { mockMap, MapMock, mockSuggest, mockRetrieve, mockForward, getCapturedOnMoveEnd, resetCapturedOnMoveEnd }
+  return { mockMap, MapMock, mockSuggest, mockRetrieve, mockForward, getCapturedOnMoveEnd, resetCapturedOnMoveEnd, getCapturedOnDragEnd, resetCapturedOnDragEnd }
 })
 
 vi.mock('react-map-gl', () => ({
@@ -99,6 +105,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
     vi.clearAllMocks()
     vi.useFakeTimers()
     resetCapturedOnMoveEnd()
+    resetCapturedOnDragEnd()
     // GeocodingCoreのデフォルトモック（空結果）
     mockForward.mockResolvedValue({ features: [] })
   })
@@ -173,7 +180,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       )
     })
 
-    it('検索候補選択時は地図のセンタリングのみ行われる（flyTo）', async () => {
+    it('検索候補選択時は暗転ワープ（jumpTo）で移動する（Issue#158: 常にワープ）', async () => {
       mockSuggest.mockResolvedValue({
         suggestions: [
           {
@@ -211,14 +218,15 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       const suggestion = await screen.findByText('東京タワー')
       fireEvent.click(suggestion)
 
-      // flyToが呼ばれることを確認（センタリング）
+      // jumpTo（暗転ワープ）が呼ばれることを確認。flyTo は使わない
       await waitFor(() => {
-        expect(mockMap.flyTo).toHaveBeenCalledWith(
+        expect(mockMap.jumpTo).toHaveBeenCalledWith(
           expect.objectContaining({
             center: [139.7454, 35.6585],
           })
         )
       })
+      expect(mockMap.flyTo).not.toHaveBeenCalled()
 
       // この時点ではonPositionChangeは呼ばれない（地図移動完了を待つ）
       expect(defaultProps.onPositionChange).not.toHaveBeenCalled()
@@ -487,15 +495,99 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       const suggestion = await screen.findByText('渋谷区')
       fireEvent.click(suggestion)
 
-      // retrieveは呼ばれず、直接flyToで移動する
+      // retrieveは呼ばれず、直接ワープ（jumpTo）で移動する
       await waitFor(() => {
         expect(mockRetrieve).not.toHaveBeenCalled()
-        expect(mockMap.flyTo).toHaveBeenCalledWith(
+        expect(mockMap.jumpTo).toHaveBeenCalledWith(
           expect.objectContaining({
             center: [139.6989, 35.6580],
           })
         )
       })
+    })
+  })
+
+  describe('Issue#158: 常にワープ / 能動選択の通知', () => {
+    it('目標が現在の表示とほぼ同じ場合は何もしない（jumpTo も flyTo も呼ばない）', async () => {
+      mockSuggest.mockResolvedValue({ suggestions: [] })
+      // 現在の中心（mockMap.getCenter＝139.6503,35.6762）とほぼ同じ座標を返す
+      mockForward.mockResolvedValue({
+        features: [
+          {
+            properties: { name: 'ほぼ現在地', place_formatted: '', mapbox_id: 'geo-same', feature_type: 'place' },
+            geometry: { coordinates: [139.6503, 35.6762] },
+          },
+        ],
+      })
+
+      render(<InlineMapPicker {...defaultProps} />)
+
+      const searchInput = screen.getByPlaceholderText(/場所を検索/)
+      fireEvent.change(searchInput, { target: { value: 'ほぼ現在地' } })
+      await vi.advanceTimersByTimeAsync(300)
+      vi.useRealTimers()
+
+      const suggestion = await screen.findByText('ほぼ現在地')
+      fireEvent.click(suggestion)
+
+      // 念のため microtask を消化してから確認（no-op なので何も呼ばれない）
+      await new Promise((r) => setTimeout(r, 0))
+      expect(mockMap.jumpTo).not.toHaveBeenCalled()
+      expect(mockMap.flyTo).not.toHaveBeenCalled()
+    })
+
+    it('検索候補選択で onUserPositionChange が選択座標で発火する', async () => {
+      const onUserPositionChange = vi.fn()
+      mockSuggest.mockResolvedValue({ suggestions: [] })
+      mockForward.mockResolvedValue({
+        features: [
+          {
+            properties: { name: '東京タワー', place_formatted: '', mapbox_id: 'geo-tt', feature_type: 'poi' },
+            geometry: { coordinates: [139.7454, 35.6585] },
+          },
+        ],
+      })
+
+      render(<InlineMapPicker {...defaultProps} onUserPositionChange={onUserPositionChange} />)
+
+      const searchInput = screen.getByPlaceholderText(/場所を検索/)
+      fireEvent.change(searchInput, { target: { value: '東京タワー' } })
+      await vi.advanceTimersByTimeAsync(300)
+      vi.useRealTimers()
+
+      const suggestion = await screen.findByText('東京タワー')
+      fireEvent.click(suggestion)
+
+      await waitFor(() => {
+        expect(onUserPositionChange).toHaveBeenCalledWith({ lat: 35.6585, lng: 139.7454 })
+      })
+    })
+
+    it('ユーザーのドラッグ（onDragEnd）で onUserPositionChange が発火する', () => {
+      const onUserPositionChange = vi.fn()
+      render(<InlineMapPicker {...defaultProps} onUserPositionChange={onUserPositionChange} />)
+
+      const onDragEnd = getCapturedOnDragEnd()
+      expect(onDragEnd).toBeTruthy()
+      act(() => {
+        onDragEnd!({ target: mockMap })
+      })
+
+      expect(onUserPositionChange).toHaveBeenCalledWith({ lat: 35.6762, lng: 139.6503 })
+    })
+
+    it('外部からの position 変更（EXIF自動配置）では onUserPositionChange は発火しない', async () => {
+      const onUserPositionChange = vi.fn()
+      render(
+        <InlineMapPicker
+          {...defaultProps}
+          position={{ lat: 35.6585, lng: 139.7454 }}
+          onUserPositionChange={onUserPositionChange}
+        />
+      )
+
+      await vi.advanceTimersByTimeAsync(0)
+      expect(onUserPositionChange).not.toHaveBeenCalled()
     })
   })
 

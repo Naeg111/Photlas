@@ -1311,7 +1311,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
   })
 
   describe('Issue#69: flyToPlace 距離判定', () => {
-    it('近距離移動ではflyToが呼ばれjumpToは呼ばれない', async () => {
+    it('近距離移動でも常にワープ（jumpTo）で移動する（Issue#158）', async () => {
       setupFetchMock()
       mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
 
@@ -1324,8 +1324,10 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
       ref.current.flyToPlace(139.8, 35.7, 14)
 
-      expect(mockMap.flyTo).toHaveBeenCalled()
-      expect(mockMap.jumpTo).not.toHaveBeenCalled()
+      await waitFor(() => {
+        expect(mockMap.jumpTo).toHaveBeenCalled()
+      })
+      expect(mockMap.flyTo).not.toHaveBeenCalled()
     })
 
     it('長距離移動ではjumpToが呼ばれflyToは呼ばれない', async () => {
@@ -2401,7 +2403,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
 
     describe('flyToPlace（場所検索）', () => {
-      it('Issue#116 - 現在ズーム=14・飛び先ズーム=14・距離=0 → flyTo', async () => {
+      it('Issue#158 - 距離=0・ズーム差=0（ほぼ同じ表示）→ 何もしない（no-op）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(14)
@@ -2415,11 +2417,13 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
         ref.current.flyToPlace(139.7, 35.6, 14)
 
-        expect(mockMap.flyTo).toHaveBeenCalled()
+        // no-op なので rAF/microtask を消化しても何も呼ばれない
+        await new Promise((r) => setTimeout(r, 0))
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
         expect(mockMap.jumpTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 現在ズーム=14・飛び先ズーム=11・距離=0 → flyTo（差3で閾値未満）', async () => {
+      it('Issue#158 - 距離=0・ズーム差=3（ズームは変わる）→ 常にワープ（jumpTo）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(14)
@@ -2433,8 +2437,10 @@ describe('MapView Component - Issue#53, Issue#55', () => {
 
         ref.current.flyToPlace(139.7, 35.6, 11)
 
-        expect(mockMap.flyTo).toHaveBeenCalled()
-        expect(mockMap.jumpTo).not.toHaveBeenCalled()
+        await waitFor(() => {
+          expect(mockMap.jumpTo).toHaveBeenCalled()
+        })
+        expect(mockMap.flyTo).not.toHaveBeenCalled()
       })
 
       it('Issue#116 - 現在ズーム=14・飛び先ズーム=10・距離=0 → 暗転（差4）', async () => {
