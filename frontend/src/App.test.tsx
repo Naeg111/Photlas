@@ -4,7 +4,7 @@ import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { toast } from 'sonner'
 import App from './App'
-import { SPLASH_SCREEN_DURATION_MS } from './config/app'
+import { SPLASH_SCREEN_DURATION_MS, INITIAL_SPOTS_SPLASH_TIMEOUT_MS } from './config/app'
 
 /**
  * App コンポーネントのテスト
@@ -133,8 +133,11 @@ vi.stubGlobal('Image', MockImage)
  * fake timersが有効な状態で呼び出す必要がある
  */
 function skipSplashScreen() {
+  // Issue#156: スプラッシュ解除条件に「初回ピン取得完了」が加わった。テスト環境では実フェッチの
+  // マイクロタスク解決タイミングに依存しないよう、ピン待ち上限(INITIAL_SPOTS_SPLASH_TIMEOUT_MS)まで
+  // 進めてフォールバック解除を確実に発火させる（最低表示 2 秒もこの間に経過する）。
   act(() => {
-    vi.advanceTimersByTime(SPLASH_SCREEN_DURATION_MS)
+    vi.advanceTimersByTime(INITIAL_SPOTS_SPLASH_TIMEOUT_MS)
   })
 }
 
@@ -190,6 +193,53 @@ describe('App - Issue#28: App.tsx再構築', () => {
       renderApp()
       skipSplashScreen()
       expect(screen.getByTestId('mapbox-map')).toBeInTheDocument()
+    })
+  })
+
+  describe('Issue#156: スプラッシュはピン取得完了まで待つ', () => {
+    it('初回ピン取得が完了しないうちは、2秒経過してもスプラッシュは解除されない', () => {
+      // 初回フェッチが永遠に resolve しない（hang）→ onInitialSpotsLoaded が発火しない
+      global.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch
+
+      renderApp()
+      // 最低表示時間(2秒)だけ進める。地図ロード完了(mapReady)は onLoad で同期的に立つが、
+      // ピン取得が未完了なのでゲートは解除されない。
+      act(() => {
+        vi.advanceTimersByTime(SPLASH_SCREEN_DURATION_MS)
+      })
+
+      expect(screen.getByTestId('splash-screen')).toBeInTheDocument()
+    })
+
+    it('地図ロード・2秒経過・初回ピン取得完了が揃うとスプラッシュが解除される', async () => {
+      // 初回フェッチは空配列で即 resolve → onInitialSpotsLoaded が発火する
+      global.fetch = vi.fn(() =>
+        Promise.resolve({ ok: true, json: async () => [] })
+      ) as unknown as typeof fetch
+
+      renderApp()
+      expect(screen.getByTestId('splash-screen')).toBeInTheDocument()
+
+      // 最低表示時間(2秒)を進める。ピン取得(フェッチ)のマイクロタスク解決は waitFor 側で待つ。
+      act(() => {
+        vi.advanceTimersByTime(SPLASH_SCREEN_DURATION_MS)
+      })
+
+      // mapReady(同期) + 2秒経過 + ピン取得完了 の3条件が揃い解除される
+      await waitFor(() => {
+        expect(screen.queryByTestId('splash-screen')).not.toBeInTheDocument()
+      })
+    })
+
+    it('ピン取得が返らなくても、待ち上限(10秒)でスプラッシュは解除される（フォールバック）', () => {
+      global.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch
+
+      renderApp()
+      act(() => {
+        vi.advanceTimersByTime(INITIAL_SPOTS_SPLASH_TIMEOUT_MS)
+      })
+
+      expect(screen.queryByTestId('splash-screen')).not.toBeInTheDocument()
     })
   })
 

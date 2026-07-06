@@ -176,6 +176,14 @@ function performWarpAnimation(
 }
 /** マップ移動完了時のスポット取得デバウンス（ms） */
 const FETCH_SPOTS_DEBOUNCE_MS = 500
+
+/**
+ * Issue#156: 初回（スプラッシュ裏）フェッチ専用の固定全世界 bounds。
+ * 実ビューポートの bounds は端末・画面サイズごとに小数が異なり CDN キャッシュキー
+ * (URL) が分散してしまうため、初回だけこの固定値を送って全ユーザーで URL を一致させ、
+ * CloudFront 共有キャッシュ（Issue#127, TTL 60秒）を効かせる。moveend 以降は実 bounds。
+ */
+const INITIAL_WORLD_BOUNDS = { north: 90, south: -90, east: 180, west: -180 } as const
 const SHOOTING_PIN_SCALE = 1.4
 
 /**
@@ -260,6 +268,12 @@ interface MapViewProps {
   onClusterClick?: (spotIds: number[]) => void
   onMapClick?: () => void
   onMapReady?: () => void
+  /**
+   * Issue#156: 初回（スプラッシュ裏）のスポット取得が「試行完了」した時に呼ばれる。
+   * 成功・失敗（エラー/レート制限/bounds なし）いずれでも発火する（＝スプラッシュ解除の
+   * ゲート用シグナル）。App 側はこれと最低表示時間・地図ロード完了を合わせて解除する。
+   */
+  onInitialSpotsLoaded?: () => void
   /**
    * Issue#111-followup §8: 投稿詳細ダイアログが表示中かどうか。
    * true の間は地球儀回転と 5 秒タイマーを停止する。
@@ -350,7 +364,7 @@ function handleClusterClick(mapInstance: MapboxMap, e: any, callbackRef: React.R
   })
 }
 
-const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady, isPhotoDialogOpen, headingIndicatorEnabled = false, heading = null }, ref) {
+const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filterParams, onSpotClick, onClusterClick, onMapClick, onMapReady, onInitialSpotsLoaded, isPhotoDialogOpen, headingIndicatorEnabled = false, heading = null }, ref) {
   const { t, i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [spots, setSpots] = useState<SpotResponse[]>([])
@@ -653,18 +667,41 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     return () => { map.off('rotate', handleRotate) }
   }, [map, headingIndicatorEnabled])
 
+  // Issue#156: 各 fetchSpots 呼び出しに連番を振り、応答反映時に「最新か」を判定する（stale 応答ガード）。
+  // 許可済みユーザーで初回①（全世界）とワープ後②（現在地）が並行した際、先発①の遅延応答が
+  // 後発②の表示を上書きするのを防ぐ。高速パン/ズームの古い応答上書きも同時に防止する。
+  const fetchSeqRef = useRef(0)
+
   // スポットデータを取得
   // Issue#127: bypassCache=true で _t=<timestamp> を付与し CloudFront キャッシュをバイパスする
-  const fetchSpots = useCallback(async (mapInstance: MapboxMap, bypassCache = false) => {
+  // Issue#156: boundsOverride で実測 bounds の代わりに固定 bounds を送れる（初回の全世界正規化）。
+  //           suppressErrorToast=true で初回先読み失敗時のエラートーストを抑制する。
+  const fetchSpots = useCallback(async (
+    mapInstance: MapboxMap,
+    bypassCache = false,
+    boundsOverride?: { north: number; south: number; east: number; west: number },
+    suppressErrorToast = false,
+  ) => {
+    // このフェッチのシーケンス番号。setSpots 前に fetchSeqRef.current と一致するか確認する。
+    const seq = ++fetchSeqRef.current
     try {
-      const bounds = mapInstance.getBounds()
-      if (!bounds) return
+      // Issue#156: boundsOverride があればそれを、無ければ実測 getBounds() を使う。
+      // LngLatBounds のメソッド API（getNorth 等）とプレーンオブジェクトの差を吸収するため
+      // 先に4つの数値へ正規化し、params / mineParams 双方でこの数値を使う。
+      const rawBounds = boundsOverride ? null : mapInstance.getBounds()
+      if (!boundsOverride && !rawBounds) return
+      const b = boundsOverride ?? {
+        north: rawBounds!.getNorth(),
+        south: rawBounds!.getSouth(),
+        east: rawBounds!.getEast(),
+        west: rawBounds!.getWest(),
+      }
 
       const params = new URLSearchParams({
-        north: bounds.getNorth().toString(),
-        south: bounds.getSouth().toString(),
-        east: bounds.getEast().toString(),
-        west: bounds.getWest().toString(),
+        north: b.north.toString(),
+        south: b.south.toString(),
+        east: b.east.toString(),
+        west: b.west.toString(),
       })
 
       if (filterParams) {
@@ -703,6 +740,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
       const publishedSpots = await response.json()
 
+      // Issue#156: この応答が返る前に後発フェッチが始まっていたら破棄する（stale 応答ガード）。
+      if (seq !== fetchSeqRef.current) return
+
       // 緊急対応: /spots 結果は即座に画面反映し、mine-pending の完走は待たない。
       // 旧実装は mine-pending が ALB idle timeout (60 秒) で hang するとピン表示も
       // 60 秒遅延していた。published を先出ししてから mine-pending を背景で取得し、
@@ -720,10 +760,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       // （ただしモデレーション状態と本人 user_id でさらに絞られる）
       // Issue#141 Phase 5: 全フィルタを mine-pending にも転送 (UX 一貫性, Q-new-5/7)
       const mineParams = new URLSearchParams({
-        north: bounds.getNorth().toString(),
-        south: bounds.getSouth().toString(),
-        east: bounds.getEast().toString(),
-        west: bounds.getWest().toString(),
+        north: b.north.toString(),
+        south: b.south.toString(),
+        east: b.east.toString(),
+        west: b.west.toString(),
       })
       if (filterParams) {
         appendArrayParams(mineParams, 'subject_categories', filterParams.subject_categories)
@@ -750,6 +790,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           if (!mineResponse.ok) return
           const minePending = await mineResponse.json()
           if (!Array.isArray(minePending) || minePending.length === 0) return
+          // Issue#156: マージ反映時も後発フェッチが始まっていたら破棄する（stale 応答ガード）。
+          if (seq !== fetchSeqRef.current) return
           // spotId 衝突時は published を優先（既に公開済みのものに重ねない）。
           // mine-pending 専用の spot（新規投稿でまだ他に PUBLISHED 写真がない場所）
           // だけが新しく追加される。
@@ -765,8 +807,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           // mine-pending 失敗 / hang はピン表示に影響させない
         })
     } catch {
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), TOAST_DURATION_MS)
+      // Issue#156: 初回先読み（suppressErrorToast=true）ではエラートーストを出さない。
+      // 起動直後にスプラッシュ裏で失敗してもトーストで邪魔せず、後続の取得で回復させる。
+      if (!suppressErrorToast) {
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), TOAST_DURATION_MS)
+      }
     }
   }, [filterParams, t])
 
@@ -1158,13 +1204,19 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     // バックエンドの MAX_SPOTS_LIMIT=50 でレスポンス件数が保護されているため、
     // 世界全体クエリでもペイロードは大きくならない。
     // 巨大クラスタを安全に開く仕組みは Issue#112 のページネーションで担保済み。
-    fetchSpots(mapInstance)
+    //
+    // Issue#156: 初回だけ固定の全世界 bounds（INITIAL_WORLD_BOUNDS）で取得して CDN 共有キャッシュを
+    // 効かせる。エラートーストは抑制し、試行完了（成功/失敗問わず）で onInitialSpotsLoaded を呼んで
+    // スプラッシュ解除のゲートを解く。
+    fetchSpots(mapInstance, false, INITIAL_WORLD_BOUNDS, true).finally(() => {
+      onInitialSpotsLoaded?.()
+    })
 
     // E2Eテスト用: マップインスタンスをwindowに公開
     ;(globalThis as unknown as Record<string, unknown>).__photlas_map = mapInstance
 
     onMapReady?.()
-  }, [fetchSpots, onMapReady, initializeSymbolLayers, stopRotationOnUserInteraction, scheduleGlobeRotation, rotationLoop])
+  }, [fetchSpots, onMapReady, onInitialSpotsLoaded, initializeSymbolLayers, stopRotationOnUserInteraction, scheduleGlobeRotation, rotationLoop])
 
   // 地図移動完了時のスポット取得（デバウンス: 連続操作を1回のAPI呼び出しにまとめる）
   const debouncedFetchSpots = useDebouncedCallback(

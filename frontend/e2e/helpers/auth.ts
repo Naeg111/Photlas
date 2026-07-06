@@ -38,9 +38,20 @@ export async function initCookieConsent(page: Page): Promise<void> {
 
 /**
  * スプラッシュ画面の終了を待機
+ *
+ * Issue#156: スプラッシュはピン取得完了まで待つようになり、表示時間が
+ * 最短 2 秒〜最長 10 秒（＋地図ロード遅延）の可変になった。固定待機だと
+ * 取得が遅い環境で「スプラッシュ表示中にアサーションが走る」ため、
+ * スプラッシュ要素の消滅をポーリングで待つ方式に変更する。
  */
 export async function waitForSplash(page: Page): Promise<void> {
-  await page.waitForTimeout(SPLASH_WAIT_MS)
+  await page
+    .locator('[data-testid="splash-screen"]')
+    .waitFor({ state: 'detached', timeout: 15000 })
+    .catch(() => {
+      // 万一検出できない場合でも従来相当の固定待機でフォールバック
+      return page.waitForTimeout(SPLASH_WAIT_MS)
+    })
 }
 
 /**
