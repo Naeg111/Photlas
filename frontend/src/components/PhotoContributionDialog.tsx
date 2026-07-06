@@ -38,6 +38,7 @@ import { ApiError } from '../utils/apiClient'
 import { notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { WeatherIcons } from './FilterIcons'
 import { InlineMapPicker } from './InlineMapPicker'
+import { getLastPickedLocation, setLastPickedLocation } from '../utils/lastPickedLocation'
 import {
   WEATHER_OPTIONS as CODE_WEATHER_OPTIONS,
   WEATHER_LABELS,
@@ -163,7 +164,13 @@ export function PhotoContributionDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string>('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [pinPosition, setPinPosition] = useState<{ lat: number; lng: number } | null>(null)
+  // Issue#158: ダイアログは開くたびに再マウントされるため、初期ピンに「前回選択位置」を seed する。
+  // 記憶が無ければ null（＝InlineMapPicker 側の現在位置→東京駅フォールバックに委ねる）。
+  // GPS 付き写真を選ぶと後段（handlePhotoSelect）で GPS 地点に上書きされる。
+  const [pinPosition, setPinPosition] = useState<{ lat: number; lng: number } | null>(() => getLastPickedLocation())
+  // Issue#158: ユーザーが能動的に選んだ最新位置（検索・ドラッグ・現在地）。閉じる時にこれを記憶する。
+  // 自動現在地寄せや seed 由来の位置は入らない（onUserPositionChange が能動選択のみ発火するため）。
+  const lastUserPickedRef = useRef<{ lat: number; lng: number } | null>(null)
   const [selectedWeather, setSelectedWeather] = useState<number | ''>('')
   const [selectedDeviceType, setSelectedDeviceType] = useState<number | ''>('')
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
@@ -229,6 +236,16 @@ export function PhotoContributionDialog({
     return () => {
       if (statusTimerRef.current) {
         clearTimeout(statusTimerRef.current)
+      }
+    }
+  }, [])
+
+  // Issue#158: 閉じる（＝アンマウント）時に、ユーザーが能動的に選んだ最後の位置を記憶する。
+  // 投稿成功の close（resetForm→onOpenChange）・キャンセル close の両方で必ず走るため取りこぼさない。
+  useEffect(() => {
+    return () => {
+      if (lastUserPickedRef.current) {
+        setLastPickedLocation(lastUserPickedRef.current)
       }
     }
   }, [])
@@ -922,6 +939,7 @@ export function PhotoContributionDialog({
                 <InlineMapPicker
                   position={pinPosition}
                   onPositionChange={setPinPosition}
+                  onUserPositionChange={(pos) => { lastUserPickedRef.current = pos }}
                 />
               </div>
               {/* Issue#146: GPS 地点から 1km を超えると投稿不可（エラー表示） */}

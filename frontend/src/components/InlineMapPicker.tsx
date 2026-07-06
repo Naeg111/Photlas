@@ -42,6 +42,8 @@ interface MarkerConfig {
 interface InlineMapPickerProps {
   position: { lat: number; lng: number } | null
   onPositionChange: (position: { lat: number; lng: number }) => void
+  /** Issue#158: ユーザーが能動的に選んだ位置のみ通知（検索候補選択・ドラッグ・現在地ボタン）。自動移動（EXIF/自動現在地寄せ）では発火しない */
+  onUserPositionChange?: (position: { lat: number; lng: number }) => void
   /** 固定中央ピンの色（デフォルト: '#ef4444' 赤） */
   pinColor?: string
   /** 地図上に表示する追加マーカー */
@@ -67,9 +69,9 @@ const DEFAULT_ZOOM = 15
 // Issue#106: ブラウザ位置情報取得時のズームレベル
 const GEOLOCATION_ZOOM = 15
 const SEARCH_DEBOUNCE_MS = 300
-const LONG_DISTANCE_THRESHOLD = 4.5
-/** Issue#116 と同じ: 飛び先ズームとの差がこの値以上なら暗転ワープに切替 */
-const FLYTO_ZOOM_DIFF_THRESHOLD = 4
+/** Issue#158: 目標が現在の表示とほぼ同じ（この距離以内かつズーム差以内）なら何もしない。既存の距離式と同じ度数ユークリッド距離で比較 */
+const NEGLIGIBLE_MOVE_DEG = 0.0003
+const NEGLIGIBLE_ZOOM_DIFF = 0.5
 const TRANSITION_FADE_MS = 500
 const GEOCODING_TYPES = 'country,region,postcode,district,place,locality,neighborhood'
 
@@ -127,7 +129,7 @@ const overlayStyles = {
 
 const DEFAULT_PIN_COLOR = '#ef4444'
 
-export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT_PIN_COLOR, markers, showLocationButton = true }: Readonly<InlineMapPickerProps>) {
+export function InlineMapPicker({ position, onPositionChange, onUserPositionChange, pinColor = DEFAULT_PIN_COLOR, markers, showLocationButton = true }: Readonly<InlineMapPickerProps>) {
   const { i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const mapRef = useRef<MapboxMap | null>(null)
@@ -136,6 +138,9 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const [mapForLanguage, setMapForLanguage] = useState<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
+  // Issue#158: 能動選択（検索・ドラッグ・現在地）のみ通知するコールバックの ref
+  const onUserPositionChangeRef = useRef(onUserPositionChange)
+  onUserPositionChangeRef.current = onUserPositionChange
   // moveMapTo呼び出し時のターゲット座標（onMoveEndで正確な座標を返すため）
   const moveTargetRef = useRef<{ lat: number; lng: number } | null>(null)
   // 初回moveEndスキップフラグ（初回レンダリングのmoveEndでgetCenter()のMercator誤差を拾わない）
@@ -250,36 +255,40 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
     }, SEARCH_DEBOUNCE_MS)
   }, [searchBox, geocoding, mapboxLang])
 
-  // 距離 OR ズーム差が大きいときは暗転ワープ、それ以外は flyTo（MapView.flyToPlace と同じロジック）
-  const moveMapTo = useCallback((lng: number, lat: number, zoom: number = DEFAULT_ZOOM) => {
+  // Issue#158: 「別の場所へ飛ぶ」移動は距離に関係なく常に暗転ワープに統一する。
+  // ただし目標が現在の表示とほぼ同じ（微小移動）なら何もしない（無駄な黒フラッシュを防ぐ）。
+  // userInitiated=true（検索候補選択・現在地ボタン）は、カメラが動くかに関わらず「能動選択」として通知する。
+  const moveMapTo = useCallback((lng: number, lat: number, zoom: number = DEFAULT_ZOOM, userInitiated = false) => {
     if (!mapRef.current) return
-    // ターゲット座標を保存（onMoveEndでgetCenter()の代わりに使用し、Mercator変換誤差を回避）
-    moveTargetRef.current = { lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 }
+    const target = { lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 }
+    if (userInitiated) {
+      onUserPositionChangeRef.current?.(target)
+    }
     const currentCenter = mapRef.current.getCenter()
     const distance = Math.sqrt(
       Math.pow(lng - currentCenter.lng, 2) + Math.pow(lat - currentCenter.lat, 2)
     )
     const zoomDiff = Math.abs(mapRef.current.getZoom() - zoom)
-    if (distance > LONG_DISTANCE_THRESHOLD || zoomDiff >= FLYTO_ZOOM_DIFF_THRESHOLD) {
-      setMapTransitioning(true)
-      let completed = false
-      const completeTransition = () => {
-        if (completed) return
-        completed = true
-        setMapTransitionFading(true)
-        setTimeout(() => {
-          setMapTransitioning(false)
-          setMapTransitionFading(false)
-        }, TRANSITION_FADE_MS)
-      }
-      requestAnimationFrame(() => {
-        mapRef.current?.jumpTo({ center: [lng, lat], zoom })
-        mapRef.current?.once('idle', completeTransition)
-        setTimeout(completeTransition, 500)
-      })
-    } else {
-      mapRef.current.flyTo({ center: [lng, lat], zoom })
+    // 微小移動（目標がほぼ現在の表示と同じ）は何もしない
+    if (distance <= NEGLIGIBLE_MOVE_DEG && zoomDiff <= NEGLIGIBLE_ZOOM_DIFF) return
+    // ターゲット座標を保存（onMoveEndでgetCenter()の代わりに使用し、Mercator変換誤差を回避）
+    moveTargetRef.current = target
+    setMapTransitioning(true)
+    let completed = false
+    const completeTransition = () => {
+      if (completed) return
+      completed = true
+      setMapTransitionFading(true)
+      setTimeout(() => {
+        setMapTransitioning(false)
+        setMapTransitionFading(false)
+      }, TRANSITION_FADE_MS)
     }
+    requestAnimationFrame(() => {
+      mapRef.current?.jumpTo({ center: [lng, lat], zoom })
+      mapRef.current?.once('idle', completeTransition)
+      setTimeout(completeTransition, 500)
+    })
   }, [])
 
   // 外部からのposition変更を検知してマップを移動（EXIF GPS座標等）
@@ -300,7 +309,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
   const handleSelectSuggestion = useCallback(async (suggestion: SearchSuggestion) => {
     if (suggestion.source === 'geocoding' && suggestion.coordinates) {
       const [lng, lat] = suggestion.coordinates
-      moveMapTo(lng, lat)
+      moveMapTo(lng, lat, DEFAULT_ZOOM, true)
     } else if (suggestion.source === 'searchbox' && searchBox) {
       try {
         const result = await searchBox.retrieve(suggestion.originalSuggestion ?? suggestion, {
@@ -309,7 +318,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         const feature = result.features?.[0]
         if (feature?.geometry?.coordinates) {
           const [lng, lat] = feature.geometry.coordinates
-          moveMapTo(lng, lat)
+          moveMapTo(lng, lat, DEFAULT_ZOOM, true)
         }
       } catch {
         // 検索結果の取得に失敗した場合はスキップ
@@ -357,6 +366,17 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
     }
   }, [])
 
+  // Issue#158: ユーザーのドラッグ操作のみ「能動選択」として通知（プログラム移動〈flyTo/jumpTo〉では発火しない）
+  const handleDragEnd = useCallback((e: ViewStateChangeEvent) => {
+    const center = e.target.getCenter()
+    if (center) {
+      onUserPositionChangeRef.current?.({
+        lat: Math.round(center.lat * 1e6) / 1e6,
+        lng: Math.round(center.lng * 1e6) / 1e6,
+      })
+    }
+  }, [])
+
   const handleCurrentLocation = useCallback(() => {
     if (!navigator.geolocation || !mapRef.current) return
 
@@ -366,7 +386,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         }
-        moveMapTo(newCenter.lng, newCenter.lat)
+        moveMapTo(newCenter.lng, newCenter.lat, DEFAULT_ZOOM, true)
       },
       () => {
         // 位置情報取得失敗時は現在位置への移動をスキップ
@@ -463,6 +483,7 @@ export function InlineMapPicker({ position, onPositionChange, pinColor = DEFAULT
         attributionControl={false}
         onLoad={handleLoad}
         onMoveEnd={handleMoveEnd}
+        onDragEnd={handleDragEnd}
       >
         {markers?.map((marker, index) => (
           <Marker key={index} latitude={marker.lat} longitude={marker.lng}>

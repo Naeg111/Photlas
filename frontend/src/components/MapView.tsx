@@ -134,8 +134,9 @@ const LONG_DISTANCE_THRESHOLD = 4.5
 const SHOOTING_PREVIEW_TARGET_ZOOM = 16
 /** Issue#116: 撮影地点プレビューの暗転判定ズーム差（|現在ズーム - 16| ≥ 5 で暗転） */
 const SHOOTING_PREVIEW_ZOOM_DIFF_THRESHOLD = 5
-/** Issue#116: 場所検索（flyToPlace）の暗転判定ズーム差（|現在ズーム - 飛び先ズーム| ≥ 4 で暗転） */
-const FLYTO_ZOOM_DIFF_THRESHOLD = 4
+/** Issue#158: 目標が現在の表示とほぼ同じ（この距離以内かつズーム差以内）なら何もしない。度数ユークリッド距離で比較 */
+const NEGLIGIBLE_MOVE_DEG = 0.0003
+const NEGLIGIBLE_ZOOM_DIFF = 0.5
 const TRANSITION_FADE_MS = 500
 
 /** 地図遷移完了時のフェードアウト処理を生成（ネスト深度削減用） */
@@ -842,15 +843,15 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
             setLastGeolocationCache(newLocation.lat, newLocation.lng)
             if (isFirstUpdate) {
               const distance = calculateMapDistance(map.getCenter(), newLocation.lng, newLocation.lat)
-              if (distance > LONG_DISTANCE_THRESHOLD) {
+              // Issue#158: 微小移動（ほぼ同じ表示）は何もしない。それ以外は距離に関係なく常にワープ。
+              // （centerOnUserLocation はズームを変えないため距離のみで判定）
+              if (distance > NEGLIGIBLE_MOVE_DEG) {
                 performWarpAnimation(
                   map,
                   { center: [newLocation.lng, newLocation.lat] },
                   setMapTransitioning,
                   setMapTransitionFading,
                 )
-              } else {
-                map.flyTo({ center: [newLocation.lng, newLocation.lat] })
               }
               isFirstUpdate = false
             }
@@ -968,20 +969,17 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     flyToPlace: (lng: number, lat: number, zoom: number) => {
       if (!map) return
       const distance = calculateMapDistance(map.getCenter(), lng, lat)
-      // Issue#116: 飛び先ズームとのズーム差も暗転判定の対象にする
       const zoomDiff = Math.abs(map.getZoom() - zoom)
       const padding = { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 }
 
-      if (distance > LONG_DISTANCE_THRESHOLD || zoomDiff >= FLYTO_ZOOM_DIFF_THRESHOLD) {
-        performWarpAnimation(
-          map,
-          { center: [lng, lat], zoom, padding },
-          setMapTransitioning,
-          setMapTransitionFading,
-        )
-      } else {
-        map.flyTo({ center: [lng, lat], zoom, speed: 0.8, padding })
-      }
+      // Issue#158: 微小移動（目標がほぼ現在の表示と同じ）は何もしない。それ以外は距離に関係なく常にワープ。
+      if (distance <= NEGLIGIBLE_MOVE_DEG && zoomDiff <= NEGLIGIBLE_ZOOM_DIFF) return
+      performWarpAnimation(
+        map,
+        { center: [lng, lat], zoom, padding },
+        setMapTransitioning,
+        setMapTransitionFading,
+      )
     },
     /**
      * Issue#106: 初期表示位置をユーザーの現在地またはIP国判定結果に自動的に移動する。

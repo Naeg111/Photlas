@@ -6,6 +6,7 @@ import { PhotoContributionDialog } from './PhotoContributionDialog'
 import type { ExifData } from '../utils/extractExif'
 import { ApiError } from '../utils/apiClient'
 import { _resetRateLimitNotifyDebounce } from '../utils/notifyIfRateLimited'
+import { getLastPickedLocation, setLastPickedLocation, clearLastPickedLocation } from '../utils/lastPickedLocation'
 
 // sonner (toast) のモック
 vi.mock('sonner', () => ({
@@ -126,9 +127,12 @@ vi.mock('react-easy-crop', () => ({
 
 // InlineMapPickerのモック（EXIF GPS テスト用にpositionを追跡）
 let lastMapPickerPosition: { lat: number; lng: number } | null = null
+// Issue#158: 能動選択通知（onUserPositionChange）をテストから発火できるよう捕捉
+let capturedOnUserPositionChange: ((pos: { lat: number; lng: number }) => void) | undefined
 vi.mock('./InlineMapPicker', () => ({
-  InlineMapPicker: ({ position }: { position: { lat: number; lng: number } | null }) => {
+  InlineMapPicker: ({ position, onUserPositionChange }: { position: { lat: number; lng: number } | null; onUserPositionChange?: (pos: { lat: number; lng: number }) => void }) => {
     lastMapPickerPosition = position
+    capturedOnUserPositionChange = onUserPositionChange
     return (
       <div data-testid="inline-map-picker">
         {position && (
@@ -158,6 +162,9 @@ describe('PhotoContributionDialog', () => {
     vi.clearAllMocks()
     mockExtractExif.mockResolvedValue(null)
     _resetRateLimitNotifyDebounce()
+    // Issue#158: モジュールレベルの記憶がテスト間で漏れないよう毎回クリア
+    clearLastPickedLocation()
+    capturedOnUserPositionChange = undefined
   })
 
   describe('UI Elements - UI要素', () => {
@@ -1055,6 +1062,53 @@ describe('PhotoContributionDialog', () => {
 
       expect(lastCropperStyle?.mediaStyle).toBeDefined()
       expect(lastCropperStyle?.mediaStyle?.willChange).toBe('auto')
+    })
+  })
+
+  describe('Issue#158: 前回選択位置の記憶（seed / save）', () => {
+    it('記憶があれば初期ピンにその位置を seed する', () => {
+      setLastPickedLocation({ lat: 34.7025, lng: 135.4959 })
+
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      expect(lastMapPickerPosition).toEqual({ lat: 34.7025, lng: 135.4959 })
+    })
+
+    it('記憶が無ければ初期ピンは null（現在位置フォールバックに委ねる）', () => {
+      render(<PhotoContributionDialog {...defaultProps} />)
+
+      expect(lastMapPickerPosition).toBeNull()
+    })
+
+    it('能動的に選んだ位置は閉じる（アンマウント）時に記憶される', () => {
+      const { unmount } = render(<PhotoContributionDialog {...defaultProps} />)
+
+      // ユーザーが検索/ドラッグ/現在地で能動的に位置を選んだのを再現
+      expect(capturedOnUserPositionChange).toBeTruthy()
+      capturedOnUserPositionChange!({ lat: 35.0, lng: 139.0 })
+
+      unmount()
+
+      expect(getLastPickedLocation()).toEqual({ lat: 35.0, lng: 139.0 })
+    })
+
+    it('能動選択が無ければ閉じても記憶しない（自動現在地寄せは記憶対象外）', () => {
+      const { unmount } = render(<PhotoContributionDialog {...defaultProps} />)
+
+      // onUserPositionChange を呼ばずに閉じる
+      unmount()
+
+      expect(getLastPickedLocation()).toBeNull()
+    })
+
+    it('新しい能動選択で記憶が更新される', () => {
+      setLastPickedLocation({ lat: 34.7025, lng: 135.4959 })
+      const { unmount } = render(<PhotoContributionDialog {...defaultProps} />)
+
+      capturedOnUserPositionChange!({ lat: 43.0621, lng: 141.3544 })
+      unmount()
+
+      expect(getLastPickedLocation()).toEqual({ lat: 43.0621, lng: 141.3544 })
     })
   })
 })
