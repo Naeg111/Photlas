@@ -346,7 +346,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
           {/* Issue#135: キーワードフィルタ (カテゴリと投稿時期の間に配置) */}
           <div>
             <p className="text-sm font-medium mb-2 text-muted-foreground">
-              {t('filter.keywords', { defaultValue: '小カテゴリー' })}
+              {t('filter.keywords', { defaultValue: '詳細カテゴリー' })}
             </p>
             <KeywordSection
               allTags={allTags}

@@ -69,7 +69,7 @@ describe('FilterPanel', () => {
     it('通常フィルターにセクションラベルが表示される', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      expect(screen.getByText('大カテゴリー')).toBeInTheDocument()
+      expect(screen.getByText('カテゴリー')).toBeInTheDocument()
       expect(screen.getByText('投稿時期')).toBeInTheDocument()
       expect(screen.getByText('撮影時期')).toBeInTheDocument()
       expect(screen.getByText('撮影された時間帯')).toBeInTheDocument()

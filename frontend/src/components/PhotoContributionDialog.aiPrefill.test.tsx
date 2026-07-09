@@ -354,7 +354,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     })
     // 文言は i18n キー aiPrefill.error の日本語文
     expect(toast.error).toHaveBeenCalledWith(
-      '自動入力できませんでした。お手数ですが大カテゴリー・天候を選択してください。'
+      '自動入力できませんでした。お手数ですがカテゴリー・天候を選択してください。'
     )
   })
 

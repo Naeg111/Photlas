@@ -1312,7 +1312,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       {/* Issue#135 追補: 詳細カテゴリー（キーワード）編集 */}
                       <div className="space-y-3">
                         <label className="text-sm text-gray-500">
-                          {t('keyword.sectionLabel', { defaultValue: '小カテゴリー（任意）' })}
+                          {t('keyword.sectionLabel', { defaultValue: '詳細カテゴリー（任意）' })}
                         </label>
                         <KeywordSection
                           allTags={allTags}

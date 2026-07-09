@@ -216,7 +216,7 @@ describe('PhotoContributionDialog', () => {
     it('renders category selection area', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      expect(screen.getByText(/大カテゴリー（必須/)).toBeInTheDocument()
+      expect(screen.getByText(/カテゴリー（必須/)).toBeInTheDocument()
     })
 
     it('「場所の名前」ラベルが表示される', () => {

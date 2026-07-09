@@ -152,7 +152,7 @@
     "description": "Filter by main category, period, time, and weather",
     "openFilter": "Open photo filter",
     "filterDescription": "Set photo filtering conditions",
-    "genre": "Main Category",
+    "genre": "Category",
     "postDate": "Post Date",
     "shootingPeriod": "Season",
     "timeOfDay": "Time of Day",
@@ -177,15 +177,15 @@
     "iso1600": "ISO ≤1600",
     "iso6400": "ISO ≤6400",
     "iso12800": "ISO ≤12800",
-    "keywords": "Sub Category"
+    "keywords": "Detailed Category"
   },
   "keyword": {
-    "sectionLabel": "Sub Category (optional)",
-    "aiSuggestions": "AI Suggested Sub Categories",
-    "contextual": "Sub Categories of Selected Main Category",
-    "moreOpen": "+ Show further details (Sub Category List)",
-    "moreClose": "— Close Sub Category List",
-    "searchPlaceholder": "Search sub categories",
+    "sectionLabel": "Detailed Category (optional)",
+    "aiSuggestions": "AI Suggested Detailed Categories",
+    "contextual": "Detailed Categories of Selected Category",
+    "moreOpen": "+ Show further details (Detailed Category List)",
+    "moreClose": "— Close Detailed Category List",
+    "searchPlaceholder": "Search detailed categories",
     "selectionCount": "{{count}} / {{max}} selected"
   },
   "photo": {
@@ -214,7 +214,7 @@
     "locationError": "Please set the location.",
     "locationName": "Location Name",
     "locationNamePlaceholder": "e.g. Tokyo Skytree, Mt. Fuji",
-    "categoryRequired": "Main Category (required, select 1)",
+    "categoryRequired": "Category (required, select 1)",
     "deviceTypeRequired": "Device (required)",
     "weatherLabel": "Weather",
     "post": "Post",

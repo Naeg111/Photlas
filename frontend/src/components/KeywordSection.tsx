@@ -232,7 +232,7 @@ export function KeywordSection({
       {contextualByCategory.size > 0 && (
         <section data-testid="keyword-section-contextual">
           <h3 className="text-sm font-semibold mb-2">
-            {t('keyword.contextual', { defaultValue: '選択中の小カテゴリー' })}
+            {t('keyword.contextual', { defaultValue: '選択中の詳細カテゴリー' })}
           </h3>
           {[...contextualByCategory.entries()].map(([code, tags]) => (
             <div key={code} className="mb-2">
@@ -266,8 +266,8 @@ export function KeywordSection({
         onClick={() => setIsMoreOpen((v) => !v)}
       >
         {isMoreOpen
-          ? t('keyword.moreClose', { defaultValue: '— 小カテゴリー一覧を閉じる' })
-          : t('keyword.moreOpen', { defaultValue: '+ さらに細かく（小カテゴリー一覧）' })}
+          ? t('keyword.moreClose', { defaultValue: '— 詳細カテゴリー一覧を閉じる' })
+          : t('keyword.moreOpen', { defaultValue: '+ さらに細かく（詳細カテゴリー一覧）' })}
       </button>
 
       {/* 「もっと細かく」展開部 */}
@@ -276,7 +276,7 @@ export function KeywordSection({
           <input
             type="search"
             data-testid="keyword-section-search-input"
-            placeholder={t('keyword.searchPlaceholder', { defaultValue: '小カテゴリーを検索' })}
+            placeholder={t('keyword.searchPlaceholder', { defaultValue: '詳細カテゴリーを検索' })}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded text-sm"

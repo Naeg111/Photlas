@@ -126,10 +126,10 @@
   },
   "filter": {
     "title": "照片筛选",
-    "description": "按主分类、时间、时段和天气筛选",
+    "description": "按分类、时间、时段和天气筛选",
     "openFilter": "打开照片筛选",
     "filterDescription": "设置照片筛选条件",
-    "genre": "主分类",
+    "genre": "分类",
     "postDate": "发布日期",
     "shootingPeriod": "季节",
     "timeOfDay": "拍摄时段",
@@ -154,15 +154,15 @@
     "iso1600": "ISO ≤1600",
     "iso6400": "ISO ≤6400",
     "iso12800": "ISO ≤12800",
-    "keywords": "子分类"
+    "keywords": "详细分类"
   },
   "keyword": {
-    "sectionLabel": "子分类（可选）",
-    "aiSuggestions": "AI 推荐子分类",
-    "contextual": "所选主分类的子分类",
-    "moreOpen": "+ 更进一步细分（子分类列表）",
-    "moreClose": "— 关闭子分类列表",
-    "searchPlaceholder": "搜索子分类",
+    "sectionLabel": "详细分类（可选）",
+    "aiSuggestions": "AI 推荐详细分类",
+    "contextual": "所选分类的详细分类",
+    "moreOpen": "+ 更进一步细分（详细分类列表）",
+    "moreClose": "— 关闭详细分类列表",
+    "searchPlaceholder": "搜索详细分类",
     "selectionCount": "已选 {{count}} / {{max}}"
   },
   "photo": {
@@ -191,7 +191,7 @@
     "locationError": "请设置拍摄位置。",
     "locationName": "地点名称",
     "locationNamePlaceholder": "例：东京晴空塔、富士山",
-    "categoryRequired": "主分类（必填，选1个）",
+    "categoryRequired": "分类（必填，选1个）",
     "deviceTypeRequired": "设备（必填）",
     "weatherLabel": "天气",
     "post": "发布",
@@ -302,7 +302,7 @@
     "exploreSpots": "查找拍摄地",
     "exploreSpotsText": "移动地图，选择感兴趣区域的图钉，即可查看带有相机信息的照片。使用地点搜索可按地名或设施名搜索并移动地图。点击发布画面上的小地图，可在地图上放大显示照片的拍摄位置,更方便了解周边地理关系。",
     "filterPhotos": "使用筛选条件",
-    "filterPhotosText": "通过左上角的筛选按钮，可按主分类、拍摄时期、时段、天气等条件进行筛选。也为熟悉摄影的用户提供按设备类型、焦距、ISO 感光度筛选的功能。",
+    "filterPhotosText": "通过左上角的筛选按钮，可按分类、拍摄时期、时段、天气等条件进行筛选。也为熟悉摄影的用户提供按设备类型、焦距、ISO 感光度筛选的功能。",
     "mapControls": "地图操作",
     "mapControlsText": "可用两根手指、或按住鼠标右键并上下左右拖动来改变地图的方向和角度。",
     "compassReset": "方位重置按钮",
@@ -352,7 +352,7 @@
     "feature2Title": "可立即知道照片的拍摄地点",
     "feature2Text": "所有照片均可在地图上确认拍摄地点。「这张照片是在哪里拍的?」可立即得到答案。",
     "feature3Title": "可用筛选条件查找喜欢的照片",
-    "feature3Text": "可按主分类、拍摄时期、时段、天气等条件筛选照片。也支持按相机种类和设置值进行搜索。",
+    "feature3Text": "可按分类、拍摄时期、时段、天气等条件筛选照片。也支持按相机种类和设置值进行搜索。",
     "feature4Title": "可保存到收藏",
     "feature4Text": "将感兴趣的照片添加到收藏,稍后可统一回看。也方便用于旅行规划。",
     "feature5Title": "可通过个人主页展示 SNS",
@@ -461,7 +461,7 @@
   "aiPrefill": {
     "banner": "部分项目已由 AI 自动填写。请确认内容。",
     "analyzing": "AI 分析中...",
-    "error": "自动填写失败。请手动选择主分类和天气。"
+    "error": "自动填写失败。请手动选择分类和天气。"
   },
   "weather": {
     "sunny": "晴天",

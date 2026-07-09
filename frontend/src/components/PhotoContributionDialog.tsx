@@ -395,7 +395,7 @@ export function PhotoContributionDialog({
     trackParentFallbackEvents(response.parentFallbacks)
     trackExifRuleFiredEvents(response.exifRulesFired)
 
-    // AI 提案キーワードをデフォルトで「選択中の小カテゴリー」に追加する
+    // AI 提案キーワードをデフォルトで「選択中の詳細カテゴリー」に追加する
     // (旧: AI 提案エリアに別表示していたが、エリアを廃止して選択中に統合)
     const suggested = response.suggestedTags ?? []
     if (suggested.length > 0) {
@@ -1021,7 +1021,7 @@ export function PhotoContributionDialog({
             {/* Issue#135: キーワード選択（カテゴリと機材種別の間に配置） */}
             <div className="space-y-3">
               <Label className="text-base">
-                {t('keyword.sectionLabel', { defaultValue: '小カテゴリー（任意）' })}
+                {t('keyword.sectionLabel', { defaultValue: '詳細カテゴリー（任意）' })}
               </Label>
               {/* Issue#141 Q2: 投稿フォームでは autoSelectByCategoryMode を渡さない (default false) */}
               <KeywordSection
