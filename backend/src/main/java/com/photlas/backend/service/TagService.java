@@ -25,6 +25,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -136,12 +137,13 @@ public class TagService {
     @Transactional(readOnly = true)
     public List<TagSuggestion> extractSuggestions(List<Label> labels, Optional<Integer> focalLength35mm) {
         List<TagSuggestion> base = extractBaseSuggestions(labels);
-        // ≥300mm は従来どおり（野鳥全般＋種別を維持）
-        if (focalLength35mm.filter(f -> f >= ExifBasedCategoryHints.R3_5_MIN_FOCAL_35MM).isPresent()) {
-            return base;
-        }
-        // <300mm または欠落: 野鳥専用タグを companion-bird(207) にリマップ
-        return remapWildBirdToCompanion(base);
+        // ≥300mm は従来どおり（野鳥全般＋種別を維持）、<300mm/欠落は野鳥専用→companion-bird(207) リマップ
+        List<TagSuggestion> afterBird =
+                focalLength35mm.filter(f -> f >= ExifBasedCategoryHints.R3_5_MIN_FOCAL_35MM).isPresent()
+                        ? base
+                        : remapWildBirdToCompanion(base);
+        // Issue#159 ③-9: 鉄道「その他」の特殊サジェスト（一般鉄道ラベル→その他／特定種があれば抑制）
+        return remapRailwayOther(afterBird, labels);
     }
 
     /**
@@ -227,6 +229,62 @@ public class TagService {
         kept.add(new TagSuggestion(c.getId(), c.getSlug(), pickDisplayName(c, null), maxConf));
         kept.sort(Comparator.comparing(TagSuggestion::confidence).reversed());
         return kept;
+    }
+
+    /** Issue#159 ③-9: 鉄道「その他」判定用の一般鉄道ラベル（小文字比較）。 */
+    private static final Set<String> GENERAL_RAIL_LABELS =
+            Set.of("train", "railway", "subway", "freight train");
+    /** 特定種の slug（提案にあれば「その他」は出さない）。 */
+    private static final Set<String> SPECIFIC_RAIL_SLUGS =
+            Set.of("bullet-train", "locomotive", "tram", "cable-car", "monorail");
+    /** 「その他」タグ（旧・鉄道全般）の slug。 */
+    private static final String RAILWAY_OTHER_SLUG = "railway";
+
+    /**
+     * Issue#159 ③-9 / Q14: 鉄道「その他」の特殊サジェスト。
+     *
+     * <ul>
+     *   <li>提案に特定種（新幹線/機関車/路面電車/モノレール/ケーブルカー）が含まれる場合は
+     *       「その他」を提案から除外する（具体的な方を優先）。</li>
+     *   <li>特定種が無く、一般鉄道ラベル（Train/Railway/Subway/Freight Train）が信頼度
+     *       {@value #CONFIDENCE_THRESHOLD}% 以上で検知され、まだ「その他」が提案に無いなら追加する。</li>
+     * </ul>
+     */
+    private List<TagSuggestion> remapRailwayOther(List<TagSuggestion> suggestions, List<Label> labels) {
+        boolean hasSpecific = suggestions.stream()
+                .anyMatch(s -> SPECIFIC_RAIL_SLUGS.contains(s.slug()));
+        boolean hasOther = suggestions.stream()
+                .anyMatch(s -> RAILWAY_OTHER_SLUG.equals(s.slug()));
+
+        // ② 特定種があれば「その他」を出さない
+        if (hasSpecific) {
+            return hasOther
+                    ? suggestions.stream().filter(s -> !RAILWAY_OTHER_SLUG.equals(s.slug())).toList()
+                    : suggestions;
+        }
+        // ① 特定種なし: 一般鉄道ラベルがあり、まだ「その他」が無ければ追加
+        if (hasOther || labels == null) {
+            return suggestions;
+        }
+        float bestConf = -1f;
+        for (Label l : labels) {
+            if (l.confidence() != null && l.confidence() >= CONFIDENCE_THRESHOLD
+                    && GENERAL_RAIL_LABELS.contains(l.name().toLowerCase(Locale.ROOT))) {
+                bestConf = Math.max(bestConf, l.confidence());
+            }
+        }
+        if (bestConf < 0f) {
+            return suggestions; // 一般鉄道ラベルなし
+        }
+        Optional<Tag> railwayTag = tagRepository.findActiveBySlug(RAILWAY_OTHER_SLUG);
+        if (railwayTag.isEmpty()) {
+            return suggestions;
+        }
+        Tag t = railwayTag.get();
+        List<TagSuggestion> next = new ArrayList<>(suggestions);
+        next.add(new TagSuggestion(t.getId(), t.getSlug(), pickDisplayName(t, null), bestConf));
+        next.sort(Comparator.comparing(TagSuggestion::confidence).reversed());
+        return next.stream().limit(MAX_SUGGESTIONS).toList();
     }
 
     /**
