@@ -140,7 +140,7 @@ export function CategoryIcon({
         <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
       </svg>
     ),
-    星空: (
+    星: (
       <svg
         viewBox="0 0 24 24"
         fill="currentColor"
@@ -148,6 +148,22 @@ export function CategoryIcon({
       >
         {/* 星ひとつ */}
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+      </svg>
+    ),
+    'レジャー・施設': (
+      <svg
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className={className}
+      >
+        {/* 観覧車（レジャー・施設） */}
+        <circle cx="12" cy="11" r="8" fill="none" stroke="currentColor" strokeWidth="1.6" />
+        <circle cx="12" cy="11" r="1.6" />
+        <circle cx="12" cy="3.6" r="1.3" />
+        <circle cx="12" cy="18.4" r="1.3" />
+        <circle cx="4.6" cy="11" r="1.3" />
+        <circle cx="19.4" cy="11" r="1.3" />
+        <path d="M11 18h2l1 4h-4z" />
       </svg>
     ),
     その他: (

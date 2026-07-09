@@ -257,6 +257,22 @@ public class TagService {
     }
 
     /**
+     * 写真の詳細カテゴリー（キーワード）を丸ごと置き換える（編集用）。
+     *
+     * <p>既存の {@code photo_tags} を全削除してから、指定タグを USER 割当として登録し直す。
+     * {@code tagIds} が空なら全消去になる。編集では AI 由来／ユーザー選択の区別は行わず、
+     * すべて {@link PhotoTag#ASSIGNED_BY_USER} として保存する（AI 再解析はしないため）。</p>
+     *
+     * @param photoId 対象写真の ID
+     * @param tagIds  新しいキーワード ID リスト（null/空なら全消去）
+     */
+    @Transactional
+    public void replacePhotoTags(Long photoId, List<Long> tagIds) {
+        photoTagRepository.deleteByPhotoId(photoId);
+        assignTagsToPhoto(photoId, tagIds, PhotoTag.ASSIGNED_BY_USER, Map.of());
+    }
+
+    /**
      * 1 つのカテゴリ配下の主要キーワード上位 N 件を取得する（文脈連動表示用）。
      * 並び順は sort_order 昇順、同値時は alphabetical（slug 基準）。
      */

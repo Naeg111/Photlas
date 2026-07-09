@@ -188,11 +188,53 @@ public class RekognitionLabelMapper {
     }
 
     private static LabelMappingResult combine(CategoryMapping categories, WeatherMapping weather) {
-        Map<String, Float> confidence = new LinkedHashMap<>(categories.confidence());
+        // Issue#159 ②(案A/Q4): 複合判定(夜景等)は既に codes へ反映済み。ここで最終的に
+        // 「最高信頼度の 1 カテゴリー」へ絞り込む（単一選択化）。
+        List<Integer> single = reduceToSingle(categories.codes(), categories.confidence());
+        Map<String, Float> confidence = new LinkedHashMap<>();
+        // 単一化後のカテゴリーの信頼度のみ残す。
+        for (Integer code : single) {
+            Float c = categories.confidence().get(String.valueOf(code));
+            if (c != null) {
+                confidence.put(String.valueOf(code), c);
+            }
+        }
         if (weather.code() != null) {
             confidence.put(String.valueOf(weather.code()), weather.confidence());
         }
-        return new LabelMappingResult(new ArrayList<>(categories.codes()), weather.code(), confidence);
+        return new LabelMappingResult(single, weather.code(), confidence);
+    }
+
+    /**
+     * Issue#159 ②(Q4): 候補カテゴリー群を最高信頼度の 1 件へ絞り込む。
+     *
+     * <ol>
+     *   <li>複合判定（夜景 204 等）は呼び出し前に codes へ反映済み（本メソッドの対象に含む）。</li>
+     *   <li>包含関係: 動物(207) と 野鳥(208) が両立する場合は具体的な野鳥(208)を優先し 207 を除外。</li>
+     *   <li>残った候補のうち信頼度最大の 1 件を採用（同点は挿入順で先勝ち）。</li>
+     * </ol>
+     *
+     * @return 0 件（該当なし）または 1 件のカテゴリーコード。
+     */
+    private static List<Integer> reduceToSingle(Set<Integer> codes, Map<String, Float> confidence) {
+        if (codes.isEmpty()) {
+            return List.of();
+        }
+        Set<Integer> working = new LinkedHashSet<>(codes);
+        if (working.contains(CodeConstants.CATEGORY_ANIMALS)
+                && working.contains(CodeConstants.CATEGORY_WILD_BIRDS)) {
+            working.remove(CodeConstants.CATEGORY_ANIMALS);
+        }
+        Integer best = null;
+        float bestConf = -1f;
+        for (Integer code : working) {
+            float c = confidence.getOrDefault(String.valueOf(code), 0f);
+            if (c > bestConf) {
+                bestConf = c;
+                best = code;
+            }
+        }
+        return best == null ? List.of() : List.of(best);
     }
 
     /** カテゴリマッピング結果（コード集合 + 信頼度マップ）。内部使用のみ。 */
@@ -228,10 +270,12 @@ public class RekognitionLabelMapper {
                 return;
             }
             codes.add(CodeConstants.CATEGORY_NIGHT_VIEW);
-            // 組合せの「弱い側」を信頼度として記録（両方が揃って初めて成立するため）
+            // Issue#159 ②(Q4): 夜景の信頼度は「夜であることの確信度」= Night ラベルの信頼度とする。
+            // partner(City/Building 等) が揃って初めて成立する前提は満たしつつ、単一選択化では
+            // 夜景写真が partner の街並み/建造物より優先されるようにする。
             confidenceMap.put(
                     String.valueOf(CodeConstants.CATEGORY_NIGHT_VIEW),
-                    Math.min(nightConfidence, partnerConfidence)
+                    nightConfidence
             );
         }
     }

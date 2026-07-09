@@ -4,6 +4,7 @@ import com.photlas.backend.dto.CachedAnalyzeResult;
 import com.photlas.backend.dto.CreatePhotoRequest;
 import com.photlas.backend.dto.LabelMappingResult;
 import com.photlas.backend.dto.TagSuggestion;
+import com.photlas.backend.dto.UpdatePhotoRequest;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.PhotoTag;
 import com.photlas.backend.entity.Tag;
@@ -139,6 +140,54 @@ class PhotoServiceTagAssignmentTest {
         List<PhotoTag> saved = photoTagRepository.findByPhotoId(photoId);
         assertThat(saved).hasSize(1);
         assertThat(saved.get(0).getAssignedBy()).isEqualTo(PhotoTag.ASSIGNED_BY_USER);
+    }
+
+    // ========== Issue#135 追補: updatePhoto によるタグ置き換え（編集対応） ==========
+
+    @Test
+    @DisplayName("Issue#135 - updatePhoto: tagIds で photo_tags が置き換わる（USER 割当）")
+    void updatePhoto_replacesTagAssignments() {
+        CreatePhotoRequest createReq = baseRequest();
+        createReq.setTagIds(List.of(tagCherry.getId(), tagSushi.getId()));
+        Long photoId = photoService.createPhoto(createReq, user.getEmail()).getPhoto().getPhotoId();
+
+        UpdatePhotoRequest updateReq = new UpdatePhotoRequest();
+        updateReq.setTagIds(List.of(tagMaple.getId()));
+        photoService.updatePhoto(photoId, updateReq, user.getEmail());
+
+        List<PhotoTag> saved = photoTagRepository.findByPhotoId(photoId);
+        assertThat(saved).extracting(PhotoTag::getTagId).containsExactly(tagMaple.getId());
+        assertThat(saved.get(0).getAssignedBy()).isEqualTo(PhotoTag.ASSIGNED_BY_USER);
+    }
+
+    @Test
+    @DisplayName("Issue#135 - updatePhoto: 空の tagIds で全タグが消去される")
+    void updatePhoto_emptyTagIds_clearsAllTags() {
+        CreatePhotoRequest createReq = baseRequest();
+        createReq.setTagIds(List.of(tagCherry.getId()));
+        Long photoId = photoService.createPhoto(createReq, user.getEmail()).getPhoto().getPhotoId();
+
+        UpdatePhotoRequest updateReq = new UpdatePhotoRequest();
+        updateReq.setTagIds(List.of());
+        photoService.updatePhoto(photoId, updateReq, user.getEmail());
+
+        assertThat(photoTagRepository.findByPhotoId(photoId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Issue#135 - updatePhoto: tagIds=null なら既存タグは変更されない")
+    void updatePhoto_nullTagIds_leavesTagsUnchanged() {
+        CreatePhotoRequest createReq = baseRequest();
+        createReq.setTagIds(List.of(tagCherry.getId()));
+        Long photoId = photoService.createPhoto(createReq, user.getEmail()).getPhoto().getPhotoId();
+
+        // tagIds を設定しない（null）＝タグは変更対象外
+        UpdatePhotoRequest updateReq = new UpdatePhotoRequest();
+        photoService.updatePhoto(photoId, updateReq, user.getEmail());
+
+        assertThat(photoTagRepository.findByPhotoId(photoId))
+                .extracting(PhotoTag::getTagId)
+                .containsExactly(tagCherry.getId());
     }
 
     // ========== ヘルパー ==========

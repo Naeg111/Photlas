@@ -374,11 +374,8 @@ export function PhotoContributionDialog({
       .filter((name): name is string => Boolean(name))
 
     if (prefillCategoryNames.length > 0) {
-      setSelectedCategories((prev) => {
-        // 既存ユーザー選択を残しつつ AI 提案を追加（重複排除）
-        const merged = new Set([...prev, ...prefillCategoryNames])
-        return Array.from(merged)
-      })
+      // Issue#159 ②: AI は最高信頼度の1件のみ返す。単一選択なので置き換える。
+      setSelectedCategories([prefillCategoryNames[0]])
     }
 
     if (response.weather) {
@@ -398,7 +395,7 @@ export function PhotoContributionDialog({
     trackParentFallbackEvents(response.parentFallbacks)
     trackExifRuleFiredEvents(response.exifRulesFired)
 
-    // AI 提案キーワードをデフォルトで「選択中の小カテゴリー」に追加する
+    // AI 提案キーワードをデフォルトで「選択中の詳細カテゴリー」に追加する
     // (旧: AI 提案エリアに別表示していたが、エリアを廃止して選択中に統合)
     const suggested = response.suggestedTags ?? []
     if (suggested.length > 0) {
@@ -483,13 +480,11 @@ export function PhotoContributionDialog({
     }
   }
 
+  // Issue#159 ②: カテゴリーは単一選択（ラジオ相当）。選んだ1つに置き換える。
   const handleCategoryToggle = (category: string) => {
     setSelectedCategories((prev) => {
-      const next = prev.includes(category)
-        ? prev.length > 1 ? prev.filter((c) => c !== category) : prev
-        : [...prev, category]
       lastToggleRef.current = () => setSelectedCategories(prev)
-      return next
+      return [category]
     })
   }
 
@@ -1026,7 +1021,7 @@ export function PhotoContributionDialog({
             {/* Issue#135: キーワード選択（カテゴリと機材種別の間に配置） */}
             <div className="space-y-3">
               <Label className="text-base">
-                {t('keyword.sectionLabel', { defaultValue: '小カテゴリー（任意）' })}
+                {t('keyword.sectionLabel', { defaultValue: '詳細カテゴリー（任意）' })}
               </Label>
               {/* Issue#141 Q2: 投稿フォームでは autoSelectByCategoryMode を渡さない (default false) */}
               <KeywordSection

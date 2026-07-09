@@ -545,3 +545,66 @@ describe('KeywordSection - Issue#141 Phase 6: autoSelectByCategoryMode', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 })
+
+describe('KeywordSection - Issue#159 複数タグ→1表示名グルーピング', () => {
+  const GROUP_TAGS = [
+    { tagId: 10, slug: 'farm', displayName: '牧場', categoryCodes: [215], sortOrder: 60 },
+    { tagId: 11, slug: 'ranch', displayName: '牧場', categoryCodes: [215], sortOrder: 60 },
+    { tagId: 12, slug: 'pasture', displayName: '牧場', categoryCodes: [215], sortOrder: 60 },
+    { tagId: 13, slug: 'zoo', displayName: '動物園', categoryCodes: [215], sortOrder: 40 },
+  ]
+
+  function props(overrides: Partial<KeywordSectionProps> = {}): KeywordSectionProps {
+    return {
+      allTags: GROUP_TAGS,
+      selectedCategoryCodes: [215],
+      selectedTagIds: [],
+      onSelectionChange: vi.fn(),
+      maxSelections: 3,
+      contextualTopN: 10,
+      ...overrides,
+    }
+  }
+
+  it('同義タグ(牧場=Farm/Ranch/Pasture)は文脈連動エリアで1チップに畳まれる', () => {
+    render(<KeywordSection {...props()} />)
+    const ctx = screen.getByTestId('keyword-section-contextual')
+    expect(within(ctx).getAllByText('牧場')).toHaveLength(1)
+    expect(within(ctx).getByText('動物園')).toBeInTheDocument()
+  })
+
+  it('投稿モード: 牧場グループ選択で正準タグ(farm=10)のみ追加される', () => {
+    const onSelectionChange = vi.fn()
+    render(<KeywordSection {...props({ onSelectionChange })} />)
+    const ctx = screen.getByTestId('keyword-section-contextual')
+    fireEvent.click(within(ctx).getByText('牧場'))
+    expect(onSelectionChange).toHaveBeenCalledWith([10])
+  })
+
+  it('フィルタモード: 牧場グループ選択でグループ全 tagId が追加される(OR)', () => {
+    const onSelectionChange = vi.fn()
+    render(<KeywordSection {...props({ onSelectionChange, autoSelectByCategoryMode: true })} />)
+    // フィルタモードはマウント時にカテゴリ配下を自動選択する。その呼び出しを無視してクリックのみ検証。
+    onSelectionChange.mockClear()
+    const ctx = screen.getByTestId('keyword-section-contextual')
+    fireEvent.click(within(ctx).getByText('牧場'))
+    expect(onSelectionChange).toHaveBeenCalledWith(expect.arrayContaining([10, 11, 12]))
+    expect(onSelectionChange.mock.calls[0][0]).toHaveLength(3)
+  })
+
+  it('選択中メンバーがあればグループは選択済み扱い、解除で全メンバーが外れる', () => {
+    const onSelectionChange = vi.fn()
+    render(<KeywordSection {...props({ selectedTagIds: [11], onSelectionChange })} />)
+    const ctx = screen.getByTestId('keyword-section-contextual')
+    fireEvent.click(within(ctx).getByText('牧場'))
+    expect(onSelectionChange).toHaveBeenCalledWith([])
+  })
+
+  it('上限はグループ単位: 牧場(farm+ranch=同一グループ)で1件消費し、max=1では動物園を追加不可', () => {
+    const onSelectionChange = vi.fn()
+    render(<KeywordSection {...props({ selectedTagIds: [10, 11], maxSelections: 1, onSelectionChange })} />)
+    const ctx = screen.getByTestId('keyword-section-contextual')
+    fireEvent.click(within(ctx).getByText('動物園'))
+    expect(onSelectionChange).not.toHaveBeenCalled()
+  })
+})

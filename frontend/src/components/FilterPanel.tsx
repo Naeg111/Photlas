@@ -34,7 +34,8 @@ const CATEGORY_TO_I18N_KEY: Record<string, string> = {
   'バイク': 'categories.motorcycles',
   '鉄道': 'categories.railways',
   '飛行機': 'categories.aircraft',
-  '星空': 'categories.starrysky',
+  '星': 'categories.starrysky',
+  'レジャー・施設': 'categories.leisure',
   'その他': 'categories.other',
 }
 
@@ -345,7 +346,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
           {/* Issue#135: キーワードフィルタ (カテゴリと投稿時期の間に配置) */}
           <div>
             <p className="text-sm font-medium mb-2 text-muted-foreground">
-              {t('filter.keywords', { defaultValue: '小カテゴリー' })}
+              {t('filter.keywords', { defaultValue: '詳細カテゴリー' })}
             </p>
             <KeywordSection
               allTags={allTags}

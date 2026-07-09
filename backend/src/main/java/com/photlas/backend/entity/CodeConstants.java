@@ -44,6 +44,8 @@ public final class CodeConstants {
     public static final int CATEGORY_AIRCRAFT = 212;
     public static final int CATEGORY_STARRY_SKY = 213;
     public static final int CATEGORY_OTHER = 214;
+    // Issue#159 ③-5: レジャー・施設（表示順は 214「その他」の前）
+    public static final int CATEGORY_LEISURE_FACILITY = 215;
 
     // ========== 300番台: Photo.time_of_day ==========
     public static final int TIME_OF_DAY_MORNING = 301;

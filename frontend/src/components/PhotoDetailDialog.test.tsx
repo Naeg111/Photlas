@@ -1951,6 +1951,73 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(screen.getByTestId('edit-photo-button')).toBeInTheDocument()
       })
     })
+
+    it('Issue#135 追補: 編集保存時に PUT ボディへ tagIds が含まれる（現在のタグをプリフィル）', async () => {
+      const photoDetail = createMockApiResponse({ userId: TEST_USER_ID, categories: ['自然風景'] })
+      const sakuraTag = { tagId: 42, slug: 'sakura', displayName: 'サクラ', categoryCodes: [206], sortOrder: 1, photoCount: 3 }
+
+      // fetchJson 経由（タグ取得系）は headers/status を参照するため、完全なレスポンス形で返す
+      const json = (data: unknown) => Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: { get: (h: string) => (String(h).toLowerCase() === 'content-type' ? 'application/json' : null) },
+        json: async () => data,
+        text: async () => JSON.stringify(data),
+      })
+
+      // URL 対応 mock: 詳細取得・現在タグ・全タグ・保存(PUT) を出し分け、PUT の body を捕捉する
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let putBody: any = null
+      const mockFetch = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+        if (typeof url === 'string' && url.includes('/api/v1/spots/photos')) {
+          return json({ ids: [TEST_PHOTO_ID_1], total: 1 })
+        }
+        if (typeof url === 'string' && url.endsWith('/api/v1/photos/batch') && options?.method === 'POST') {
+          return json([photoDetail])
+        }
+        if (typeof url === 'string' && url.includes(`/photos/${TEST_PHOTO_ID_1}/tags`)) {
+          return json({ tags: [sakuraTag] })
+        }
+        if (typeof url === 'string' && /\/api\/v1\/tags\?/.test(url)) {
+          return json({ tags: [sakuraTag] })
+        }
+        if (typeof url === 'string' && options?.method === 'PUT' && /\/api\/v1\/photos\/\d+$/.test(url)) {
+          putBody = JSON.parse(String(options?.body ?? '{}'))
+          return json(photoDetail)
+        }
+        if (typeof url === 'string') {
+          const m = url.match(/\/api\/v1\/photos\/(\d+)(?:\?|$)/)
+          if (m) return json(photoDetail)
+        }
+        return json({})
+      })
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />
+      )
+      Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true, configurable: true })
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />)
+
+      // 現在のタグが読み込まれるまで待つ（プリフィルの前提）
+      await waitFor(() => {
+        expect(screen.getByTestId('photo-detail-tags')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('edit-photo-button'))
+      await waitFor(() => {
+        expect(screen.getByTestId('edit-save-button')).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByTestId('edit-save-button'))
+
+      await waitFor(() => {
+        expect(putBody).not.toBeNull()
+      })
+      // 修正の核心: PUT ボディに tagIds が含まれ、現在タグ(42)がプリフィルされて送られる
+      expect(putBody).toHaveProperty('tagIds')
+      expect(putBody.tagIds).toEqual([42])
+    })
   })
 
   // ============================================================

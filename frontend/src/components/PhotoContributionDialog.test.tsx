@@ -216,7 +216,7 @@ describe('PhotoContributionDialog', () => {
     it('renders category selection area', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      expect(screen.getByText(/大カテゴリー（必須/)).toBeInTheDocument()
+      expect(screen.getByText(/カテゴリー（必須/)).toBeInTheDocument()
     })
 
     it('「場所の名前」ラベルが表示される', () => {
@@ -240,11 +240,11 @@ describe('PhotoContributionDialog', () => {
       expect(label.className).toContain('text-gray-500')
     })
 
-    it('renders all 14 genre options', () => {
+    it('renders all 15 genre options', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      // Issue#63: 14ジャンルに変更（「その他」はカテゴリと機材種別で重複のため除外）
-      const categories = ['自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物', '動物', '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星空']
+      // Issue#159: 星空→星に改名、レジャー・施設(215)を追加（「その他」は機材種別と重複のため getAllByText で別途確認）
+      const categories = ['自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物', '動物', '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星', 'レジャー・施設']
       categories.forEach(category => {
         expect(screen.getByText(category)).toBeInTheDocument()
       })
@@ -316,46 +316,40 @@ describe('PhotoContributionDialog', () => {
       expect(checkbox).toBeChecked()
     })
 
-    it('allows selecting multiple categories', async () => {
+    it('Issue#159 ②: カテゴリーは単一選択（2つ目を選ぶと1つ目が外れる）', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      // 複数のカテゴリを選択（親divをクリック）
       const landscapeDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')
       const cityDiv = screen.getByText('街並み').closest('div[class*="cursor-pointer"]')
 
       if (landscapeDiv) await user.click(landscapeDiv)
       if (cityDiv) await user.click(cityDiv)
 
-      // チェックボックスの状態を確認
+      // 単一選択: 後から選んだ「街並み」だけが選択され、「自然風景」は外れる
       await waitFor(() => {
         const landscapeCheckbox = screen.getByRole('checkbox', { name: /自然風景/ })
         const cityCheckbox = screen.getByRole('checkbox', { name: /街並み/ })
-        expect(landscapeCheckbox).toBeChecked()
+        expect(landscapeCheckbox).not.toBeChecked()
         expect(cityCheckbox).toBeChecked()
       })
     })
 
-    it('複数選択時は再クリックでカテゴリを解除できる', async () => {
+    it('Issue#159 ②: 3カテゴリーを順に選ぶと最後の1つだけが選択される', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
       const landscapeDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')!
       const cityDiv = screen.getByText('街並み').closest('div[class*="cursor-pointer"]')!
+      const buildingDiv = screen.getByText('建造物').closest('div[class*="cursor-pointer"]')!
 
-      // 2つ選択
       await user.click(landscapeDiv)
       await user.click(cityDiv)
+      await user.click(buildingDiv)
 
-      const landscapeCheckbox = screen.getByRole('checkbox', { name: /自然風景/ })
-      const cityCheckbox = screen.getByRole('checkbox', { name: /街並み/ })
-      expect(landscapeCheckbox).toBeChecked()
-      expect(cityCheckbox).toBeChecked()
-
-      // 1つ解除できる
-      await user.click(landscapeDiv)
-      expect(landscapeCheckbox).not.toBeChecked()
-      expect(cityCheckbox).toBeChecked()
+      expect(screen.getByRole('checkbox', { name: /自然風景/ })).not.toBeChecked()
+      expect(screen.getByRole('checkbox', { name: /街並み/ })).not.toBeChecked()
+      expect(screen.getByRole('checkbox', { name: /建造物/ })).toBeChecked()
     })
 
     it('最後の1つは再クリックしても解除されない', async () => {

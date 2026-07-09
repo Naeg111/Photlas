@@ -126,10 +126,10 @@
   },
   "filter": {
     "title": "照片篩選",
-    "description": "依主分類、時期、時段、天氣篩選",
+    "description": "依分類、時期、時段、天氣篩選",
     "openFilter": "開啟照片篩選",
     "filterDescription": "設定照片篩選條件",
-    "genre": "主分類",
+    "genre": "分類",
     "postDate": "發布日期",
     "shootingPeriod": "季節",
     "timeOfDay": "時段",
@@ -154,15 +154,15 @@
     "iso1600": "ISO ≤1600",
     "iso6400": "ISO ≤6400",
     "iso12800": "ISO ≤12800",
-    "keywords": "子分類"
+    "keywords": "詳細分類"
   },
   "keyword": {
-    "sectionLabel": "子分類（選填）",
-    "aiSuggestions": "AI 推薦子分類",
-    "contextual": "所選主分類的子分類",
-    "moreOpen": "+ 更進一步細分（子分類列表）",
-    "moreClose": "— 關閉子分類列表",
-    "searchPlaceholder": "搜尋子分類",
+    "sectionLabel": "詳細分類（選填）",
+    "aiSuggestions": "AI 推薦詳細分類",
+    "contextual": "所選分類的詳細分類",
+    "moreOpen": "+ 更進一步細分（詳細分類列表）",
+    "moreClose": "— 關閉詳細分類列表",
+    "searchPlaceholder": "搜尋詳細分類",
     "selectionCount": "已選 {{count}} / {{max}}"
   },
   "photo": {
@@ -191,7 +191,7 @@
     "locationError": "請設定位置。",
     "locationName": "地點名稱",
     "locationNamePlaceholder": "例：台北101、玉山",
-    "categoryRequired": "主分類（必填，可多選）",
+    "categoryRequired": "分類（必填，選1個）",
     "deviceTypeRequired": "裝置（必填）",
     "weatherLabel": "天氣",
     "post": "發布",
@@ -302,7 +302,7 @@
     "exploreSpots": "尋找景點",
     "exploreSpotsText": "移動地圖,選擇感興趣區域的圖釘看看吧。可以查看在該處拍攝的照片以及相機資訊。使用地點搜尋功能,可以搜尋地名或設施名稱,並移動地圖。點選發布畫面上的小地圖,即可在地圖上放大顯示照片的拍攝地點,更容易確認周邊的地理關係。",
     "filterPhotos": "使用篩選功能",
-    "filterPhotosText": "從左上角的篩選按鈕,可以依主分類、拍攝時期、時段、天氣等條件進行篩選。對攝影熟悉的使用者,也可依裝置類型、焦距、ISO 感光度進行篩選。",
+    "filterPhotosText": "從左上角的篩選按鈕,可以依分類、拍攝時期、時段、天氣等條件進行篩選。對攝影熟悉的使用者,也可依裝置類型、焦距、ISO 感光度進行篩選。",
     "mapControls": "地圖操作",
     "mapControlsText": "地圖可以用兩根手指,或按住滑鼠右鍵並上下左右移動,來變更方向和角度。",
     "compassReset": "方位重置按鈕",
@@ -352,7 +352,7 @@
     "feature2Title": "立即知道照片的拍攝地點",
     "feature2Text": "所有照片均可在地圖上確認拍攝地點。「這張照片是在哪裡拍的?」可立即得到解答。",
     "feature3Title": "用篩選功能尋找喜歡的照片",
-    "feature3Text": "可依主分類、拍攝時期、時段、天氣等條件篩選照片。也可依相機種類和設定值進行搜尋。",
+    "feature3Text": "可依分類、拍攝時期、時段、天氣等條件篩選照片。也可依相機種類和設定值進行搜尋。",
     "feature4Title": "可儲存到收藏",
     "feature4Text": "將感興趣的照片加入收藏,日後可彙整查看。也方便用於旅行規劃。",
     "feature5Title": "透過個人頁面展示 SNS",
@@ -454,13 +454,14 @@
     "motorcycles": "機車",
     "railways": "鐵道",
     "aircraft": "飛機",
-    "starrysky": "星空",
+    "starrysky": "星",
+    "leisure": "休閒·設施",
     "other": "其他"
   },
   "aiPrefill": {
     "banner": "部分項目已由 AI 自動填寫。請確認內容。",
     "analyzing": "AI 分析中...",
-    "error": "自動填寫失敗。請手動選擇主分類和天氣。"
+    "error": "自動填寫失敗。請手動選擇分類和天氣。"
   },
   "weather": {
     "sunny": "晴天",

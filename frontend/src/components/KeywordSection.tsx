@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CATEGORY_LABELS } from '../utils/codeConstants'
 import { formatTagDisplayName } from '../utils/formatTagDisplayName'
+import { groupTagsByDisplayName, type TagGroup } from '../utils/tagGrouping'
 
 export interface KeywordTag {
   tagId: number
@@ -78,6 +79,18 @@ export function KeywordSection({
   const [searchQuery, setSearchQuery] = useState('')
 
   const selectedSet = useMemo(() => new Set(selectedTagIds), [selectedTagIds])
+
+  // Issue#159: 上限は「グループ（表示名）単位」で数える。同義タグ（牧場=Farm/Ranch/Pasture）は 1 件扱い。
+  const displayNameByTagId = useMemo(() => {
+    const m = new Map<number, string>()
+    for (const tag of allTags) m.set(tag.tagId, tag.displayName)
+    return m
+  }, [allTags])
+  const selectedGroupCount = useMemo(() => {
+    const names = new Set<string>()
+    for (const id of selectedTagIds) names.add(displayNameByTagId.get(id) ?? `#${id}`)
+    return names.size
+  }, [selectedTagIds, displayNameByTagId])
 
   // Issue#141 Phase 6: カテゴリ変化 diff で配下 tag を自動追加/除外
   // useRef で前回 codes と最新 selectedTagIds を保持し、依存配列に
@@ -172,17 +185,29 @@ export function KeywordSection({
     return s
   }, [allTags, autoSelectByCategoryMode])
 
-  function handleToggle(tagId: number) {
-    // Issue#141 後追い: 非活性 (投稿 0 件) のチップはクリック不可
-    if (disabledTagIdSet.has(tagId)) return
-    if (selectedSet.has(tagId)) {
-      // 解除
-      onSelectionChange(selectedTagIds.filter((id) => id !== tagId))
+  // Issue#159: 表示名グループ単位の選択判定。いずれかのメンバーが選択済みならグループは選択中。
+  function isGroupSelected(group: TagGroup): boolean {
+    return group.tagIds.some((id) => selectedSet.has(id))
+  }
+  // グループの全メンバーが非活性（投稿 0 件）のときだけグループを非活性にする。
+  function isGroupDisabled(group: TagGroup): boolean {
+    return group.tagIds.every((id) => disabledTagIdSet.has(id))
+  }
+
+  // Issue#159: 表示名グループのトグル。
+  //   - 解除: グループの全メンバー tagId を外す
+  //   - フィルタ (autoSelectByCategoryMode): グループ全 tagId を追加（OR 絞り込み）
+  //   - 投稿/編集: グループ単位の上限チェック → 正準タグ 1 件のみ追加
+  function handleToggleGroup(group: TagGroup) {
+    if (isGroupDisabled(group)) return
+    const memberSet = new Set(group.tagIds)
+    if (isGroupSelected(group)) {
+      onSelectionChange(selectedTagIds.filter((id) => !memberSet.has(id)))
+    } else if (autoSelectByCategoryMode) {
+      onSelectionChange([...selectedTagIds, ...group.tagIds])
     } else {
-      // 追加（上限チェック）
-      // Issue#141 Q1: autoSelectByCategoryMode 中は上限を無視（フィルタ画面は実質無制限）
-      if (!autoSelectByCategoryMode && selectedTagIds.length >= maxSelections) return
-      onSelectionChange([...selectedTagIds, tagId])
+      if (selectedGroupCount >= maxSelections) return
+      onSelectionChange([...selectedTagIds, group.canonicalTagId])
     }
   }
 
@@ -207,23 +232,23 @@ export function KeywordSection({
       {contextualByCategory.size > 0 && (
         <section data-testid="keyword-section-contextual">
           <h3 className="text-sm font-semibold mb-2">
-            {t('keyword.contextual', { defaultValue: '選択中の小カテゴリー' })}
+            {t('keyword.contextual', { defaultValue: '選択中の詳細カテゴリー' })}
           </h3>
           {[...contextualByCategory.entries()].map(([code, tags]) => (
             <div key={code} className="mb-2">
               <div className="text-xs text-gray-500 mb-1">{CATEGORY_LABELS[code]}</div>
               <div className="flex flex-wrap">
-                {tags.map((tag) => {
-                  const isDisabled = disabledTagIdSet.has(tag.tagId)
+                {groupTagsByDisplayName(tags).map((group) => {
+                  const isDisabled = isGroupDisabled(group)
                   return (
                     <button
-                      key={`${code}-${tag.tagId}`}
+                      key={`${code}-${group.slug}`}
                       type="button"
-                      className={chipClass(selectedSet.has(tag.tagId), isDisabled)}
-                      onClick={() => handleToggle(tag.tagId)}
+                      className={chipClass(isGroupSelected(group), isDisabled)}
+                      onClick={() => handleToggleGroup(group)}
                       disabled={isDisabled}
                     >
-                      {formatTagDisplayName(tag.displayName)}
+                      {formatTagDisplayName(group.displayName)}
                     </button>
                   )
                 })}
@@ -241,8 +266,8 @@ export function KeywordSection({
         onClick={() => setIsMoreOpen((v) => !v)}
       >
         {isMoreOpen
-          ? t('keyword.moreClose', { defaultValue: '— 小カテゴリー一覧を閉じる' })
-          : t('keyword.moreOpen', { defaultValue: '+ さらに細かく（小カテゴリー一覧）' })}
+          ? t('keyword.moreClose', { defaultValue: '— 詳細カテゴリー一覧を閉じる' })
+          : t('keyword.moreOpen', { defaultValue: '+ さらに細かく（詳細カテゴリー一覧）' })}
       </button>
 
       {/* 「もっと細かく」展開部 */}
@@ -251,7 +276,7 @@ export function KeywordSection({
           <input
             type="search"
             data-testid="keyword-section-search-input"
-            placeholder={t('keyword.searchPlaceholder', { defaultValue: '小カテゴリーを検索' })}
+            placeholder={t('keyword.searchPlaceholder', { defaultValue: '詳細カテゴリーを検索' })}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
@@ -260,14 +285,15 @@ export function KeywordSection({
           {searchQuery.trim().length > 0 ? (
             <SearchResultList
               accordionByCategory={accordionByCategory}
-              selectedSet={selectedSet}
               chipClass={chipClass}
-              onToggle={handleToggle}
-              disabledTagIdSet={disabledTagIdSet}
+              onToggleGroup={handleToggleGroup}
+              isGroupSelected={isGroupSelected}
+              isGroupDisabled={isGroupDisabled}
             />
           ) : null}
           {[...accordionByCategory.entries()].map(([code, tags]) => {
             const isOpen = openAccordionCode === code
+            const groups = groupTagsByDisplayName(tags)
             return (
               <div
                 key={code}
@@ -281,23 +307,23 @@ export function KeywordSection({
                 >
                   <span className="text-sm font-medium">
                     {CATEGORY_LABELS[code]}
-                    <span className="text-xs text-gray-500 ml-2">({tags.length})</span>
+                    <span className="text-xs text-gray-500 ml-2">({groups.length})</span>
                   </span>
                   <span className="text-xs">{isOpen ? '▲' : '▼'}</span>
                 </button>
                 {isOpen && (
                   <div className="px-3 pb-3 flex flex-wrap">
-                    {tags.map((tag) => {
-                      const isDisabled = disabledTagIdSet.has(tag.tagId)
+                    {groups.map((group) => {
+                      const isDisabled = isGroupDisabled(group)
                       return (
                         <button
-                          key={`${code}-acc-${tag.tagId}`}
+                          key={`${code}-acc-${group.slug}`}
                           type="button"
-                          className={chipClass(selectedSet.has(tag.tagId), isDisabled)}
-                          onClick={() => handleToggle(tag.tagId)}
+                          className={chipClass(isGroupSelected(group), isDisabled)}
+                          onClick={() => handleToggleGroup(group)}
                           disabled={isDisabled}
                         >
-                          {formatTagDisplayName(tag.displayName)}
+                          {formatTagDisplayName(group.displayName)}
                         </button>
                       )
                     })}
@@ -313,7 +339,7 @@ export function KeywordSection({
       <div className="text-xs text-gray-500">
         {t('keyword.selectionCount', {
           defaultValue: '{{count}} / {{max}} 件選択中',
-          count: selectedTagIds.length,
+          count: selectedGroupCount,
           max: maxSelections,
         })}
       </div>
@@ -324,36 +350,36 @@ export function KeywordSection({
 /** 検索クエリ入力時の matched 全件フラット表示（カテゴリ枠を超えて重複表示）。 */
 function SearchResultList({
   accordionByCategory,
-  selectedSet,
   chipClass,
-  onToggle,
-  disabledTagIdSet,
+  onToggleGroup,
+  isGroupSelected,
+  isGroupDisabled,
 }: Readonly<{
   accordionByCategory: Map<number, KeywordTag[]>
-  selectedSet: Set<number>
   chipClass: (selected: boolean, disabled?: boolean) => string
-  onToggle: (tagId: number) => void
-  disabledTagIdSet: Set<number>
+  onToggleGroup: (group: TagGroup) => void
+  isGroupSelected: (group: TagGroup) => boolean
+  isGroupDisabled: (group: TagGroup) => boolean
 }>) {
-  // 同じ tag が複数カテゴリにあっても重複させて表示（チェック状態は selectedSet で連動）
-  const items: { code: number; tag: KeywordTag }[] = []
+  // Issue#159: 同一表示名の同義タグは 1 チップに畳む。複数カテゴリの重複表示は従来どおり維持。
+  const items: { code: number; group: TagGroup }[] = []
   for (const [code, tags] of accordionByCategory.entries()) {
-    for (const tag of tags) items.push({ code, tag })
+    for (const group of groupTagsByDisplayName(tags)) items.push({ code, group })
   }
   if (items.length === 0) return null
   return (
     <div data-testid="keyword-section-search-results" className="flex flex-wrap">
-      {items.map(({ code, tag }) => {
-        const isDisabled = disabledTagIdSet.has(tag.tagId)
+      {items.map(({ code, group }) => {
+        const isDisabled = isGroupDisabled(group)
         return (
           <button
-            key={`search-${code}-${tag.tagId}`}
+            key={`search-${code}-${group.slug}`}
             type="button"
-            className={chipClass(selectedSet.has(tag.tagId), isDisabled)}
-            onClick={() => onToggle(tag.tagId)}
+            className={chipClass(isGroupSelected(group), isDisabled)}
+            onClick={() => onToggleGroup(group)}
             disabled={isDisabled}
           >
-            {formatTagDisplayName(tag.displayName)}
+            {formatTagDisplayName(group.displayName)}
           </button>
         )
       })}

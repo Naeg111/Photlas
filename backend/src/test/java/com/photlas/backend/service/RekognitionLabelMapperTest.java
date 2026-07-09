@@ -94,19 +94,20 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 夜景: Night + City の組合せで 202 と 204 の両方を返す")
+    @DisplayName("Issue#159 ② - 夜景: Night(90) + City(80) は単一化で 204(夜景) を返す")
     void nightViewFromNightAndCity() {
         LabelMappingResult result = mapper.map(List.of(
                 label("Night", 90f),
                 label("City", 80f)
         ));
 
+        // Issue#159 ②: 複合解決で 204 を成立させ、夜景の信頼度(=Night=90) が街並み(80)を上回るため 204 に単一化
         assertThat(result.categories())
-                .containsExactlyInAnyOrder(CodeConstants.CATEGORY_CITYSCAPE, CodeConstants.CATEGORY_NIGHT_VIEW);
+                .containsExactly(CodeConstants.CATEGORY_NIGHT_VIEW);
     }
 
     @Test
-    @DisplayName("Issue#119 - 夜景: Night + Building の組合せでも 204 を返す")
+    @DisplayName("Issue#159 ② - 夜景: Night(90) + Building(80) も単一化で 204(夜景) を返す")
     void nightViewFromNightAndBuilding() {
         LabelMappingResult result = mapper.map(List.of(
                 label("Night", 90f),
@@ -114,7 +115,7 @@ class RekognitionLabelMapperTest {
         ));
 
         assertThat(result.categories())
-                .containsExactlyInAnyOrder(CodeConstants.CATEGORY_ARCHITECTURE, CodeConstants.CATEGORY_NIGHT_VIEW);
+                .containsExactly(CodeConstants.CATEGORY_NIGHT_VIEW);
     }
 
     @Test
@@ -141,7 +142,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 + Issue#141 後追い - 植物: Flower / Plant / Garden は 206 を返す (Tree は削除済)")
+    @DisplayName("Issue#119 + Issue#159 - 植物: Flower / Plant は 206 を返す (Garden は 215 へ移動、Tree は削除済)")
     void plantsFromPlantLabels() {
         assertThat(mapper.map(List.of(label("Flower", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_PLANTS);
@@ -149,8 +150,76 @@ class RekognitionLabelMapperTest {
                 .containsExactly(CodeConstants.CATEGORY_PLANTS);
         // Issue#141 後追い (#4): Tree は削除済
         assertThat(mapper.map(List.of(label("Tree", 80f))).categories()).isEmpty();
+        // Issue#159 ③-5: Garden はレジャー・施設(215)へ付け替え
         assertThat(mapper.map(List.of(label("Garden", 80f))).categories())
-                .containsExactly(CodeConstants.CATEGORY_PLANTS);
+                .containsExactly(CodeConstants.CATEGORY_LEISURE_FACILITY);
+    }
+
+    @Test
+    @DisplayName("Issue#159 ③ - 辞書変更: 215新設 / ③-4判定除外 / parrot付替 / 各カテゴリー◎追加 / 判定維持")
+    void issue159DictionaryChanges() {
+        // ③-5 レジャー・施設(215) の新ラベル
+        for (String name : List.of("Park", "Zoo", "Aquarium", "Farm", "Ranch", "Pasture",
+                "Amusement Park", "Theme Park", "Ski", "Marina", "Harbor", "Golf Course", "Orchard", "Campground")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("%s → 215", name).containsExactly(CodeConstants.CATEGORY_LEISURE_FACILITY);
+        }
+        // Hot Spring も 215（従来は判定不参加だったが 215 で有効化）
+        assertThat(mapper.map(List.of(label("Hot Spring", 80f))).categories())
+                .containsExactly(CodeConstants.CATEGORY_LEISURE_FACILITY);
+        // meadow(草原) は 201 のまま据え置き
+        assertThat(mapper.map(List.of(label("Meadow", 80f))).categories())
+                .containsExactly(CodeConstants.CATEGORY_NATURE);
+
+        // ③-4: 夕日/朝日/夜明け/黄昏 は自然風景の判定から除外
+        for (String name : List.of("Sunset", "Sunrise", "Dawn", "Dusk")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("%s は判定除外", name).isEmpty();
+        }
+
+        // ③-21: Parrot は 207(動物) → 208(野鳥) へ付替
+        assertThat(mapper.map(List.of(label("Parrot", 80f))).categories())
+                .containsExactly(CodeConstants.CATEGORY_WILD_BIRDS);
+        // ③-7: 軍用機
+        assertThat(mapper.map(List.of(label("Warplane", 80f))).categories())
+                .containsExactly(CodeConstants.CATEGORY_AIRCRAFT);
+        // ③-11 野鳥 ◎追加
+        for (String name : List.of("Cormorant", "Mandarin Duck", "Toucan", "Ostrich", "Macaw", "Vulture")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("%s → 208", name).containsExactly(CodeConstants.CATEGORY_WILD_BIRDS);
+        }
+        // ③-12 植物 ◎追加
+        for (String name : List.of("Wisteria", "Poppy", "Lotus", "Cosmos", "Hibiscus")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("%s → 206", name).containsExactly(CodeConstants.CATEGORY_PLANTS);
+        }
+        // ③-13 グルメ ◎追加
+        for (String name : List.of("Taco", "Burrito", "Pretzel", "Paella")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("%s → 205", name).containsExactly(CodeConstants.CATEGORY_GOURMET);
+        }
+        // ③-16 自然風景 ◎追加
+        for (String name : List.of("Coral Reef", "Mangrove")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("%s → 201", name).containsExactly(CodeConstants.CATEGORY_NATURE);
+        }
+        // ③-16 建造物 ◎追加
+        for (String name : List.of("Palace", "Windmill", "Ruins")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("%s → 203", name).containsExactly(CodeConstants.CATEGORY_ARCHITECTURE);
+        }
+        // ③-16 動物 ◎追加
+        for (String name : List.of("Gorilla", "Camel", "Hippopotamus", "Rhinoceros",
+                "Alpaca", "Sloth", "Meerkat", "Raccoon", "Chimpanzee")) {
+            assertThat(mapper.map(List.of(label(name, 80f))).categories())
+                    .as("%s → 207", name).containsExactly(CodeConstants.CATEGORY_ANIMALS);
+        }
+
+        // ③-1/③-2「タグ削除・判定維持」: 街並み/自然風景の判定は従来どおり残る
+        assertThat(mapper.map(List.of(label("City", 80f))).categories())
+                .containsExactly(CodeConstants.CATEGORY_CITYSCAPE);
+        assertThat(mapper.map(List.of(label("Cave", 80f))).categories())
+                .containsExactly(CodeConstants.CATEGORY_NATURE);
     }
 
     @Test
@@ -250,15 +319,34 @@ class RekognitionLabelMapperTest {
     // ========== 複数・重複 ==========
 
     @Test
-    @DisplayName("Issue#119 - 複数カテゴリのラベル: それぞれ別カテゴリで含める")
+    @DisplayName("Issue#159 ② - 複数カテゴリ候補は最高信頼度の1件へ単一化する（Mountain90 > Food80 → 201）")
     void multipleDifferentCategoriesAreReturned() {
         LabelMappingResult result = mapper.map(List.of(
                 label("Mountain", 90f),
                 label("Food", 80f)
         ));
 
+        // Issue#159 ②(Q4): 最高信頼度の 1 カテゴリーのみ採用
         assertThat(result.categories())
-                .containsExactlyInAnyOrder(CodeConstants.CATEGORY_NATURE, CodeConstants.CATEGORY_GOURMET);
+                .containsExactly(CodeConstants.CATEGORY_NATURE);
+    }
+
+    @Test
+    @DisplayName("Issue#159 ② - 単一化: 包含関係(動物207 vs 野鳥208)は信頼度に関わらず野鳥を優先")
+    void issue159SingleCategory_prefersWildBirdsOverAnimals() {
+        // Dog→207(95), Sparrow→208(80)。両立時は具体的な野鳥(208)を優先（信頼度が低くても）。
+        LabelMappingResult result = mapper.map(List.of(
+                label("Dog", 95f),
+                label("Sparrow", 80f)
+        ));
+        assertThat(result.categories()).containsExactly(CodeConstants.CATEGORY_WILD_BIRDS);
+    }
+
+    @Test
+    @DisplayName("Issue#159 ② - 単一化: 該当カテゴリーが無ければ空を返す")
+    void issue159SingleCategory_emptyWhenNoMatch() {
+        LabelMappingResult result = mapper.map(List.of(label("Person", 95f)));
+        assertThat(result.categories()).isEmpty();
     }
 
     @Test
@@ -445,9 +533,9 @@ class RekognitionLabelMapperTest {
             assertThat(mapper.map(List.of(label(removed, 80f))).categories())
                     .as("削除済ラベル '%s' は空", removed).isEmpty();
         }
-        // Vineyard は 206 (植物) ではなく 214 (その他) へ移動
+        // Issue#159 ③-5: Vineyard(果樹園) はレジャー・施設(215)へ付け替え
         assertThat(mapper.map(List.of(label("Vineyard", 80f))).categories())
-                .containsExactly(CodeConstants.CATEGORY_OTHER);
+                .containsExactly(CodeConstants.CATEGORY_LEISURE_FACILITY);
     }
 
     @Test
