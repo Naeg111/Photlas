@@ -225,6 +225,15 @@ export interface CreatePhotoRequest {
   cropZoom?: number
   /** Issue#146: 撮影場所が EXIF GPS 由来か（既定 false）。指摘の距離上限判定に使う */
   locationFromExif?: boolean
+  /**
+   * Issue#135: ユーザーが選択した詳細カテゴリー（キーワード）の tagId 群。
+   * これを送らないと backend の savePhotoTags が早期 return し photo_tags に保存されない。
+   */
+  tagIds?: number[]
+  /** Issue#135: 上記 tagIds のうち、元々 AI 提案だったものの subset（assigned_by の判定に使う）。 */
+  aiOriginatedTagIds?: number[]
+  /** Issue#119: AI 解析で発行された analyzeToken。backend が photo_ai_predictions に紐づける。 */
+  analyzeToken?: string
 }
 
 /**

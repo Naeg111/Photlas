@@ -450,6 +450,12 @@ public class PhotoService {
 
         Photo savedPhoto = photoRepository.save(photo);
 
+        // Issue#135 追補（編集対応）: 詳細カテゴリー（キーワード）を置き換える。
+        // null は「変更なし」、空リストは「全消去」、要素ありは「その内容へ置換」。
+        if (request.getTagIds() != null) {
+            tagService.replacePhotoTags(photoId, request.getTagIds());
+        }
+
         Spot spot = spotRepository.findById(photo.getSpotId())
                 .orElseThrow(() -> new SpotNotFoundException(ERROR_SPOT_NOT_FOUND));
 

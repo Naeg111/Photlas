@@ -11,7 +11,8 @@ import { ProtectedImage } from './figma/ProtectedImage'
 import { LqipPlaceholder } from './LqipPlaceholder'
 import { getAuthHeaders } from '../utils/apiClient'
 import { buildRateLimitApiError, notifyIfRateLimited } from '../utils/notifyIfRateLimited'
-import { fetchPhotoTags, type PhotoTagDisplay } from '../utils/tagsApi'
+import { fetchPhotoTags, fetchTags, type PhotoTagDisplay } from '../utils/tagsApi'
+import { KeywordSection, type KeywordTag } from './KeywordSection'
 import { formatTagDisplayName } from '../utils/formatTagDisplayName'
 import { API_V1_URL } from '../config/api'
 import { MAPBOX_ACCESS_TOKEN, MAPBOX_STYLE } from '../config/mapbox'
@@ -38,9 +39,15 @@ import {
   WEATHER_OPTIONS,
   MODERATION_STATUS_QUARANTINED,
   MODERATION_STATUS_PENDING_REVIEW,
+  CATEGORY_LABELS,
 } from '../utils/codeConstants'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 import { useSwipeDirectionHistory } from '../hooks/useSwipeDirectionHistory'
+
+/** カテゴリ名 → ID の逆引きマップ（CATEGORY_LABELS の逆・KeywordSection の selectedCategoryCodes 用） */
+const CATEGORY_NAME_TO_ID: Record<string, number> = Object.fromEntries(
+  Object.entries(CATEGORY_LABELS).map(([id, name]) => [name, Number(id)])
+)
 
 // API Endpoints
 // Issue#112: スポット写真ID一覧は POST /spots/photos に統一（複数スポット横断 + ページネーション）
@@ -534,6 +541,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const [editWeather, setEditWeather] = useState<number | ''>('')
   const [editPlaceName, setEditPlaceName] = useState('')
   const [editCategories, setEditCategories] = useState<string[]>([])
+  // Issue#135 追補: 編集時の詳細カテゴリー（キーワード）選択と、選択肢となる全アクティブタグ
+  const [editTagIds, setEditTagIds] = useState<number[]>([])
+  const [allTags, setAllTags] = useState<KeywordTag[]>([])
   const [isSaving, setIsSaving] = useState(false)
 
   // スクロール時の選択取り消し機構（モバイルタッチ対応）
@@ -588,6 +598,18 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     return () => controller.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedPhoto?.photoId, i18n.language])
+
+  // Issue#135 追補: 編集モードに入ったら KeywordSection 用の全アクティブタグを取得
+  useEffect(() => {
+    if (!isEditing) return
+    const controller = new AbortController()
+    fetchTags(i18n.language, { signal: controller.signal })
+      .then((res) => setAllTags(Array.isArray(res?.tags) ? res.tags : []))
+      .catch(() => {
+        // 取得失敗は静かに無視（既存タグの表示・選択解除は可能）
+      })
+    return () => controller.abort()
+  }, [isEditing, i18n.language])
 
   // スポットの写真ID一覧を取得（Issue#112: ページネーション対応）
   useEffect(() => {
@@ -998,8 +1020,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     setEditWeather(currentPhoto.weather ?? '')
     setEditPlaceName(currentPhoto.placeName || '')
     setEditCategories(currentPhoto.categories || [])
+    // Issue#135 追補: 現在付いている詳細カテゴリー（キーワード）を初期選択にする
+    setEditTagIds(photoTags.map((tag) => tag.tagId))
     setIsEditing(true)
-  }, [currentPhoto])
+  }, [currentPhoto, photoTags])
 
   // Issue#61: 編集キャンセル
   const handleCancelEdit = useCallback(() => {
@@ -1063,12 +1087,6 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     placeNameSessionTokenRef.current = new SessionToken()
   }, [])
 
-  // Issue#61: 保存前チェック
-  const handleSaveClick = useCallback(() => {
-    if (!currentPhoto) return
-    handleSaveEdit()
-  }, [currentPhoto])
-
   // Issue#61: 編集保存
   const handleSaveEdit = useCallback(async () => {
     if (!currentPhotoId) return
@@ -1085,6 +1103,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           weather: editWeather !== '' ? editWeather : null,
           placeName: editPlaceName || null,
           categories: editCategories.length > 0 ? editCategories : null,
+          // Issue#135 追補: 詳細カテゴリー（キーワード）。空配列なら全消去、要素ありは置換。
+          tagIds: editTagIds,
         }),
       })
 
@@ -1111,6 +1131,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         } : prev)
         setIsEditing(false)
         toast.success('保存しました')
+        // Issue#135 追補: PhotoDetailResponse にタグは含まれないため、表示用に再取得する
+        fetchPhotoTags(currentPhotoId, i18n.language)
+          .then((res) => setPhotoTags(Array.isArray(res?.tags) ? res.tags : []))
+          .catch(() => { /* 表示更新の失敗は無視（保存自体は成功） */ })
       } else {
         toast.error('更新に失敗しました')
       }
@@ -1119,7 +1143,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     } finally {
       setIsSaving(false)
     }
-  }, [currentPhotoId, editWeather, editPlaceName, editCategories])
+  }, [currentPhotoId, editWeather, editPlaceName, editCategories, editTagIds, i18n.language])
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal={false}>
@@ -1288,6 +1312,22 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         </div>
                       </div>
 
+                      {/* Issue#135 追補: 詳細カテゴリー（キーワード）編集 */}
+                      <div className="space-y-3">
+                        <label className="text-sm text-gray-500">
+                          {t('keyword.sectionLabel', { defaultValue: '小カテゴリー（任意）' })}
+                        </label>
+                        <KeywordSection
+                          allTags={allTags}
+                          selectedCategoryCodes={editCategories
+                            .map((name) => CATEGORY_NAME_TO_ID[name])
+                            .filter((id): id is number => typeof id === 'number')}
+                          selectedTagIds={editTagIds}
+                          onSelectionChange={setEditTagIds}
+                          maxSelections={3}
+                        />
+                      </div>
+
                       {/* 天気選択 */}
                       <div>
                         <label htmlFor="edit-weather" className="text-sm text-gray-500">{t('photo.weatherLabel')}</label>
@@ -1343,7 +1383,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                       <div className="flex gap-2">
                         <Button
                           data-testid="edit-save-button"
-                          onClick={handleSaveClick}
+                          onClick={handleSaveEdit}
                           disabled={isSaving}
                           className="flex-1"
                         >

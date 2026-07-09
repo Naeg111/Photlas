@@ -2,6 +2,7 @@ package com.photlas.backend.repository;
 
 import com.photlas.backend.entity.PhotoTag;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,6 +17,14 @@ public interface PhotoTagRepository extends JpaRepository<PhotoTag, PhotoTag.Pho
 
     /** 1 枚の写真に付いた全キーワード関連を取得。 */
     List<PhotoTag> findByPhotoId(Long photoId);
+
+    /**
+     * Issue#135 追補（編集対応）: 1 枚の写真の全キーワード関連を一括削除する。
+     * 写真編集時にタグを置き換える（全削除 → 再登録）ために使う。
+     */
+    @Modifying
+    @Query("DELETE FROM PhotoTag pt WHERE pt.photoId = :photoId")
+    void deleteByPhotoId(@Param("photoId") Long photoId);
 
     /** 複数写真に付いた全キーワード関連を一括取得（検索結果カード等）。 */
     List<PhotoTag> findByPhotoIdIn(List<Long> photoIds);

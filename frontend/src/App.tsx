@@ -550,6 +550,11 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
     cropCenterY?: number
     cropZoom?: number
     locationFromExif?: boolean
+    // Issue#135/#136: 詳細カテゴリー（キーワード）と AI 解析トークン。
+    // これらを createPhoto へ転送しないと photo_tags / photo_ai_predictions に保存されない。
+    tagIds?: number[]
+    aiOriginatedTagIds?: number[]
+    analyzeToken?: string
     exif?: {
       cameraBody?: string
       cameraLens?: string
@@ -620,6 +625,10 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         cropCenterY: data.cropCenterY,
         cropZoom: data.cropZoom,
         locationFromExif: data.locationFromExif,
+        // Issue#135/#136: 選択タグと AI トークンを backend へ転送（未転送だと photo_tags が空のままになる）
+        tagIds: data.tagIds,
+        aiOriginatedTagIds: data.aiOriginatedTagIds,
+        analyzeToken: data.analyzeToken,
       })
 
       // 5. マップ更新
