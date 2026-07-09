@@ -191,7 +191,7 @@
     "locationError": "위치를 설정해 주세요.",
     "locationName": "장소 이름",
     "locationNamePlaceholder": "예: 남산타워, 한라산",
-    "categoryRequired": "대분류 (필수, 1개 이상 선택)",
+    "categoryRequired": "대분류 (필수, 1개 선택)",
     "deviceTypeRequired": "기기 (필수)",
     "weatherLabel": "날씨",
     "post": "게시",

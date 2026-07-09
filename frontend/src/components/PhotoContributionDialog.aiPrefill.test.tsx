@@ -200,17 +200,17 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
 
   // ========== プリフィル ==========
 
-  it('Issue#119 - analyze 成功時にカテゴリがプリフィルされる', async () => {
+  it('Issue#159 ② - analyze 成功時に最高信頼度カテゴリ1件のみプリフィルされる', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
     await selectFile(user)
     await waitFor(() => {
-      // 自然風景(201) と 夜景(204) のチェックボックスが選択されている
+      // Issue#159 ②: 単一選択なので AI 返却の先頭カテゴリ(自然風景=201)のみ選択、夜景(204)は選択しない
       const natureCheckbox = screen.getByLabelText('自然風景') as HTMLInputElement
       const nightCheckbox = screen.getByLabelText('夜景') as HTMLInputElement
       expect(natureCheckbox).toBeChecked()
-      expect(nightCheckbox).toBeChecked()
+      expect(nightCheckbox).not.toBeChecked()
     })
   })
 

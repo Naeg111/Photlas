@@ -214,7 +214,7 @@
     "locationError": "位置情報を設定してください。",
     "locationName": "場所の名前",
     "locationNamePlaceholder": "例：東京スカイツリー、富士山",
-    "categoryRequired": "大カテゴリー（必須・1つ以上選択）",
+    "categoryRequired": "大カテゴリー（必須・1つ選択）",
     "deviceTypeRequired": "機材種別（必須）",
     "weatherLabel": "天気",
     "post": "投稿する",

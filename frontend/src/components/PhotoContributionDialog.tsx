@@ -374,11 +374,8 @@ export function PhotoContributionDialog({
       .filter((name): name is string => Boolean(name))
 
     if (prefillCategoryNames.length > 0) {
-      setSelectedCategories((prev) => {
-        // 既存ユーザー選択を残しつつ AI 提案を追加（重複排除）
-        const merged = new Set([...prev, ...prefillCategoryNames])
-        return Array.from(merged)
-      })
+      // Issue#159 ②: AI は最高信頼度の1件のみ返す。単一選択なので置き換える。
+      setSelectedCategories([prefillCategoryNames[0]])
     }
 
     if (response.weather) {
@@ -483,13 +480,11 @@ export function PhotoContributionDialog({
     }
   }
 
+  // Issue#159 ②: カテゴリーは単一選択（ラジオ相当）。選んだ1つに置き換える。
   const handleCategoryToggle = (category: string) => {
     setSelectedCategories((prev) => {
-      const next = prev.includes(category)
-        ? prev.length > 1 ? prev.filter((c) => c !== category) : prev
-        : [...prev, category]
       lastToggleRef.current = () => setSelectedCategories(prev)
-      return next
+      return [category]
     })
   }
 

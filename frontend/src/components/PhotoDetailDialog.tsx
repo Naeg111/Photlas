@@ -1033,14 +1033,11 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   }, [])
 
   // Issue#61: カテゴリ切替（最低1つ必須、スクロール取り消し対応）
+  // Issue#159 ②: 編集でもカテゴリーは単一選択（ラジオ相当）。選んだ1つに置き換える。
   const handleEditCategoryToggle = useCallback((category: string) => {
     setEditCategories(prev => {
-      const next = prev.includes(category)
-        ? prev.length > 1 ? prev.filter(c => c !== category) : prev
-        : [...prev, category]
-      // スクロール取り消し用に逆操作を記録
       lastEditToggleRef.current = () => setEditCategories(prev)
-      return next
+      return [category]
     })
   }, [])
 

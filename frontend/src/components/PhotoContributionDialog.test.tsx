@@ -316,46 +316,40 @@ describe('PhotoContributionDialog', () => {
       expect(checkbox).toBeChecked()
     })
 
-    it('allows selecting multiple categories', async () => {
+    it('Issue#159 ②: カテゴリーは単一選択（2つ目を選ぶと1つ目が外れる）', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      // 複数のカテゴリを選択（親divをクリック）
       const landscapeDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')
       const cityDiv = screen.getByText('街並み').closest('div[class*="cursor-pointer"]')
 
       if (landscapeDiv) await user.click(landscapeDiv)
       if (cityDiv) await user.click(cityDiv)
 
-      // チェックボックスの状態を確認
+      // 単一選択: 後から選んだ「街並み」だけが選択され、「自然風景」は外れる
       await waitFor(() => {
         const landscapeCheckbox = screen.getByRole('checkbox', { name: /自然風景/ })
         const cityCheckbox = screen.getByRole('checkbox', { name: /街並み/ })
-        expect(landscapeCheckbox).toBeChecked()
+        expect(landscapeCheckbox).not.toBeChecked()
         expect(cityCheckbox).toBeChecked()
       })
     })
 
-    it('複数選択時は再クリックでカテゴリを解除できる', async () => {
+    it('Issue#159 ②: 3カテゴリーを順に選ぶと最後の1つだけが選択される', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
       const landscapeDiv = screen.getByText('自然風景').closest('div[class*="cursor-pointer"]')!
       const cityDiv = screen.getByText('街並み').closest('div[class*="cursor-pointer"]')!
+      const buildingDiv = screen.getByText('建造物').closest('div[class*="cursor-pointer"]')!
 
-      // 2つ選択
       await user.click(landscapeDiv)
       await user.click(cityDiv)
+      await user.click(buildingDiv)
 
-      const landscapeCheckbox = screen.getByRole('checkbox', { name: /自然風景/ })
-      const cityCheckbox = screen.getByRole('checkbox', { name: /街並み/ })
-      expect(landscapeCheckbox).toBeChecked()
-      expect(cityCheckbox).toBeChecked()
-
-      // 1つ解除できる
-      await user.click(landscapeDiv)
-      expect(landscapeCheckbox).not.toBeChecked()
-      expect(cityCheckbox).toBeChecked()
+      expect(screen.getByRole('checkbox', { name: /自然風景/ })).not.toBeChecked()
+      expect(screen.getByRole('checkbox', { name: /街並み/ })).not.toBeChecked()
+      expect(screen.getByRole('checkbox', { name: /建造物/ })).toBeChecked()
     })
 
     it('最後の1つは再クリックしても解除されない', async () => {

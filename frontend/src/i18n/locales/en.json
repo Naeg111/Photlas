@@ -214,7 +214,7 @@
     "locationError": "Please set the location.",
     "locationName": "Location Name",
     "locationNamePlaceholder": "e.g. Tokyo Skytree, Mt. Fuji",
-    "categoryRequired": "Main Category (required, select 1+)",
+    "categoryRequired": "Main Category (required, select 1)",
     "deviceTypeRequired": "Device (required)",
     "weatherLabel": "Weather",
     "post": "Post",

@@ -191,7 +191,7 @@
     "locationError": "請設定位置。",
     "locationName": "地點名稱",
     "locationNamePlaceholder": "例：台北101、玉山",
-    "categoryRequired": "主分類（必填，可多選）",
+    "categoryRequired": "主分類（必填，選1個）",
     "deviceTypeRequired": "裝置（必填）",
     "weatherLabel": "天氣",
     "post": "發布",

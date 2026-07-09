@@ -191,7 +191,7 @@
     "locationError": "请设置拍摄位置。",
     "locationName": "地点名称",
     "locationNamePlaceholder": "例：东京晴空塔、富士山",
-    "categoryRequired": "主分类（必填，至少选1个）",
+    "categoryRequired": "主分类（必填，选1个）",
     "deviceTypeRequired": "设备（必填）",
     "weatherLabel": "天气",
     "post": "发布",
