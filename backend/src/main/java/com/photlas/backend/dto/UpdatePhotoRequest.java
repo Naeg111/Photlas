@@ -9,6 +9,8 @@ import java.util.List;
  */
 public class UpdatePhotoRequest {
 
+    // Issue#159 ②(Q6): 更新では categories=null は「変更なし」。指定する場合は 1 件のみ。
+    @Size(max = 1, message = "カテゴリーは1つのみ選択できます")
     private List<String> categories;
 
     private Integer weather;

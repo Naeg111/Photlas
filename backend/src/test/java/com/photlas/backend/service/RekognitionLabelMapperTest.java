@@ -94,19 +94,20 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 夜景: Night + City の組合せで 202 と 204 の両方を返す")
+    @DisplayName("Issue#159 ② - 夜景: Night(90) + City(80) は単一化で 204(夜景) を返す")
     void nightViewFromNightAndCity() {
         LabelMappingResult result = mapper.map(List.of(
                 label("Night", 90f),
                 label("City", 80f)
         ));
 
+        // Issue#159 ②: 複合解決で 204 を成立させ、夜景の信頼度(=Night=90) が街並み(80)を上回るため 204 に単一化
         assertThat(result.categories())
-                .containsExactlyInAnyOrder(CodeConstants.CATEGORY_CITYSCAPE, CodeConstants.CATEGORY_NIGHT_VIEW);
+                .containsExactly(CodeConstants.CATEGORY_NIGHT_VIEW);
     }
 
     @Test
-    @DisplayName("Issue#119 - 夜景: Night + Building の組合せでも 204 を返す")
+    @DisplayName("Issue#159 ② - 夜景: Night(90) + Building(80) も単一化で 204(夜景) を返す")
     void nightViewFromNightAndBuilding() {
         LabelMappingResult result = mapper.map(List.of(
                 label("Night", 90f),
@@ -114,7 +115,7 @@ class RekognitionLabelMapperTest {
         ));
 
         assertThat(result.categories())
-                .containsExactlyInAnyOrder(CodeConstants.CATEGORY_ARCHITECTURE, CodeConstants.CATEGORY_NIGHT_VIEW);
+                .containsExactly(CodeConstants.CATEGORY_NIGHT_VIEW);
     }
 
     @Test
@@ -318,15 +319,34 @@ class RekognitionLabelMapperTest {
     // ========== 複数・重複 ==========
 
     @Test
-    @DisplayName("Issue#119 - 複数カテゴリのラベル: それぞれ別カテゴリで含める")
+    @DisplayName("Issue#159 ② - 複数カテゴリ候補は最高信頼度の1件へ単一化する（Mountain90 > Food80 → 201）")
     void multipleDifferentCategoriesAreReturned() {
         LabelMappingResult result = mapper.map(List.of(
                 label("Mountain", 90f),
                 label("Food", 80f)
         ));
 
+        // Issue#159 ②(Q4): 最高信頼度の 1 カテゴリーのみ採用
         assertThat(result.categories())
-                .containsExactlyInAnyOrder(CodeConstants.CATEGORY_NATURE, CodeConstants.CATEGORY_GOURMET);
+                .containsExactly(CodeConstants.CATEGORY_NATURE);
+    }
+
+    @Test
+    @DisplayName("Issue#159 ② - 単一化: 包含関係(動物207 vs 野鳥208)は信頼度に関わらず野鳥を優先")
+    void issue159SingleCategory_prefersWildBirdsOverAnimals() {
+        // Dog→207(95), Sparrow→208(80)。両立時は具体的な野鳥(208)を優先（信頼度が低くても）。
+        LabelMappingResult result = mapper.map(List.of(
+                label("Dog", 95f),
+                label("Sparrow", 80f)
+        ));
+        assertThat(result.categories()).containsExactly(CodeConstants.CATEGORY_WILD_BIRDS);
+    }
+
+    @Test
+    @DisplayName("Issue#159 ② - 単一化: 該当カテゴリーが無ければ空を返す")
+    void issue159SingleCategory_emptyWhenNoMatch() {
+        LabelMappingResult result = mapper.map(List.of(label("Person", 95f)));
+        assertThat(result.categories()).isEmpty();
     }
 
     @Test

@@ -298,7 +298,7 @@ public class PhotoControllerTest {
                 ISO_DATETIME_1,
                 LATITUDE_TOKYO_TOWER,
                 LONGITUDE_TOKYO_TOWER,
-                List.of(CATEGORY_LANDSCAPE, CATEGORY_CITYSCAPE)
+                List.of(CATEGORY_LANDSCAPE)
         );
 
         mockMvc.perform(post(ENDPOINT_PHOTOS)
@@ -613,11 +613,12 @@ public class PhotoControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ===== Issue#48: カテゴリ任意化テスト =====
+    // ===== Issue#159 ②(Q6): カテゴリは必須・ちょうど1件 =====
+    // （Issue#48 で任意化していたが、単一選択化に伴い「ちょうど1件」に厳格化）
 
     @Test
-    @DisplayName("Issue#48 - カテゴリ空リストでの投稿が201を返す")
-    void testCreatePhoto_EmptyCategories_ReturnsCreated() throws Exception {
+    @DisplayName("Issue#159 ②(Q6) - カテゴリ空リストの投稿は400を返す")
+    void testCreatePhoto_EmptyCategories_ReturnsBadRequest() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 "uploads/1/b0000000-0000-0000-0000-000000000001.jpg",
                 ISO_DATETIME_1,
@@ -631,14 +632,12 @@ public class PhotoControllerTest {
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists())
-                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("Issue#48 - カテゴリnullでの投稿が201を返す")
-    void testCreatePhoto_NullCategories_ReturnsCreated() throws Exception {
+    @DisplayName("Issue#159 ②(Q6) - カテゴリnullの投稿は400を返す")
+    void testCreatePhoto_NullCategories_ReturnsBadRequest() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 "uploads/1/b0000000-0000-0000-0000-000000000002.jpg",
                 ISO_DATETIME_1,
@@ -652,8 +651,26 @@ public class PhotoControllerTest {
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath(JSON_PATH_PHOTO_ID).exists());
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Issue#159 ②(Q6) - カテゴリ2件以上の投稿は400を返す")
+    void testCreatePhoto_MultipleCategories_ReturnsBadRequest() throws Exception {
+        CreatePhotoRequest request = createPhotoRequest(
+                "uploads/1/b0000000-0000-0000-0000-000000000003.jpg",
+                ISO_DATETIME_1,
+                LATITUDE_TOKYO_TOWER,
+                LONGITUDE_TOKYO_TOWER,
+                List.of(CATEGORY_LANDSCAPE, CATEGORY_CITYSCAPE)
+        );
+
+        mockMvc.perform(post(ENDPOINT_PHOTOS)
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     // ===== Issue#40: Photo Entity拡張テスト =====
@@ -759,6 +776,7 @@ public class PhotoControllerTest {
                     "takenAt": "2026-02-08T10:00:00Z",
                     "latitude": 35.658581,
                     "longitude": 139.745433,
+                    "categories": ["風景"],
                     "cropCenterX": 0.3,
                     "cropCenterY": 0.7,
                     "cropZoom": 1.5

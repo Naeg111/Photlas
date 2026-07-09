@@ -33,6 +33,9 @@ public class CreatePhotoRequest {
     @DecimalMax(value = "180.0", message = "経度は180以下である必要があります")
     private BigDecimal longitude;
 
+    // Issue#159 ②(Q6): カテゴリーは「ちょうど1つ」。0件は 400、2件以上も 400。
+    @NotEmpty(message = "カテゴリーは1つ選択してください")
+    @Size(max = 1, message = "カテゴリーは1つのみ選択できます")
     private List<String> categories;
 
     private Integer weather;
