@@ -454,7 +454,8 @@
     "motorcycles": "機車",
     "railways": "鐵道",
     "aircraft": "飛機",
-    "starrysky": "星空",
+    "starrysky": "星",
+    "leisure": "休閒·設施",
     "other": "其他"
   },
   "aiPrefill": {

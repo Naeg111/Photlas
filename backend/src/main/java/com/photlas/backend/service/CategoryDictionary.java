@@ -66,10 +66,7 @@ final class CategoryDictionary {
             Map.entry("cave", List.of(CodeConstants.CATEGORY_NATURE)),
             Map.entry("cavern", List.of(CodeConstants.CATEGORY_NATURE)),
             Map.entry("rainbow", List.of(CodeConstants.CATEGORY_NATURE)),
-            Map.entry("sunset", List.of(CodeConstants.CATEGORY_NATURE)),
-            Map.entry("sunrise", List.of(CodeConstants.CATEGORY_NATURE)),
-            Map.entry("dawn", List.of(CodeConstants.CATEGORY_NATURE)),
-            Map.entry("dusk", List.of(CodeConstants.CATEGORY_NATURE)),
+            // Issue#159 ③-4: 夕日/朝日/夜明け/黄昏 は自然風景の判定対象から除外（タグも削除）
             Map.entry("horizon", List.of(CodeConstants.CATEGORY_NATURE)),
             Map.entry("island", List.of(CodeConstants.CATEGORY_NATURE)),
             Map.entry("bay", List.of(CodeConstants.CATEGORY_NATURE)),
@@ -215,7 +212,8 @@ final class CategoryDictionary {
             //   - vineyard は 206 → 214 (その他) へ移動
             Map.entry("flower", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("plant", List.of(CodeConstants.CATEGORY_PLANTS)),
-            Map.entry("garden", List.of(CodeConstants.CATEGORY_PLANTS)),
+            // Issue#159 ③-5: 庭園はレジャー・施設(215)へ付け替え
+            Map.entry("garden", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
             Map.entry("branch", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("shrub", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("rose", List.of(CodeConstants.CATEGORY_PLANTS)),
@@ -235,8 +233,8 @@ final class CategoryDictionary {
             Map.entry("sprout", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("hedge", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("foliage", List.of(CodeConstants.CATEGORY_PLANTS)),
-            // ぶどう畑は植物ではなく「その他」(214) に移動
-            Map.entry("vineyard", List.of(CodeConstants.CATEGORY_OTHER)),
+            // Issue#159 ③-5: ぶどう畑(果樹園)はレジャー・施設(215)へ付け替え
+            Map.entry("vineyard", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
             // 動物 (207)
             Map.entry("animal", List.of(CodeConstants.CATEGORY_ANIMALS)),
             // Issue#141 後追い (#3): owl/peacock/flamingo/penguin は野鳥 (208) → 動物 (207) のみに移動
@@ -288,7 +286,8 @@ final class CategoryDictionary {
             Map.entry("dragonfly", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("puppy", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("kitten", List.of(CodeConstants.CATEGORY_ANIMALS)),
-            Map.entry("parrot", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            // Issue#159 ③-21: オウム・インコは野鳥(208)へ付け替え
+            Map.entry("parrot", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
             // 野鳥 (208) - Issue#141 後追い (#3): 207 (動物) を外して 208 のみへ
             // owl/peacock/flamingo/penguin は上の動物セクションへ移動 (CATEGORY_ANIMALS のみ)
             // crow/goose/duck/seagull/pigeon は tag 削除に合わせて削除
@@ -353,7 +352,66 @@ final class CategoryDictionary {
             Map.entry("constellation", List.of(CodeConstants.CATEGORY_STARRY_SKY)),
             Map.entry("nebula", List.of(CodeConstants.CATEGORY_STARRY_SKY)),
             // Issue#141 後追い (#3): astronomy は削除
-            Map.entry("aurora", List.of(CodeConstants.CATEGORY_STARRY_SKY))
+            Map.entry("aurora", List.of(CodeConstants.CATEGORY_STARRY_SKY)),
+            // ================= Issue#159 追加分 =================
+            // ③-5 レジャー・施設 (215)。既存の garden(→215)/vineyard(→215) は上で付け替え済み。
+            Map.entry("park", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("hot spring", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("amusement park", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("theme park", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("zoo", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("aquarium", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("farm", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("ranch", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("pasture", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("campground", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("camping", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("campsite", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("orchard", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("ski", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("piste", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("slope", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("golf course", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("marina", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("harbor", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            Map.entry("port", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
+            // ③-7 飛行機 (212): 軍用機
+            Map.entry("warplane", List.of(CodeConstants.CATEGORY_AIRCRAFT)),
+            // ③-11/③-16 野鳥 (208): ◎ 追加（woodpecker/pelican/hummingbird/stork は既存・parrot は付け替え済）
+            Map.entry("cormorant", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("mandarin duck", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("toucan", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("ostrich", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("macaw", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            Map.entry("vulture", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
+            // ③-12/③-16 植物 (206): ◎ 追加
+            Map.entry("wisteria", List.of(CodeConstants.CATEGORY_PLANTS)),
+            Map.entry("poppy", List.of(CodeConstants.CATEGORY_PLANTS)),
+            Map.entry("lotus", List.of(CodeConstants.CATEGORY_PLANTS)),
+            Map.entry("cosmos", List.of(CodeConstants.CATEGORY_PLANTS)),
+            Map.entry("hibiscus", List.of(CodeConstants.CATEGORY_PLANTS)),
+            // ③-13 グルメ (205): ◎ 追加
+            Map.entry("taco", List.of(CodeConstants.CATEGORY_GOURMET)),
+            Map.entry("burrito", List.of(CodeConstants.CATEGORY_GOURMET)),
+            Map.entry("pretzel", List.of(CodeConstants.CATEGORY_GOURMET)),
+            Map.entry("paella", List.of(CodeConstants.CATEGORY_GOURMET)),
+            // ③-16 自然風景 (201): ◎ 追加（iceberg は既存）
+            Map.entry("coral reef", List.of(CodeConstants.CATEGORY_NATURE)),
+            Map.entry("mangrove", List.of(CodeConstants.CATEGORY_NATURE)),
+            // ③-16 建造物 (203): ◎ 追加
+            Map.entry("palace", List.of(CodeConstants.CATEGORY_ARCHITECTURE)),
+            Map.entry("windmill", List.of(CodeConstants.CATEGORY_ARCHITECTURE)),
+            Map.entry("ruins", List.of(CodeConstants.CATEGORY_ARCHITECTURE)),
+            // ③-16 動物 (207): ◎ 追加（kangaroo/koala/otter/cheetah は既存）
+            Map.entry("hippopotamus", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            Map.entry("rhinoceros", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            Map.entry("camel", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            Map.entry("gorilla", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            Map.entry("chimpanzee", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            Map.entry("raccoon", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            Map.entry("sloth", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            Map.entry("alpaca", List.of(CodeConstants.CATEGORY_ANIMALS)),
+            Map.entry("meerkat", List.of(CodeConstants.CATEGORY_ANIMALS))
     );
 
     /** Rekognition ラベル（小文字） → Photlas 天候コード。 */

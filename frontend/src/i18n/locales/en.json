@@ -479,7 +479,8 @@
     "motorcycles": "Motorcycles",
     "railways": "Railways",
     "aircraft": "Aircraft",
-    "starrysky": "Starry Sky",
+    "starrysky": "Stars",
+    "leisure": "Leisure & Facilities",
     "other": "Other"
   },
   "aiPrefill": {

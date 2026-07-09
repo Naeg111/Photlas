@@ -240,11 +240,11 @@ describe('PhotoContributionDialog', () => {
       expect(label.className).toContain('text-gray-500')
     })
 
-    it('renders all 14 genre options', () => {
+    it('renders all 15 genre options', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      // Issue#63: 14ジャンルに変更（「その他」はカテゴリと機材種別で重複のため除外）
-      const categories = ['自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物', '動物', '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星空']
+      // Issue#159: 星空→星に改名、レジャー・施設(215)を追加（「その他」は機材種別と重複のため getAllByText で別途確認）
+      const categories = ['自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物', '動物', '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星', 'レジャー・施設']
       categories.forEach(category => {
         expect(screen.getByText(category)).toBeInTheDocument()
       })

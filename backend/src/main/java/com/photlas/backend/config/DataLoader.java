@@ -46,7 +46,8 @@ public class DataLoader implements CommandLineRunner {
         CATEGORY_MAP.put(CodeConstants.CATEGORY_MOTORCYCLES, "バイク");
         CATEGORY_MAP.put(CodeConstants.CATEGORY_RAILWAYS, "鉄道");
         CATEGORY_MAP.put(CodeConstants.CATEGORY_AIRCRAFT, "飛行機");
-        CATEGORY_MAP.put(CodeConstants.CATEGORY_STARRY_SKY, "星空");
+        CATEGORY_MAP.put(CodeConstants.CATEGORY_STARRY_SKY, "星");
+        CATEGORY_MAP.put(CodeConstants.CATEGORY_LEISURE_FACILITY, "レジャー・施設");
         CATEGORY_MAP.put(CodeConstants.CATEGORY_OTHER, "その他");
     }
 
@@ -67,12 +68,18 @@ public class DataLoader implements CommandLineRunner {
         for (Map.Entry<Integer, String> entry : CATEGORY_MAP.entrySet()) {
             int categoryId = entry.getKey();
             String categoryName = entry.getValue();
-            if (categoryRepository.findById(categoryId).isEmpty()) {
+            Category existing = categoryRepository.findById(categoryId).orElse(null);
+            if (existing == null) {
                 Category category = new Category();
                 category.setCategoryId(categoryId);
                 category.setName(categoryName);
                 categoryRepository.save(category);
                 logger.info("カテゴリを追加しました: id={}, name={}", categoryId, categoryName);
+            } else if (!categoryName.equals(existing.getName())) {
+                // Issue#159 ③-8: 既存カテゴリー名の変更（例 213 星空→星）に追従する
+                existing.setName(categoryName);
+                categoryRepository.save(existing);
+                logger.info("カテゴリ名を更新しました: id={}, name={}", categoryId, categoryName);
             }
         }
         logger.info("カテゴリ初期化完了: {} 件", categoryRepository.count());

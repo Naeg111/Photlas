@@ -23,7 +23,8 @@ export const PHOTO_CATEGORIES = [
   'バイク',
   '鉄道',
   '飛行機',
-  '星空',
+  '星',
+  'レジャー・施設',
   'その他',
 ] as const
 

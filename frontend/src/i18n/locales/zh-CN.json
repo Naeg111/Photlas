@@ -454,7 +454,8 @@
     "motorcycles": "摩托车",
     "railways": "铁路",
     "aircraft": "飞机",
-    "starrysky": "星空",
+    "starrysky": "星",
+    "leisure": "休闲·设施",
     "other": "其他"
   },
   "aiPrefill": {

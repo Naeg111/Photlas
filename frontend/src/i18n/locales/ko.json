@@ -454,7 +454,8 @@
     "motorcycles": "오토바이",
     "railways": "철도",
     "aircraft": "항공기",
-    "starrysky": "별하늘",
+    "starrysky": "별",
+    "leisure": "레저·시설",
     "other": "기타"
   },
   "aiPrefill": {

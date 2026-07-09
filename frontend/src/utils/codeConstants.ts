@@ -39,6 +39,8 @@ export const CATEGORY_RAILWAYS = 211
 export const CATEGORY_AIRCRAFT = 212
 export const CATEGORY_STARRY_SKY = 213
 export const CATEGORY_OTHER = 214
+// Issue#159 ③-5: レジャー・施設（表示順は 214「その他」の前）
+export const CATEGORY_LEISURE_FACILITY = 215
 
 // ========== 300番台: Photo.time_of_day ==========
 export const TIME_OF_DAY_MORNING = 301
@@ -148,7 +150,8 @@ export const CATEGORY_LABELS: Record<number, string> = {
   [CATEGORY_MOTORCYCLES]: 'バイク',
   [CATEGORY_RAILWAYS]: '鉄道',
   [CATEGORY_AIRCRAFT]: '飛行機',
-  [CATEGORY_STARRY_SKY]: '星空',
+  [CATEGORY_STARRY_SKY]: '星',
+  [CATEGORY_LEISURE_FACILITY]: 'レジャー・施設',
   [CATEGORY_OTHER]: 'その他',
 }
 

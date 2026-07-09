@@ -34,7 +34,8 @@ const CATEGORY_TO_I18N_KEY: Record<string, string> = {
   'バイク': 'categories.motorcycles',
   '鉄道': 'categories.railways',
   '飛行機': 'categories.aircraft',
-  '星空': 'categories.starrysky',
+  '星': 'categories.starrysky',
+  'レジャー・施設': 'categories.leisure',
   'その他': 'categories.other',
 }
 

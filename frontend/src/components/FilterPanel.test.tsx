@@ -25,12 +25,13 @@ describe('FilterPanel', () => {
   })
 
   describe('Issue#63: ジャンルフィルター', () => {
-    it('14種類のジャンルボタンが表示される', { timeout: 30000 }, () => {
+    it('15種類のジャンルボタンが表示される', { timeout: 30000 }, () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
+      // Issue#159: 星空→星に改名、レジャー・施設(215)を追加 → 15種
       const genres = [
         '自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物', '動物',
-        '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星空', 'その他',
+        '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星', 'レジャー・施設', 'その他',
       ]
 
       genres.forEach(genre => {

@@ -479,7 +479,8 @@
     "motorcycles": "バイク",
     "railways": "鉄道",
     "aircraft": "飛行機",
-    "starrysky": "星空",
+    "starrysky": "星",
+    "leisure": "レジャー・施設",
     "other": "その他"
   },
   "aiPrefill": {
