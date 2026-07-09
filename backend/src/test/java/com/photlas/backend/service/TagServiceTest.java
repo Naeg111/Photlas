@@ -148,6 +148,49 @@ class TagServiceTest {
         assertThat(result).allSatisfy(s -> assertThat(s.confidence()).isGreaterThanOrEqualTo(82f));
     }
 
+    // ========== extractSuggestions: 鉄道「その他」特殊サジェスト (Issue#159 ③-9) ==========
+
+    private void seedRailwayTags() {
+        Tag other = saveTag("Railway", "railway", "その他", "Other");
+        linkCategory(other.getId(), CodeConstants.CATEGORY_RAILWAYS);
+        Tag bullet = saveTag("Bullet Train", "bullet-train", "新幹線", "Bullet Train");
+        linkCategory(bullet.getId(), CodeConstants.CATEGORY_RAILWAYS);
+    }
+
+    @Test
+    @DisplayName("Issue#159 ③-9 - 一般鉄道ラベル(Train)のみ検知で「その他」が提案される")
+    void railwayGeneralLabelSuggestsOther() {
+        seedRailwayTags();
+        List<TagSuggestion> result = tagService.extractSuggestions(List.of(
+                Label.builder().name("Train").confidence(90f).build()
+        ), Optional.empty());
+        assertThat(result).extracting(TagSuggestion::slug).contains("railway");
+        assertThat(result).extracting(TagSuggestion::slug).doesNotContain("bullet-train");
+    }
+
+    @Test
+    @DisplayName("Issue#159 ③-9 - 特定種(新幹線)がある時は「その他」を提案しない")
+    void railwaySpecificTypeSuppressesOther() {
+        seedRailwayTags();
+        // Railway と Bullet Train を両方検知 → 新幹線のみ（その他は抑制）
+        List<TagSuggestion> result = tagService.extractSuggestions(List.of(
+                Label.builder().name("Railway").confidence(88f).build(),
+                Label.builder().name("Bullet Train").confidence(95f).build()
+        ), Optional.empty());
+        assertThat(result).extracting(TagSuggestion::slug).contains("bullet-train");
+        assertThat(result).extracting(TagSuggestion::slug).doesNotContain("railway");
+    }
+
+    @Test
+    @DisplayName("Issue#159 ③-9 - 特定種(新幹線)のみなら新幹線を返し「その他」は追加しない")
+    void railwaySpecificOnlyNoOther() {
+        seedRailwayTags();
+        List<TagSuggestion> result = tagService.extractSuggestions(List.of(
+                Label.builder().name("Bullet Train").confidence(95f).build()
+        ), Optional.empty());
+        assertThat(result).extracting(TagSuggestion::slug).containsExactly("bullet-train");
+    }
+
     // ========== extractSuggestions: 焦点距離リマップ (Issue#142) ==========
 
     /** companion-bird(207 のみ) を投入するヘルパー。 */
