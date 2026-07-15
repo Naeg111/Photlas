@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { X } from 'lucide-react'
 import { Button } from './ui/button'
 import { LIGHTBOX } from '../utils/constants'
+import { clampLightboxPan, type Point } from '../utils/lightboxPan'
 import { toast } from 'sonner'
 
 /**
@@ -32,6 +33,28 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const pinchRef = useRef<{ initialDistance: number; initialScale: number } | null>(null)
+  const imageRef = useRef<HTMLImageElement>(null)
+
+  /** 画像の表示サイズと画面サイズからパン量を丸める。画像が画面に収まるときは中央（0, 0）に戻る。 */
+  const clampPan = useCallback((pan: Point, currentScale: number): Point => {
+    const image = imageRef.current
+    if (!image) return pan
+    return clampLightboxPan(
+      pan,
+      currentScale,
+      { width: image.offsetWidth, height: image.offsetHeight },
+      { width: window.innerWidth, height: window.innerHeight }
+    )
+  }, [])
+
+  // 拡大率が変わったら、はみ出せる量の上限も変わるためパン量を丸め直す。
+  // これをしないと「拡大 → 端までドラッグ → 縮小」で画像が画面の端に残ってしまう。
+  useEffect(() => {
+    setPosition((prev) => {
+      const next = clampPan(prev, scale)
+      return next.x === prev.x && next.y === prev.y ? prev : next
+    })
+  }, [scale, clampPan])
 
   // Issue#88: ローディング状態管理
   const [isLoading, setIsLoading] = useState(false)
@@ -165,10 +188,10 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging) {
-      setPosition({
+      setPosition(clampPan({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y,
-      })
+      }, scale))
     }
   }
 
@@ -206,10 +229,10 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
       const newScale = pinchRef.current.initialScale * ratio
       setScale(Math.max(LIGHTBOX.MIN_SCALE, Math.min(LIGHTBOX.MAX_SCALE, newScale)))
     } else if (isDragging && e.touches.length === 1) {
-      setPosition({
+      setPosition(clampPan({
         x: e.touches[0].clientX - dragStart.x,
         y: e.touches[0].clientY - dragStart.y,
-      })
+      }, scale))
     }
   }
 
@@ -294,6 +317,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               >
                 <img
+                  ref={imageRef}
                   src={displayImageUrl}
                   alt="フルサイズ写真"
                   loading="eager"
