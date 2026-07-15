@@ -16,7 +16,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CATEGORY_LABELS } from '../utils/codeConstants'
+import { CATEGORY_LABELS, CATEGORY_I18N_KEYS } from '../utils/codeConstants'
 import { formatTagDisplayName } from '../utils/formatTagDisplayName'
 import { groupTagsByDisplayName, type TagGroup } from '../utils/tagGrouping'
 
@@ -242,7 +242,7 @@ export function KeywordSection({
           </h3>
           {[...contextualByCategory.entries()].map(([code, tags]) => (
             <div key={code} className="mb-2">
-              <div className="text-xs text-gray-500 mb-1">{CATEGORY_LABELS[code]}</div>
+              <div className="text-xs text-gray-500 mb-1">{t(CATEGORY_I18N_KEYS[code] ?? '')}</div>
               <div className="flex flex-wrap">
                 {groupTagsByDisplayName(tags).map((group) => {
                   const isDisabled = isGroupDisabled(group)
@@ -314,7 +314,7 @@ export function KeywordSection({
                   onClick={() => handleAccordionToggle(code)}
                 >
                   <span className="text-sm font-medium">
-                    {CATEGORY_LABELS[code]}
+                    {t(CATEGORY_I18N_KEYS[code] ?? '')}
                     <span className="text-xs text-gray-500 ml-2">({groups.length})</span>
                   </span>
                   <span className="text-xs">{isOpen ? '▲' : '▼'}</span>

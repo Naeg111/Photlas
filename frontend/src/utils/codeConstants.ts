@@ -155,6 +155,28 @@ export const CATEGORY_LABELS: Record<number, string> = {
   [CATEGORY_OTHER]: 'その他',
 }
 
+/**
+ * カテゴリID → i18n 翻訳キー（categories.*）。
+ * 表示名は言語に依存するため、CATEGORY_LABELS（日本語固定）ではなくこのキー経由で t() を引く。
+ */
+export const CATEGORY_I18N_KEYS: Record<number, string> = {
+  [CATEGORY_NATURE]: 'categories.nature',
+  [CATEGORY_CITYSCAPE]: 'categories.cityscape',
+  [CATEGORY_ARCHITECTURE]: 'categories.architecture',
+  [CATEGORY_NIGHT_VIEW]: 'categories.nightscape',
+  [CATEGORY_GOURMET]: 'categories.gourmet',
+  [CATEGORY_PLANTS]: 'categories.plants',
+  [CATEGORY_ANIMALS]: 'categories.animals',
+  [CATEGORY_WILD_BIRDS]: 'categories.birds',
+  [CATEGORY_CARS]: 'categories.cars',
+  [CATEGORY_MOTORCYCLES]: 'categories.motorcycles',
+  [CATEGORY_RAILWAYS]: 'categories.railways',
+  [CATEGORY_AIRCRAFT]: 'categories.aircraft',
+  [CATEGORY_STARRY_SKY]: 'categories.starrysky',
+  [CATEGORY_LEISURE_FACILITY]: 'categories.leisure',
+  [CATEGORY_OTHER]: 'categories.other',
+}
+
 /** SNSプラットフォームコード → 表示名 */
 export const PLATFORM_LABELS: Record<number, string> = {
   [PLATFORM_TWITTER]: 'X',
