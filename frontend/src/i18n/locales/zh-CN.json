@@ -535,5 +535,9 @@
     "signupButton": "注册",
     "loginButton": "登录",
     "aboutLink": "什么是 Photlas?"
+  },
+  "orientation": {
+    "rotateTitle": "请将屏幕切换为竖屏",
+    "rotateDescription": "手机端仅支持竖屏显示。将设备转回竖屏后即可继续使用。"
   }
 }

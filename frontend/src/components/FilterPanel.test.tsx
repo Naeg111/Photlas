@@ -14,7 +14,7 @@ import { FilterPanel } from './FilterPanel'
  * - 投稿の新しさ: 5種類（3ヶ月以内追加）
  * - ISO感度: 4種類に拡張
  * - maxAgeYears → maxAgeDays に変更
- * - 横向き→横位置、縦向き→縦位置（正方形は削除）
+ * - 撮影の向きは「縦」「横」の2択（正方形は削除）
  */
 
 describe('FilterPanel', () => {
@@ -94,8 +94,8 @@ describe('FilterPanel', () => {
     it('上級者向けフィルターを開かずに撮影の向きの選択肢が表示される', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      expect(screen.getByText('縦位置')).toBeInTheDocument()
-      expect(screen.getByText('横位置')).toBeInTheDocument()
+      expect(screen.getByText('縦')).toBeInTheDocument()
+      expect(screen.getByText('横')).toBeInTheDocument()
     })
 
     it('横向き・縦向き・正方形の旧名称は表示されない', () => {
@@ -230,7 +230,7 @@ describe('FilterPanel', () => {
       // 通常フィルターで選択
       await user.click(screen.getByRole('button', { name: /自然風景/ }))
       await user.click(screen.getByText('3ヶ月以内'))
-      await user.click(screen.getByText('横位置'))
+      await user.click(screen.getByText('横'))
 
       // 上級者フィルターを開いて選択
       await user.click(screen.getByRole('button', { name: /上級者向け/ }))
@@ -401,8 +401,8 @@ describe('FilterPanel', () => {
         />
       )
 
-      await user.click(screen.getByRole('button', { name: /縦位置/ }))
-      await user.click(screen.getByRole('button', { name: /横位置/ }))
+      await user.click(screen.getByRole('button', { name: /縦/ }))
+      await user.click(screen.getByRole('button', { name: /横/ }))
       await user.click(screen.getByRole('button', { name: '適用' }))
 
       expect(mockOnApply).toHaveBeenCalledWith(
@@ -496,11 +496,11 @@ describe('FilterPanel', () => {
       expect(screen.queryByText('写真の向き')).not.toBeInTheDocument()
     })
 
-    it('「縦位置」「横位置」ボタンが表示され、「正方形」は表示されない', () => {
+    it('「縦」「横」ボタンが表示され、「正方形」は表示されない', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      expect(screen.getByRole('button', { name: /縦位置/ })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /横位置/ })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /縦/ })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /横/ })).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: /正方形/ })).not.toBeInTheDocument()
     })
   })

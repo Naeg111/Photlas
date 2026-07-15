@@ -19,6 +19,7 @@ const AdminDeletedUsersPage = lazy(() => import('./pages/AdminDeletedUsersPage')
 const AdminDeletedUserDetailPage = lazy(() => import('./pages/AdminDeletedUserDetailPage'))
 const ReviewLocationPage = lazy(() => import('./pages/ReviewLocationPage'))
 import { CookieConsentBanner } from './components/CookieConsentBanner'
+import { RotateToPortraitOverlay } from './components/RotateToPortraitOverlay'
 import { formatLocalDateTime } from './utils/extractExif'
 import { FilterPanel } from './components/FilterPanel'
 import type { FilterConditions } from './components/FilterPanel'
@@ -1230,6 +1231,8 @@ function MainApp() {
 function App() {
   return (
     <AuthProvider>
+      {/* スマホ横向き時は全ページ共通で縦向きを促す（レイアウトが崩れるため） */}
+      <RotateToPortraitOverlay />
       {/* Issue#130: lazy 化したページの読み込み中は RouteFallback を表示 */}
       <Suspense fallback={<RouteFallback />}>
         <Routes>
