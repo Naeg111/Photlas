@@ -123,6 +123,15 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
     expect(screen.getByTestId('keyword-accordion-206')).toBeInTheDocument()
   })
 
+  it('isSearchBoxVisible=false のとき展開部に検索 BOX は表示されない（投稿ダイアログ用）', () => {
+    render(<KeywordSection {...defaultProps({ isSearchBoxVisible: false })} />)
+    fireEvent.click(screen.getByTestId('keyword-section-more-toggle'))
+
+    expect(screen.queryByTestId('keyword-section-search-input')).not.toBeInTheDocument()
+    // アコーディオンからは従来どおり選べる
+    expect(screen.getByTestId('keyword-accordion-201')).toBeInTheDocument()
+  })
+
   it('検索 BOX に文字を入力するとマッチしないキーワードは非表示になる', () => {
     render(<KeywordSection {...defaultProps()} />)
     fireEvent.click(screen.getByTestId('keyword-section-more-toggle'))

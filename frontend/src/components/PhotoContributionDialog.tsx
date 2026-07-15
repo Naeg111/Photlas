@@ -1032,6 +1032,7 @@ export function PhotoContributionDialog({
                 selectedTagIds={selectedTagIds}
                 onSelectionChange={setSelectedTagIds}
                 maxSelections={3}
+                isSearchBoxVisible={false}
               />
             </div>
 

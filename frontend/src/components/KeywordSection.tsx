@@ -60,6 +60,11 @@ export interface KeywordSectionProps {
    *   - 手動 handleToggle の maxSelections チェックも無効化 (フィルタ画面は実質無制限, Q1)
    */
   autoSelectByCategoryMode?: boolean
+  /**
+   * 「もっと細かく」展開部に検索 BOX を表示するか（デフォルト true）。
+   * 投稿・編集ダイアログでは選択肢が少なくアコーディオンだけで足りるため false を渡す。
+   */
+  isSearchBoxVisible?: boolean
 }
 
 const DEFAULT_CONTEXTUAL_TOP_N = 10
@@ -72,6 +77,7 @@ export function KeywordSection({
   maxSelections,
   contextualTopN = DEFAULT_CONTEXTUAL_TOP_N,
   autoSelectByCategoryMode = false,
+  isSearchBoxVisible = true,
 }: Readonly<KeywordSectionProps>) {
   const { t } = useTranslation()
   const [isMoreOpen, setIsMoreOpen] = useState(false)
@@ -273,14 +279,16 @@ export function KeywordSection({
       {/* 「もっと細かく」展開部 */}
       {isMoreOpen && (
         <div data-testid="keyword-section-more-panel" className="flex flex-col gap-2 border-t pt-3">
-          <input
-            type="search"
-            data-testid="keyword-section-search-input"
-            placeholder={t('keyword.searchPlaceholder', { defaultValue: '詳細カテゴリーを検索' })}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-          />
+          {isSearchBoxVisible && (
+            <input
+              type="search"
+              data-testid="keyword-section-search-input"
+              placeholder={t('keyword.searchPlaceholder', { defaultValue: '詳細カテゴリーを検索' })}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+            />
+          )}
           {/* 検索中はアコーディオンを畳まずマッチ全体を表示する（UX 改善） */}
           {searchQuery.trim().length > 0 ? (
             <SearchResultList
