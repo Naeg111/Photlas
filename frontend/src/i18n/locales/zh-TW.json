@@ -535,5 +535,9 @@
     "signupButton": "註冊",
     "loginButton": "登入",
     "aboutLink": "什麼是 Photlas?"
+  },
+  "orientation": {
+    "rotateTitle": "請將螢幕切換為直向",
+    "rotateDescription": "手機端僅支援直向顯示。將裝置轉回直向後即可繼續使用。"
   }
 }
