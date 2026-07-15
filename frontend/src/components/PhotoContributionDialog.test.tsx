@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { toast } from 'sonner'
+import i18n from '../i18n'
 import { PhotoContributionDialog } from './PhotoContributionDialog'
 import type { ExifData } from '../utils/extractExif'
 import { ApiError } from '../utils/apiClient'
@@ -250,6 +251,22 @@ describe('PhotoContributionDialog', () => {
       })
       // 「その他」はカテゴリと機材種別の両方に存在するため、getAllByTextで確認
       expect(screen.getAllByText('その他').length).toBeGreaterThanOrEqual(1)
+    })
+
+    it('カテゴリー名は言語設定に追従して翻訳される（日本語→英語）', async () => {
+      render(<PhotoContributionDialog {...defaultProps} />)
+      // 既定(ja) では日本語カテゴリー名
+      expect(screen.getByText('自然風景')).toBeInTheDocument()
+
+      try {
+        await act(async () => { await i18n.changeLanguage('en') })
+        expect(screen.queryByText('自然風景')).not.toBeInTheDocument()
+        expect(screen.getByText('Nature')).toBeInTheDocument()
+        expect(screen.getByText('Cityscape')).toBeInTheDocument()
+      } finally {
+        // 後続テストは日本語前提のため必ず戻す
+        await act(async () => { await i18n.changeLanguage('ja') })
+      }
     })
 
     it('renders cancel button', () => {

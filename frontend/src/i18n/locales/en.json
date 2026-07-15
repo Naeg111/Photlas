@@ -396,7 +396,8 @@
     "suggestionInstruction": "Move the map to place the blue pin at the correct shooting location.",
     "suggestionTooClose": "Too close. Please choose a spot at least 30m from the original shooting location.",
     "suggestionTooFar": "Too far. Please choose a spot within 1km of the original shooting location.",
-    "suggestLocation": "Report Location"
+    "suggestLocation": "Report Location",
+    "searchPlaceholder": "Search for a place"
   },
   "cookie": {
     "message": "This site uses Google Analytics and collects access information through cookies to improve our service. For details, see our",

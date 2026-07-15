@@ -373,7 +373,8 @@
     "suggestionInstruction": "移动地图，将蓝色图钉放置在正确的拍摄位置。",
     "suggestionTooClose": "太近了。请指定距原拍摄位置30m以上的地点",
     "suggestionTooFar": "太远了。请在距原拍摄位置1km以内指定",
-    "suggestLocation": "举报位置"
+    "suggestLocation": "举报位置",
+    "searchPlaceholder": "搜索地点"
   },
   "cookie": {
     "message": "本网站使用 Google Analytics，并通过Cookie收集访问信息以改善服务。详情请参阅",

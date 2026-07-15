@@ -10,7 +10,8 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, act } from '@testing-library/react'
+import i18n from '../i18n'
 import { KeywordSection, type KeywordSectionProps } from './KeywordSection'
 
 const TAGS_FIXTURE = [
@@ -99,6 +100,22 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
     expect(within(ctx).getByText('A')).toBeInTheDocument()
     expect(within(ctx).getByText('B')).toBeInTheDocument()
     expect(within(ctx).queryByText('C')).not.toBeInTheDocument()
+  })
+
+  it('大カテゴリー見出しは言語設定に追従して翻訳される（日本語→英語）', async () => {
+    render(<KeywordSection {...defaultProps({ selectedCategoryCodes: [201] })} />)
+    // 既定(ja) では「自然風景」
+    expect(within(screen.getByTestId('keyword-section-contextual')).getByText('自然風景')).toBeInTheDocument()
+
+    try {
+      await act(async () => { await i18n.changeLanguage('en') })
+      const ctx = screen.getByTestId('keyword-section-contextual')
+      expect(within(ctx).queryByText('自然風景')).not.toBeInTheDocument()
+      expect(within(ctx).getByText('Nature')).toBeInTheDocument()
+    } finally {
+      // 後続テストに影響しないよう日本語へ戻す
+      await act(async () => { await i18n.changeLanguage('ja') })
+    }
   })
 
   // ========== 「もっと細かく」展開 ==========
