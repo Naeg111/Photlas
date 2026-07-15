@@ -373,7 +373,8 @@
     "suggestionInstruction": "移動地圖，將藍色圖釘移至正確的拍攝地點。",
     "suggestionTooClose": "太近了。請指定距原拍攝地點 30m 以上的位置",
     "suggestionTooFar": "太遠了。請在距原拍攝地點 1km 以內指定",
-    "suggestLocation": "回報位置"
+    "suggestLocation": "回報位置",
+    "searchPlaceholder": "搜尋地點"
   },
   "cookie": {
     "message": "本網站使用 Google Analytics，並透過 Cookie 收集存取資訊以改善服務。詳情請參閱",

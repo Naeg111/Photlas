@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Issue#8: 位置設定用地図ピッカー (UI)
@@ -26,6 +27,7 @@ export default function MapPicker({
   onConfirm,
   onCancel
 }: Readonly<MapPickerProps>) {
+  const { t } = useTranslation()
   // 現在の地図の中心座標を管理
   const [center, setCenter] = useState(initialCenter || DEFAULT_CENTER)
   // 検索バーの入力値を管理
@@ -91,8 +93,8 @@ export default function MapPicker({
       <div className="relative z-10 flex items-center gap-4 bg-white p-4 shadow-md">
         <input
           type="text"
-          placeholder="場所を検索"
-          aria-label="場所を検索"
+          placeholder={t('location.searchPlaceholder')}
+          aria-label={t('location.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1 rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"

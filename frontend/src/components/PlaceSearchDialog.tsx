@@ -104,7 +104,7 @@ export function PlaceSearchDialog({
   onOpenChange,
   onPlaceSelect,
 }: Readonly<PlaceSearchDialogProps>) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [searchQuery, setSearchQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -216,7 +216,7 @@ export function PlaceSearchDialog({
         {/* 検索ボックス */}
         <Input
           type="text"
-          placeholder="場所を検索"
+          placeholder={t('location.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="w-full h-11 shadow-lg"

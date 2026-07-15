@@ -373,7 +373,8 @@
     "suggestionInstruction": "파란 핀을 올바른 촬영 위치에 맞게 지도를 이동해 주세요.",
     "suggestionTooClose": "너무 가깝습니다. 원래 촬영 장소에서 30m 이상 떨어진 곳을 지정해 주세요",
     "suggestionTooFar": "너무 멉니다. 원래 촬영 장소에서 1km 이내로 지정해 주세요",
-    "suggestLocation": "위치 제보"
+    "suggestLocation": "위치 제보",
+    "searchPlaceholder": "장소 검색"
   },
   "cookie": {
     "message": "이 사이트는 Google Analytics를 사용하며 서비스 개선을 위해 쿠키를 통해 접속 정보를 수집합니다. 자세한 내용은",

@@ -137,6 +137,20 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       expect(DEFAULT_CENTER.lat).toBeCloseTo(35.6812, 3)
       expect(DEFAULT_CENTER.lng).toBeCloseTo(139.7671, 3)
     })
+
+    it('検索ボックスのプレースホルダーは言語設定に追従する（日本語→英語）', async () => {
+      render(<InlineMapPicker {...defaultProps} />)
+      expect(screen.getByPlaceholderText('場所を検索')).toBeInTheDocument()
+
+      try {
+        await act(async () => { await i18n.changeLanguage('en') })
+        expect(screen.queryByPlaceholderText('場所を検索')).not.toBeInTheDocument()
+        expect(screen.getByPlaceholderText('Search for a place')).toBeInTheDocument()
+      } finally {
+        // 後続テストは日本語前提のため必ず戻す
+        await act(async () => { await i18n.changeLanguage('ja') })
+      }
+    })
   })
 
   describe('場所検索（Mapbox Search Box API）', () => {

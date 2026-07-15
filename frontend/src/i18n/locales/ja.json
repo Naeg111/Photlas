@@ -396,7 +396,8 @@
     "suggestionInstruction": "マップを動かして、正しいと思われる撮影場所を青いピンに合わせてください。",
     "suggestionTooClose": "近すぎます。元の撮影場所から30m以上離れた場所を指定してください",
     "suggestionTooFar": "離れすぎです。元の撮影場所から1km以内で指定してください",
-    "suggestLocation": "撮影場所の指摘"
+    "suggestLocation": "撮影場所の指摘",
+    "searchPlaceholder": "場所を検索"
   },
   "cookie": {
     "message": "このサイトでは、サービス改善のためにGoogle Analyticsを使用し、Cookieによるアクセス情報を収集しています。詳しくは",
