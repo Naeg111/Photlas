@@ -560,5 +560,9 @@
     "signupButton": "Sign up",
     "loginButton": "Log in",
     "aboutLink": "What is Photlas?"
+  },
+  "orientation": {
+    "rotateTitle": "Please rotate your device to portrait",
+    "rotateDescription": "Photlas supports portrait mode only on phones. Rotate your device back to portrait to continue."
   }
 }

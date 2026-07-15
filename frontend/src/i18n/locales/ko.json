@@ -535,5 +535,9 @@
     "signupButton": "회원가입",
     "loginButton": "로그인",
     "aboutLink": "Photlas란?"
+  },
+  "orientation": {
+    "rotateTitle": "화면을 세로로 돌려 주세요",
+    "rotateDescription": "스마트폰에서는 세로 화면만 지원합니다. 기기를 세로 방향으로 되돌리면 그대로 이용하실 수 있습니다."
   }
 }
