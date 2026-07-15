@@ -4,7 +4,7 @@ import { fetchTags } from '../utils/tagsApi'
 import { KeywordSection, type KeywordTag } from './KeywordSection'
 import { resizeImageToBlobForAnalyze } from '../utils/cropImageToBlob'
 import { resizeImageFile } from '../utils/resizeImageFile'
-import { CATEGORY_LABELS } from '../utils/codeConstants'
+import { CATEGORY_LABELS, CATEGORY_I18N_KEYS } from '../utils/codeConstants'
 import {
   trackAiPrefillEvent,
   compareAiPrefill,
@@ -1005,13 +1005,13 @@ export function PhotoContributionDialog({
                   >
                     <Checkbox
                       checked={selectedCategories.includes(category)}
-                      aria-label={category}
+                      aria-label={t(CATEGORY_I18N_KEYS[CATEGORY_NAME_TO_ID[category]] ?? category)}
                       tabIndex={-1}
                       style={{ pointerEvents: 'none' }}
                     />
                     <CategoryIcon category={category} className="w-5 h-5" />
                     <Label className="cursor-pointer flex-1">
-                      {category}
+                      {t(CATEGORY_I18N_KEYS[CATEGORY_NAME_TO_ID[category]] ?? category)}
                     </Label>
                   </div>
                 ))}
