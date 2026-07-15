@@ -130,7 +130,7 @@ const overlayStyles = {
 const DEFAULT_PIN_COLOR = '#ef4444'
 
 export function InlineMapPicker({ position, onPositionChange, onUserPositionChange, pinColor = DEFAULT_PIN_COLOR, markers, showLocationButton = true }: Readonly<InlineMapPickerProps>) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const mapRef = useRef<MapboxMap | null>(null)
   // Issue#107: 言語切替時に setLanguage を呼ぶ useEffect の依存対象として、
@@ -516,7 +516,7 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="場所を検索"
+              placeholder={t('location.searchPlaceholder')}
               style={{
                 width: '100%',
                 paddingLeft: 36,
