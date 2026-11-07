@@ -148,18 +148,25 @@ interface UnmountSafeScheduler {
   frame: (callback: () => void) => void
 }
 
-/** 地図遷移完了時のフェードアウト処理を生成（ネスト深度削減用） */
+/**
+ * 地図遷移完了時のフェードアウト処理を生成（ネスト深度削減用）。
+ * isLatest が false（後から別のワープが始まっている）なら何もせず、最新のワープの完了処理に任せる。
+ * そうしないと、前のワープの idle / 保険タイマー / フェード解除が後のワープの暗転を早く終わらせてしまう。
+ */
 function createTransitionCompleter(
   setMapTransitioning: (v: boolean) => void,
   setMapTransitionFading: (v: boolean) => void,
   scheduler: UnmountSafeScheduler,
+  isLatest: () => boolean,
 ) {
   let completed = false
   return () => {
     if (completed) return
     completed = true
+    if (!isLatest()) return
     setMapTransitionFading(true)
     scheduler.timeout(() => {
+      if (!isLatest()) return
       setMapTransitioning(false)
       setMapTransitionFading(false)
     }, TRANSITION_FADE_MS)
@@ -177,9 +184,12 @@ function performWarpAnimation(
   setMapTransitioning: (v: boolean) => void,
   setMapTransitionFading: (v: boolean) => void,
   scheduler: UnmountSafeScheduler,
+  isLatest: () => boolean,
 ) {
   setMapTransitioning(true)
-  const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading, scheduler)
+  // 前のワープのフェードアウト中に始まった場合も、暗転し直してからジャンプする
+  setMapTransitionFading(false)
+  const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading, scheduler, isLatest)
   // アンマウント時に取り消されるため、破棄済みの地図に jumpTo しない
   scheduler.frame(() => {
     map.jumpTo(jumpToOptions)
@@ -439,6 +449,32 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       pendingFramesRef.current.add(id)
     },
   }), [])
+
+  // ワープ開始。開始ごとに番号を振り、最新のワープだけが暗転を終わらせられるようにする
+  // （前のワープの idle / 保険タイマー / フェード解除で、後のワープの暗転が早く終わるのを防ぐ）。
+  const warpSeqRef = useRef(0)
+  const warpTo = useCallback((mapInstance: MapboxMap, jumpToOptions: Parameters<MapboxMap['jumpTo']>[0]) => {
+    const seq = ++warpSeqRef.current
+    performWarpAnimation(
+      mapInstance,
+      jumpToOptions,
+      setMapTransitioning,
+      setMapTransitionFading,
+      scheduler,
+      () => warpSeqRef.current === seq,
+    )
+  }, [scheduler])
+
+  // エラートースト。表示ごとに番号を振り、最新の表示から一定時間経つまでは消さない
+  // （エラーが続いたとき、前の表示の非表示タイマーで新しいトーストが早く消えるのを防ぐ）。
+  const toastSeqRef = useRef(0)
+  const showErrorToast = useCallback(() => {
+    const seq = ++toastSeqRef.current
+    setShowToast(true)
+    scheduler.timeout(() => {
+      if (toastSeqRef.current === seq) setShowToast(false)
+    }, TOAST_DURATION_MS)
+  }, [scheduler])
 
   // Issue#111: 初期表示経度をマウント時に一度だけランダム化する（毎回違う面が正面に見える）。
   // モジュールトップレベルで Math.random() を呼ぶと SPA で MapView が再マウントされても
@@ -858,11 +894,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       // Issue#156: 初回先読み（suppressErrorToast=true）ではエラートーストを出さない。
       // 起動直後にスプラッシュ裏で失敗してもトーストで邪魔せず、後続の取得で回復させる。
       if (!suppressErrorToast) {
-        setShowToast(true)
-        scheduler.timeout(() => setShowToast(false), TOAST_DURATION_MS)
+        showErrorToast()
       }
     }
-  }, [filterParams, t, scheduler])
+  }, [filterParams, t, showErrorToast])
 
   // 現在位置に移動するメソッドとスポット再取得メソッドを公開
   useImperativeHandle(ref, () => ({
@@ -893,13 +928,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               // Issue#158: 微小移動（ほぼ同じ表示）は何もしない。それ以外は距離に関係なく常にワープ。
               // （centerOnUserLocation はズームを変えないため距離のみで判定）
               if (distance > NEGLIGIBLE_MOVE_DEG) {
-                performWarpAnimation(
-                  map,
-                  { center: [newLocation.lng, newLocation.lat] },
-                  setMapTransitioning,
-                  setMapTransitionFading,
-                  scheduler,
-                )
+                warpTo(map, { center: [newLocation.lng, newLocation.lat] })
               }
               isFirstUpdate = false
             }
@@ -978,13 +1007,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         distance > LONG_DISTANCE_THRESHOLD ||
         zoomDiff >= SHOOTING_PREVIEW_ZOOM_DIFF_THRESHOLD
       ) {
-        performWarpAnimation(
-          map,
-          { center: [lng, lat], zoom: SHOOTING_PREVIEW_TARGET_ZOOM, padding },
-          setMapTransitioning,
-          setMapTransitionFading,
-          scheduler,
-        )
+        warpTo(map, { center: [lng, lat], zoom: SHOOTING_PREVIEW_TARGET_ZOOM, padding })
       } else {
         map.flyTo({ center: [lng, lat], zoom: SHOOTING_PREVIEW_TARGET_ZOOM, speed: 0.8, padding })
       }
@@ -1002,13 +1025,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           distance > LONG_DISTANCE_THRESHOLD ||
           zoomDiff >= SHOOTING_PREVIEW_ZOOM_DIFF_THRESHOLD
         ) {
-          performWarpAnimation(
-            map,
-            { center: savedCenter, zoom: savedZoom, padding },
-            setMapTransitioning,
-            setMapTransitionFading,
-            scheduler,
-          )
+          warpTo(map, { center: savedCenter, zoom: savedZoom, padding })
         } else {
           map.flyTo({ center: savedCenter, zoom: savedZoom, speed: 0.8, padding })
         }
@@ -1024,13 +1041,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
       // Issue#158: 微小移動（目標がほぼ現在の表示と同じ）は何もしない。それ以外は距離に関係なく常にワープ。
       if (distance <= NEGLIGIBLE_MOVE_DEG && zoomDiff <= NEGLIGIBLE_ZOOM_DIFF) return
-      performWarpAnimation(
-        map,
-        { center: [lng, lat], zoom, padding },
-        setMapTransitioning,
-        setMapTransitionFading,
-        scheduler,
-      )
+      warpTo(map, { center: [lng, lat], zoom, padding })
     },
     /**
      * Issue#106: 初期表示位置をユーザーの現在地またはIP国判定結果に自動的に移動する。
@@ -1064,13 +1075,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         stopGlobeRotation()
         // Mapbox の jumpTo は moveend イベントを発火するため、handleMoveEnd 経由で
         // fetchSpots が呼ばれる（zoom > 0 のフィルタにより、autoCenter 後のズーム5～14で動作）
-        performWarpAnimation(
-          map,
-          { center: [lng, lat], zoom },
-          setMapTransitioning,
-          setMapTransitionFading,
-          scheduler,
-        )
+        warpTo(map, { center: [lng, lat], zoom })
       }
 
       // ズーム0（地球全体）を最低一定時間表示するための待機ヘルパー
@@ -1140,7 +1145,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       clearIdleRotationTimer()
       startGlobeRotation(map)
     },
-  }), [map, fetchSpots, stopGlobeRotation, startGlobeRotation, clearIdleRotationTimer, rotationLoop, scheduler])
+  }), [map, fetchSpots, stopGlobeRotation, startGlobeRotation, clearIdleRotationTimer, rotationLoop, warpTo])
 
   // 地図が読み込まれたときの処理
   const handleLoad = useCallback((e: MapEvent) => {
