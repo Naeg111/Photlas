@@ -7,6 +7,11 @@ FROM amazoncorretto:21 AS builder
 
 WORKDIR /app
 
+# gradlew は xargs を使うため findutils を入れる。
+# amazoncorretto:21 の Amazon Linux 2023 版（2026-11 時点）には含まれておらず、
+# "xargs is not available" で ./gradlew が失敗していた。
+RUN dnf install -y findutils && dnf clean all
+
 # Copy Gradle files
 COPY gradle/ gradle/
 COPY gradlew .
