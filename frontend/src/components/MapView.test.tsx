@@ -1396,6 +1396,34 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(clearTimeoutSpy).toHaveBeenCalledWith(transitionTimeoutIds[0])
       expect(clearTimeoutSpy).toHaveBeenCalledWith(fadeTimeoutIds[0])
     })
+
+    it('requestAnimationFrame の発火前にアンマウントされた場合、発火後も保険タイマー（5秒）を予約しない', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+
+      const ref = { current: null as any }
+      const { unmount } = render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
+
+      // ワープ開始直後（requestAnimationFrame の発火前）にアンマウントする
+      act(() => {
+        ref.current.flyToPlace(-73.9, 40.7, 12)
+      })
+      unmount()
+
+      // アンマウント後に requestAnimationFrame が発火して jumpTo が呼ばれる
+      await waitFor(() => {
+        expect(mockMap.jumpTo).toHaveBeenCalled()
+      })
+
+      // 片付け後に予約されたタイマーは誰にも解除されないため、そもそも予約しない
+      expect(setTimeoutSpy.mock.calls.filter((call) => call[1] === 5000)).toHaveLength(0)
+    })
   })
 
   describe('Issue#111: ユーザー位置情報キャッシュ（lastGeolocationCache）', () => {

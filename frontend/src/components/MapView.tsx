@@ -411,7 +411,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // まとめて解除する。アンマウント後に発火すると不要な state 更新になり、テスト環境では破棄済みの
   // jsdom に触れて "window is not defined" の未処理エラーになる。
   const pendingTimeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+  const isUnmountedRef = useRef(false)
   const scheduleTimeout = useCallback<ScheduleTimeout>((callback, ms) => {
+    // アンマウント後は予約しない（例: ワープの requestAnimationFrame がアンマウント後に発火した場合）。
+    // 片付け後に予約したタイマーは誰にも解除されないため。
+    if (isUnmountedRef.current) return
     const id = setTimeout(() => {
       pendingTimeoutsRef.current.delete(id)
       callback()
@@ -427,7 +431,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // watchPosition / 地球儀回転 / アイドル予約タイマー / scheduleTimeout のクリーンアップ（unmount 時）
   useEffect(() => {
     const pendingTimeouts = pendingTimeoutsRef.current
+    // StrictMode の再マウントでも予約できるよう、マウントのたびに戻す
+    isUnmountedRef.current = false
     return () => {
+      isUnmountedRef.current = true
       pendingTimeouts.forEach((id) => clearTimeout(id))
       pendingTimeouts.clear()
       // 防御的チェック: テスト環境では unmount 時に navigator.geolocation の clearWatch が
