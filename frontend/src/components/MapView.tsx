@@ -139,17 +139,21 @@ const NEGLIGIBLE_MOVE_DEG = 0.0003
 const NEGLIGIBLE_ZOOM_DIFF = 0.5
 const TRANSITION_FADE_MS = 500
 
+/** アンマウント時にまとめて解除される setTimeout（MapView の scheduleTimeout） */
+type ScheduleTimeout = (callback: () => void, ms: number) => void
+
 /** 地図遷移完了時のフェードアウト処理を生成（ネスト深度削減用） */
 function createTransitionCompleter(
   setMapTransitioning: (v: boolean) => void,
-  setMapTransitionFading: (v: boolean) => void
+  setMapTransitionFading: (v: boolean) => void,
+  scheduleTimeout: ScheduleTimeout,
 ) {
   let completed = false
   return () => {
     if (completed) return
     completed = true
     setMapTransitionFading(true)
-    setTimeout(() => {
+    scheduleTimeout(() => {
       setMapTransitioning(false)
       setMapTransitionFading(false)
     }, TRANSITION_FADE_MS)
@@ -165,14 +169,15 @@ function performWarpAnimation(
   map: MapboxMap,
   jumpToOptions: Parameters<MapboxMap['jumpTo']>[0],
   setMapTransitioning: (v: boolean) => void,
-  setMapTransitionFading: (v: boolean) => void
+  setMapTransitionFading: (v: boolean) => void,
+  scheduleTimeout: ScheduleTimeout,
 ) {
   setMapTransitioning(true)
-  const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading)
+  const completeTransition = createTransitionCompleter(setMapTransitioning, setMapTransitionFading, scheduleTimeout)
   requestAnimationFrame(() => {
     map.jumpTo(jumpToOptions)
     map.once('idle', completeTransition)
-    setTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
+    scheduleTimeout(completeTransition, TRANSITION_TIMEOUT_MS)
   })
 }
 /** マップ移動完了時のスポット取得デバウンス（ms） */
@@ -402,14 +407,29 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isRotatingRef = useRef(false)
 
+  // ワープ遷移（保険タイマー・フェード解除）やエラートースト非表示のタイマーは、アンマウント時に
+  // まとめて解除する。アンマウント後に発火すると不要な state 更新になり、テスト環境では破棄済みの
+  // jsdom に触れて "window is not defined" の未処理エラーになる。
+  const pendingTimeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+  const scheduleTimeout = useCallback<ScheduleTimeout>((callback, ms) => {
+    const id = setTimeout(() => {
+      pendingTimeoutsRef.current.delete(id)
+      callback()
+    }, ms)
+    pendingTimeoutsRef.current.add(id)
+  }, [])
+
   // Issue#111: 初期表示経度をマウント時に一度だけランダム化する（毎回違う面が正面に見える）。
   // モジュールトップレベルで Math.random() を呼ぶと SPA で MapView が再マウントされても
   // 同じ値が使われ続けるため useMemo を使う。
   const initialLongitude = useMemo(() => Math.floor(Math.random() * 360), [])
 
-  // watchPosition / 地球儀回転 / アイドル予約タイマーのクリーンアップ（unmount 時）
+  // watchPosition / 地球儀回転 / アイドル予約タイマー / scheduleTimeout のクリーンアップ（unmount 時）
   useEffect(() => {
+    const pendingTimeouts = pendingTimeoutsRef.current
     return () => {
+      pendingTimeouts.forEach((id) => clearTimeout(id))
+      pendingTimeouts.clear()
       // 防御的チェック: テスト環境では unmount 時に navigator.geolocation の clearWatch が
       // 差し替えにより undefined になっている場合があるため、関数として呼び出せるか確認する。
       if (watchIdRef.current !== null) {
@@ -812,10 +832,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       // 起動直後にスプラッシュ裏で失敗してもトーストで邪魔せず、後続の取得で回復させる。
       if (!suppressErrorToast) {
         setShowToast(true)
-        setTimeout(() => setShowToast(false), TOAST_DURATION_MS)
+        scheduleTimeout(() => setShowToast(false), TOAST_DURATION_MS)
       }
     }
-  }, [filterParams, t])
+  }, [filterParams, t, scheduleTimeout])
 
   // 現在位置に移動するメソッドとスポット再取得メソッドを公開
   useImperativeHandle(ref, () => ({
@@ -851,6 +871,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
                   { center: [newLocation.lng, newLocation.lat] },
                   setMapTransitioning,
                   setMapTransitionFading,
+                  scheduleTimeout,
                 )
               }
               isFirstUpdate = false
@@ -935,6 +956,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           { center: [lng, lat], zoom: SHOOTING_PREVIEW_TARGET_ZOOM, padding },
           setMapTransitioning,
           setMapTransitionFading,
+          scheduleTimeout,
         )
       } else {
         map.flyTo({ center: [lng, lat], zoom: SHOOTING_PREVIEW_TARGET_ZOOM, speed: 0.8, padding })
@@ -958,6 +980,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
             { center: savedCenter, zoom: savedZoom, padding },
             setMapTransitioning,
             setMapTransitionFading,
+            scheduleTimeout,
           )
         } else {
           map.flyTo({ center: savedCenter, zoom: savedZoom, speed: 0.8, padding })
@@ -979,6 +1002,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         { center: [lng, lat], zoom, padding },
         setMapTransitioning,
         setMapTransitionFading,
+        scheduleTimeout,
       )
     },
     /**
@@ -1018,6 +1042,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           { center: [lng, lat], zoom },
           setMapTransitioning,
           setMapTransitionFading,
+          scheduleTimeout,
         )
       }
 
@@ -1088,7 +1113,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       clearIdleRotationTimer()
       startGlobeRotation(map)
     },
-  }), [map, fetchSpots, stopGlobeRotation, startGlobeRotation, clearIdleRotationTimer, rotationLoop])
+  }), [map, fetchSpots, stopGlobeRotation, startGlobeRotation, clearIdleRotationTimer, rotationLoop, scheduleTimeout])
 
   // 地図が読み込まれたときの処理
   const handleLoad = useCallback((e: MapEvent) => {
