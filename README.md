@@ -25,7 +25,7 @@
 
 ### 前提条件
 - Java 21
-- Node.js 22（バージョンはリポジトリ直下の `.tool-versions` で指定。CI も同じファイルを参照）
+- Node.js 22（バージョンはリポジトリ直下の `.tool-versions` で指定。CI も同じファイルを参照。`frontend/Dockerfile` の `node:22-alpine` は `.tool-versions` を読めないため、変更時は手動で揃える）
 - pnpm
 
 ### バックエンドの起動

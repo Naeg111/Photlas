@@ -1,6 +1,8 @@
 # Frontend Dockerfile - Multi-stage build
 # Stage 1: Build React application with Vite
 
+# Node のメジャーバージョンはリポジトリ直下の .tool-versions と揃えること
+# （Dockerfile は .tool-versions を読めないため、Node を上げるときはここも手動で変更する）
 FROM node:22-alpine AS builder
 
 WORKDIR /app
