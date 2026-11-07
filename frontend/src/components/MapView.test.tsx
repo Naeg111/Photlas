@@ -1397,7 +1397,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(clearTimeoutSpy).toHaveBeenCalledWith(fadeTimeoutIds[0])
     })
 
-    it('requestAnimationFrame の発火前にアンマウントされた場合、発火後も保険タイマー（5秒）を予約しない', async () => {
+    it('requestAnimationFrame の発火前にアンマウントされた場合、地図操作も保険タイマー（5秒）の予約もしない', async () => {
       setupFetchMock()
       mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
 
@@ -1409,6 +1409,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
 
       const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
+      const jumpToCallsBefore = mockMap.jumpTo.mock.calls.length
 
       // ワープ開始直後（requestAnimationFrame の発火前）にアンマウントする
       act(() => {
@@ -1416,11 +1417,11 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
       unmount()
 
-      // アンマウント後に requestAnimationFrame が発火して jumpTo が呼ばれる
-      await waitFor(() => {
-        expect(mockMap.jumpTo).toHaveBeenCalled()
-      })
+      // 本来 requestAnimationFrame が発火するだけの時間を待つ
+      await new Promise((resolve) => setTimeout(resolve, 100))
 
+      // アンマウント時に requestAnimationFrame を取り消すため、破棄済みの地図を操作しない
+      expect(mockMap.jumpTo.mock.calls.length).toBe(jumpToCallsBefore)
       // 片付け後に予約されたタイマーは誰にも解除されないため、そもそも予約しない
       expect(setTimeoutSpy.mock.calls.filter((call) => call[1] === 5000)).toHaveLength(0)
     })
