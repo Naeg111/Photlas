@@ -123,6 +123,17 @@ jobs:
       with:
         node-version-file: '.tool-versions'
 
+    # frontend/Dockerfile は .tool-versions を読めないため、Node のメジャーバージョンが一致しているか確認する
+    - name: Check Node version consistency (.tool-versions vs frontend/Dockerfile)
+      run: |
+        tool_major=$(awk '$1 == "nodejs" || $1 == "node" { split($2, v, "."); print v[1]; exit }' .tool-versions)
+        docker_major=$(sed -n -E 's/^FROM node:([0-9]+).*/\1/p' frontend/Dockerfile | head -n 1)
+        echo ".tool-versions: ${tool_major:-?} / frontend/Dockerfile: ${docker_major:-?}"
+        if [ -z "$tool_major" ] || [ "$tool_major" != "$docker_major" ]; then
+          echo "::error file=frontend/Dockerfile::Node major version (${docker_major:-none}) does not match .tool-versions (${tool_major:-none})"
+          exit 1
+        fi
+
     - name: Run shellcheck on scripts/
       run: |
         shopt -s nullglob
