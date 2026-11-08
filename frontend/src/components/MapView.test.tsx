@@ -1350,6 +1350,83 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
+  // ワープ遷移のタイマーがアンマウント後に発火すると、テスト環境では破棄済みの jsdom に触れて
+  // "window is not defined" の未処理エラーになり、全テスト成功でも CI が失敗していた。
+  describe('ワープ遷移タイマーのアンマウント時解除', () => {
+    it('アンマウント時に保険タイマー（5秒）とフェード解除タイマー（500ms）が解除される', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+
+      const ref = { current: null as any }
+      const { unmount } = render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
+      const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
+      const timerIdsScheduledWith = (delay: number, fromCallIndex: number) =>
+        setTimeoutSpy.mock.calls
+          .map((call, index) => ({ delay: call[1], id: setTimeoutSpy.mock.results[index]?.value, index }))
+          .filter((timer) => timer.index >= fromCallIndex && timer.delay === delay)
+          .map((timer) => timer.id)
+
+      ref.current.flyToPlace(-73.9, 40.7, 12)
+
+      // requestAnimationFrame 内で jumpTo と同時に保険タイマー（5秒）が予約される
+      await waitFor(() => {
+        expect(mockMap.jumpTo).toHaveBeenCalled()
+      })
+      const transitionTimeoutIds = timerIdsScheduledWith(5000, 0)
+      expect(transitionTimeoutIds).toHaveLength(1)
+
+      // idle 到達で遷移が完了し、フェード解除タイマー（500ms）が予約される
+      const idleHandler = mockMap.once.mock.calls.find((c: any[]) => c[0] === 'idle')?.[1]
+      expect(idleHandler).toBeDefined()
+      const callCountBeforeIdle = setTimeoutSpy.mock.calls.length
+      act(() => {
+        idleHandler()
+      })
+      const fadeTimeoutIds = timerIdsScheduledWith(500, callCountBeforeIdle)
+      expect(fadeTimeoutIds).toHaveLength(1)
+
+      unmount()
+
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(transitionTimeoutIds[0])
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(fadeTimeoutIds[0])
+    })
+
+    it('requestAnimationFrame の発火前にアンマウントされた場合、地図操作も保険タイマー（5秒）の予約もしない', async () => {
+      setupFetchMock()
+      mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+
+      const ref = { current: null as any }
+      const { unmount } = render(<MapView ref={ref} />)
+
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
+      const jumpToCallsBefore = mockMap.jumpTo.mock.calls.length
+
+      // ワープ開始直後（requestAnimationFrame の発火前）にアンマウントする
+      act(() => {
+        ref.current.flyToPlace(-73.9, 40.7, 12)
+      })
+      unmount()
+
+      // 本来 requestAnimationFrame が発火するだけの時間を待つ
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      // アンマウント時に requestAnimationFrame を取り消すため、破棄済みの地図を操作しない
+      expect(mockMap.jumpTo.mock.calls.length).toBe(jumpToCallsBefore)
+      // 片付け後に予約されたタイマーは誰にも解除されないため、そもそも予約しない
+      expect(setTimeoutSpy.mock.calls.filter((call) => call[1] === 5000)).toHaveLength(0)
+    })
+  })
+
   describe('Issue#111: ユーザー位置情報キャッシュ（lastGeolocationCache）', () => {
     let originalGeolocation: Geolocation | undefined
     const mockGetCurrentPosition = vi.fn()
