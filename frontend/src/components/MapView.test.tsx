@@ -1427,6 +1427,154 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
+  describe('重なったワープ・連続したエラートーストのタイマー', () => {
+    const getOverlay = () => screen.queryByTestId('map-transition-overlay')
+    const idleHandlers = () =>
+      mockMap.once.mock.calls.filter((c: any[]) => c[0] === 'idle').map((c: any[]) => c[1] as () => void)
+
+    async function renderWithRef() {
+      const ref = { current: null as any }
+      render(<MapView ref={ref} />)
+      await waitFor(() => {
+        expect(ref.current).not.toBeNull()
+      })
+      return ref
+    }
+
+    it('前のワープのフェード解除タイマーが、後から始まったワープの暗転を終わらせない', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        const ref = await renderWithRef()
+
+        // 1回目のワープが idle で完了し、フェードアウトが始まる
+        act(() => {
+          ref.current.flyToPlace(-73.9, 40.7, 12)
+        })
+        await act(async () => {
+          vi.advanceTimersByTime(50)
+        })
+        expect(idleHandlers()).toHaveLength(1)
+        act(() => {
+          idleHandlers()[0]()
+        })
+        await act(async () => {
+          vi.advanceTimersByTime(200)
+        })
+
+        // フェードアウト中に2回目のワープを開始すると、暗転し直す
+        act(() => {
+          ref.current.flyToPlace(2.35, 48.85, 12)
+        })
+        await act(async () => {
+          vi.advanceTimersByTime(50)
+        })
+        expect(idleHandlers()).toHaveLength(2)
+        expect(getOverlay()).toHaveClass('opacity-100')
+
+        // 1回目のフェード解除（500ms）を過ぎても、2回目のワープ中は暗転が続く
+        await act(async () => {
+          vi.advanceTimersByTime(400)
+        })
+        expect(getOverlay()).toBeInTheDocument()
+        expect(getOverlay()).toHaveClass('opacity-100')
+
+        // 2回目のワープが完了すれば暗転が終わる
+        act(() => {
+          idleHandlers()[1]()
+        })
+        await act(async () => {
+          vi.advanceTimersByTime(600)
+        })
+        expect(getOverlay()).not.toBeInTheDocument()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('前のワープの保険タイマー（5秒）が、後から始まったワープの暗転を早く終わらせない', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        setupFetchMock()
+        mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
+        const ref = await renderWithRef()
+
+        // 1回目のワープ（idle が来ないまま）
+        act(() => {
+          ref.current.flyToPlace(-73.9, 40.7, 12)
+        })
+        await act(async () => {
+          vi.advanceTimersByTime(3000)
+        })
+
+        // 3秒後に2回目のワープを開始
+        act(() => {
+          ref.current.flyToPlace(2.35, 48.85, 12)
+        })
+
+        // 1回目の保険タイマー（約5秒）とフェード（+500ms）を過ぎても、2回目は未完了なので暗転が続く
+        await act(async () => {
+          vi.advanceTimersByTime(3000)
+        })
+        expect(getOverlay()).toBeInTheDocument()
+        expect(getOverlay()).toHaveClass('opacity-100')
+
+        // 2回目の保険タイマー（約8秒）とフェードを過ぎれば暗転が終わる
+        await act(async () => {
+          vi.advanceTimersByTime(3000)
+        })
+        expect(getOverlay()).not.toBeInTheDocument()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('エラーが続いたとき、前のトーストの非表示タイマーで新しいトーストが早く消えない', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        // 初回ロードは成功させ、その後の取得からエラーにする
+        setupFetchMock()
+        const ref = await renderWithRef()
+        await act(async () => {
+          vi.advanceTimersByTime(1000)
+        })
+        global.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
+        expect(screen.queryByTestId('toast-container')).not.toBeInTheDocument()
+
+        // 1回目のエラー
+        await act(async () => {
+          ref.current.refreshSpots()
+        })
+        await waitFor(() => {
+          expect(screen.getByTestId('toast-container')).toBeInTheDocument()
+        })
+        await act(async () => {
+          vi.advanceTimersByTime(2000)
+        })
+
+        // 1回目の表示中に2回目のエラー
+        await act(async () => {
+          ref.current.refreshSpots()
+        })
+
+        // 1回目の非表示タイマー（3秒）を過ぎても、2回目から3秒経つまでは表示が続く
+        await act(async () => {
+          vi.advanceTimersByTime(1500)
+        })
+        expect(screen.getByTestId('toast-container')).toBeInTheDocument()
+
+        // 2回目から3秒経てば消える
+        await act(async () => {
+          vi.advanceTimersByTime(2000)
+        })
+        expect(screen.queryByTestId('toast-container')).not.toBeInTheDocument()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+  })
+
   describe('Issue#111: ユーザー位置情報キャッシュ（lastGeolocationCache）', () => {
     let originalGeolocation: Geolocation | undefined
     const mockGetCurrentPosition = vi.fn()
