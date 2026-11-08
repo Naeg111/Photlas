@@ -8,6 +8,6 @@
 --
 -- PostGIS 拡張(CREATE EXTENSION postgis)は本スクリプトでは有効化しない。
 -- 拡張は Flyway マイグレーション(Issue#149 で追加予定)で全環境共通に有効化する方針。
--- 本イメージ(postgis/postgis)は拡張を「利用可能」にするだけ。
+-- 本イメージ(docker/postgis/Dockerfile: 公式 postgres + PostGIS)は拡張を「利用可能」にするだけ。
 
 CREATE DATABASE photlas_test OWNER photlas_user;
