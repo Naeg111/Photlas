@@ -32,8 +32,10 @@ services:
   # PostgreSQL 17 + PostGIS データベースサービス
   # Issue#120: テスト/ローカル開発を本番(PostgreSQL+PostGIS)に統一。
   # PostGIS 同梱イメージにすることで Issue#149 の空間検索もローカル/テストで動かせる。
+  # postgis/postgis は amd64 版しかないため、公式 postgres + PostGIS の自前イメージをビルドして使う
+  # （Apple Silicon でもエミュレーションなしで動く。詳細は docker/postgis/Dockerfile）。
   db:
-    image: postgis/postgis:17-3.5
+    build: ./docker/postgis
     container_name: photlas-db
     # Issue#120: テストは多数の ApplicationContext がそれぞれコネクションプールを持つため、
     # 既定の max_connections=100 では不足する。テスト実行時の "too many clients" を防ぐため引き上げる。
