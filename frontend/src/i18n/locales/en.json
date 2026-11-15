@@ -35,6 +35,7 @@
     "forgotPassword": "Forgot your password?",
     "enterBothFields": "Please enter both email and password",
     "loginSuccess": "Logged in",
+    "logoutSuccess": "Logged out",
     "loginFailed": "Login failed",
     "noAccount": "Don't have an account?",
     "oauthSignupNotice": "To register with Google or LINE,",

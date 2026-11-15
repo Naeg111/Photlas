@@ -35,6 +35,7 @@
     "forgotPassword": "パスワードをお忘れですか？",
     "enterBothFields": "メールアドレスとパスワードを入力してください",
     "loginSuccess": "ログインしました",
+    "logoutSuccess": "ログアウトしました",
     "loginFailed": "ログインに失敗しました",
     "noAccount": "アカウントをお持ちでない方は",
     "oauthSignupNotice": "Google、LINEアカウントで登録される方は",

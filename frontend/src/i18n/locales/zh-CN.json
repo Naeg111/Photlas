@@ -34,6 +34,7 @@
     "forgotPassword": "忘记密码？",
     "enterBothFields": "请输入邮箱和密码",
     "loginSuccess": "登录成功",
+    "logoutSuccess": "已退出登录",
     "loginFailed": "登录失败",
     "noAccount": "没有账户？",
     "oauthSignupNotice": "使用 Google、LINE 账户注册请",

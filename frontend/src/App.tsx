@@ -654,7 +654,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
   const handleLogout = () => {
     logout()
     dialog.close('topMenu')
-    toast('ログアウトしました')
+    toast(t('auth.logoutSuccess'))
   }
 
   /**

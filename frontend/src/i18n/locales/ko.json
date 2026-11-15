@@ -34,6 +34,7 @@
     "forgotPassword": "비밀번호를 잊으셨나요?",
     "enterBothFields": "이메일과 비밀번호를 모두 입력해 주세요",
     "loginSuccess": "로그인 완료",
+    "logoutSuccess": "로그아웃했습니다",
     "loginFailed": "로그인 실패",
     "noAccount": "계정이 없으신가요?",
     "oauthSignupNotice": "Google, LINE 계정으로 가입하시는 분은",

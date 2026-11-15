@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { toast } from 'sonner'
+import i18n from './i18n'
 import App from './App'
 import { SPLASH_SCREEN_DURATION_MS, INITIAL_SPOTS_SPLASH_TIMEOUT_MS } from './config/app'
 
@@ -612,6 +613,23 @@ describe('App - Issue#28: App.tsx再構築', () => {
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'アカウント設定' })).toBeInTheDocument()
       })
+    })
+
+    it('ログアウトのお知らせは言語設定に合わせて出る（英語なら Logged out）', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        renderApp()
+        skipSplashScreen()
+        const user = switchToRealTimers()
+
+        await user.click(screen.getByRole('button', { name: /メニュー/i }))
+        await user.click(await screen.findByText('Log Out'))
+
+        await waitFor(() => expect(toast).toHaveBeenCalledWith('Logged out'))
+        expect(toast).not.toHaveBeenCalledWith('ログアウトしました')
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
   })
 

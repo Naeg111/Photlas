@@ -34,6 +34,7 @@
     "forgotPassword": "忘記密碼？",
     "enterBothFields": "請輸入電子郵件和密碼",
     "loginSuccess": "已登入",
+    "logoutSuccess": "已登出",
     "loginFailed": "登入失敗",
     "noAccount": "還沒有帳號？",
     "oauthSignupNotice": "使用 Google、LINE 帳號註冊請",
