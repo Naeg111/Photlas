@@ -292,7 +292,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           clearInterval(pollingIntervalRef.current)
           pollingIntervalRef.current = null
         }
-        toast.info('写真は審査中です。審査完了後に公開されます。')
+        toast.info(t('photo.moderationStillPending'))
         return
       }
 
@@ -307,14 +307,14 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         const status = data.moderation_status
 
         if (status === MODERATION_STATUS_PUBLISHED) {
-          toast.success('写真が公開されました')
+          toast.success(t('photo.moderationPublished'))
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current)
             pollingIntervalRef.current = null
           }
           mapRef.current?.refreshSpots({ bypassCache: true })
         } else if (status === MODERATION_STATUS_QUARANTINED) {
-          toast.error('写真がコンテンツポリシーに違反している可能性があります')
+          toast.error(t('photo.moderationQuarantined'))
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current)
             pollingIntervalRef.current = null
@@ -324,7 +324,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         // ネットワークエラーは無視（次回ポーリングで再試行）
       }
     }, POLLING_INTERVAL_MS)
-  }, [])
+  }, [t])
 
   // コンポーネントアンマウント時にポーリングをクリア
   useEffect(() => {
@@ -636,8 +636,8 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
       mapRef.current?.refreshSpots({ bypassCache: true })
 
       // 6. Issue#54: モデレーションステータスのポーリング開始
-      if (photoResponse?.photo?.photoId) {
-        startModerationPolling(photoResponse.photo.photoId)
+      if (photoResponse?.photo?.photo_id) {
+        startModerationPolling(photoResponse.photo.photo_id)
       }
     } catch (error) {
       // 認証エラーの場合はログアウトしてログインダイアログを表示
