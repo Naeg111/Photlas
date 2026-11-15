@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { toast } from 'sonner'
 import AdminModerationPage from './AdminModerationPage'
+import i18n from '../i18n'
 import { ROLE_ADMIN, REASON_ADULT_CONTENT, REASON_VIOLENCE } from '../utils/codeConstants'
 import { _resetRateLimitNotifyDebounce } from '../utils/notifyIfRateLimited'
 
@@ -359,6 +360,48 @@ describe('AdminModerationPage', () => {
     })
 
     expect(screen.getByTestId('moderation-item-2')).toBeInTheDocument()
+  })
+
+  it('承認のお知らせは言語設定に合わせて出る（英語なら Photo approved）', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          content: MOCK_QUEUE_ITEMS,
+          total_elements: 2,
+          total_pages: 1,
+        }),
+      })
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+
+    await i18n.changeLanguage('en')
+    try {
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByTestId('approve-btn-1')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('approve-btn-1'))
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('Photo approved')
+      })
+      expect(toast.success).not.toHaveBeenCalledWith('写真を承認しました')
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
   })
 
   it('拒否ボタンをクリックすると写真が拒否される', async () => {

@@ -924,21 +924,21 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       })
 
       if (response.ok) {
-        toast.success('通報を受け付けました')
+        toast.success(t('report.success'))
         setIsReportOpen(false)
       } else if (response.status === 409) {
         setIsReportOpen(false)
       } else if (response.status === 400) {
         setIsReportOpen(false)
       } else {
-        toast.error('通報に失敗しました')
+        toast.error(t('report.failed'))
       }
     } catch {
-      toast.error('通報に失敗しました')
+      toast.error(t('report.failed'))
     } finally {
       setIsReportLoading(false)
     }
-  }, [currentPhotoId])
+  }, [currentPhotoId, t])
 
   // Issue#65: 撮影場所の指摘送信処理
   const handleLocationSuggestion = useCallback(async (latitude: number, longitude: number) => {
@@ -986,14 +986,14 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         onPhotoDeleted?.()
         onClose()
       } else {
-        toast.error('写真の削除に失敗しました')
+        toast.error(t('photo.deleteFailed'))
       }
     } catch {
-      toast.error('写真の削除に失敗しました')
+      toast.error(t('photo.deleteFailed'))
     } finally {
       setIsDeleteLoading(false)
     }
-  }, [currentPhotoId, onClose, onPhotoDeleted])
+  }, [currentPhotoId, onClose, onPhotoDeleted, t])
 
   // Issue#58: 共有処理
   const handleShare = useCallback(async () => {
@@ -1010,9 +1010,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     } catch (error) {
       // ユーザーが共有シートをキャンセルした場合（AbortError）は無視
       if (error instanceof Error && error.name === 'AbortError') return
-      toast.error('共有に失敗しました')
+      toast.error(t('photo.shareFailed'))
     }
-  }, [currentPhotoId, currentPhoto?.placeName])
+  }, [currentPhotoId, currentPhoto?.placeName, t])
 
   // Issue#61: 編集モード開始
   const handleStartEdit = useCallback(() => {
@@ -1127,20 +1127,20 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           moderationStatus: data.moderationStatus,
         } : prev)
         setIsEditing(false)
-        toast.success('保存しました')
+        toast.success(t('photo.saveSuccess'))
         // Issue#135 追補: PhotoDetailResponse にタグは含まれないため、表示用に再取得する
         fetchPhotoTags(currentPhotoId, i18n.language)
           .then((res) => setPhotoTags(Array.isArray(res?.tags) ? res.tags : []))
           .catch(() => { /* 表示更新の失敗は無視（保存自体は成功） */ })
       } else {
-        toast.error('更新に失敗しました')
+        toast.error(t('photo.updateFailed'))
       }
     } catch {
-      toast.error('更新に失敗しました')
+      toast.error(t('photo.updateFailed'))
     } finally {
       setIsSaving(false)
     }
-  }, [currentPhotoId, editWeather, editPlaceName, editCategories, editTagIds, i18n.language])
+  }, [currentPhotoId, editWeather, editPlaceName, editCategories, editTagIds, i18n.language, t])
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal={false}>

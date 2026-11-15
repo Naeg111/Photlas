@@ -15,7 +15,6 @@ const API_ENDPOINTS = {
 
 const ERROR_MESSAGES = {
   FAILED_TO_UPDATE_USERNAME: 'Failed to update username',
-  FAILED_TO_REGISTER_PROFILE_IMAGE: 'プロフィール画像の登録に失敗しました',
 } as const
 
 const HTTP_STATUS = {
@@ -314,7 +313,7 @@ export const useProfileEdit = ({
           })
 
           if (!s3Response.ok) {
-            toast.error(ERROR_MESSAGES.FAILED_TO_REGISTER_PROFILE_IMAGE)
+            toast.error(t('profile.imageRegisterFailed'))
           } else {
             const registerResponse = await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
               method: 'PUT',
@@ -323,7 +322,7 @@ export const useProfileEdit = ({
             })
 
             if (!registerResponse.ok) {
-              toast.error(ERROR_MESSAGES.FAILED_TO_REGISTER_PROFILE_IMAGE)
+              toast.error(t('profile.imageRegisterFailed'))
             } else {
               setPendingImageBlob(null)
             }

@@ -909,6 +909,21 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(toast.closest('[role="alert"]')).toHaveClass('bg-red-500')
       })
     })
+
+    it('トースト通知の文言は言語設定に合わせて出る（英語なら Failed to load data）', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        setupFetchError()
+        render(<MapView />)
+
+        await waitFor(() => {
+          expect(screen.getByRole('alert')).toHaveTextContent('Failed to load data')
+        })
+        expect(screen.queryByText(/データの取得に失敗しました/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
   })
 
   // Issue#96 PR3: 429 レート制限ハンドリング（パターンC: サイレント + 頻度制御通知）

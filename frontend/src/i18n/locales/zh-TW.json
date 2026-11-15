@@ -105,7 +105,9 @@
       "cancel": "取消",
       "cancelledToast": "帳號註冊已取消",
       "agreeToPrivacyPolicySuffix": "我同意"
-    }
+    },
+    "linkedAndLoggedIn": "已連結帳號並登入。",
+    "linkedUserFetchFailed": "連結後取得使用者資訊失敗"
   },
   "menu": {
     "title": "選單",
@@ -225,7 +227,12 @@
     "shootingInfo": "拍攝資訊",
     "suggestionSent": "已送出位置建議",
     "suggestionFailed": "送出位置建議失敗",
-    "change": "變更"
+    "change": "變更",
+    "deleteFailed": "刪除照片失敗",
+    "shareFailed": "分享失敗",
+    "saveSuccess": "已儲存",
+    "updateFailed": "更新失敗",
+    "imageLoadFailed": "圖片載入失敗，請重新開啟"
   },
   "profile": {
     "posts": "發布",
@@ -233,7 +240,8 @@
     "noPosts": "尚無發布",
     "noFavorites": "尚無收藏",
     "editSnsLinks": "編輯 SNS 連結",
-    "duplicateUsername": "此顯示名稱已被使用"
+    "duplicateUsername": "此顯示名稱已被使用",
+    "imageRegisterFailed": "個人頭像設定失敗"
   },
   "settings": {
     "title": "帳號設定",
@@ -369,7 +377,9 @@
     "description": "檢舉不當或有問題的內容",
     "reason": "原因",
     "detailRequired": "詳細說明（必填）",
-    "detailOptional": "詳細說明（選填）"
+    "detailOptional": "詳細說明（選填）",
+    "success": "已受理檢舉",
+    "failed": "檢舉失敗"
   },
   "location": {
     "suggestionTitle": "回報位置",
@@ -409,7 +419,8 @@
     "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "顯示名稱中包含看不見的特殊字元。",
     "USERNAME_INVALID_CHARACTER_OTHER": "顯示名稱包含不允許的字元，僅允許字母、數字、日文（平假名、全形片假名、基礎漢字）、底線和連字號。",
     "USERNAME_INVALID_FIRST_CHARACTER": "顯示名稱必須以字母或日文開頭（數字、底線、連字號不能作為首字元）。",
-    "USERNAME_RESERVED": "此顯示名稱為系統保留字，無法使用。"
+    "USERNAME_RESERVED": "此顯示名稱為系統保留字，無法使用。",
+    "dataFetchFailed": "資料載入失敗"
   },
   "pages": {
     "emailVerifying": "正在驗證電子郵件...",
@@ -544,5 +555,25 @@
   "orientation": {
     "rotateTitle": "請將螢幕切換為直向",
     "rotateDescription": "手機端僅支援直向顯示。將裝置轉回直向後即可繼續使用。"
+  },
+  "admin": {
+    "moderation": {
+      "approveSuccess": "已核准照片",
+      "approveFailed": "核准失敗",
+      "rejectSuccess": "已拒絕照片",
+      "rejectFailed": "拒絕失敗"
+    },
+    "deletedUser": {
+      "fetchFailed": "取得資料失敗",
+      "emailMismatch": "電子郵件地址不一致",
+      "deleteSuccess": "已刪除使用者",
+      "deleteFailed": "刪除失敗",
+      "holdSuccess": "已延長保留期限",
+      "holdFailed": "延長保留期限失敗",
+      "removeHoldSuccess": "已解除保留期限延長",
+      "removeHoldFailed": "解除失敗",
+      "exportSuccess": "匯出完成",
+      "exportFailed": "匯出失敗"
+    }
   }
 }

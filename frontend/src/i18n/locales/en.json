@@ -128,7 +128,9 @@
       "cancel": "Cancel",
       "cancelledToast": "Account registration was cancelled",
       "agreeToPrivacyPolicySuffix": " I agree"
-    }
+    },
+    "linkedAndLoggedIn": "Your accounts have been linked and you are now logged in.",
+    "linkedUserFetchFailed": "Failed to fetch user information after linking"
   },
   "menu": {
     "title": "Menu",
@@ -248,7 +250,12 @@
     "shootingInfo": "Shooting Info",
     "suggestionSent": "Location suggestion sent",
     "suggestionFailed": "Failed to send suggestion",
-    "change": "Change"
+    "change": "Change",
+    "deleteFailed": "Failed to delete photo",
+    "shareFailed": "Failed to share",
+    "saveSuccess": "Saved",
+    "updateFailed": "Failed to update",
+    "imageLoadFailed": "Failed to load image. Please close and open it again."
   },
   "profile": {
     "posts": "Posts",
@@ -256,7 +263,8 @@
     "noPosts": "No posts yet",
     "noFavorites": "No favorites yet",
     "editSnsLinks": "Edit SNS Links",
-    "duplicateUsername": "This display name is already taken"
+    "duplicateUsername": "This display name is already taken",
+    "imageRegisterFailed": "Failed to register profile image"
   },
   "settings": {
     "title": "Account Settings",
@@ -392,7 +400,9 @@
     "description": "Report inappropriate or problematic content",
     "reason": "Reason",
     "detailRequired": "Details (required)",
-    "detailOptional": "Details (optional)"
+    "detailOptional": "Details (optional)",
+    "success": "Your report has been received",
+    "failed": "Failed to submit report"
   },
   "location": {
     "suggestionTitle": "Report Location",
@@ -432,7 +442,8 @@
     "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "Display name contains invisible special characters.",
     "USERNAME_INVALID_CHARACTER_OTHER": "Display name contains invalid characters. Only letters, digits, Japanese (hiragana, full-width katakana, basic kanji), underscore, and hyphen are allowed.",
     "USERNAME_INVALID_FIRST_CHARACTER": "Display name must start with a letter or Japanese character (digits, underscore, and hyphen cannot be used as the first character).",
-    "USERNAME_RESERVED": "This display name is reserved and cannot be used."
+    "USERNAME_RESERVED": "This display name is reserved and cannot be used.",
+    "dataFetchFailed": "Failed to load data"
   },
   "pages": {
     "emailVerifying": "Verifying your email...",
@@ -569,5 +580,25 @@
   "orientation": {
     "rotateTitle": "Please rotate your device to portrait",
     "rotateDescription": "Photlas supports portrait mode only on phones. Rotate your device back to portrait to continue."
+  },
+  "admin": {
+    "moderation": {
+      "approveSuccess": "Photo approved",
+      "approveFailed": "Failed to approve",
+      "rejectSuccess": "Photo rejected",
+      "rejectFailed": "Failed to reject"
+    },
+    "deletedUser": {
+      "fetchFailed": "Failed to fetch data",
+      "emailMismatch": "Email address does not match",
+      "deleteSuccess": "User deleted",
+      "deleteFailed": "Failed to delete",
+      "holdSuccess": "Retention period extended",
+      "holdFailed": "Failed to extend retention period",
+      "removeHoldSuccess": "Retention period extension removed",
+      "removeHoldFailed": "Failed to remove extension",
+      "exportSuccess": "Export completed",
+      "exportFailed": "Export failed"
+    }
   }
 }

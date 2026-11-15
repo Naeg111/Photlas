@@ -461,13 +461,13 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         language: userData.language,
       }, token, true)
       // Issue#144: 連携フローは「ログインしました」を別途出さず、この1トーストに集約する
-      toast.success('アカウントを連携し、ログインしました。')
+      toast.success(t('auth.linkedAndLoggedIn'))
     } catch {
-      toast.error('連携後のユーザー情報取得に失敗しました')
+      toast.error(t('auth.linkedUserFetchFailed'))
     } finally {
       setLinkConfirmation(null)
     }
-  }, [login])
+  }, [login, t])
 
   // Issue#58: ディープリンクでPhotoDetailDialogを自動表示
   useEffect(() => {

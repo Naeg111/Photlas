@@ -128,7 +128,9 @@
       "cancel": "キャンセル",
       "cancelledToast": "アカウント登録をキャンセルしました",
       "agreeToPrivacyPolicySuffix": "に同意する"
-    }
+    },
+    "linkedAndLoggedIn": "アカウントを連携し、ログインしました。",
+    "linkedUserFetchFailed": "連携後のユーザー情報取得に失敗しました"
   },
   "menu": {
     "title": "メニュー",
@@ -248,7 +250,12 @@
     "shootingInfo": "撮影情報",
     "suggestionSent": "指摘を送信しました",
     "suggestionFailed": "指摘の送信に失敗しました",
-    "change": "変更"
+    "change": "変更",
+    "deleteFailed": "写真の削除に失敗しました",
+    "shareFailed": "共有に失敗しました",
+    "saveSuccess": "保存しました",
+    "updateFailed": "更新に失敗しました",
+    "imageLoadFailed": "画像の読み込みに失敗しました。再度開き直してください"
   },
   "profile": {
     "posts": "投稿",
@@ -256,7 +263,8 @@
     "noPosts": "まだ投稿がありません",
     "noFavorites": "お気に入りはまだありません",
     "editSnsLinks": "SNSリンクを編集",
-    "duplicateUsername": "この表示名はすでに使用されています"
+    "duplicateUsername": "この表示名はすでに使用されています",
+    "imageRegisterFailed": "プロフィール画像の登録に失敗しました"
   },
   "settings": {
     "title": "アカウント設定",
@@ -392,7 +400,9 @@
     "description": "不適切なコンテンツや問題のある投稿を通報",
     "reason": "通報理由",
     "detailRequired": "詳細説明（必須）",
-    "detailOptional": "詳細説明（任意）"
+    "detailOptional": "詳細説明（任意）",
+    "success": "通報を受け付けました",
+    "failed": "通報に失敗しました"
   },
   "location": {
     "suggestionTitle": "撮影場所の指摘",
@@ -432,7 +442,8 @@
     "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "表示名に表示されない特殊文字が含まれています。",
     "USERNAME_INVALID_CHARACTER_OTHER": "表示名に使用できない文字が含まれています。英数字・日本語（ひらがな・全角カタカナ・基本漢字）・アンダースコア・ハイフンのみ使用できます。",
     "USERNAME_INVALID_FIRST_CHARACTER": "表示名の先頭は英字または日本語にしてください（数字・アンダースコア・ハイフンは先頭に使えません）。",
-    "USERNAME_RESERVED": "この表示名は予約語のため使用できません。"
+    "USERNAME_RESERVED": "この表示名は予約語のため使用できません。",
+    "dataFetchFailed": "データの取得に失敗しました"
   },
   "pages": {
     "emailVerifying": "メールアドレスを認証しています...",
@@ -569,5 +580,25 @@
   "orientation": {
     "rotateTitle": "画面を縦向きにしてください",
     "rotateDescription": "スマートフォンでは縦向きの表示のみに対応しています。端末を縦に戻すと、そのままご利用いただけます。"
+  },
+  "admin": {
+    "moderation": {
+      "approveSuccess": "写真を承認しました",
+      "approveFailed": "承認に失敗しました",
+      "rejectSuccess": "写真を拒否しました",
+      "rejectFailed": "拒否に失敗しました"
+    },
+    "deletedUser": {
+      "fetchFailed": "データの取得に失敗しました",
+      "emailMismatch": "メールアドレスが一致しません",
+      "deleteSuccess": "ユーザーを削除しました",
+      "deleteFailed": "削除に失敗しました",
+      "holdSuccess": "保持期間を延長しました",
+      "holdFailed": "保持期間の延長に失敗しました",
+      "removeHoldSuccess": "保持期間延長を解除しました",
+      "removeHoldFailed": "解除に失敗しました",
+      "exportSuccess": "エクスポートが完了しました",
+      "exportFailed": "エクスポートに失敗しました"
+    }
   }
 }

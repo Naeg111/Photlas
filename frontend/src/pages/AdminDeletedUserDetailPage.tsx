@@ -5,6 +5,7 @@ import { ArrowLeft, Trash2, Clock, Download } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { API_V1_URL } from '../config/api'
 
@@ -27,6 +28,7 @@ export default function AdminDeletedUserDetailPage() {
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
   const { getAuthToken } = useAuth()
+  const { t } = useTranslation()
   const [detail, setDetail] = useState<UserDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -55,11 +57,11 @@ export default function AdminDeletedUserDetailPage() {
         setDetail(await response.json())
       }
     } catch {
-      toast.error('データの取得に失敗しました')
+      toast.error(t('admin.deletedUser.fetchFailed'))
     } finally {
       setIsLoading(false)
     }
-  }, [userId, getAuthToken])
+  }, [userId, getAuthToken, t])
 
   useEffect(() => {
     fetchDetail()
@@ -67,7 +69,7 @@ export default function AdminDeletedUserDetailPage() {
 
   const handleImmediateDelete = async () => {
     if (confirmEmail !== detail?.email) {
-      toast.error('メールアドレスが一致しません')
+      toast.error(t('admin.deletedUser.emailMismatch'))
       return
     }
     setIsDeleting(true)
@@ -81,13 +83,13 @@ export default function AdminDeletedUserDetailPage() {
         }
       )
       if (response.ok) {
-        toast.success('ユーザーを削除しました')
+        toast.success(t('admin.deletedUser.deleteSuccess'))
         navigate('/manage/deleted-users')
       } else {
-        toast.error('削除に失敗しました')
+        toast.error(t('admin.deletedUser.deleteFailed'))
       }
     } catch {
-      toast.error('削除に失敗しました')
+      toast.error(t('admin.deletedUser.deleteFailed'))
     } finally {
       setIsDeleting(false)
     }
@@ -104,12 +106,12 @@ export default function AdminDeletedUserDetailPage() {
         }
       )
       if (response.ok) {
-        toast.success('保持期間を延長しました')
+        toast.success(t('admin.deletedUser.holdSuccess'))
         setIsHoldDialogOpen(false)
         fetchDetail()
       }
     } catch {
-      toast.error('保持期間の延長に失敗しました')
+      toast.error(t('admin.deletedUser.holdFailed'))
     }
   }
 
@@ -120,11 +122,11 @@ export default function AdminDeletedUserDetailPage() {
         { method: 'DELETE', headers: getAuthHeaders() }
       )
       if (response.ok) {
-        toast.success('保持期間延長を解除しました')
+        toast.success(t('admin.deletedUser.removeHoldSuccess'))
         fetchDetail()
       }
     } catch {
-      toast.error('解除に失敗しました')
+      toast.error(t('admin.deletedUser.removeHoldFailed'))
     }
   }
 
@@ -143,10 +145,10 @@ export default function AdminDeletedUserDetailPage() {
         a.download = `deleted-user-${userId}-export.json`
         a.click()
         URL.revokeObjectURL(url)
-        toast.success('エクスポートが完了しました')
+        toast.success(t('admin.deletedUser.exportSuccess'))
       }
     } catch {
-      toast.error('エクスポートに失敗しました')
+      toast.error(t('admin.deletedUser.exportFailed'))
     }
   }
 

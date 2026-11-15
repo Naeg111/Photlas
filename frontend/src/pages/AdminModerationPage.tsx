@@ -92,12 +92,12 @@ export default function AdminModerationPage() {
         `${API_V1_URL}/admin/moderation/photos/${photoId}/approve`,
         { method: 'POST', headers: getAuthHeaders() as Record<string, string> }
       )
-      toast.success('写真を承認しました')
+      toast.success(t('admin.moderation.approveSuccess'))
       setItems(prev => prev.filter(item => item.photo_id !== photoId))
       setTotalElements(prev => prev - 1)
     } catch (e) {
       if (!notifyIfRateLimited(e, t)) {
-        toast.error('承認に失敗しました')
+        toast.error(t('admin.moderation.approveFailed'))
       }
     } finally {
       setProcessingIds(prev => {
@@ -119,12 +119,12 @@ export default function AdminModerationPage() {
           body: { reason: '利用規約違反' },
         }
       )
-      toast.success('写真を拒否しました')
+      toast.success(t('admin.moderation.rejectSuccess'))
       setItems(prev => prev.filter(item => item.photo_id !== photoId))
       setTotalElements(prev => prev - 1)
     } catch (e) {
       if (!notifyIfRateLimited(e, t)) {
-        toast.error('拒否に失敗しました')
+        toast.error(t('admin.moderation.rejectFailed'))
       }
     } finally {
       setProcessingIds(prev => {

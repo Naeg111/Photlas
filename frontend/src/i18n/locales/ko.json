@@ -105,7 +105,9 @@
       "cancel": "취소",
       "cancelledToast": "계정 등록이 취소되었습니다",
       "agreeToPrivacyPolicySuffix": "에 동의합니다"
-    }
+    },
+    "linkedAndLoggedIn": "계정을 연결하고 로그인했습니다.",
+    "linkedUserFetchFailed": "연결 후 사용자 정보를 가져오지 못했습니다"
   },
   "menu": {
     "title": "메뉴",
@@ -225,7 +227,12 @@
     "shootingInfo": "촬영 정보",
     "suggestionSent": "위치 제안을 전송했습니다",
     "suggestionFailed": "위치 제안 전송에 실패했습니다",
-    "change": "변경"
+    "change": "변경",
+    "deleteFailed": "사진 삭제에 실패했습니다",
+    "shareFailed": "공유에 실패했습니다",
+    "saveSuccess": "저장했습니다",
+    "updateFailed": "업데이트에 실패했습니다",
+    "imageLoadFailed": "이미지를 불러오지 못했습니다. 다시 열어 주세요"
   },
   "profile": {
     "posts": "게시물",
@@ -233,7 +240,8 @@
     "noPosts": "아직 게시물이 없습니다",
     "noFavorites": "아직 즐겨찾기가 없습니다",
     "editSnsLinks": "SNS 링크 편집",
-    "duplicateUsername": "이미 사용 중인 표시 이름입니다"
+    "duplicateUsername": "이미 사용 중인 표시 이름입니다",
+    "imageRegisterFailed": "프로필 이미지 등록에 실패했습니다"
   },
   "settings": {
     "title": "계정 설정",
@@ -369,7 +377,9 @@
     "description": "부적절하거나 문제 있는 콘텐츠를 신고하세요",
     "reason": "신고 이유",
     "detailRequired": "상세 내용 (필수)",
-    "detailOptional": "상세 내용 (선택)"
+    "detailOptional": "상세 내용 (선택)",
+    "success": "신고가 접수되었습니다",
+    "failed": "신고에 실패했습니다"
   },
   "location": {
     "suggestionTitle": "위치 제보",
@@ -409,7 +419,8 @@
     "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "표시 이름에 보이지 않는 특수 문자가 포함되어 있습니다.",
     "USERNAME_INVALID_CHARACTER_OTHER": "표시 이름에 사용할 수 없는 문자가 포함되어 있습니다. 영숫자, 일본어(히라가나, 전각 가타카나, 기본 한자), 밑줄, 하이픈만 사용할 수 있습니다.",
     "USERNAME_INVALID_FIRST_CHARACTER": "표시 이름의 첫 글자는 영문자 또는 일본어여야 합니다(숫자, 밑줄, 하이픈은 첫 글자로 사용할 수 없습니다).",
-    "USERNAME_RESERVED": "이 표시 이름은 예약어이므로 사용할 수 없습니다."
+    "USERNAME_RESERVED": "이 표시 이름은 예약어이므로 사용할 수 없습니다.",
+    "dataFetchFailed": "데이터를 불러오지 못했습니다"
   },
   "pages": {
     "emailVerifying": "이메일 인증 중...",
@@ -544,5 +555,25 @@
   "orientation": {
     "rotateTitle": "화면을 세로로 돌려 주세요",
     "rotateDescription": "스마트폰에서는 세로 화면만 지원합니다. 기기를 세로 방향으로 되돌리면 그대로 이용하실 수 있습니다."
+  },
+  "admin": {
+    "moderation": {
+      "approveSuccess": "사진을 승인했습니다",
+      "approveFailed": "승인에 실패했습니다",
+      "rejectSuccess": "사진을 거부했습니다",
+      "rejectFailed": "거부에 실패했습니다"
+    },
+    "deletedUser": {
+      "fetchFailed": "데이터를 가져오지 못했습니다",
+      "emailMismatch": "이메일 주소가 일치하지 않습니다",
+      "deleteSuccess": "사용자를 삭제했습니다",
+      "deleteFailed": "삭제에 실패했습니다",
+      "holdSuccess": "보존 기간을 연장했습니다",
+      "holdFailed": "보존 기간 연장에 실패했습니다",
+      "removeHoldSuccess": "보존 기간 연장을 해제했습니다",
+      "removeHoldFailed": "해제에 실패했습니다",
+      "exportSuccess": "내보내기가 완료되었습니다",
+      "exportFailed": "내보내기에 실패했습니다"
+    }
   }
 }
