@@ -35,6 +35,7 @@
     "forgotPassword": "パスワードをお忘れですか？",
     "enterBothFields": "メールアドレスとパスワードを入力してください",
     "loginSuccess": "ログインしました",
+    "logoutSuccess": "ログアウトしました",
     "loginFailed": "ログインに失敗しました",
     "noAccount": "アカウントをお持ちでない方は",
     "oauthSignupNotice": "Google、LINEアカウントで登録される方は",
@@ -127,7 +128,9 @@
       "cancel": "キャンセル",
       "cancelledToast": "アカウント登録をキャンセルしました",
       "agreeToPrivacyPolicySuffix": "に同意する"
-    }
+    },
+    "linkedAndLoggedIn": "アカウントを連携し、ログインしました。",
+    "linkedUserFetchFailed": "連携後のユーザー情報取得に失敗しました"
   },
   "menu": {
     "title": "メニュー",
@@ -240,11 +243,19 @@
     "loadMoreFailed": "次の写真の読み込みに失敗しました",
     "quarantined": "この投稿はコンテンツポリシーに違反している可能性があるため、現在非公開です。",
     "pendingReview": "この投稿は審査中です。審査完了後に公開されます。",
+    "moderationPublished": "写真が公開されました",
+    "moderationStillPending": "写真は審査中です。審査完了後に公開されます。",
+    "moderationQuarantined": "写真がコンテンツポリシーに違反している可能性があります",
     "notFound": "写真が見つかりません",
     "shootingInfo": "撮影情報",
     "suggestionSent": "指摘を送信しました",
     "suggestionFailed": "指摘の送信に失敗しました",
-    "change": "変更"
+    "change": "変更",
+    "deleteFailed": "写真の削除に失敗しました",
+    "shareFailed": "共有に失敗しました",
+    "saveSuccess": "保存しました",
+    "updateFailed": "更新に失敗しました",
+    "imageLoadFailed": "画像の読み込みに失敗しました。再度開き直してください"
   },
   "profile": {
     "posts": "投稿",
@@ -252,7 +263,8 @@
     "noPosts": "まだ投稿がありません",
     "noFavorites": "お気に入りはまだありません",
     "editSnsLinks": "SNSリンクを編集",
-    "duplicateUsername": "この表示名はすでに使用されています"
+    "duplicateUsername": "この表示名はすでに使用されています",
+    "imageRegisterFailed": "プロフィール画像の登録に失敗しました"
   },
   "settings": {
     "title": "アカウント設定",
@@ -388,7 +400,12 @@
     "description": "不適切なコンテンツや問題のある投稿を通報",
     "reason": "通報理由",
     "detailRequired": "詳細説明（必須）",
-    "detailOptional": "詳細説明（任意）"
+    "detailOptional": "詳細説明（任意）",
+    "detailPlaceholder": "通報理由の詳細を入力してください（300文字以内）",
+    "submit": "通報する",
+    "success": "通報を受け付けました",
+    "failed": "通報に失敗しました",
+    "alreadyReported": "すでに通報済みです"
   },
   "location": {
     "suggestionTitle": "撮影場所の指摘",
@@ -428,7 +445,8 @@
     "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "表示名に表示されない特殊文字が含まれています。",
     "USERNAME_INVALID_CHARACTER_OTHER": "表示名に使用できない文字が含まれています。英数字・日本語（ひらがな・全角カタカナ・基本漢字）・アンダースコア・ハイフンのみ使用できます。",
     "USERNAME_INVALID_FIRST_CHARACTER": "表示名の先頭は英字または日本語にしてください（数字・アンダースコア・ハイフンは先頭に使えません）。",
-    "USERNAME_RESERVED": "この表示名は予約語のため使用できません。"
+    "USERNAME_RESERVED": "この表示名は予約語のため使用できません。",
+    "dataFetchFailed": "データの取得に失敗しました"
   },
   "pages": {
     "emailVerifying": "メールアドレスを認証しています...",
@@ -565,5 +583,77 @@
   "orientation": {
     "rotateTitle": "画面を縦向きにしてください",
     "rotateDescription": "スマートフォンでは縦向きの表示のみに対応しています。端末を縦に戻すと、そのままご利用いただけます。"
+  },
+  "admin": {
+    "accessDenied": "アクセス権限がありません",
+    "backToTop": "トップに戻る",
+    "moderation": {
+      "title": "モデレーション管理",
+      "pendingCount": "{{total}}件の審査待ち",
+      "fetchFailed": "キューの取得に失敗しました",
+      "reload": "再読み込み",
+      "empty": "審査待ちの写真はありません",
+      "imageAlt": "画像",
+      "blurApply": "ぼかしを適用",
+      "blurRemove": "ぼかしを解除",
+      "poster": "投稿者: {{username}} (ID: {{userId}})",
+      "reportCount": "通報 {{total}}件",
+      "approve": "承認",
+      "reject": "拒否",
+      "approveSuccess": "写真を承認しました",
+      "approveFailed": "承認に失敗しました",
+      "rejectSuccess": "写真を拒否しました",
+      "rejectFailed": "拒否に失敗しました"
+    },
+    "deletedUsers": {
+      "title": "退会済みユーザー管理",
+      "searchPlaceholder": "メールアドレスまたは表示名で検索",
+      "empty": "退会済みユーザーはいません",
+      "remainingDays": "残り {{days}} 日",
+      "holdActive": "保持延長中"
+    },
+    "deletedUser": {
+      "title": "退会済みユーザー詳細",
+      "profileSection": "プロフィール情報",
+      "email": "メールアドレス",
+      "originalUsername": "元の表示名",
+      "deletedAt": "退会日",
+      "untilPhysicalDeletion": "物理削除まで",
+      "days": "{{days}} 日",
+      "holdUntil": "保持延長期限",
+      "photoCount": "写真数: {{total}} 枚",
+      "historySection": "違反・制裁履歴",
+      "noHistory": "履歴はありません",
+      "actionsSection": "操作",
+      "removeHold": "保持延長を解除",
+      "extendHold": "保持期間延長",
+      "export": "データエクスポート",
+      "immediateDelete": "即時削除",
+      "deleteConfirmTitle": "即時削除の確認",
+      "deleteConfirmDescription": "この操作は取り消せません。確認のため、対象ユーザーのメールアドレスを入力して確認してください。",
+      "emailConfirmPlaceholder": "メールアドレスを入力して確認",
+      "deleting": "削除中...",
+      "deletePermanently": "完全に削除する",
+      "holdDialogDescription": "延長期限日を指定してください。",
+      "extend": "延長する",
+      "fetchFailed": "データの取得に失敗しました",
+      "emailMismatch": "メールアドレスが一致しません",
+      "deleteSuccess": "ユーザーを削除しました",
+      "deleteFailed": "削除に失敗しました",
+      "holdSuccess": "保持期間を延長しました",
+      "holdFailed": "保持期間の延長に失敗しました",
+      "removeHoldSuccess": "保持期間延長を解除しました",
+      "removeHoldFailed": "解除に失敗しました",
+      "exportSuccess": "エクスポートが完了しました",
+      "exportFailed": "エクスポートに失敗しました"
+    },
+    "sanctionTypes": {
+      "warning": "警告",
+      "temporarySuspension": "一時停止",
+      "permanentSuspension": "永久停止"
+    },
+    "actionTaken": {
+      "removed": "削除"
+    }
   }
 }

@@ -5,8 +5,15 @@ import { ArrowLeft, Trash2, Clock, Download } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { API_V1_URL } from '../config/api'
+import { useLatest } from '../hooks/useLatest'
+import {
+  ACTION_TAKEN_I18N_KEYS,
+  REPORT_REASON_I18N_KEYS,
+  SANCTION_TYPE_I18N_KEYS,
+} from '../utils/codeConstants'
 
 interface UserDetail {
   email: string
@@ -15,8 +22,8 @@ interface UserDetail {
   deletion_hold_until: string | null
   remaining_days: number
   photo_count: number
-  violations: Array<{ violation_type: string; action_taken: string; created_at: string }>
-  sanctions: Array<{ sanction_type: string; reason: string; created_at: string }>
+  violations: Array<{ violation_type: number; action_taken: number; created_at: string }>
+  sanctions: Array<{ sanction_type: number; reason: string; created_at: string }>
 }
 
 /**
@@ -27,6 +34,15 @@ export default function AdminDeletedUserDetailPage() {
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
   const { getAuthToken } = useAuth()
+  const { t, i18n } = useTranslation()
+  // fetchDetail を t に依存させず、言語の切り替えで再取得しないよう、ref 経由で今の言語の t を使う。
+  // ref を使うのは useEffect の依存に入る fetchDetail だけ。ほかのハンドラーは依存に入らないので t のままでよい。
+  const tRef = useLatest(t)
+
+  /** Spec#93 追加対応: 数値コードを表示言語の名前にする（未知のコードは数値のまま出す） */
+  const codeLabel = (keys: Record<number, string>, code: number) =>
+    keys[code] ? t(keys[code]) : String(code)
+  const formatDate = (value: string) => new Date(value).toLocaleDateString(i18n.language)
   const [detail, setDetail] = useState<UserDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -53,9 +69,12 @@ export default function AdminDeletedUserDetailPage() {
       )
       if (response.ok) {
         setDetail(await response.json())
+      } else {
+        // 403・500 などでも「読み込み中」のまま止まらないよう、失敗を知らせる（詳細が無いままなら下でエラーを表示する）
+        toast.error(tRef.current('admin.deletedUser.fetchFailed'))
       }
     } catch {
-      toast.error('データの取得に失敗しました')
+      toast.error(tRef.current('admin.deletedUser.fetchFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -67,7 +86,7 @@ export default function AdminDeletedUserDetailPage() {
 
   const handleImmediateDelete = async () => {
     if (confirmEmail !== detail?.email) {
-      toast.error('メールアドレスが一致しません')
+      toast.error(t('admin.deletedUser.emailMismatch'))
       return
     }
     setIsDeleting(true)
@@ -81,13 +100,13 @@ export default function AdminDeletedUserDetailPage() {
         }
       )
       if (response.ok) {
-        toast.success('ユーザーを削除しました')
+        toast.success(t('admin.deletedUser.deleteSuccess'))
         navigate('/manage/deleted-users')
       } else {
-        toast.error('削除に失敗しました')
+        toast.error(t('admin.deletedUser.deleteFailed'))
       }
     } catch {
-      toast.error('削除に失敗しました')
+      toast.error(t('admin.deletedUser.deleteFailed'))
     } finally {
       setIsDeleting(false)
     }
@@ -104,12 +123,14 @@ export default function AdminDeletedUserDetailPage() {
         }
       )
       if (response.ok) {
-        toast.success('保持期間を延長しました')
+        toast.success(t('admin.deletedUser.holdSuccess'))
         setIsHoldDialogOpen(false)
         fetchDetail()
+      } else {
+        toast.error(t('admin.deletedUser.holdFailed'))
       }
     } catch {
-      toast.error('保持期間の延長に失敗しました')
+      toast.error(t('admin.deletedUser.holdFailed'))
     }
   }
 
@@ -120,11 +141,13 @@ export default function AdminDeletedUserDetailPage() {
         { method: 'DELETE', headers: getAuthHeaders() }
       )
       if (response.ok) {
-        toast.success('保持期間延長を解除しました')
+        toast.success(t('admin.deletedUser.removeHoldSuccess'))
         fetchDetail()
+      } else {
+        toast.error(t('admin.deletedUser.removeHoldFailed'))
       }
     } catch {
-      toast.error('解除に失敗しました')
+      toast.error(t('admin.deletedUser.removeHoldFailed'))
     }
   }
 
@@ -143,17 +166,32 @@ export default function AdminDeletedUserDetailPage() {
         a.download = `deleted-user-${userId}-export.json`
         a.click()
         URL.revokeObjectURL(url)
-        toast.success('エクスポートが完了しました')
+        toast.success(t('admin.deletedUser.exportSuccess'))
+      } else {
+        toast.error(t('admin.deletedUser.exportFailed'))
       }
     } catch {
-      toast.error('エクスポートに失敗しました')
+      toast.error(t('admin.deletedUser.exportFailed'))
     }
   }
 
-  if (isLoading || !detail) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">読み込み中...</p>
+        <p className="text-gray-500">{t('common.loading')}</p>
+      </div>
+    )
+  }
+
+  // 取得に失敗して詳細が無い（「読み込み中」のまま止めない）
+  if (!detail) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
+        <p className="text-red-600">{t('admin.deletedUser.fetchFailed')}</p>
+        <Button variant="outline" onClick={() => navigate('/manage/deleted-users')}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          {t('common.back')}
+        </Button>
       </div>
     )
   }
@@ -165,49 +203,49 @@ export default function AdminDeletedUserDetailPage() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/manage/deleted-users')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-lg font-semibold">退会済みユーザー詳細</h1>
+        <h1 className="text-lg font-semibold">{t('admin.deletedUser.title')}</h1>
       </div>
 
       <div className="p-4 space-y-6 max-w-3xl mx-auto">
         {/* プロフィール情報 */}
         <section className="bg-white border rounded-lg p-4 space-y-2">
-          <h2 className="font-semibold text-gray-800">プロフィール情報</h2>
+          <h2 className="font-semibold text-gray-800">{t('admin.deletedUser.profileSection')}</h2>
           <div className="grid grid-cols-2 gap-2 text-sm">
-            <p className="text-gray-500">メールアドレス</p>
+            <p className="text-gray-500">{t('admin.deletedUser.email')}</p>
             <p>{detail.email}</p>
-            <p className="text-gray-500">元の表示名</p>
+            <p className="text-gray-500">{t('admin.deletedUser.originalUsername')}</p>
             <p>{detail.original_username}</p>
-            <p className="text-gray-500">退会日</p>
-            <p>{new Date(detail.deleted_at).toLocaleDateString('ja-JP')}</p>
-            <p className="text-gray-500">物理削除まで</p>
-            <p>{detail.remaining_days} 日</p>
+            <p className="text-gray-500">{t('admin.deletedUser.deletedAt')}</p>
+            <p>{formatDate(detail.deleted_at)}</p>
+            <p className="text-gray-500">{t('admin.deletedUser.untilPhysicalDeletion')}</p>
+            <p>{t('admin.deletedUser.days', { days: detail.remaining_days })}</p>
             {detail.deletion_hold_until && (
               <>
-                <p className="text-gray-500">保持延長期限</p>
-                <p className="text-yellow-700">{new Date(detail.deletion_hold_until).toLocaleDateString('ja-JP')}</p>
+                <p className="text-gray-500">{t('admin.deletedUser.holdUntil')}</p>
+                <p className="text-yellow-700">{formatDate(detail.deletion_hold_until)}</p>
               </>
             )}
           </div>
-          <p className="text-sm text-gray-500">写真数: {detail.photo_count} 枚</p>
+          <p className="text-sm text-gray-500">{t('admin.deletedUser.photoCount', { total: detail.photo_count })}</p>
         </section>
 
         {/* 違反履歴 */}
         <section className="bg-white border rounded-lg p-4 space-y-2">
-          <h2 className="font-semibold text-gray-800">違反・制裁履歴</h2>
+          <h2 className="font-semibold text-gray-800">{t('admin.deletedUser.historySection')}</h2>
           {detail.violations.length === 0 && detail.sanctions.length === 0 ? (
-            <p className="text-sm text-gray-500">履歴はありません</p>
+            <p className="text-sm text-gray-500">{t('admin.deletedUser.noHistory')}</p>
           ) : (
             <div className="space-y-2">
-              {detail.violations.map((v) => (
-                <div key={`v-${v.created_at}`} className="text-sm border-l-2 border-red-300 pl-3">
-                  <p className="font-medium">{v.action_taken}</p>
-                  <p className="text-gray-500">{v.violation_type} - {new Date(v.created_at).toLocaleDateString('ja-JP')}</p>
+              {detail.violations.map((v, index) => (
+                <div key={`v-${index}-${v.created_at}`} className="text-sm border-l-2 border-red-300 pl-3">
+                  <p className="font-medium">{codeLabel(ACTION_TAKEN_I18N_KEYS, v.action_taken)}</p>
+                  <p className="text-gray-500">{codeLabel(REPORT_REASON_I18N_KEYS, v.violation_type)} - {formatDate(v.created_at)}</p>
                 </div>
               ))}
-              {detail.sanctions.map((s) => (
-                <div key={`s-${s.created_at}`} className="text-sm border-l-2 border-orange-300 pl-3">
-                  <p className="font-medium">{s.sanction_type}</p>
-                  <p className="text-gray-500">{s.reason} - {new Date(s.created_at).toLocaleDateString('ja-JP')}</p>
+              {detail.sanctions.map((s, index) => (
+                <div key={`s-${index}-${s.created_at}`} className="text-sm border-l-2 border-orange-300 pl-3">
+                  <p className="font-medium">{codeLabel(SANCTION_TYPE_I18N_KEYS, s.sanction_type)}</p>
+                  <p className="text-gray-500">{s.reason} - {formatDate(s.created_at)}</p>
                 </div>
               ))}
             </div>
@@ -216,26 +254,26 @@ export default function AdminDeletedUserDetailPage() {
 
         {/* アクションボタン */}
         <section className="bg-white border rounded-lg p-4 space-y-3">
-          <h2 className="font-semibold text-gray-800">操作</h2>
+          <h2 className="font-semibold text-gray-800">{t('admin.deletedUser.actionsSection')}</h2>
           <div className="flex flex-wrap gap-2">
             {detail.deletion_hold_until ? (
               <Button variant="outline" onClick={handleRemoveHold}>
                 <Clock className="w-4 h-4 mr-2" />
-                保持延長を解除
+                {t('admin.deletedUser.removeHold')}
               </Button>
             ) : (
               <Button variant="outline" onClick={() => setIsHoldDialogOpen(true)}>
                 <Clock className="w-4 h-4 mr-2" />
-                保持期間延長
+                {t('admin.deletedUser.extendHold')}
               </Button>
             )}
             <Button variant="outline" onClick={handleExport}>
               <Download className="w-4 h-4 mr-2" />
-              データエクスポート
+              {t('admin.deletedUser.export')}
             </Button>
             <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
               <Trash2 className="w-4 h-4 mr-2" />
-              即時削除
+              {t('admin.deletedUser.immediateDelete')}
             </Button>
           </div>
         </section>
@@ -244,26 +282,26 @@ export default function AdminDeletedUserDetailPage() {
         {isDeleteDialogOpen && (
           <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
             <div className="bg-white rounded-lg p-6 max-w-md w-full space-y-4">
-              <h3 className="font-semibold text-red-600">即時削除の確認</h3>
+              <h3 className="font-semibold text-red-600">{t('admin.deletedUser.deleteConfirmTitle')}</h3>
               <p className="text-sm text-gray-600">
-                この操作は取り消せません。確認のため、対象ユーザーのメールアドレスを入力して確認してください。
+                {t('admin.deletedUser.deleteConfirmDescription')}
               </p>
               <p className="text-sm font-mono bg-gray-100 p-2 rounded">{detail.email}</p>
               <Input
-                placeholder="メールアドレスを入力して確認"
+                placeholder={t('admin.deletedUser.emailConfirmPlaceholder')}
                 value={confirmEmail}
                 onChange={(e) => setConfirmEmail(e.target.value)}
               />
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => { setIsDeleteDialogOpen(false); setConfirmEmail('') }}>
-                  キャンセル
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   variant="destructive"
                   onClick={handleImmediateDelete}
                   disabled={isDeleting || confirmEmail !== detail.email}
                 >
-                  {isDeleting ? '削除中...' : '完全に削除する'}
+                  {isDeleting ? t('admin.deletedUser.deleting') : t('admin.deletedUser.deletePermanently')}
                 </Button>
               </div>
             </div>
@@ -274,8 +312,8 @@ export default function AdminDeletedUserDetailPage() {
         {isHoldDialogOpen && (
           <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
             <div className="bg-white rounded-lg p-6 max-w-md w-full space-y-4">
-              <h3 className="font-semibold">保持期間延長</h3>
-              <p className="text-sm text-gray-600">延長期限日を指定してください。</p>
+              <h3 className="font-semibold">{t('admin.deletedUser.extendHold')}</h3>
+              <p className="text-sm text-gray-600">{t('admin.deletedUser.holdDialogDescription')}</p>
               <Input
                 type="date"
                 value={holdUntil}
@@ -283,10 +321,10 @@ export default function AdminDeletedUserDetailPage() {
               />
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setIsHoldDialogOpen(false)}>
-                  キャンセル
+                  {t('common.cancel')}
                 </Button>
                 <Button onClick={handleSetHold} disabled={!holdUntil}>
-                  延長する
+                  {t('admin.deletedUser.extend')}
                 </Button>
               </div>
             </div>

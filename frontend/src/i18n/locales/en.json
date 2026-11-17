@@ -35,6 +35,7 @@
     "forgotPassword": "Forgot your password?",
     "enterBothFields": "Please enter both email and password",
     "loginSuccess": "Logged in",
+    "logoutSuccess": "Logged out",
     "loginFailed": "Login failed",
     "noAccount": "Don't have an account?",
     "oauthSignupNotice": "To register with Google or LINE,",
@@ -127,7 +128,9 @@
       "cancel": "Cancel",
       "cancelledToast": "Account registration was cancelled",
       "agreeToPrivacyPolicySuffix": " I agree"
-    }
+    },
+    "linkedAndLoggedIn": "Your accounts have been linked and you are now logged in.",
+    "linkedUserFetchFailed": "Failed to fetch user information after linking"
   },
   "menu": {
     "title": "Menu",
@@ -240,11 +243,19 @@
     "loadMoreFailed": "Failed to load more photos",
     "quarantined": "This post may violate our content policy and is currently hidden.",
     "pendingReview": "This post is under review and will be published after approval.",
+    "moderationPublished": "Your photo has been published",
+    "moderationStillPending": "Your photo is under review and will be published once the review is complete.",
+    "moderationQuarantined": "Your photo may violate our content policy",
     "notFound": "Photo not found",
     "shootingInfo": "Shooting Info",
     "suggestionSent": "Location suggestion sent",
     "suggestionFailed": "Failed to send suggestion",
-    "change": "Change"
+    "change": "Change",
+    "deleteFailed": "Failed to delete photo",
+    "shareFailed": "Failed to share",
+    "saveSuccess": "Saved",
+    "updateFailed": "Failed to update",
+    "imageLoadFailed": "Failed to load image. Please close and open it again."
   },
   "profile": {
     "posts": "Posts",
@@ -252,7 +263,8 @@
     "noPosts": "No posts yet",
     "noFavorites": "No favorites yet",
     "editSnsLinks": "Edit SNS Links",
-    "duplicateUsername": "This display name is already taken"
+    "duplicateUsername": "This display name is already taken",
+    "imageRegisterFailed": "Failed to register profile image"
   },
   "settings": {
     "title": "Account Settings",
@@ -388,7 +400,12 @@
     "description": "Report inappropriate or problematic content",
     "reason": "Reason",
     "detailRequired": "Details (required)",
-    "detailOptional": "Details (optional)"
+    "detailOptional": "Details (optional)",
+    "detailPlaceholder": "Describe the reason for your report (up to 300 characters)",
+    "submit": "Report",
+    "success": "Your report has been received",
+    "failed": "Failed to submit report",
+    "alreadyReported": "You have already reported this"
   },
   "location": {
     "suggestionTitle": "Report Location",
@@ -428,7 +445,8 @@
     "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "Display name contains invisible special characters.",
     "USERNAME_INVALID_CHARACTER_OTHER": "Display name contains invalid characters. Only letters, digits, Japanese (hiragana, full-width katakana, basic kanji), underscore, and hyphen are allowed.",
     "USERNAME_INVALID_FIRST_CHARACTER": "Display name must start with a letter or Japanese character (digits, underscore, and hyphen cannot be used as the first character).",
-    "USERNAME_RESERVED": "This display name is reserved and cannot be used."
+    "USERNAME_RESERVED": "This display name is reserved and cannot be used.",
+    "dataFetchFailed": "Failed to load data"
   },
   "pages": {
     "emailVerifying": "Verifying your email...",
@@ -565,5 +583,77 @@
   "orientation": {
     "rotateTitle": "Please rotate your device to portrait",
     "rotateDescription": "Photlas supports portrait mode only on phones. Rotate your device back to portrait to continue."
+  },
+  "admin": {
+    "accessDenied": "You do not have permission to access this page",
+    "backToTop": "Back to top",
+    "moderation": {
+      "title": "Moderation",
+      "pendingCount": "Pending review: {{total}}",
+      "fetchFailed": "Failed to load the review queue",
+      "reload": "Reload",
+      "empty": "No photos are pending review",
+      "imageAlt": "Image",
+      "blurApply": "Apply blur",
+      "blurRemove": "Remove blur",
+      "poster": "Posted by: {{username}} (ID: {{userId}})",
+      "reportCount": "Reports: {{total}}",
+      "approve": "Approve",
+      "reject": "Reject",
+      "approveSuccess": "Photo approved",
+      "approveFailed": "Failed to approve",
+      "rejectSuccess": "Photo rejected",
+      "rejectFailed": "Failed to reject"
+    },
+    "deletedUsers": {
+      "title": "Deleted Users",
+      "searchPlaceholder": "Search by email or display name",
+      "empty": "No deleted users",
+      "remainingDays": "Days left: {{days}}",
+      "holdActive": "Retention extended"
+    },
+    "deletedUser": {
+      "title": "Deleted User Details",
+      "profileSection": "Profile",
+      "email": "Email address",
+      "originalUsername": "Original display name",
+      "deletedAt": "Deleted on",
+      "untilPhysicalDeletion": "Until permanent deletion",
+      "days": "{{days}} days",
+      "holdUntil": "Retention extended until",
+      "photoCount": "Photos: {{total}}",
+      "historySection": "Violations and Sanctions",
+      "noHistory": "No history",
+      "actionsSection": "Actions",
+      "removeHold": "Remove retention extension",
+      "extendHold": "Extend retention period",
+      "export": "Export data",
+      "immediateDelete": "Delete now",
+      "deleteConfirmTitle": "Confirm immediate deletion",
+      "deleteConfirmDescription": "This action cannot be undone. To confirm, enter the user's email address.",
+      "emailConfirmPlaceholder": "Enter the email address to confirm",
+      "deleting": "Deleting...",
+      "deletePermanently": "Delete permanently",
+      "holdDialogDescription": "Choose the date until which to extend retention.",
+      "extend": "Extend",
+      "fetchFailed": "Failed to fetch data",
+      "emailMismatch": "Email address does not match",
+      "deleteSuccess": "User deleted",
+      "deleteFailed": "Failed to delete",
+      "holdSuccess": "Retention period extended",
+      "holdFailed": "Failed to extend retention period",
+      "removeHoldSuccess": "Retention period extension removed",
+      "removeHoldFailed": "Failed to remove extension",
+      "exportSuccess": "Export completed",
+      "exportFailed": "Export failed"
+    },
+    "sanctionTypes": {
+      "warning": "Warning",
+      "temporarySuspension": "Temporary suspension",
+      "permanentSuspension": "Permanent suspension"
+    },
+    "actionTaken": {
+      "removed": "Removed"
+    }
   }
 }

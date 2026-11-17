@@ -237,26 +237,33 @@ export interface CreatePhotoRequest {
 }
 
 /**
- * 写真レスポンスの型定義
+ * 写真投稿（POST /photos）のレスポンスの型定義
+ *
+ * バックエンドの PhotoResponse（@JsonProperty でスネークケース）に合わせる。
+ * Spec#54: 以前は photoId などキャメルケースで書かれていたため、
+ * photo.photoId が常に undefined になり、審査状態の確認が始まっていなかった。
  */
 export interface PhotoResponse {
   photo: {
-    photoId: number
-    title: string
-    s3ObjectKey: string
-    shotAt: string
-    weather: string | null
-    isFavorited: boolean
-    favoriteCount: number
+    photo_id: number
+    place_name?: string
+    image_url: string
+    shot_at: string
+    weather: number | null
+    is_favorited: boolean
+    favorite_count: number
+    moderation_status?: number
+    thumbnail_url?: string
   }
   spot: {
-    spotId: number
+    spot_id: number
     latitude: number
     longitude: number
   }
   user: {
-    userId: number
+    user_id: number
     username: string
+    profile_image_url?: string
   }
 }
 

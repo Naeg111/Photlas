@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { toast } from 'sonner'
 import AdminModerationPage from './AdminModerationPage'
+import i18n from '../i18n'
 import { ROLE_ADMIN, REASON_ADULT_CONTENT, REASON_VIOLENCE } from '../utils/codeConstants'
 import { _resetRateLimitNotifyDebounce } from '../utils/notifyIfRateLimited'
 
@@ -359,6 +360,105 @@ describe('AdminModerationPage', () => {
     })
 
     expect(screen.getByTestId('moderation-item-2')).toBeInTheDocument()
+  })
+
+  it('承認のお知らせは言語設定に合わせて出る（英語なら Photo approved）', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          content: MOCK_QUEUE_ITEMS,
+          total_elements: 2,
+          total_pages: 1,
+        }),
+      })
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+
+    await i18n.changeLanguage('en')
+    try {
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByTestId('approve-btn-1')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('approve-btn-1'))
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('Photo approved')
+      })
+      expect(toast.success).not.toHaveBeenCalledWith('写真を承認しました')
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
+  })
+
+  it('Spec#93 追加対応: 言語設定が英語なら画面を英語で表示する', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        content: MOCK_QUEUE_ITEMS,
+        total_elements: 2,
+        total_pages: 1,
+      }),
+    })
+
+    await i18n.changeLanguage('en')
+    try {
+      renderPage()
+
+      expect(await screen.findByText('Posted by: testuser1 (ID: 10)')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Moderation' })).toBeInTheDocument()
+      expect(screen.getByText('Pending review: 2')).toBeInTheDocument()
+      expect(screen.getByText('Reports: 2')).toBeInTheDocument()
+      expect(screen.getByText('Adult Content')).toBeInTheDocument()
+      expect(screen.getByText('Violent Content')).toBeInTheDocument()
+      expect(screen.getAllByText('Approve')).toHaveLength(2)
+      expect(screen.getAllByText('Reject')).toHaveLength(2)
+      expect(screen.queryByText('モデレーション管理')).not.toBeInTheDocument()
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
+  })
+
+  it('Spec#93 追加対応: 言語を切り替えてもキューを取り直さず、エラーは切り替え後の言語で表示する', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+
+    renderPage()
+
+    expect(await screen.findByText('キューの取得に失敗しました')).toBeInTheDocument()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+
+    try {
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+      expect(screen.getByText('Failed to load the review queue')).toBeInTheDocument()
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage('ja')
+      })
+    }
   })
 
   it('拒否ボタンをクリックすると写真が拒否される', async () => {

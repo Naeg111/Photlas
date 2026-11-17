@@ -82,6 +82,7 @@ import { MODERATION_STATUS_PUBLISHED, MODERATION_STATUS_QUARANTINED, ROLE_ADMIN 
 import { stripExif } from './utils/stripExif'
 import { SPLASH_SCREEN_DURATION_MS, INITIAL_SPOTS_SPLASH_TIMEOUT_MS } from './config/app'
 import { useOAuthLoginToast } from './hooks/useOAuthLoginToast'
+import { useLatest } from './hooks/useLatest'
 import { useCanonicalUrl } from './hooks/useCanonicalUrl'
 import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed, Search } from 'lucide-react'
 import { CompassIcon } from './components/CompassIcon'
@@ -272,6 +273,9 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
 
   // Issue#54: モデレーションステータスポーリング
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // 実行中の setInterval が古い t を閉じ込めないよう、お知らせの文言は ref 経由で今の言語の t を使う
+  // （ポーリング中に言語を切り替えても、切り替え後の言語で出す）
+  const tRef = useLatest(t)
 
   const startModerationPolling = useCallback((photoId: number) => {
     // 既存のポーリングをクリア
@@ -292,7 +296,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           clearInterval(pollingIntervalRef.current)
           pollingIntervalRef.current = null
         }
-        toast.info('写真は審査中です。審査完了後に公開されます。')
+        toast.info(tRef.current('photo.moderationStillPending'))
         return
       }
 
@@ -307,14 +311,14 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         const status = data.moderation_status
 
         if (status === MODERATION_STATUS_PUBLISHED) {
-          toast.success('写真が公開されました')
+          toast.success(tRef.current('photo.moderationPublished'))
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current)
             pollingIntervalRef.current = null
           }
           mapRef.current?.refreshSpots({ bypassCache: true })
         } else if (status === MODERATION_STATUS_QUARANTINED) {
-          toast.error('写真がコンテンツポリシーに違反している可能性があります')
+          toast.error(tRef.current('photo.moderationQuarantined'))
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current)
             pollingIntervalRef.current = null
@@ -461,13 +465,13 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         language: userData.language,
       }, token, true)
       // Issue#144: 連携フローは「ログインしました」を別途出さず、この1トーストに集約する
-      toast.success('アカウントを連携し、ログインしました。')
+      toast.success(t('auth.linkedAndLoggedIn'))
     } catch {
-      toast.error('連携後のユーザー情報取得に失敗しました')
+      toast.error(t('auth.linkedUserFetchFailed'))
     } finally {
       setLinkConfirmation(null)
     }
-  }, [login])
+  }, [login, t])
 
   // Issue#58: ディープリンクでPhotoDetailDialogを自動表示
   useEffect(() => {
@@ -636,8 +640,8 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
       mapRef.current?.refreshSpots({ bypassCache: true })
 
       // 6. Issue#54: モデレーションステータスのポーリング開始
-      if (photoResponse?.photo?.photoId) {
-        startModerationPolling(photoResponse.photo.photoId)
+      if (photoResponse?.photo?.photo_id) {
+        startModerationPolling(photoResponse.photo.photo_id)
       }
     } catch (error) {
       // 認証エラーの場合はログアウトしてログインダイアログを表示
@@ -654,7 +658,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
   const handleLogout = () => {
     logout()
     dialog.close('topMenu')
-    toast('ログアウトしました')
+    toast(t('auth.logoutSuccess'))
   }
 
   /**

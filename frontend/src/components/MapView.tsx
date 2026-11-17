@@ -1474,7 +1474,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
             role="alert"
             className="bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg"
           >
-            データの取得に失敗しました
+            {t('errors.dataFetchFailed')}
           </div>
         </div>
       )}

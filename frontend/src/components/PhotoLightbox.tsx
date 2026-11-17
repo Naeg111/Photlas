@@ -6,6 +6,8 @@ import { Button } from './ui/button'
 import { LIGHTBOX } from '../utils/constants'
 import { clampLightboxPan, type Point } from '../utils/lightboxPan'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
+import { useLatest } from '../hooks/useLatest'
 
 /**
  * PhotoLightbox コンポーネント
@@ -28,6 +30,9 @@ interface PhotoLightboxProps {
 }
 
 export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxProps) {
+  const { t } = useTranslation()
+  // fetchImage を t に依存させず、開いている間に言語が変わっても画像を取り直さないよう、ref 経由で今の言語の t を使う
+  const tRef = useLatest(t)
   const [scale, setScale] = useState<number>(LIGHTBOX.INITIAL_SCALE)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -124,7 +129,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
       setLoadError(true)
       setIsLoading(false)
       setShowLoading(false)
-      toast.error('画像の読み込みに失敗しました。再度開き直してください')
+      toast.error(tRef.current('photo.imageLoadFailed'))
     }
   }, [])
 

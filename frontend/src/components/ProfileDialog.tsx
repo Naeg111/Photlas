@@ -29,6 +29,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { ApiError, getAuthHeaders } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
 import { notifyIfRateLimited } from '../utils/notifyIfRateLimited'
+import { notifyReportFailure } from '../utils/notifyReportFailure'
 
 // Issue#130: react-easy-crop 依存を初回バンドルから除外（プロフィール画像トリミング時のみロード）
 const ProfileImageCropper = lazy(() => import('./ProfileImageCropper'))
@@ -341,12 +342,13 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         headers: getAuthHeaders() as Record<string, string>,
         body: { reason: data.reason, details: data.details },
       })
+      toast.success(t('report.success'))
       setIsReportOpen(false)
     } catch (e) {
-      if (e instanceof ApiError && (e.status === 409 || e.status === 400)) {
+      if (notifyIfRateLimited(e, t)) return
+      // 409（通報済み）・400 は閉じる。扱いは写真詳細の通報とそろえる（notifyReportFailure）
+      if (notifyReportFailure(e instanceof ApiError ? e.status : null, t)) {
         setIsReportOpen(false)
-      } else {
-        notifyIfRateLimited(e, t)
       }
     } finally {
       setIsReportLoading(false)
