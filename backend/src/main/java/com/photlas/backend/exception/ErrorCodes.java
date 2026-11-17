@@ -19,7 +19,7 @@ public final class ErrorCodes {
     // ---- 汎用（フロントは画面ごとの汎用文言で表示する） ----
     /** 入力チェックエラー（詳細は errors[] のフィールド別メッセージ） */
     public static final String VALIDATION_ERROR = "VALIDATION_ERROR";
-    /** 個別のコードを持たない 400 */
+    /** 個別のコードを持たない 4xx（Spring MVC 標準の例外を含む） */
     public static final String BAD_REQUEST = "BAD_REQUEST";
     /** 想定外のサーバーエラー */
     public static final String INTERNAL_ERROR = "INTERNAL_ERROR";

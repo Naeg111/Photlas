@@ -26,6 +26,7 @@ import java.util.Map;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -95,6 +96,34 @@ class ErrorCodeResponseTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(ErrorCodes.VALIDATION_ERROR))
                 .andExpect(jsonPath("$.errors").isArray());
+    }
+
+    @Test
+    @DisplayName("Issue#93 - 壊れた JSON（Spring 標準の例外）も BAD_REQUEST と固定の文言で返す")
+    void malformedJson_returnsBadRequestCode() throws Exception {
+        mockMvc.perform(post(AUTH + "/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.BAD_REQUEST))
+                .andExpect(jsonPath("$.message").value("リクエストが正しくありません"));
+    }
+
+    @Test
+    @DisplayName("Issue#93 - 対応していないメソッド（405）も BAD_REQUEST を付け、Allow ヘッダーは残す")
+    void methodNotAllowed_returnsBadRequestCodeWithAllowHeader() throws Exception {
+        mockMvc.perform(get(AUTH + "/register"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.BAD_REQUEST))
+                .andExpect(header().exists("Allow"));
+    }
+
+    @Test
+    @DisplayName("Issue#93 - 必須パラメーターが無い（Spring 標準の例外）も BAD_REQUEST")
+    void missingParameter_returnsBadRequestCode() throws Exception {
+        mockMvc.perform(get(AUTH + "/verify-email"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.BAD_REQUEST));
     }
 
     @Test

@@ -27,6 +27,7 @@ import {
 } from '../utils/validation'
 import { validateUsername } from '../utils/validation/username'
 import { localizeFieldError } from '../utils/validation/localizeFieldError'
+import { translateErrorCode } from '../utils/apiErrorMessage'
 
 /**
  * SignUpDialog コンポーネント
@@ -227,12 +228,9 @@ export function SignUpDialog({
           setRegisterRateLimitError(err)
           setErrors({ general: getRateLimitInlineMessage(err, t) })
         } else if (err.status === 409) {
-          // Issue#93: 退会処理中のメールアドレスは「使用済み」と区別して案内する
-          setErrors({
-            email: err.code === 'EMAIL_PENDING_DELETION'
-              ? t('errors.EMAIL_PENDING_DELETION')
-              : t('auth.emailAlreadyUsed'),
-          })
+          // Issue#93: code から文言を出す（EMAIL_PENDING_DELETION なら「退会処理中」、
+          // EMAIL_ALREADY_IN_USE なら「使用済み」）。code が無ければ「既に登録されています」
+          setErrors({ email: translateErrorCode(err.code, t, 'auth.emailAlreadyUsed') })
         } else if (err.status === 400) {
           // Issue#98: バリデーションエラーの field-level メッセージを取得
           const usernameErr = err.getFieldErrorMessage('username')

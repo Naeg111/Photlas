@@ -664,6 +664,30 @@ describe('SignUpDialog', () => {
         { status: 409, headers: { 'Content-Type': 'application/json' } }
       )
 
+    it('Issue#93 - 登録済みのメールアドレス（409 EMAIL_ALREADY_IN_USE）は code から文言を出す', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ code: 'EMAIL_ALREADY_IN_USE', message: 'このメールアドレスは既に登録されています（サーバー）' }),
+          { status: 409, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+
+      render(<SignUpDialog {...defaultProps} />)
+
+      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+      await user.type(screen.getByLabelText(/メールアドレス/), 'existing@example.com')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
+      await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      expect(await screen.findByText('このメールアドレスはすでに使用されています')).toBeInTheDocument()
+      expect(screen.queryByText(/（サーバー）/)).not.toBeInTheDocument()
+    })
+
     it('Issue#93 - 退会処理中のメールアドレス（409 EMAIL_PENDING_DELETION）は専用のメッセージを出す', async () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce(pendingDeletionError())

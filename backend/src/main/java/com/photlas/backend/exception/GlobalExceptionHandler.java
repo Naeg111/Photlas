@@ -34,6 +34,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /** Issue#93: コードの無い 400 で返す固定の message（内部の message は返さない） */
     static final String BAD_REQUEST_MESSAGE = "リクエストが正しくありません";
 
+    /** Issue#93: 想定外のエラー（500）で返す固定の message */
+    static final String INTERNAL_ERROR_MESSAGE = "サーバーエラーが発生しました";
+
     /**
      * バリデーションエラーをハンドリング
      */
@@ -56,7 +59,36 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
+     * Issue#93: Spring MVC 標準の例外（壊れた JSON、必須パラメーターの欠落、型の不一致、405、415 など）にも
+     * code を付ける。既定の本文（ProblemDetail）の代わりに、4xx は {@code BAD_REQUEST}、5xx は
+     * {@code INTERNAL_ERROR} と固定の文言を返す（フロントは画面ごとの汎用の文言で表示する）。
+     * 入力チェックエラーは {@link #handleMethodArgumentNotValid} が {@code VALIDATION_ERROR} で返す。
+     */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(
+            Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+        ResponseEntity<Object> response = super.handleExceptionInternal(ex, body, headers, statusCode, request);
+        if (response == null) {
+            // レスポンスが既に送信済みなどで、本文を書けない場合
+            return null;
+        }
+        ErrorResponse errorResponse;
+        if (statusCode.is5xxServerError()) {
+            logger.error("Spring MVC の処理でエラーが発生しました", ex);
+            errorResponse = new ErrorResponse(ErrorCodes.INTERNAL_ERROR, INTERNAL_ERROR_MESSAGE);
+        } else {
+            errorResponse = new ErrorResponse(ErrorCodes.BAD_REQUEST, BAD_REQUEST_MESSAGE);
+        }
+        return ResponseEntity.status(response.getStatusCode()).headers(response.getHeaders()).body(errorResponse);
+    }
+
+    /**
      * Issue#20: 認証エラー（401 Unauthorized）をハンドリング
+     *
+     * <p>Issue#93 注意: {@link UnauthorizedException} は「メールアドレスかパスワードが違う」のほか、
+     * 「ユーザーが見つからない」「現在のパスワードが違う」などにも使われており、すべて
+     * {@code INVALID_CREDENTIALS} になる。今のフロントで 401 の code から文言を出すのはログイン画面だけ。
+     * ほかの画面で 401 の code を使うときは、場面ごとにコードを分けること。
      */
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException ex) {
@@ -227,7 +259,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         logger.error("予期しないエラーが発生しました", ex);
-        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.INTERNAL_ERROR, "サーバーエラーが発生しました");
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.INTERNAL_ERROR, INTERNAL_ERROR_MESSAGE);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }
