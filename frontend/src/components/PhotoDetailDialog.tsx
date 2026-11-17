@@ -40,15 +40,11 @@ import {
   WEATHER_OPTIONS,
   MODERATION_STATUS_QUARANTINED,
   MODERATION_STATUS_PENDING_REVIEW,
-  CATEGORY_LABELS,
+  CATEGORY_NAME_TO_ID,
+  categoryNameI18nKey,
 } from '../utils/codeConstants'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 import { useSwipeDirectionHistory } from '../hooks/useSwipeDirectionHistory'
-
-/** カテゴリ名 → ID の逆引きマップ（CATEGORY_LABELS の逆・KeywordSection の selectedCategoryCodes 用） */
-const CATEGORY_NAME_TO_ID: Record<string, number> = Object.fromEntries(
-  Object.entries(CATEGORY_LABELS).map(([id, name]) => [name, Number(id)])
-)
 
 // API Endpoints
 // Issue#112: スポット写真ID一覧は POST /spots/photos に統一（複数スポット横断 + ページネーション）
@@ -1301,12 +1297,12 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                             >
                               <Checkbox
                                 checked={editCategories.includes(category)}
-                                aria-label={category}
+                                aria-label={t(categoryNameI18nKey(category))}
                                 tabIndex={-1}
                                 style={{ pointerEvents: 'none' }}
                               />
                               <CategoryIcon category={category} className="w-4 h-4" />
-                              <span className="flex-1">{category}</span>
+                              <span className="flex-1">{t(categoryNameI18nKey(category))}</span>
                             </div>
                           ))}
                         </div>
