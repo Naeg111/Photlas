@@ -70,6 +70,21 @@ describe('i18n - Issue#130', () => {
     })
   })
 
+  // Spec#93 追加対応: 読み上げソフトやブラウザの翻訳が表示言語を正しく扱えるよう、<html lang> を合わせる
+  describe('<html> の lang', () => {
+    it('表示言語を切り替えると、<html> の lang も同じ言語になる', async () => {
+      try {
+        for (const lng of SUPPORTED_LANGUAGES) {
+          await i18n.changeLanguage(lng)
+          expect(document.documentElement.lang).toBe(lng)
+        }
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+      expect(document.documentElement.lang).toBe('ja')
+    })
+  })
+
   // Spec#93 追加対応: 言語ファイルごとの項目漏れを防ぐ。
   // 翻訳ファイルは今の言語の分しか読み込まないため、項目が欠けると代わりの英語も出ず、キー名がそのまま表示される。
   describe('翻訳ファイルの項目', () => {

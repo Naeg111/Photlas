@@ -50,6 +50,17 @@ export async function loadLanguageResource(lng: SupportedLanguage): Promise<void
 }
 
 /**
+ * Spec#93: 表示言語を <html lang> に反映する（読み上げソフトやブラウザの翻訳が言語を正しく扱うため）。
+ * index.html の lang="ja" は、スクリプトが動く前の初期値。
+ */
+function syncDocumentLanguage(lng: string): void {
+  if (typeof document === 'undefined' || !lng) return
+  document.documentElement.lang = lng
+}
+
+i18n.on('languageChanged', syncDocumentLanguage)
+
+/**
  * localStorage / navigator.language から初期言語を決定する。
  * SUPPORTED_LANGUAGES に含まれない場合は FALLBACK_LANGUAGE を返す。
  */
