@@ -41,6 +41,7 @@ import {
   MODERATION_STATUS_QUARANTINED,
   MODERATION_STATUS_PENDING_REVIEW,
   CATEGORY_LABELS,
+  CATEGORY_I18N_KEYS,
 } from '../utils/codeConstants'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 import { useSwipeDirectionHistory } from '../hooks/useSwipeDirectionHistory'
@@ -1301,12 +1302,12 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                             >
                               <Checkbox
                                 checked={editCategories.includes(category)}
-                                aria-label={category}
+                                aria-label={t(CATEGORY_I18N_KEYS[CATEGORY_NAME_TO_ID[category]] ?? category)}
                                 tabIndex={-1}
                                 style={{ pointerEvents: 'none' }}
                               />
                               <CategoryIcon category={category} className="w-4 h-4" />
-                              <span className="flex-1">{category}</span>
+                              <span className="flex-1">{t(CATEGORY_I18N_KEYS[CATEGORY_NAME_TO_ID[category]] ?? category)}</span>
                             </div>
                           ))}
                         </div>

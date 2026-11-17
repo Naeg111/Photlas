@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import PhotoDetailDialog from './PhotoDetailDialog'
 import { MODERATION_STATUS_QUARANTINED, MODERATION_STATUS_PENDING_REVIEW, MODERATION_STATUS_PUBLISHED, WEATHER_SUNNY } from '../utils/codeConstants'
@@ -1949,6 +1949,46 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(screen.getByTestId('edit-save-button')).toBeInTheDocument()
         expect(screen.getByTestId('edit-cancel-button')).toBeInTheDocument()
       })
+    })
+
+    it('Spec#93 追加対応: 英語の設定では、編集画面のカテゴリー名が英語で表示される', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        const photoDetail = createMockApiResponse({ userId: TEST_USER_ID, categories: ['自然風景'] })
+        const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+        const { rerender } = render(
+          <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />
+        )
+
+        Object.defineProperty(globalThis, 'fetch', {
+          value: mockFetch,
+          writable: true,
+          configurable: true,
+        })
+
+        rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('edit-photo-button')).toBeInTheDocument()
+        })
+
+        const user = userEvent.setup()
+        await user.click(screen.getByTestId('edit-photo-button'))
+
+        const categoryList = await waitFor(() => {
+          const el = document.getElementById('edit-categories')
+          expect(el).not.toBeNull()
+          return el as HTMLElement
+        })
+        expect(within(categoryList).getByText('Nature')).toBeInTheDocument()
+        expect(within(categoryList).getByText('Leisure & Facilities')).toBeInTheDocument()
+        expect(within(categoryList).getByRole('checkbox', { name: 'Nature' })).toBeChecked()
+        expect(within(categoryList).queryByText('自然風景')).not.toBeInTheDocument()
+        expect(within(categoryList).queryByRole('checkbox', { name: '自然風景' })).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
 
     it('キャンセルボタンを押すと表示モードに戻る', async () => {
