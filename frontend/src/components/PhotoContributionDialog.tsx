@@ -42,10 +42,7 @@ import { getLastPickedLocation, setLastPickedLocation } from '../utils/lastPicke
 import {
   WEATHER_OPTIONS as CODE_WEATHER_OPTIONS,
   WEATHER_LABELS,
-  WEATHER_SUNNY,
-  WEATHER_CLOUDY,
-  WEATHER_RAIN,
-  WEATHER_SNOW,
+  WEATHER_I18N_KEYS,
   DEVICE_TYPE_LABELS,
   DEVICE_TYPE_SMARTPHONE,
   DEVICE_TYPE_MIRRORLESS,
@@ -91,13 +88,6 @@ const DEVICE_TYPE_I18N_KEYS: Record<number, string> = {
   [DEVICE_TYPE_COMPACT]: 'deviceType.compact',
   [DEVICE_TYPE_FILM]: 'deviceType.film',
   [DEVICE_TYPE_OTHER]: 'deviceType.other',
-}
-
-const WEATHER_I18N_KEYS: Record<number, string> = {
-  [WEATHER_SUNNY]: 'weather.sunny',
-  [WEATHER_CLOUDY]: 'weather.cloudy',
-  [WEATHER_RAIN]: 'weather.rainy',
-  [WEATHER_SNOW]: 'weather.snowy',
 }
 
 // 施設名・店名の検索候補型
@@ -444,7 +434,7 @@ export function PhotoContributionDialog({
     if (file) {
       // ファイルサイズチェック
       if (file.size > PHOTO_UPLOAD.MAX_FILE_SIZE) {
-        toast.error(t('photo.fileSizeError'))
+        toast.error(t('photo.fileSizeError', { maxSize: PHOTO_UPLOAD.MAX_FILE_SIZE_DISPLAY }))
         return
       }
 
@@ -843,7 +833,7 @@ export function PhotoContributionDialog({
                       {t('photo.selectPhoto')}
                     </Button>
                     <p className="text-sm text-gray-500 mt-2">
-                      {PHOTO_UPLOAD.ALLOWED_FILE_TYPES_DISPLAY}（最大{PHOTO_UPLOAD.MAX_FILE_SIZE_DISPLAY}）
+                      {t('photo.photoFormat', { maxSize: PHOTO_UPLOAD.MAX_FILE_SIZE_DISPLAY })}
                     </p>
                   </div>
                 )}

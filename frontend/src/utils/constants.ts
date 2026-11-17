@@ -44,8 +44,6 @@ export const PHOTO_UPLOAD = {
   AUTO_RESIZE_MAX_DIMENSION: 4000,
   /** 許可されるファイルタイプ */
   ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/heic'] as const,
-  /** ファイルタイプ表示用テキスト */
-  ALLOWED_FILE_TYPES_DISPLAY: 'JPEG、PNG、HEIC',
   /** 施設名・店名の最大文字数 */
   PLACE_NAME_MAX_LENGTH: 100,
 } as const

@@ -46,58 +46,81 @@ export function getPasswordStrength(password: string): PasswordStrength {
 }
 
 /**
- * パスワードバリデーション結果
+ * パスワード・メールアドレスのエラーの種類（i18n の errors.* のキー）
+ * Spec#93 追加対応: 文言は表示する側で t(errorKey, errorParams) に通して、表示言語に合わせる。
  */
-export interface PasswordValidationResult {
+export type ValidationErrorKey =
+  | 'errors.PASSWORD_REQUIRED'
+  | 'errors.PASSWORD_LENGTH_INVALID'
+  | 'errors.PASSWORD_MISSING_DIGIT'
+  | 'errors.PASSWORD_MISSING_LOWERCASE'
+  | 'errors.PASSWORD_MISSING_UPPERCASE'
+  | 'errors.PASSWORD_CONTAINS_SYMBOL'
+  | 'errors.EMAIL_REQUIRED'
+  | 'errors.EMAIL_INVALID_FORMAT'
+
+/**
+ * バリデーション結果
+ */
+export interface ValidationResult {
   isValid: boolean
-  errorMessage: string | null
+  /** エラー文言の i18n キー。問題がなければ null */
+  errorKey: ValidationErrorKey | null
+  /** errorKey の文言に差し込む値（{{min}} など） */
+  errorParams?: Record<string, number>
 }
+
+function invalid(errorKey: ValidationErrorKey, errorParams?: Record<string, number>): ValidationResult {
+  return { isValid: false, errorKey, errorParams }
+}
+
+const VALID: ValidationResult = { isValid: true, errorKey: null }
 
 /**
  * パスワードをバリデーション（Issue#21統一要件）
  */
-export function validatePassword(password: string): PasswordValidationResult {
+export function validatePassword(password: string): ValidationResult {
   if (!password) {
-    return { isValid: false, errorMessage: 'パスワードを入力してください' }
+    return invalid('errors.PASSWORD_REQUIRED')
   }
 
   if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
-    return {
-      isValid: false,
-      errorMessage: `パスワードは${PASSWORD_MIN_LENGTH}文字以上${PASSWORD_MAX_LENGTH}文字以内で入力してください`,
-    }
+    return invalid('errors.PASSWORD_LENGTH_INVALID', {
+      min: PASSWORD_MIN_LENGTH,
+      max: PASSWORD_MAX_LENGTH,
+    })
   }
 
   if (!/\d/.test(password)) {
-    return { isValid: false, errorMessage: 'パスワードには数字を1文字以上含めてください' }
+    return invalid('errors.PASSWORD_MISSING_DIGIT')
   }
 
   if (!/[a-z]/.test(password)) {
-    return { isValid: false, errorMessage: 'パスワードにはローマ字小文字を1文字以上含めてください' }
+    return invalid('errors.PASSWORD_MISSING_LOWERCASE')
   }
 
   if (!/[A-Z]/.test(password)) {
-    return { isValid: false, errorMessage: 'パスワードにはローマ字大文字を1文字以上含めてください' }
+    return invalid('errors.PASSWORD_MISSING_UPPERCASE')
   }
 
   if (/[^a-zA-Z0-9]/.test(password)) {
-    return { isValid: false, errorMessage: 'パスワードに記号を含めることはできません' }
+    return invalid('errors.PASSWORD_CONTAINS_SYMBOL')
   }
 
-  return { isValid: true, errorMessage: null }
+  return VALID
 }
 
 /**
  * メールアドレスをバリデーション
  */
-export function validateEmail(email: string): PasswordValidationResult {
+export function validateEmail(email: string): ValidationResult {
   if (!email.trim()) {
-    return { isValid: false, errorMessage: 'メールアドレスを入力してください' }
+    return invalid('errors.EMAIL_REQUIRED')
   }
 
   if (!EMAIL_REGEX.test(email)) {
-    return { isValid: false, errorMessage: '正しいメールアドレスの形式で入力してください' }
+    return invalid('errors.EMAIL_INVALID_FORMAT')
   }
 
-  return { isValid: true, errorMessage: null }
+  return VALID
 }

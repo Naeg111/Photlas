@@ -588,7 +588,7 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
               className="shadow-lg"
               style={{ backgroundColor: 'white' }}
               onClick={handleCurrentLocation}
-              aria-label="現在地へ移動"
+              aria-label={t('map.moveToCurrentLocation')}
             >
               <LocateFixed className="w-5 h-5" />
             </Button>
@@ -601,7 +601,7 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
             href="https://www.mapbox.com/"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Mapbox ホームページ"
+            aria-label={t('map.mapboxHome')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" fillRule="evenodd" viewBox="0 0 88 23" width="88" height="23">
               <defs>
@@ -633,7 +633,7 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
           <button
             type="button"
             onClick={() => setIsAttributionOpen(prev => !prev)}
-            aria-label="帰属情報"
+            aria-label={t('map.attribution')}
             style={{
               width: 24,
               height: 24,

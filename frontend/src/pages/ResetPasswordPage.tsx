@@ -29,7 +29,7 @@ export default function ResetPasswordPage() {
   const { t } = useTranslation()
   const token = searchParams.get('token')
 
-  useDocumentTitle('パスワードの再設定 - Photlas')
+  useDocumentTitle(`${t('pages.resetPassword')} - Photlas`)
 
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -46,8 +46,8 @@ export default function ResetPasswordPage() {
     setError('')
 
     const validation = validatePassword(newPassword)
-    if (!validation.isValid) {
-      setError(validation.errorMessage!)
+    if (validation.errorKey) {
+      setError(t(validation.errorKey, validation.errorParams))
       return
     }
 

@@ -19,7 +19,8 @@
     "retry": "再試行",
     "retryWithCooldown": "再試行（あと {{seconds}} 秒）",
     "submitWithCooldown": "送信（あと {{seconds}} 秒）",
-    "back": "戻る"
+    "back": "戻る",
+    "confirm": "確定"
   },
   "auth": {
     "loginTitle": "ログイン",
@@ -77,6 +78,7 @@
     "passwordResetTitle": "パスワードリセット",
     "passwordResetDescription": "パスワードリセットリクエスト",
     "passwordResetInstruction": "登録メールアドレスを入力してください。",
+    "passwordResetSubmitHint": "入力したら送信ボタンを押してください。",
     "invalidEmailFormat": "メールアドレスの形式が正しくありません",
     "passwordResetSent": "パスワード再設定用のメールを送信しました。受信トレイをご確認ください。",
     "errorOccurred": "エラーが発生しました",
@@ -196,8 +198,8 @@
     "contributeDescription": "写真とコンテクスト情報を投稿する",
     "photoRequired": "写真（必須）",
     "selectPhoto": "写真を選択",
-    "photoFormat": "JPEG、PNG、HEIC（最大50MB）",
-    "fileSizeError": "ファイルサイズは50MB以下にしてください。",
+    "photoFormat": "JPEG、PNG、HEIC（最大{{maxSize}}）",
+    "fileSizeError": "ファイルサイズは{{maxSize}}以下にしてください。",
     "fileFormatError": "JPEG、PNG、HEIC形式のファイルのみ対応しています。",
     "photoRequiredError": "写真を選択してください。",
     "zoom": "ズーム",
@@ -255,7 +257,11 @@
     "shareFailed": "共有に失敗しました",
     "saveSuccess": "保存しました",
     "updateFailed": "更新に失敗しました",
-    "imageLoadFailed": "画像の読み込みに失敗しました。再度開き直してください"
+    "imageLoadFailed": "画像の読み込みに失敗しました。再度開き直してください",
+    "notSet": "未設定",
+    "imageAlt": "画像",
+    "fullSizeAlt": "フルサイズ写真",
+    "zoomLevel": "拡大: {{percent}}%"
   },
   "profile": {
     "posts": "投稿",
@@ -264,7 +270,10 @@
     "noFavorites": "お気に入りはまだありません",
     "editSnsLinks": "SNSリンクを編集",
     "duplicateUsername": "この表示名はすでに使用されています",
-    "imageRegisterFailed": "プロフィール画像の登録に失敗しました"
+    "imageRegisterFailed": "プロフィール画像の登録に失敗しました",
+    "accountName": "アカウント名",
+    "dialogDescription": "ユーザープロフィール情報",
+    "reportProfile": "このプロフィールを通報"
   },
   "settings": {
     "title": "アカウント設定",
@@ -395,6 +404,18 @@
     "feature6Title": "ホーム画面に追加できる",
     "feature6Text": "ブラウザからホーム画面やデスクトップに追加すると、全画面で快適に利用できます。タブレットなら大画面でマップと写真を楽しめます。"
   },
+  "aboutPage": {
+    "tagline": "写真から行ってみたい場所が見つかるサービス",
+    "intro": "写真から行ってみたい場所が見つかるサービスです。ユーザーが投稿した写真とその撮影場所を地図上から自由に探索でき、新たな旅のきっかけを生み出します。",
+    "cta": "Photlas を使ってみる",
+    "featuresTitle": "主な特徴",
+    "exploreMapTitle": "地図上でスポットを探索:",
+    "exploreMapText": "投稿された写真を地図上のピンで一覧表示することで、何気なく地図を眺めるうちに思いがけない投稿と出会い、行ってみたい場所が見つかります。",
+    "filterPostsTitle": "写真の条件で投稿を絞り込み:",
+    "filterPostsText": "カテゴリ・季節・時間帯・天候などの条件で絞り込んで、自分好みの投稿を探せます。",
+    "shareShootingInfoTitle": "撮影情報の共有:",
+    "shareShootingInfoText": "カメラ・レンズ・撮影設定など、写真の撮影情報を他のユーザーと共有できます。"
+  },
   "report": {
     "title": "この投稿を通報",
     "description": "不適切なコンテンツや問題のある投稿を通報",
@@ -415,6 +436,20 @@
     "suggestionTooFar": "離れすぎです。元の撮影場所から1km以内で指定してください",
     "suggestLocation": "撮影場所の指摘",
     "searchPlaceholder": "場所を検索"
+  },
+  "map": {
+    "filter": "フィルター",
+    "placeSearch": "場所検索",
+    "zoomIn": "ズームイン",
+    "zoomOut": "ズームアウト",
+    "northHeading": "ノースヘディング",
+    "currentLocation": "現在位置",
+    "post": "投稿",
+    "moveToCurrentLocation": "現在地へ移動",
+    "mapboxHome": "Mapbox ホームページ",
+    "attribution": "帰属情報",
+    "unavailable": "地図を表示できません",
+    "tokenMissing": "Mapbox アクセストークンが設定されていません"
   },
   "cookie": {
     "message": "このサイトでは、サービス改善のためにGoogle Analyticsを使用し、Cookieによるアクセス情報を収集しています。詳しくは",
@@ -446,6 +481,14 @@
     "USERNAME_INVALID_CHARACTER_OTHER": "表示名に使用できない文字が含まれています。英数字・日本語（ひらがな・全角カタカナ・基本漢字）・アンダースコア・ハイフンのみ使用できます。",
     "USERNAME_INVALID_FIRST_CHARACTER": "表示名の先頭は英字または日本語にしてください（数字・アンダースコア・ハイフンは先頭に使えません）。",
     "USERNAME_RESERVED": "この表示名は予約語のため使用できません。",
+    "PASSWORD_REQUIRED": "パスワードを入力してください",
+    "PASSWORD_LENGTH_INVALID": "パスワードは{{min}}文字以上{{max}}文字以内で入力してください",
+    "PASSWORD_MISSING_DIGIT": "パスワードには数字を1文字以上含めてください",
+    "PASSWORD_MISSING_LOWERCASE": "パスワードにはローマ字小文字を1文字以上含めてください",
+    "PASSWORD_MISSING_UPPERCASE": "パスワードにはローマ字大文字を1文字以上含めてください",
+    "PASSWORD_CONTAINS_SYMBOL": "パスワードに記号を含めることはできません",
+    "EMAIL_REQUIRED": "メールアドレスを入力してください",
+    "EMAIL_INVALID_FORMAT": "正しいメールアドレスの形式で入力してください",
     "dataFetchFailed": "データの取得に失敗しました"
   },
   "pages": {

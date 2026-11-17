@@ -275,6 +275,23 @@ describe('App - Issue#28: App.tsx再構築', () => {
       expect(postButton).toBeInTheDocument()
     })
 
+    it('Spec#93 追加対応: 英語の設定では、地図のボタンが英語の名前で読み上げられる', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        renderApp()
+        skipSplashScreen()
+
+        for (const name of ['Filter', 'Menu', 'Zoom in', 'Zoom out', 'Reset to north', 'Current location', 'Post']) {
+          expect(screen.getByRole('button', { name })).toBeInTheDocument()
+        }
+        // 場所検索は PC 用とモバイル用の 2 つ
+        expect(screen.getAllByRole('button', { name: 'Search places' })).toHaveLength(2)
+        expect(screen.queryByRole('button', { name: 'フィルター' })).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
     it('Issue#70 - フィルター/メニューボタンのコンテナがsafe-area-inset-topを考慮している', () => {
       renderApp()
       skipSplashScreen()
@@ -622,7 +639,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
         skipSplashScreen()
         const user = switchToRealTimers()
 
-        await user.click(screen.getByRole('button', { name: /メニュー/i }))
+        await user.click(screen.getByRole('button', { name: 'Menu' }))
         await user.click(await screen.findByText('Log Out'))
 
         await waitFor(() => expect(toast).toHaveBeenCalledWith('Logged out'))

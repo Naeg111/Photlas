@@ -108,14 +108,14 @@ export function SignUpDialog({
 
     // メールアドレス
     const emailValidation = validateEmail(email)
-    if (!emailValidation.isValid && emailValidation.errorMessage) {
-      newErrors.email = emailValidation.errorMessage
+    if (emailValidation.errorKey) {
+      newErrors.email = t(emailValidation.errorKey, emailValidation.errorParams)
     }
 
     // パスワード
     const passwordValidation = validatePassword(password)
-    if (!passwordValidation.isValid && passwordValidation.errorMessage) {
-      newErrors.password = passwordValidation.errorMessage
+    if (passwordValidation.errorKey) {
+      newErrors.password = t(passwordValidation.errorKey, passwordValidation.errorParams)
     }
 
     // パスワード（確認用）

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import AboutPage from './AboutPage'
+import i18n from '../i18n'
 
 /**
  * Issue#99 - Google OAuth 検証要件: ホームページが
@@ -56,5 +57,22 @@ describe('AboutPage', () => {
     renderPage()
     const cta = screen.getByRole('link', { name: 'Photlas を使ってみる' })
     expect(cta).toHaveAttribute('href', '/')
+  })
+
+  it('Spec#93 追加対応: 英語の設定では、本文・リンク・タブ名が英語で表示される', async () => {
+    await i18n.changeLanguage('en')
+    try {
+      renderPage()
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Photlas')
+      expect(screen.getByText(/discovering places you want to visit through photos/)).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Try Photlas' })).toHaveAttribute('href', '/')
+      expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy-policy')
+      expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms-of-service')
+      expect(screen.getByText('Key features')).toBeInTheDocument()
+      expect(document.title).toBe('Photlas - Discover places you want to visit through photos')
+      expect(screen.queryByText(/写真から行ってみたい場所が見つかる/)).not.toBeInTheDocument()
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
   })
 })

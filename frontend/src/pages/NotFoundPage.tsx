@@ -10,7 +10,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 function NotFoundPage() {
   useRobotsNoindex()
   const { t } = useTranslation()
-  useDocumentTitle('ページが見つかりません - Photlas')
+  useDocumentTitle(`${t('pages.notFound')} - Photlas`)
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">

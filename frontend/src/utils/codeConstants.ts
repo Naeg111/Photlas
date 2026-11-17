@@ -116,6 +116,17 @@ export const WEATHER_OPTIONS = [
   { value: WEATHER_SNOW, label: '雪' },
 ] as const
 
+/**
+ * 天気コード → i18n 翻訳キー（weather.*）。
+ * 表示名は言語に依存するため、WEATHER_LABELS（日本語固定）ではなくこのキー経由で t() を引く。
+ */
+export const WEATHER_I18N_KEYS: Record<number, string> = {
+  [WEATHER_SUNNY]: 'weather.sunny',
+  [WEATHER_CLOUDY]: 'weather.cloudy',
+  [WEATHER_RAIN]: 'weather.rainy',
+  [WEATHER_SNOW]: 'weather.snowy',
+}
+
 /** 時間帯コード → 日本語表示 */
 export const TIME_OF_DAY_LABELS: Record<number, string> = {
   [TIME_OF_DAY_MORNING]: '朝',

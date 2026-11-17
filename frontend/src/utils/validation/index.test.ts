@@ -83,67 +83,70 @@ describe('validation', () => {
     it('空文字でエラーを返す', () => {
       const result = validatePassword('')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toBe('パスワードを入力してください')
+      expect(result.errorKey).toBe('errors.PASSWORD_REQUIRED')
     })
 
     it('8文字未満でエラーを返す', () => {
       const result = validatePassword('Pass1a')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toContain('8文字以上')
+      expect(result.errorKey).toBe('errors.PASSWORD_LENGTH_INVALID')
+      expect(result.errorParams).toEqual({ min: 8, max: 20 })
     })
 
     it('境界値: 7文字でエラーを返す', () => {
       const result = validatePassword('Passwor')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toContain('8文字以上')
+      expect(result.errorKey).toBe('errors.PASSWORD_LENGTH_INVALID')
+      expect(result.errorParams).toEqual({ min: 8, max: 20 })
     })
 
     it('21文字以上でエラーを返す', () => {
       const result = validatePassword('Abcdefghij1234567890k')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toContain('20文字以内')
+      expect(result.errorKey).toBe('errors.PASSWORD_LENGTH_INVALID')
+      expect(result.errorParams).toEqual({ min: 8, max: 20 })
     })
 
     it('数字なしでエラーを返す', () => {
       const result = validatePassword('Abcdefgh')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toContain('数字を1文字以上')
+      expect(result.errorKey).toBe('errors.PASSWORD_MISSING_DIGIT')
     })
 
     it('小文字なしでエラーを返す', () => {
       const result = validatePassword('ABCDEFG1')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toContain('ローマ字小文字を1文字以上')
+      expect(result.errorKey).toBe('errors.PASSWORD_MISSING_LOWERCASE')
     })
 
     it('大文字なしでエラーを返す', () => {
       const result = validatePassword('abcdefg1')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toContain('ローマ字大文字を1文字以上')
+      expect(result.errorKey).toBe('errors.PASSWORD_MISSING_UPPERCASE')
     })
 
     it('記号を含むとエラーを返す', () => {
       const result = validatePassword('Passwo1!')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toContain('記号を含めることはできません')
+      expect(result.errorKey).toBe('errors.PASSWORD_CONTAINS_SYMBOL')
     })
 
     it('有効なパスワードで成功を返す', () => {
       const result = validatePassword('Password1')
       expect(result.isValid).toBe(true)
-      expect(result.errorMessage).toBeNull()
+      expect(result.errorKey).toBeNull()
     })
 
     it('境界値: ちょうど8文字の有効パスワードで成功', () => {
       const result = validatePassword('Abcdef1g')
       expect(result.isValid).toBe(true)
-      expect(result.errorMessage).toBeNull()
+      expect(result.errorKey).toBeNull()
     })
 
     it('境界値: ちょうど20文字の有効パスワードで成功', () => {
       const result = validatePassword('AbcDef1ghijklmnopqrs')
       expect(result.isValid).toBe(true)
-      expect(result.errorMessage).toBeNull()
+      expect(result.errorKey).toBeNull()
     })
   })
 
@@ -151,43 +154,43 @@ describe('validation', () => {
     it('空文字でエラーを返す', () => {
       const result = validateEmail('')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toBe('メールアドレスを入力してください')
+      expect(result.errorKey).toBe('errors.EMAIL_REQUIRED')
     })
 
     it('空白のみでエラーを返す', () => {
       const result = validateEmail('   ')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toBe('メールアドレスを入力してください')
+      expect(result.errorKey).toBe('errors.EMAIL_REQUIRED')
     })
 
     it('@なしでエラーを返す', () => {
       const result = validateEmail('userexample.com')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toContain('正しいメールアドレスの形式')
+      expect(result.errorKey).toBe('errors.EMAIL_INVALID_FORMAT')
     })
 
     it('ドメインなしでエラーを返す', () => {
       const result = validateEmail('user@')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toContain('正しいメールアドレスの形式')
+      expect(result.errorKey).toBe('errors.EMAIL_INVALID_FORMAT')
     })
 
     it('ローカルパートなしでエラーを返す', () => {
       const result = validateEmail('@domain.com')
       expect(result.isValid).toBe(false)
-      expect(result.errorMessage).toContain('正しいメールアドレスの形式')
+      expect(result.errorKey).toBe('errors.EMAIL_INVALID_FORMAT')
     })
 
     it('有効なメールアドレスで成功を返す', () => {
       const result = validateEmail('user@example.com')
       expect(result.isValid).toBe(true)
-      expect(result.errorMessage).toBeNull()
+      expect(result.errorKey).toBeNull()
     })
 
     it('サブドメイン付きメールで成功を返す', () => {
       const result = validateEmail('user@mail.example.co.jp')
       expect(result.isValid).toBe(true)
-      expect(result.errorMessage).toBeNull()
+      expect(result.errorKey).toBeNull()
     })
   })
 })

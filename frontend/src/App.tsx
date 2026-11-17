@@ -785,7 +785,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           size="icon"
           className="shadow-lg w-18 h-10 hover:bg-secondary"
           onClick={() => dialog.open('filterPanel')}
-          aria-label="フィルター"
+          aria-label={t('map.filter')}
         >
           <SlidersHorizontal className="w-5 h-5" />
         </Button>
@@ -795,7 +795,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           size="icon"
           className="shadow-lg w-18 h-10 hover:bg-secondary"
           onClick={() => dialog.open('topMenu')}
-          aria-label="メニュー"
+          aria-label={t('menu.title')}
         >
           <Menu className="w-5 h-5" />
         </Button>
@@ -812,7 +812,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           className="hidden md:flex rounded-full shadow-lg hover:bg-secondary"
           style={FLOATING_BUTTON_SIZE}
           onClick={() => dialog.open('placeSearch')}
-          aria-label="場所検索"
+          aria-label={t('map.placeSearch')}
         >
           <Search className="w-5 h-5" />
         </Button>
@@ -824,7 +824,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
             className="rounded-full shadow-lg hover:bg-secondary"
             style={FLOATING_BUTTON_SIZE}
             onClick={() => mapRef.current?.zoomIn()}
-            aria-label="ズームイン"
+            aria-label={t('map.zoomIn')}
           >
             <Plus className="w-5 h-5" />
           </Button>
@@ -833,7 +833,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
             className="rounded-full shadow-lg hover:bg-secondary"
             style={FLOATING_BUTTON_SIZE}
             onClick={() => mapRef.current?.zoomOut()}
-            aria-label="ズームアウト"
+            aria-label={t('map.zoomOut')}
           >
             <Minus className="w-5 h-5" />
           </Button>
@@ -845,7 +845,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           className="md:hidden rounded-full shadow-lg hover:bg-secondary"
           style={FLOATING_BUTTON_SIZE}
           onClick={() => dialog.open('placeSearch')}
-          aria-label="場所検索"
+          aria-label={t('map.placeSearch')}
         >
           <Search className="w-5 h-5" />
         </Button>
@@ -856,7 +856,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           className="rounded-full shadow-lg hover:bg-secondary"
           style={FLOATING_BUTTON_SIZE}
           onClick={() => mapRef.current?.resetNorthHeading()}
-          aria-label="ノースヘディング"
+          aria-label={t('map.northHeading')}
         >
           <CompassIcon className="w-5 h-5" />
         </Button>
@@ -867,7 +867,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           className="rounded-full shadow-lg hover:bg-secondary"
           style={FLOATING_BUTTON_SIZE}
           onClick={() => mapRef.current?.centerOnUserLocation()}
-          aria-label="現在位置"
+          aria-label={t('map.currentLocation')}
         >
           <LocateFixed className="w-5 h-5" />
         </Button>
@@ -877,7 +877,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           <Button
             className={`${FLOATING_BUTTON_STYLES.fab} hover:bg-primary`}
             onClick={handlePostClick}
-            aria-label="投稿"
+            aria-label={t('map.post')}
           >
             <Plus className="w-6 h-6" />
           </Button>
