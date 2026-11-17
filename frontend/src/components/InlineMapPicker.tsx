@@ -350,7 +350,9 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
     // ユーザー操作（originalEvent あり）と moveMapTo の移動（moveTargetRef あり）はスキップしない。
     if (isFirstMoveEndRef.current) {
       isFirstMoveEndRef.current = false
-      if (!e.originalEvent && !moveTargetRef.current) return
+      // ViewStateChangeEvent は originalEvent を持たないイベント型も含む合併型なので、in で確かめる
+      const isUserGesture = 'originalEvent' in e && Boolean(e.originalEvent)
+      if (!isUserGesture && !moveTargetRef.current) return
     }
     // moveMapToで移動した場合はターゲット座標を使用（getCenter()のMercator変換誤差を回避）
     if (moveTargetRef.current) {
