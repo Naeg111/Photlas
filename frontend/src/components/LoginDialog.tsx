@@ -74,7 +74,7 @@ export function LoginDialog({
   }, [open])
 
   interface LoginResponse {
-    user: { id: number; email: string; username: string; role?: unknown }
+    user: { id: number; email: string; username: string; role?: unknown; language?: string }
     token: string
   }
 
@@ -94,7 +94,14 @@ export function LoginDialog({
         body: { email, password },
       })
       login(
-        { userId: data.user.id, email: data.user.email, username: data.user.username, role: (data.user.role || 'user') as unknown as number },
+        {
+          userId: data.user.id,
+          email: data.user.email,
+          username: data.user.username,
+          role: (data.user.role || 'user') as unknown as number,
+          // Spec#93: DB の言語設定で表示言語を上書きする（AuthContext.login が反映）
+          language: data.user.language,
+        },
         data.token,
         rememberMe
       )

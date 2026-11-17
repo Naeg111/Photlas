@@ -202,6 +202,33 @@ describe('LoginDialog', () => {
       })
     })
 
+    it('Spec#93 - ログインレスポンスの language（DB の言語設定）を AuthContext の login に渡す', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            user: { id: 1, email: 'test@example.com', username: 'testuser', role: 'user', language: 'ko' },
+            token: 'test-token',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+
+      render(<LoginDialog {...defaultProps} />)
+
+      await user.type(screen.getByLabelText('メールアドレス'), 'test@example.com')
+      await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      await waitFor(() => {
+        expect(mockLogin).toHaveBeenCalledWith(
+          expect.objectContaining({ userId: 1, language: 'ko' }),
+          'test-token',
+          true
+        )
+      })
+    })
+
     it('passes rememberMe=false when checkbox is unchecked', async () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce(

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { detectInitialLanguage, loadLanguageResource, SUPPORTED_LANGUAGES } from './index'
+import { applyAccountLanguage, detectInitialLanguage, loadLanguageResource, SUPPORTED_LANGUAGES } from './index'
 import i18n from './index'
 import ja from './locales/ja.json'
 import en from './locales/en.json'
@@ -51,6 +51,29 @@ describe('i18n - Issue#130', () => {
     it('localStorage が null でも SUPPORTED_LANGUAGES 内の値を返す', () => {
       const detected = detectInitialLanguage()
       expect(SUPPORTED_LANGUAGES).toContain(detected)
+    })
+  })
+
+  // Spec#93 2.2: ログイン後は DB の言語設定で localStorage と表示言語を上書きする
+  describe('applyAccountLanguage', () => {
+    beforeEach(() => {
+      vi.mocked(localStorage.setItem).mockClear()
+    })
+
+    it('対応言語なら localStorage に保存し、表示言語を切り替える', async () => {
+      try {
+        await applyAccountLanguage('ko')
+        expect(localStorage.setItem).toHaveBeenCalledWith('photlas-language', 'ko')
+        expect(i18n.language).toBe('ko')
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
+    it.each([undefined, null, '', 'fr'])('%s のときは何もしない', async (language) => {
+      await applyAccountLanguage(language)
+      expect(localStorage.setItem).not.toHaveBeenCalled()
+      expect(i18n.language).toBe('ja')
     })
   })
 

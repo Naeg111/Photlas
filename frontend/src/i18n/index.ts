@@ -49,15 +49,22 @@ export async function loadLanguageResource(lng: SupportedLanguage): Promise<void
   i18n.addResourceBundle(lng, 'translation', mod.default, true, true)
 }
 
+/** 手動で選んだ言語（ログイン後は DB の言語）を保存する localStorage のキー */
+const LANGUAGE_STORAGE_KEY = 'photlas-language'
+
+export function isSupportedLanguage(value: unknown): value is SupportedLanguage {
+  return typeof value === 'string' && (SUPPORTED_LANGUAGES as readonly string[]).includes(value)
+}
+
 /**
  * localStorage / navigator.language から初期言語を決定する。
  * SUPPORTED_LANGUAGES に含まれない場合は FALLBACK_LANGUAGE を返す。
  */
 export function detectInitialLanguage(): SupportedLanguage {
   if (typeof window === 'undefined') return FALLBACK_LANGUAGE
-  const stored = localStorage.getItem('photlas-language')
-  if (stored && (SUPPORTED_LANGUAGES as readonly string[]).includes(stored)) {
-    return stored as SupportedLanguage
+  const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY)
+  if (isSupportedLanguage(stored)) {
+    return stored
   }
   const navLang = navigator.language
   if ((SUPPORTED_LANGUAGES as readonly string[]).includes(navLang)) {
@@ -68,6 +75,23 @@ export function detectInitialLanguage(): SupportedLanguage {
     return base as SupportedLanguage
   }
   return FALLBACK_LANGUAGE
+}
+
+/**
+ * Spec#93: ログイン後、アカウント（DB）の言語設定で表示言語と localStorage を上書きする。
+ * 対応 5 言語以外（未設定を含む）は何もしない。
+ */
+export async function applyAccountLanguage(language: string | null | undefined): Promise<void> {
+  if (!isSupportedLanguage(language)) return
+  // 先に保存しておけば、直後に画面を読み直しても（PWA の OAuth 等）この言語で起動する
+  localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
+  try {
+    // Issue#130: 言語リソースは動的 import なので、changeLanguage 前にロードする
+    await loadLanguageResource(language)
+    await i18n.changeLanguage(language)
+  } catch {
+    // 読み込みに失敗しても localStorage には保存済みなので、次回起動時に反映される
+  }
 }
 
 /**
@@ -88,7 +112,7 @@ export async function initI18n(): Promise<void> {
       supportedLngs: [...SUPPORTED_LANGUAGES],
       detection: {
         order: ['localStorage', 'navigator'],
-        lookupLocalStorage: 'photlas-language',
+        lookupLocalStorage: LANGUAGE_STORAGE_KEY,
         caches: ['localStorage'],
       },
       interpolation: {

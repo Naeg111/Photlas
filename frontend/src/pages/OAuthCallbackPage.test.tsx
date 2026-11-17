@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import OAuthCallbackPage from './OAuthCallbackPage'
+import i18n from '../i18n'
 
 // ---------- モック ----------
 
@@ -168,6 +169,31 @@ describe('OAuthCallbackPage', () => {
         expect(savedUser.userId).toBe(42)
         expect(savedUser.email).toBe('alice@example.com')
       })
+    })
+
+    it('Spec#93 - access_token 成功時、DB の言語設定で表示言語と localStorage を上書きする', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ ...USER_PROFILE, language: 'zh-TW' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+      localStorageMock['photlas-language'] = 'ja'
+      window.location.hash = '#access_token=jwt-lang'
+      try {
+        render(
+          <MemoryRouter>
+            <OAuthCallbackPage />
+          </MemoryRouter>
+        )
+
+        await waitFor(() => {
+          expect(localStorageMock['photlas-language']).toBe('zh-TW')
+          expect(i18n.language).toBe('zh-TW')
+        })
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
 
     it('成功時は / へ replace 遷移する', async () => {
