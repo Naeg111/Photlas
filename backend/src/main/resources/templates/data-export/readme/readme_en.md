@@ -36,6 +36,7 @@ fulfillment of the right to data portability under Article 20 of the GDPR.
 
 ### Date format
 - All timestamps in the JSON files are **UTC** ISO 8601 (ending with `Z`, e.g. `2026-03-10T05:30:00Z`).
+- Exception: `shotAt` (date taken) in `photos.json` is not converted to UTC. It is the time shown on the camera's clock when the photo was taken, as is (no `Z`, e.g. `2026-11-11T14:30:00`), and carries no time zone information.
 - Only this file and the notification email show times in the local time zone derived from your registered language.
 
 ## Important notes

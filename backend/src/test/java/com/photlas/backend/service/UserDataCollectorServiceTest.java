@@ -100,7 +100,20 @@ class UserDataCollectorServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - LocationSuggestion は本人が出したもののみ含まれる")
+    @DisplayName("Spec#161 - shotAt は UTC に直さず、shot_at の時刻（カメラの時計の時刻）をそのまま返す")
+    void shotAtIsReturnedWithoutConversion() {
+        Spot spot = newSpot();
+        LocalDateTime cameraClock = LocalDateTime.of(2026, 11, 11, 14, 30, 0);
+        photoRepository.save(newPhoto(spot, "key-shot.jpg", cameraClock));
+
+        UserExportData data = userDataCollectorService.collectFor(user.getId());
+
+        assertThat(data.photos()).hasSize(1);
+        assertThat(data.photos().get(0).shotAt()).isEqualTo(cameraClock);
+    }
+
+    @Test
+    @DisplayName("Spec#108 - LocationSuggestion は本人が出したもののみ含まれる")
     void locationSuggestionsOnlyOwnSuggestions() {
         Spot spot = newSpot();
         Photo photo = newPhoto(spot, "key-x.jpg", LocalDateTime.now());

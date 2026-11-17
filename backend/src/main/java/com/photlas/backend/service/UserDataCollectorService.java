@@ -22,14 +22,14 @@ import java.util.List;
  * <p>DB トランザクションは {@code readOnly = true} とし、ストリーミング処理に入る前に
  * 一度にメモリへ読み込む（§4.14 のトランザクション境界）。</p>
  *
- * <p><b>タイムゾーン:</b> Photlas は LocalDateTime をストレージ層では Asia/Tokyo
- * 基準で扱う（V16 マイグレーション: shot_at を UTC→JST へ変換）。エクスポート
- * 出力では JST → UTC ISO 8601(Z) に変換する（§4.13）。</p>
+ * <p><b>タイムゾーン:</b> 作成時刻などの LocalDateTime は {@link #toUtc} で
+ * UTC ISO 8601(Z) に変換する（§4.13）。写真の shotAt はカメラの時計の時刻なので
+ * 変換せず、そのまま出す（Spec#161 §3.6、§4.13 の例外）。</p>
  */
 @Service
 public class UserDataCollectorService {
 
-    /** Photlas のストレージ層が想定するタイムゾーン（V16 以降 shot_at は JST 基準）。 */
+    /** 作成時刻などの LocalDateTime を UTC に直すときに想定するタイムゾーン（shot_at には使わない）。 */
     private static final ZoneId STORAGE_ZONE = ZoneId.of("Asia/Tokyo");
 
     private final UserRepository userRepository;
@@ -129,7 +129,7 @@ public class UserDataCollectorService {
                 p.getS3ObjectKey(),
                 p.getModerationStatus(),
                 p.getPlaceName(),
-                toUtc(p.getShotAt()),
+                p.getShotAt(),
                 p.getLatitude(),
                 p.getLongitude(),
                 p.getWeather(),
