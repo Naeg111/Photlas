@@ -11,6 +11,7 @@ import { ProtectedImage } from './figma/ProtectedImage'
 import { LqipPlaceholder } from './LqipPlaceholder'
 import { getAuthHeaders } from '../utils/apiClient'
 import { buildRateLimitApiError, notifyIfRateLimited } from '../utils/notifyIfRateLimited'
+import { notifyReportFailure } from '../utils/notifyReportFailure'
 import { fetchPhotoTags, fetchTags, type PhotoTagDisplay } from '../utils/tagsApi'
 import { KeywordSection, type KeywordTag } from './KeywordSection'
 import { formatTagDisplayName } from '../utils/formatTagDisplayName'
@@ -926,19 +927,12 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       if (response.ok) {
         toast.success(t('report.success'))
         setIsReportOpen(false)
-      } else if (response.status === 409) {
-        // すでに通報済み（利用者の目的は果たされているので、エラーではなくお知らせとして出す）
-        toast.info(t('report.alreadyReported'))
+      } else if (notifyReportFailure(response.status, t)) {
+        // 409（通報済み）・400 は閉じる。扱いはプロフィールの通報とそろえる（notifyReportFailure）
         setIsReportOpen(false)
-      } else if (response.status === 400) {
-        // 自分の投稿の通報・不正な理由など（自分の投稿の通報ボタンは押せないので、通常は起きない）
-        toast.error(t('report.failed'))
-        setIsReportOpen(false)
-      } else {
-        toast.error(t('report.failed'))
       }
     } catch {
-      toast.error(t('report.failed'))
+      notifyReportFailure(null, t)
     } finally {
       setIsReportLoading(false)
     }
