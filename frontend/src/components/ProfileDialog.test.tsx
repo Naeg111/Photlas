@@ -11,6 +11,7 @@ vi.mock('sonner', () => ({
   toast: Object.assign(vi.fn(), {
     error: vi.fn(),
     success: vi.fn(),
+    info: vi.fn(),
   }),
 }))
 
@@ -1604,7 +1605,7 @@ describe('ProfileDialog', () => {
       )
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('すでに通報済みです')
+        expect(toast.info).toHaveBeenCalledWith('すでに通報済みです')
       })
       expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
     })

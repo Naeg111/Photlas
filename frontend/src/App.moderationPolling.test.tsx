@@ -77,6 +77,29 @@ vi.mock('react-map-gl', () => ({
   AttributionControl: () => null,
 }))
 
+// 地図はスタブに置き換える。本物の MapView はピンの取得などで state を更新し、偽のタイマーのもとで act の警告を出すため。
+// App が ref 経由で呼ぶメソッドだけを持たせる。
+const { mockRefreshSpots } = vi.hoisted(() => ({ mockRefreshSpots: vi.fn() }))
+vi.mock('./components/MapView', async () => {
+  const { forwardRef, useImperativeHandle } = await import('react')
+  const MapViewStub = forwardRef(function MapViewStub(_props: unknown, ref) {
+    useImperativeHandle(ref, () => ({
+      refreshSpots: mockRefreshSpots,
+      autoCenter: vi.fn(),
+      startGlobeRotationImmediately: vi.fn(),
+      zoomIn: vi.fn(),
+      zoomOut: vi.fn(),
+      resetNorthHeading: vi.fn(),
+      centerOnUserLocation: vi.fn(),
+      flyToPlace: vi.fn(),
+      showShootingLocationPin: vi.fn(),
+      clearShootingLocationPin: vi.fn(),
+    }))
+    return <div data-testid="map-stub" />
+  })
+  return { default: MapViewStub }
+})
+
 vi.mock('@mapbox/search-js-core', () => ({
   SearchBoxCore: vi.fn(() => ({ suggest: vi.fn(), retrieve: vi.fn() })),
   GeocodingCore: vi.fn(() => ({ forward: vi.fn() })),
@@ -163,8 +186,7 @@ function statusRequestCount() {
 
 /**
  * 時計を進め、確認処理（fetch → json → toast）の Promise も流し切る。
- * act() で包むと、偽のタイマーのもとで act の後始末が終わらず止まってしまうため、包まない
- * （地図側の state 更新について act の警告が出るが、テストの結果には影響しない）。
+ * act() で包むと、偽のタイマーのもとで act の後始末が終わらず止まってしまうため、包まない。
  */
 async function advance(ms: number) {
   await vi.advanceTimersByTimeAsync(ms)
@@ -229,6 +251,8 @@ describe('App - Spec#54: 投稿後の審査状態のお知らせ', () => {
     await advance(POLLING_INTERVAL_MS)
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('写真が公開されました'))
     expect(statusRequestCount()).toBe(2)
+    // 公開されたら地図のピンを取り直す
+    expect(mockRefreshSpots).toHaveBeenLastCalledWith({ bypassCache: true })
 
     // 確認はそこで止まる
     await advance(POLLING_INTERVAL_MS * 3)
@@ -242,14 +266,19 @@ describe('App - Spec#54: 投稿後の審査状態のお知らせ', () => {
     await advance(POLLING_INTERVAL_MS)
     expect(statusRequestCount()).toBe(1)
 
-    await i18n.changeLanguage('en')
+    // 言語の切り替えで画面全体が描き直されるので act で包む（偽のタイマーのもとで止まらないよう、同期の act にする）
+    act(() => {
+      void i18n.changeLanguage('en')
+    })
     try {
       moderationStatus = MODERATION_STATUS_PUBLISHED
       await advance(POLLING_INTERVAL_MS)
       await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Your photo has been published'))
       expect(toast.success).not.toHaveBeenCalledWith('写真が公開されました')
     } finally {
-      await i18n.changeLanguage('ja')
+      act(() => {
+        void i18n.changeLanguage('ja')
+      })
     }
   })
 

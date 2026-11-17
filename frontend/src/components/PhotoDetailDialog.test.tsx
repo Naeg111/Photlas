@@ -32,6 +32,7 @@ const { mockToast } = vi.hoisted(() => ({
   mockToast: {
     success: vi.fn(),
     error: vi.fn(),
+    info: vi.fn(),
   },
 }))
 vi.mock('sonner', () => ({
@@ -2365,7 +2366,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await submitReport(createReportMockFetch({ ok: false, status: 409 }))
 
       await waitFor(() => {
-        expect(mockToast.error).toHaveBeenCalledWith('すでに通報済みです')
+        expect(mockToast.info).toHaveBeenCalledWith('すでに通報済みです')
       })
       expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
     })

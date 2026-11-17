@@ -345,8 +345,8 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
       setIsReportOpen(false)
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
-        // すでに通報済み
-        toast.error(t('report.alreadyReported'))
+        // すでに通報済み（利用者の目的は果たされているので、エラーではなくお知らせとして出す）
+        toast.info(t('report.alreadyReported'))
         setIsReportOpen(false)
       } else if (e instanceof ApiError && e.status === 400) {
         // 自分のプロフィールの通報・不正な理由など
