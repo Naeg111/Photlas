@@ -165,6 +165,31 @@ export async function clearStorage(page: Page): Promise<void> {
 }
 
 /**
+ * API で新規アカウントを作成する（規約・プライバシーポリシー・年齢確認に同意済み）
+ *
+ * 新規登録の画面そのものは signup.spec.ts で確かめる。ログイン済みの状態が欲しいだけのテストは、
+ * 画面の変更（同意のチェックボックスや確認の手順など）に左右されないよう API で作る。
+ */
+export async function registerAccountByApi(page: Page, email: string): Promise<void> {
+  const apiBaseUrl = getApiBaseUrl(page)
+  // 表示名は 2〜12 文字。並列で動いても重ならないよう、時刻と乱数から 11 文字で作る
+  const username = `e${Date.now().toString(36).slice(-6)}${Math.random().toString(36).slice(2, 6)}`
+  const response = await page.request.post(`${apiBaseUrl}/auth/register`, {
+    data: {
+      username,
+      email,
+      password: TEST_PASSWORD,
+      agreedToTerms: true,
+      agreedToPrivacy: true,
+      ageConfirmed: true,
+    },
+  })
+  if (!response.ok()) {
+    throw new Error(`アカウント作成に失敗: ${response.status()} ${await response.text()}`)
+  }
+}
+
+/**
  * 新規アカウントを作成してログイン状態にする
  */
 export async function createAccountAndLogin(
@@ -173,17 +198,10 @@ export async function createAccountAndLogin(
 ): Promise<string> {
   const email = generateUniqueEmail(emailPrefix)
 
-  await openSignUpDialog(page)
-  await performSignUp(page, email, TEST_PASSWORD)
-
-  // トースト表示を待機（ステージング環境ではAPI応答が60秒以上かかる場合がある）
-  await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({ timeout: 60000 })
+  await registerAccountByApi(page, email)
 
   // メール認証をバイパス
   await verifyEmailByApi(page, email)
-
-  // ログインダイアログに切り替わるのを待機
-  await page.waitForTimeout(1000)
 
   // ログインを実行
   await openLoginDialog(page)

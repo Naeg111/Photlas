@@ -55,6 +55,52 @@ async function expectLoginRequiredDialog(page: Page): Promise<void> {
   await expect(page.getByText('ログインが必要です')).toBeVisible({ timeout: 5000 })
 }
 
+/** 位置情報のない写真を選んだときのピンの既定の位置（東京駅。PhotoContributionDialog と同じ） */
+const DEFAULT_PIN_POSITION = { lat: 35.6812, lng: 139.7671 }
+/** 地図をドラッグする距離（px） */
+const MAP_DRAG_PX = 150
+/** ドラッグで位置がずれたとみなす最小の量（度）。ズーム 15 で 150px は経度 0.003 度ほど（慣性でさらに動くこともある） */
+const MIN_DRAG_SHIFT_DEG = 0.001
+/** 地図の移動（アニメーション）が終わるまで待つ時間 */
+const MAP_SETTLE_MS = 2000
+
+/**
+ * 写真の投稿で呼ばれる API を偽の応答に置き換え、投稿（POST /api/v1/photos）の中身を記録する。
+ * S3 へのアップロードと AI 解析は、ローカルでは AWS につながらず、位置のテストの対象でもないため。
+ */
+async function mockPhotoPostingApis(page: Page): Promise<Array<{ latitude: number; longitude: number }>> {
+  const createPhotoRequests: Array<{ latitude: number; longitude: number }> = []
+  await page.route('**/api/v1/photos/analyze', (route) => route.fulfill({ status: 503, body: '' }))
+  await page.route('**/api/v1/photos/upload-url', (route) =>
+    route.fulfill({
+      json: { uploadUrl: 'http://localhost:5173/e2e-mock-s3/photo.jpg', objectKey: 'uploads/e2e/photo.jpg' },
+    })
+  )
+  await page.route('**/e2e-mock-s3/**', (route) => route.fulfill({ status: 200, body: '' }))
+  await page.route('**/api/v1/photos', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback()
+      return
+    }
+    createPhotoRequests.push(route.request().postDataJSON())
+    await route.fulfill({
+      status: 201,
+      json: {
+        photo: {
+          photo_id: 999999,
+          image_url: '',
+          shot_at: '2026-01-01T00:00:00',
+          weather: null,
+          is_favorited: false,
+          favorite_count: 0,
+        },
+        spot: { spot_id: 999999, latitude: 0, longitude: 0 },
+      },
+    })
+  })
+  return createPhotoRequests
+}
+
 /**
  * テスト用画像ファイルを準備
  */
@@ -364,29 +410,44 @@ test.describe('写真投稿機能', () => {
       await expect(page.getByText('地図をドラッグして撮影場所にピンを合わせてください')).toBeVisible({ timeout: 5000 })
     })
 
-    test('MapPickerで位置を変更できる', async ({ page }) => {
+    test('地図をドラッグすると、投稿する位置が変わる', async ({ page }) => {
+      const createPhotoRequests = await mockPhotoPostingApis(page)
+
       await createAccountAndLogin(page, 'location-change')
       await openPhotoContributionDialog(page)
 
-      // 写真を選択
-      const testImagePath = getTestImagePath('small')
-      await page.locator('input[type="file"]').setInputFiles(testImagePath)
-      await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
+      // 位置情報（EXIF の GPS）のない写真を選ぶと、ピンは既定の位置（東京駅）に置かれる
+      await page.locator('input[type="file"]').setInputFiles(getTestImagePath('small'))
+      await expect(page.getByText('マップをドラッグして撮影場所にピンを合わせてください')).toBeVisible({ timeout: 5000 })
+      const mapPicker = page.getByTestId('inline-map-picker')
+      await expect(mapPicker.locator('canvas.mapboxgl-canvas')).toBeVisible({ timeout: 10000 })
+      // 既定の位置への移動（アニメーション）が終わるのを待ってから、地図全体が見える位置までスクロールする
+      await page.waitForTimeout(MAP_SETTLE_MS)
+      await mapPicker.scrollIntoViewIfNeeded()
 
-      // InlineMapPickerが表示されていることで位置設定済みを確認
-      await expect(page.getByText('地図をドラッグして撮影場所にピンを合わせてください')).toBeVisible({ timeout: 5000 })
+      // 地図を左へドラッグする。中心に固定されたピンの位置は、東（経度が大きい方）へずれる
+      const box = await mapPicker.boundingBox()
+      if (!box) throw new Error('地図の位置を取得できません')
+      const startX = box.x + box.width / 2
+      const startY = box.y + box.height / 2
+      await page.mouse.move(startX, startY)
+      await page.mouse.down()
+      await page.mouse.move(startX - MAP_DRAG_PX, startY, { steps: 10 })
+      await page.mouse.up()
+      await page.waitForTimeout(MAP_SETTLE_MS)
 
-      // 位置変更ボタンをクリック（存在する場合）
-      const changeLocationButton = page.getByRole('button', { name: /位置.*変更|地図.*選択/i })
-      if (await changeLocationButton.isVisible()) {
-        await changeLocationButton.click()
+      // 必須項目を選んで投稿する
+      await page.getByText('自然風景', { exact: true }).click()
+      await page.getByText('スマートフォン', { exact: true }).click()
+      const submitButton = page.getByRole('button', { name: '投稿する' })
+      await expect(submitButton).toBeEnabled({ timeout: 3000 })
+      await submitButton.click()
 
-        // MapPickerが開く
-        await expect(page.getByText('この位置に決定')).toBeVisible({ timeout: 5000 })
-
-        // 位置を確定
-        await page.getByRole('button', { name: 'この位置に決定' }).click()
-      }
+      // 投稿の API に、ドラッグした後の位置が送られる
+      await expect.poll(() => createPhotoRequests.length, { timeout: 15000 }).toBe(1)
+      const { latitude, longitude } = createPhotoRequests[0]
+      expect(longitude).toBeGreaterThan(DEFAULT_PIN_POSITION.lng + MIN_DRAG_SHIFT_DEG)
+      expect(Math.abs(latitude - DEFAULT_PIN_POSITION.lat)).toBeLessThan(MIN_DRAG_SHIFT_DEG)
     })
   })
 
