@@ -72,7 +72,12 @@ export const PLATFORM_TIKTOK = 604
 /** Issue#102: Threads(605) を新規追加 */
 export const PLATFORM_THREADS = 605
 
-// ========== 800番台: Report.reason ==========
+// ========== 700番台: AccountSanction.sanction_type ==========
+export const SANCTION_WARNING = 701
+export const SANCTION_TEMPORARY_SUSPENSION = 702
+export const SANCTION_PERMANENT_SUSPENSION = 703
+
+// ========== 800番台: Report.reason / Violation.violation_type ==========
 export const REASON_ADULT_CONTENT = 801
 export const REASON_VIOLENCE = 802
 export const REASON_COPYRIGHT_INFRINGEMENT = 803
@@ -89,6 +94,9 @@ export const MODERATION_STATUS_REMOVED = 1004
 // ========== 1100番台: Report.target_type ==========
 export const TARGET_TYPE_PHOTO = 1101
 export const TARGET_TYPE_PROFILE = 1102
+
+// ========== 1300番台: Violation.action_taken ==========
+export const ACTION_TAKEN_REMOVED = 1301
 
 // ========== 表示文字列マッピング ==========
 
@@ -198,14 +206,29 @@ export const PLATFORM_OPTIONS = [
   { value: PLATFORM_TIKTOK, label: 'TikTok' },
 ] as const
 
-/** 通報理由コード → 日本語表示 */
-export const REPORT_REASON_LABELS: Record<number, string> = {
-  [REASON_ADULT_CONTENT]: '成人向けコンテンツ',
-  [REASON_VIOLENCE]: '暴力的なコンテンツ',
-  [REASON_COPYRIGHT_INFRINGEMENT]: '著作権侵害',
-  [REASON_PRIVACY_VIOLATION]: 'プライバシー侵害',
-  [REASON_SPAM]: 'スパム',
-  [REASON_OTHER]: 'その他',
+/**
+ * 通報理由コード（違反の種類にも使う） → i18n 翻訳キー（reportReasons.*）。
+ * 表示名は言語に依存するため、このキー経由で t() を引く。
+ */
+export const REPORT_REASON_I18N_KEYS: Record<number, string> = {
+  [REASON_ADULT_CONTENT]: 'reportReasons.adult',
+  [REASON_VIOLENCE]: 'reportReasons.violence',
+  [REASON_COPYRIGHT_INFRINGEMENT]: 'reportReasons.copyright',
+  [REASON_PRIVACY_VIOLATION]: 'reportReasons.privacy',
+  [REASON_SPAM]: 'reportReasons.spam',
+  [REASON_OTHER]: 'reportReasons.other',
+}
+
+/** Spec#93 追加対応: 制裁の種類コード → i18n 翻訳キー（管理者ページの履歴表示用） */
+export const SANCTION_TYPE_I18N_KEYS: Record<number, string> = {
+  [SANCTION_WARNING]: 'admin.sanctionTypes.warning',
+  [SANCTION_TEMPORARY_SUSPENSION]: 'admin.sanctionTypes.temporarySuspension',
+  [SANCTION_PERMANENT_SUSPENSION]: 'admin.sanctionTypes.permanentSuspension',
+}
+
+/** Spec#93 追加対応: 違反への処置コード → i18n 翻訳キー（管理者ページの履歴表示用） */
+export const ACTION_TAKEN_I18N_KEYS: Record<number, string> = {
+  [ACTION_TAKEN_REMOVED]: 'admin.actionTaken.removed',
 }
 
 /** 通報理由の選択肢 */

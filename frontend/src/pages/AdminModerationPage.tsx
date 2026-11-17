@@ -11,7 +11,7 @@ import { Button } from '../components/ui/button'
 import { ArrowLeft, Check, X, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { Toaster } from '../components/ui/sonner'
-import { REPORT_REASON_LABELS, ROLE_ADMIN } from '../utils/codeConstants'
+import { REPORT_REASON_I18N_KEYS, ROLE_ADMIN } from '../utils/codeConstants'
 import { PhotoLightbox } from '../components/PhotoLightbox'
 
 /**
@@ -42,7 +42,7 @@ export default function AdminModerationPage() {
   useRobotsNoindex()
   const { user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [items, setItems] = useState<ModerationQueueItem[]>([])
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -64,20 +64,20 @@ export default function AdminModerationPage() {
       )
       if (!response.ok) {
         if (response.status === 403) {
-          setError('アクセス権限がありません')
+          setError(t('admin.accessDenied'))
           return
         }
-        throw new Error('キューの取得に失敗しました')
+        throw new Error(`failed to fetch moderation queue: ${response.status}`)
       }
       const data: ModerationQueueResponse = await response.json()
       setItems(data.content)
       setTotalElements(data.total_elements)
     } catch {
-      setError('キューの取得に失敗しました')
+      setError(t('admin.moderation.fetchFailed'))
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
@@ -116,6 +116,8 @@ export default function AdminModerationPage() {
         {
           method: 'POST',
           headers: getAuthHeaders() as Record<string, string>,
+          // 理由は画面の文言ではなく DB に保存されるデータ（制裁の理由・投稿者への通知メールに使われる）。
+          // 管理者の表示言語で変わらないよう、Spec#93 追加対応でも多言語化の対象外としている。
           body: { reason: '利用規約違反' },
         }
       )
@@ -141,10 +143,10 @@ export default function AdminModerationPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Toaster />
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">アクセス権限がありません</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('admin.accessDenied')}</h1>
           <Button variant="outline" onClick={() => navigate('/')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            トップに戻る
+            {t('admin.backToTop')}
           </Button>
         </div>
       </div>
@@ -161,10 +163,10 @@ export default function AdminModerationPage() {
             <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-bold">モデレーション管理</h1>
+            <h1 className="text-xl font-bold">{t('admin.moderation.title')}</h1>
           </div>
           <div className="text-sm text-gray-500">
-            {totalElements}件の審査待ち
+            {t('admin.moderation.pendingCount', { total: totalElements })}
           </div>
         </div>
       </header>
@@ -180,13 +182,13 @@ export default function AdminModerationPage() {
         {error && (
           <div className="text-center py-12">
             <p className="text-red-600 mb-4">{error}</p>
-            <Button variant="outline" onClick={fetchQueue}>再読み込み</Button>
+            <Button variant="outline" onClick={fetchQueue}>{t('admin.moderation.reload')}</Button>
           </div>
         )}
 
         {!isLoading && !error && items.length === 0 && (
           <div className="text-center py-12 text-gray-500">
-            審査待ちの写真はありません
+            {t('admin.moderation.empty')}
           </div>
         )}
 
@@ -218,7 +220,7 @@ export default function AdminModerationPage() {
                 >
                   <img
                     src={item.thumbnail_url || item.image_url}
-                    alt="画像"
+                    alt={t('admin.moderation.imageAlt')}
                     loading="lazy"
                     className={`w-full h-full object-cover transition-all duration-300 ${
                       revealedIds.has(item.photo_id) ? '' : 'blur-lg'
@@ -238,7 +240,7 @@ export default function AdminModerationPage() {
                       })
                     }}
                     data-testid={`blur-toggle-${item.photo_id}`}
-                    aria-label={revealedIds.has(item.photo_id) ? 'ぼかしを適用' : 'ぼかしを解除'}
+                    aria-label={revealedIds.has(item.photo_id) ? t('admin.moderation.blurApply') : t('admin.moderation.blurRemove')}
                   >
                     {revealedIds.has(item.photo_id) ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   </button>
@@ -246,22 +248,22 @@ export default function AdminModerationPage() {
 
                 {/* 情報 */}
                 <div className="p-4 space-y-2">
-                  <h3 className="font-medium truncate text-sm text-gray-600">{item.created_at ? new Date(item.created_at).toLocaleString('ja-JP') : ''}</h3>
+                  <h3 className="font-medium truncate text-sm text-gray-600">{item.created_at ? new Date(item.created_at).toLocaleString(i18n.language) : ''}</h3>
                   <p className="text-sm text-gray-500">
-                    投稿者: {item.username} (ID: {item.user_id})
+                    {t('admin.moderation.poster', { username: item.username, userId: item.user_id })}
                   </p>
 
                   {/* Issue#54: 通報情報 */}
                   {item.report_count > 0 && (
                     <div className="text-sm">
-                      <p className="font-medium text-orange-600">通報 {item.report_count}件</p>
+                      <p className="font-medium text-orange-600">{t('admin.moderation.reportCount', { total: item.report_count })}</p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {item.report_reasons.map((reason) => (
                           <span
                             key={reason}
                             className="px-2 py-0.5 text-xs bg-orange-100 text-orange-700 rounded"
                           >
-                            {REPORT_REASON_LABELS[reason] || reason}
+                            {REPORT_REASON_I18N_KEYS[reason] ? t(REPORT_REASON_I18N_KEYS[reason]) : reason}
                           </span>
                         ))}
                       </div>
@@ -278,7 +280,7 @@ export default function AdminModerationPage() {
                       data-testid={`approve-btn-${item.photo_id}`}
                     >
                       <Check className="w-4 h-4 mr-1" />
-                      承認
+                      {t('admin.moderation.approve')}
                     </Button>
                     <Button
                       variant="outline"
@@ -288,7 +290,7 @@ export default function AdminModerationPage() {
                       data-testid={`reject-btn-${item.photo_id}`}
                     >
                       <X className="w-4 h-4 mr-1" />
-                      拒否
+                      {t('admin.moderation.reject')}
                     </Button>
                   </div>
                 </div>

@@ -582,13 +582,57 @@
     "rotateDescription": "スマートフォンでは縦向きの表示のみに対応しています。端末を縦に戻すと、そのままご利用いただけます。"
   },
   "admin": {
+    "accessDenied": "アクセス権限がありません",
+    "backToTop": "トップに戻る",
     "moderation": {
+      "title": "モデレーション管理",
+      "pendingCount": "{{total}}件の審査待ち",
+      "fetchFailed": "キューの取得に失敗しました",
+      "reload": "再読み込み",
+      "empty": "審査待ちの写真はありません",
+      "imageAlt": "画像",
+      "blurApply": "ぼかしを適用",
+      "blurRemove": "ぼかしを解除",
+      "poster": "投稿者: {{username}} (ID: {{userId}})",
+      "reportCount": "通報 {{total}}件",
+      "approve": "承認",
+      "reject": "拒否",
       "approveSuccess": "写真を承認しました",
       "approveFailed": "承認に失敗しました",
       "rejectSuccess": "写真を拒否しました",
       "rejectFailed": "拒否に失敗しました"
     },
+    "deletedUsers": {
+      "title": "退会済みユーザー管理",
+      "searchPlaceholder": "メールアドレスまたは表示名で検索",
+      "empty": "退会済みユーザーはいません",
+      "remainingDays": "残り {{days}} 日",
+      "holdActive": "保持延長中"
+    },
     "deletedUser": {
+      "title": "退会済みユーザー詳細",
+      "profileSection": "プロフィール情報",
+      "email": "メールアドレス",
+      "originalUsername": "元の表示名",
+      "deletedAt": "退会日",
+      "untilPhysicalDeletion": "物理削除まで",
+      "days": "{{days}} 日",
+      "holdUntil": "保持延長期限",
+      "photoCount": "写真数: {{total}} 枚",
+      "historySection": "違反・制裁履歴",
+      "noHistory": "履歴はありません",
+      "actionsSection": "操作",
+      "removeHold": "保持延長を解除",
+      "extendHold": "保持期間延長",
+      "export": "データエクスポート",
+      "immediateDelete": "即時削除",
+      "deleteConfirmTitle": "即時削除の確認",
+      "deleteConfirmDescription": "この操作は取り消せません。確認のため、対象ユーザーのメールアドレスを入力して確認してください。",
+      "emailConfirmPlaceholder": "メールアドレスを入力して確認",
+      "deleting": "削除中...",
+      "deletePermanently": "完全に削除する",
+      "holdDialogDescription": "延長期限日を指定してください。",
+      "extend": "延長する",
       "fetchFailed": "データの取得に失敗しました",
       "emailMismatch": "メールアドレスが一致しません",
       "deleteSuccess": "ユーザーを削除しました",
@@ -599,6 +643,14 @@
       "removeHoldFailed": "解除に失敗しました",
       "exportSuccess": "エクスポートが完了しました",
       "exportFailed": "エクスポートに失敗しました"
+    },
+    "sanctionTypes": {
+      "warning": "警告",
+      "temporarySuspension": "一時停止",
+      "permanentSuspension": "永久停止"
+    },
+    "actionTaken": {
+      "removed": "削除"
     }
   }
 }

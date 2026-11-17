@@ -404,6 +404,38 @@ describe('AdminModerationPage', () => {
     }
   })
 
+  it('Spec#93 追加対応: 言語設定が英語なら画面を英語で表示する', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        content: MOCK_QUEUE_ITEMS,
+        total_elements: 2,
+        total_pages: 1,
+      }),
+    })
+
+    await i18n.changeLanguage('en')
+    try {
+      renderPage()
+
+      expect(await screen.findByText('Posted by: testuser1 (ID: 10)')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Moderation' })).toBeInTheDocument()
+      expect(screen.getByText('Pending review: 2')).toBeInTheDocument()
+      expect(screen.getByText('Reports: 2')).toBeInTheDocument()
+      expect(screen.getByText('Adult Content')).toBeInTheDocument()
+      expect(screen.getByText('Violent Content')).toBeInTheDocument()
+      expect(screen.getAllByText('Approve')).toHaveLength(2)
+      expect(screen.getAllByText('Reject')).toHaveLength(2)
+      expect(screen.queryByText('モデレーション管理')).not.toBeInTheDocument()
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
+  })
+
   it('拒否ボタンをクリックすると写真が拒否される', async () => {
     mockUseAuth.mockReturnValue({
       user: { userId: 1, role: ROLE_ADMIN },
