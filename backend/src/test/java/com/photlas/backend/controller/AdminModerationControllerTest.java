@@ -2,6 +2,7 @@ package com.photlas.backend.controller;
 
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.*;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
@@ -184,11 +185,13 @@ public class AdminModerationControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 隔離キュー: USERロールで403が返る")
+    @DisplayName("Issue#54 - 隔離キュー: USERロールで403が返る（Issue#93: code は ACCESS_DENIED）")
     void testGetQueue_UserRole_ReturnsForbidden() throws Exception {
+        // 権限の判定は @PreAuthorize（MVC 層）なので、GlobalExceptionHandler が code を付ける
         mockMvc.perform(get(QUEUE_ENDPOINT)
                 .header(HEADER_AUTHORIZATION, getBearerToken(userToken)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.ACCESS_DENIED));
     }
 
     // ===== POST /api/v1/admin/moderation/photos/{id}/approve =====
