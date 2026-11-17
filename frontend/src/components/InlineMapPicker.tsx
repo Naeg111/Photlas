@@ -344,10 +344,13 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
 
   // 地図移動完了時に中心座標をonPositionChangeに伝播
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
-    // 初回レンダリングのmoveEndはスキップ（initialViewStateのgetCenter()にMercator誤差が含まれるため）
+    // 初回レンダリングのmoveEndはスキップ（initialViewStateのgetCenter()にMercator誤差が含まれるため）。
+    // ただし、初回レンダリングで moveEnd が発火しない場合もあり、そのときは最初の moveEnd が
+    // ユーザーのドラッグや moveMapTo による移動になる。これを捨てると位置が反映されないので、
+    // ユーザー操作（originalEvent あり）と moveMapTo の移動（moveTargetRef あり）はスキップしない。
     if (isFirstMoveEndRef.current) {
       isFirstMoveEndRef.current = false
-      return
+      if (!e.originalEvent && !moveTargetRef.current) return
     }
     // moveMapToで移動した場合はターゲット座標を使用（getCenter()のMercator変換誤差を回避）
     if (moveTargetRef.current) {
