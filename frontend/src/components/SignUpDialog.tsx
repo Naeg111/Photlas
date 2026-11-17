@@ -71,7 +71,7 @@ export function SignUpDialog({
   onBack,
   triggeredFromWall = false,
 }: Readonly<SignUpDialogProps>) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [profileImage, setProfileImage] = useState<string>('')
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [displayName, setDisplayName] = useState('')
@@ -198,6 +198,8 @@ export function SignUpDialog({
           agreedToTerms,
           agreedToPrivacy,
           ageConfirmed,
+          // Spec#93: 今の表示言語（手動で選んだ言語、なければブラウザの言語）を DB の言語設定の初期値にする
+          language: i18n.language,
         },
       })
       const token = data.token

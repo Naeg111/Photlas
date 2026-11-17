@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { SignUpDialog } from './SignUpDialog'
@@ -385,6 +385,43 @@ describe('SignUpDialog', () => {
   })
 
   describe('API Integration - API連携', () => {
+    it('Spec#93 - 今の表示言語（手動で選んだ言語）を language として登録 API に送る', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ user: { id: 1, username: 'テストユーザー', email: 'test@example.com' }, token: null }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+
+      try {
+        render(<SignUpDialog {...defaultProps} />)
+
+        await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+        await user.type(screen.getByLabelText(/メールアドレス/), 'test@example.com')
+        await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+        await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
+        await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
+        await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+        await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
+
+        // 入力後に言語スイッチで韓国語へ切り替えてから登録する
+        await act(async () => {
+          await i18n.changeLanguage('ko')
+        })
+        await user.click(screen.getByRole('button', { name: i18n.t('auth.register') }))
+
+        await waitFor(() => {
+          expect(mockFetch).toHaveBeenCalledWith(
+            expect.stringContaining('/auth/register'),
+            expect.objectContaining({ body: expect.stringContaining('"language":"ko"') })
+          )
+        })
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
     it('calls register API with form data on submit', async () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce(
@@ -422,6 +459,7 @@ describe('SignUpDialog', () => {
               agreedToTerms: true,
               agreedToPrivacy: true,
               ageConfirmed: true,
+              language: 'ja',
             }),
           })
         )
@@ -712,6 +750,7 @@ describe('SignUpDialog', () => {
               agreedToTerms: true,
               agreedToPrivacy: true,
               ageConfirmed: true,
+              language: 'ja',
             }),
           })
         )
