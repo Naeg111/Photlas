@@ -57,6 +57,10 @@ describe('translateErrorCode', () => {
         'This link is invalid or has expired. Please try again.'
       )
       expect(translateErrorCode('BAD_REQUEST', t, 'auth.errorOccurred')).toBe('An error occurred')
+      // 翻訳の無い未知のコードも、英語の汎用文言に落ちる（日本語やキー名は出ない）
+      expect(translateErrorCode('NO_SUCH_CODE', t, 'photo.suggestionFailed')).toBe(
+        'Failed to send suggestion'
+      )
     } finally {
       await i18n.changeLanguage('ja')
     }

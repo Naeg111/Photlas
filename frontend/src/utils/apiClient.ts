@@ -46,6 +46,9 @@ export class ApiError extends Error {
    * Issue#93: バックエンドが返すエラー本文の `code`（例: `INVALID_TOKEN`）。
    * 画面には `translateErrorCode(err.code, t, 'fallback')` で表示言語の文言を出す。
    * 本文の `message` は日本語固定のため画面に出さない。
+   *
+   * 使い分け: エラー全体の種類は `code` で見る。入力チェックエラー（`VALIDATION_ERROR`）で
+   * どのフィールドが何で弾かれたかを出したいときは `getFieldErrorMessage` を使う。
    */
   get code(): string | undefined {
     return getErrorCode(this.responseData)
