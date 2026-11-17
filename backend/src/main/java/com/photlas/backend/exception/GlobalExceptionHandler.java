@@ -163,8 +163,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        if (ex instanceof CodedException) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(ex, ErrorCodes.BAD_REQUEST));
+        if (ex instanceof CodedException coded) {
+            ErrorResponse errorResponse = new ErrorResponse(coded.getCode(), ex.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
         logger.warn("コードの無い不正な引数エラー: {}", ex.getMessage());
         ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.BAD_REQUEST, BAD_REQUEST_MESSAGE);
@@ -179,7 +180,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(InvalidStateException.class)
     public ResponseEntity<ErrorResponse> handleInvalidStateException(InvalidStateException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(ex, ErrorCodes.BAD_REQUEST));
+        ErrorResponse errorResponse = new ErrorResponse(ex.getCode(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     /**

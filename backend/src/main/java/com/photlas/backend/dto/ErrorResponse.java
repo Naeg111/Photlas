@@ -1,7 +1,5 @@
 package com.photlas.backend.dto;
 
-import com.photlas.backend.exception.CodedException;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -28,14 +26,6 @@ public class ErrorResponse {
         this.code = code;
         this.message = message;
         this.timestamp = LocalDateTime.now();
-    }
-
-    /**
-     * Issue#93: 例外からエラーレスポンスを作る。
-     * 例外がエラーコードを持っていればそのコード、持っていなければ {@code fallbackCode} を使う。
-     */
-    public static ErrorResponse of(Throwable ex, String fallbackCode) {
-        return new ErrorResponse(CodedException.codeOf(ex, fallbackCode), ex.getMessage());
     }
 
     // Getters and Setters

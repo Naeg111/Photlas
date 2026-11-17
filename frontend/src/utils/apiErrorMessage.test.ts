@@ -1,7 +1,7 @@
 /**
  * Issue#93: バックエンドのエラーコードを表示言語の文言にするヘルパーのテスト
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import i18n from '../i18n'
 import { getErrorCode, translateErrorCode } from './apiErrorMessage'
 
@@ -31,6 +31,23 @@ describe('translateErrorCode', () => {
     expect(translateErrorCode('VALIDATION_ERROR', t, 'auth.errorOccurred')).toBe('エラーが発生しました')
     expect(translateErrorCode('INTERNAL_ERROR', t, 'photo.suggestionFailed')).toBe('指摘の送信に失敗しました')
     expect(translateErrorCode(undefined, t, 'auth.errorOccurred')).toBe('エラーが発生しました')
+  })
+
+  it('翻訳が無いコードで fallbackKey に落ちても、missing key の警告をコンソールに出さない', () => {
+    const spies = [
+      vi.spyOn(console, 'log').mockImplementation(() => {}),
+      vi.spyOn(console, 'warn').mockImplementation(() => {}),
+      vi.spyOn(console, 'error').mockImplementation(() => {}),
+    ]
+    try {
+      translateErrorCode('VALIDATION_ERROR', t, 'auth.errorOccurred')
+      translateErrorCode('NO_SUCH_CODE', t, 'auth.errorOccurred')
+      for (const spy of spies) {
+        expect(spy).not.toHaveBeenCalled()
+      }
+    } finally {
+      spies.forEach((spy) => spy.mockRestore())
+    }
   })
 
   it('英語の設定では英語の文言を返す', async () => {

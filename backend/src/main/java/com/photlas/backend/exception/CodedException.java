@@ -10,14 +10,4 @@ public interface CodedException {
      * @return エラーコード（{@link ErrorCodes} の値）
      */
     String getCode();
-
-    /**
-     * 例外がエラーコードを持っていればそれを、持っていなければ {@code fallback} を返す。
-     */
-    static String codeOf(Throwable ex, String fallback) {
-        if (ex instanceof CodedException coded && coded.getCode() != null) {
-            return coded.getCode();
-        }
-        return fallback;
-    }
 }

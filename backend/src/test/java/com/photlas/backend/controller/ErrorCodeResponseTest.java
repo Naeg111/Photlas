@@ -8,6 +8,7 @@ import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.filter.RateLimitFilter;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -52,6 +54,9 @@ class ErrorCodeResponseTest {
 
     @Autowired
     private RateLimitFilter rateLimitFilter;
+
+    @Autowired
+    private JwtService jwtService;
 
     @BeforeEach
     void setUp() {
@@ -162,6 +167,21 @@ class ErrorCodeResponseTest {
                         .content(objectMapper.writeValueAsString(Map.of("email", ""))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(ErrorCodes.EMAIL_REQUIRED));
+    }
+
+    @Test
+    @DisplayName("Issue#93 - コードの無い 400（SNS リンクの未対応プラットフォーム）は BAD_REQUEST と固定の文言で、内部の message を返さない")
+    void uncodedBadRequest_returnsGenericMessage() throws Exception {
+        User user = saveUser(true, null);
+        String body = "{\"snsLinks\":[{\"platform\":9999,\"url\":\"https://example.com/u\"}]}";
+
+        mockMvc.perform(put("/api/v1/users/me/sns-links")
+                        .header("Authorization", "Bearer " + jwtService.generateToken(user.getEmail()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.BAD_REQUEST))
+                .andExpect(jsonPath("$.message").value("リクエストが正しくありません"));
     }
 
     @Test

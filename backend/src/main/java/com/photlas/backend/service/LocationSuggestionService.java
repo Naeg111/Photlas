@@ -33,6 +33,10 @@ import java.util.UUID;
 
 /**
  * Issue#65: 位置情報修正の指摘サービス
+ *
+ * <p>Issue#93: 利用者に知らせるエラーは、コード付きの {@link InvalidRequestException} /
+ * {@link InvalidStateException} で投げること。コードの無い {@link IllegalArgumentException} は
+ * 固定の文言の 400、{@link IllegalStateException} は想定外のエラーとして 500 になる。
  */
 @Service
 public class LocationSuggestionService {

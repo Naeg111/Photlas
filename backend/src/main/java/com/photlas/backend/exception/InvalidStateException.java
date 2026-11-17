@@ -1,5 +1,7 @@
 package com.photlas.backend.exception;
 
+import java.util.Objects;
+
 /**
  * Issue#93: エラーコード付きの「今の状態ではできない操作」を表す例外。
  *
@@ -12,7 +14,7 @@ public class InvalidStateException extends IllegalStateException implements Code
 
     public InvalidStateException(String code, String message) {
         super(message);
-        this.code = code;
+        this.code = Objects.requireNonNull(code, "code");
     }
 
     @Override

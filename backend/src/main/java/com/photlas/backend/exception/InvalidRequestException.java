@@ -1,5 +1,7 @@
 package com.photlas.backend.exception;
 
+import java.util.Objects;
+
 /**
  * Issue#93: エラーコード付きの 400 Bad Request 例外。
  *
@@ -12,7 +14,7 @@ public class InvalidRequestException extends IllegalArgumentException implements
 
     public InvalidRequestException(String code, String message) {
         super(message);
-        this.code = code;
+        this.code = Objects.requireNonNull(code, "code");
     }
 
     @Override

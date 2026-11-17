@@ -47,6 +47,15 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("Issue#93 - コード付きの 400 の例外もコード無しでは作れない")
+    void codedBadRequestExceptions_requireCode() {
+        assertThatThrownBy(() -> new InvalidRequestException(null, "x"))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new InvalidStateException(null, "x"))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
     @DisplayName("Issue#93 - 見つからない系の 404 にそれぞれのコードが付く")
     void notFound_returnsSpecificCodes() {
         assertError(handler.handleFavoriteNotFoundException(new FavoriteNotFoundException("x")),
