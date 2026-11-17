@@ -324,7 +324,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
                 <img
                   ref={imageRef}
                   src={displayImageUrl}
-                  alt="フルサイズ写真"
+                  alt={t('photo.fullSizeAlt')}
                   loading="eager"
                   className="max-w-[90vw] max-h-[90vh] object-contain"
                 />
@@ -345,7 +345,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
           </Button>
 
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-2 rounded-full pointer-events-none">
-            拡大: {Math.round(scale * 100)}%
+            {t('photo.zoomLevel', { percent: Math.round(scale * 100) })}
           </div>
         </motion.div>
       )}

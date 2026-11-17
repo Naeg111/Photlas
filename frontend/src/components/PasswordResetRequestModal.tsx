@@ -116,7 +116,7 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
               />
             </div>
 
-            <p className="mb-4 text-black">入力したら送信ボタンを押してください。</p>
+            <p className="mb-4 text-black">{t('auth.passwordResetSubmitHint')}</p>
 
             <Button
               type="submit"

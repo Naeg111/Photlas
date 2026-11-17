@@ -447,7 +447,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
             <DialogTitle>{t('menu.profile')}</DialogTitle>
-            <DialogDescription className="sr-only">ユーザープロフィール情報</DialogDescription>
+            <DialogDescription className="sr-only">{t('profile.dialogDescription')}</DialogDescription>
           </DialogHeader>
         </div>
 
@@ -512,7 +512,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
           {/* 表示名 */}
           <div className="flex flex-col gap-2 mb-[14px]">
-            <label htmlFor="profile-username" className="text-sm font-medium text-gray-700">アカウント名</label>
+            <label htmlFor="profile-username" className="text-sm font-medium text-gray-700">{t('profile.accountName')}</label>
             {isEditingUsername && (
               <p className="text-xs text-gray-500 whitespace-pre-line">{t('auth.displayNameFormatHint')}</p>
             )}
@@ -540,7 +540,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                       size="sm"
                       variant="outline"
                       onClick={() => setIsReportOpen(true)}
-                      aria-label="このプロフィールを通報"
+                      aria-label={t('profile.reportProfile')}
                     >
                       <Flag className="w-4 h-4" />
                     </Button>
@@ -693,7 +693,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                           src={item.photo.thumbnail_url || item.photo.image_url}
                           fallbackSrc={item.photo.image_url}
                           data-fallback-src={item.photo.image_url}
-                          alt="画像"
+                          alt={t('photo.imageAlt')}
                           className="absolute inset-0 w-full h-full"
                           style={{
                             objectFit: 'cover',
@@ -788,7 +788,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                             src={favorite.photo.thumbnail_url || favorite.photo.image_url}
                             fallbackSrc={favorite.photo.image_url}
                             data-fallback-src={favorite.photo.image_url}
-                            alt="画像"
+                            alt={t('photo.imageAlt')}
                             className="absolute inset-0 w-full h-full"
                             style={{
                               objectFit: 'cover',

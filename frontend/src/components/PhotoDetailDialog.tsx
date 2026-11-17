@@ -36,7 +36,7 @@ import { Checkbox } from './ui/checkbox'
 import { CategoryIcon } from './CategoryIcon'
 import { PHOTO_CATEGORIES } from '../utils/constants'
 import {
-  WEATHER_LABELS as CODE_WEATHER_LABELS,
+  WEATHER_I18N_KEYS,
   WEATHER_OPTIONS,
   MODERATION_STATUS_QUARANTINED,
   MODERATION_STATUS_PENDING_REVIEW,
@@ -206,16 +206,18 @@ interface PhotoDetail {
 }
 
 /**
- * 撮影日時をフォーマットする（例: 2026年1月15日 18:30）
+ * 撮影日時を表示言語の書式にする（例: ja「2026年1月15日 18:30」、en「January 15, 2026 at 18:30」）
+ * Spec#93 追加対応: 以前は日本語の書式を直書きしていた。
  */
-function formatShotAt(shotAt: string): string {
-  const date = new Date(shotAt)
-  const year = date.getFullYear()
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${year}年${month}月${day}日 ${hours}:${minutes}`
+function formatShotAt(shotAt: string, language: string): string {
+  return new Intl.DateTimeFormat(language, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(shotAt))
 }
 
 // Mapbox アクセストークン
@@ -389,7 +391,7 @@ const DetailMiniMap = React.memo(function DetailMiniMap({
   longitude: number
   onClick?: () => void
 }>) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [isAttributionOpen, setIsAttributionOpen] = useState(false)
 
@@ -444,7 +446,7 @@ const DetailMiniMap = React.memo(function DetailMiniMap({
           </MapGL>
           {/* Mapboxロゴ（左下） */}
           <div style={{ position: 'absolute', bottom: 4, left: 4, pointerEvents: 'auto', zIndex: 1 }}>
-            <a href="https://www.mapbox.com/" target="_blank" rel="noopener noreferrer" aria-label="Mapbox ホームページ">
+            <a href="https://www.mapbox.com/" target="_blank" rel="noopener noreferrer" aria-label={t('map.mapboxHome')}>
               <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" fillRule="evenodd" viewBox="0 0 88 23" width="88" height="23">
                 <defs>
                   <path id="dm-logo-icon" d="M11.5 2.25c5.105 0 9.25 4.145 9.25 9.25s-4.145 9.25-9.25 9.25-9.25-4.145-9.25-9.25 4.145-9.25 9.25-9.25zM6.997 15.983c-.051-.338-.828-5.802 2.233-8.873a4.395 4.395 0 013.13-1.28c1.27 0 2.49.51 3.39 1.42.91.9 1.42 2.12 1.42 3.39 0 1.18-.449 2.301-1.28 3.13C12.72 16.93 7 16 7 16l-.003-.017zM15.3 10.5l-2 .8-.8 2-.8-2-2-.8 2-.8.8-2 .8 2 2 .8z" />
@@ -468,7 +470,7 @@ const DetailMiniMap = React.memo(function DetailMiniMap({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setIsAttributionOpen(prev => !prev) }}
-              aria-label="帰属情報"
+              aria-label={t('map.attribution')}
               style={{ width: 24, height: 24, borderRadius: '50%', border: 'none', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
             >
               <svg viewBox="0 0 20 20" width="20" height="20" fill="black" fillRule="evenodd">
@@ -1229,7 +1231,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                                 <ProtectedImage
                                   key={photo.photoId}
                                   src={photo.thumbnailUrl}
-                                  alt="画像"
+                                  alt={t('photo.imageAlt')}
                                   loading="eager"
                                   className={`relative w-full h-full object-cover ${PHOTO_CROSS_FADE_CLASSES}`}
                                 />
@@ -1336,9 +1338,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                           onChange={(e) => setEditWeather(e.target.value ? Number(e.target.value) : '')}
                           className="w-full border rounded-md px-3 py-2 text-sm"
                         >
-                          <option value="">未設定</option>
+                          <option value="">{t('photo.notSet')}</option>
                           {WEATHER_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
+                            <option key={option.value} value={option.value}>{t(WEATHER_I18N_KEYS[option.value])}</option>
                           ))}
                         </select>
                       </div>
@@ -1455,7 +1457,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     {/* 撮影日時 */}
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar className="w-4 h-4" />
-                      <span>{formatShotAt(displayedPhoto.shotAt)}</span>
+                      <span>{formatShotAt(displayedPhoto.shotAt, i18n.language)}</span>
                     </div>
 
                     {/* 施設名・店名 */}
@@ -1469,7 +1471,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     {/* 天気情報 */}
                     {displayedPhoto.weather != null && (
                       <div className="text-sm text-gray-600">
-                        {t('photo.weatherLabel')}: {CODE_WEATHER_LABELS[displayedPhoto.weather] ?? displayedPhoto.weather}
+                        {t('photo.weatherLabel')}: {WEATHER_I18N_KEYS[displayedPhoto.weather] ? t(WEATHER_I18N_KEYS[displayedPhoto.weather]) : displayedPhoto.weather}
                       </div>
                     )}
 

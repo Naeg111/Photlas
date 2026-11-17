@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
 import { Button } from './ui/button'
@@ -87,6 +88,7 @@ const ProfileImageCropper: React.FC<ProfileImageCropperProps> = ({
   onCropComplete,
   onCancel,
 }) => {
+  const { t } = useTranslation()
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(ZOOM_MIN)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
@@ -145,7 +147,7 @@ const ProfileImageCropper: React.FC<ProfileImageCropperProps> = ({
         {/* ズームスライダー */}
         <div className="p-4 bg-gray-50">
           <label className="flex items-center gap-2 text-sm text-gray-600">
-            <span>ズーム</span>
+            <span>{t('photo.zoom')}</span>
             <input
               type="range"
               data-testid="zoom-slider"
@@ -178,14 +180,14 @@ const ProfileImageCropper: React.FC<ProfileImageCropperProps> = ({
             disabled={isProcessing}
             className="flex-1"
           >
-            キャンセル
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={!croppedAreaPixels || isProcessing}
             className="flex-1"
           >
-            確定
+            {t('common.confirm')}
           </Button>
         </div>
       </div>

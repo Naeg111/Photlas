@@ -197,8 +197,19 @@ describe('PhotoContributionDialog', () => {
     it('renders file format information', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      expect(screen.getByText(/JPEG、PNG、HEIC/)).toBeInTheDocument()
-      expect(screen.getByText(/100MB/)).toBeInTheDocument()
+      expect(screen.getByText('JPEG、PNG、HEIC（最大100MB）')).toBeInTheDocument()
+    })
+
+    it('Spec#93 追加対応: 英語の設定では、ファイル形式と上限サイズが英語で表示される', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        render(<PhotoContributionDialog {...defaultProps} />)
+
+        expect(screen.getByText('JPEG, PNG, HEIC (max 100MB)')).toBeInTheDocument()
+        expect(screen.queryByText(/JPEG、PNG、HEIC/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
 
     it('Issue#74 - タイトル入力フィールドが表示されない', () => {

@@ -304,6 +304,7 @@ interface MapViewProps {
  * APIキーが設定されていない場合に表示
  */
 function FallbackMapView() {
+  const { t } = useTranslation()
   return (
     <div className="w-full h-full relative bg-gradient-to-br from-gray-100 to-gray-200">
       <div
@@ -317,8 +318,8 @@ function FallbackMapView() {
         }}
       />
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-        <p className="text-gray-700 font-semibold mb-2">地図を表示できません</p>
-        <p className="text-gray-500 text-sm">Mapbox アクセストークンが設定されていません</p>
+        <p className="text-gray-700 font-semibold mb-2">{t('map.unavailable')}</p>
+        <p className="text-gray-500 text-sm">{t('map.tokenMissing')}</p>
       </div>
     </div>
   )

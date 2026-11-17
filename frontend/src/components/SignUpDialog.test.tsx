@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { SignUpDialog } from './SignUpDialog'
+import i18n from '../i18n'
 import { PLATFORM_TWITTER } from '../utils/codeConstants'
 
 /**
@@ -358,6 +359,28 @@ describe('SignUpDialog', () => {
 
       // 登録ボタンがdisabledであることを確認
       expect(screen.getByRole('button', { name: '登録する' })).toBeDisabled()
+    })
+
+    it('Spec#93 追加対応: 英語の設定では、メールアドレスの入力エラーが英語で表示される', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        const user = userEvent.setup()
+        render(<SignUpDialog {...defaultProps} />)
+
+        await user.type(screen.getByLabelText(/^Display Name/), 'testuser')
+        await user.type(screen.getByLabelText(/^Email/), 'invalid-email')
+        await user.type(screen.getByLabelText(/^Password \(required\)/), 'Password123')
+        await user.type(screen.getByLabelText(/^Confirm Password/), 'Password123')
+        await user.click(screen.getByRole('checkbox', { name: /Terms of Service/ }))
+        await user.click(screen.getByRole('checkbox', { name: /Privacy Policy/ }))
+        await user.click(screen.getByRole('checkbox', { name: /13 years/ }))
+        await user.click(screen.getByRole('button', { name: 'Sign Up' }))
+
+        expect(screen.getByText('Please enter a valid email address.')).toBeInTheDocument()
+        expect(screen.queryByText('正しいメールアドレスの形式で入力してください')).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
   })
 

@@ -19,7 +19,8 @@
     "retry": "重试",
     "retryWithCooldown": "重试（{{seconds}} 秒后）",
     "submitWithCooldown": "提交（{{seconds}} 秒后）",
-    "back": "返回"
+    "back": "返回",
+    "confirm": "确定"
   },
   "auth": {
     "loginTitle": "登录",
@@ -77,6 +78,7 @@
     "passwordResetTitle": "重置密码",
     "passwordResetDescription": "密码重置申请",
     "passwordResetInstruction": "请输入您注册时使用的邮箱地址。",
+    "passwordResetSubmitHint": "输入后请点击“提交”按钮。",
     "invalidEmailFormat": "邮箱格式无效",
     "passwordResetSent": "密码重置邮件已发送，请查收邮箱。",
     "errorOccurred": "发生错误",
@@ -196,8 +198,8 @@
     "contributeDescription": "发布带有拍摄信息的照片",
     "photoRequired": "照片（必填）",
     "selectPhoto": "选择照片",
-    "photoFormat": "JPEG、PNG、HEIC（最大50MB）",
-    "fileSizeError": "文件大小不能超过50MB。",
+    "photoFormat": "JPEG、PNG、HEIC（最大{{maxSize}}）",
+    "fileSizeError": "文件大小不能超过{{maxSize}}。",
     "fileFormatError": "仅支持JPEG、PNG和HEIC格式。",
     "photoRequiredError": "请选择一张照片。",
     "zoom": "缩放",
@@ -255,7 +257,11 @@
     "shareFailed": "分享失败",
     "saveSuccess": "已保存",
     "updateFailed": "更新失败",
-    "imageLoadFailed": "图片加载失败，请重新打开"
+    "imageLoadFailed": "图片加载失败，请重新打开",
+    "notSet": "未设置",
+    "imageAlt": "图片",
+    "fullSizeAlt": "全尺寸照片",
+    "zoomLevel": "缩放：{{percent}}%"
   },
   "profile": {
     "posts": "发布",
@@ -264,7 +270,10 @@
     "noFavorites": "暂无收藏",
     "editSnsLinks": "编辑SNS链接",
     "duplicateUsername": "该昵称已被使用",
-    "imageRegisterFailed": "头像设置失败"
+    "imageRegisterFailed": "头像设置失败",
+    "accountName": "账号名",
+    "dialogDescription": "用户个人主页信息",
+    "reportProfile": "举报此个人主页"
   },
   "settings": {
     "title": "账户设置",
@@ -395,6 +404,18 @@
     "feature6Title": "可添加到主屏幕",
     "feature6Text": "通过浏览器添加到主屏幕或桌面,即可全屏舒适使用。在平板的大屏幕上可享受地图与照片。"
   },
+  "aboutPage": {
+    "tagline": "通过照片发现想去的地方",
+    "intro": "通过照片发现想去的地方的服务。可以在地图上自由探索用户发布的照片及其拍摄地点，开启新的旅程。",
+    "cta": "开始使用 Photlas",
+    "featuresTitle": "主要特点",
+    "exploreMapTitle": "在地图上探索地点：",
+    "exploreMapText": "已发布的照片以图钉显示在地图上，随意浏览地图时就能邂逅意想不到的照片，找到想去的地方。",
+    "filterPostsTitle": "按照片条件筛选：",
+    "filterPostsText": "可按分类、季节、时段、天气等条件筛选，找到符合自己喜好的照片。",
+    "shareShootingInfoTitle": "分享拍摄信息：",
+    "shareShootingInfoText": "可以与其他用户分享相机、镜头、拍摄设置等照片拍摄信息。"
+  },
   "report": {
     "title": "举报此内容",
     "description": "举报不当或违规内容",
@@ -415,6 +436,20 @@
     "suggestionTooFar": "太远了。请在距原拍摄位置1km以内指定",
     "suggestLocation": "举报位置",
     "searchPlaceholder": "搜索地点"
+  },
+  "map": {
+    "filter": "筛选",
+    "placeSearch": "搜索地点",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "northHeading": "重置为正北",
+    "currentLocation": "当前位置",
+    "post": "发布",
+    "moveToCurrentLocation": "移动到当前位置",
+    "mapboxHome": "Mapbox 主页",
+    "attribution": "版权信息",
+    "unavailable": "无法显示地图",
+    "tokenMissing": "未配置 Mapbox 访问令牌"
   },
   "cookie": {
     "message": "本网站使用 Google Analytics，并通过Cookie收集访问信息以改善服务。详情请参阅",
@@ -446,6 +481,14 @@
     "USERNAME_INVALID_CHARACTER_OTHER": "昵称包含不允许的字符，仅允许字母、数字、日文（平假名、全角片假名、基础汉字）、下划线和连字符。",
     "USERNAME_INVALID_FIRST_CHARACTER": "昵称必须以字母或日文开头（数字、下划线、连字符不能作为首字符）。",
     "USERNAME_RESERVED": "该昵称为系统保留字，无法使用。",
+    "PASSWORD_REQUIRED": "请输入密码。",
+    "PASSWORD_LENGTH_INVALID": "密码长度需在 {{min}} 到 {{max}} 个字符之间。",
+    "PASSWORD_MISSING_DIGIT": "密码须至少包含一个数字。",
+    "PASSWORD_MISSING_LOWERCASE": "密码须至少包含一个小写字母。",
+    "PASSWORD_MISSING_UPPERCASE": "密码须至少包含一个大写字母。",
+    "PASSWORD_CONTAINS_SYMBOL": "密码不能包含符号。",
+    "EMAIL_REQUIRED": "请输入邮箱地址。",
+    "EMAIL_INVALID_FORMAT": "请输入有效的邮箱地址。",
     "dataFetchFailed": "数据加载失败"
   },
   "pages": {

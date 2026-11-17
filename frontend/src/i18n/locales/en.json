@@ -19,7 +19,8 @@
     "retry": "Retry",
     "retryWithCooldown": "Retry ({{seconds}}s)",
     "submitWithCooldown": "Submit ({{seconds}}s)",
-    "back": "Back"
+    "back": "Back",
+    "confirm": "Confirm"
   },
   "auth": {
     "loginTitle": "Log In",
@@ -77,6 +78,7 @@
     "passwordResetTitle": "Password Reset",
     "passwordResetDescription": "Password reset request",
     "passwordResetInstruction": "Enter your registered email address.",
+    "passwordResetSubmitHint": "After entering it, press the Submit button.",
     "invalidEmailFormat": "Invalid email format",
     "passwordResetSent": "Password reset email sent. Please check your inbox.",
     "errorOccurred": "An error occurred",
@@ -196,8 +198,8 @@
     "contributeDescription": "Post a photo with context information",
     "photoRequired": "Photo (required)",
     "selectPhoto": "Select Photo",
-    "photoFormat": "JPEG, PNG, HEIC (max 50MB)",
-    "fileSizeError": "File size must be 50MB or less.",
+    "photoFormat": "JPEG, PNG, HEIC (max {{maxSize}})",
+    "fileSizeError": "File size must be {{maxSize}} or less.",
     "fileFormatError": "Only JPEG, PNG, and HEIC formats are supported.",
     "photoRequiredError": "Please select a photo.",
     "zoom": "Zoom",
@@ -255,7 +257,11 @@
     "shareFailed": "Failed to share",
     "saveSuccess": "Saved",
     "updateFailed": "Failed to update",
-    "imageLoadFailed": "Failed to load image. Please close and open it again."
+    "imageLoadFailed": "Failed to load image. Please close and open it again.",
+    "notSet": "Not set",
+    "imageAlt": "Image",
+    "fullSizeAlt": "Full-size photo",
+    "zoomLevel": "Zoom: {{percent}}%"
   },
   "profile": {
     "posts": "Posts",
@@ -264,7 +270,10 @@
     "noFavorites": "No favorites yet",
     "editSnsLinks": "Edit SNS Links",
     "duplicateUsername": "This display name is already taken",
-    "imageRegisterFailed": "Failed to register profile image"
+    "imageRegisterFailed": "Failed to register profile image",
+    "accountName": "Account name",
+    "dialogDescription": "User profile information",
+    "reportProfile": "Report this profile"
   },
   "settings": {
     "title": "Account Settings",
@@ -395,6 +404,18 @@
     "feature6Title": "Add to your home screen",
     "feature6Text": "Add Photlas from your browser to your home screen or desktop for a full-screen experience. On a tablet, you can enjoy the map and photos on a larger screen."
   },
+  "aboutPage": {
+    "tagline": "Discover places you want to visit through photos",
+    "intro": "Photlas is a service for discovering places you want to visit through photos. Freely explore photos posted by users and where they were taken on the map, and find inspiration for your next trip.",
+    "cta": "Try Photlas",
+    "featuresTitle": "Key features",
+    "exploreMapTitle": "Explore spots on the map:",
+    "exploreMapText": "Posted photos appear as pins on the map, so just browsing the map leads you to unexpected posts and places you will want to visit.",
+    "filterPostsTitle": "Filter posts by photo details:",
+    "filterPostsText": "Narrow down posts by category, season, time of day, weather and more to find the ones you like.",
+    "shareShootingInfoTitle": "Share shooting details:",
+    "shareShootingInfoText": "Share shooting details such as camera, lens and settings with other users."
+  },
   "report": {
     "title": "Report This Post",
     "description": "Report inappropriate or problematic content",
@@ -415,6 +436,20 @@
     "suggestionTooFar": "Too far. Please choose a spot within 1km of the original shooting location.",
     "suggestLocation": "Report Location",
     "searchPlaceholder": "Search for a place"
+  },
+  "map": {
+    "filter": "Filter",
+    "placeSearch": "Search places",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "northHeading": "Reset to north",
+    "currentLocation": "Current location",
+    "post": "Post",
+    "moveToCurrentLocation": "Go to current location",
+    "mapboxHome": "Mapbox homepage",
+    "attribution": "Attribution",
+    "unavailable": "Unable to display the map",
+    "tokenMissing": "Mapbox access token is not configured"
   },
   "cookie": {
     "message": "This site uses Google Analytics and collects access information through cookies to improve our service. For details, see our",
@@ -446,6 +481,14 @@
     "USERNAME_INVALID_CHARACTER_OTHER": "Display name contains invalid characters. Only letters, digits, Japanese (hiragana, full-width katakana, basic kanji), underscore, and hyphen are allowed.",
     "USERNAME_INVALID_FIRST_CHARACTER": "Display name must start with a letter or Japanese character (digits, underscore, and hyphen cannot be used as the first character).",
     "USERNAME_RESERVED": "This display name is reserved and cannot be used.",
+    "PASSWORD_REQUIRED": "Please enter a password.",
+    "PASSWORD_LENGTH_INVALID": "Password must be between {{min}} and {{max}} characters.",
+    "PASSWORD_MISSING_DIGIT": "Password must contain at least one number.",
+    "PASSWORD_MISSING_LOWERCASE": "Password must contain at least one lowercase letter.",
+    "PASSWORD_MISSING_UPPERCASE": "Password must contain at least one uppercase letter.",
+    "PASSWORD_CONTAINS_SYMBOL": "Password cannot contain symbols.",
+    "EMAIL_REQUIRED": "Please enter your email address.",
+    "EMAIL_INVALID_FORMAT": "Please enter a valid email address.",
     "dataFetchFailed": "Failed to load data"
   },
   "pages": {

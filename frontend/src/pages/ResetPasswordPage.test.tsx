@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import ResetPasswordPage from './ResetPasswordPage'
+import i18n from '../i18n'
 
 // API URL
 const RESET_PASSWORD_ENDPOINT = '/api/v1/auth/reset-password'
@@ -382,6 +383,25 @@ describe('ResetPasswordPage', () => {
           screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
         ).toBeInTheDocument()
       })
+    })
+  })
+
+  describe('Spec#93 追加対応: 表示言語', () => {
+    it('英語の設定では、タブ名とパスワードの入力エラーが英語で表示される', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        renderWithToken(VALID_TOKEN)
+        expect(document.title).toBe('Reset Password - Photlas')
+
+        fireEvent.change(screen.getByLabelText('New Password'), { target: { value: WEAK_PASSWORD } })
+        fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: WEAK_PASSWORD } })
+        fireEvent.click(screen.getByRole('button', { name: 'Reset Password' }))
+
+        expect(await screen.findByText('Password must be between 8 and 20 characters.')).toBeInTheDocument()
+        expect(screen.queryByText(/パスワードは8文字以上/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
   })
 })

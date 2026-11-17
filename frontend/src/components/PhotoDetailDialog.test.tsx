@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import PhotoDetailDialog from './PhotoDetailDialog'
-import { MODERATION_STATUS_QUARANTINED, MODERATION_STATUS_PENDING_REVIEW, MODERATION_STATUS_PUBLISHED } from '../utils/codeConstants'
+import { MODERATION_STATUS_QUARANTINED, MODERATION_STATUS_PENDING_REVIEW, MODERATION_STATUS_PUBLISHED, WEATHER_SUNNY } from '../utils/codeConstants'
+import i18n from '../i18n'
 import { _resetRateLimitNotifyDebounce } from '../utils/notifyIfRateLimited'
 
 // Mapbox GL JS (react-map-gl) のモック
@@ -118,7 +119,7 @@ function createMockApiResponse(overrides?: {
     lqip?: string | null
   }
   shotAt?: string
-  weather?: string
+  weather?: string | number
   isFavorited?: boolean
   favoriteCount?: number
   userId?: number
@@ -1194,6 +1195,38 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(screen.getByText(/2026年1月15日/)).toBeInTheDocument()
         expect(screen.getByText(/18:30/)).toBeInTheDocument()
       })
+    })
+
+    it('Spec#93 追加対応: 英語の設定では、撮影日時と天気が英語で表示される', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        const photoDetail = createMockApiResponse({
+          shotAt: '2026-01-15T18:30:00',
+          weather: WEATHER_SUNNY,
+        })
+        const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+        const { rerender } = render(
+          <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+        )
+
+        Object.defineProperty(globalThis, 'fetch', {
+          value: mockFetch,
+          writable: true,
+          configurable: true,
+        })
+
+        rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+        await waitFor(() => {
+          expect(screen.getByText(/January 15, 2026/)).toBeInTheDocument()
+          expect(screen.getByText(/Sunny/)).toBeInTheDocument()
+        })
+        expect(screen.queryByText(/2026年1月15日/)).not.toBeInTheDocument()
+        expect(screen.queryByText(/晴れ/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
 
   })

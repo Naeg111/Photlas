@@ -234,4 +234,21 @@ describe('PhotoLightbox', () => {
       expect(screen.getByText('拡大: 110%')).toBeInTheDocument()
     })
   })
+
+  describe('Spec#93 追加対応: 表示言語', () => {
+    it('英語の設定では、拡大率と写真の代替テキストが英語になる', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        render(<PhotoLightbox {...defaultProps} />)
+
+        await waitFor(() => {
+          expect(screen.getByAltText('Full-size photo')).toBeInTheDocument()
+        })
+        expect(screen.getByText('Zoom: 100%')).toBeInTheDocument()
+        expect(screen.queryByText(/拡大:/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+  })
 })
