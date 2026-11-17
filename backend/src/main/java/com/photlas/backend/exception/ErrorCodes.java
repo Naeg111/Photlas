@@ -44,9 +44,11 @@ public final class ErrorCodes {
     public static final String ALREADY_REPORTED = "ALREADY_REPORTED";
     public static final String ALREADY_FAVORITED = "ALREADY_FAVORITED";
     public static final String PASSWORD_ALREADY_SET = "PASSWORD_ALREADY_SET";
+    /** フロントはアカウント設定の settings.* の専用文言で表示する（errors.* の翻訳は持たない） */
     public static final String EXPORT_IN_PROGRESS = "EXPORT_IN_PROGRESS";
 
     // ---- 429 ----
+    /** フロントはアカウント設定の settings.* の専用文言（次に使える日時入り）で表示する（errors.* の翻訳は持たない） */
     public static final String EXPORT_RATE_LIMITED = "EXPORT_RATE_LIMITED";
 
     // ---- 400（個別） ----

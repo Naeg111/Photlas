@@ -27,6 +27,13 @@ describe('translateErrorCode', () => {
     expect(translateErrorCode('ALREADY_REPORTED', t, 'auth.errorOccurred')).toBe('すでに通報済みです')
   })
 
+  it('コードの形（英大文字とアンダースコア）でないものは翻訳キーに使わず fallbackKey の文言を返す', () => {
+    // errors.ALREADY_REPORTED を指すような値でも、区切り文字を含めば使わない
+    expect(translateErrorCode('errors.ALREADY_REPORTED', t, 'auth.errorOccurred')).toBe('エラーが発生しました')
+    expect(translateErrorCode('auth:errorOccurred', t, 'photo.suggestionFailed')).toBe('指摘の送信に失敗しました')
+    expect(translateErrorCode('already_reported', t, 'auth.errorOccurred')).toBe('エラーが発生しました')
+  })
+
   it('翻訳が無いコード・コード無しは fallbackKey の文言を返す', () => {
     expect(translateErrorCode('VALIDATION_ERROR', t, 'auth.errorOccurred')).toBe('エラーが発生しました')
     expect(translateErrorCode('INTERNAL_ERROR', t, 'photo.suggestionFailed')).toBe('指摘の送信に失敗しました')

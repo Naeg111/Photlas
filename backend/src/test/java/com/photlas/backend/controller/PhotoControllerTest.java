@@ -7,6 +7,7 @@ import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
@@ -463,7 +464,9 @@ public class PhotoControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(JSON_PATH_MESSAGE, containsString("カテゴリ")));
+                .andExpect(jsonPath(JSON_PATH_MESSAGE, containsString("カテゴリ")))
+                // Issue#93: GlobalExceptionHandler が CATEGORY_NOT_FOUND を付ける
+                .andExpect(jsonPath("$.code").value(ErrorCodes.CATEGORY_NOT_FOUND));
     }
 
     @Test

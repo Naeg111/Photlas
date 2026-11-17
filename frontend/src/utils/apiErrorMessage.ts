@@ -8,6 +8,12 @@
 import type { TFunction } from 'i18next'
 
 /**
+ * バックエンドのエラーコードの形（英大文字とアンダースコア）。
+ * サーバー応答は信頼境界の外なので、`.` や `:`（i18next のキー区切り）を含むものは翻訳キーに使わない。
+ */
+const ERROR_CODE_PATTERN = /^[A-Z][A-Z_]*$/
+
+/**
  * エラーレスポンスの本文から `code` を取り出す。
  * 本文がオブジェクトでない、または `code` が文字列でない場合は undefined。
  */
@@ -21,14 +27,14 @@ export function getErrorCode(data: unknown): string | undefined {
  * エラーコードを表示言語の文言にする。
  *
  * - `errors.<code>` の翻訳があればその文言
- * - コードが無い、または翻訳が無いコード（VALIDATION_ERROR・BAD_REQUEST・INTERNAL_ERROR など）は
- *   `fallbackKey`（その画面の汎用の文言）
+ * - コードが無い、翻訳が無いコード（VALIDATION_ERROR・BAD_REQUEST・INTERNAL_ERROR など）、
+ *   またはコードの形（英大文字とアンダースコア）でないものは `fallbackKey`（その画面の汎用の文言）
  */
 export function translateErrorCode(
   code: string | undefined,
   t: TFunction,
   fallbackKey: string
 ): string {
-  if (!code) return t(fallbackKey)
+  if (!code || !ERROR_CODE_PATTERN.test(code)) return t(fallbackKey)
   return t([`errors.${code}`, fallbackKey])
 }

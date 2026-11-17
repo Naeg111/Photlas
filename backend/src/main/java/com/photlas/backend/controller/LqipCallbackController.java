@@ -58,7 +58,7 @@ public class LqipCallbackController {
     ) {
         if (!validApiKey.equals(apiKey)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponse("無効なAPIキーです"));
+                    .body(ErrorResponse.withoutCode("無効なAPIキーです"));
         }
 
         String s3ObjectKey = (String) request.get(FIELD_S3_OBJECT_KEY);

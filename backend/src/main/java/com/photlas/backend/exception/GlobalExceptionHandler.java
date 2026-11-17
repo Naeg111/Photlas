@@ -156,17 +156,33 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * 不正な引数エラー（400 Bad Request）をハンドリング
+     * Issue#93: コード付きの不正な入力（400 Bad Request）をハンドリング
+     * そのコードと固定の message を返す。
+     */
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRequestException(InvalidRequestException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(ex.getCode(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * Issue#93: カテゴリが見つからない（400 Bad Request）をハンドリング
+     * 写真の投稿・編集で、存在しないカテゴリを指定したとき。
+     */
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCategoryNotFoundException(CategoryNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.CATEGORY_NOT_FOUND, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * コードの無い不正な引数エラー（400 Bad Request）をハンドリング
      *
-     * <p>Issue#93: コード付きの例外（{@link InvalidRequestException}）は、そのコードと固定の message を返す。
-     * コードの無い例外の message はライブラリ等の内部向けのことがあるため返さず、ログにだけ残す。
+     * <p>Issue#93: コードの無い例外の message はライブラリ等の内部向けのことがあるため返さず、
+     * 固定の文言にしてログにだけ残す。コード付きの {@link InvalidRequestException} は上のハンドラーが扱う。
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        if (ex instanceof CodedException coded) {
-            ErrorResponse errorResponse = new ErrorResponse(coded.getCode(), ex.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
         logger.warn("コードの無い不正な引数エラー: {}", ex.getMessage());
         ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.BAD_REQUEST, BAD_REQUEST_MESSAGE);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);

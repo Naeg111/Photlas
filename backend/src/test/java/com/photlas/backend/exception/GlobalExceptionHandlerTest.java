@@ -78,9 +78,9 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - IllegalArgumentException はコード付きならそのコードと message を返す")
-    void illegalArgument_coded_returnsCodeAndMessage() {
-        ResponseEntity<ErrorResponse> response = handler.handleIllegalArgumentException(
+    @DisplayName("Issue#93 - コード付きの InvalidRequestException はそのコードと message を返す")
+    void invalidRequest_returnsCodeAndMessage() {
+        ResponseEntity<ErrorResponse> response = handler.handleInvalidRequestException(
                 new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "トークンが無効または期限切れです"));
         assertError(response, HttpStatus.BAD_REQUEST, ErrorCodes.INVALID_TOKEN);
         assertThat(response.getBody().getMessage()).isEqualTo("トークンが無効または期限切れです");
@@ -95,6 +95,13 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getMessage())
                 .isEqualTo(GlobalExceptionHandler.BAD_REQUEST_MESSAGE)
                 .doesNotContain("OAuthProvider");
+    }
+
+    @Test
+    @DisplayName("Issue#93 - カテゴリが見つからないときは 400 と CATEGORY_NOT_FOUND")
+    void categoryNotFound_returnsCode() {
+        assertError(handler.handleCategoryNotFoundException(new CategoryNotFoundException("x")),
+                HttpStatus.BAD_REQUEST, ErrorCodes.CATEGORY_NOT_FOUND);
     }
 
     @Test

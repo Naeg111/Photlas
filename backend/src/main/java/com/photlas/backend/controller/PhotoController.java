@@ -1,7 +1,6 @@
 package com.photlas.backend.controller;
 
 import com.photlas.backend.dto.CreatePhotoRequest;
-import com.photlas.backend.dto.ErrorResponse;
 import com.photlas.backend.dto.PhotoBatchRequest;
 import com.photlas.backend.dto.PhotoDetailResponse;
 import com.photlas.backend.dto.PhotoResponse;
@@ -9,7 +8,6 @@ import com.photlas.backend.dto.UpdatePhotoRequest;
 import com.photlas.backend.dto.UploadUrlRequest;
 import com.photlas.backend.dto.UploadUrlResponse;
 import com.photlas.backend.entity.User;
-import com.photlas.backend.exception.CategoryNotFoundException;
 import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.exception.InvalidRequestException;
 import com.photlas.backend.exception.UserNotFoundException;
@@ -191,14 +189,5 @@ public class PhotoController {
         String email = authentication.getName();
         photoService.deletePhoto(photoId, email);
         return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * CategoryNotFoundExceptionをハンドリング
-     */
-    @ExceptionHandler(CategoryNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCategoryNotFoundException(CategoryNotFoundException e) {
-        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.CATEGORY_NOT_FOUND, e.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }
