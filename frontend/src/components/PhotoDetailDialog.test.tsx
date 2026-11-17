@@ -1017,20 +1017,20 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    // Issue#93: 公開中でない写真のお気に入り登録は 400 PHOTO_NOT_PUBLIC が返る
-    async function clickFavoriteWithPhotoNotPublic() {
+    // Issue#93: お気に入り登録で 400 が返る（既定は公開中でない写真の PHOTO_NOT_PUBLIC）
+    const createPhotoNotPublicFavoriteResponse = () => new Response(
+      JSON.stringify({ code: 'PHOTO_NOT_PUBLIC', message: '公開中の写真のみお気に入り登録できます' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    )
+
+    async function clickFavoriteWithBadRequest(favoriteResponse = createPhotoNotPublicFavoriteResponse()) {
       const photoDetail = createMockPhotoDetail({ isFavorited: false, favoriteCount: 3 })
       const mockFetch = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
         .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Issue#135: photoTags
         .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
-        .mockResolvedValueOnce(
-          new Response(
-            JSON.stringify({ code: 'PHOTO_NOT_PUBLIC', message: '公開中の写真のみお気に入り登録できます' }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
-          )
-        ) // POST /favorite
+        .mockResolvedValueOnce(favoriteResponse) // POST /favorite
 
       const { rerender } = render(
         <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
@@ -1053,7 +1053,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     }
 
     it('Issue#93: 公開中でない写真（400 PHOTO_NOT_PUBLIC）なら、理由を知らせて元の状態に戻す', async () => {
-      await clickFavoriteWithPhotoNotPublic()
+      await clickFavoriteWithBadRequest()
 
       await waitFor(() => {
         expect(mockToast.error).toHaveBeenCalledWith('この写真は公開中ではないため操作できません')
@@ -1062,10 +1062,20 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(screen.getByTestId('favorite-count')).toHaveTextContent('3')
     })
 
+    it('Issue#93: 400 の本文が JSON でなければ、汎用の文言を出して元の状態に戻す', async () => {
+      await clickFavoriteWithBadRequest(new Response('Bad Request', { status: 400 }))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('エラーが発生しました')
+      })
+      expect(screen.getByTestId('favorite-button')).toHaveAttribute('aria-label', 'お気に入りに追加')
+      expect(screen.getByTestId('favorite-count')).toHaveTextContent('3')
+    })
+
     it('Issue#93: 英語の設定では、公開中でない写真の理由を英語で知らせる', async () => {
       await i18n.changeLanguage('en')
       try {
-        await clickFavoriteWithPhotoNotPublic()
+        await clickFavoriteWithBadRequest()
 
         await waitFor(() => {
           expect(mockToast.error).toHaveBeenCalledWith('This photo is not public, so this action is unavailable.')

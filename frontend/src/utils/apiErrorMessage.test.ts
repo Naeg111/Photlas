@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi } from 'vitest'
 import i18n from '../i18n'
-import { getErrorCode, translateErrorCode } from './apiErrorMessage'
+import { getErrorCode, readErrorCode, translateErrorCode } from './apiErrorMessage'
 
 describe('getErrorCode', () => {
   it('本文の code を返す', () => {
@@ -17,6 +17,19 @@ describe('getErrorCode', () => {
     expect(getErrorCode('text')).toBeUndefined()
     expect(getErrorCode(null)).toBeUndefined()
     expect(getErrorCode(undefined)).toBeUndefined()
+  })
+})
+
+describe('readErrorCode', () => {
+  it('応答の本文（JSON）の code を返す', async () => {
+    const response = new Response(JSON.stringify({ code: 'PHOTO_NOT_PUBLIC', message: '無効' }), { status: 400 })
+    expect(await readErrorCode(response)).toBe('PHOTO_NOT_PUBLIC')
+  })
+
+  it('本文が JSON でない・空・code が無い場合は undefined（例外を投げない）', async () => {
+    expect(await readErrorCode(new Response('Bad Request', { status: 400 }))).toBeUndefined()
+    expect(await readErrorCode(new Response(null, { status: 400 }))).toBeUndefined()
+    expect(await readErrorCode(new Response(JSON.stringify({ message: '無効' }), { status: 400 }))).toBeUndefined()
   })
 })
 
