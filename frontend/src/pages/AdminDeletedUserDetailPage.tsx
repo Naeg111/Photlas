@@ -35,7 +35,8 @@ export default function AdminDeletedUserDetailPage() {
   const navigate = useNavigate()
   const { getAuthToken } = useAuth()
   const { t, i18n } = useTranslation()
-  // fetchDetail を t に依存させず、言語の切り替えで再取得しないよう、ref 経由で今の言語の t を使う
+  // fetchDetail を t に依存させず、言語の切り替えで再取得しないよう、ref 経由で今の言語の t を使う。
+  // ref を使うのは useEffect の依存に入る fetchDetail だけ。ほかのハンドラーは依存に入らないので t のままでよい。
   const tRef = useLatest(t)
 
   /** Spec#93 追加対応: 数値コードを表示言語の名前にする（未知のコードは数値のまま出す） */
