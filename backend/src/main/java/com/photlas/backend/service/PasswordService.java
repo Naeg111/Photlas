@@ -4,6 +4,8 @@ import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
@@ -95,19 +97,19 @@ public class PasswordService {
     public void resetPassword(String token, String newPassword) {
         Optional<PasswordResetToken> tokenOptional = passwordResetTokenRepository.findByToken(token);
         if (tokenOptional.isEmpty()) {
-            throw new IllegalArgumentException("トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "トークンが無効または期限切れです");
         }
 
         PasswordResetToken resetToken = tokenOptional.get();
 
         if (resetToken.getExpiryDate().before(new Date())) {
             passwordResetTokenRepository.delete(resetToken);
-            throw new IllegalArgumentException("トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "トークンが無効または期限切れです");
         }
 
         Optional<User> userOptional = userRepository.findById(resetToken.getUserId());
         if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException(ERROR_USER_NOT_FOUND);
+            throw new InvalidRequestException(ErrorCodes.USER_NOT_FOUND, ERROR_USER_NOT_FOUND);
         }
 
         User user = userOptional.get();
@@ -139,7 +141,7 @@ public class PasswordService {
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         if (user.getPasswordHash() != null) {
-            throw new ConflictException("パスワードは既に設定されています。変更するには updatePassword を使用してください。");
+            throw new ConflictException(ErrorCodes.PASSWORD_ALREADY_SET, "パスワードは既に設定されています。変更するには updatePassword を使用してください。");
         }
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));

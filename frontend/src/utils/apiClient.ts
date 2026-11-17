@@ -5,6 +5,7 @@
  */
 
 import { API_V1_URL } from '../config/api';
+import { getErrorCode } from './apiErrorMessage';
 
 const API_BASE_URL = API_V1_URL;
 
@@ -42,12 +43,15 @@ export class ApiError extends Error {
   }
 
   /**
-   * バックエンドが返す `{ message: string }` 形式のエラー本文から message を取り出す。
-   * 本文がオブジェクトでない（生テキスト等）、または message フィールドが無い場合は undefined。
-   * 呼び出し側で `err.responseMessage || t('fallback')` のように既定メッセージと併用する。
+   * Issue#93: バックエンドが返すエラー本文の `code`（例: `INVALID_TOKEN`）。
+   * 画面には `translateErrorCode(err.code, t, 'fallback')` で表示言語の文言を出す。
+   * 本文の `message` は日本語固定のため画面に出さない。
+   *
+   * 使い分け: エラー全体の種類は `code` で見る。入力チェックエラー（`VALIDATION_ERROR`）で
+   * どのフィールドが何で弾かれたかを出したいときは `getFieldErrorMessage` を使う。
    */
-  get responseMessage(): string | undefined {
-    return (this.responseData as { message?: string } | undefined)?.message
+  get code(): string | undefined {
+    return getErrorCode(this.responseData)
   }
 
   /**
@@ -58,7 +62,7 @@ export class ApiError extends Error {
    * フィールド別エラー取得用。username 用 i18n キー（例: `errors.USERNAME_RESERVED`）
    * を取り出すために使う。
    *
-   * 既存の `responseMessage` は top-level の固定文言（"入力内容が無効です。"）を返すため、
+   * top-level の `message` は固定文言（"入力内容が無効です。"）のため、
    * フィールド別の i18n キーが欲しい場合は本メソッドを使うこと。
    */
   getFieldErrorMessage(fieldName: string): string | undefined {

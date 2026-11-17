@@ -17,20 +17,23 @@ public class ErrorResponse {
         this.timestamp = LocalDateTime.now();
     }
 
-    public ErrorResponse(String message) {
-        this.message = message;
-        this.timestamp = LocalDateTime.now();
+    /**
+     * code の無いエラーレスポンス。
+     *
+     * <p>Issue#93: 画面に出ない機械どうしの API（LQIP・審査のコールバック、テスト用 API）だけで使う。
+     * 利用者に届くエラーは、フロントが code から表示言語の文言を出すため、
+     * {@link #ErrorResponse(String, String)} で {@code ErrorCodes} のコードを付けること。
+     * 誤って使わないよう、コンストラクターではなく名前で用途がわかる静的ファクトリにしている。
+     */
+    public static ErrorResponse withoutCode(String message) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(message);
+        return errorResponse;
     }
 
     public ErrorResponse(String code, String message) {
         this.code = code;
         this.message = message;
-        this.timestamp = LocalDateTime.now();
-    }
-
-    public ErrorResponse(String message, List<FieldError> errors) {
-        this.message = message;
-        this.errors = errors;
         this.timestamp = LocalDateTime.now();
     }
 

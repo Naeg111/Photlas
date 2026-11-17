@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { API_V1_URL } from '../config/api'
 import { isInAppBrowser } from '../utils/isInAppBrowser'
+import { getErrorCode, translateErrorCode } from '../utils/apiErrorMessage'
 
 /**
  * Issue#110: メールアドレス変更完了マーカーの localStorage キー。
@@ -64,7 +65,7 @@ export default function ConfirmEmailChangePage() {
         } else {
           const data = await response.json().catch(() => null)
           setStatus('error')
-          setErrorMessage(data?.message || t('auth.errorOccurred'))
+          setErrorMessage(translateErrorCode(getErrorCode(data), t, 'auth.errorOccurred'))
         }
       } catch {
         setStatus('error')

@@ -5,6 +5,7 @@ import com.photlas.backend.entity.OAuthLinkConfirmation;
 import com.photlas.backend.entity.OAuthProvider;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserOAuthConnection;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.repository.OAuthLinkConfirmationRepository;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
@@ -150,7 +151,8 @@ class OAuthLinkConfirmationServiceTest {
         when(repository.findByTokenHash(sha256Hex(rawToken))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.consume(rawToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .extracting("code").isEqualTo(ErrorCodes.INVALID_TOKEN);
 
         verify(userOAuthConnectionRepository, never()).save(any());
     }
@@ -165,7 +167,8 @@ class OAuthLinkConfirmationServiceTest {
         when(repository.findByTokenHash(sha256Hex(rawToken))).thenReturn(Optional.of(record));
 
         assertThatThrownBy(() -> service.consume(rawToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .extracting("code").isEqualTo(ErrorCodes.INVALID_TOKEN);
 
         verify(userOAuthConnectionRepository, never()).save(any());
     }
@@ -181,7 +184,8 @@ class OAuthLinkConfirmationServiceTest {
         when(repository.findByTokenHash(sha256Hex(rawToken))).thenReturn(Optional.of(record));
 
         assertThatThrownBy(() -> service.consume(rawToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .extracting("code").isEqualTo(ErrorCodes.TOKEN_ALREADY_USED);
 
         verify(userOAuthConnectionRepository, never()).save(any());
     }
@@ -203,7 +207,8 @@ class OAuthLinkConfirmationServiceTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(softDeletedUser));
 
         assertThatThrownBy(() -> service.consume(rawToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .extracting("code").isEqualTo(ErrorCodes.ACCOUNT_DELETED);
 
         verify(userOAuthConnectionRepository, never()).save(any());
     }
@@ -219,7 +224,8 @@ class OAuthLinkConfirmationServiceTest {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.consume(rawToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .extracting("code").isEqualTo(ErrorCodes.USER_NOT_FOUND);
 
         verify(userOAuthConnectionRepository, never()).save(any());
     }

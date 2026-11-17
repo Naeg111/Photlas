@@ -8,6 +8,7 @@ import { API_V1_URL } from '../config/api'
 import { useAuth } from '../contexts/AuthContext'
 import { ApiError } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
+import { translateErrorCode } from '../utils/apiErrorMessage'
 import { validateUsername } from '../utils/validation/username'
 import { localizeFieldError } from '../utils/validation/localizeFieldError'
 
@@ -70,7 +71,7 @@ export default function UsernameSetupDialog({
         if (usernameErr) {
           setErrorMessage(localizeFieldError(usernameErr, t))
         } else {
-          setErrorMessage(err.responseMessage || t('auth.errorOccurred'))
+          setErrorMessage(translateErrorCode(err.code, t, 'auth.errorOccurred'))
         }
       } else {
         setErrorMessage(t('auth.errorOccurred'))

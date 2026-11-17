@@ -7,6 +7,7 @@ import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Report;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.SelfReportException;
 import com.photlas.backend.exception.UserNotFoundException;
@@ -133,7 +134,7 @@ public class ReportService {
         reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
                 reporterUserId, targetType, targetId)
                 .ifPresent(report -> {
-                    throw new ConflictException("すでに通報済みです");
+                    throw new ConflictException(ErrorCodes.ALREADY_REPORTED, "すでに通報済みです");
                 });
 
         Report report = new Report();

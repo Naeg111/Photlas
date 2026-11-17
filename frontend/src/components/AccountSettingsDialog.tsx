@@ -171,8 +171,9 @@ export function AccountSettingsDialog({
       } else if (response.status === 401) {
         toast.error(t('settings.currentPasswordWrong'));
       } else if (response.status === 400) {
-        const errorData = await response.json();
-        toast.error(errorData.message || t('settings.passwordInvalidFormat'));
+        // Issue#93: 400 は入力チェックエラー（VALIDATION_ERROR）。message は日本語固定のため出さない。
+        // フィールド別に出したくなったら、errors[] を ApiError.getFieldErrorMessage と同じ形で拾える
+        toast.error(t('settings.passwordInvalidFormat'));
       } else {
         toast.error(t('settings.passwordChangeFailed'));
       }

@@ -7,6 +7,7 @@ import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserOAuthConnection;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.EmailChangeTokenRepository;
 import com.photlas.backend.repository.EmailVerificationTokenRepository;
@@ -14,6 +15,7 @@ import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.exception.ForbiddenException;
+import com.photlas.backend.exception.InvalidRequestException;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.util.SecurityAuditLogger;
@@ -115,12 +117,12 @@ public class AccountService {
 
         String normalizedNewEmail = newEmail.toLowerCase();
         if (email.equals(normalizedNewEmail)) {
-            throw new IllegalArgumentException("現在のメールアドレスと同じです");
+            throw new InvalidRequestException(ErrorCodes.SAME_EMAIL, "現在のメールアドレスと同じです");
         }
 
         Optional<User> existingUser = userRepository.findByEmail(normalizedNewEmail);
         if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
-            throw new ConflictException("このメールアドレスはすでに使用されています");
+            throw new ConflictException(ErrorCodes.EMAIL_ALREADY_IN_USE, "このメールアドレスはすでに使用されています");
         }
 
         // 既存トークンを削除して新規作成
@@ -159,25 +161,25 @@ public class AccountService {
     public EmailChangeResult confirmEmailChange(String token) {
         Optional<EmailChangeToken> tokenOptional = emailChangeTokenRepository.findByToken(token);
         if (tokenOptional.isEmpty()) {
-            throw new IllegalArgumentException("トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "トークンが無効または期限切れです");
         }
 
         EmailChangeToken changeToken = tokenOptional.get();
 
         if (changeToken.getExpiryDate().before(new Date())) {
             emailChangeTokenRepository.delete(changeToken);
-            throw new IllegalArgumentException("トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "トークンが無効または期限切れです");
         }
 
         // 新メールアドレスの重複チェック（リクエスト〜確認の間に別ユーザーが登録した場合に備える）
         Optional<User> existingUser = userRepository.findByEmail(changeToken.getNewEmail());
         if (existingUser.isPresent() && !existingUser.get().getId().equals(changeToken.getUserId())) {
             emailChangeTokenRepository.delete(changeToken);
-            throw new ConflictException("このメールアドレスはすでに使用されています");
+            throw new ConflictException(ErrorCodes.EMAIL_ALREADY_IN_USE, "このメールアドレスはすでに使用されています");
         }
 
         User user = userRepository.findById(changeToken.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
+                .orElseThrow(() -> new InvalidRequestException(ErrorCodes.USER_NOT_FOUND, ERROR_USER_NOT_FOUND));
 
         user.setEmail(changeToken.getNewEmail());
         userRepository.save(user);

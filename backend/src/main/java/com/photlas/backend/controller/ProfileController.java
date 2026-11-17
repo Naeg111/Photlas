@@ -15,6 +15,8 @@ import com.photlas.backend.entity.OAuthProvider;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserOAuthConnection;
 import com.photlas.backend.entity.UserSnsLink;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
@@ -109,7 +111,7 @@ public class ProfileController {
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         if (!ALLOWED_IMAGE_EXTENSIONS.contains(request.getExtension().toLowerCase())) {
-            throw new IllegalArgumentException("対応していないファイル形式です");
+            throw new InvalidRequestException(ErrorCodes.UNSUPPORTED_FILE_TYPE, "対応していないファイル形式です");
         }
 
         S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(

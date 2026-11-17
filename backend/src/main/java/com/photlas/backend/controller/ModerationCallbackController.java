@@ -74,7 +74,7 @@ public class ModerationCallbackController {
         // APIキー検証
         if (!validApiKey.equals(apiKey)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponse("無効なAPIキーです"));
+                    .body(ErrorResponse.withoutCode("無効なAPIキーです"));
         }
 
         String s3ObjectKey = (String) request.get("s3_object_key");
@@ -192,7 +192,7 @@ public class ModerationCallbackController {
     ) {
         if (!validApiKey.equals(apiKey)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponse("無効なAPIキーです"));
+                    .body(ErrorResponse.withoutCode("無効なAPIキーです"));
         }
 
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(thresholdMinutes);

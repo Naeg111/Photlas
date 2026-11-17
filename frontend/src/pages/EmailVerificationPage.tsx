@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { API_V1_URL } from '../config/api'
 import { ApiError } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
+import { translateErrorCode } from '../utils/apiErrorMessage'
 import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { isInAppBrowser } from '../utils/isInAppBrowser'
 
@@ -59,7 +60,7 @@ export default function EmailVerificationPage() {
           if (err.isRateLimited) {
             setErrorMessage(getRateLimitInlineMessage(err, t))
           } else {
-            setErrorMessage(err.responseMessage || t('auth.errorOccurred'))
+            setErrorMessage(translateErrorCode(err.code, t, 'auth.errorOccurred'))
           }
         } else {
           setErrorMessage(t('auth.errorOccurred'))

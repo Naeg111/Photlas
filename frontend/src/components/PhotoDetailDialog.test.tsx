@@ -2200,18 +2200,53 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('400エラー時にサーバーのメッセージがエラートーストに表示される', async () => {
-      const mockFetch = createLocationSuggestionMockFetch({
-        ok: false,
-        status: 400,
-        body: { message: '自分の投稿に対して撮影場所の指摘はできません' },
-      })
+    // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+    const ownPhotoError = {
+      ok: false,
+      status: 400,
+      body: { code: 'SUGGESTION_OWN_PHOTO', message: '自分の投稿に対して撮影場所の指摘はできません（サーバー）' },
+    }
+
+    it('400エラー時にエラーコードに応じたメッセージがエラートーストに表示される', async () => {
+      const mockFetch = createLocationSuggestionMockFetch(ownPhotoError)
       const user = await renderAndOpenSuggestionDialog(mockFetch)
 
       await user.click(screen.getByTestId('mock-suggestion-submit'))
 
       await waitFor(() => {
         expect(mockToast.error).toHaveBeenCalledWith('自分の投稿に対して撮影場所の指摘はできません')
+      })
+    })
+
+    it('Issue#93 - 英語の設定では400エラーのトーストが英語で表示される', async () => {
+      const mockFetch = createLocationSuggestionMockFetch(ownPhotoError)
+      await i18n.changeLanguage('en')
+      try {
+        const user = await renderAndOpenSuggestionDialog(mockFetch)
+
+        await user.click(screen.getByTestId('mock-suggestion-submit'))
+
+        await waitFor(() => {
+          expect(mockToast.error).toHaveBeenCalledWith('You cannot suggest a location for your own photo.')
+        })
+        expect(mockToast.error).not.toHaveBeenCalledWith(ownPhotoError.body.message)
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
+    it('400エラーでコードが無い場合は汎用のメッセージになる', async () => {
+      const mockFetch = createLocationSuggestionMockFetch({
+        ok: false,
+        status: 400,
+        body: { message: '日本語のメッセージ' },
+      })
+      const user = await renderAndOpenSuggestionDialog(mockFetch)
+
+      await user.click(screen.getByTestId('mock-suggestion-submit'))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('指摘の送信に失敗しました')
       })
     })
 

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { validateUsername as validateUsernameLite } from '../utils/validation/username'
 import { localizeFieldError } from '../utils/validation/localizeFieldError'
+import { getErrorCode, translateErrorCode } from '../utils/apiErrorMessage'
 import { S3_TAG_HEADER_NAME, S3_TAG_HEADER_VALUE_PENDING, S3_CACHE_CONTROL_VALUE } from '../utils/apiClient'
 
 // APIエンドポイント定数
@@ -145,8 +146,10 @@ export const useProfileEdit = ({
 
       if (!response.ok) {
         if (response.status === HTTP_STATUS.CONFLICT) {
-          const data = await response.json()
-          setUsernameError(data.message)
+          // Issue#93: 今のバックエンドは表示名の保存で 409 を返さない。将来コード（例: USERNAME_ALREADY_IN_USE）と
+          // errors.* の翻訳を足せば、ここでその文言が出る。それまでは汎用の文言になる
+          const data = await response.json().catch(() => null)
+          setUsernameError(translateErrorCode(getErrorCode(data), t, 'auth.errorOccurred'))
           return
         }
         if (response.status === HTTP_STATUS.BAD_REQUEST) {
@@ -263,8 +266,8 @@ export const useProfileEdit = ({
 
         if (!usernameResponse.ok) {
           if (usernameResponse.status === HTTP_STATUS.CONFLICT) {
-            const data = await usernameResponse.json()
-            setUsernameError(data.message)
+            const data = await usernameResponse.json().catch(() => null)
+            setUsernameError(translateErrorCode(getErrorCode(data), t, 'auth.errorOccurred'))
             setIsSaving(false)
             return
           }

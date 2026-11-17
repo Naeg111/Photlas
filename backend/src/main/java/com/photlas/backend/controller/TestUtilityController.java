@@ -46,19 +46,19 @@ public class TestUtilityController {
     ) {
         if (!validApiKey.equals(apiKey)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponse("無効なAPIキーです"));
+                    .body(ErrorResponse.withoutCode("無効なAPIキーです"));
         }
 
         String email = request.get("email");
         if (email == null || email.isBlank()) {
             return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("emailは必須です"));
+                    .body(ErrorResponse.withoutCode("emailは必須です"));
         }
 
         Optional<User> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse("ユーザーが見つかりません"));
+                    .body(ErrorResponse.withoutCode("ユーザーが見つかりません"));
         }
 
         User user = userOptional.get();

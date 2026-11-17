@@ -3,6 +3,7 @@ package com.photlas.backend.service;
 import com.photlas.backend.dto.LocationSuggestionReviewResponse;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.*;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.repository.LocationSuggestionRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
@@ -130,7 +131,8 @@ public class LocationSuggestionServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(IllegalStateException.class)
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_ALREADY_SENT);
     }
 
     @Test
@@ -145,7 +147,8 @@ public class LocationSuggestionServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, OWNER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(IllegalStateException.class)
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_OWN_PHOTO);
     }
 
     @Test
@@ -187,7 +190,8 @@ public class LocationSuggestionServiceTest {
         // Act & Assert
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("上限");
+                .hasMessageContaining("上限")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_DAILY_LIMIT);
     }
 
     @Test
@@ -204,7 +208,8 @@ public class LocationSuggestionServiceTest {
         // Act & Assert
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("公開中");
+                .hasMessageContaining("公開中")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_PHOTO_NOT_PUBLIC);
     }
 
     @Test
@@ -221,7 +226,8 @@ public class LocationSuggestionServiceTest {
         // Act & Assert
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("公開中");
+                .hasMessageContaining("公開中")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_PHOTO_NOT_PUBLIC);
     }
 
     // ========================================
@@ -341,7 +347,8 @@ public class LocationSuggestionServiceTest {
         // Act & Assert
         assertThatThrownBy(() -> service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("解決済み");
+                .hasMessageContaining("解決済み")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_ALREADY_RESOLVED);
     }
 
     @Test
@@ -361,7 +368,8 @@ public class LocationSuggestionServiceTest {
         // Act & Assert
         assertThatThrownBy(() -> service.rejectSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("解決済み");
+                .hasMessageContaining("解決済み")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_ALREADY_RESOLVED);
     }
 
     // ========================================
@@ -443,7 +451,8 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("審査中");
+                .hasMessageContaining("審査中")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_UNDER_REVIEW);
     }
 
     @Test
@@ -460,7 +469,8 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("削除された");
+                .hasMessageContaining("削除された")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_DELETED);
     }
 
     @Test
@@ -477,7 +487,8 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.rejectSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("審査中");
+                .hasMessageContaining("審査中")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_UNDER_REVIEW);
     }
 
     @Test
@@ -494,7 +505,8 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.rejectSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("削除された");
+                .hasMessageContaining("削除された")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_DELETED);
     }
 
     // ========================================
@@ -683,7 +695,8 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, nearLat, ORIGINAL_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("30m");
+                .hasMessageContaining("30m")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_TOO_CLOSE);
     }
 
     @Test
@@ -701,7 +714,8 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, lat29, ORIGINAL_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("30m");
+                .hasMessageContaining("30m")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_TOO_CLOSE);
     }
 
     @Test
@@ -733,7 +747,8 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, farLat, ORIGINAL_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("1km");
+                .hasMessageContaining("1km")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_TOO_FAR);
     }
 
     @Test
@@ -752,7 +767,8 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, lat1001, ORIGINAL_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("1km");
+                .hasMessageContaining("1km")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_TOO_FAR);
     }
 
     @Test

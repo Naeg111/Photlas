@@ -4,6 +4,8 @@ import com.photlas.backend.entity.OAuthLinkConfirmation;
 import com.photlas.backend.entity.OAuthProvider;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserOAuthConnection;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
 import com.photlas.backend.repository.OAuthLinkConfirmationRepository;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
@@ -80,20 +82,20 @@ public class OAuthLinkConfirmationService {
     public User consume(String rawToken) {
         String hashed = sha256Hex(rawToken);
         OAuthLinkConfirmation record = repository.findByTokenHash(hashed)
-                .orElseThrow(() -> new IllegalArgumentException("リンク確認トークンが無効です"));
+                .orElseThrow(() -> new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "リンク確認トークンが無効です"));
 
         if (record.getConsumedAt() != null) {
-            throw new IllegalArgumentException("リンク確認トークンは既に使用されています");
+            throw new InvalidRequestException(ErrorCodes.TOKEN_ALREADY_USED, "リンク確認トークンは既に使用されています");
         }
         if (record.getExpiresAt() == null || record.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("リンク確認トークンの有効期限が切れています");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "リンク確認トークンの有効期限が切れています");
         }
 
         User user = userRepository.findById(record.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("対象ユーザーが見つかりません"));
+                .orElseThrow(() -> new InvalidRequestException(ErrorCodes.USER_NOT_FOUND, "対象ユーザーが見つかりません"));
         if (user.getDeletedAt() != null) {
             // [T6] 発行後にソフトデリートされたユーザーは拒否
-            throw new IllegalArgumentException("対象ユーザーは退会済みです");
+            throw new InvalidRequestException(ErrorCodes.ACCOUNT_DELETED, "対象ユーザーは退会済みです");
         }
 
         // UserOAuthConnection を新規作成して保存

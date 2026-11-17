@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.service.AccountService;
 import com.photlas.backend.service.AuthService;
 import com.photlas.backend.service.JwtService;
@@ -97,7 +98,7 @@ public class AuthController {
         String email = request.get(FIELD_EMAIL);
         if (email == null || email.isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponse("メールアドレスは必須です"));
+                    .body(new ErrorResponse(ErrorCodes.EMAIL_REQUIRED, "メールアドレスは必須です"));
         }
         authService.resendVerificationEmail(email);
 

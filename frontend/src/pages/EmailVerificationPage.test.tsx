@@ -3,6 +3,7 @@ import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import EmailVerificationPage from './EmailVerificationPage'
+import i18n from '../i18n'
 
 // テスト用定数
 const VALID_TOKEN = 'test-valid-token'
@@ -249,20 +250,44 @@ describe('EmailVerificationPage', () => {
   })
 
   describe('認証失敗', () => {
-    it('API非200レスポンスでAPIからのエラーメッセージが表示される', async () => {
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: TEXT_API_ERROR }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      )
+    // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+    const invalidTokenError = () =>
+      new Response(JSON.stringify({ code: 'INVALID_TOKEN', message: TEXT_API_ERROR }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+    it('API非200レスポンスでエラーコードに応じたメッセージが表示される', async () => {
+      mockFetch.mockResolvedValueOnce(invalidTokenError())
 
       renderWithToken(VALID_TOKEN)
 
       await waitFor(() => {
         expect(screen.getByText(TEXT_ERROR_HEADING)).toBeInTheDocument()
-        expect(screen.getByText(TEXT_API_ERROR)).toBeInTheDocument()
+        expect(
+          screen.getByText('リンクが無効か、有効期限が切れています。もう一度やり直してください。')
+        ).toBeInTheDocument()
       })
+      expect(screen.queryByText(TEXT_API_ERROR)).not.toBeInTheDocument()
+    })
+
+    it('Issue#93 - 英語の設定ではエラーが英語で表示される', async () => {
+      mockFetch.mockResolvedValueOnce(invalidTokenError())
+
+      await i18n.changeLanguage('en')
+      try {
+        renderWithToken(VALID_TOKEN)
+
+        await waitFor(() => {
+          expect(screen.getByText('Verification Error')).toBeInTheDocument()
+          expect(
+            screen.getByText('This link is invalid or has expired. Please try again.')
+          ).toBeInTheDocument()
+        })
+        expect(screen.queryByText(TEXT_API_ERROR)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
 
     it('fetch例外発生時に汎用エラーメッセージが表示される', async () => {

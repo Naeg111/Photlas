@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { BrowserRouter } from 'react-router-dom'
 import { AccountSettingsDialog } from './AccountSettingsDialog'
+import i18n from '../i18n'
 import { toast } from 'sonner'
 
 /**
@@ -576,6 +577,62 @@ describe('AccountSettingsDialog', () => {
           [FIELD_NEW_PASSWORD_CONFIRM]: NEW_PASSWORD,
         })
       })
+    })
+
+    // Issue#93: 400 は入力チェックエラー。バックエンドの message（日本語固定）は出さない
+    const validationError = () =>
+      createMockFetchResponse(false, 400, {
+        code: 'VALIDATION_ERROR',
+        message: '入力内容が無効です。',
+      })
+
+    it('Issue#93 - 400 のときはパスワードの形式エラーを出し、サーバーの日本語メッセージは出さない', async () => {
+      mockFetch.mockResolvedValueOnce(validationError())
+
+      render(
+        <MockedAccountSettingsDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          currentEmail={CURRENT_EMAIL}
+        />
+      )
+
+      const { currentPasswordInput, newPasswordInput, confirmPasswordInput, submitButton } = setupPasswordChangeTest()
+      fireEvent.change(currentPasswordInput, { target: { value: VALID_PASSWORD } })
+      fireEvent.change(newPasswordInput, { target: { value: NEW_PASSWORD } })
+      fireEvent.change(confirmPasswordInput, { target: { value: NEW_PASSWORD } })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('パスワードの形式が正しくありません')
+      })
+      expect(toast.error).not.toHaveBeenCalledWith('入力内容が無効です。')
+    })
+
+    it('Issue#93 - 英語の設定では 400 のエラーが英語で表示される', async () => {
+      mockFetch.mockResolvedValueOnce(validationError())
+      await i18n.changeLanguage('en')
+      try {
+        render(
+          <MockedAccountSettingsDialog
+            open={true}
+            onOpenChange={mockOnOpenChange}
+            currentEmail={CURRENT_EMAIL}
+          />
+        )
+
+        fireEvent.change(screen.getByLabelText('Current Password'), { target: { value: VALID_PASSWORD } })
+        fireEvent.change(screen.getByLabelText('New Password'), { target: { value: NEW_PASSWORD } })
+        fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: NEW_PASSWORD } })
+        fireEvent.click(screen.getByRole('button', { name: 'Change Password' }))
+
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith('Invalid password format')
+        })
+        expect(toast.error).not.toHaveBeenCalledWith('入力内容が無効です。')
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
 
     // Issue#21: パスワードバリデーション統一 - 記号禁止チェック

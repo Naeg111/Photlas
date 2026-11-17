@@ -35,6 +35,13 @@ vi.mock('react-router-dom', async () => {
 /**
  * tokenパラメータ付きでResetPasswordPageをレンダリングする
  */
+// Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+const invalidTokenError = () =>
+  new Response(
+    JSON.stringify({ code: 'INVALID_TOKEN', message: 'トークンが無効または期限切れです' }),
+    { status: 400, headers: { 'Content-Type': 'application/json' } }
+  )
+
 const renderWithToken = (token?: string) => {
   const initialEntries = token
     ? [`/reset-password?token=${token}`]
@@ -268,12 +275,7 @@ describe('ResetPasswordPage', () => {
 
   describe('エラーハンドリング', () => {
     it('トークンが無効な場合、エラーメッセージが表示される', async () => {
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: 'トークンが無効または期限切れです' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      )
+      mockFetch.mockResolvedValueOnce(invalidTokenError())
 
       renderWithToken(VALID_TOKEN)
 
@@ -286,8 +288,11 @@ describe('ResetPasswordPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('トークンが無効または期限切れです')).toBeInTheDocument()
+        expect(
+          screen.getByText('リンクが無効か、有効期限が切れています。もう一度やり直してください。')
+        ).toBeInTheDocument()
       })
+      expect(screen.queryByText('トークンが無効または期限切れです')).not.toBeInTheDocument()
     })
 
     it('通信エラー時にエラーメッセージが表示される', async () => {
@@ -399,6 +404,25 @@ describe('ResetPasswordPage', () => {
 
         expect(await screen.findByText('Password must be between 8 and 20 characters.')).toBeInTheDocument()
         expect(screen.queryByText(/パスワードは8文字以上/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
+    it('Issue#93 - 英語の設定では、トークンが無効なときのエラーが英語で表示される', async () => {
+      mockFetch.mockResolvedValueOnce(invalidTokenError())
+      await i18n.changeLanguage('en')
+      try {
+        renderWithToken(VALID_TOKEN)
+
+        fireEvent.change(screen.getByLabelText('New Password'), { target: { value: VALID_PASSWORD } })
+        fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: VALID_PASSWORD } })
+        fireEvent.click(screen.getByRole('button', { name: 'Reset Password' }))
+
+        expect(
+          await screen.findByText('This link is invalid or has expired. Please try again.')
+        ).toBeInTheDocument()
+        expect(screen.queryByText('トークンが無効または期限切れです')).not.toBeInTheDocument()
       } finally {
         await i18n.changeLanguage('ja')
       }

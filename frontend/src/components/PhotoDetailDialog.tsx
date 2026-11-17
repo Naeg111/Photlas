@@ -12,6 +12,7 @@ import { LqipPlaceholder } from './LqipPlaceholder'
 import { getAuthHeaders } from '../utils/apiClient'
 import { buildRateLimitApiError, notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { notifyReportFailure } from '../utils/notifyReportFailure'
+import { getErrorCode, translateErrorCode } from '../utils/apiErrorMessage'
 import { fetchPhotoTags, fetchTags, type PhotoTagDisplay } from '../utils/tagsApi'
 import { KeywordSection, type KeywordTag } from './KeywordSection'
 import { formatTagDisplayName } from '../utils/formatTagDisplayName'
@@ -957,8 +958,8 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         toast.success(t('photo.suggestionSent'))
         setIsLocationSuggestionOpen(false)
       } else if (response.status === 400) {
-        const data = await response.json()
-        toast.error(data.message || t('photo.suggestionFailed'))
+        const data = await response.json().catch(() => null)
+        toast.error(translateErrorCode(getErrorCode(data), t, 'photo.suggestionFailed'))
         setIsLocationSuggestionOpen(false)
       } else {
         toast.error(t('photo.suggestionFailed'))
@@ -966,7 +967,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     } catch {
       toast.error(t('photo.suggestionFailed'))
     }
-  }, [currentPhotoId])
+  }, [currentPhotoId, t])
 
   // Issue#57: 写真削除処理
   const handleDeletePhoto = useCallback(async () => {

@@ -65,13 +65,15 @@ describe('LinkAccountConfirmDialog', () => {
     })
   })
 
-  it('API エラー時はエラーメッセージを表示し onClose/onLinked は呼ばれない', async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ message: '期限切れのトークンです' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
+  // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+  const usedTokenError = () =>
+    new Response(
+      JSON.stringify({ code: 'TOKEN_ALREADY_USED', message: 'リンク確認トークンは既に使用されています' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
     )
+
+  it('API エラー時はエラーメッセージを表示し onClose/onLinked は呼ばれない', async () => {
+    mockFetch.mockResolvedValueOnce(usedTokenError())
     const onLinked = vi.fn()
     const onClose = vi.fn()
     renderDialog({ onLinked, onClose })
@@ -79,10 +81,27 @@ describe('LinkAccountConfirmDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: '連携する' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(/期限切れ/)
+      expect(screen.getByRole('alert')).toHaveTextContent('このリンクはすでに使用されています')
     })
     expect(onLinked).not.toHaveBeenCalled()
     expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('Issue#93 - 英語の設定では API エラーが英語で表示される', async () => {
+    mockFetch.mockResolvedValueOnce(usedTokenError())
+    await i18nInstance.changeLanguage('en')
+    try {
+      renderDialog()
+
+      await userEvent.click(screen.getByRole('button', { name: 'Link' }))
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toHaveTextContent('This link has already been used.')
+      })
+      expect(screen.queryByText(/トークン/)).not.toBeInTheDocument()
+    } finally {
+      await i18nInstance.changeLanguage('ja')
+    }
   })
 
   it('「キャンセル」クリックで onClose のみ呼ばれる', async () => {

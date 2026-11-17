@@ -13,6 +13,7 @@ import { Button } from '../components/ui/button'
 import { useAuth } from '../contexts/AuthContext'
 import { ApiError, getAuthHeaders } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
+import { getErrorCode, translateErrorCode } from '../utils/apiErrorMessage'
 import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { computeBoundsForPins } from '../utils/geoBounds'
 import { API_V1_URL } from '../config/api'
@@ -186,7 +187,7 @@ export default function ReviewLocationPage() {
         )
         if (!response.ok) {
           const data = await response.json().catch(() => null)
-          throw new Error(data?.message || t('reviewLocation.fetchFailed'))
+          throw new Error(translateErrorCode(getErrorCode(data), t, 'reviewLocation.fetchFailed'))
         }
         const data = await response.json()
         setReviewData(data)
