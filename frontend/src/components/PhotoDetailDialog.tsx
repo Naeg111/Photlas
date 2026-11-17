@@ -896,6 +896,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           notifyIfRateLimited(buildRateLimitApiError(response), t)
         } else if (response.status === 400) {
           // Issue#93: 公開中でない写真（PHOTO_NOT_PUBLIC）など、やり直しても通らない理由を表示言語で知らせる
+          // （readErrorCode は本文を読み切るので、この後で response の本文を読まないこと）
           toast.error(translateErrorCode(await readErrorCode(response), t, 'errors.errorOccurred'))
         }
       }
