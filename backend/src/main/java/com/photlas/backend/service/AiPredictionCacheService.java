@@ -102,8 +102,11 @@ public class AiPredictionCacheService {
      *
      * <p>cron は午前3時固定（投稿が少ない時間帯）。期限切れトークンが
      * 短時間残ること自体は害がないため日次実行で十分。</p>
+     *
+     * <p>Spec#169: 日本時間の午前3時に動くよう zone を指定する（指定しないと JVM（本番は UTC）の
+     * 3 時 = 日本時間 12 時になる）。</p>
      */
-    @Scheduled(cron = "0 0 3 * * *")
+    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Tokyo")
     @Transactional
     public void cleanupExpired() {
         repository.deleteByExpiresAtBefore(new Date());

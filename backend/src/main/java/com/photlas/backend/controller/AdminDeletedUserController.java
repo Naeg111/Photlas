@@ -14,8 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.photlas.backend.util.ServerTime;
+
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -218,10 +219,11 @@ public class AdminDeletedUserController {
     }
 
     /**
-     * 退会済みユーザー詳細・一覧用の日時フォーマット（snake_case 出力との互換性のため ISO_DATE_TIME 形式を維持）。
-     * エクスポート（{@link #exportData}）は Issue#108 で UTC ISO 8601(Z) へ移行済み。
+     * 退会済みユーザー詳細・一覧用の日時フォーマット。
+     * Spec#169: サーバーが記録した時刻（本番は UTC）を UTC の ISO 8601（末尾 Z）で返す。
+     * オフセットのない文字列だと、ブラウザが現地時刻とみなして 9 時間ずれるため。
      */
     private String formatDateTime(LocalDateTime dt) {
-        return dt != null ? dt.format(DateTimeFormatter.ISO_DATE_TIME) : null;
+        return ServerTime.toUtcIsoString(dt);
     }
 }

@@ -4,12 +4,12 @@ import com.photlas.backend.dto.export.*;
 import com.photlas.backend.entity.*;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.*;
+import com.photlas.backend.util.ServerTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,15 +22,13 @@ import java.util.List;
  * <p>DB トランザクションは {@code readOnly = true} とし、ストリーミング処理に入る前に
  * 一度にメモリへ読み込む（§4.14 のトランザクション境界）。</p>
  *
- * <p><b>タイムゾーン:</b> 作成時刻などの LocalDateTime は {@link #toUtc} で
- * UTC ISO 8601(Z) に変換する（§4.13）。写真の shotAt はカメラの時計の時刻なので
- * 変換せず、そのまま出す（Spec#161 §3.6、§4.13 の例外）。</p>
+ * <p><b>タイムゾーン:</b> 作成時刻などの LocalDateTime は、サーバーが {@code LocalDateTime.now()}
+ * （JVM の既定のタイムゾーン。本番は UTC）で記録した時刻なので、{@link #toUtc} で
+ * そのタイムゾーンのまま読んで UTC ISO 8601(Z) に変換する（§4.13）。日本時間とはみなさない。
+ * 写真の shotAt はカメラの時計の時刻なので変換せず、そのまま出す（Spec#161 §3.6、§4.13 の例外）。</p>
  */
 @Service
 public class UserDataCollectorService {
-
-    /** 作成時刻などの LocalDateTime を UTC に直すときに想定するタイムゾーン（shot_at には使わない）。 */
-    private static final ZoneId STORAGE_ZONE = ZoneId.of("Asia/Tokyo");
 
     private final UserRepository userRepository;
     private final PhotoRepository photoRepository;
@@ -223,11 +221,15 @@ public class UserDataCollectorService {
     }
 
     /**
-     * Photlas のストレージ層に保存されている LocalDateTime（JST 想定）を、
-     * 出力用の UTC Instant へ変換する。null は null のまま返す。
+     * サーバーが記録した LocalDateTime（作成時刻など）を、出力用の UTC Instant へ変換する。
+     * null は null のまま返す。
+     *
+     * <p>作成時刻などは {@code LocalDateTime.now()} / {@code @CreationTimestamp} で、JVM の既定の
+     * タイムゾーンの時刻として記録されている。そのため、日本時間とはみなさず、JVM の既定の
+     * タイムゾーンのまま読む（本番は UTC なので、保存されている時刻がそのまま UTC になる）。</p>
      */
     static Instant toUtc(LocalDateTime dt) {
-        return dt == null ? null : dt.atZone(STORAGE_ZONE).toInstant();
+        return ServerTime.toInstant(dt);
     }
 
     /**

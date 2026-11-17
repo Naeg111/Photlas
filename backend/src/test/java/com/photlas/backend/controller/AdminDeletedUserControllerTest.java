@@ -115,7 +115,9 @@ public class AdminDeletedUserControllerTest {
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email", is("detail@example.com")))
-                .andExpect(jsonPath("$.original_username", is("detailuser")));
+                .andExpect(jsonPath("$.original_username", is("detailuser")))
+                // Spec#169: ブラウザが正しい現地時刻で表示できるよう、UTC（末尾 Z）で返す
+                .andExpect(jsonPath("$.deleted_at", endsWith("Z")));
     }
 
     @Test

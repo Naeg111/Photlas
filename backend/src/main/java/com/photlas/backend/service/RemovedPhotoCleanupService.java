@@ -38,9 +38,9 @@ public class RemovedPhotoCleanupService {
 
     /**
      * REMOVED投稿の物理削除を実行する
-     * 毎日午前3時に実行される
+     * 毎日午前3時（日本時間）に実行される。Spec#169: zone を指定しないと JVM（本番は UTC）の 3 時 = 日本時間 12 時になる
      */
-    @Scheduled(cron = "0 0 3 * * *")
+    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Tokyo")
     @Transactional
     public void cleanupRemovedPhotos() {
         LocalDateTime threshold = LocalDateTime.now().minusDays(RETENTION_DAYS);

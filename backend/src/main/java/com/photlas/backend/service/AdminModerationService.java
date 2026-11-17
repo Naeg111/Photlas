@@ -170,7 +170,7 @@ public class AdminModerationService {
             accountSanctionRepository.save(sanction);
             if (email != null) {
                 notificationService.sendTemporarySuspensionNotification(
-                        email, username, reason, sanction.getSuspendedUntil().toLocalDate(), language);
+                        email, username, reason, sanction.getSuspendedUntil(), language);
             }
             logger.info("一時停止を適用: userId={}, until={}", userId, sanction.getSuspendedUntil());
         } else {

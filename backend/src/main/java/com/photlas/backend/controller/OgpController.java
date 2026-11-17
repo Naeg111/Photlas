@@ -8,6 +8,7 @@ import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.S3Service;
+import com.photlas.backend.util.ServerTime;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -106,7 +107,8 @@ public class OgpController {
         sb.append("  }");
 
         if (photo.getCreatedAt() != null) {
-            sb.append(",\n  \"datePublished\": \"").append(photo.getCreatedAt().toString()).append("\"");
+            // Spec#169: UTC（末尾 Z）で出す。オフセットがないと、どこの時刻か決まらないため
+            sb.append(",\n  \"datePublished\": \"").append(ServerTime.toUtcIsoString(photo.getCreatedAt())).append("\"");
         }
 
         // 位置情報

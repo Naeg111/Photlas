@@ -13,6 +13,7 @@ import com.photlas.backend.repository.LocationSuggestionRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.util.ServerTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +24,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -40,6 +44,8 @@ public class LocationSuggestionService {
 
     // Issue#146: 撮影場所指摘の距離制限（SpotRepository の haversine と同じ地球半径を使用）
     private static final double EARTH_RADIUS_METERS = 6371000.0;
+    /** Spec#169: 「1日あたりの指摘件数」の「1日」の区切りに使うタイムゾーン。 */
+    private static final ZoneId JAPAN_ZONE = ZoneId.of("Asia/Tokyo");
     /** 指摘の下限距離（これ未満は近すぎる誤差レベルの指摘として拒否）。全写真共通。 */
     private static final double SUGGESTION_MIN_DISTANCE_METERS = 30.0;
     /** GPS 由来写真の指摘の上限距離（これ超は離れすぎとして拒否）。 */
@@ -88,9 +94,9 @@ public class LocationSuggestionService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
-        // 1日あたりの指摘件数制限
+        // 1日あたりの指摘件数制限（Spec#169: 「1日」は日本時間の 0 時で区切る）
         long dailyCount = locationSuggestionRepository.countBySuggesterIdAndCreatedAtAfter(
-                suggester.getId(), LocalDateTime.now().toLocalDate().atStartOfDay());
+                suggester.getId(), dailyLimitWindowStart(Instant.now()));
         if (dailyCount >= 10) {
             throw new IllegalStateException("1日あたりの指摘件数の上限に達しました");
         }
@@ -415,6 +421,20 @@ public class LocationSuggestionService {
         message.setSubject(subject);
         message.setText(body);
         mailSender.send(message);
+    }
+
+    /**
+     * 「1日あたりの指摘件数」を数え始める時刻（今日の日本時間 0 時）を返す。
+     *
+     * <p>Spec#169: created_at と比べられるよう、JVM の既定のタイムゾーン（本番は UTC）の
+     * LocalDateTime にして返す。以前は JVM の日付（本番では日本時間 9 時に切り替わる）で区切っていた。</p>
+     *
+     * @param now 今の瞬間
+     * @return 今日の日本時間 0 時を、JVM の既定のタイムゾーンの時刻にしたもの
+     */
+    static LocalDateTime dailyLimitWindowStart(Instant now) {
+        LocalDate todayInJapan = LocalDate.ofInstant(now, JAPAN_ZONE);
+        return ServerTime.fromInstant(todayInJapan.atStartOfDay(JAPAN_ZONE).toInstant());
     }
 
     private String generateSecureToken() {

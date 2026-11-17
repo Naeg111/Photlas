@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.matchesRegex;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -98,7 +99,9 @@ public class OgpControllerTest {
                 .andExpect(content().string(containsString("twitter:card")))
                 .andExpect(content().string(containsString("photographerさんが撮影した写真")))
                 .andExpect(content().string(containsString("application/ld+json")))
-                .andExpect(content().string(containsString("Photograph")));
+                .andExpect(content().string(containsString("Photograph")))
+                // Spec#169: datePublished は UTC（末尾 Z）で出す
+                .andExpect(content().string(matchesRegex("(?s).*\"datePublished\": \"[^\"]+Z\".*")));
     }
 
     @Test
