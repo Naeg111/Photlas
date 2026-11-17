@@ -1,13 +1,12 @@
 package com.photlas.backend.controller;
 
+import com.photlas.backend.dto.ErrorResponse;
 import com.photlas.backend.dto.LocationSuggestionRequest;
 import jakarta.validation.Valid;
-import com.photlas.backend.dto.ErrorResponse;
 import com.photlas.backend.dto.LocationSuggestionReviewResponse;
 import com.photlas.backend.entity.LocationSuggestion;
-import com.photlas.backend.service.LocationSuggestionService;
 import com.photlas.backend.exception.ErrorCodes;
-import com.photlas.backend.exception.CodedException;
+import com.photlas.backend.service.LocationSuggestionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -114,6 +113,6 @@ public class LocationSuggestionController {
      */
     private static ResponseEntity<ErrorResponse> badRequest(RuntimeException e) {
         return ResponseEntity.badRequest()
-                .body(new ErrorResponse(CodedException.codeOf(e, ErrorCodes.BAD_REQUEST), e.getMessage()));
+                .body(ErrorResponse.of(e, ErrorCodes.BAD_REQUEST));
     }
 }

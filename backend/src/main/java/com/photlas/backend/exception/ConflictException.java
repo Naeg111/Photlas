@@ -3,6 +3,8 @@ package com.photlas.backend.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import java.util.Objects;
+
 /**
  * Issue#19: 競合エラー（409 Conflict）を表す例外
  *
@@ -15,12 +17,12 @@ public class ConflictException extends RuntimeException implements CodedExceptio
 
     public ConflictException(String code, String message) {
         super(message);
-        this.code = code;
+        this.code = Objects.requireNonNull(code, "code");
     }
 
     public ConflictException(String code, String message, Throwable cause) {
         super(message, cause);
-        this.code = code;
+        this.code = Objects.requireNonNull(code, "code");
     }
 
     @Override

@@ -10,13 +10,12 @@ import com.photlas.backend.dto.UploadUrlRequest;
 import com.photlas.backend.dto.UploadUrlResponse;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.CategoryNotFoundException;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.PhotoService;
 import com.photlas.backend.service.S3Service;
-import com.photlas.backend.exception.ErrorCodes;
-import com.photlas.backend.exception.InvalidRequestException;
-import com.photlas.backend.exception.CodedException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -208,8 +207,7 @@ public class PhotoController {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                CodedException.codeOf(e, ErrorCodes.BAD_REQUEST), e.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.of(e, ErrorCodes.BAD_REQUEST);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }

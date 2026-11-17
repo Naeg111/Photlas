@@ -157,8 +157,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                CodedException.codeOf(ex, ErrorCodes.BAD_REQUEST), ex.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.of(ex, ErrorCodes.BAD_REQUEST);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 

@@ -10,6 +10,7 @@ import org.springframework.security.access.AccessDeniedException;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Issue#93: GlobalExceptionHandler がすべてのエラーレスポンスに code を付けることを確かめる。
@@ -34,6 +35,15 @@ class GlobalExceptionHandlerTest {
         assertError(handler.handleConflictException(
                         new ConflictException(ErrorCodes.ALREADY_REPORTED, "通報済み")),
                 HttpStatus.CONFLICT, ErrorCodes.ALREADY_REPORTED);
+    }
+
+    @Test
+    @DisplayName("Issue#93 - 409 の例外はコード無しでは作れない（code: null のレスポンスを防ぐ）")
+    void conflict_requiresCode() {
+        assertThatThrownBy(() -> new ConflictException(null, "x"))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new ConflictException(null, "x", new RuntimeException()))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
