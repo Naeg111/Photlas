@@ -2537,8 +2537,9 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(screen.getByText('otheruser')).toBeInTheDocument()
       })
       await user.click(screen.getByTestId('report-button'))
-      await user.click(await screen.findByLabelText('成人向けコンテンツ'))
-      await user.click(screen.getByRole('button', { name: '通報する' }))
+      // ラベルは表示言語に合わせる（ja では「成人向けコンテンツ」「通報する」）
+      await user.click(await screen.findByLabelText(i18n.t('reportReasons.adult')))
+      await user.click(screen.getByRole('button', { name: i18n.t('report.submit') }))
     }
 
     it('通報が受け付けられたら成功のお知らせを出す', async () => {
@@ -2589,43 +2590,15 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(mockToast.error).not.toHaveBeenCalledWith('通報に失敗しました')
       expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
     })
-  })
 
-  describe('Issue#93: 英語の設定での通報の失敗のお知らせ', () => {
-    it('公開中でない写真（400 PHOTO_NOT_PUBLIC）なら、英語で理由を知らせる', async () => {
-      const photoDetail = createMockApiResponse({ userId: 999, username: 'otheruser' })
-      const mockFetch = vi.fn().mockImplementation((url: string, options?: RequestInit) => {
-        if (url.includes('/report') && options?.method === 'POST') {
-          return Promise.resolve({
-            ok: false,
-            status: 400,
-            headers: new Headers(),
-            json: async () => ({ code: 'PHOTO_NOT_PUBLIC', message: '公開中の写真のみ通報できます' }),
-          })
-        }
-        if (url.includes('/spots/') && url.includes('/photos')) {
-          return Promise.resolve({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
-        }
-        if (url.includes(`/photos/${TEST_PHOTO_ID_1}`)) {
-          return Promise.resolve({ ok: true, json: async () => photoDetail })
-        }
-        return Promise.resolve({ ok: true, json: async () => ({}) })
-      })
-
+    it('Issue#93: 英語の設定では、公開中でない写真（400 PHOTO_NOT_PUBLIC）の理由を英語で知らせる', async () => {
       await i18n.changeLanguage('en')
       try {
-        mockUseAuth.mockReturnValue({ user: { userId: TEST_USER_ID, username: TEST_USERNAME }, isAuthenticated: true })
-        global.fetch = mockFetch
-        const user = userEvent.setup()
-
-        render(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={vi.fn()} />)
-
-        await waitFor(() => {
-          expect(screen.getByText('otheruser')).toBeInTheDocument()
-        })
-        await user.click(screen.getByTestId('report-button'))
-        await user.click(await screen.findByLabelText(i18n.t('reportReasons.adult')))
-        await user.click(screen.getByRole('button', { name: i18n.t('report.submit') }))
+        await submitReport(createReportMockFetch({
+          ok: false,
+          status: 400,
+          body: { code: 'PHOTO_NOT_PUBLIC', message: '公開中の写真のみ通報できます' },
+        }))
 
         await waitFor(() => {
           expect(mockToast.error).toHaveBeenCalledWith('This photo is not public, so this action is unavailable.')
