@@ -82,6 +82,7 @@ import { MODERATION_STATUS_PUBLISHED, MODERATION_STATUS_QUARANTINED, ROLE_ADMIN 
 import { stripExif } from './utils/stripExif'
 import { SPLASH_SCREEN_DURATION_MS, INITIAL_SPOTS_SPLASH_TIMEOUT_MS } from './config/app'
 import { useOAuthLoginToast } from './hooks/useOAuthLoginToast'
+import { useLatest } from './hooks/useLatest'
 import { useCanonicalUrl } from './hooks/useCanonicalUrl'
 import { SlidersHorizontal, Menu, Plus, Minus, LocateFixed, Search } from 'lucide-react'
 import { CompassIcon } from './components/CompassIcon'
@@ -274,8 +275,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // 実行中の setInterval が古い t を閉じ込めないよう、お知らせの文言は ref 経由で今の言語の t を使う
   // （ポーリング中に言語を切り替えても、切り替え後の言語で出す）
-  const tRef = useRef(t)
-  tRef.current = t
+  const tRef = useLatest(t)
 
   const startModerationPolling = useCallback((photoId: number) => {
     // 既存のポーリングをクリア

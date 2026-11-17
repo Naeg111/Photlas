@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRobotsNoindex } from '../hooks/useRobotsNoindex'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Trash2, Clock, Download } from 'lucide-react'
@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { API_V1_URL } from '../config/api'
+import { useLatest } from '../hooks/useLatest'
 import {
   ACTION_TAKEN_I18N_KEYS,
   REPORT_REASON_I18N_KEYS,
@@ -35,8 +36,7 @@ export default function AdminDeletedUserDetailPage() {
   const { getAuthToken } = useAuth()
   const { t, i18n } = useTranslation()
   // fetchDetail を t に依存させず、言語の切り替えで再取得しないよう、ref 経由で今の言語の t を使う
-  const tRef = useRef(t)
-  tRef.current = t
+  const tRef = useLatest(t)
 
   /** Spec#93 追加対応: 数値コードを表示言語の名前にする（未知のコードは数値のまま出す） */
   const codeLabel = (keys: Record<number, string>, code: number) =>
