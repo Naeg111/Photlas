@@ -927,6 +927,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       if (response.ok) {
         toast.success(t('report.success'))
         setIsReportOpen(false)
+      } else if (response.status === 429) {
+        // レート制限は、プロフィールの通報と同じく専用のお知らせを出す（やり直せるよう開いたままにする）
+        notifyIfRateLimited(buildRateLimitApiError(response), t)
       } else if (notifyReportFailure(response.status, t)) {
         // 409（通報済み）・400 は閉じる。扱いはプロフィールの通報とそろえる（notifyReportFailure）
         setIsReportOpen(false)

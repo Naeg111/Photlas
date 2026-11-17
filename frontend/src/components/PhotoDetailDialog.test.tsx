@@ -2322,11 +2322,16 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   describe('通報の送信結果のお知らせ', () => {
-    function createReportMockFetch(reportResponse: { ok: boolean; status: number }) {
+    function createReportMockFetch(reportResponse: { ok: boolean; status: number; headers?: Record<string, string> }) {
       const photoDetail = createMockApiResponse({ userId: 999, username: 'otheruser' })
       return vi.fn().mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/report') && options?.method === 'POST') {
-          return Promise.resolve({ ok: reportResponse.ok, status: reportResponse.status, json: async () => ({}) })
+          return Promise.resolve({
+            ok: reportResponse.ok,
+            status: reportResponse.status,
+            headers: new Headers(reportResponse.headers ?? {}),
+            json: async () => ({}),
+          })
         }
         if (url.includes('/spots/') && url.includes('/photos')) {
           return Promise.resolve({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
@@ -2369,6 +2374,15 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(mockToast.info).toHaveBeenCalledWith('すでに通報済みです')
       })
       expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
+    })
+
+    it('レート制限（429）なら、プロフィールの通報と同じく専用のお知らせを出す', async () => {
+      await submitReport(createReportMockFetch({ ok: false, status: 429, headers: { 'Retry-After': '30' } }))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('混雑しています（30 秒後に再取得）')
+      })
+      expect(mockToast.error).not.toHaveBeenCalledWith('通報に失敗しました')
     })
 
     it('400 なら失敗のお知らせを出してダイアログを閉じる', async () => {

@@ -219,14 +219,22 @@ export const REPORT_REASON_I18N_KEYS: Record<number, string> = {
   [REASON_OTHER]: 'reportReasons.other',
 }
 
-/** Spec#93 追加対応: 制裁の種類コード → i18n 翻訳キー（管理者ページの履歴表示用） */
+/**
+ * Spec#93 追加対応: 制裁の種類コード → i18n 翻訳キー（管理者ページの履歴表示用）。
+ * バックエンドの CodeConstants（700番台）に制裁を足したら、ここと i18n（admin.sanctionTypes.*、5言語）にも足す。
+ * 足し忘れると、管理者ページでは数値のまま表示される。
+ */
 export const SANCTION_TYPE_I18N_KEYS: Record<number, string> = {
   [SANCTION_WARNING]: 'admin.sanctionTypes.warning',
   [SANCTION_TEMPORARY_SUSPENSION]: 'admin.sanctionTypes.temporarySuspension',
   [SANCTION_PERMANENT_SUSPENSION]: 'admin.sanctionTypes.permanentSuspension',
 }
 
-/** Spec#93 追加対応: 違反への処置コード → i18n 翻訳キー（管理者ページの履歴表示用） */
+/**
+ * Spec#93 追加対応: 違反への処置コード → i18n 翻訳キー（管理者ページの履歴表示用）。
+ * バックエンドの CodeConstants（1300番台）に処置を足したら、ここと i18n（admin.actionTaken.*、5言語）にも足す。
+ * 足し忘れると、管理者ページでは数値のまま表示される。
+ */
 export const ACTION_TAKEN_I18N_KEYS: Record<number, string> = {
   [ACTION_TAKEN_REMOVED]: 'admin.actionTaken.removed',
 }
