@@ -6,6 +6,7 @@ import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
@@ -332,6 +333,26 @@ public class ReportControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath(JSON_PATH_MESSAGE).value(containsString("自分の投稿を通報")));
+    }
+
+    @Test
+    @DisplayName("Issue#93 - 公開中でない写真の通報は 400 と PHOTO_NOT_PUBLIC を返す")
+    void testCreateReport_PhotoNotPublic_ReturnsBadRequestWithCode() throws Exception {
+        // testPhoto は管理下のエンティティなので、状態を変えて flush する
+        // （save だと merge になり、List.of で入れたカテゴリーの差し替えで失敗する）
+        testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
+        photoRepository.flush();
+
+        com.photlas.backend.dto.ReportRequest request =
+            createReportRequest(REASON_ADULT_CONTENT, DETAILS_ADULT_CONTENT);
+
+        mockMvc.perform(post(getReportEndpoint(testPhoto.getPhotoId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.PHOTO_NOT_PUBLIC));
     }
 
     // ===== Issue#54: プロフィール通報テスト =====

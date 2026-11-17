@@ -347,7 +347,8 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     } catch (e) {
       if (notifyIfRateLimited(e, t)) return
       // 409（通報済み）・400 は閉じる。扱いは写真詳細の通報とそろえる（notifyReportFailure）
-      if (notifyReportFailure(e instanceof ApiError ? e.status : null, t)) {
+      const apiError = e instanceof ApiError ? e : null
+      if (notifyReportFailure(apiError?.status ?? null, t, apiError?.code)) {
         setIsReportOpen(false)
       }
     } finally {

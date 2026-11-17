@@ -894,6 +894,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         setFavoriteCount(prevCount)
         if (response.status === 429) {
           notifyIfRateLimited(buildRateLimitApiError(response), t)
+        } else if (response.status === 400) {
+          // Issue#93: 公開中でない写真（PHOTO_NOT_PUBLIC）など、やり直しても通らない理由を表示言語で知らせる
+          const data = await response.json().catch(() => null)
+          toast.error(translateErrorCode(getErrorCode(data), t, 'errors.errorOccurred'))
         }
       }
     } catch {
@@ -929,9 +933,15 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       } else if (response.status === 429) {
         // レート制限は、プロフィールの通報と同じく専用のお知らせを出す（やり直せるよう開いたままにする）
         notifyIfRateLimited(buildRateLimitApiError(response), t)
-      } else if (notifyReportFailure(response.status, t)) {
-        // 409（通報済み）・400 は閉じる。扱いはプロフィールの通報とそろえる（notifyReportFailure）
-        setIsReportOpen(false)
+      } else {
+        // Issue#93: 400 はエラーコード（公開中でない写真など）の文言を出すため、本文の code を渡す
+        const code = response.status === 400
+          ? getErrorCode(await response.json().catch(() => null))
+          : undefined
+        if (notifyReportFailure(response.status, t, code)) {
+          // 409（通報済み）・400 は閉じる。扱いはプロフィールの通報とそろえる（notifyReportFailure）
+          setIsReportOpen(false)
+        }
       }
     } catch {
       notifyReportFailure(null, t)

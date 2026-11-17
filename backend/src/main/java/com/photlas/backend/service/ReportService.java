@@ -8,6 +8,7 @@ import com.photlas.backend.entity.Report;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidStateException;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.SelfReportException;
 import com.photlas.backend.exception.UserNotFoundException;
@@ -53,6 +54,7 @@ public class ReportService {
      * @throws SelfReportException 自分の投稿を通報した場合
      * @throws ConflictException すでに通報済みの場合
      * @throws PhotoNotFoundException 写真が見つからない場合
+     * @throws InvalidStateException 写真が公開中でない場合（PHOTO_NOT_PUBLIC）
      */
     @Transactional
     public ReportResponse createReport(Long photoId, ReportRequest request, Long userId) {
@@ -62,7 +64,7 @@ public class ReportService {
 
         // Issue#54: 公開中の写真のみ通報可能
         if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
-            throw new IllegalStateException("公開中の写真のみ通報できます");
+            throw new InvalidStateException(ErrorCodes.PHOTO_NOT_PUBLIC, "公開中の写真のみ通報できます");
         }
 
         // Issue#54: 自分の投稿は通報できない

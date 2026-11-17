@@ -9,6 +9,7 @@ import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.exception.FavoriteNotFoundException;
+import com.photlas.backend.exception.InvalidStateException;
 import com.photlas.backend.exception.PhotoNotFoundException;
 
 import com.photlas.backend.exception.UserNotFoundException;
@@ -69,6 +70,7 @@ public class FavoriteService {
     /**
      * お気に入りに登録する（Issue#30）
      * @throws ConflictException 既に登録済みの場合
+     * @throws InvalidStateException 写真が公開中でない場合（PHOTO_NOT_PUBLIC）
      */
     @Transactional
     public void addFavorite(Long photoId, String email) {
@@ -80,7 +82,7 @@ public class FavoriteService {
 
         // Issue#54: 公開中の写真のみお気に入り登録可能
         if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
-            throw new IllegalStateException("公開中の写真のみお気に入り登録できます");
+            throw new InvalidStateException(ErrorCodes.PHOTO_NOT_PUBLIC, "公開中の写真のみお気に入り登録できます");
         }
 
         // 通常フローでの重複チェック

@@ -6,7 +6,9 @@ import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.exception.FavoriteNotFoundException;
+import com.photlas.backend.exception.InvalidStateException;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.FavoriteRepository;
@@ -251,8 +253,9 @@ public class FavoriteServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> favoriteService.addFavorite(TEST_PHOTO_ID, TEST_EMAIL))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("公開中の写真のみ");
+                .isInstanceOf(InvalidStateException.class)
+                .hasMessageContaining("公開中の写真のみ")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_NOT_PUBLIC);
     }
 
     @Test
@@ -268,8 +271,9 @@ public class FavoriteServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> favoriteService.addFavorite(TEST_PHOTO_ID, TEST_EMAIL))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("公開中の写真のみ");
+                .isInstanceOf(InvalidStateException.class)
+                .hasMessageContaining("公開中の写真のみ")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_NOT_PUBLIC);
     }
 
     @SuppressWarnings("unchecked")

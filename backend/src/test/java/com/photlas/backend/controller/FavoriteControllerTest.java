@@ -4,6 +4,7 @@ import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -207,6 +209,21 @@ public class FavoriteControllerTest {
                 .with(csrf())
                 .header(HEADER_AUTHORIZATION, getBearerToken(token)))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("Issue#93 - 公開中でない写真のお気に入り登録は 400 と PHOTO_NOT_PUBLIC を返す")
+    void testAddFavorite_PhotoNotPublic_ReturnsBadRequestWithCode() throws Exception {
+        testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
+        photoRepository.save(testPhoto);
+
+        mockMvc.perform(post(getFavoriteEndpoint(testPhoto.getPhotoId()))
+                .with(csrf())
+                .header(HEADER_AUTHORIZATION, getBearerToken(token)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.PHOTO_NOT_PUBLIC));
+
+        assertThat(favoriteRepository.count()).isZero();
     }
 
     @Test
