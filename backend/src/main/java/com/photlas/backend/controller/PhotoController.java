@@ -201,13 +201,4 @@ public class PhotoController {
         ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.CATEGORY_NOT_FOUND, e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
-
-    /**
-     * IllegalArgumentExceptionをハンドリング
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        ErrorResponse errorResponse = ErrorResponse.of(e, ErrorCodes.BAD_REQUEST);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
 }

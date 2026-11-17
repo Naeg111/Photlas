@@ -69,13 +69,31 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - IllegalArgumentException はコード付きならそのコード、無ければ BAD_REQUEST")
-    void illegalArgument_returnsCodeOrBadRequest() {
-        assertError(handler.handleIllegalArgumentException(
-                        new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "無効")),
-                HttpStatus.BAD_REQUEST, ErrorCodes.INVALID_TOKEN);
-        assertError(handler.handleIllegalArgumentException(new IllegalArgumentException("x")),
-                HttpStatus.BAD_REQUEST, ErrorCodes.BAD_REQUEST);
+    @DisplayName("Issue#93 - IllegalArgumentException はコード付きならそのコードと message を返す")
+    void illegalArgument_coded_returnsCodeAndMessage() {
+        ResponseEntity<ErrorResponse> response = handler.handleIllegalArgumentException(
+                new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "トークンが無効または期限切れです"));
+        assertError(response, HttpStatus.BAD_REQUEST, ErrorCodes.INVALID_TOKEN);
+        assertThat(response.getBody().getMessage()).isEqualTo("トークンが無効または期限切れです");
+    }
+
+    @Test
+    @DisplayName("Issue#93 - コードの無い IllegalArgumentException は BAD_REQUEST で、内部の message を返さない")
+    void illegalArgument_uncoded_hidesInternalMessage() {
+        ResponseEntity<ErrorResponse> response = handler.handleIllegalArgumentException(
+                new IllegalArgumentException("不明な OAuthProvider コード: 99"));
+        assertError(response, HttpStatus.BAD_REQUEST, ErrorCodes.BAD_REQUEST);
+        assertThat(response.getBody().getMessage())
+                .isEqualTo(GlobalExceptionHandler.BAD_REQUEST_MESSAGE)
+                .doesNotContain("OAuthProvider");
+    }
+
+    @Test
+    @DisplayName("Issue#93 - コード付きの InvalidStateException は 400 とそのコード")
+    void invalidState_returnsCode() {
+        assertError(handler.handleInvalidStateException(
+                        new InvalidStateException(ErrorCodes.SUGGESTION_ALREADY_RESOLVED, "解決済み")),
+                HttpStatus.BAD_REQUEST, ErrorCodes.SUGGESTION_ALREADY_RESOLVED);
     }
 
     @Test

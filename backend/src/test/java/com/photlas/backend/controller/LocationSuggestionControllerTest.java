@@ -147,6 +147,64 @@ public class LocationSuggestionControllerTest {
     }
 
     @Test
+    @DisplayName("Issue#93 - 指摘作成: 同じ写真に 2 回指摘すると 400 と SUGGESTION_ALREADY_SENT が返る")
+    void testCreateSuggestion_AlreadySent_ReturnsCode() throws Exception {
+        createPendingSuggestion("token-already-sent");
+
+        LocationSuggestionRequest request = new LocationSuggestionRequest();
+        request.setLatitude(SUGGESTED_LAT);
+        request.setLongitude(SUGGESTED_LNG);
+
+        mockMvc.perform(post("/api/v1/photos/" + photo.getPhotoId() + "/location-suggestions")
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + suggesterToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.SUGGESTION_ALREADY_SENT));
+    }
+
+    @Test
+    @DisplayName("Issue#93 - 指摘作成: 元の場所から 30m 未満なら 400 と SUGGESTION_TOO_CLOSE が返る")
+    void testCreateSuggestion_TooClose_ReturnsCode() throws Exception {
+        LocationSuggestionRequest request = new LocationSuggestionRequest();
+        request.setLatitude(ORIGINAL_LAT);
+        request.setLongitude(ORIGINAL_LNG);
+
+        mockMvc.perform(post("/api/v1/photos/" + photo.getPhotoId() + "/location-suggestions")
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + suggesterToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.SUGGESTION_TOO_CLOSE));
+    }
+
+    @Test
+    @DisplayName("Issue#93 - レビュー: 写真の投稿者以外がレビューすると 403 と ACCESS_DENIED が返る")
+    void testReview_NotOwner_ReturnsAccessDenied() throws Exception {
+        createPendingSuggestion("token-not-owner");
+
+        mockMvc.perform(get("/api/v1/location-suggestions/review")
+                .param("token", "token-not-owner")
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + suggesterToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.ACCESS_DENIED));
+    }
+
+    @Test
+    @DisplayName("Issue#93 - レビュー: 解決済みの指摘を受け入れると 400 と SUGGESTION_ALREADY_RESOLVED が返る")
+    void testAccept_AlreadyResolved_ReturnsCode() throws Exception {
+        LocationSuggestion suggestion = createPendingSuggestion("token-resolved");
+        suggestion.setStatus(CodeConstants.SUGGESTION_STATUS_REJECTED);
+        locationSuggestionRepository.save(suggestion);
+
+        mockMvc.perform(post("/api/v1/location-suggestions/review/accept")
+                .param("token", "token-resolved")
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + ownerToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.SUGGESTION_ALREADY_RESOLVED));
+    }
+
+    @Test
     @DisplayName("Issue#93 - レビュー情報取得: トークンが無効な場合は 400 と INVALID_TOKEN が返る")
     void testGetReview_InvalidToken_ReturnsCode() throws Exception {
         mockMvc.perform(get("/api/v1/location-suggestions/review")
@@ -200,6 +258,17 @@ public class LocationSuggestionControllerTest {
     // ========================================
     // ヘルパーメソッド
     // ========================================
+
+    private LocationSuggestion createPendingSuggestion(String reviewToken) {
+        LocationSuggestion suggestion = new LocationSuggestion();
+        suggestion.setPhotoId(photo.getPhotoId());
+        suggestion.setSuggesterId(suggester.getId());
+        suggestion.setSuggestedLatitude(SUGGESTED_LAT);
+        suggestion.setSuggestedLongitude(SUGGESTED_LNG);
+        suggestion.setStatus(CodeConstants.SUGGESTION_STATUS_PENDING);
+        suggestion.setReviewToken(reviewToken);
+        return locationSuggestionRepository.save(suggestion);
+    }
 
     private User createUser(String email, String username) {
         User user = new User();

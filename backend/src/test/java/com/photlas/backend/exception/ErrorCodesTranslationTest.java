@@ -60,6 +60,14 @@ class ErrorCodesTranslationTest {
     }
 
     @Test
+    @DisplayName("Issue#93 - コードは英大文字とアンダースコアだけ（i18next のキーの区切り . や : を含まない）")
+    void codesUseUpperSnakeCaseOnly() throws IllegalAccessException {
+        for (String code : codes()) {
+            assertThat(code).as(code).matches("[A-Z][A-Z_]*");
+        }
+    }
+
+    @Test
     @DisplayName("Issue#93 - 定数名とコードの値が一致する")
     void constantNameEqualsValue() throws IllegalAccessException {
         List<Field> fields = codeFields();

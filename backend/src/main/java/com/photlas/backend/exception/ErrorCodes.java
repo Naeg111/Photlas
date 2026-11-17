@@ -6,6 +6,10 @@ package com.photlas.backend.exception;
  * <p>バックエンドはエラーコードを返し、フロントエンドが {@code errors.<code>} の翻訳キーで
  * 表示言語に合わせた文言を出す（Spec#93 2.3 方式 B）。{@code message} はログ・互換のために
  * 日本語のまま残すが、画面には出さない。
+ *
+ * <p>コードは英大文字とアンダースコアだけ（{@code [A-Z][A-Z_]*}）にする。フロントは {@code errors.<code>} を
+ * i18next のキーにするため、{@code .} や {@code :} を含むとキーの区切りと解釈されてしまう。
+ * 定数名と値は同じにする（{@code ErrorCodesTranslationTest} で確かめている）。
  */
 public final class ErrorCodes {
 

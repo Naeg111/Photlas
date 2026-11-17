@@ -31,6 +31,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /** Issue#93: コードの無い 400 で返す固定の message（内部の message は返さない） */
+    static final String BAD_REQUEST_MESSAGE = "リクエストが正しくありません";
+
     /**
      * バリデーションエラーをハンドリング
      */
@@ -154,11 +157,29 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * 不正な引数エラー（400 Bad Request）をハンドリング
+     *
+     * <p>Issue#93: コード付きの例外（{@link InvalidRequestException}）は、そのコードと固定の message を返す。
+     * コードの無い例外の message はライブラリ等の内部向けのことがあるため返さず、ログにだけ残す。
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        ErrorResponse errorResponse = ErrorResponse.of(ex, ErrorCodes.BAD_REQUEST);
+        if (ex instanceof CodedException) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(ex, ErrorCodes.BAD_REQUEST));
+        }
+        logger.warn("コードの無い不正な引数エラー: {}", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.BAD_REQUEST, BAD_REQUEST_MESSAGE);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * Issue#93: 今の状態ではできない操作（400 Bad Request）をハンドリング
+     *
+     * <p>コード付きの {@link InvalidStateException} だけを 400 にする。
+     * コードの無い {@link IllegalStateException} は想定外のエラーとして 500 のまま扱う。
+     */
+    @ExceptionHandler(InvalidStateException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidStateException(InvalidStateException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(ex, ErrorCodes.BAD_REQUEST));
     }
 
     /**
