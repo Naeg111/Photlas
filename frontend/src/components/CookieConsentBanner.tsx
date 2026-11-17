@@ -11,6 +11,9 @@ const CONSENT_KEY = 'cookie_consent'
  * 「拒否する」でGA4はdenied（匿名基本計測のみ）のまま。
  * Sentryはサービス運営の正当な利益として常に有効。
  *
+ * Spec#93: 文言は表示言語の翻訳（cookie.*）だけを出す。
+ * 多言語化の前に入れていた英文の併記（Spec#71）は、英語表示で同じ文が 2 回出るなどのため削除した。
+ *
  * Safariツールバーの色検出対策:
  * 全画面transparent overlay（fixed inset-0）の中にバナーを配置。
  * バナーの下に透明スペーサーを置き、ビューポート最下端にbodyの黒が透過する。
@@ -68,10 +71,6 @@ export function CookieConsentBanner({ onPrivacyPolicyClick }: Readonly<CookieCon
                 {t('cookie.privacyLink')}
               </button>
               {t('cookie.messageSuffix')}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              This site uses Google Analytics and cookies to collect access information for service improvement.
-              See our <button onClick={onPrivacyPolicyClick} className="text-blue-600 underline hover:text-blue-800 mx-1">Privacy Policy</button> for details.
             </p>
           </div>
           <div className="flex gap-3">

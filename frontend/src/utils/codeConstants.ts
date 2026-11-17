@@ -196,6 +196,19 @@ export const CATEGORY_I18N_KEYS: Record<number, string> = {
   [CATEGORY_OTHER]: 'categories.other',
 }
 
+/** カテゴリ名（CATEGORY_LABELS の日本語名）→ カテゴリID の逆引き */
+export const CATEGORY_NAME_TO_ID: Record<string, number> = Object.fromEntries(
+  Object.entries(CATEGORY_LABELS).map(([id, name]) => [name, Number(id)])
+)
+
+/**
+ * カテゴリ名（日本語名）→ i18n 翻訳キー（categories.*）。
+ * 選択状態などで日本語名を持つ画面が、表示名を t() で引くために使う。知らない名前はそのまま返す。
+ */
+export function categoryNameI18nKey(name: string): string {
+  return CATEGORY_I18N_KEYS[CATEGORY_NAME_TO_ID[name]] ?? name
+}
+
 /** SNSプラットフォームコード → 表示名 */
 export const PLATFORM_LABELS: Record<number, string> = {
   [PLATFORM_TWITTER]: 'X',

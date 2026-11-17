@@ -4,18 +4,13 @@ import { fetchTags } from '../utils/tagsApi'
 import { KeywordSection, type KeywordTag } from './KeywordSection'
 import { resizeImageToBlobForAnalyze } from '../utils/cropImageToBlob'
 import { resizeImageFile } from '../utils/resizeImageFile'
-import { CATEGORY_LABELS, CATEGORY_I18N_KEYS } from '../utils/codeConstants'
+import { CATEGORY_LABELS, CATEGORY_NAME_TO_ID, categoryNameI18nKey } from '../utils/codeConstants'
 import {
   trackAiPrefillEvent,
   compareAiPrefill,
   trackParentFallbackEvents,
   trackExifRuleFiredEvents,
 } from '../utils/aiPrefillAnalytics'
-
-/** カテゴリ名 → ID の逆引きマップ（CATEGORY_LABELS の逆） */
-const CATEGORY_NAME_TO_ID: Record<string, number> = Object.fromEntries(
-  Object.entries(CATEGORY_LABELS).map(([id, name]) => [name, Number(id)])
-)
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
@@ -995,13 +990,13 @@ export function PhotoContributionDialog({
                   >
                     <Checkbox
                       checked={selectedCategories.includes(category)}
-                      aria-label={t(CATEGORY_I18N_KEYS[CATEGORY_NAME_TO_ID[category]] ?? category)}
+                      aria-label={t(categoryNameI18nKey(category))}
                       tabIndex={-1}
                       style={{ pointerEvents: 'none' }}
                     />
                     <CategoryIcon category={category} className="w-5 h-5" />
                     <Label className="cursor-pointer flex-1">
-                      {t(CATEGORY_I18N_KEYS[CATEGORY_NAME_TO_ID[category]] ?? category)}
+                      {t(categoryNameI18nKey(category))}
                     </Label>
                   </div>
                 ))}
