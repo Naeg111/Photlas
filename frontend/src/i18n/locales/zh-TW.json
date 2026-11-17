@@ -401,8 +401,11 @@
     "reason": "原因",
     "detailRequired": "詳細說明（必填）",
     "detailOptional": "詳細說明（選填）",
+    "detailPlaceholder": "請輸入檢舉理由的詳細說明（300字以內）",
+    "submit": "檢舉",
     "success": "已受理檢舉",
-    "failed": "檢舉失敗"
+    "failed": "檢舉失敗",
+    "alreadyReported": "您已檢舉過"
   },
   "location": {
     "suggestionTitle": "回報位置",

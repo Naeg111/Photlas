@@ -927,8 +927,12 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         toast.success(t('report.success'))
         setIsReportOpen(false)
       } else if (response.status === 409) {
+        // すでに通報済み
+        toast.error(t('report.alreadyReported'))
         setIsReportOpen(false)
       } else if (response.status === 400) {
+        // 自分の投稿の通報・不正な理由など（自分の投稿の通報ボタンは押せないので、通常は起きない）
+        toast.error(t('report.failed'))
         setIsReportOpen(false)
       } else {
         toast.error(t('report.failed'))

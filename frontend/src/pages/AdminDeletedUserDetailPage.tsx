@@ -69,6 +69,9 @@ export default function AdminDeletedUserDetailPage() {
       )
       if (response.ok) {
         setDetail(await response.json())
+      } else {
+        // 403・500 などでも「読み込み中」のまま止まらないよう、失敗を知らせる（詳細が無いままなら下でエラーを表示する）
+        toast.error(tRef.current('admin.deletedUser.fetchFailed'))
       }
     } catch {
       toast.error(tRef.current('admin.deletedUser.fetchFailed'))
@@ -123,6 +126,8 @@ export default function AdminDeletedUserDetailPage() {
         toast.success(t('admin.deletedUser.holdSuccess'))
         setIsHoldDialogOpen(false)
         fetchDetail()
+      } else {
+        toast.error(t('admin.deletedUser.holdFailed'))
       }
     } catch {
       toast.error(t('admin.deletedUser.holdFailed'))
@@ -138,6 +143,8 @@ export default function AdminDeletedUserDetailPage() {
       if (response.ok) {
         toast.success(t('admin.deletedUser.removeHoldSuccess'))
         fetchDetail()
+      } else {
+        toast.error(t('admin.deletedUser.removeHoldFailed'))
       }
     } catch {
       toast.error(t('admin.deletedUser.removeHoldFailed'))
@@ -160,16 +167,31 @@ export default function AdminDeletedUserDetailPage() {
         a.click()
         URL.revokeObjectURL(url)
         toast.success(t('admin.deletedUser.exportSuccess'))
+      } else {
+        toast.error(t('admin.deletedUser.exportFailed'))
       }
     } catch {
       toast.error(t('admin.deletedUser.exportFailed'))
     }
   }
 
-  if (isLoading || !detail) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <p className="text-gray-500">{t('common.loading')}</p>
+      </div>
+    )
+  }
+
+  // 取得に失敗して詳細が無い（「読み込み中」のまま止めない）
+  if (!detail) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
+        <p className="text-red-600">{t('admin.deletedUser.fetchFailed')}</p>
+        <Button variant="outline" onClick={() => navigate('/manage/deleted-users')}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          {t('common.back')}
+        </Button>
       </div>
     )
   }
@@ -214,14 +236,14 @@ export default function AdminDeletedUserDetailPage() {
             <p className="text-sm text-gray-500">{t('admin.deletedUser.noHistory')}</p>
           ) : (
             <div className="space-y-2">
-              {detail.violations.map((v) => (
-                <div key={`v-${v.created_at}`} className="text-sm border-l-2 border-red-300 pl-3">
+              {detail.violations.map((v, index) => (
+                <div key={`v-${index}-${v.created_at}`} className="text-sm border-l-2 border-red-300 pl-3">
                   <p className="font-medium">{codeLabel(ACTION_TAKEN_I18N_KEYS, v.action_taken)}</p>
                   <p className="text-gray-500">{codeLabel(REPORT_REASON_I18N_KEYS, v.violation_type)} - {formatDate(v.created_at)}</p>
                 </div>
               ))}
-              {detail.sanctions.map((s) => (
-                <div key={`s-${s.created_at}`} className="text-sm border-l-2 border-orange-300 pl-3">
+              {detail.sanctions.map((s, index) => (
+                <div key={`s-${index}-${s.created_at}`} className="text-sm border-l-2 border-orange-300 pl-3">
                   <p className="font-medium">{codeLabel(SANCTION_TYPE_I18N_KEYS, s.sanction_type)}</p>
                   <p className="text-gray-500">{s.reason} - {formatDate(s.created_at)}</p>
                 </div>

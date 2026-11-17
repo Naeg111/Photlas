@@ -401,8 +401,11 @@
     "reason": "신고 이유",
     "detailRequired": "상세 내용 (필수)",
     "detailOptional": "상세 내용 (선택)",
+    "detailPlaceholder": "신고 사유를 자세히 입력해 주세요 (300자 이내)",
+    "submit": "신고하기",
     "success": "신고가 접수되었습니다",
-    "failed": "신고에 실패했습니다"
+    "failed": "신고에 실패했습니다",
+    "alreadyReported": "이미 신고했습니다"
   },
   "location": {
     "suggestionTitle": "위치 제보",

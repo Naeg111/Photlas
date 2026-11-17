@@ -106,7 +106,7 @@ export function ReportDialog({
             </Label>
             <Textarea
               id="details"
-              placeholder="通報理由の詳細を入力してください（300文字以内）"
+              placeholder={t('report.detailPlaceholder')}
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               className="min-h-[100px]"
@@ -133,7 +133,7 @@ export function ReportDialog({
               onClick={handleSubmit}
               disabled={isSubmitDisabled || isOverLimit}
             >
-              通報する
+              {t('report.submit')}
             </Button>
           </div>
         </div>

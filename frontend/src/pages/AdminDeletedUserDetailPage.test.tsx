@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { toast } from 'sonner'
 import AdminDeletedUserDetailPage from './AdminDeletedUserDetailPage'
 import {
   ROLE_ADMIN,
@@ -19,6 +20,10 @@ beforeAll(() => {
 afterAll(() => {
   global.fetch = originalFetch
 })
+
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+}))
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
@@ -108,6 +113,98 @@ describe('AdminDeletedUserDetailPage', () => {
     expect(await screen.findByText('1399')).toBeInTheDocument()
     expect(screen.getByText(/^899 - /)).toBeInTheDocument()
     expect(screen.getByText('799')).toBeInTheDocument()
+  })
+
+  it('詳細の取得が失敗したら「読み込み中」のまま止めず、失敗と戻るボタンを表示する', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+
+    renderWithRoute()
+
+    expect(await screen.findByText('データの取得に失敗しました')).toBeInTheDocument()
+    expect(screen.queryByText('読み込み中...')).not.toBeInTheDocument()
+    expect(toast.error).toHaveBeenCalledWith('データの取得に失敗しました')
+
+    fireEvent.click(screen.getByRole('button', { name: '戻る' }))
+    expect(mockNavigate).toHaveBeenCalledWith('/manage/deleted-users')
+  })
+
+  it('保持期間の延長がサーバーに拒否されたら、失敗を知らせる', async () => {
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => MOCK_DETAIL })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+
+    renderWithRoute()
+
+    fireEvent.click(await screen.findByText('保持期間延長'))
+    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
+    fireEvent.change(dateInput, { target: { value: '2026-12-31' } })
+    fireEvent.click(screen.getByText('延長する'))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('保持期間の延長に失敗しました')
+    })
+  })
+
+  it('保持延長の解除がサーバーに拒否されたら、失敗を知らせる', async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ...MOCK_DETAIL, deletion_hold_until: '2026-12-31T00:00:00' }),
+      })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+
+    renderWithRoute()
+
+    fireEvent.click(await screen.findByText('保持延長を解除'))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('解除に失敗しました')
+    })
+  })
+
+  it('エクスポートがサーバーに拒否されたら、失敗を知らせる', async () => {
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => MOCK_DETAIL })
+      .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+
+    renderWithRoute()
+
+    fireEvent.click(await screen.findByText('データエクスポート'))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('エクスポートに失敗しました')
+    })
+  })
+
+  it('同じ時刻の履歴が複数あっても、key が重ならずにすべて表示する', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        ...MOCK_DETAIL,
+        violations: [
+          { violation_type: REASON_ADULT_CONTENT, action_taken: ACTION_TAKEN_REMOVED, created_at: '2026-02-15T00:00:00' },
+          { violation_type: REASON_ADULT_CONTENT, action_taken: ACTION_TAKEN_REMOVED, created_at: '2026-02-15T00:00:00' },
+        ],
+        sanctions: [
+          { sanction_type: SANCTION_WARNING, reason: 'r1', created_at: '2026-02-15T00:00:00' },
+          { sanction_type: SANCTION_WARNING, reason: 'r2', created_at: '2026-02-15T00:00:00' },
+        ],
+      }),
+    })
+
+    try {
+      renderWithRoute()
+
+      expect(await screen.findAllByText('削除')).toHaveLength(2)
+      expect(screen.getAllByText('警告')).toHaveLength(2)
+      const keyWarnings = consoleError.mock.calls.filter((args) =>
+        args.some((arg) => typeof arg === 'string' && arg.includes('same key'))
+      )
+      expect(keyWarnings).toEqual([])
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 
   it('Spec#93 追加対応: 言語を切り替えても詳細を取り直さない', async () => {

@@ -2320,6 +2320,66 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
+  describe('通報の送信結果のお知らせ', () => {
+    function createReportMockFetch(reportResponse: { ok: boolean; status: number }) {
+      const photoDetail = createMockApiResponse({ userId: 999, username: 'otheruser' })
+      return vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/report') && options?.method === 'POST') {
+          return Promise.resolve({ ok: reportResponse.ok, status: reportResponse.status, json: async () => ({}) })
+        }
+        if (url.includes('/spots/') && url.includes('/photos')) {
+          return Promise.resolve({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
+        }
+        if (url.includes(`/photos/${TEST_PHOTO_ID_1}`)) {
+          return Promise.resolve({ ok: true, json: async () => photoDetail })
+        }
+        return Promise.resolve({ ok: true, json: async () => ({}) })
+      })
+    }
+
+    async function submitReport(mockFetch: ReturnType<typeof vi.fn>) {
+      mockUseAuth.mockReturnValue({ user: { userId: TEST_USER_ID, username: TEST_USERNAME }, isAuthenticated: true })
+      global.fetch = mockFetch
+      const user = userEvent.setup()
+
+      render(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={vi.fn()} />)
+
+      // 他人の写真が読み込まれてから通報する
+      await waitFor(() => {
+        expect(screen.getByText('otheruser')).toBeInTheDocument()
+      })
+      await user.click(screen.getByTestId('report-button'))
+      await user.click(await screen.findByLabelText('成人向けコンテンツ'))
+      await user.click(screen.getByRole('button', { name: '通報する' }))
+    }
+
+    it('通報が受け付けられたら成功のお知らせを出す', async () => {
+      await submitReport(createReportMockFetch({ ok: true, status: 201 }))
+
+      await waitFor(() => {
+        expect(mockToast.success).toHaveBeenCalledWith('通報を受け付けました')
+      })
+    })
+
+    it('すでに通報済み（409）なら、そのことを知らせてダイアログを閉じる', async () => {
+      await submitReport(createReportMockFetch({ ok: false, status: 409 }))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('すでに通報済みです')
+      })
+      expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
+    })
+
+    it('400 なら失敗のお知らせを出してダイアログを閉じる', async () => {
+      await submitReport(createReportMockFetch({ ok: false, status: 400 }))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('通報に失敗しました')
+      })
+      expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
+    })
+  })
+
   // ============================================================
   // プロフィール画像表示
   // ============================================================

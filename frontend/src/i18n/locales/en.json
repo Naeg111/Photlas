@@ -401,8 +401,11 @@
     "reason": "Reason",
     "detailRequired": "Details (required)",
     "detailOptional": "Details (optional)",
+    "detailPlaceholder": "Describe the reason for your report (up to 300 characters)",
+    "submit": "Report",
     "success": "Your report has been received",
-    "failed": "Failed to submit report"
+    "failed": "Failed to submit report",
+    "alreadyReported": "You have already reported this"
   },
   "location": {
     "suggestionTitle": "Report Location",

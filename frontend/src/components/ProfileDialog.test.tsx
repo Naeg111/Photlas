@@ -1552,6 +1552,72 @@ describe('ProfileDialog', () => {
   })
 
   // Issue#96 PR2c: 429 レート制限ハンドリング（notifyIfRateLimited 経由のトースト）
+  describe('プロフィール通報の送信結果のお知らせ', () => {
+    async function submitProfileReport(reportResponse: Response) {
+      const user = userEvent.setup()
+
+      global.fetch = vi.fn()
+        // プロフィールAPI（他ユーザー）
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ profileImageUrl: null, snsLinks: [] }),
+        })
+        // 写真一覧API（空レスポンス）
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockEmptyPhotosResponse),
+        })
+        // 通報API（fetchJson 経由で呼ばれるので Response を返す）
+        .mockResolvedValueOnce(reportResponse)
+
+      render(
+        <ProfileDialog
+          open={true}
+          onClose={mockOnClose}
+          userProfile={mockOtherUserProfile}
+          isOwnProfile={false}
+          onPhotoClick={mockOnPhotoClick}
+        />
+      )
+
+      await user.click(await screen.findByLabelText('このプロフィールを通報'))
+      await user.click(await screen.findByLabelText('成人向けコンテンツ'))
+      await user.click(screen.getByRole('button', { name: '通報する' }))
+    }
+
+    it('通報が受け付けられたら成功のお知らせを出す', async () => {
+      await submitProfileReport(
+        new Response(JSON.stringify({}), { status: 201, headers: { 'Content-Type': 'application/json' } })
+      )
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('通報を受け付けました')
+      })
+    })
+
+    it('すでに通報済み（409）なら、そのことを知らせてダイアログを閉じる', async () => {
+      await submitProfileReport(
+        new Response(JSON.stringify({ message: 'すでに通報済みです' }), {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('すでに通報済みです')
+      })
+      expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
+    })
+
+    it('サーバーエラー（500）なら失敗のお知らせを出す', async () => {
+      await submitProfileReport(new Response('error', { status: 500 }))
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('通報に失敗しました')
+      })
+    })
+  })
+
   describe('Rate Limit (429) - レート制限', () => {
     it('プロフィール通報 API で 429 を受信したらレート制限トーストが表示される', async () => {
       const user = userEvent.setup()

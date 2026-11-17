@@ -401,8 +401,11 @@
     "reason": "举报原因",
     "detailRequired": "详细说明（必填）",
     "detailOptional": "详细说明（可选）",
+    "detailPlaceholder": "请输入举报理由的详细说明（300字以内）",
+    "submit": "举报",
     "success": "举报已受理",
-    "failed": "举报失败"
+    "failed": "举报失败",
+    "alreadyReported": "您已举报过"
   },
   "location": {
     "suggestionTitle": "举报位置",

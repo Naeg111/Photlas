@@ -341,12 +341,19 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
         headers: getAuthHeaders() as Record<string, string>,
         body: { reason: data.reason, details: data.details },
       })
+      toast.success(t('report.success'))
       setIsReportOpen(false)
     } catch (e) {
-      if (e instanceof ApiError && (e.status === 409 || e.status === 400)) {
+      if (e instanceof ApiError && e.status === 409) {
+        // すでに通報済み
+        toast.error(t('report.alreadyReported'))
         setIsReportOpen(false)
-      } else {
-        notifyIfRateLimited(e, t)
+      } else if (e instanceof ApiError && e.status === 400) {
+        // 自分のプロフィールの通報・不正な理由など
+        toast.error(t('report.failed'))
+        setIsReportOpen(false)
+      } else if (!notifyIfRateLimited(e, t)) {
+        toast.error(t('report.failed'))
       }
     } finally {
       setIsReportLoading(false)

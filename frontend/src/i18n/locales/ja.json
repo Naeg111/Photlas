@@ -401,8 +401,11 @@
     "reason": "通報理由",
     "detailRequired": "詳細説明（必須）",
     "detailOptional": "詳細説明（任意）",
+    "detailPlaceholder": "通報理由の詳細を入力してください（300文字以内）",
+    "submit": "通報する",
     "success": "通報を受け付けました",
-    "failed": "通報に失敗しました"
+    "failed": "通報に失敗しました",
+    "alreadyReported": "すでに通報済みです"
   },
   "location": {
     "suggestionTitle": "撮影場所の指摘",
