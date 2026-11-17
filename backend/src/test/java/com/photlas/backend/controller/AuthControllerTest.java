@@ -369,6 +369,41 @@ public class AuthControllerTest {
         assertThat(savedUser.getLanguage()).isEqualTo("ja");
     }
 
+    // ===== Spec#93: 登録画面の表示言語（language）を DB の初期値にする =====
+
+    @Test
+    @DisplayName("Spec#93 - 登録: language が対応言語なら Accept-Language より優先して保存される")
+    void testRegister_LanguageInBody_TakesPrecedenceOverAcceptLanguage() throws Exception {
+        RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
+        request.setLanguage("ko");
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .header("Accept-Language", "ja,en-US;q=0.9")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.user.language", is("ko")));
+
+        User savedUser = userRepository.findByEmail(TEST_EMAIL).orElseThrow();
+        assertThat(savedUser.getLanguage()).isEqualTo("ko");
+    }
+
+    @Test
+    @DisplayName("Spec#93 - 登録: language が未対応の値なら Accept-Language から判定する")
+    void testRegister_UnsupportedLanguageInBody_FallsBackToAcceptLanguage() throws Exception {
+        RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
+        request.setLanguage("fr");
+
+        mockMvc.perform(post(REGISTER_ENDPOINT)
+                .header("Accept-Language", "zh-HK,zh;q=0.9")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        User savedUser = userRepository.findByEmail(TEST_EMAIL).orElseThrow();
+        assertThat(savedUser.getLanguage()).isEqualTo("zh-TW");
+    }
+
     // ===== Issue#109: 同意・年齢確認フィールドの検証 =====
 
     /**

@@ -49,25 +49,73 @@ export async function loadLanguageResource(lng: SupportedLanguage): Promise<void
   i18n.addResourceBundle(lng, 'translation', mod.default, true, true)
 }
 
+/** 手動で選んだ言語（ログイン後は DB の言語）を保存する localStorage のキー */
+const LANGUAGE_STORAGE_KEY = 'photlas-language'
+
+export function isSupportedLanguage(value: unknown): value is SupportedLanguage {
+  return typeof value === 'string' && (SUPPORTED_LANGUAGES as readonly string[]).includes(value)
+}
+
+/** 繁体字を使う地域（台湾・香港・マカオ） */
+const TRADITIONAL_CHINESE_REGIONS = ['tw', 'hk', 'mo']
+
+/**
+ * ブラウザの言語タグ（navigator.language）を対応 5 言語のどれかに判定する。
+ * 中国語は、繁体（zh-Hant）か台湾・香港・マカオなら zh-TW、それ以外は zh-CN とする。
+ * 5 言語以外は英語にする。バックエンドの LanguageUtils.resolve と同じ判定。
+ */
+export function resolveBrowserLanguage(tag: string | null | undefined): SupportedLanguage {
+  if (!tag) return FALLBACK_LANGUAGE
+  const [primary, ...subtags] = tag.trim().toLowerCase().split(/[-_]/)
+  switch (primary) {
+    case 'ja':
+      return 'ja'
+    case 'ko':
+      return 'ko'
+    case 'en':
+      return 'en'
+    case 'zh':
+      return isTraditionalChinese(subtags) ? 'zh-TW' : 'zh-CN'
+    default:
+      return FALLBACK_LANGUAGE
+  }
+}
+
+function isTraditionalChinese(subtags: string[]): boolean {
+  // 文字の指定（Hant / Hans）があれば地域より優先する
+  if (subtags.includes('hant')) return true
+  if (subtags.includes('hans')) return false
+  return subtags.some((subtag) => TRADITIONAL_CHINESE_REGIONS.includes(subtag))
+}
+
 /**
  * localStorage / navigator.language から初期言語を決定する。
- * SUPPORTED_LANGUAGES に含まれない場合は FALLBACK_LANGUAGE を返す。
+ * localStorage に対応言語があればそれを優先し、なければブラウザの言語から判定する。
  */
 export function detectInitialLanguage(): SupportedLanguage {
   if (typeof window === 'undefined') return FALLBACK_LANGUAGE
-  const stored = localStorage.getItem('photlas-language')
-  if (stored && (SUPPORTED_LANGUAGES as readonly string[]).includes(stored)) {
-    return stored as SupportedLanguage
+  const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY)
+  if (isSupportedLanguage(stored)) {
+    return stored
   }
-  const navLang = navigator.language
-  if ((SUPPORTED_LANGUAGES as readonly string[]).includes(navLang)) {
-    return navLang as SupportedLanguage
+  return resolveBrowserLanguage(navigator.language)
+}
+
+/**
+ * Spec#93: ログイン後、アカウント（DB）の言語設定で表示言語と localStorage を上書きする。
+ * 対応 5 言語以外（未設定を含む）は何もしない。
+ */
+export async function applyAccountLanguage(language: string | null | undefined): Promise<void> {
+  if (!isSupportedLanguage(language)) return
+  // 先に保存しておけば、直後に画面を読み直しても（PWA の OAuth 等）この言語で起動する
+  localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
+  try {
+    // Issue#130: 言語リソースは動的 import なので、changeLanguage 前にロードする
+    await loadLanguageResource(language)
+    await i18n.changeLanguage(language)
+  } catch {
+    // 読み込みに失敗しても localStorage には保存済みなので、次回起動時に反映される
   }
-  const base = navLang.split('-')[0]
-  if ((SUPPORTED_LANGUAGES as readonly string[]).includes(base)) {
-    return base as SupportedLanguage
-  }
-  return FALLBACK_LANGUAGE
 }
 
 /**
@@ -88,7 +136,7 @@ export async function initI18n(): Promise<void> {
       supportedLngs: [...SUPPORTED_LANGUAGES],
       detection: {
         order: ['localStorage', 'navigator'],
-        lookupLocalStorage: 'photlas-language',
+        lookupLocalStorage: LANGUAGE_STORAGE_KEY,
         caches: ['localStorage'],
       },
       interpolation: {

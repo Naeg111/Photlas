@@ -14,6 +14,7 @@ import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.util.LanguageUtils;
 import com.photlas.backend.util.TokenGenerator;
+import com.photlas.backend.validation.LanguageValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -84,7 +85,7 @@ public class AuthService {
             hashedPassword,
             CodeConstants.ROLE_USER
         );
-        user.setLanguage(LanguageUtils.resolve(acceptLanguage));
+        user.setLanguage(resolveRegistrationLanguage(request.getLanguage(), acceptLanguage));
 
         // Issue#104 + Issue#109: メール+パスワード登録時は利用規約・プライバシーポリシー・年齢確認を同意済みとして記録
         // (RegisterRequest の @AssertTrue により、各 boolean が true であることはバリデーション済み)
@@ -109,6 +110,17 @@ public class AuthService {
     @Transactional
     public RegisterResponse registerUser(RegisterRequest request) {
         return registerUser(request, null);
+    }
+
+    /**
+     * Spec#93: 登録時の言語設定の初期値を決める。
+     * 登録画面の表示言語（手動で選んだ言語、なければブラウザの言語）が対応 5 言語ならそれを、
+     * 未指定・未対応なら Accept-Language から判定する。
+     */
+    private static String resolveRegistrationLanguage(String requestedLanguage, String acceptLanguage) {
+        return LanguageValidator.isValid(requestedLanguage)
+                ? requestedLanguage
+                : LanguageUtils.resolve(acceptLanguage);
     }
 
     /**
