@@ -2512,7 +2512,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
             ok: reportResponse.ok,
             status: reportResponse.status,
             headers: new Headers(reportResponse.headers ?? {}),
-            json: async () => reportResponse.body ?? {},
+            json: async () => ('body' in reportResponse ? reportResponse.body : {}),
           })
         }
         if (url.includes('/spots/') && url.includes('/photos')) {
