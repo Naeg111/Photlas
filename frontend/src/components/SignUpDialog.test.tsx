@@ -616,6 +616,64 @@ describe('SignUpDialog', () => {
       })
     })
 
+    // Issue#93: 409 のうち退会処理中のメールアドレスは code で見分け、表示言語の文言を出す
+    const pendingDeletionError = () =>
+      new Response(
+        JSON.stringify({
+          code: 'EMAIL_PENDING_DELETION',
+          message: 'このメールアドレスは退会処理中のため、現在ご利用いただけません（サーバー）',
+        }),
+        { status: 409, headers: { 'Content-Type': 'application/json' } }
+      )
+
+    it('Issue#93 - 退会処理中のメールアドレス（409 EMAIL_PENDING_DELETION）は専用のメッセージを出す', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(pendingDeletionError())
+
+      render(<SignUpDialog {...defaultProps} />)
+
+      await user.type(screen.getByLabelText(/表示名/), 'テストユーザー')
+      await user.type(screen.getByLabelText(/メールアドレス/), 'deleting@example.com')
+      await user.type(screen.getByLabelText(/^パスワード（必須）/), 'Password123')
+      await user.type(screen.getByLabelText(/パスワード（確認用・必須）/), 'Password123')
+      await user.click(screen.getByRole('checkbox', { name: /利用規約/ }))
+      await user.click(screen.getByRole('checkbox', { name: /プライバシーポリシー/ }))
+      await user.click(screen.getByRole('checkbox', { name: /13歳以上/ }))
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      expect(
+        await screen.findByText('このメールアドレスは退会処理中のため、現在ご利用いただけません')
+      ).toBeInTheDocument()
+      expect(screen.queryByText('このメールアドレスは既に登録されています')).not.toBeInTheDocument()
+    })
+
+    it('Issue#93 - 英語の設定では退会処理中のメッセージが英語で表示される', async () => {
+      mockFetch.mockResolvedValueOnce(pendingDeletionError())
+      await i18n.changeLanguage('en')
+      try {
+        const user = userEvent.setup()
+        render(<SignUpDialog {...defaultProps} />)
+
+        await user.type(screen.getByLabelText(/^Display Name/), 'testuser')
+        await user.type(screen.getByLabelText(/^Email/), 'deleting@example.com')
+        await user.type(screen.getByLabelText(/^Password \(required\)/), 'Password123')
+        await user.type(screen.getByLabelText(/^Confirm Password/), 'Password123')
+        await user.click(screen.getByRole('checkbox', { name: /Terms of Service/ }))
+        await user.click(screen.getByRole('checkbox', { name: /Privacy Policy/ }))
+        await user.click(screen.getByRole('checkbox', { name: /13 years/ }))
+        await user.click(screen.getByRole('button', { name: 'Sign Up' }))
+
+        expect(
+          await screen.findByText(
+            'This email address belongs to an account that is being deleted, so it cannot be used right now.'
+          )
+        ).toBeInTheDocument()
+        expect(screen.queryByText(/退会処理中/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
     it('shows generic error when registration fails', async () => {
       const user = userEvent.setup()
       mockFetch.mockRejectedValueOnce(new Error('Network error'))

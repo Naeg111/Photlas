@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import ConfirmEmailChangePage from './ConfirmEmailChangePage'
+import i18n from '../i18n'
 
 // テスト用定数
 const VALID_TOKEN = 'test-valid-token'
@@ -65,6 +66,12 @@ function setUserAgent(ua: string) {
     configurable: true,
   })
 }
+
+const invalidTokenError = () =>
+  new Response(
+    JSON.stringify({ code: 'INVALID_TOKEN', message: 'トークンが無効または期限切れです' }),
+    { status: 400, headers: { 'Content-Type': 'application/json' } }
+  )
 
 const renderWithToken = (token = VALID_TOKEN) => {
   return render(
@@ -230,23 +237,46 @@ describe('ConfirmEmailChangePage', () => {
     })
 
     it('エラー画面に「ホーム」リンクが表示されない', async () => {
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: 'Token invalid' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      )
+      mockFetch.mockResolvedValueOnce(invalidTokenError())
 
       renderWithToken()
 
       // エラー画面が出るのを待つ
       await waitFor(() => {
-        // エラー時のタイトル要素が存在する想定
-        const heading = screen.queryByText(/エラー|失敗/)
-        expect(heading).toBeInTheDocument()
+        expect(screen.getByText('確認エラー')).toBeInTheDocument()
       })
 
       expect(screen.queryByText(TEXT_HOME)).not.toBeInTheDocument()
+    })
+  })
+
+  // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+  describe('Issue#93 - エラーの表示言語', () => {
+    it('トークンが無効なときはエラーコードに応じたメッセージが表示される', async () => {
+      mockFetch.mockResolvedValueOnce(invalidTokenError())
+
+      renderWithToken()
+
+      expect(
+        await screen.findByText('リンクが無効か、有効期限が切れています。もう一度やり直してください。')
+      ).toBeInTheDocument()
+      expect(screen.queryByText('トークンが無効または期限切れです')).not.toBeInTheDocument()
+    })
+
+    it('英語の設定ではエラーが英語で表示される', async () => {
+      mockFetch.mockResolvedValueOnce(invalidTokenError())
+      await i18n.changeLanguage('en')
+      try {
+        renderWithToken()
+
+        expect(
+          await screen.findByText('This link is invalid or has expired. Please try again.')
+        ).toBeInTheDocument()
+        expect(screen.getByText('Confirmation Error')).toBeInTheDocument()
+        expect(screen.queryByText('トークンが無効または期限切れです')).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
   })
 })

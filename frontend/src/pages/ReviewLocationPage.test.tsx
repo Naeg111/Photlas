@@ -3,6 +3,7 @@ import { userEvent } from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import ReviewLocationPage from './ReviewLocationPage'
+import i18n from '../i18n'
 
 /**
  * Issue#65, Issue#54: ReviewLocationPage のテスト
@@ -119,6 +120,50 @@ describe('ReviewLocationPage', () => {
     renderWithToken()
 
     expect(screen.getByText('無効なリンクです')).toBeInTheDocument()
+  })
+
+  // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+  const resolvedError = () => ({
+    ok: false,
+    status: 400,
+    json: async () => ({ code: 'SUGGESTION_ALREADY_RESOLVED', message: 'この指摘は既に解決済みです' }),
+  })
+
+  it('Issue#93 - レビュー情報の取得に失敗したらエラーコードに応じたメッセージを出す', async () => {
+    mockFetch.mockResolvedValue(resolvedError())
+
+    renderWithToken('valid-token')
+
+    expect(await screen.findByText('この指摘はすでに解決済みです')).toBeInTheDocument()
+    expect(screen.queryByText('この指摘は既に解決済みです')).not.toBeInTheDocument()
+  })
+
+  it('Issue#93 - 英語の設定ではレビュー情報の取得エラーが英語で表示される', async () => {
+    mockFetch.mockResolvedValue(resolvedError())
+    await i18n.changeLanguage('en')
+    try {
+      renderWithToken('valid-token')
+
+      expect(
+        await screen.findByText('This location suggestion has already been resolved.')
+      ).toBeInTheDocument()
+      expect(screen.queryByText(/解決済み/)).not.toBeInTheDocument()
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
+  })
+
+  it('Issue#93 - コードが無い取得エラーは汎用のメッセージを出す', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({ message: 'サーバーエラーが発生しました' }),
+    })
+
+    renderWithToken('valid-token')
+
+    expect(await screen.findByText('レビュー情報の取得に失敗しました')).toBeInTheDocument()
+    expect(screen.queryByText('サーバーエラーが発生しました')).not.toBeInTheDocument()
   })
 
   it('should show photo, username, place name, and shot date', async () => {

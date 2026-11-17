@@ -114,6 +114,22 @@ describe('ApiError (Issue#96 拡張)', () => {
       expect(err.getFieldErrorMessage('username')).toBeUndefined()
     })
   })
+
+  describe('code (Issue#93)', () => {
+    it('responseData の code を返す', () => {
+      const err = new ApiError('Bad Request', 400, undefined, {
+        code: 'INVALID_TOKEN',
+        message: 'トークンが無効または期限切れです',
+      })
+      expect(err.code).toBe('INVALID_TOKEN')
+    })
+
+    it('code が無い・responseData がオブジェクトでない場合は undefined', () => {
+      expect(new ApiError('Bad Request', 400, undefined, { message: 'foo' }).code).toBeUndefined()
+      expect(new ApiError('Bad Request', 400, undefined, 'plain text').code).toBeUndefined()
+      expect(new ApiError('Bad Request', 400).code).toBeUndefined()
+    })
+  })
 })
 
 describe('Issue#100 - S3 タグベース孤立ファイル対応', () => {

@@ -979,7 +979,9 @@ describe('ProfileDialog', () => {
       })
     })
 
-    it('表示名が重複している場合はエラーが表示される', async () => {
+    // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す。
+    // 409 に表示名用のコードは無いため、汎用のエラー文言になる
+    it('表示名の保存が 409 になった場合はエラーが表示される', async () => {
       const user = userEvent.setup()
 
       global.fetch = vi.fn()
@@ -1014,8 +1016,9 @@ describe('ProfileDialog', () => {
       await user.click(saveButton)
 
       await waitFor(() => {
-        expect(screen.getByText(/この表示名はすでに使用されています/i)).toBeInTheDocument()
+        expect(screen.getByText('エラーが発生しました')).toBeInTheDocument()
       })
+      expect(screen.queryByText(/この表示名はすでに使用されています/)).not.toBeInTheDocument()
     })
   })
 

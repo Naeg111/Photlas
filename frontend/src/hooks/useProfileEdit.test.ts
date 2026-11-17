@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { toast } from 'sonner'
 import { useProfileEdit } from './useProfileEdit'
+import i18n from '../i18n'
 
 // sonnerのモック
 vi.mock('sonner', () => ({
@@ -132,12 +133,14 @@ describe('useProfileEdit', () => {
       })
     })
 
-    it('handleSaveUsernameで409コンフリクトの場合にエラーメッセージがセットされる', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 409,
-        json: () => Promise.resolve({ message: 'この表示名は既に使用されています' }),
-      })
+    // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+    const conflictResponse = () => ({
+      ok: false,
+      status: 409,
+      json: () => Promise.resolve({ message: 'この表示名は既に使用されています' }),
+    })
+
+    const saveDuplicateUsername = async () => {
       const { result } = renderHook(() => useProfileEdit(defaultProps))
 
       act(() => {
@@ -152,8 +155,27 @@ describe('useProfileEdit', () => {
       await act(async () => {
         await result.current.handleSaveUsername()
       })
+      return result
+    }
 
-      expect(result.current.usernameError).toBe('この表示名は既に使用されています')
+    it('handleSaveUsernameで409コンフリクトの場合にエラーメッセージがセットされる', async () => {
+      mockFetch.mockResolvedValueOnce(conflictResponse())
+
+      const result = await saveDuplicateUsername()
+
+      expect(result.current.usernameError).toBe('エラーが発生しました')
+    })
+
+    it('Issue#93 - 英語の設定では409コンフリクトのエラーメッセージが英語になる', async () => {
+      mockFetch.mockResolvedValueOnce(conflictResponse())
+      await i18n.changeLanguage('en')
+      try {
+        const result = await saveDuplicateUsername()
+
+        expect(result.current.usernameError).toBe('An error occurred')
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
 
     it('handleSaveUsername成功時にonUsernameUpdatedコールバックが呼ばれる', async () => {
