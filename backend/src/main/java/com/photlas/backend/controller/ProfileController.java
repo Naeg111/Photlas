@@ -21,6 +21,8 @@ import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.PhotoService;
 import com.photlas.backend.service.ProfileService;
 import com.photlas.backend.service.S3Service;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -109,7 +111,7 @@ public class ProfileController {
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         if (!ALLOWED_IMAGE_EXTENSIONS.contains(request.getExtension().toLowerCase())) {
-            throw new IllegalArgumentException("対応していないファイル形式です");
+            throw new InvalidRequestException(ErrorCodes.UNSUPPORTED_FILE_TYPE, "対応していないファイル形式です");
         }
 
         S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(

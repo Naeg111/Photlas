@@ -15,6 +15,7 @@ import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.exception.ErrorCodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -85,7 +86,7 @@ public class FavoriteService {
         // 通常フローでの重複チェック
         if (favoriteRepository.findByUserIdAndPhotoId(user.getId(), photoId).isPresent()) {
             logger.info("お気に入りは既に登録済みです: userId={}, photoId={}", user.getId(), photoId);
-            throw new ConflictException(ERROR_ALREADY_FAVORITED);
+            throw new ConflictException(ErrorCodes.ALREADY_FAVORITED, ERROR_ALREADY_FAVORITED);
         }
 
         Favorite favorite = new Favorite();
@@ -97,7 +98,7 @@ public class FavoriteService {
         } catch (DataIntegrityViolationException e) {
             // 同時リクエストによるレースコンディション時のセーフティネット
             logger.info("お気に入りは既に登録済みです（並行リクエスト）: userId={}, photoId={}", user.getId(), photoId);
-            throw new ConflictException(ERROR_ALREADY_FAVORITED);
+            throw new ConflictException(ErrorCodes.ALREADY_FAVORITED, ERROR_ALREADY_FAVORITED);
         }
 
         logger.info("お気に入りに登録しました: userId={}, photoId={}", user.getId(), photoId);

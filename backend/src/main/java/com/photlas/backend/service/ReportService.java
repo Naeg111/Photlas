@@ -13,6 +13,7 @@ import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.exception.ErrorCodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -133,7 +134,7 @@ public class ReportService {
         reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
                 reporterUserId, targetType, targetId)
                 .ifPresent(report -> {
-                    throw new ConflictException("すでに通報済みです");
+                    throw new ConflictException(ErrorCodes.ALREADY_REPORTED, "すでに通報済みです");
                 });
 
         Report report = new Report();

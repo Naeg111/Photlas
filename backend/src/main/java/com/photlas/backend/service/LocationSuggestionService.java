@@ -13,6 +13,9 @@ import com.photlas.backend.repository.LocationSuggestionRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
+import com.photlas.backend.exception.InvalidStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -92,22 +95,22 @@ public class LocationSuggestionService {
         long dailyCount = locationSuggestionRepository.countBySuggesterIdAndCreatedAtAfter(
                 suggester.getId(), LocalDateTime.now().toLocalDate().atStartOfDay());
         if (dailyCount >= 10) {
-            throw new IllegalStateException("1日あたりの指摘件数の上限に達しました");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_DAILY_LIMIT, "1日あたりの指摘件数の上限に達しました");
         }
 
         // 公開中の写真のみ指摘可能
         if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
-            throw new IllegalStateException("公開中の写真のみ撮影場所の指摘ができます");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_PHOTO_NOT_PUBLIC, "公開中の写真のみ撮影場所の指摘ができます");
         }
 
         // 自分の写真には指摘できない
         if (photo.getUserId().equals(suggester.getId())) {
-            throw new IllegalStateException("自分の投稿に対して撮影場所の指摘はできません");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_OWN_PHOTO, "自分の投稿に対して撮影場所の指摘はできません");
         }
 
         // 同じ写真に対して既に指摘済みの場合はエラー
         if (locationSuggestionRepository.existsByPhotoIdAndSuggesterId(photoId, suggester.getId())) {
-            throw new IllegalStateException("この写真に対して既に撮影場所の指摘を行っています");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_ALREADY_SENT, "この写真に対して既に撮影場所の指摘を行っています");
         }
 
         // Issue#146: 指摘の距離バリデーション（フロントをすり抜けても弾く安全網）。
@@ -274,7 +277,7 @@ public class LocationSuggestionService {
                 .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         LocationSuggestion suggestion = locationSuggestionRepository.findByReviewToken(reviewToken)
-                .orElseThrow(() -> new IllegalArgumentException("無効なトークンです"));
+                .orElseThrow(() -> new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "無効なトークンです"));
 
         Photo photo = photoRepository.findById(suggestion.getPhotoId())
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
@@ -285,15 +288,15 @@ public class LocationSuggestionService {
 
         // Issue#54: QUARANTINED/REMOVED写真への操作をブロック
         if (Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(photo.getModerationStatus())) {
-            throw new IllegalStateException("この写真は現在審査中のため操作できません");
+            throw new InvalidStateException(ErrorCodes.PHOTO_UNDER_REVIEW, "この写真は現在審査中のため操作できません");
         }
         if (Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(photo.getModerationStatus())) {
-            throw new IllegalStateException("この写真は削除されたため操作できません");
+            throw new InvalidStateException(ErrorCodes.PHOTO_DELETED, "この写真は削除されたため操作できません");
         }
 
         // Issue#65: 解決済みの指摘への再操作を防止
         if (!Integer.valueOf(CodeConstants.SUGGESTION_STATUS_PENDING).equals(suggestion.getStatus())) {
-            throw new IllegalStateException("この指摘は既に解決済みです");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_ALREADY_RESOLVED, "この指摘は既に解決済みです");
         }
 
         return suggestion;
@@ -321,10 +324,10 @@ public class LocationSuggestionService {
                 latitude.doubleValue(), longitude.doubleValue());
 
         if (meters < SUGGESTION_MIN_DISTANCE_METERS) {
-            throw new IllegalStateException("元の撮影場所から 30m 以上離れた場所を指定してください");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_TOO_CLOSE, "元の撮影場所から 30m 以上離れた場所を指定してください");
         }
         if (Boolean.TRUE.equals(photo.getLocationFromExif()) && meters > SUGGESTION_MAX_DISTANCE_METERS) {
-            throw new IllegalStateException(
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_TOO_FAR,
                     "この写真は GPS の位置情報が設定されているため、元の撮影場所から 1km 以内で指定してください");
         }
     }

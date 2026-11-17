@@ -14,6 +14,9 @@ import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.PhotoService;
 import com.photlas.backend.service.S3Service;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
+import com.photlas.backend.exception.CodedException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -107,7 +110,7 @@ public class PhotoController {
     ) {
         // 拡張子のバリデーション
         if (!ALLOWED_IMAGE_EXTENSIONS.contains(request.getExtension().toLowerCase())) {
-            throw new IllegalArgumentException("対応していないファイル形式です");
+            throw new InvalidRequestException(ErrorCodes.UNSUPPORTED_FILE_TYPE, "対応していないファイル形式です");
         }
 
         String email = authentication.getName();
@@ -196,7 +199,7 @@ public class PhotoController {
      */
     @ExceptionHandler(CategoryNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCategoryNotFoundException(CategoryNotFoundException e) {
-        ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.CATEGORY_NOT_FOUND, e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
@@ -205,7 +208,8 @@ public class PhotoController {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(
+                CodedException.codeOf(e, ErrorCodes.BAD_REQUEST), e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }

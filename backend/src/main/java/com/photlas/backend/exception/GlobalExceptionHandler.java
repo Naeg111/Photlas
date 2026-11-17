@@ -22,6 +22,9 @@ import java.util.List;
  * アプリケーション全体の例外を一元的に処理します。
  * ResponseEntityExceptionHandlerを継承してSpring MVC標準例外を適切に処理します。
  * Issue#19, Issue#20
+ *
+ * <p>Issue#93: すべてのエラーレスポンスに {@code code}（{@link ErrorCodes}）を付ける。
+ * フロントエンドはこのコードから表示言語の文言を出し、{@code message} は画面に出さない。
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -44,7 +47,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             ));
         }
 
-        ErrorResponse errorResponse = new ErrorResponse("入力内容が無効です。", errors);
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.VALIDATION_ERROR, "入力内容が無効です。");
+        errorResponse.setErrors(errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
@@ -53,7 +57,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("INVALID_CREDENTIALS", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.INVALID_CREDENTIALS, ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
@@ -62,7 +66,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("CONFLICT", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ex.getCode(), ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
@@ -71,7 +75,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(FavoriteNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleFavoriteNotFoundException(FavoriteNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.FAVORITE_NOT_FOUND, ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
@@ -80,7 +84,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.USER_NOT_FOUND, ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
@@ -89,7 +93,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(PhotoNotFoundException.class)
     public ResponseEntity<ErrorResponse> handlePhotoNotFoundException(PhotoNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.PHOTO_NOT_FOUND, ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
@@ -98,7 +102,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(SpotNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleSpotNotFoundException(SpotNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.SPOT_NOT_FOUND, ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
@@ -107,7 +111,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(SelfReportException.class)
     public ResponseEntity<ErrorResponse> handleSelfReportException(SelfReportException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.SELF_REPORT, ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
@@ -116,7 +120,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(AccountSuspendedException.class)
     public ResponseEntity<ErrorResponse> handleAccountSuspendedException(AccountSuspendedException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("ACCOUNT_SUSPENDED", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.ACCOUNT_SUSPENDED, ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
@@ -125,7 +129,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("FORBIDDEN", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.FORBIDDEN, ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
@@ -135,7 +139,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(
             org.springframework.security.access.AccessDeniedException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("アクセスが拒否されました");
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.ACCESS_DENIED, "アクセスが拒否されました");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
@@ -144,7 +148,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(EmailNotVerifiedException.class)
     public ResponseEntity<ErrorResponse> handleEmailNotVerifiedException(EmailNotVerifiedException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("EMAIL_NOT_VERIFIED", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.EMAIL_NOT_VERIFIED, ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
@@ -153,7 +157,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(
+                CodedException.codeOf(ex, ErrorCodes.BAD_REQUEST), ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
@@ -162,7 +167,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(ExportInProgressException.class)
     public ResponseEntity<ErrorResponse> handleExportInProgressException(ExportInProgressException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("EXPORT_IN_PROGRESS", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.EXPORT_IN_PROGRESS, ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
@@ -172,7 +177,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ExportRateLimitException.class)
     public ResponseEntity<ErrorResponse> handleExportRateLimitException(ExportRateLimitException ex) {
         long seconds = Math.max(1, ex.getRetryAfter().toSeconds());
-        ErrorResponse errorResponse = new ErrorResponse("EXPORT_RATE_LIMITED", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.EXPORT_RATE_LIMITED, ex.getMessage());
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, String.valueOf(seconds))
                 .body(errorResponse);
@@ -184,7 +189,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         logger.error("予期しないエラーが発生しました", ex);
-        ErrorResponse errorResponse = new ErrorResponse("サーバーエラーが発生しました");
+        ErrorResponse errorResponse = new ErrorResponse(ErrorCodes.INTERNAL_ERROR, "サーバーエラーが発生しました");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }

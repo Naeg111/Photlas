@@ -17,6 +17,7 @@ import com.photlas.backend.service.AuthService;
 import com.photlas.backend.service.JwtService;
 import com.photlas.backend.service.OAuthLinkConfirmationService;
 import com.photlas.backend.service.PasswordService;
+import com.photlas.backend.exception.ErrorCodes;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -97,7 +98,7 @@ public class AuthController {
         String email = request.get(FIELD_EMAIL);
         if (email == null || email.isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponse("メールアドレスは必須です"));
+                    .body(new ErrorResponse(ErrorCodes.EMAIL_REQUIRED, "メールアドレスは必須です"));
         }
         authService.resendVerificationEmail(email);
 

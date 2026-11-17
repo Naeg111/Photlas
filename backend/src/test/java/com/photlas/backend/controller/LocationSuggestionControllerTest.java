@@ -4,6 +4,7 @@ import com.photlas.backend.entity.CodeConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photlas.backend.dto.LocationSuggestionRequest;
 import com.photlas.backend.entity.*;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.repository.*;
 import com.photlas.backend.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -126,7 +127,33 @@ public class LocationSuggestionControllerTest {
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + ownerToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.SUGGESTION_OWN_PHOTO));
+    }
+
+    @Test
+    @DisplayName("Issue#93 - 指摘作成: 写真が無い場合は 404 と PHOTO_NOT_FOUND が返る")
+    void testCreateSuggestion_PhotoNotFound_ReturnsCode() throws Exception {
+        LocationSuggestionRequest request = new LocationSuggestionRequest();
+        request.setLatitude(SUGGESTED_LAT);
+        request.setLongitude(SUGGESTED_LNG);
+
+        mockMvc.perform(post("/api/v1/photos/" + (photo.getPhotoId() + 99999) + "/location-suggestions")
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + suggesterToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.PHOTO_NOT_FOUND));
+    }
+
+    @Test
+    @DisplayName("Issue#93 - レビュー情報取得: トークンが無効な場合は 400 と INVALID_TOKEN が返る")
+    void testGetReview_InvalidToken_ReturnsCode() throws Exception {
+        mockMvc.perform(get("/api/v1/location-suggestions/review")
+                .param("token", "no-such-token")
+                .header(HEADER_AUTHORIZATION, BEARER_PREFIX + ownerToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.INVALID_TOKEN));
     }
 
     @Test

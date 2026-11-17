@@ -2,9 +2,12 @@ package com.photlas.backend.controller;
 
 import com.photlas.backend.dto.LocationSuggestionRequest;
 import jakarta.validation.Valid;
+import com.photlas.backend.dto.ErrorResponse;
 import com.photlas.backend.dto.LocationSuggestionReviewResponse;
 import com.photlas.backend.entity.LocationSuggestion;
 import com.photlas.backend.service.LocationSuggestionService;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.CodedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -41,8 +44,7 @@ public class LocationSuggestionController {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of("id", suggestion.getId()));
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
+            return badRequest(e);
         }
     }
 
@@ -71,8 +73,7 @@ public class LocationSuggestionController {
                     locationSuggestionService.getReviewResponse(token, email);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
+            return badRequest(e);
         }
     }
 
@@ -88,8 +89,7 @@ public class LocationSuggestionController {
             locationSuggestionService.acceptSuggestion(token, email);
             return ResponseEntity.ok(Map.of(KEY_MESSAGE, "撮影場所の指摘を受け入れました"));
         } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
+            return badRequest(e);
         }
     }
 
@@ -105,8 +105,15 @@ public class LocationSuggestionController {
             locationSuggestionService.rejectSuggestion(token, email);
             return ResponseEntity.ok(Map.of(KEY_MESSAGE, "撮影場所の指摘を拒否しました"));
         } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
+            return badRequest(e);
         }
+    }
+
+    /**
+     * Issue#93: 400 をエラーコード付きで返す（フロントはコードから表示言語の文言を出す）
+     */
+    private static ResponseEntity<ErrorResponse> badRequest(RuntimeException e) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(CodedException.codeOf(e, ErrorCodes.BAD_REQUEST), e.getMessage()));
     }
 }

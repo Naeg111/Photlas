@@ -28,12 +28,6 @@ public class ErrorResponse {
         this.timestamp = LocalDateTime.now();
     }
 
-    public ErrorResponse(String message, List<FieldError> errors) {
-        this.message = message;
-        this.errors = errors;
-        this.timestamp = LocalDateTime.now();
-    }
-
     // Getters and Setters
     public String getCode() {
         return code;

@@ -14,6 +14,8 @@ import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.util.LanguageUtils;
 import com.photlas.backend.util.TokenGenerator;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -71,9 +73,9 @@ public class AuthService {
         if (userRepository.existsByEmail(normalizedEmail)) {
             Optional<User> existingUser = userRepository.findByEmail(normalizedEmail);
             if (existingUser.isPresent() && existingUser.get().getDeletedAt() != null) {
-                throw new ConflictException("このメールアドレスは退会処理中のため、現在ご利用いただけません");
+                throw new ConflictException(ErrorCodes.EMAIL_PENDING_DELETION, "このメールアドレスは退会処理中のため、現在ご利用いただけません");
             }
-            throw new ConflictException("このメールアドレスは既に登録されています");
+            throw new ConflictException(ErrorCodes.EMAIL_ALREADY_IN_USE, "このメールアドレスは既に登録されています");
         }
 
         String hashedPassword = passwordEncoder.encode(request.getPassword());
@@ -174,19 +176,19 @@ public class AuthService {
                 emailVerificationTokenRepository.findByToken(token);
 
         if (tokenOptional.isEmpty()) {
-            throw new IllegalArgumentException("認証トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "認証トークンが無効または期限切れです");
         }
 
         EmailVerificationToken verificationToken = tokenOptional.get();
 
         if (verificationToken.getExpiryDate().before(new Date())) {
             emailVerificationTokenRepository.delete(verificationToken);
-            throw new IllegalArgumentException("認証トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "認証トークンが無効または期限切れです");
         }
 
         Optional<User> userOptional = userRepository.findById(verificationToken.getUserId());
         if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException(ERROR_USER_NOT_FOUND);
+            throw new InvalidRequestException(ErrorCodes.USER_NOT_FOUND, ERROR_USER_NOT_FOUND);
         }
 
         User user = userOptional.get();
@@ -212,7 +214,7 @@ public class AuthService {
         User user = userOptional.get();
 
         if (user.isEmailVerified()) {
-            throw new IllegalArgumentException("このメールアドレスは既に認証済みです");
+            throw new InvalidRequestException(ErrorCodes.EMAIL_ALREADY_VERIFIED, "このメールアドレスは既に認証済みです");
         }
 
         sendVerificationEmail(user);
