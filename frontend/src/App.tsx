@@ -272,6 +272,10 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
 
   // Issue#54: モデレーションステータスポーリング
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // 実行中の setInterval が古い t を閉じ込めないよう、お知らせの文言は ref 経由で今の言語の t を使う
+  // （ポーリング中に言語を切り替えても、切り替え後の言語で出す）
+  const tRef = useRef(t)
+  tRef.current = t
 
   const startModerationPolling = useCallback((photoId: number) => {
     // 既存のポーリングをクリア
@@ -292,7 +296,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           clearInterval(pollingIntervalRef.current)
           pollingIntervalRef.current = null
         }
-        toast.info(t('photo.moderationStillPending'))
+        toast.info(tRef.current('photo.moderationStillPending'))
         return
       }
 
@@ -307,14 +311,14 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         const status = data.moderation_status
 
         if (status === MODERATION_STATUS_PUBLISHED) {
-          toast.success(t('photo.moderationPublished'))
+          toast.success(tRef.current('photo.moderationPublished'))
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current)
             pollingIntervalRef.current = null
           }
           mapRef.current?.refreshSpots({ bypassCache: true })
         } else if (status === MODERATION_STATUS_QUARANTINED) {
-          toast.error(t('photo.moderationQuarantined'))
+          toast.error(tRef.current('photo.moderationQuarantined'))
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current)
             pollingIntervalRef.current = null
@@ -324,7 +328,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         // ネットワークエラーは無視（次回ポーリングで再試行）
       }
     }, POLLING_INTERVAL_MS)
-  }, [t])
+  }, [])
 
   // コンポーネントアンマウント時にポーリングをクリア
   useEffect(() => {

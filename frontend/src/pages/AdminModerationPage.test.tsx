@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -433,6 +433,31 @@ describe('AdminModerationPage', () => {
       expect(screen.queryByText('モデレーション管理')).not.toBeInTheDocument()
     } finally {
       await i18n.changeLanguage('ja')
+    }
+  })
+
+  it('Spec#93 追加対応: 言語を切り替えてもキューを取り直さず、エラーは切り替え後の言語で表示する', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+
+    renderPage()
+
+    expect(await screen.findByText('キューの取得に失敗しました')).toBeInTheDocument()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+
+    try {
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+      expect(screen.getByText('Failed to load the review queue')).toBeInTheDocument()
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage('ja')
+      })
     }
   })
 

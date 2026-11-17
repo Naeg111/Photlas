@@ -30,6 +30,9 @@ interface PhotoLightboxProps {
 
 export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxProps) {
   const { t } = useTranslation()
+  // fetchImage を t に依存させず、開いている間に言語が変わっても画像を取り直さないよう、ref 経由で今の言語の t を使う
+  const tRef = useRef(t)
+  tRef.current = t
   const [scale, setScale] = useState<number>(LIGHTBOX.INITIAL_SCALE)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -126,9 +129,9 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
       setLoadError(true)
       setIsLoading(false)
       setShowLoading(false)
-      toast.error(t('photo.imageLoadFailed'))
+      toast.error(tRef.current('photo.imageLoadFailed'))
     }
-  }, [t])
+  }, [])
 
   useEffect(() => {
     if (!open) {

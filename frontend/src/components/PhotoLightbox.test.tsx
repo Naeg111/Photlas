@@ -1,7 +1,9 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { PhotoLightbox } from './PhotoLightbox'
+import { toast } from 'sonner'
+import i18n from '../i18n'
 
 /**
  * PhotoLightbox コンポーネントのテスト
@@ -61,6 +63,38 @@ describe('PhotoLightbox', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  describe('Spec#93 追加対応: 言語の切り替え', () => {
+    afterEach(async () => {
+      await act(async () => {
+        await i18n.changeLanguage('ja')
+      })
+    })
+
+    it('開いている間に言語が切り替わっても、画像を取り直さない', async () => {
+      render(<PhotoLightbox {...defaultProps} />)
+      await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1))
+
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+
+      expect(fetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('読み込みに失敗したら、今の言語でお知らせを出す', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')))
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+
+      render(<PhotoLightbox {...defaultProps} />)
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('Failed to load image. Please close and open it again.')
+      )
+    })
   })
 
   describe('UI Elements - UI要素', () => {

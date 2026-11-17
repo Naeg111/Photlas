@@ -46,7 +46,8 @@ export default function AdminModerationPage() {
   const [items, setItems] = useState<ModerationQueueItem[]>([])
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // エラーは翻訳キーで持ち、表示するときに t() する（fetchQueue を t に依存させず、言語の切り替えで再取得しないため）
+  const [errorKey, setErrorKey] = useState<string | null>(null)
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set())
   const [revealedIds, setRevealedIds] = useState<Set<number>>(new Set())
   const [selectedImageUrl, setSelectedImageUrl] = useState('')
@@ -56,7 +57,7 @@ export default function AdminModerationPage() {
 
   const fetchQueue = useCallback(async () => {
     setIsLoading(true)
-    setError(null)
+    setErrorKey(null)
     try {
       const response = await fetch(
         `${API_V1_URL}/admin/moderation/queue?size=${PAGE_SIZE}`,
@@ -64,7 +65,7 @@ export default function AdminModerationPage() {
       )
       if (!response.ok) {
         if (response.status === 403) {
-          setError(t('admin.accessDenied'))
+          setErrorKey('admin.accessDenied')
           return
         }
         throw new Error(`failed to fetch moderation queue: ${response.status}`)
@@ -73,11 +74,11 @@ export default function AdminModerationPage() {
       setItems(data.content)
       setTotalElements(data.total_elements)
     } catch {
-      setError(t('admin.moderation.fetchFailed'))
+      setErrorKey('admin.moderation.fetchFailed')
     } finally {
       setIsLoading(false)
     }
-  }, [t])
+  }, [])
 
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
@@ -118,6 +119,7 @@ export default function AdminModerationPage() {
           headers: getAuthHeaders() as Record<string, string>,
           // 理由は画面の文言ではなく DB に保存されるデータ（制裁の理由・投稿者への通知メールに使われる）。
           // 管理者の表示言語で変わらないよう、Spec#93 追加対応でも多言語化の対象外としている。
+          // TODO(Spec#168): メールの理由が投稿者の言語にならない問題は Spec#168 で対応する。
           body: { reason: '利用規約違反' },
         }
       )
@@ -179,20 +181,20 @@ export default function AdminModerationPage() {
           </div>
         )}
 
-        {error && (
+        {errorKey && (
           <div className="text-center py-12">
-            <p className="text-red-600 mb-4">{error}</p>
+            <p className="text-red-600 mb-4">{t(errorKey)}</p>
             <Button variant="outline" onClick={fetchQueue}>{t('admin.moderation.reload')}</Button>
           </div>
         )}
 
-        {!isLoading && !error && items.length === 0 && (
+        {!isLoading && !errorKey && items.length === 0 && (
           <div className="text-center py-12 text-gray-500">
             {t('admin.moderation.empty')}
           </div>
         )}
 
-        {!isLoading && !error && items.length > 0 && (
+        {!isLoading && !errorKey && items.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map(item => (
               <div

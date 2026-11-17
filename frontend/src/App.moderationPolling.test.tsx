@@ -3,6 +3,7 @@ import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { toast } from 'sonner'
 import App from './App'
+import i18n from './i18n'
 import { INITIAL_SPOTS_SPLASH_TIMEOUT_MS } from './config/app'
 import { createPhoto, getPhotoUploadUrl, uploadFileToS3 } from './utils/apiClient'
 import type { PhotoResponse } from './utils/apiClient'
@@ -232,6 +233,24 @@ describe('App - Spec#54: 投稿後の審査状態のお知らせ', () => {
     // 確認はそこで止まる
     await advance(POLLING_INTERVAL_MS * 3)
     expect(statusRequestCount()).toBe(2)
+  })
+
+  it('確認の途中で言語を切り替えても、切り替え後の言語でお知らせを出す', async () => {
+    await renderAndSubmitPhoto()
+
+    // 1回目: まだ審査中
+    await advance(POLLING_INTERVAL_MS)
+    expect(statusRequestCount()).toBe(1)
+
+    await i18n.changeLanguage('en')
+    try {
+      moderationStatus = MODERATION_STATUS_PUBLISHED
+      await advance(POLLING_INTERVAL_MS)
+      await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Your photo has been published'))
+      expect(toast.success).not.toHaveBeenCalledWith('写真が公開されました')
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
   })
 
   it('隔離されたらコンテンツポリシー違反の可能性をお知らせする', async () => {

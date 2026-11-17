@@ -51,6 +51,12 @@ public class AdminDeletedUserControllerTest {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private ViolationRepository violationRepository;
+
+    @Autowired
+    private AccountSanctionRepository accountSanctionRepository;
+
     @MockBean
     private S3Service s3Service;
 
@@ -110,6 +116,34 @@ public class AdminDeletedUserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email", is("detail@example.com")))
                 .andExpect(jsonPath("$.original_username", is("detailuser")));
+    }
+
+    @Test
+    @DisplayName("Spec#93 追加対応 - 違反・制裁履歴の種類・処置・制裁は数値コードで返す（フロントはコードから表示名を引く）")
+    void testGetDeletedUserDetail_ReturnsHistoryCodesAsNumbers() throws Exception {
+        User deleted = createDeletedUser("history@example.com", "historyuser", 10);
+
+        Violation violation = new Violation();
+        violation.setUserId(deleted.getId());
+        violation.setTargetType(CodeConstants.TARGET_TYPE_PHOTO);
+        violation.setTargetId(1L);
+        violation.setViolationType(CodeConstants.REASON_ADULT_CONTENT);
+        violation.setActionTaken(CodeConstants.ACTION_TAKEN_REMOVED);
+        violationRepository.save(violation);
+
+        AccountSanction sanction = new AccountSanction();
+        sanction.setUserId(deleted.getId());
+        sanction.setSanctionType(CodeConstants.SANCTION_WARNING);
+        sanction.setReason("利用規約違反");
+        accountSanctionRepository.save(sanction);
+
+        // is(int) は JSON の数値にだけ一致する（文字列 "801" では失敗する）
+        mockMvc.perform(get(ENDPOINT + "/" + deleted.getId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.violations[0].violation_type", is(CodeConstants.REASON_ADULT_CONTENT)))
+                .andExpect(jsonPath("$.violations[0].action_taken", is(CodeConstants.ACTION_TAKEN_REMOVED)))
+                .andExpect(jsonPath("$.sanctions[0].sanction_type", is(CodeConstants.SANCTION_WARNING)));
     }
 
     @Test

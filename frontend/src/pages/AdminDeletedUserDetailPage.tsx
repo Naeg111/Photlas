@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRobotsNoindex } from '../hooks/useRobotsNoindex'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Trash2, Clock, Download } from 'lucide-react'
@@ -34,6 +34,9 @@ export default function AdminDeletedUserDetailPage() {
   const navigate = useNavigate()
   const { getAuthToken } = useAuth()
   const { t, i18n } = useTranslation()
+  // fetchDetail を t に依存させず、言語の切り替えで再取得しないよう、ref 経由で今の言語の t を使う
+  const tRef = useRef(t)
+  tRef.current = t
 
   /** Spec#93 追加対応: 数値コードを表示言語の名前にする（未知のコードは数値のまま出す） */
   const codeLabel = (keys: Record<number, string>, code: number) =>
@@ -67,11 +70,11 @@ export default function AdminDeletedUserDetailPage() {
         setDetail(await response.json())
       }
     } catch {
-      toast.error(t('admin.deletedUser.fetchFailed'))
+      toast.error(tRef.current('admin.deletedUser.fetchFailed'))
     } finally {
       setIsLoading(false)
     }
-  }, [userId, getAuthToken, t])
+  }, [userId, getAuthToken])
 
   useEffect(() => {
     fetchDetail()

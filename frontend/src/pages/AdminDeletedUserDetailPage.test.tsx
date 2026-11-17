@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import AdminDeletedUserDetailPage from './AdminDeletedUserDetailPage'
 import {
@@ -26,9 +26,11 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate }
 })
 
+// 本物の AuthContext と同じく、getAuthToken はレンダーごとに作り直さない（fetchDetail の依存が毎回変わらないように）
+const { mockGetAuthToken } = vi.hoisted(() => ({ mockGetAuthToken: () => 'test-admin-token' }))
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
-    getAuthToken: () => 'test-admin-token',
+    getAuthToken: mockGetAuthToken,
     user: { role: ROLE_ADMIN },
   }),
 }))
@@ -106,6 +108,30 @@ describe('AdminDeletedUserDetailPage', () => {
     expect(await screen.findByText('1399')).toBeInTheDocument()
     expect(screen.getByText(/^899 - /)).toBeInTheDocument()
     expect(screen.getByText('799')).toBeInTheDocument()
+  })
+
+  it('Spec#93 追加対応: 言語を切り替えても詳細を取り直さない', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => MOCK_DETAIL,
+    })
+
+    renderWithRoute()
+
+    expect(await screen.findByText('deleted@example.com')).toBeInTheDocument()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+
+    try {
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+      expect(screen.getByText('Deleted User Details')).toBeInTheDocument()
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage('ja')
+      })
+    }
   })
 
   it('Spec#93 追加対応: 言語設定が英語なら英語で表示する', async () => {
