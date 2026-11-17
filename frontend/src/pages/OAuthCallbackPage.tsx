@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AUTH_CHANGED_EVENT } from '../contexts/AuthContext'
 import { OAUTH_LOGIN_TOAST_FLAG_KEY } from '../config/app'
+import { applyAccountLanguage } from '../i18n'
 
 /**
  * Issue#81 Phase 5a - OAuth コールバックページ。
@@ -154,6 +155,10 @@ async function completeLogin(
     role: userData.role,
     language: userData.language,
   }))
+
+  // Spec#93: ログイン後は DB の言語設定で表示言語と localStorage を上書きする。
+  // PWA では直後に画面を読み直すため、localStorage への保存を先に済ませておく（applyAccountLanguage 内で同期的に保存）。
+  void applyAccountLanguage(userData.language)
 
   // Issue#144: OAuth ログイン操作が「今」完了したことを示すフラグをセットする。
   // App.tsx（MainContent）の /users/me チェックがこれを読み、受動的な起動と区別して

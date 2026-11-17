@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { detectInitialLanguage, loadLanguageResource, SUPPORTED_LANGUAGES } from './index'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { applyAccountLanguage, detectInitialLanguage, loadLanguageResource, SUPPORTED_LANGUAGES } from './index'
 import i18n from './index'
 import ja from './locales/ja.json'
 import en from './locales/en.json'
@@ -27,30 +27,85 @@ function placeholders(text: string): string[] {
 }
 
 describe('i18n - Issue#130', () => {
+  // Spec#93 2.7: 非ログイン時のブラウザ言語検出
   describe('detectInitialLanguage', () => {
+    /** navigator.language を差し替える */
+    function setBrowserLanguage(tag: string) {
+      vi.spyOn(navigator, 'language', 'get').mockReturnValue(tag)
+    }
+
     beforeEach(() => {
       vi.mocked(localStorage.getItem).mockReturnValue(null)
     })
 
-    it('localStorage に photlas-language があればそれを返す', () => {
-      vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
-        key === 'photlas-language' ? 'ko' : null
-      )
-      expect(detectInitialLanguage()).toBe('ko')
+    afterEach(() => {
+      vi.restoreAllMocks()
     })
 
-    it('localStorage に未サポート言語があれば navigator にフォールバック', () => {
+    it.each([
+      ['ja', 'ja'],
+      ['ja-JP', 'ja'],
+      ['en-US', 'en'],
+      ['en-GB', 'en'],
+      ['ko', 'ko'],
+      ['ko-KR', 'ko'],
+      ['zh-CN', 'zh-CN'],
+      ['zh', 'zh-CN'],
+      ['zh-SG', 'zh-CN'],
+      ['zh-Hans-CN', 'zh-CN'],
+      ['zh-Hans-HK', 'zh-CN'],
+      ['zh-TW', 'zh-TW'],
+      ['zh-HK', 'zh-TW'],
+      ['zh-MO', 'zh-TW'],
+      ['zh-Hant', 'zh-TW'],
+      ['zh-Hant-TW', 'zh-TW'],
+      ['zh-tw', 'zh-TW'],
+      ['fr', 'en'],
+      ['fr-FR', 'en'],
+      ['de-DE', 'en'],
+      ['th', 'en'],
+    ])('ブラウザの言語が %s なら %s で表示する', (browserLanguage, expected) => {
+      setBrowserLanguage(browserLanguage)
+      expect(detectInitialLanguage()).toBe(expected)
+    })
+
+    it('localStorage に photlas-language があればブラウザの言語より優先する', () => {
+      setBrowserLanguage('ja-JP')
+      vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
+        key === 'photlas-language' ? 'zh-TW' : null
+      )
+      expect(detectInitialLanguage()).toBe('zh-TW')
+    })
+
+    it('localStorage に未対応の言語があればブラウザの言語で判定する', () => {
+      setBrowserLanguage('ko-KR')
       vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
         key === 'photlas-language' ? 'fr' : null
       )
-      // jsdom の navigator.language は 'en-US' なので 'en' に解決される
-      const detected = detectInitialLanguage()
-      expect(SUPPORTED_LANGUAGES).toContain(detected)
+      expect(detectInitialLanguage()).toBe('ko')
+    })
+  })
+
+  // Spec#93 2.2: ログイン後は DB の言語設定で localStorage と表示言語を上書きする
+  describe('applyAccountLanguage', () => {
+    beforeEach(() => {
+      vi.mocked(localStorage.setItem).mockClear()
     })
 
-    it('localStorage が null でも SUPPORTED_LANGUAGES 内の値を返す', () => {
-      const detected = detectInitialLanguage()
-      expect(SUPPORTED_LANGUAGES).toContain(detected)
+    it('対応言語なら localStorage に保存し、表示言語を切り替える', async () => {
+      try {
+        await applyAccountLanguage('ko')
+        expect(localStorage.setItem).toHaveBeenCalledWith('photlas-language', 'ko')
+        expect(i18n.language).toBe('ko')
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
+    it.each([undefined, null, '', 'fr'])('%s のときは何もしない', async (language) => {
+      await applyAccountLanguage(language)
+      expect(localStorage.setItem).not.toHaveBeenCalled()
+      expect(i18n.language).toBe('ja')
     })
   })
 

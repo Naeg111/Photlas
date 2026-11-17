@@ -1,6 +1,7 @@
 package com.photlas.backend.util;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * 言語判定ユーティリティ
@@ -18,11 +19,17 @@ public final class LanguageUtils {
     public static final List<String> SUPPORTED_LANGUAGES = List.of(
             JAPANESE, ENGLISH, KOREAN, CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL);
 
+    /** 繁体字を使う地域（台湾・香港・マカオ） */
+    private static final List<String> TRADITIONAL_CHINESE_REGIONS = List.of("tw", "hk", "mo");
+
     private LanguageUtils() {}
 
     /**
      * Accept-Languageヘッダーから言語を判定する
      * サポート言語: ja, en, ko, zh-CN, zh-TW
+     * 先頭（最も優先度の高い）言語タグだけを見る。
+     * 中国語は、繁体（zh-Hant）か台湾・香港・マカオなら zh-TW、それ以外は zh-CN とする。
+     * フロントエンドの resolveBrowserLanguage と同じ判定。
      * ヘッダーが存在しない場合は日本語をデフォルトとする。
      * 未対応言語の場合は英語にフォールバックする。
      *
@@ -33,23 +40,28 @@ public final class LanguageUtils {
         if (acceptLanguage == null || acceptLanguage.isBlank()) {
             return JAPANESE;
         }
-        String lang = acceptLanguage.trim();
-        if (lang.startsWith("ja")) {
-            return JAPANESE;
+        // 例: "zh-HK,zh;q=0.9,en;q=0.8" → "zh-HK"
+        // limit=-1: "," や "-" だけの値でも空の配列にならないようにする
+        String firstTag = acceptLanguage.split(",", -1)[0].split(";", -1)[0].trim();
+        List<String> subtags = List.of(firstTag.toLowerCase(Locale.ROOT).split("[-_]", -1));
+        return switch (subtags.get(0)) {
+            case "ja" -> JAPANESE;
+            case "ko" -> KOREAN;
+            case "zh" -> isTraditionalChinese(subtags.subList(1, subtags.size()))
+                    ? CHINESE_TRADITIONAL : CHINESE_SIMPLIFIED;
+            default -> ENGLISH;
+        };
+    }
+
+    private static boolean isTraditionalChinese(List<String> subtags) {
+        // 文字の指定（Hant / Hans）があれば地域より優先する
+        if (subtags.contains("hant")) {
+            return true;
         }
-        if (lang.startsWith("ko")) {
-            return KOREAN;
+        if (subtags.contains("hans")) {
+            return false;
         }
-        if (lang.startsWith("zh-TW") || lang.startsWith("zh-Hant")) {
-            return CHINESE_TRADITIONAL;
-        }
-        if (lang.startsWith("zh")) {
-            return CHINESE_SIMPLIFIED;
-        }
-        if (lang.startsWith("en")) {
-            return ENGLISH;
-        }
-        return ENGLISH;
+        return subtags.stream().anyMatch(TRADITIONAL_CHINESE_REGIONS::contains);
     }
 
     /**
