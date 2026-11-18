@@ -55,6 +55,8 @@ async function expectLoginRequiredDialog(page: Page): Promise<void> {
   await expect(page.getByText('ログインが必要です')).toBeVisible({ timeout: 5000 })
 }
 
+/** 投稿の地図の上に出る案内（ja.json の photo.locationInstruction） */
+const LOCATION_INSTRUCTION = 'マップをドラッグして撮影場所にピンを合わせてください'
 /** 位置情報のない写真を選んだときのピンの既定の位置（東京駅。PhotoContributionDialog と同じ） */
 const DEFAULT_PIN_POSITION = { lat: 35.6812, lng: 139.7671 }
 /** 地図をドラッグする距離（px） */
@@ -407,7 +409,7 @@ test.describe('写真投稿機能', () => {
       await expect(page.locator('[data-testid="photo-crop-area"]')).toBeVisible()
 
       // InlineMapPickerが表示されていることで位置設定済みを確認
-      await expect(page.getByText('地図をドラッグして撮影場所にピンを合わせてください')).toBeVisible({ timeout: 5000 })
+      await expect(page.getByText(LOCATION_INSTRUCTION)).toBeVisible({ timeout: 5000 })
     })
 
     test('地図をドラッグすると、投稿する位置が変わる', async ({ page }) => {
@@ -418,7 +420,7 @@ test.describe('写真投稿機能', () => {
 
       // 位置情報（EXIF の GPS）のない写真を選ぶと、ピンは既定の位置（東京駅）に置かれる
       await page.locator('input[type="file"]').setInputFiles(getTestImagePath('small'))
-      await expect(page.getByText('マップをドラッグして撮影場所にピンを合わせてください')).toBeVisible({ timeout: 5000 })
+      await expect(page.getByText(LOCATION_INSTRUCTION)).toBeVisible({ timeout: 5000 })
       const mapPicker = page.getByTestId('inline-map-picker')
       await expect(mapPicker.locator('canvas.mapboxgl-canvas')).toBeVisible({ timeout: 10000 })
       // 既定の位置への移動（アニメーション）が終わるのを待ってから、地図全体が見える位置までスクロールする
