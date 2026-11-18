@@ -303,6 +303,44 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
     })
   })
 
+  describe('最初の moveEnd の扱い（初回表示の moveEnd だけ捨てる）', () => {
+    it('初回表示の moveEnd（ユーザー操作でない）は、位置を伝えない', () => {
+      const onPositionChange = vi.fn()
+      render(<InlineMapPicker {...defaultProps} onPositionChange={onPositionChange} />)
+
+      getCapturedOnMoveEnd()!({ target: mockMap })
+
+      expect(onPositionChange).not.toHaveBeenCalled()
+    })
+
+    it('最初の moveEnd がユーザーのドラッグなら、捨てずに位置を伝える', () => {
+      // 初回表示で moveEnd が発火しない環境では、最初の moveEnd がユーザーのドラッグになる
+      const onPositionChange = vi.fn()
+      render(<InlineMapPicker {...defaultProps} onPositionChange={onPositionChange} />)
+
+      mockMap.getCenter.mockReturnValue({ lng: 139.7700, lat: 35.6812 })
+      getCapturedOnMoveEnd()!({ target: mockMap, originalEvent: new MouseEvent('mouseup') })
+
+      expect(onPositionChange).toHaveBeenCalledWith({ lat: 35.6812, lng: 139.77 })
+    })
+
+    it('最初の moveEnd が moveMapTo による移動なら、捨てずに目標の位置を伝える', () => {
+      // 地図の中心（mockMap.getCenter）から離れた位置を渡すと、moveMapTo で移動する
+      const onPositionChange = vi.fn()
+      render(
+        <InlineMapPicker
+          {...defaultProps}
+          position={{ lat: 35.6585, lng: 139.7454 }}
+          onPositionChange={onPositionChange}
+        />
+      )
+
+      getCapturedOnMoveEnd()!({ target: mockMap })
+
+      expect(onPositionChange).toHaveBeenCalledWith({ lat: 35.6585, lng: 139.7454 })
+    })
+  })
+
   describe('現在地ボタン', () => {
     it('現在地ボタンが表示される', () => {
       render(<InlineMapPicker {...defaultProps} />)
