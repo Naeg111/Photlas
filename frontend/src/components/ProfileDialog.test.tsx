@@ -1613,6 +1613,35 @@ describe('ProfileDialog', () => {
       expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
     })
 
+    it('Issue#93: 400 でエラーコード（SELF_REPORT）があれば、その文言を出してダイアログを閉じる', async () => {
+      await submitProfileReport(
+        new Response(JSON.stringify({ code: 'SELF_REPORT', message: '自分の投稿を通報することはできません' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('自分の投稿は通報できません')
+      })
+      expect(toast.error).not.toHaveBeenCalledWith('通報に失敗しました')
+      expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
+    })
+
+    it('Issue#93: 400 で翻訳の無いコード（VALIDATION_ERROR）なら、汎用の文言を出してダイアログを閉じる', async () => {
+      await submitProfileReport(
+        new Response(JSON.stringify({ code: 'VALIDATION_ERROR', message: '入力内容が無効です' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('通報に失敗しました')
+      })
+      expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
+    })
+
     it('サーバーエラー（500）なら失敗のお知らせを出す', async () => {
       await submitProfileReport(new Response('error', { status: 500 }))
 

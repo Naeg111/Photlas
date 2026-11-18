@@ -491,6 +491,7 @@
     "SUGGESTION_ALREADY_RESOLVED": "この指摘はすでに解決済みです",
     "PHOTO_UNDER_REVIEW": "この写真は現在審査中のため操作できません",
     "PHOTO_DELETED": "この写真は削除されたため操作できません",
+    "PHOTO_NOT_PUBLIC": "この写真は公開中ではないため操作できません",
     "unexpected": "予期しないエラーが発生しました。ページを再読み込みしてください。",
     "errorOccurred": "エラーが発生しました",
     "RATE_LIMIT_EXCEEDED": "リクエストが多すぎます。{{seconds}} 秒後に再度お試しください。",

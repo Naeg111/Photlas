@@ -7,6 +7,8 @@ import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidStateException;
 import com.photlas.backend.exception.SelfReportException;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
@@ -133,8 +135,8 @@ public class ReportModerationTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - すでにQUARANTINEDの写真への通報はIllegalStateExceptionがスローされる")
-    void testCreateReport_AlreadyQuarantined_ThrowsIllegalStateException() {
+    @DisplayName("Issue#54 / Issue#93 - すでにQUARANTINEDの写真への通報はPHOTO_NOT_PUBLICのInvalidStateExceptionがスローされる")
+    void testCreateReport_AlreadyQuarantined_ThrowsInvalidStateException() {
         // Given: 写真を事前にQUARANTINEDに設定
         testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
         photoRepository.save(testPhoto);
@@ -144,8 +146,9 @@ public class ReportModerationTest {
         // When & Then: 公開中でない写真への通報はブロックされる
         assertThatThrownBy(() -> reportService.createReport(
                 testPhoto.getPhotoId(), request, reporter1.getId()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("公開中の写真のみ");
+                .isInstanceOf(InvalidStateException.class)
+                .hasMessageContaining("公開中の写真のみ")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_NOT_PUBLIC);
     }
 
     // ===== Issue#54: S3隔離フロー整合性テスト =====

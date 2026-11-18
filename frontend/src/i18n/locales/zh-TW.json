@@ -491,6 +491,7 @@
     "SUGGESTION_ALREADY_RESOLVED": "此位置建議已處理。",
     "PHOTO_UNDER_REVIEW": "這張照片正在審核中，無法操作。",
     "PHOTO_DELETED": "這張照片已被刪除，無法操作。",
+    "PHOTO_NOT_PUBLIC": "這張照片未公開，無法操作。",
     "unexpected": "發生意外錯誤，請重新載入頁面。",
     "errorOccurred": "發生錯誤",
     "RATE_LIMIT_EXCEEDED": "請求過多，請在 {{seconds}} 秒後再試。",

@@ -24,6 +24,19 @@ export function getErrorCode(data: unknown): string | undefined {
 }
 
 /**
+ * fetch の応答の本文を読み、`code` を取り出す。
+ * 本文が JSON でない・読めない、または `code` が無い場合は undefined。
+ * 本文を読み切るので、同じ応答の本文をほかで読まないときに使う。
+ */
+export async function readErrorCode(response: Pick<Response, 'json'>): Promise<string | undefined> {
+  try {
+    return getErrorCode(await response.json())
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * エラーコードを表示言語の文言にする。
  *
  * - `errors.<code>` の翻訳があればその文言

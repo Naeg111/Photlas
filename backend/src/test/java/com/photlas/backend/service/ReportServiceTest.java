@@ -6,6 +6,8 @@ import com.photlas.backend.dto.ReportResponse;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Report;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidStateException;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.SelfReportException;
 import com.photlas.backend.repository.PhotoRepository;
@@ -208,8 +210,8 @@ public class ReportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - QUARANTINED写真を通報するとIllegalStateExceptionがスローされる")
-    void createReport_QuarantinedPhoto_ThrowsIllegalStateException() {
+    @DisplayName("Issue#54 / Issue#93 - QUARANTINED写真を通報するとPHOTO_NOT_PUBLICのInvalidStateExceptionがスローされる")
+    void createReport_QuarantinedPhoto_ThrowsInvalidStateException() {
         // Given
         Photo photo = createTestPhoto();
         photo.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -218,13 +220,14 @@ public class ReportServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> reportService.createReport(TEST_PHOTO_ID, request, TEST_REPORTER_USER_ID))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("公開中の写真のみ");
+                .isInstanceOf(InvalidStateException.class)
+                .hasMessageContaining("公開中の写真のみ")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_NOT_PUBLIC);
     }
 
     @Test
-    @DisplayName("Issue#54 - REMOVED写真を通報するとIllegalStateExceptionがスローされる")
-    void createReport_RemovedPhoto_ThrowsIllegalStateException() {
+    @DisplayName("Issue#54 / Issue#93 - REMOVED写真を通報するとPHOTO_NOT_PUBLICのInvalidStateExceptionがスローされる")
+    void createReport_RemovedPhoto_ThrowsInvalidStateException() {
         // Given
         Photo photo = createTestPhoto();
         photo.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);
@@ -233,7 +236,8 @@ public class ReportServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> reportService.createReport(TEST_PHOTO_ID, request, TEST_REPORTER_USER_ID))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("公開中の写真のみ");
+                .isInstanceOf(InvalidStateException.class)
+                .hasMessageContaining("公開中の写真のみ")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_NOT_PUBLIC);
     }
 }

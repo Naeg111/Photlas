@@ -491,6 +491,7 @@
     "SUGGESTION_ALREADY_RESOLVED": "This location suggestion has already been resolved.",
     "PHOTO_UNDER_REVIEW": "This photo is currently under review, so this action is unavailable.",
     "PHOTO_DELETED": "This photo has been deleted, so this action is unavailable.",
+    "PHOTO_NOT_PUBLIC": "This photo is not public, so this action is unavailable.",
     "unexpected": "An unexpected error occurred. Please reload the page.",
     "errorOccurred": "An error occurred",
     "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again in {{seconds}} seconds.",

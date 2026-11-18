@@ -54,6 +54,12 @@ public final class ErrorCodes {
     // ---- 400（個別） ----
     public static final String EMAIL_REQUIRED = "EMAIL_REQUIRED";
     public static final String SELF_REPORT = "SELF_REPORT";
+    /**
+     * お気に入り登録・通報の対象の写真が公開中でない（審査中・隔離中・削除済みなど）。
+     * 撮影場所の指摘は「撮影場所の指摘ができます」と操作に合わせた文言を出すため、
+     * 別のコード {@link #SUGGESTION_PHOTO_NOT_PUBLIC} を使う。
+     */
+    public static final String PHOTO_NOT_PUBLIC = "PHOTO_NOT_PUBLIC";
     /** メール認証・パスワード再設定・メール変更確定・連携確認・撮影場所レビューのトークンが無効または期限切れ */
     public static final String INVALID_TOKEN = "INVALID_TOKEN";
     /** 連携確認のトークンが使用済み */

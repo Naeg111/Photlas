@@ -1017,6 +1017,75 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
+    // Issue#93: お気に入り登録で 400 が返る（既定は公開中でない写真の PHOTO_NOT_PUBLIC）
+    const createPhotoNotPublicFavoriteResponse = () => new Response(
+      JSON.stringify({ code: 'PHOTO_NOT_PUBLIC', message: '公開中の写真のみお気に入り登録できます' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    )
+
+    async function clickFavoriteWithBadRequest(favoriteResponse = createPhotoNotPublicFavoriteResponse()) {
+      const photoDetail = createMockPhotoDetail({ isFavorited: false, favoriteCount: 3 })
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Issue#135: photoTags
+        .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
+        .mockResolvedValueOnce(favoriteResponse) // POST /favorite
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      const user = userEvent.setup()
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorite-count')).toHaveTextContent('3')
+      })
+
+      await user.click(screen.getByTestId('favorite-button'))
+    }
+
+    it('Issue#93: 公開中でない写真（400 PHOTO_NOT_PUBLIC）なら、理由を知らせて元の状態に戻す', async () => {
+      await clickFavoriteWithBadRequest()
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('この写真は公開中ではないため操作できません')
+      })
+      expect(screen.getByTestId('favorite-button')).toHaveAttribute('aria-label', 'お気に入りに追加')
+      expect(screen.getByTestId('favorite-count')).toHaveTextContent('3')
+    })
+
+    it('Issue#93: 400 の本文が JSON でなければ、汎用の文言を出して元の状態に戻す', async () => {
+      await clickFavoriteWithBadRequest(new Response('Bad Request', { status: 400 }))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('エラーが発生しました')
+      })
+      expect(screen.getByTestId('favorite-button')).toHaveAttribute('aria-label', 'お気に入りに追加')
+      expect(screen.getByTestId('favorite-count')).toHaveTextContent('3')
+    })
+
+    it('Issue#93: 英語の設定では、公開中でない写真の理由を英語で知らせる', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        await clickFavoriteWithBadRequest()
+
+        await waitFor(() => {
+          expect(mockToast.error).toHaveBeenCalledWith('This photo is not public, so this action is unavailable.')
+        })
+        expect(mockToast.error).not.toHaveBeenCalledWith('この写真は公開中ではないため操作できません')
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
     it('未ログイン状態ではお気に入りボタンが無効化される', async () => {
       mockUseAuth.mockReturnValue({
         isAuthenticated: false,
@@ -2430,7 +2499,12 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   describe('通報の送信結果のお知らせ', () => {
-    function createReportMockFetch(reportResponse: { ok: boolean; status: number; headers?: Record<string, string> }) {
+    function createReportMockFetch(reportResponse: {
+      ok: boolean
+      status: number
+      headers?: Record<string, string>
+      body?: unknown
+    }) {
       const photoDetail = createMockApiResponse({ userId: 999, username: 'otheruser' })
       return vi.fn().mockImplementation((url: string, options?: RequestInit) => {
         if (url.includes('/report') && options?.method === 'POST') {
@@ -2438,7 +2512,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
             ok: reportResponse.ok,
             status: reportResponse.status,
             headers: new Headers(reportResponse.headers ?? {}),
-            json: async () => ({}),
+            json: async () => ('body' in reportResponse ? reportResponse.body : {}),
           })
         }
         if (url.includes('/spots/') && url.includes('/photos')) {
@@ -2463,8 +2537,9 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(screen.getByText('otheruser')).toBeInTheDocument()
       })
       await user.click(screen.getByTestId('report-button'))
-      await user.click(await screen.findByLabelText('成人向けコンテンツ'))
-      await user.click(screen.getByRole('button', { name: '通報する' }))
+      // ラベルは表示言語に合わせる（ja では「成人向けコンテンツ」「通報する」）
+      await user.click(await screen.findByLabelText(i18n.t('reportReasons.adult')))
+      await user.click(screen.getByRole('button', { name: i18n.t('report.submit') }))
     }
 
     it('通報が受け付けられたら成功のお知らせを出す', async () => {
@@ -2500,6 +2575,38 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         expect(mockToast.error).toHaveBeenCalledWith('通報に失敗しました')
       })
       expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
+    })
+
+    it('Issue#93: 公開中でない写真（400 PHOTO_NOT_PUBLIC）なら、その理由を知らせてダイアログを閉じる', async () => {
+      await submitReport(createReportMockFetch({
+        ok: false,
+        status: 400,
+        body: { code: 'PHOTO_NOT_PUBLIC', message: '公開中の写真のみ通報できます' },
+      }))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('この写真は公開中ではないため操作できません')
+      })
+      expect(mockToast.error).not.toHaveBeenCalledWith('通報に失敗しました')
+      expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
+    })
+
+    it('Issue#93: 英語の設定では、公開中でない写真（400 PHOTO_NOT_PUBLIC）の理由を英語で知らせる', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        await submitReport(createReportMockFetch({
+          ok: false,
+          status: 400,
+          body: { code: 'PHOTO_NOT_PUBLIC', message: '公開中の写真のみ通報できます' },
+        }))
+
+        await waitFor(() => {
+          expect(mockToast.error).toHaveBeenCalledWith('This photo is not public, so this action is unavailable.')
+        })
+        expect(mockToast.error).not.toHaveBeenCalledWith('この写真は公開中ではないため操作できません')
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
   })
 

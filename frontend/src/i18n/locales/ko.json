@@ -491,6 +491,7 @@
     "SUGGESTION_ALREADY_RESOLVED": "이 위치 제안은 이미 처리되었습니다.",
     "PHOTO_UNDER_REVIEW": "이 사진은 현재 심사 중이므로 조작할 수 없습니다.",
     "PHOTO_DELETED": "이 사진은 삭제되었으므로 조작할 수 없습니다.",
+    "PHOTO_NOT_PUBLIC": "이 사진은 공개 중이 아니므로 조작할 수 없습니다.",
     "unexpected": "예기치 않은 오류가 발생했습니다. 페이지를 새로고침해 주세요.",
     "errorOccurred": "오류가 발생했습니다",
     "RATE_LIMIT_EXCEEDED": "요청이 너무 많습니다. {{seconds}}초 후에 다시 시도해 주세요.",
