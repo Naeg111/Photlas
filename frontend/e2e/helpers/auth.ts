@@ -63,13 +63,17 @@ export async function openLoginDialog(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'ログイン' })).toBeVisible()
 }
 
+/** 新規登録ダイアログの見出し */
+export const SIGN_UP_HEADING = 'アカウントを新規登録'
+
 /**
  * 新規登録ダイアログを開く
+ * Issue#104 でメニューの「新規アカウント作成」はなくなり、ログインダイアログの「新規登録」から開く。
  */
 export async function openSignUpDialog(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'メニュー' }).click()
-  await page.getByRole('button', { name: '新規アカウント作成' }).click()
-  await expect(page.getByRole('heading', { name: 'アカウント作成' })).toBeVisible()
+  await openLoginDialog(page)
+  await page.getByRole('button', { name: '新規登録' }).click()
+  await expect(page.getByRole('heading', { name: SIGN_UP_HEADING })).toBeVisible()
 }
 
 /**
@@ -93,6 +97,33 @@ export async function performLogin(
 }
 
 /**
+ * 新規登録フォームの同意のチェックボックス（Issue#109: 利用規約・プライバシーポリシー・13 歳以上）
+ */
+export const SIGN_UP_CONSENT_CHECKBOXES = {
+  terms: '#terms',
+  privacy: '#privacy',
+  age: '#age-confirmation',
+} as const
+
+/**
+ * 新規登録フォームに入力し、同意のチェックボックスをすべて入れる（登録ボタンは押さない）
+ */
+export async function fillSignUpForm(
+  page: Page,
+  email: string,
+  password: string,
+  displayName: string = 'テストユーザー'
+): Promise<void> {
+  await page.getByPlaceholder('山田太郎、半角・全角12文字以内').fill(displayName)
+  await page.getByPlaceholder('example@photlas.com').fill(email)
+  await page.getByPlaceholder('例: Abcde123').fill(password)
+  await page.getByPlaceholder('パスワードを再入力').fill(password)
+  for (const selector of Object.values(SIGN_UP_CONSENT_CHECKBOXES)) {
+    await page.locator(selector).check()
+  }
+}
+
+/**
  * 新規登録を実行
  */
 export async function performSignUp(
@@ -101,11 +132,7 @@ export async function performSignUp(
   password: string,
   displayName: string = 'テストユーザー'
 ): Promise<void> {
-  await page.getByPlaceholder('山田太郎').fill(displayName)
-  await page.getByPlaceholder('example@photlas.com').fill(email)
-  await page.getByPlaceholder('8-20文字、数字・小文字・大文字を含む').fill(password)
-  await page.getByPlaceholder('パスワードを再入力').fill(password)
-  await page.getByRole('checkbox').check()
+  await fillSignUpForm(page, email, password, displayName)
   await page.getByRole('button', { name: '登録する' }).click()
 }
 
