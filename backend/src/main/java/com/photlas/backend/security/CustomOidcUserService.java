@@ -29,7 +29,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Issue#99 - OIDC フロー（scope に {@code openid} を含むプロバイダ）用の
+ * Spec#99 - OIDC フロー（scope に {@code openid} を含むプロバイダ）用の
  * {@link OAuth2UserService} 実装。
  *
  * <p>LINE は {@code openid} を含む scope を必須とし、メールアドレスは ID トークン
@@ -44,7 +44,7 @@ import java.util.Set;
  * （LINE の {@code /v2/profile} は {@code email} を返さず、追加で得られるのは
  * {@code displayName} 等のみ。{@code displayName} は仮表示名生成があるため不要）
  *
- * <p>Google は scope に {@code openid} を含めない設計（最小権限の原則 + Issue#99 で削除済み）
+ * <p>Google は scope に {@code openid} を含めない設計（最小権限の原則 + Spec#99 で削除済み）
  * のため OIDC フローには入らず、{@link CustomOAuth2UserService} で処理される。
  */
 public class CustomOidcUserService implements OAuth2UserService<OidcUserRequest, OidcUser> {

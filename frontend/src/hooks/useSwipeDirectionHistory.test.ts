@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useSwipeDirectionHistory } from './useSwipeDirectionHistory'
 
-describe('useSwipeDirectionHistory - Issue#128', () => {
+describe('useSwipeDirectionHistory - Spec#128', () => {
   beforeEach(() => {
     vi.useFakeTimers()
   })

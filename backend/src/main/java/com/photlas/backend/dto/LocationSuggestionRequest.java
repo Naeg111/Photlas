@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 /**
- * Issue#65: 位置情報修正の指摘リクエストDTO
+ * Spec#65: 位置情報修正の指摘リクエストDTO
  */
 public class LocationSuggestionRequest {
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 #
 # Specification-driven tests for scripts/switch-waf-block-mode.sh
-# Source of truth: documents/04_Issues/Issue#94.md §3.1 and §4
+# Source of truth: documents/spec/SPEC-0094.md §3.1 and §4
 #
 # The script toggles the WAF WebACL between Count and Block modes in one
 # operation, covering all three rules (AuthRateLimit / GeneralRateLimit /

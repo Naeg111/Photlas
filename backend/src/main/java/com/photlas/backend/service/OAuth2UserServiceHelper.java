@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Issue#81 Phase 3b / Issue#99 - OAuth コアロジック（プロバイダーをモック可能な単体テスト対象）。
+ * Spec#81 Phase 3b / Spec#99 - OAuth コアロジック（プロバイダーをモック可能な単体テスト対象）。
  *
  * {@code CustomOAuth2UserService}（Spring Security の認証チェーンから呼ばれる）から委譲される。
  * 技術設計書 3.3 / 3.28 / 3.29 / 3.31 / 3.40 を参照。
@@ -48,7 +48,7 @@ import java.util.Optional;
  * レース条件: {@code DataIntegrityViolationException} をキャッチして {@code findByEmail} 再検索。
  * 全体は {@code @Transactional(rollbackFor = Exception.class)} でラップ。
  *
- * <p>Issue#99 で {@link OAuthLinkConfirmationService} を統合済み。リンク確認が必要な場合は短命トークンを
+ * <p>Spec#99 で {@link OAuthLinkConfirmationService} を統合済み。リンク確認が必要な場合は短命トークンを
  * 発行し {@link com.photlas.backend.security.OAuth2LinkConfirmationException} を投げる。
  * {@link com.photlas.backend.security.OAuth2LoginFailureHandler} がこの例外型を検出して
  * {@code #link_confirmation_token=...} 形式でフロントエンドにリダイレクトする。
@@ -172,7 +172,7 @@ public class OAuth2UserServiceHelper {
             throw authException("OAUTH_ADMIN_NOT_ALLOWED",
                     "管理者アカウントは SNS ログインで利用できません");
         }
-        // Issue#99: OAuthLinkConfirmationService で短命トークンを発行し、
+        // Spec#99: OAuthLinkConfirmationService で短命トークンを発行し、
         // 失敗ハンドラ経由でフロントエンドにトークンを渡す。フロントエンドは
         // 確認ダイアログでユーザーの同意を得てから confirm-link API を呼んで
         // UserOAuthConnection を作成する（consume() 側で INSERT）。

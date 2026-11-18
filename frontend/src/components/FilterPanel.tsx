@@ -10,7 +10,7 @@ import { fetchTags } from "../utils/tagsApi"
 import { KeywordSection, type KeywordTag } from "./KeywordSection"
 import { CATEGORY_LABELS, CATEGORY_I18N_KEYS } from "../utils/codeConstants"
 
-/** Issue#135: 検索フィルタで選択された日本語カテゴリ名 → カテゴリコードへ変換するマップ。 */
+/** Spec#135: 検索フィルタで選択された日本語カテゴリ名 → カテゴリコードへ変換するマップ。 */
 const CATEGORY_NAME_TO_FILTER_CODE: Record<string, number> = Object.fromEntries(
   Object.entries(CATEGORY_LABELS).map(([code, name]) => [name, Number(code)])
 )
@@ -25,7 +25,7 @@ const CATEGORY_TO_I18N_KEY: Record<string, string> = Object.fromEntries(
   Object.entries(CATEGORY_LABELS).map(([code, name]) => [name, CATEGORY_I18N_KEYS[Number(code)]])
 )
 
-// Issue#63: 上級者向けフィルターの選択肢（機材種別・焦点距離・ISO感度のみ）
+// Spec#63: 上級者向けフィルターの選択肢（機材種別・焦点距離・ISO感度のみ）
 const DEVICE_TYPE_OPTION_VALUES = [
   { key: "deviceType.smartphone", value: "SMARTPHONE" },
   { key: "deviceType.mirrorless", value: "MIRRORLESS" },
@@ -35,7 +35,7 @@ const DEVICE_TYPE_OPTION_VALUES = [
   { key: "deviceType.other", value: "OTHER" },
 ]
 
-// Issue#63: 投稿の新しさ（通常フィルターに移動、3ヶ月以内追加）
+// Spec#63: 投稿の新しさ（通常フィルターに移動、3ヶ月以内追加）
 const FRESHNESS_OPTION_VALUES = [
   { key: "filter.freshness1w", value: 7 },
   { key: "filter.freshness1m", value: 30 },
@@ -44,7 +44,7 @@ const FRESHNESS_OPTION_VALUES = [
   { key: "filter.freshness3y", value: 1095 },
 ]
 
-// Issue#63: 撮影の向き（通常フィルターに移動、名称変更）
+// Spec#63: 撮影の向き（通常フィルターに移動、名称変更）
 const ASPECT_RATIO_OPTION_VALUES = [
   { key: "filter.vertical", value: "VERTICAL", iconKey: "縦位置" },
   { key: "filter.horizontal", value: "HORIZONTAL", iconKey: "横位置" },
@@ -57,7 +57,7 @@ const FOCAL_LENGTH_OPTION_VALUES = [
   { key: "filter.superTelephoto", value: "SUPER_TELEPHOTO" },
 ]
 
-// Issue#63: ISO感度の選択肢を4段階に拡張
+// Spec#63: ISO感度の選択肢を4段階に拡張
 const ISO_OPTION_VALUES = [
   { key: "filter.iso400", value: 400 },
   { key: "filter.iso1600", value: 1600 },
@@ -104,7 +104,7 @@ export interface FilterConditions {
   deviceTypes?: string[]
   focalLengthRanges?: string[]
   maxIso?: number
-  /** Issue#135: 検索フィルタのキーワード ID（AND 検索、最大 10 件） */
+  /** Spec#135: 検索フィルタのキーワード ID（AND 検索、最大 10 件） */
   tagIds?: number[]
 }
 
@@ -156,7 +156,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
   const [selectedFocalLengthRanges, setSelectedFocalLengthRanges] = useState<string[]>([])
   const [selectedMaxIso, setSelectedMaxIso] = useState<number | undefined>(undefined)
 
-  // Issue#135: キーワードフィルタの状態（最大 10 件の AND 検索）
+  // Spec#135: キーワードフィルタの状態（最大 10 件の AND 検索）
   const [allTags, setAllTags] = useState<KeywordTag[]>([])
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
 
@@ -309,7 +309,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
 
         <div data-testid="filter-scroll-container" className="flex-1 min-h-0 overflow-y-auto px-6 pb-6" style={{ touchAction: 'manipulation' }} onScroll={handleScrollDuringToggle} onPointerUp={handlePointerUp}>
         <div className="space-y-[30px] pb-6 mt-4">
-          {/* Issue#63: 写真のジャンル */}
+          {/* Spec#63: 写真のジャンル */}
           <div>
             <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.genre')}</p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -329,7 +329,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
             </div>
           </div>
 
-          {/* Issue#135: キーワードフィルタ (カテゴリと投稿時期の間に配置) */}
+          {/* Spec#135: キーワードフィルタ (カテゴリと投稿時期の間に配置) */}
           <div>
             <p className="text-sm font-medium mb-2 text-muted-foreground">
               {t('filter.keywords', { defaultValue: '詳細カテゴリー' })}
@@ -342,12 +342,12 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
               selectedTagIds={selectedTagIds}
               onSelectionChange={setSelectedTagIds}
               maxSelections={10}
-              // Issue#141 Phase 8: フィルタ画面ではカテゴリ選択で配下キーワードを自動選択
+              // Spec#141 Phase 8: フィルタ画面ではカテゴリ選択で配下キーワードを自動選択
               autoSelectByCategoryMode
             />
           </div>
 
-          {/* Issue#63: 投稿時期（通常フィルターに移動） */}
+          {/* Spec#63: 投稿時期（通常フィルターに移動） */}
           <div>
             <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.postDate')}</p>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
@@ -430,7 +430,7 @@ export function FilterPanel({ open, onOpenChange, onApply }: Readonly<FilterPane
             </div>
           </div>
 
-          {/* Issue#63: 撮影の向き（通常フィルターに移動） */}
+          {/* Spec#63: 撮影の向き（通常フィルターに移動） */}
           <div>
             <p className="text-sm font-medium mb-2 text-muted-foreground">{t('filter.orientation')}</p>
             <div className="grid grid-cols-2 gap-2">

@@ -16,8 +16,8 @@ vi.mock('sonner', () => ({
 }))
 
 /**
- * Issue#18: マイページ機能 (UI + API)
- * Issue#36: 表示名更新機能
+ * Spec#18: マイページ機能 (UI + API)
+ * Spec#36: 表示名更新機能
  * TDD Red段階: ProfileDialogコンポーネントのテストケース定義
  *
  * UI要件:
@@ -29,7 +29,7 @@ vi.mock('sonner', () => ({
  * - プロフィール編集機能（自分の場合のみ）
  */
 
-// Issue#36: AuthContextのモック
+// Spec#36: AuthContextのモック
 const mockUpdateUser = vi.fn()
 const mockGetAuthToken = vi.fn(() => 'mock-token')
 vi.mock('../contexts/AuthContext', () => ({
@@ -43,7 +43,7 @@ vi.mock('../contexts/AuthContext', () => ({
 const mockCreateObjectURL = vi.fn(() => 'blob:mock-url')
 global.URL.createObjectURL = mockCreateObjectURL
 
-// Issue#35: react-easy-cropのモック
+// Spec#35: react-easy-cropのモック
 vi.mock('react-easy-crop', () => ({
   default: ({ onCropComplete }: { onCropComplete: (croppedArea: unknown, croppedAreaPixels: unknown) => void }) => {
     return (
@@ -303,7 +303,7 @@ describe('ProfileDialog', () => {
       expect(img).toHaveAttribute('src', 'https://cdn.example.com/photos/1.jpg')
     })
 
-    it('Issue#77 - 写真をクリックするとonPhotoClickがphotoIdで呼ばれる', async () => {
+    it('Spec#77 - 写真をクリックするとonPhotoClickがphotoIdで呼ばれる', async () => {
       const mockOnPhotoClick = vi.fn()
       global.fetch = vi.fn().mockResolvedValueOnce({
         ok: true,
@@ -492,10 +492,10 @@ describe('ProfileDialog', () => {
   })
 
   // ============================================================
-  // Issue#29: プロフィール機能強化のテスト
+  // Spec#29: プロフィール機能強化のテスト
   // ============================================================
 
-  describe('Issue#29: プロフィール画像アップロード機能', () => {
+  describe('Spec#29: プロフィール画像アップロード機能', () => {
     it('画像選択ボタンをクリックするとファイル選択ダイアログが開く', async () => {
       const user = userEvent.setup()
 
@@ -516,7 +516,7 @@ describe('ProfileDialog', () => {
       expect(screen.getByTestId('profile-image-input')).toBeInTheDocument()
     })
 
-    // Issue#35: 画像選択後はトリミングモーダルが表示される
+    // Spec#35: 画像選択後はトリミングモーダルが表示される
     it('画像を選択するとトリミングモーダルが表示される', async () => {
       const user = userEvent.setup()
 
@@ -535,13 +535,13 @@ describe('ProfileDialog', () => {
 
       await user.upload(fileInput, file)
 
-      // Issue#35: トリミングモーダルが表示される
+      // Spec#35: トリミングモーダルが表示される
       await waitFor(() => {
         expect(screen.getByTestId('cropper-modal')).toBeInTheDocument()
       })
     })
 
-    // Issue#35: トリミング確定後にアップロードが実行される
+    // Spec#35: トリミング確定後にアップロードが実行される
     it('トリミング確定後にアップロードが実行され、成功表示される', async () => {
       const user = userEvent.setup()
 
@@ -610,7 +610,7 @@ describe('ProfileDialog', () => {
       const confirmButton = screen.getByRole('button', { name: /確定/i })
       await user.click(confirmButton)
 
-      // Issue#82: アップロードは実行されず、保存待ち状態になる
+      // Spec#82: アップロードは実行されず、保存待ち状態になる
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument()
       })
@@ -638,7 +638,7 @@ describe('ProfileDialog', () => {
       const deleteButton = screen.getByTestId('delete-profile-image-button')
       await user.click(deleteButton)
 
-      // Issue#82: 削除は即座にAPIを呼ばず、保存待ち状態になる
+      // Spec#82: 削除は即座にAPIを呼ばず、保存待ち状態になる
       await waitFor(() => {
         expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument()
       })
@@ -772,7 +772,7 @@ describe('ProfileDialog', () => {
     })
   })
 
-  describe('Issue#102: SNSリンク編集機能（固定3行UI）', () => {
+  describe('Spec#102: SNSリンク編集機能（固定3行UI）', () => {
     it('SNSリンク編集ボタンが表示される（自分のプロフィール）', () => {
       render(
         <ProfileDialog
@@ -881,7 +881,7 @@ describe('ProfileDialog', () => {
     })
   })
 
-  describe('Issue#29: 表示名変更機能', () => {
+  describe('Spec#29: 表示名変更機能', () => {
     it('表示名を変更して保存するとAPIが呼び出される', async () => {
       const user = userEvent.setup()
 
@@ -950,7 +950,7 @@ describe('ProfileDialog', () => {
       })
     })
 
-    it('Issue#98 - 表示名が12文字を超える場合はエラーが表示される', async () => {
+    it('Spec#98 - 表示名が12文字を超える場合はエラーが表示される', async () => {
       const user = userEvent.setup()
 
       render(
@@ -968,7 +968,7 @@ describe('ProfileDialog', () => {
 
       const input = screen.getByTestId('username-input')
       await user.clear(input)
-      // Issue#98 で長さ上限が 30 → 12 に変更された
+      // Spec#98 で長さ上限が 30 → 12 に変更された
       await user.type(input, 'a'.repeat(13))
 
       const saveButton = screen.getByTestId('save-all-changes-button')
@@ -979,7 +979,7 @@ describe('ProfileDialog', () => {
       })
     })
 
-    // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す。
+    // Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す。
     // 409 に表示名用のコードは無いため、汎用のエラー文言になる
     it('表示名の保存が 409 になった場合はエラーが表示される', async () => {
       const user = userEvent.setup()
@@ -1023,10 +1023,10 @@ describe('ProfileDialog', () => {
   })
 
   // ============================================================
-  // Issue#30: お気に入り一覧表示テスト
+  // Spec#30: お気に入り一覧表示テスト
   // ============================================================
 
-  describe('Issue#30: お気に入り一覧表示', () => {
+  describe('Spec#30: お気に入り一覧表示', () => {
     it('お気に入りタブをクリックするとお気に入り一覧APIが呼び出される', async () => {
       const user = userEvent.setup()
 
@@ -1196,9 +1196,9 @@ describe('ProfileDialog', () => {
   })
 
   // ============================================================
-  // Issue#54: プロフィール通報ボタンテスト
+  // Spec#54: プロフィール通報ボタンテスト
   // ============================================================
-  describe('Issue#54: プロフィール通報', () => {
+  describe('Spec#54: プロフィール通報', () => {
     it('他人のプロフィールには通報ボタンが表示される', () => {
       render(
         <ProfileDialog
@@ -1229,10 +1229,10 @@ describe('ProfileDialog', () => {
   })
 
   // ============================================================
-  // Issue#79: プロフィール画像のAPI取得
+  // Spec#79: プロフィール画像のAPI取得
   // ============================================================
 
-  describe('Issue#79: プロフィール画像のAPI取得', () => {
+  describe('Spec#79: プロフィール画像のAPI取得', () => {
     it('profileImageUrlがnullの場合、APIからプロフィール情報を取得して画像を表示する', async () => {
       const profileWithoutImage = {
         ...mockUserProfile,
@@ -1275,10 +1275,10 @@ describe('ProfileDialog', () => {
   })
 
   // ============================================================
-  // Issue#80: 投稿一覧の即時反映とサムネイル表示
+  // Spec#80: 投稿一覧の即時反映とサムネイル表示
   // ============================================================
 
-  describe('Issue#80: 投稿一覧の即時反映', () => {
+  describe('Spec#80: 投稿一覧の即時反映', () => {
     it('ダイアログを再度開いた際に投稿一覧が再取得される', async () => {
       // 1回目open: 空レスポンス
       global.fetch = vi.fn().mockResolvedValue({
@@ -1336,7 +1336,7 @@ describe('ProfileDialog', () => {
     })
   })
 
-  describe('Issue#80: サムネイルフォールバック', () => {
+  describe('Spec#80: サムネイルフォールバック', () => {
     it('投稿写真グリッドでImageWithFallbackが使用されている', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -1555,7 +1555,7 @@ describe('ProfileDialog', () => {
     })
   })
 
-  // Issue#96 PR2c: 429 レート制限ハンドリング（notifyIfRateLimited 経由のトースト）
+  // Spec#96 PR2c: 429 レート制限ハンドリング（notifyIfRateLimited 経由のトースト）
   describe('プロフィール通報の送信結果のお知らせ', () => {
     async function submitProfileReport(reportResponse: Response) {
       const user = userEvent.setup()
@@ -1613,7 +1613,7 @@ describe('ProfileDialog', () => {
       expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
     })
 
-    it('Issue#93: 400 でエラーコード（SELF_REPORT）があれば、その文言を出してダイアログを閉じる', async () => {
+    it('Spec#93: 400 でエラーコード（SELF_REPORT）があれば、その文言を出してダイアログを閉じる', async () => {
       await submitProfileReport(
         new Response(JSON.stringify({ code: 'SELF_REPORT', message: '自分の投稿を通報することはできません' }), {
           status: 400,
@@ -1628,7 +1628,7 @@ describe('ProfileDialog', () => {
       expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
     })
 
-    it('Issue#93: 400 で翻訳の無いコード（VALIDATION_ERROR）なら、汎用の文言を出してダイアログを閉じる', async () => {
+    it('Spec#93: 400 で翻訳の無いコード（VALIDATION_ERROR）なら、汎用の文言を出してダイアログを閉じる', async () => {
       await submitProfileReport(
         new Response(JSON.stringify({ code: 'VALIDATION_ERROR', message: '入力内容が無効です' }), {
           status: 400,
@@ -1752,7 +1752,7 @@ describe('ProfileDialog', () => {
     })
   })
 
-  describe('Issue#125 - LQIP（低品質プレースホルダー）表示', () => {
+  describe('Spec#125 - LQIP（低品質プレースホルダー）表示', () => {
     const SAMPLE_LQIP_DATA_URL = 'data:image/webp;base64,UklGRhwAAABXRUJQVlA4TBAAAAAvAAAAAA8B'
 
     const lqipPhotosResponse = {
@@ -1776,7 +1776,7 @@ describe('ProfileDialog', () => {
       last: true,
     }
 
-    it('Issue#125 - lqip_data_url が API レスポンスに含まれるとき LQIP 画像が描画される', async () => {
+    it('Spec#125 - lqip_data_url が API レスポンスに含まれるとき LQIP 画像が描画される', async () => {
       global.fetch = vi.fn().mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(lqipPhotosResponse),
@@ -1801,7 +1801,7 @@ describe('ProfileDialog', () => {
       expect(lqipImg).not.toBeNull()
     })
 
-    it('Issue#125 - lqip_data_url が無いとき LQIP 画像は描画されない', async () => {
+    it('Spec#125 - lqip_data_url が無いとき LQIP 画像は描画されない', async () => {
       global.fetch = vi.fn().mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockPhotosResponse),

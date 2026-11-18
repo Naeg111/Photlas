@@ -1,5 +1,5 @@
 /**
- * Issue#119 - PhotoContributionDialog の AI プリフィル機能テスト。
+ * Spec#119 - PhotoContributionDialog の AI プリフィル機能テスト。
  *
  * cropComplete デバウンス → analyzePhoto → categories/weather プリフィル → バナー表示の
  * 流れを検証する。analyzePhoto と cropImageToBlob はモック化。
@@ -11,7 +11,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { toast } from 'sonner'
 import { PhotoContributionDialog } from './PhotoContributionDialog'
 
-// trackAiPrefillEvent / Issue#132 拡張イベント送信ヘルパーのモック
+// trackAiPrefillEvent / Spec#132 拡張イベント送信ヘルパーのモック
 const mockTrackAiPrefillEvent = vi.fn()
 const mockTrackParentFallbackEvents = vi.fn()
 const mockTrackExifRuleFiredEvents = vi.fn()
@@ -102,7 +102,7 @@ async function selectFile(user: ReturnType<typeof userEvent.setup>) {
   })
 }
 
-describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () => {
+describe('PhotoContributionDialog - AI プリフィル (Spec#119 Phase 8)', () => {
   const defaultProps = {
     open: true,
     onOpenChange: vi.fn(),
@@ -119,7 +119,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
       weather: 401,
       confidence: { '201': 92, '204': 78, '401': 85 },
       analyzeToken: 'token-uuid-1234',
-      // Issue#132: 新規フィールド（発火なし時は空配列）
+      // Spec#132: 新規フィールド（発火なし時は空配列）
       parentFallbacks: [],
       exifRulesFired: [],
     })
@@ -129,9 +129,9 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     vi.useRealTimers()
   })
 
-  // ========== Issue#119 仕様変更: トリミング前の全体画像を解析対象とする ==========
+  // ========== Spec#119 仕様変更: トリミング前の全体画像を解析対象とする ==========
 
-  it('Issue#119 - ファイル選択のみで（cropComplete 不要で）analyzePhoto が呼ばれる', async () => {
+  it('Spec#119 - ファイル選択のみで（cropComplete 不要で）analyzePhoto が呼ばれる', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
@@ -149,7 +149,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     })
   })
 
-  it('Issue#119 - 解析対象はトリミング後ではなく全体画像（resizeImageToBlobForAnalyze 使用）', async () => {
+  it('Spec#119 - 解析対象はトリミング後ではなく全体画像（resizeImageToBlobForAnalyze 使用）', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
@@ -170,7 +170,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     expect(mockCropImageToBlob).not.toHaveBeenCalled()
   })
 
-  it('Issue#119 - cropComplete を複数回起こしても analyzePhoto は 1 回のみ', async () => {
+  it('Spec#119 - cropComplete を複数回起こしても analyzePhoto は 1 回のみ', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
@@ -200,13 +200,13 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
 
   // ========== プリフィル ==========
 
-  it('Issue#159 ② - analyze 成功時に最高信頼度カテゴリ1件のみプリフィルされる', async () => {
+  it('Spec#159 ② - analyze 成功時に最高信頼度カテゴリ1件のみプリフィルされる', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
     await selectFile(user)
     await waitFor(() => {
-      // Issue#159 ②: 単一選択なので AI 返却の先頭カテゴリ(自然風景=201)のみ選択、夜景(204)は選択しない
+      // Spec#159 ②: 単一選択なので AI 返却の先頭カテゴリ(自然風景=201)のみ選択、夜景(204)は選択しない
       const natureCheckbox = screen.getByLabelText('自然風景') as HTMLInputElement
       const nightCheckbox = screen.getByLabelText('夜景') as HTMLInputElement
       expect(natureCheckbox).toBeChecked()
@@ -214,7 +214,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     })
   })
 
-  it('Issue#119 - analyze 成功時にバナーが表示される', async () => {
+  it('Spec#119 - analyze 成功時にバナーが表示される', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
@@ -224,7 +224,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     })
   })
 
-  it('Issue#119 - analyze 結果が空の場合はバナーが表示されない', async () => {
+  it('Spec#119 - analyze 結果が空の場合はバナーが表示されない', async () => {
     mockAnalyzePhoto.mockResolvedValue({
       categories: [],
       weather: null,
@@ -243,7 +243,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
 
   // ========== スピナー ==========
 
-  it('Issue#119 - analyze 中はカテゴリ・天気フィールドにスピナーが表示される', async () => {
+  it('Spec#119 - analyze 中はカテゴリ・天気フィールドにスピナーが表示される', async () => {
     // analyze の Promise を保留
     let resolveAnalyze: (v: unknown) => void = () => {}
     mockAnalyzePhoto.mockImplementation(
@@ -277,7 +277,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
 
   // ========== analyzeToken の伝播 ==========
 
-  it('Issue#119 - 投稿時 onSubmit データに analyzeToken が含まれる', async () => {
+  it('Spec#119 - 投稿時 onSubmit データに analyzeToken が含まれる', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     render(<PhotoContributionDialog {...defaultProps} onSubmit={onSubmit} />)
@@ -304,7 +304,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
 
   // ========== ダイアログ閉じ時のキャンセル ==========
 
-  it('Issue#119 - ダイアログを閉じると進行中の analyze がキャンセルされる', async () => {
+  it('Spec#119 - ダイアログを閉じると進行中の analyze がキャンセルされる', async () => {
     let abortSignal: AbortSignal | undefined
     mockAnalyzePhoto.mockImplementation((_file: Blob, options?: { signal?: AbortSignal }) => {
       abortSignal = options?.signal
@@ -328,7 +328,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
 
   // ========== エラー時 ==========
 
-  it('Issue#119 - analyze がエラーでも例外が伝播せず、バナーも表示しない', async () => {
+  it('Spec#119 - analyze がエラーでも例外が伝播せず、バナーも表示しない', async () => {
     mockAnalyzePhoto.mockRejectedValue(new Error('AI service down'))
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
@@ -343,7 +343,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
 
   // ========== Phase 9: エラー時のトースト通知 ==========
 
-  it('Issue#119 - analyze エラー時にトースト通知 toast.error が呼ばれる', async () => {
+  it('Spec#119 - analyze エラー時にトースト通知 toast.error が呼ばれる', async () => {
     mockAnalyzePhoto.mockRejectedValue(new Error('AI service down'))
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
@@ -358,7 +358,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     )
   })
 
-  it('Issue#119 - AbortError ではトースト通知 toast.error は呼ばれない', async () => {
+  it('Spec#119 - AbortError ではトースト通知 toast.error は呼ばれない', async () => {
     // AbortError を模倣
     const abortError = new DOMException('aborted', 'AbortError')
     mockAnalyzePhoto.mockRejectedValue(abortError)
@@ -374,7 +374,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
 
   // ========== Phase 10: GA4 アナリティクスイベント送信 ==========
 
-  it('Issue#119 - プリフィル成功時に ai_prefill_shown が送信される', async () => {
+  it('Spec#119 - プリフィル成功時に ai_prefill_shown が送信される', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
 
@@ -388,7 +388,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     })
   })
 
-  it('Issue#119 - 空結果（プリフィル発生せず）の場合は ai_prefill_shown は送信されない', async () => {
+  it('Spec#119 - 空結果（プリフィル発生せず）の場合は ai_prefill_shown は送信されない', async () => {
     mockAnalyzePhoto.mockResolvedValue({
       categories: [],
       weather: null,
@@ -408,7 +408,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     )
   })
 
-  it('Issue#119 - analyze エラー時に ai_prefill_failed が送信される', async () => {
+  it('Spec#119 - analyze エラー時に ai_prefill_failed が送信される', async () => {
     mockAnalyzePhoto.mockRejectedValue(new Error('AI service down'))
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)
@@ -422,7 +422,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     })
   })
 
-  it('Issue#119 - AbortError では ai_prefill_failed は送信されない', async () => {
+  it('Spec#119 - AbortError では ai_prefill_failed は送信されない', async () => {
     const abortError = new DOMException('aborted', 'AbortError')
     mockAnalyzePhoto.mockRejectedValue(abortError)
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
@@ -438,9 +438,9 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     )
   })
 
-  // ========== Issue#132: 親フォールバック / EXIF ルール のイベント送信 ==========
+  // ========== Spec#132: 親フォールバック / EXIF ルール のイベント送信 ==========
 
-  it('Issue#132 - parentFallbacks があれば trackParentFallbackEvents に渡される', async () => {
+  it('Spec#132 - parentFallbacks があれば trackParentFallbackEvents に渡される', async () => {
     mockAnalyzePhoto.mockResolvedValue({
       categories: [207],
       weather: null,
@@ -460,7 +460,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     })
   })
 
-  it('Issue#132 - exifRulesFired があれば trackExifRuleFiredEvents に渡される', async () => {
+  it('Spec#132 - exifRulesFired があれば trackExifRuleFiredEvents に渡される', async () => {
     mockAnalyzePhoto.mockResolvedValue({
       categories: [213],
       weather: null,
@@ -482,7 +482,7 @@ describe('PhotoContributionDialog - AI プリフィル (Issue#119 Phase 8)', () 
     })
   })
 
-  it('Issue#132 - 両方とも空配列なら trackParentFallbackEvents/trackExifRuleFiredEvents は空配列で呼ばれる', async () => {
+  it('Spec#132 - 両方とも空配列なら trackParentFallbackEvents/trackExifRuleFiredEvents は空配列で呼ばれる', async () => {
     // beforeEach の mockAnalyzePhoto は parentFallbacks/exifRulesFired を空配列で返す
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<PhotoContributionDialog {...defaultProps} />)

@@ -1,13 +1,13 @@
 /**
  * localizeFieldError のテスト
- * Issue#98 4.10.2
+ * Spec#98 4.10.2
  */
 
 import { describe, it, expect, vi } from 'vitest'
 import type { TFunction } from 'i18next'
 import { localizeFieldError } from './localizeFieldError'
 
-describe('localizeFieldError (Issue#98)', () => {
+describe('localizeFieldError (Spec#98)', () => {
   const mockT = vi.fn((key: string) => `[translated:${key}]`) as unknown as TFunction
 
   it('"errors." 始まりのキーは t() で翻訳される', () => {

@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Issue#14: 写真詳細情報レスポンスDTO
- * Issue#88: フィールド追加（placeName, isFavorited, favoriteCount, 座標, crop, moderationStatus, categories等）
+ * Spec#14: 写真詳細情報レスポンスDTO
+ * Spec#88: フィールド追加（placeName, isFavorited, favoriteCount, 座標, crop, moderationStatus, categories等）
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PhotoDetailResponse {
@@ -54,7 +54,7 @@ public class PhotoDetailResponse {
     private Integer moderationStatus;
 
     /**
-     * Issue#146: 撮影場所が写真の EXIF GPS 由来かどうか。
+     * Spec#146: 撮影場所が写真の EXIF GPS 由来かどうか。
      * 指摘ダイアログがこの値で「上限 1km」を適用するか判定する。
      */
     @JsonProperty("locationFromExif")
@@ -90,7 +90,7 @@ public class PhotoDetailResponse {
         private String original;
 
         /**
-         * Issue#125: LQIP（低品質プレースホルダー）の data URL 形式。
+         * Spec#125: LQIP（低品質プレースホルダー）の data URL 形式。
          * モデレーション制限中（REMOVED/QUARANTINED/PENDING_REVIEW）は null（実画像漏れ防止）。
          * Lambda コールバック未到達の場合も null（フロントが従来挙動にフォールバック）。
          */

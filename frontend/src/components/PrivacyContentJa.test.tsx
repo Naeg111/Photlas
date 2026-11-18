@@ -3,11 +3,11 @@ import { describe, it, expect } from 'vitest'
 import { PrivacyContentJa } from './PrivacyContentJa'
 
 /**
- * Issue#94 §4: WAF ログの収集開始に伴うプライバシーポリシー文面の更新。
+ * Spec#94 §4: WAF ログの収集開始に伴うプライバシーポリシー文面の更新。
  * 旧文面（IP の一時取得のみ）から、WAF ログの収集・90 日保管を明記する
  * 新文面に置き換わっていることを検証する。
  */
-describe('PrivacyContentJa - Issue#94 WAF log disclosure', () => {
+describe('PrivacyContentJa - Spec#94 WAF log disclosure', () => {
   it('第2条(7)技術情報に WAF ログの記載がある', () => {
     const { container } = render(<PrivacyContentJa />)
     expect(container.textContent).toContain('WAF ログ')
@@ -46,11 +46,11 @@ describe('PrivacyContentJa - Issue#94 WAF log disclosure', () => {
 })
 
 /**
- * Issue#99: Google OAuth scope を email のみに変更したことに伴い、
+ * Spec#99: Google OAuth scope を email のみに変更したことに伴い、
  * プライバシーポリシーの Google 取得情報から「氏名」を削除する。
  * profile スコープを取得しないため、氏名は実際に取得されない。
  */
-describe('PrivacyContentJa - Issue#99 Google scope minimization', () => {
+describe('PrivacyContentJa - Spec#99 Google scope minimization', () => {
   it('第2条(8)の Google 取得情報は「メールアドレス、Google ユーザーID」のみ', () => {
     const { container } = render(<PrivacyContentJa />)
     const text = container.textContent ?? ''
@@ -71,11 +71,11 @@ describe('PrivacyContentJa - Issue#99 Google scope minimization', () => {
 })
 
 /**
- * Issue#105: 国際対応版への格上げ。
+ * Spec#105: 国際対応版への格上げ。
  * 海外プロモーション (Product Hunt 等) に向けて、業界標準のベストプラクティスに
  * 沿った条項をプライバシーポリシーに追加する。
  */
-describe('PrivacyContentJa - Issue#105 国際対応版への格上げ', () => {
+describe('PrivacyContentJa - Spec#105 国際対応版への格上げ', () => {
   // A. 第12条 - 最低利用年齢 13 歳の明示
   it('第12条に「13歳以上」の利用制限が明記されている', () => {
     const { container } = render(<PrivacyContentJa />)
@@ -92,13 +92,13 @@ describe('PrivacyContentJa - Issue#105 国際対応版への格上げ', () => {
     expect(text).toMatch(/モデレーション[\s\S]*?180日|180日[\s\S]*?モデレーション/)
   })
 
-  // C. 第16条 - Issue#108 データポータビリティのセルフサービス運用明示
+  // C. 第16条 - Spec#108 データポータビリティのセルフサービス運用明示
   it('第16条のデータポータビリティ権が「アカウント設定からセルフサービスでダウンロード可能」と記述されている', () => {
     const { container } = render(<PrivacyContentJa />)
     const text = container.textContent ?? ''
     // データポータビリティ権の宣言は維持
     expect(text).toContain('データポータビリティ')
-    // Issue#108: アカウント設定からのセルフサービス運用が明記されている
+    // Spec#108: アカウント設定からのセルフサービス運用が明記されている
     expect(text).toMatch(/データポータビリティ[\s\S]*?アカウント設定[\s\S]*?データのエクスポート[\s\S]*?ZIPファイル/)
   })
 

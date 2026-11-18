@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * Issue#128: スワイプ方向に応じた非対称 prefetch のための履歴管理 hook。
+ * Spec#128: スワイプ方向に応じた非対称 prefetch のための履歴管理 hook。
  *
  * 直近 N 回のスワイプ方向（前へ -1 / 次へ +1）を ref で保持し、
  * 合計の絶対値が閾値以上なら「進行方向」を判定する。

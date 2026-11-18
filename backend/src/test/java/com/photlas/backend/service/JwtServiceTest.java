@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * JwtService ユニットテスト
- * Issue#23: JWT Secretの環境変数化対応
- * Issue#54: ロール情報付きトークン
+ * Spec#23: JWT Secretの環境変数化対応
+ * Spec#54: ロール情報付きトークン
  */
 public class JwtServiceTest {
 

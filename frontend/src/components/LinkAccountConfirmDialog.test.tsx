@@ -65,7 +65,7 @@ describe('LinkAccountConfirmDialog', () => {
     })
   })
 
-  // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+  // Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
   const usedTokenError = () =>
     new Response(
       JSON.stringify({ code: 'TOKEN_ALREADY_USED', message: 'リンク確認トークンは既に使用されています' }),
@@ -87,7 +87,7 @@ describe('LinkAccountConfirmDialog', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  it('Issue#93 - 英語の設定では API エラーが英語で表示される', async () => {
+  it('Spec#93 - 英語の設定では API エラーが英語で表示される', async () => {
     mockFetch.mockResolvedValueOnce(usedTokenError())
     await i18nInstance.changeLanguage('en')
     try {

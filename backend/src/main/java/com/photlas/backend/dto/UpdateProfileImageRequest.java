@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 
 /**
  * プロフィール画像更新リクエストDTO
- * Issue#29: プロフィール機能強化
+ * Spec#29: プロフィール機能強化
  */
 public class UpdateProfileImageRequest {
 

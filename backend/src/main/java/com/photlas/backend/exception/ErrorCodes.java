@@ -1,7 +1,7 @@
 package com.photlas.backend.exception;
 
 /**
- * Issue#93: API エラーレスポンスの {@code code} に入れるエラーコード。
+ * Spec#93: API エラーレスポンスの {@code code} に入れるエラーコード。
  *
  * <p>バックエンドはエラーコードを返し、フロントエンドが {@code errors.<code>} の翻訳キーで
  * 表示言語に合わせた文言を出す（Spec#93 2.3 方式 B）。{@code message} はログ・互換のために

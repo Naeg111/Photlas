@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { PrivacyContentZhTW } from './PrivacyContentZhTW'
 
 /**
- * Issue#101: 中国語繁体字版プライバシーポリシーの基本構造テスト。
+ * Spec#101: 中国語繁体字版プライバシーポリシーの基本構造テスト。
  */
 describe('PrivacyContentZhTW - 基本構造', () => {
   it('第1條 (第1條 / 第一條) の見出しが表示される', () => {
@@ -31,12 +31,12 @@ describe('PrivacyContentZhTW - 基本構造', () => {
     expect(container.textContent).toMatch(/2026.*2.*16/)
   })
 
-  it('Issue#105: 13歲 の利用制限が明記されている', () => {
+  it('Spec#105: 13歲 の利用制限が明記されている', () => {
     const { container } = render(<PrivacyContentZhTW />)
     expect(container.textContent).toMatch(/13[歲周年]/)
   })
 
-  it('Issue#105: 第6條に「販売しません」相当の宣言がある', () => {
+  it('Spec#105: 第6條に「販売しません」相当の宣言がある', () => {
     const { container } = render(<PrivacyContentZhTW />)
     expect(container.textContent).toMatch(/出售|販售|不會出售/)
   })

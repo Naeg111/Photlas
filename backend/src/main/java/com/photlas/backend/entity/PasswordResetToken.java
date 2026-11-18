@@ -8,7 +8,7 @@ import java.util.Objects;
 
 /**
  * パスワードリセットトークンのエンティティ
- * Issue#6: パスワードリセット機能
+ * Spec#6: パスワードリセット機能
  */
 @Entity
 @Table(name = "password_reset_tokens")

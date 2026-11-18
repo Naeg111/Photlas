@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * Issue#54: Lambda→バックエンドのモデレーションコールバックコントローラー
+ * Spec#54: Lambda→バックエンドのモデレーションコールバックコントローラー
  * APIキー認証で保護されたエンドポイント
  */
 @RestController
@@ -87,7 +87,7 @@ public class ModerationCallbackController {
 
         Integer newStatus = parseStatus(statusStr);
 
-        // Issue#54: プロフィール画像の場合は別処理
+        // Spec#54: プロフィール画像の場合は別処理
         if (s3ObjectKey.startsWith(PROFILE_IMAGE_PREFIX)) {
             return handleProfileImageCallback(s3ObjectKey, newStatus, confidenceScore);
         }
@@ -100,7 +100,7 @@ public class ModerationCallbackController {
         photo.setModerationStatus(newStatus);
         boolean isQuarantined = Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(newStatus);
 
-        // Issue#54: 隔離時にS3ファイルをquarantined/プレフィックスに移動
+        // Spec#54: 隔離時にS3ファイルをquarantined/プレフィックスに移動
         if (isQuarantined) {
             quarantineService.quarantinePhoto(photo);
         } else {
@@ -111,7 +111,7 @@ public class ModerationCallbackController {
         saveModerationDetail(CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId(),
                 confidenceScore, newStatus, detectedLabels);
 
-        // Issue#54: 隔離時にユーザーへメール通知
+        // Spec#54: 隔離時にユーザーへメール通知
         if (isQuarantined) {
             userRepository.findById(photo.getUserId()).ifPresent(user ->
                     notificationService.sendQuarantineNotification(
@@ -125,7 +125,7 @@ public class ModerationCallbackController {
     }
 
     /**
-     * Issue#54: プロフィール画像のモデレーションコールバック処理
+     * Spec#54: プロフィール画像のモデレーションコールバック処理
      * QUARANTINEDの場合はプロフィール画像をリセット（デフォルトに戻す）
      */
     private ResponseEntity<?> handleProfileImageCallback(

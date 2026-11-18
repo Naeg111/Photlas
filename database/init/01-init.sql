@@ -1,4 +1,4 @@
--- Issue#4: PostgreSQL初期化スクリプト
+-- Spec#4: PostgreSQL初期化スクリプト
 -- Docker環境でのデータベース初期設定
 
 -- データベースが存在しない場合は作成

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Issue#119: AWS Rekognition (DetectLabels) を Photlas backend EC2 から呼び出すための
+# Spec#119: AWS Rekognition (DetectLabels) を Photlas backend EC2 から呼び出すための
 # IAM 権限セットアップスクリプト。
 #
 # 既存の PhotlasEC2Role（ステージング・本番共通）に PhotlasRekognitionPolicy を付与する。
@@ -61,7 +61,7 @@ else
     aws iam create-policy \
         --policy-name "${POLICY_NAME}" \
         --policy-document "${POLICY_DOCUMENT}" \
-        --description "Issue#119: Photlas backend (EC2) から Rekognition DetectLabels を呼び出すためのポリシー" \
+        --description "Spec#119: Photlas backend (EC2) から Rekognition DetectLabels を呼び出すためのポリシー" \
         > /dev/null
     echo "  → 作成完了。"
 fi

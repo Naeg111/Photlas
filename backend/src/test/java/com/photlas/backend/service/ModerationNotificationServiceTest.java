@@ -21,9 +21,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
- * Issue#54: モデレーション通知メールサービスのテスト
+ * Spec#54: モデレーション通知メールサービスのテスト
  *
- * <p>Issue#113 でテンプレートが {@link EmailTemplateService} 経由になったため、
+ * <p>Spec#113 でテンプレートが {@link EmailTemplateService} 経由になったため、
  * Mockito の varargs 仕様（空 varargs マッチが信頼できない）を回避するため
  * 実 {@link ReloadableResourceBundleMessageSource} を組み立てて使用する。</p>
  */
@@ -78,7 +78,7 @@ public class ModerationNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 警告通知メールが違反理由を含む")
+    @DisplayName("Spec#54 - 警告通知メールが違反理由を含む")
     void testSendWarningNotification() {
         notificationService.sendWarningNotification(
                 "user@example.com", "テストユーザー", "不適切なコンテンツ");
@@ -113,7 +113,7 @@ public class ModerationNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 永久停止通知メールが送信される")
+    @DisplayName("Spec#54 - 永久停止通知メールが送信される")
     void testSendPermanentSuspensionNotification() {
         notificationService.sendPermanentSuspensionNotification(
                 "user@example.com", "テストユーザー", "著作権侵害");
@@ -128,10 +128,10 @@ public class ModerationNotificationServiceTest {
         assertThat(message.getText()).contains("テストユーザー");
     }
 
-    // ===== Issue#54: Fromアドレス設定テスト =====
+    // ===== Spec#54: Fromアドレス設定テスト =====
 
     @Test
-    @DisplayName("Issue#54 - メールにFromアドレスが設定されている")
+    @DisplayName("Spec#54 - メールにFromアドレスが設定されている")
     void testSendEmail_HasFromAddress() {
         notificationService.sendQuarantineNotification(
                 "user@example.com", "テストユーザー", LocalDateTime.of(2026, 3, 15, 14, 30));
@@ -145,7 +145,7 @@ public class ModerationNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - メール送信失敗時に例外がスローされない")
+    @DisplayName("Spec#54 - メール送信失敗時に例外がスローされない")
     void testSendEmail_Failure_DoesNotThrow() {
         doThrow(new RuntimeException("SMTP接続エラー"))
                 .when(mailSender).send(any(SimpleMailMessage.class));

@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { PlaceSearchDialog } from './PlaceSearchDialog'
 
 /**
- * Issue#69: PlaceSearchDialog のテスト
+ * Spec#69: PlaceSearchDialog のテスト
  */
 
 // Mapbox Search JS Coreのモック

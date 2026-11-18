@@ -19,7 +19,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#93: バックエンドのエラーコードと、フロントエンドの翻訳（{@code errors.<code>}）を突き合わせる。
+ * Spec#93: バックエンドのエラーコードと、フロントエンドの翻訳（{@code errors.<code>}）を突き合わせる。
  *
  * <p>フロントは翻訳の無いコードを画面ごとの汎用文言で表示するため、コードを足して翻訳を忘れても
  * 画面では気づけない。ここで 5 言語すべてに翻訳があることを確かめる。
@@ -60,7 +60,7 @@ class ErrorCodesTranslationTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - コードは英大文字とアンダースコアだけ（i18next のキーの区切り . や : を含まない）")
+    @DisplayName("Spec#93 - コードは英大文字とアンダースコアだけ（i18next のキーの区切り . や : を含まない）")
     void codesUseUpperSnakeCaseOnly() throws IllegalAccessException {
         for (String code : codes()) {
             assertThat(code).as(code).matches("[A-Z][A-Z_]*");
@@ -68,7 +68,7 @@ class ErrorCodesTranslationTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 定数名とコードの値が一致する")
+    @DisplayName("Spec#93 - 定数名とコードの値が一致する")
     void constantNameEqualsValue() throws IllegalAccessException {
         List<Field> fields = codeFields();
         assertThat(fields).isNotEmpty();
@@ -79,7 +79,7 @@ class ErrorCodesTranslationTest {
 
     @ParameterizedTest(name = "{0}")
     @ValueSource(strings = {"ja", "en", "ko", "zh-CN", "zh-TW"})
-    @DisplayName("Issue#93 - 汎用のコードを除くすべてのコードに errors.<code> の翻訳がある")
+    @DisplayName("Spec#93 - 汎用のコードを除くすべてのコードに errors.<code> の翻訳がある")
     void everyCodeHasTranslation(String language) throws IOException, IllegalAccessException {
         Path file = LOCALES_DIR.resolve(language + ".json");
         assertThat(Files.exists(file)).as("翻訳ファイル %s", file.toAbsolutePath()).isTrue();

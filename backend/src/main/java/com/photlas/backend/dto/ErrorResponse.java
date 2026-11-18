@@ -20,7 +20,7 @@ public class ErrorResponse {
     /**
      * code の無いエラーレスポンス。
      *
-     * <p>Issue#93: 画面に出ない機械どうしの API（LQIP・審査のコールバック、テスト用 API）だけで使う。
+     * <p>Spec#93: 画面に出ない機械どうしの API（LQIP・審査のコールバック、テスト用 API）だけで使う。
      * 利用者に届くエラーは、フロントが code から表示言語の文言を出すため、
      * {@link #ErrorResponse(String, String)} で {@code ErrorCodes} のコードを付けること。
      * 誤って使わないよう、コンストラクターではなく名前で用途がわかる静的ファクトリにしている。

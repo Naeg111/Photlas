@@ -1,8 +1,8 @@
 /**
  * PrivacyContentZhTW コンポーネント
- * Issue#101: 隱私政策本文 (繁體中文)
+ * Spec#101: 隱私政策本文 (繁體中文)
  *
- * 注: Issue#101 Phase: 機械翻訳ベースで作成。法的妥当性については、
+ * 注: Spec#101 Phase: 機械翻訳ベースで作成。法的妥当性については、
  * 海外ユーザー本格対応時に専門家レビューを実施予定。
  *
  * 注: 簡体字版から繁体字に変換し、台湾向けの語彙
@@ -126,7 +126,7 @@ export function PrivacyContentZhTW() {
           <li>對違反使用條款行為的處理</li>
           <li>本服務的廣告、宣傳、推廣(投稿資料的利用)</li>
           <li>使用者諮詢的處理</li>
-          {/* Issue#106: 透過 IP 位址判定國家 */}
+          {/* Spec#106: 透過 IP 位址判定國家 */}
           <li>基於 IP 位址判定使用者所在國家(用於最佳化地圖的初始顯示位置。IP 位址不會儲存在伺服器上,僅用於轉換為國家代碼)</li>
           <li>附屬於上述使用目的的目的</li>
         </ul>
@@ -149,7 +149,7 @@ export function PrivacyContentZhTW() {
       <section>
         <h2 className="mb-3">第6條 (第三方提供與外部服務的使用)</h2>
         <p className="text-sm text-gray-700 mb-2">
-          {/* Issue#105: Do Not Sell 宣告 */}
+          {/* Spec#105: Do Not Sell 宣告 */}
           營運方不會向第三方出售使用者的個人資訊。
         </p>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
@@ -183,7 +183,7 @@ export function PrivacyContentZhTW() {
                 <span className="font-semibold">Sentry</span>: 用於應用程式的錯誤監控。錯誤發生時傳送技術性錯誤資訊(僅傳送全部錯誤的一部分)。Sentry 的隱私政策請參閱{' '}
                 <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">此處</a>。
               </li>
-              {/* Issue#106: MaxMind GeoLite2 (透過 IP 位址判定國家) */}
+              {/* Spec#106: MaxMind GeoLite2 (透過 IP 位址判定國家) */}
               <li>
                 <span className="font-semibold">MaxMind GeoLite2</span>: 用於透過 IP 位址判定使用者所在國家,以最佳化地圖的初始顯示位置。判定處理在伺服器上執行,IP 位址僅用於轉換為國家代碼,不會被儲存。本服務使用 GeoLite2 資料(Includes GeoLite2 data created by MaxMind, available from{' '}
                 <a href="https://www.maxmind.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">https://www.maxmind.com</a>
@@ -251,7 +251,7 @@ export function PrivacyContentZhTW() {
         </ol>
       </section>
 
-      {/* Issue#119: AI 影像識別對類別・天氣的自動判別 */}
+      {/* Spec#119: AI 影像識別對類別・天氣的自動判別 */}
       <section>
         <h2 className="mb-3">第8條之2 (類別和天氣的自動判別)</h2>
         <p className="text-sm text-gray-700">
@@ -321,7 +321,7 @@ export function PrivacyContentZhTW() {
             刪除後的資料無法復原。
           </li>
           <li>
-            {/* Issue#105: 審核刪除照片的 180 日保存公開 */}
+            {/* Spec#105: 審核刪除照片的 180 日保存公開 */}
             因內容審核被刪除的照片及其中繼資料,出於複審、申訴處理目的保存 180 天後完全刪除。
           </li>
         </ol>
@@ -330,7 +330,7 @@ export function PrivacyContentZhTW() {
       <section>
         <h2 className="mb-3">第12條 (未成年人的使用)</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-          {/* Issue#105: 13歲以上的使用限制 (符合 COPPA) */}
+          {/* Spec#105: 13歲以上的使用限制 (符合 COPPA) */}
           <li>
             本服務面向<span className="font-semibold">年滿 13歲</span>的使用者提供。未滿 13歲的人不能使用本服務。如發現未滿 13歲的人誤註冊,營運方將採取刪除帳戶及相關資料的措施。
           </li>
@@ -396,7 +396,7 @@ export function PrivacyContentZhTW() {
       <section>
         <h2 className="mb-3">第17條 (國際資料傳輸)</h2>
         <p className="text-sm text-gray-700 mb-2">
-          {/* Issue#105: 國際使用者的綜合性提示 */}
+          {/* Spec#105: 國際使用者的綜合性提示 */}
           本服務由設立於日本的營運方提供,可在全球存取。即使從日本境外存取,使用者的個人資料也會傳輸至日本伺服器後處理。
         </p>
         <p className="text-sm text-gray-700 mb-2">
@@ -410,7 +410,7 @@ export function PrivacyContentZhTW() {
           這些服務提供方根據各自的隱私政策及資料處理協議採取了適當的資料保護措施。
         </p>
         <p className="text-sm text-gray-700 mt-2">
-          {/* Issue#105: 尊重使用者居住國法律授予的權利 */}
+          {/* Spec#105: 尊重使用者居住國法律授予的權利 */}
           根據使用者居住國家的法律,如享有本政策未記載的額外權利,營運方將尊重這些權利,並按照適用法律法規的規定進行處理。
         </p>
       </section>

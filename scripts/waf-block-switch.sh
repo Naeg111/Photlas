@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# AWS WAF マネージドルール 単一ルール単位 Count <-> Block 切替スクリプト (Issue#97)
+# AWS WAF マネージドルール 単一ルール単位 Count <-> Block 切替スクリプト (Spec#97)
 #
-# Issue#94 の switch-waf-block-mode.sh が「全ルールをまとめて」切り替えるのに対し、
-# 本スクリプトは Issue#97 で追加したマネージドルール 4 種のうち 1 本ずつを
+# Spec#94 の switch-waf-block-mode.sh が「全ルールをまとめて」切り替えるのに対し、
+# 本スクリプトは Spec#97 で追加したマネージドルール 4 種のうち 1 本ずつを
 # Count -> Block / Block -> Count に切り替える (§3.3, §3.5 PR2-4 段階的リリース)。
 #
 # 実行内容:
@@ -34,10 +34,10 @@
 # 前提:
 #   - ./scripts/setup-waf.sh 実行済み (Section 2 マネージドルールが Count モードで導入済)
 #   - ./scripts/setup-waf-managed-rules-alarm.sh 実行済み (Count 用アラーム 4 本あり)
-#   - SNS トピック photlas-waf-alerts (Issue#94) 既存
+#   - SNS トピック photlas-waf-alerts (Spec#94) 既存
 #
 # 関連ドキュメント:
-#   documents/04_Issues/Issue#97.md §3.3, §3.5, §3.6
+#   documents/spec/SPEC-0097.md §3.3, §3.5, §3.6
 #
 
 set -euo pipefail
@@ -104,7 +104,7 @@ AWS_REGION="ap-northeast-1"
 WEBACL_NAME="photlas-waf-main"
 SNS_TOPIC_NAME="photlas-waf-alerts"
 
-# リソースタグ (Issue#97 §3.5):
+# リソースタグ (Spec#97 §3.5):
 #   Project=Photlas
 #   Environment=production
 #   ManagedBy=Issue-97     (AWS タグ値に '#' は使えないためハイフン表記)
@@ -189,7 +189,7 @@ SNS_TOPIC_ARN="$(aws sns list-topics \
 
 if [ -z "$SNS_TOPIC_ARN" ] || [ "$SNS_TOPIC_ARN" = "None" ]; then
   echo "ERROR: SNS topic '$SNS_TOPIC_NAME' not found." >&2
-  echo "Run ./scripts/setup-waf-alarms.sh (Issue#94) first." >&2
+  echo "Run ./scripts/setup-waf-alarms.sh (Spec#94) first." >&2
   exit 1
 fi
 log "SNS topic: $SNS_TOPIC_ARN"
@@ -263,7 +263,7 @@ else
     > "$TMP_DIR/webacl-rules.json"
 fi
 
-# CustomResponseBodies は明示的に書き出す (Issue#94 setup-waf.sh と同じ構造)。
+# CustomResponseBodies は明示的に書き出す (Spec#94 setup-waf.sh と同じ構造)。
 cat > "$TMP_DIR/custom-response-bodies.json" <<'EOF'
 {
   "RateLimitExceeded": {
@@ -314,7 +314,7 @@ create_managed_rule_alarm \
   "$RULE_NAME" \
   "$THRESHOLD" \
   "$NEW_METRIC" \
-  "Issue#97: WAF $RULE_NAME $NEW_METRIC ($MODE mode)"
+  "Spec#97: WAF $RULE_NAME $NEW_METRIC ($MODE mode)"
 
 log "Deleting old alarm: $OLD_ALARM_NAME"
 aws cloudwatch delete-alarms \

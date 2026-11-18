@@ -1,7 +1,7 @@
 /**
- * Issue#96: notifyIfRateLimited 共通ヘルパー関数のテスト
+ * Spec#96: notifyIfRateLimited 共通ヘルパー関数のテスト
  *
- * 仕様（Issue#96 3.1-3）:
+ * 仕様（Spec#96 3.1-3）:
  *   - ApiError が 429（isRateLimited）かを判定
  *   - 429 ならトースト表示
  *   - 直前の表示から 1 秒以内なら連打抑制（PhotoDetailDialog の prev/current/next prefetch 対策）
@@ -104,9 +104,9 @@ describe('notifyIfRateLimited', () => {
 })
 
 /**
- * Issue#96 PR3: notifyIfRateLimitedBurst（パターンC バックグラウンド系）
+ * Spec#96 PR3: notifyIfRateLimitedBurst（パターンC バックグラウンド系）
  *
- * 仕様（Issue#96 3.4 パターンC）:
+ * 仕様（Spec#96 3.4 パターンC）:
  *   - 初回の 429 は **サイレント**（トーストすら出さない）
  *   - 一定時間内（デフォルト 1 分）に閾値回数（デフォルト 3 回）以上 429 が連続した場合のみトースト表示
  *   - 同一ウインドウ内で通知済みなら再通知しない

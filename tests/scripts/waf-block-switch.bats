@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 #
 # Specification-driven tests for scripts/waf-block-switch.sh
-# Source of truth: documents/04_Issues/Issue#97.md §3.3, §3.5, §3.6
+# Source of truth: documents/spec/SPEC-0097.md §3.3, §3.5, §3.6
 # Used by PR2-4 (Count → Block per-rule cutover) and for rollback Block → Count.
 #
 # The script targets ONE managed rule at a time (argument) and:
@@ -115,7 +115,7 @@ SCRIPT="$SCRIPTS_DIR/waf-block-switch.sh"
   assert_contains "$SCRIPT" 'photlas-waf-alerts'
 }
 
-# --- Tags (Issue#97 resource tags) ------------------------------------------
+# --- Tags (Spec#97 resource tags) ------------------------------------------
 
 @test "waf-block-switch.sh: tags alarms with ManagedBy=Issue-97" {
   assert_contains "$SCRIPT" 'ManagedBy=Issue-97'

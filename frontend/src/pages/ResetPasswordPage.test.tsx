@@ -35,7 +35,7 @@ vi.mock('react-router-dom', async () => {
 /**
  * tokenパラメータ付きでResetPasswordPageをレンダリングする
  */
-// Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+// Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
 const invalidTokenError = () =>
   new Response(
     JSON.stringify({ code: 'INVALID_TOKEN', message: 'トークンが無効または期限切れです' }),
@@ -89,7 +89,7 @@ describe('ResetPasswordPage', () => {
       expect(document.title).toBe('パスワードの再設定 - Photlas')
     })
 
-    it('Issue#110 - ページ全体の外側コンテナの背景が bg-black である', () => {
+    it('Spec#110 - ページ全体の外側コンテナの背景が bg-black である', () => {
       const { container } = renderWithToken(VALID_TOKEN)
 
       const outer = container.querySelector('.min-h-screen')
@@ -97,7 +97,7 @@ describe('ResetPasswordPage', () => {
       expect(outer).not.toHaveClass('bg-gray-50')
     })
 
-    it('Issue#110 - tokenなしのエラー画面でも背景が bg-black である', () => {
+    it('Spec#110 - tokenなしのエラー画面でも背景が bg-black である', () => {
       const { container } = renderWithToken()
 
       const outer = container.querySelector('.min-h-screen')
@@ -314,7 +314,7 @@ describe('ResetPasswordPage', () => {
     })
   })
 
-  // Issue#96 PR2b: 429 レート制限ハンドリング（パターンA: フォーム送信系）
+  // Spec#96 PR2b: 429 レート制限ハンドリング（パターンA: フォーム送信系）
   describe('Rate Limit (429) - レート制限', () => {
     it('パスワードリセットで429を受信したらレート制限メッセージをインライン表示する', async () => {
       mockFetch.mockResolvedValueOnce(
@@ -409,7 +409,7 @@ describe('ResetPasswordPage', () => {
       }
     })
 
-    it('Issue#93 - 英語の設定では、トークンが無効なときのエラーが英語で表示される', async () => {
+    it('Spec#93 - 英語の設定では、トークンが無効なときのエラーが英語で表示される', async () => {
       mockFetch.mockResolvedValueOnce(invalidTokenError())
       await i18n.changeLanguage('en')
       try {

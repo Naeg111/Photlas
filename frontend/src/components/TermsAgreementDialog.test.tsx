@@ -6,7 +6,7 @@ import TermsAgreementDialog from './TermsAgreementDialog'
 
 /**
  * TermsAgreementDialog コンポーネントのテスト
- * Issue#109 で年齢確認チェックボックス追加に伴い、新規作成。
+ * Spec#109 で年齢確認チェックボックス追加に伴い、新規作成。
  */
 
 // sonner (toast) のモック
@@ -39,7 +39,7 @@ describe('TermsAgreementDialog', () => {
     vi.clearAllMocks()
   })
 
-  describe('Issue#109 - 年齢確認チェックボックス', () => {
+  describe('Spec#109 - 年齢確認チェックボックス', () => {
     it('年齢確認チェックボックス（13歳以上）が表示される', () => {
       render(<TermsAgreementDialog {...defaultProps} />)
 
@@ -71,7 +71,7 @@ describe('TermsAgreementDialog', () => {
     })
   })
 
-  describe('Issue#144 - 規約同意では「ログインしました」トーストを出さない', () => {
+  describe('Spec#144 - 規約同意では「ログインしました」トーストを出さない', () => {
     it('「利用を開始する」押下で onAgreed は呼ぶが「ログインしました」トーストは出さない', async () => {
       const user = userEvent.setup()
       const onAgreed = vi.fn()

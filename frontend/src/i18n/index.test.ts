@@ -26,7 +26,7 @@ function placeholders(text: string): string[] {
   return [...text.matchAll(/\{\{\s*(\w+)\s*\}\}/g)].map((m) => m[1]).sort()
 }
 
-describe('i18n - Issue#130', () => {
+describe('i18n - Spec#130', () => {
   // Spec#93 2.7: 非ログイン時のブラウザ言語検出
   describe('detectInitialLanguage', () => {
     /** navigator.language を差し替える */

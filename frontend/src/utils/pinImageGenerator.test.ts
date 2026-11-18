@@ -8,12 +8,12 @@ import {
 } from './pinImageGenerator'
 
 /**
- * Issue#55: Symbol Layer移行 - ピン画像生成ユーティリティのテスト
+ * Spec#55: Symbol Layer移行 - ピン画像生成ユーティリティのテスト
  */
 
-describe('pinImageGenerator - Issue#55 / Issue#103', () => {
+describe('pinImageGenerator - Spec#55 / Spec#103', () => {
   describe('PIN_COLOR_MAP', () => {
-    it('5色のカラーマッピングが定義されている (Issue#103: Purple 追加)', () => {
+    it('5色のカラーマッピングが定義されている (Spec#103: Purple 追加)', () => {
       expect(PIN_COLOR_MAP.Green).toBe('#00d68f')
       expect(PIN_COLOR_MAP.Yellow).toBe('#ffbe0b')
       expect(PIN_COLOR_MAP.Orange).toBe('#ff6b35')
@@ -22,7 +22,7 @@ describe('pinImageGenerator - Issue#55 / Issue#103', () => {
     })
   })
 
-  describe('determinePinColor (Issue#103: 新閾値)', () => {
+  describe('determinePinColor (Spec#103: 新閾値)', () => {
     it('1〜9件の場合はGreen (#00d68f) を返す', () => {
       expect(determinePinColor(1)).toBe('#00d68f')
       expect(determinePinColor(9)).toBe('#00d68f')
@@ -145,14 +145,14 @@ describe('pinImageGenerator - Issue#55 / Issue#103', () => {
       )
     })
 
-    it('Issue#103 - 紫色のピンの場合はテキストが描画されない', () => {
+    it('Spec#103 - 紫色のピンの場合はテキストが描画されない', () => {
       generatePinImage(PIN_COLOR_MAP.Purple, 1500, 1.0)
 
       expect(mockContext.fillText).not.toHaveBeenCalled()
       expect(mockContext.strokeText).not.toHaveBeenCalled()
     })
 
-    it('Issue#103 - 紫以外のピンには photoCount >= 1000 でも件数テキストが描画される (Red)', () => {
+    it('Spec#103 - 紫以外のピンには photoCount >= 1000 でも件数テキストが描画される (Red)', () => {
       generatePinImage(PIN_COLOR_MAP.Red, 1500, 1.0)
 
       expect(mockContext.fillText).toHaveBeenCalledWith(
@@ -162,7 +162,7 @@ describe('pinImageGenerator - Issue#55 / Issue#103', () => {
       )
     })
 
-    it('Issue#103 - 紫以外のピンには photoCount >= 1000 でも件数テキストが描画される (Yellow)', () => {
+    it('Spec#103 - 紫以外のピンには photoCount >= 1000 でも件数テキストが描画される (Yellow)', () => {
       generatePinImage(PIN_COLOR_MAP.Yellow, 1500, 1.0)
 
       expect(mockContext.fillText).toHaveBeenCalledWith(

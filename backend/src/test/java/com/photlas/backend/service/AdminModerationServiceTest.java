@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Issue#54: 管理者モデレーション操作のテスト
+ * Spec#54: 管理者モデレーション操作のテスト
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -86,7 +86,7 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 隔離中の写真を「問題なし」にするとPUBLISHEDになる")
+    @DisplayName("Spec#54 - 隔離中の写真を「問題なし」にするとPUBLISHEDになる")
     void testApprovePhoto_QuarantinedPhoto_BecomesPublished() {
         Photo photo = createPhotoWithStatus("photos/approve001.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -97,7 +97,7 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 隔離中の写真を「違反あり」にするとREMOVEDになる")
+    @DisplayName("Spec#54 - 隔離中の写真を「違反あり」にするとREMOVEDになる")
     void testRejectPhoto_QuarantinedPhoto_BecomesRemoved() {
         Photo photo = createPhotoWithStatus("photos/reject001.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -108,7 +108,7 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PENDING_REVIEW状態の写真を承認するとPUBLISHEDになる")
+    @DisplayName("Spec#54 - PENDING_REVIEW状態の写真を承認するとPUBLISHEDになる")
     void testApprovePhoto_PendingReviewPhoto_BecomesPublished() {
         Photo photo = createPhotoWithStatus("photos/approve002.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
@@ -119,21 +119,21 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 存在しない写真を拒否しようとすると例外")
+    @DisplayName("Spec#54 - 存在しない写真を拒否しようとすると例外")
     void testRejectPhoto_NonExistentPhoto_ThrowsException() {
         assertThatThrownBy(() -> adminModerationService.rejectPhoto(99999L, "違反理由"))
                 .isInstanceOf(PhotoNotFoundException.class);
     }
 
     @Test
-    @DisplayName("Issue#54 - 存在しない写真を承認しようとすると例外")
+    @DisplayName("Spec#54 - 存在しない写真を承認しようとすると例外")
     void testApprovePhoto_NonExistentPhoto_ThrowsException() {
         assertThatThrownBy(() -> adminModerationService.approvePhoto(99999L))
                 .isInstanceOf(PhotoNotFoundException.class);
     }
 
     @Test
-    @DisplayName("Issue#54 - 違反あり操作で違反履歴が作成される")
+    @DisplayName("Spec#54 - 違反あり操作で違反履歴が作成される")
     void testRejectPhoto_CreatesViolationRecord() {
         Photo photo = createPhotoWithStatus("photos/violation001.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -147,7 +147,7 @@ public class AdminModerationServiceTest {
     // ===== アカウント制裁テスト =====
 
     @Test
-    @DisplayName("Issue#54 - 違反1回目: WARNING制裁が作成される")
+    @DisplayName("Spec#54 - 違反1回目: WARNING制裁が作成される")
     void testRejectPhoto_FirstViolation_CreatesWarning() {
         Photo photo = createPhotoWithStatus("photos/v1.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -160,7 +160,7 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 違反2回目: TEMPORARY_SUSPENSION制裁（60日間投稿停止）")
+    @DisplayName("Spec#54 - 違反2回目: TEMPORARY_SUSPENSION制裁（60日間投稿停止）")
     void testRejectPhoto_SecondViolation_CreatesTemporarySuspension() {
         // 1回目の違反
         Photo photo1 = createPhotoWithStatus("photos/v2a.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -183,7 +183,7 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 違反3回目: PERMANENT_SUSPENSION制裁（永久停止）")
+    @DisplayName("Spec#54 - 違反3回目: PERMANENT_SUSPENSION制裁（永久停止）")
     void testRejectPhoto_ThirdViolation_CreatesPermanentSuspension() {
         // 1回目
         Photo photo1 = createPhotoWithStatus("photos/v3a.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -207,7 +207,7 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 永久停止時: ユーザーのロールがSUSPENDEDになる")
+    @DisplayName("Spec#54 - 永久停止時: ユーザーのロールがSUSPENDEDになる")
     void testRejectPhoto_PermanentSuspension_UserRoleChangedToSuspended() {
         Photo photo1 = createPhotoWithStatus("photos/vs1.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
         adminModerationService.rejectPhoto(photo1.getPhotoId(), "違反1");
@@ -223,7 +223,7 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 永久停止時: ユーザーの公開写真がREMOVEDになる")
+    @DisplayName("Spec#54 - 永久停止時: ユーザーの公開写真がREMOVEDになる")
     void testRejectPhoto_PermanentSuspension_AllPhotosRemoved() {
         // 公開中の写真を追加
         Photo publishedPhoto = createPhotoWithStatus("photos/pub.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
@@ -243,10 +243,10 @@ public class AdminModerationServiceTest {
         assertThat(updatedPublished.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_REMOVED);
     }
 
-    // ===== Issue#54: violationType振り分けテスト =====
+    // ===== Spec#54: violationType振り分けテスト =====
 
     @Test
-    @DisplayName("Issue#54 - 拒否: ユーザー通報がある場合、最多の通報理由がviolationTypeになる")
+    @DisplayName("Spec#54 - 拒否: ユーザー通報がある場合、最多の通報理由がviolationTypeになる")
     void testRejectPhoto_WithReports_ViolationTypeFromMostCommonReason() {
         Photo photo = createPhotoWithStatus("photos/vt1.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
         User reporter1 = createUser("reporter1", "r1@example.com");
@@ -264,7 +264,7 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 拒否: AI検知のみでExplicit Nudityラベルの場合、ADULT_CONTENTになる")
+    @DisplayName("Spec#54 - 拒否: AI検知のみでExplicit Nudityラベルの場合、ADULT_CONTENTになる")
     void testRejectPhoto_AiDetectedAdultContent_ViolationTypeAdultContent() {
         Photo photo = createPhotoWithStatus("photos/vt2.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
         createModerationDetail(photo.getPhotoId(), "Explicit Nudity,Exposed Female Genitalia");
@@ -277,7 +277,7 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 拒否: AI検知のみでViolenceラベルの場合、VIOLENCEになる")
+    @DisplayName("Spec#54 - 拒否: AI検知のみでViolenceラベルの場合、VIOLENCEになる")
     void testRejectPhoto_AiDetectedViolence_ViolationTypeViolence() {
         Photo photo = createPhotoWithStatus("photos/vt3.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
         createModerationDetail(photo.getPhotoId(), "Violence,Graphic Violence");
@@ -290,7 +290,7 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 拒否: 通報もAI検知もない場合、REASON_OTHERになる")
+    @DisplayName("Spec#54 - 拒否: 通報もAI検知もない場合、REASON_OTHERになる")
     void testRejectPhoto_NoReportsNoAi_ViolationTypeOther() {
         Photo photo = createPhotoWithStatus("photos/vt4.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -301,10 +301,10 @@ public class AdminModerationServiceTest {
         assertThat(violations.get(0).getViolationType()).isEqualTo(CodeConstants.REASON_OTHER);
     }
 
-    // ===== Issue#54: S3隔離フロー整合性テスト =====
+    // ===== Spec#54: S3隔離フロー整合性テスト =====
 
     @Test
-    @DisplayName("Issue#54 - 承認時にs3_object_keyからquarantined/プレフィックスが除去される")
+    @DisplayName("Spec#54 - 承認時にs3_object_keyからquarantined/プレフィックスが除去される")
     void testApprovePhoto_RestoresS3ObjectKey() {
         Photo photo = createPhotoWithStatus("quarantined/uploads/1/test.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -315,7 +315,7 @@ public class AdminModerationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 拒否時にs3_object_keyはquarantined/のまま維持される")
+    @DisplayName("Spec#54 - 拒否時にs3_object_keyはquarantined/のまま維持される")
     void testRejectPhoto_KeepsQuarantinedS3ObjectKey() {
         Photo photo = createPhotoWithStatus("quarantined/uploads/1/test.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 

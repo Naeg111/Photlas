@@ -1,4 +1,4 @@
-// Issue#117: CloudFront Function のローカルテストヘルパー
+// Spec#117: CloudFront Function のローカルテストヘルパー
 //
 // CloudFront Function は AWS のエッジ環境で動く独自ランタイムだが、
 // 構文は ES5.1 互換のサブセット。`function handler(event)` をトップレベルに

@@ -8,7 +8,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * Issue#81 - OAuth access_token の AES-256-GCM 暗号化器。
+ * Spec#81 - OAuth access_token の AES-256-GCM 暗号化器。
  *
  * Round 12 / Q9 決定: OAuth access_token を DB に生で保存せず、AES-256-GCM で暗号化する。
  * 退会時の best-effort revoke で復号してプロバイダに送信する。

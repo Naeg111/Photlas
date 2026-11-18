@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import { initCookieConsent } from './helpers/auth'
 
 /**
- * 場所検索テスト（Issue#69）
+ * 場所検索テスト（Spec#69）
  * 検索ボタン、検索ダイアログ、候補表示、地図移動を確認
  */
 test.describe('Place Search Tests', () => {

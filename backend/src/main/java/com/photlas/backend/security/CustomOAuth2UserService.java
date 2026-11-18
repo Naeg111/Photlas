@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Issue#81 Phase 3c - Spring Security OAuth2 の {@link OAuth2UserService} カスタム実装。
+ * Spec#81 Phase 3c - Spring Security OAuth2 の {@link OAuth2UserService} カスタム実装。
  *
  * <p>処理フロー:
  * <ol>

@@ -235,7 +235,7 @@ public class AuthControllerEmailVerificationTest {
     @Test
     @DisplayName("ユーザー登録時に認証トークンが生成される")
     void testRegister_CreatesVerificationToken() throws Exception {
-        // Issue#109: 同意・年齢確認フィールドを true で送信
+        // Spec#109: 同意・年齢確認フィールドを true で送信
         String registerRequest = """
                 {
                     "username": "newuser",

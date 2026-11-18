@@ -33,7 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#99 - {@link CustomOidcUserService} のテスト。
+ * Spec#99 - {@link CustomOidcUserService} のテスト。
  *
  * LINE は OAuth スコープに {@code openid} を含むため、Spring Security は OIDC フローに
  * 切り替わる。OIDC フローでは ID トークンクレームから {@code sub} と {@code email} を

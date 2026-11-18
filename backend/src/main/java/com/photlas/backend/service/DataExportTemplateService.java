@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Issue#108 §4.19 / §4.12: ZIP 内 README.md と通知メールの多言語テンプレート生成サービス。
+ * Spec#108 §4.19 / §4.12: ZIP 内 README.md と通知メールの多言語テンプレート生成サービス。
  *
  * <p>README.md は {@code src/main/resources/templates/data-export/readme/readme_{lang}.md}
  * から読み込み、簡易プレースホルダ（{@code {{username}}} / {@code {{exportedAt}}}）を

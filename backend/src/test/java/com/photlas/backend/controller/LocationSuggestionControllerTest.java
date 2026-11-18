@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Issue#65: LocationSuggestionController の統合テスト
+ * Spec#65: LocationSuggestionController の統合テスト
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -90,7 +90,7 @@ public class LocationSuggestionControllerTest {
     // ========================================
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 正常に201が返る")
+    @DisplayName("Spec#65 - 指摘作成: 正常に201が返る")
     void testCreateSuggestion_Success_Returns201() throws Exception {
         LocationSuggestionRequest request = new LocationSuggestionRequest();
         request.setLatitude(SUGGESTED_LAT);
@@ -104,7 +104,7 @@ public class LocationSuggestionControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 未認証の場合401が返る")
+    @DisplayName("Spec#65 - 指摘作成: 未認証の場合401が返る")
     void testCreateSuggestion_Unauthorized_Returns401() throws Exception {
         LocationSuggestionRequest request = new LocationSuggestionRequest();
         request.setLatitude(SUGGESTED_LAT);
@@ -117,7 +117,7 @@ public class LocationSuggestionControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 自分の写真に対する指摘は400が返る")
+    @DisplayName("Spec#65 - 指摘作成: 自分の写真に対する指摘は400が返る")
     void testCreateSuggestion_OwnPhoto_Returns400() throws Exception {
         LocationSuggestionRequest request = new LocationSuggestionRequest();
         request.setLatitude(SUGGESTED_LAT);
@@ -132,7 +132,7 @@ public class LocationSuggestionControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 指摘作成: 写真が無い場合は 404 と PHOTO_NOT_FOUND が返る")
+    @DisplayName("Spec#93 - 指摘作成: 写真が無い場合は 404 と PHOTO_NOT_FOUND が返る")
     void testCreateSuggestion_PhotoNotFound_ReturnsCode() throws Exception {
         LocationSuggestionRequest request = new LocationSuggestionRequest();
         request.setLatitude(SUGGESTED_LAT);
@@ -147,7 +147,7 @@ public class LocationSuggestionControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 指摘作成: 同じ写真に 2 回指摘すると 400 と SUGGESTION_ALREADY_SENT が返る")
+    @DisplayName("Spec#93 - 指摘作成: 同じ写真に 2 回指摘すると 400 と SUGGESTION_ALREADY_SENT が返る")
     void testCreateSuggestion_AlreadySent_ReturnsCode() throws Exception {
         createPendingSuggestion("token-already-sent");
 
@@ -164,7 +164,7 @@ public class LocationSuggestionControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 指摘作成: 元の場所から 30m 未満なら 400 と SUGGESTION_TOO_CLOSE が返る")
+    @DisplayName("Spec#93 - 指摘作成: 元の場所から 30m 未満なら 400 と SUGGESTION_TOO_CLOSE が返る")
     void testCreateSuggestion_TooClose_ReturnsCode() throws Exception {
         LocationSuggestionRequest request = new LocationSuggestionRequest();
         request.setLatitude(ORIGINAL_LAT);
@@ -179,7 +179,7 @@ public class LocationSuggestionControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - レビュー: 写真の投稿者以外がレビューすると 403 と ACCESS_DENIED が返る")
+    @DisplayName("Spec#93 - レビュー: 写真の投稿者以外がレビューすると 403 と ACCESS_DENIED が返る")
     void testReview_NotOwner_ReturnsAccessDenied() throws Exception {
         createPendingSuggestion("token-not-owner");
 
@@ -191,7 +191,7 @@ public class LocationSuggestionControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - レビュー: 解決済みの指摘を受け入れると 400 と SUGGESTION_ALREADY_RESOLVED が返る")
+    @DisplayName("Spec#93 - レビュー: 解決済みの指摘を受け入れると 400 と SUGGESTION_ALREADY_RESOLVED が返る")
     void testAccept_AlreadyResolved_ReturnsCode() throws Exception {
         LocationSuggestion suggestion = createPendingSuggestion("token-resolved");
         suggestion.setStatus(CodeConstants.SUGGESTION_STATUS_REJECTED);
@@ -205,7 +205,7 @@ public class LocationSuggestionControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - レビュー情報取得: トークンが無効な場合は 400 と INVALID_TOKEN が返る")
+    @DisplayName("Spec#93 - レビュー情報取得: トークンが無効な場合は 400 と INVALID_TOKEN が返る")
     void testGetReview_InvalidToken_ReturnsCode() throws Exception {
         mockMvc.perform(get("/api/v1/location-suggestions/review")
                 .param("token", "no-such-token")
@@ -215,7 +215,7 @@ public class LocationSuggestionControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 緯度が範囲外（91）の場合400が返る")
+    @DisplayName("Spec#65 - 指摘作成: 緯度が範囲外（91）の場合400が返る")
     void testCreateSuggestion_LatitudeOutOfRange_Returns400() throws Exception {
         LocationSuggestionRequest request = new LocationSuggestionRequest();
         request.setLatitude(new BigDecimal("91.0"));
@@ -229,7 +229,7 @@ public class LocationSuggestionControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 経度が範囲外（-181）の場合400が返る")
+    @DisplayName("Spec#65 - 指摘作成: 経度が範囲外（-181）の場合400が返る")
     void testCreateSuggestion_LongitudeOutOfRange_Returns400() throws Exception {
         LocationSuggestionRequest request = new LocationSuggestionRequest();
         request.setLatitude(SUGGESTED_LAT);
@@ -247,7 +247,7 @@ public class LocationSuggestionControllerTest {
     // ========================================
 
     @Test
-    @DisplayName("Issue#65 - 指摘済み確認: 未指摘の場合falseが返る")
+    @DisplayName("Spec#65 - 指摘済み確認: 未指摘の場合falseが返る")
     void testGetStatus_NotSuggested_ReturnsFalse() throws Exception {
         mockMvc.perform(get("/api/v1/photos/" + photo.getPhotoId() + "/location-suggestions/status")
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + suggesterToken))

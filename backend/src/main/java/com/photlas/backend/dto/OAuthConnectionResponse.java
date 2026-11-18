@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Issue#81 Phase 4h - ユーザーの OAuth 連携一覧レスポンス。
+ * Spec#81 Phase 4h - ユーザーの OAuth 連携一覧レスポンス。
  *
  * <p>{@code GET /api/v1/users/me/oauth-connections} のレスポンス。
  * email / providerUserId などの PII はクライアントに返さず、連携の有無と基本情報のみ。

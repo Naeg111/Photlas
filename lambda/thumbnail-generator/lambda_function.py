@@ -1,19 +1,19 @@
 """
-Issue#75: サムネイル生成Lambda関数
-Issue#100: タグベース孤立ファイル対応（元画像タグのコピー + 二重チェック方式）
-Issue#123: Retina 対応として 800x800 化 + アンシャープマスク適用
-Issue#125: LQIP（低品質プレースホルダー）生成 + バックエンド内部 API へのコールバック
+Spec#75: サムネイル生成Lambda関数
+Spec#100: タグベース孤立ファイル対応（元画像タグのコピー + 二重チェック方式）
+Spec#123: Retina 対応として 800x800 化 + アンシャープマスク適用
+Spec#125: LQIP（低品質プレースホルダー）生成 + バックエンド内部 API へのコールバック
 SNS ファンアウト対応: S3 → SNS Topic → 複数 Lambda の構成に対応
 
 S3にアップロードされた写真から中央クロップで正方形サムネイル（800x800 WebP）を
 生成し、thumbnails/ プレフィックス配下に保存する。
 
-Issue#100 対応として、元画像の status タグをサムネイルにコピーする。
+Spec#100 対応として、元画像の status タグをサムネイルにコピーする。
 書き込み後にもう一度元画像のタグを確認し、書き込み中にメタデータ登録（ステップ3）
 が完了して registered に変わっていた場合はサムネイルのタグも追従させる
 （race condition への二重チェック対策）。
 
-Issue#125 対応として、サムネイル生成と同時に 20x20 px の WebP（base64 化した
+Spec#125 対応として、サムネイル生成と同時に 20x20 px の WebP（base64 化した
 data URL、~800 byte）を生成し、バックエンドの内部 API にコールバックして
 DB に保存する。コールバック失敗時は指数バックオフで最大 3 回リトライし、
 最終失敗時はサムネイル生成自体は成功扱いとする。
@@ -41,26 +41,26 @@ THUMBNAIL_QUALITY = 85
 THUMBNAIL_PREFIX = "thumbnails/"
 UPLOADS_PREFIX = "uploads/"
 
-# Issue#123: アンシャープマスクのパラメータ（Pillow デフォルト値を初期値に採用）
+# Spec#123: アンシャープマスクのパラメータ（Pillow デフォルト値を初期値に採用）
 # 実物確認の結果でチューニングする想定のため、この定数値を変えて再デプロイで対応する
 UNSHARP_MASK_RADIUS = 2       # 強調するエッジの太さ（px）
 UNSHARP_MASK_PERCENT = 150    # 強調の強度（%）
 UNSHARP_MASK_THRESHOLD = 3    # この値以下のコントラスト差は無視（ノイズ抑制）
 
-# Issue#100: タグ定数（バックエンド S3Service / フロントエンド apiClient.ts と値を揃える）
+# Spec#100: タグ定数（バックエンド S3Service / フロントエンド apiClient.ts と値を揃える）
 STATUS_TAG_KEY = "status"
 STATUS_TAG_VALUE_PENDING = "pending"
 STATUS_TAG_VALUE_REGISTERED = "registered"
 
-# Issue#124: 写真画像の Cache-Control を immutable 化（バックエンド S3Service /
+# Spec#124: 写真画像の Cache-Control を immutable 化（バックエンド S3Service /
 # フロントエンド apiClient.ts と値を揃える。変更時は 3 箇所同時に変える）
 S3_CACHE_CONTROL_VALUE = "public, max-age=31536000, immutable"
 
-# Issue#125: LQIP（低品質プレースホルダー）の生成パラメータ
+# Spec#125: LQIP（低品質プレースホルダー）の生成パラメータ
 LQIP_SIZE = 20
 LQIP_QUALITY = 30
 
-# Issue#125: バックエンド内部 API へのコールバック設定
+# Spec#125: バックエンド内部 API へのコールバック設定
 # 環境変数 BACKEND_URL が未設定の場合（ローカルテスト時等）はコールバックを諦める
 LQIP_BACKEND_URL_ENV = "BACKEND_URL"
 LQIP_API_KEY_ENV = "MODERATION_API_KEY"
@@ -132,7 +132,7 @@ def should_process(s3_key: str) -> bool:
 def calculate_user_specified_crop_box(
     width: int, height: int, cx: float, cy: float, zoom: float
 ) -> tuple[float, float, float, float]:
-    """Issue#131: ユーザー指定範囲のクロップ box (left, top, right, bottom) を計算する。
+    """Spec#131: ユーザー指定範囲のクロップ box (left, top, right, bottom) を計算する。
 
     cx, cy: 0.0〜1.0 の正規化座標（画像内の中心位置）
     zoom:   1.0〜3.0 のズーム倍率
@@ -155,13 +155,13 @@ def calculate_user_specified_crop_box(
     return (left, top, left + side, top + side)
 
 
-# Issue#131: ユーザー指定範囲の crop 値域
+# Spec#131: ユーザー指定範囲の crop 値域
 CROP_CENTER_MIN = 0.0
 CROP_CENTER_MAX = 1.0
 CROP_ZOOM_MIN = 1.0
 CROP_ZOOM_MAX = 3.0
 
-# Issue#131: S3 オブジェクトメタデータのキー（"x-amz-meta-" は除いた小文字キー）
+# Spec#131: S3 オブジェクトメタデータのキー（"x-amz-meta-" は除いた小文字キー）
 # バックエンド S3Service.java とフロントエンド apiClient.ts と値を揃える
 # （変更時は 3 箇所同時に変えること）
 S3_METADATA_KEY_CROP_CENTER_X = "crop-center-x"
@@ -170,7 +170,7 @@ S3_METADATA_KEY_CROP_ZOOM = "crop-zoom"
 
 
 def parse_crop_metadata(metadata: dict) -> tuple[float, float, float] | None:
-    """Issue#131: S3 Metadata から (cx, cy, zoom) を取り出す。
+    """Spec#131: S3 Metadata から (cx, cy, zoom) を取り出す。
 
     キーが揃っていて、float としてパースでき、値域内の場合のみ tuple を返す。
     そうでない場合は None を返し、呼び出し側で中央クロップにフォールバックする。
@@ -210,11 +210,11 @@ def center_crop_and_resize(
 ) -> Image.Image:
     """画像を正方形クロップし、800x800にリサイズしてアンシャープマスクをかける。
 
-    Issue#123: Retina ディスプレイで CSS 200〜400 px の枠でも輪郭がくっきり
+    Spec#123: Retina ディスプレイで CSS 200〜400 px の枠でも輪郭がくっきり
     見えるよう、解像度を 400→800 に倍化。リサイズ後はアンシャープマスクで
     エッジ強調する（threshold で平坦部のノイズには手を入れない）。
 
-    Issue#131: crop 引数（cx, cy, zoom）が渡された場合は、ユーザー指定範囲で
+    Spec#131: crop 引数（cx, cy, zoom）が渡された場合は、ユーザー指定範囲で
     クロップする。None の場合は従来通り中央クロップにフォールバック。
 
     Args:
@@ -251,7 +251,7 @@ def center_crop_and_resize(
 
 
 def get_status_tag_value(bucket: str, key: str) -> str | None:
-    """Issue#100: 指定 S3 オブジェクトの status タグ値を返す。
+    """Spec#100: 指定 S3 オブジェクトの status タグ値を返す。
 
     タグが存在しない場合は None を返す。
     """
@@ -267,7 +267,7 @@ def get_status_tag_value(bucket: str, key: str) -> str | None:
 
 
 def set_status_tag(bucket: str, key: str, value: str) -> None:
-    """Issue#100: 指定 S3 オブジェクトの status タグを設定する。"""
+    """Spec#100: 指定 S3 オブジェクトの status タグを設定する。"""
     s3_client.put_object_tagging(
         Bucket=bucket,
         Key=key,
@@ -276,7 +276,7 @@ def set_status_tag(bucket: str, key: str, value: str) -> None:
 
 
 def generate_lqip(image: Image.Image) -> bytes:
-    """Issue#125: 元画像から LQIP（低品質プレースホルダー）の WebP バイト列を生成する。
+    """Spec#125: 元画像から LQIP（低品質プレースホルダー）の WebP バイト列を生成する。
 
     20x20 px に縮小し、quality=30 で WebP エンコードする。実測で 200〜600 byte 程度。
     入力 image オブジェクトは破壊しない（copy してから加工する）。
@@ -291,7 +291,7 @@ def generate_lqip(image: Image.Image) -> bytes:
 
 
 def post_lqip_to_backend(s3_object_key: str, lqip_data_url: str) -> bool:
-    """Issue#125: バックエンド内部 API に LQIP コールバックを POST する。
+    """Spec#125: バックエンド内部 API に LQIP コールバックを POST する。
 
     指数バックオフで最大 3 回リトライする（LQIP_CALLBACK_RETRY_DELAYS 参照）。
     すべて失敗した場合は False を返す（例外は伝播しない）。
@@ -342,7 +342,7 @@ def post_lqip_to_backend(s3_object_key: str, lqip_data_url: str) -> bool:
 
 
 def process_lqip_callback(image: Image.Image, s3_object_key: str) -> None:
-    """Issue#125: LQIP 生成 + バックエンドコールバックを 1 関数にまとめる。
+    """Spec#125: LQIP 生成 + バックエンドコールバックを 1 関数にまとめる。
 
     例外は内部で吸収する（ログ出力のみ）。サムネ生成の主流から呼んでも
     Lambda 全体の成功・失敗には影響しない。
@@ -360,7 +360,7 @@ def lambda_handler(event, context):
     """Lambda関数ハンドラー。
 
     S3 PutObjectイベントを受け取り、サムネイルを生成する。
-    Issue#100: 元画像の status タグをサムネイルにコピーし、書き込み後に
+    Spec#100: 元画像の status タグをサムネイルにコピーし、書き込み後に
     元画像のタグが変わっていれば追従更新する。
     """
     for record in extract_s3_records(event):
@@ -377,7 +377,7 @@ def lambda_handler(event, context):
             response = s3_client.get_object(Bucket=bucket, Key=key)
             image_data = response["Body"].read()
 
-            # Issue#131: ユーザー指定範囲のクロップを S3 Metadata から取得。
+            # Spec#131: ユーザー指定範囲のクロップを S3 Metadata から取得。
             # 無い・不正な値の場合は中央クロップにフォールバックする。
             metadata = response.get("Metadata", {})
             crop = parse_crop_metadata(metadata)
@@ -399,7 +399,7 @@ def lambda_handler(event, context):
             image.save(output, format="WEBP", quality=THUMBNAIL_QUALITY)
             output.seek(0)
 
-            # Issue#100: サムネイル書き込み直前に元画像のタグを取得
+            # Spec#100: サムネイル書き込み直前に元画像のタグを取得
             # （書き込み直前に取得することで race window を最小化）
             source_status_before = get_status_tag_value(bucket, key)
 
@@ -420,12 +420,12 @@ def lambda_handler(event, context):
             logger.info("Thumbnail generated: %s/%s (tag=%s)",
                         bucket, thumbnail_key, source_status_before)
 
-            # Issue#125: LQIP 生成 + バックエンド内部 API へのコールバック。
+            # Spec#125: LQIP 生成 + バックエンド内部 API へのコールバック。
             # サムネ書き込み成功後に行い、コールバック失敗は致命的にしない
             # （LQIP 無しでもフロントは従来挙動にフォールバックするため）。
             process_lqip_callback(image, key)
 
-            # Issue#100: 二重チェック - 書き込み中にメタデータ登録が完了して
+            # Spec#100: 二重チェック - 書き込み中にメタデータ登録が完了して
             # 元画像のタグが registered に変わっていた場合、サムネイルのタグも追従
             source_status_after = get_status_tag_value(bucket, key)
             if (source_status_after is not None

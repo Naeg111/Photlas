@@ -16,7 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * HealthController のテストクラス
  * TDD Red-Green-Refactor サイクルでの開発
  *
- * Issue#1 要件:
+ * Spec#1 要件:
  * - GET /api/v1/health エンドポイント
  * - 200 OK ステータス
  * - {"status":"UP"} レスポンス

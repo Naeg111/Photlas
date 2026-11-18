@@ -68,7 +68,7 @@ public class PasswordService {
 
         User user = userOptional.get();
 
-        // Issue#92: 退会済みユーザーにはパスワードリセットを許可（アカウント復旧のため）
+        // Spec#92: 退会済みユーザーにはパスワードリセットを許可（アカウント復旧のため）
         // 停止中かつアクティブなユーザーにはリセットメールを送信しない（レスポンスは正常時と同一）
         if (user.getDeletedAt() == null && Integer.valueOf(CodeConstants.ROLE_SUSPENDED).equals(user.getRole())) {
             return;
@@ -124,7 +124,7 @@ public class PasswordService {
     }
 
     /**
-     * Issue#81 Phase 4e: OAuth のみユーザー向けの初回パスワード設定。
+     * Spec#81 Phase 4e: OAuth のみユーザー向けの初回パスワード設定。
      *
      * <p>password_hash が null のユーザーが任意でパスワードを追加するときに使う。
      * 成功時は {@code password_recommendation_dismissed_at} を NULL に明示リセット
@@ -165,7 +165,7 @@ public class PasswordService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
-        // Issue#81 Phase 4e: OAuth のみユーザー (password_hash == null) は updatePassword 不可。
+        // Spec#81 Phase 4e: OAuth のみユーザー (password_hash == null) は updatePassword 不可。
         // setInitialPassword を使うよう案内する専用エラー。
         if (user.getPasswordHash() == null) {
             throw new UnauthorizedException("パスワード未設定のアカウントです。初回パスワード設定を使用してください。");
@@ -183,7 +183,7 @@ public class PasswordService {
     }
 
     /**
-     * Issue#113 グループ C: パスワード変更完了の通知メールを送信。
+     * Spec#113 グループ C: パスワード変更完了の通知メールを送信。
      * 失敗時は WARN ログのみで業務操作は成功扱い（ユーザーは新パスワードでログインできる状態）。
      */
     private void sendPasswordChangedNotification(String email, User user) {
@@ -199,7 +199,7 @@ public class PasswordService {
     }
 
     /**
-     * Issue#113 グループ A: パスワードリセットメールを送信。
+     * Spec#113 グループ A: パスワードリセットメールを送信。
      * 失敗時は例外を呼び出し元へ伝播し HTTP 500 にマップされる。
      */
     private void sendPasswordResetEmail(User user, String token) {

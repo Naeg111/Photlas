@@ -16,7 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#54: QuarantineServiceのユニットテスト
+ * Spec#54: QuarantineServiceのユニットテスト
  */
 @ExtendWith(MockitoExtension.class)
 public class QuarantineServiceTest {
@@ -42,7 +42,7 @@ public class QuarantineServiceTest {
     // ===== quarantinePhoto テスト =====
 
     @Test
-    @DisplayName("Issue#54 - 隔離時に元画像がquarantined/プレフィックスに移動される")
+    @DisplayName("Spec#54 - 隔離時に元画像がquarantined/プレフィックスに移動される")
     void testQuarantinePhoto_MovesOriginalImage() {
         when(photoRepository.save(testPhoto)).thenReturn(testPhoto);
 
@@ -54,7 +54,7 @@ public class QuarantineServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 隔離時にサムネイルがquarantined/プレフィックスに移動される")
+    @DisplayName("Spec#54 - 隔離時にサムネイルがquarantined/プレフィックスに移動される")
     void testQuarantinePhoto_MovesThumbnail() {
         when(photoRepository.save(testPhoto)).thenReturn(testPhoto);
 
@@ -66,7 +66,7 @@ public class QuarantineServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 隔離時にDBのs3_object_keyがquarantined/プレフィックス付きに更新される")
+    @DisplayName("Spec#54 - 隔離時にDBのs3_object_keyがquarantined/プレフィックス付きに更新される")
     void testQuarantinePhoto_UpdatesS3ObjectKey() {
         when(photoRepository.save(testPhoto)).thenReturn(testPhoto);
 
@@ -79,7 +79,7 @@ public class QuarantineServiceTest {
     // ===== restorePhoto テスト =====
 
     @Test
-    @DisplayName("Issue#54 - 復元時に元画像がquarantined/プレフィックスから元の場所に戻される")
+    @DisplayName("Spec#54 - 復元時に元画像がquarantined/プレフィックスから元の場所に戻される")
     void testRestorePhoto_MovesOriginalImageBack() {
         testPhoto.setS3ObjectKey("quarantined/uploads/1/abc.jpg");
         when(photoRepository.save(testPhoto)).thenReturn(testPhoto);
@@ -92,7 +92,7 @@ public class QuarantineServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 復元時にサムネイルが元の場所に戻される")
+    @DisplayName("Spec#54 - 復元時にサムネイルが元の場所に戻される")
     void testRestorePhoto_MovesThumbnailBack() {
         testPhoto.setS3ObjectKey("quarantined/uploads/1/abc.jpg");
         when(photoRepository.save(testPhoto)).thenReturn(testPhoto);
@@ -105,7 +105,7 @@ public class QuarantineServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 復元時にDBのs3_object_keyからquarantined/プレフィックスが除去される")
+    @DisplayName("Spec#54 - 復元時にDBのs3_object_keyからquarantined/プレフィックスが除去される")
     void testRestorePhoto_UpdatesS3ObjectKey() {
         testPhoto.setS3ObjectKey("quarantined/uploads/1/abc.jpg");
         when(photoRepository.save(testPhoto)).thenReturn(testPhoto);
@@ -119,42 +119,42 @@ public class QuarantineServiceTest {
     // ===== ヘルパーメソッドテスト =====
 
     @Test
-    @DisplayName("Issue#54 - toQuarantinedKeyでプレフィックスが付与される")
+    @DisplayName("Spec#54 - toQuarantinedKeyでプレフィックスが付与される")
     void testToQuarantinedKey() {
         assertThat(quarantineService.toQuarantinedKey("uploads/1/abc.jpg"))
                 .isEqualTo("quarantined/uploads/1/abc.jpg");
     }
 
     @Test
-    @DisplayName("Issue#54 - toQuarantinedKeyで既にプレフィックスがある場合は二重付与されない")
+    @DisplayName("Spec#54 - toQuarantinedKeyで既にプレフィックスがある場合は二重付与されない")
     void testToQuarantinedKey_AlreadyQuarantined() {
         assertThat(quarantineService.toQuarantinedKey("quarantined/uploads/1/abc.jpg"))
                 .isEqualTo("quarantined/uploads/1/abc.jpg");
     }
 
     @Test
-    @DisplayName("Issue#54 - fromQuarantinedKeyでプレフィックスが除去される")
+    @DisplayName("Spec#54 - fromQuarantinedKeyでプレフィックスが除去される")
     void testFromQuarantinedKey() {
         assertThat(quarantineService.fromQuarantinedKey("quarantined/uploads/1/abc.jpg"))
                 .isEqualTo("uploads/1/abc.jpg");
     }
 
     @Test
-    @DisplayName("Issue#54 - fromQuarantinedKeyでプレフィックスがない場合はそのまま返す")
+    @DisplayName("Spec#54 - fromQuarantinedKeyでプレフィックスがない場合はそのまま返す")
     void testFromQuarantinedKey_NotQuarantined() {
         assertThat(quarantineService.fromQuarantinedKey("uploads/1/abc.jpg"))
                 .isEqualTo("uploads/1/abc.jpg");
     }
 
     @Test
-    @DisplayName("Issue#54 - toThumbnailKeyで正しいサムネイルキーが導出される")
+    @DisplayName("Spec#54 - toThumbnailKeyで正しいサムネイルキーが導出される")
     void testToThumbnailKey() {
         assertThat(quarantineService.toThumbnailKey("uploads/1/abc.jpg"))
                 .isEqualTo("thumbnails/uploads/1/abc.webp");
     }
 
     @Test
-    @DisplayName("Issue#54 - toThumbnailKeyでquarantined/プレフィックス付きキーも正しく変換される")
+    @DisplayName("Spec#54 - toThumbnailKeyでquarantined/プレフィックス付きキーも正しく変換される")
     void testToThumbnailKey_Quarantined() {
         assertThat(quarantineService.toThumbnailKey("quarantined/uploads/1/abc.jpg"))
                 .isEqualTo("thumbnails/quarantined/uploads/1/abc.webp");

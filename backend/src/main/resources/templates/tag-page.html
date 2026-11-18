@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  Issue#135 Phase 13 + Issue#136 Phase 7: キーワードランディングページ (SSR)。
+  Spec#135 Phase 13 + Spec#136 Phase 7: キーワードランディングページ (SSR)。
   i18n: messages*.properties + TagPageQueryLocaleResolver による request-scoped Locale。
 -->
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${lang}">
@@ -8,7 +8,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Issue#150: 写真が少ない（0 件）ページは検索結果に載せない。リンクは辿らせる(follow)。
+    <!-- Spec#150: 写真が少ない（0 件）ページは検索結果に載せない。リンクは辿らせる(follow)。
          写真が増えれば indexable=true になり自動的にインデックス対象へ復帰する。 -->
     <meta th:if="${!indexable}" name="robots" content="noindex,follow" />
 
@@ -24,7 +24,7 @@
           th:hreflang="${entry.key}"
           th:href="${entry.value}" />
 
-    <!-- OGP (Issue#136 §9: og:url/og:image 補完。og:image=先頭写真 or og-image.png) -->
+    <!-- OGP (Spec#136 §9: og:url/og:image 補完。og:image=先頭写真 or og-image.png) -->
     <meta property="og:title" th:content="${title}" />
     <meta property="og:description" th:content="${description}" />
     <meta property="og:type" content="website" />
@@ -60,7 +60,7 @@
     </header>
 
     <main>
-        <!-- 写真 0 件のキーワードページ: 案内文 (Issue#135 3.6) -->
+        <!-- 写真 0 件のキーワードページ: 案内文 (Spec#135 3.6) -->
         <div th:if="${photoCount == 0}" class="empty">
             <p th:text="#{tag.page.empty.message}">No photos for this keyword yet.</p>
             <p><a href="/" th:text="#{tag.page.empty.back}">Back to home</a></p>

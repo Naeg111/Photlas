@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#136 Phase 3: {@code PhotoTagRepository.countActivePublishedByTagId} のテスト。
+ * Spec#136 Phase 3: {@code PhotoTagRepository.countActivePublishedByTagId} のテスト。
  *
  * <p>TagPageController の photoCount 表示と {@code findActivePublishedByTagId} の
  * 結果件数が完全一致することを保証するための COUNT クエリ。</p>
@@ -73,7 +73,7 @@ class PhotoTagCountByTagTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - 通常: PUBLISHED 写真のみカウントされる")
+    @DisplayName("Spec#136 - 通常: PUBLISHED 写真のみカウントされる")
     void countsPublishedOnly() {
         link(createPhoto(activeUser, CodeConstants.MODERATION_STATUS_PUBLISHED), tagCherry);
         link(createPhoto(activeUser, CodeConstants.MODERATION_STATUS_PUBLISHED), tagCherry);
@@ -88,7 +88,7 @@ class PhotoTagCountByTagTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - 退会済みユーザーの写真は除外")
+    @DisplayName("Spec#136 - 退会済みユーザーの写真は除外")
     void excludesDeletedUserPhotos() {
         User deletedUser = new User();
         deletedUser.setUsername("phtcntdel");
@@ -108,7 +108,7 @@ class PhotoTagCountByTagTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - 別タグに紐づく写真は含まれない")
+    @DisplayName("Spec#136 - 別タグに紐づく写真は含まれない")
     void excludesPhotosLinkedToDifferentTag() {
         Tag tagSushi = new Tag();
         tagSushi.setRekognitionLabel("Sushi");
@@ -128,7 +128,7 @@ class PhotoTagCountByTagTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - 該当 0 件で 0L")
+    @DisplayName("Spec#136 - 該当 0 件で 0L")
     void returnsZeroForNoMatches() {
         long count = photoTagRepository.countActivePublishedByTagId(
                 tagCherry.getId(), CodeConstants.MODERATION_STATUS_PUBLISHED);

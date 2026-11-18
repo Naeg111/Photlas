@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Issue#102: SNSリンク機能の修正
+ * Spec#102: SNSリンク機能の修正
  * - YouTube/TikTok 一時停止
  * - Threads(605) 追加
  * - UserProfileResponse.SnsLink に platform 追加
@@ -63,7 +63,7 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - Threads(605) のURL (threads.com) が保存できる")
+    @DisplayName("Spec#102 - Threads(605) のURL (threads.com) が保存できる")
     void testUpdateSnsLinks_ThreadsCom_Saved() {
         var request = new UpdateSnsLinksRequest.SnsLinkRequest(
                 CodeConstants.PLATFORM_THREADS,
@@ -78,7 +78,7 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - Threads の旧ドメイン (threads.net) も保存できる")
+    @DisplayName("Spec#102 - Threads の旧ドメイン (threads.net) も保存できる")
     void testUpdateSnsLinks_ThreadsNet_Saved() {
         var request = new UpdateSnsLinksRequest.SnsLinkRequest(
                 CodeConstants.PLATFORM_THREADS,
@@ -92,7 +92,7 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - YouTube(603) のリンク登録が拒否される（ALLOWED_PLATFORMS から除外）")
+    @DisplayName("Spec#102 - YouTube(603) のリンク登録が拒否される（ALLOWED_PLATFORMS から除外）")
     void testUpdateSnsLinks_YouTube_Rejected() {
         var request = new UpdateSnsLinksRequest.SnsLinkRequest(
                 CodeConstants.PLATFORM_YOUTUBE,
@@ -105,7 +105,7 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - TikTok(604) のリンク登録が拒否される（ALLOWED_PLATFORMS から除外）")
+    @DisplayName("Spec#102 - TikTok(604) のリンク登録が拒否される（ALLOWED_PLATFORMS から除外）")
     void testUpdateSnsLinks_TikTok_Rejected() {
         var request = new UpdateSnsLinksRequest.SnsLinkRequest(
                 CodeConstants.PLATFORM_TIKTOK,
@@ -118,7 +118,7 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - Instagram の入力欄に Threads の URL を入れた場合は拒否される")
+    @DisplayName("Spec#102 - Instagram の入力欄に Threads の URL を入れた場合は拒否される")
     void testUpdateSnsLinks_InstagramWithThreadsUrl_Rejected() {
         var request = new UpdateSnsLinksRequest.SnsLinkRequest(
                 CodeConstants.PLATFORM_INSTAGRAM,
@@ -131,7 +131,7 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - Threads の入力欄に X の URL を入れた場合は拒否される")
+    @DisplayName("Spec#102 - Threads の入力欄に X の URL を入れた場合は拒否される")
     void testUpdateSnsLinks_ThreadsWithXUrl_Rejected() {
         var request = new UpdateSnsLinksRequest.SnsLinkRequest(
                 CodeConstants.PLATFORM_THREADS,
@@ -144,7 +144,7 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - X / Instagram / Threads の3種を同時登録できる")
+    @DisplayName("Spec#102 - X / Instagram / Threads の3種を同時登録できる")
     void testUpdateSnsLinks_ThreeAllowedPlatforms_Saved() {
         List<UpdateSnsLinksRequest.SnsLinkRequest> requests = List.of(
                 new UpdateSnsLinksRequest.SnsLinkRequest(
@@ -160,7 +160,7 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - getMyProfile のレスポンス SnsLink に platform フィールドが含まれる")
+    @DisplayName("Spec#102 - getMyProfile のレスポンス SnsLink に platform フィールドが含まれる")
     void testGetMyProfile_SnsLinkIncludesPlatform() {
         UserSnsLink link = new UserSnsLink(
                 testUser.getId(),
@@ -177,18 +177,18 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - PLATFORM_THREADS の値が 605 で 600番台に収まる")
+    @DisplayName("Spec#102 - PLATFORM_THREADS の値が 605 で 600番台に収まる")
     void testPlatformThreadsConstant() {
         assertThat(CodeConstants.PLATFORM_THREADS).isEqualTo(605);
         assertThat(CodeConstants.PLATFORM_THREADS).isBetween(600, 699);
     }
 
-    // ===== Issue#100: タグベース孤立ファイル対応 =====
+    // ===== Spec#100: タグベース孤立ファイル対応 =====
 
     @Test
-    @DisplayName("Issue#100 - updateProfileImage: ユーザー保存前にタグを status=registered に更新する")
+    @DisplayName("Spec#100 - updateProfileImage: ユーザー保存前にタグを status=registered に更新する")
     void testUpdateProfileImage_UpdatesTagToRegisteredBeforeUserSave() {
-        String objectKey = "profile-images/" + testUser.getId() + "/issue100-test.jpg";
+        String objectKey = "profile-images/" + testUser.getId() + "/spec100-test.jpg";
 
         profileService.updateProfileImage(testUser.getEmail(), objectKey);
 
@@ -201,7 +201,7 @@ class ProfileServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#100 - updateProfileImage: タグ更新が失敗した場合はユーザー保存を行わずエラーを返す")
+    @DisplayName("Spec#100 - updateProfileImage: タグ更新が失敗した場合はユーザー保存を行わずエラーを返す")
     void testUpdateProfileImage_TagUpdateFails_DoesNotSaveUserAndThrows() {
         org.mockito.Mockito.doThrow(new RuntimeException("S3 tag update failed"))
                 .when(s3Service).updateObjectTag(
@@ -210,7 +210,7 @@ class ProfileServiceTest {
                         org.mockito.ArgumentMatchers.eq(S3Service.STATUS_TAG_VALUE_REGISTERED)
                 );
 
-        String objectKey = "profile-images/" + testUser.getId() + "/issue100-fail.jpg";
+        String objectKey = "profile-images/" + testUser.getId() + "/spec100-fail.jpg";
 
         assertThatThrownBy(() -> profileService.updateProfileImage(testUser.getEmail(), objectKey))
                 .isInstanceOf(RuntimeException.class);

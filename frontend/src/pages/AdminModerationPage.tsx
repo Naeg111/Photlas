@@ -15,7 +15,7 @@ import { REPORT_REASON_I18N_KEYS, ROLE_ADMIN } from '../utils/codeConstants'
 import { PhotoLightbox } from '../components/PhotoLightbox'
 
 /**
- * Issue#54: 管理者モデレーションページ
+ * Spec#54: 管理者モデレーションページ
  * 隔離キューの写真を承認・拒否する管理画面
  */
 
@@ -202,7 +202,7 @@ export default function AdminModerationPage() {
                 className="bg-white rounded-lg shadow overflow-hidden"
                 data-testid={`moderation-item-${item.photo_id}`}
               >
-                {/* Issue#89: 画像（サムネイル表示＋トグルボタン＋ライトボックス） */}
+                {/* Spec#89: 画像（サムネイル表示＋トグルボタン＋ライトボックス） */}
                 <div
                   role="button" tabIndex={0}
                   className={`aspect-square relative overflow-hidden ${revealedIds.has(item.photo_id) ? 'cursor-pointer' : 'cursor-default'}`}
@@ -255,7 +255,7 @@ export default function AdminModerationPage() {
                     {t('admin.moderation.poster', { username: item.username, userId: item.user_id })}
                   </p>
 
-                  {/* Issue#54: 通報情報 */}
+                  {/* Spec#54: 通報情報 */}
                   {item.report_count > 0 && (
                     <div className="text-sm">
                       <p className="font-medium text-orange-600">{t('admin.moderation.reportCount', { total: item.report_count })}</p>
@@ -302,7 +302,7 @@ export default function AdminModerationPage() {
         )}
       </main>
 
-      {/* Issue#89: ライトボックス */}
+      {/* Spec#89: ライトボックス */}
       <PhotoLightbox
         open={isLightboxOpen}
         onOpenChange={(open) => {

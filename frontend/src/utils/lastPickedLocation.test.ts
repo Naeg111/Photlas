@@ -6,7 +6,7 @@ import {
 } from './lastPickedLocation'
 
 /**
- * Issue#158: 投稿ダイアログで「ユーザーが能動的に選んだ前回位置」をセッション内メモリに保持する。
+ * Spec#158: 投稿ダイアログで「ユーザーが能動的に選んだ前回位置」をセッション内メモリに保持する。
  * localStorage は使わず（＝リロードで消える）、モジュールレベル変数で保持する純粋なストア。
  */
 describe('lastPickedLocation', () => {

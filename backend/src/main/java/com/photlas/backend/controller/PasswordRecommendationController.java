@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Issue#81 Phase 4f - パスワード推奨バナー API（Round 12 / Q8）。
+ * Spec#81 Phase 4f - パスワード推奨バナー API（Round 12 / Q8）。
  *
  * <ul>
  *   <li>{@code GET /api/v1/users/me/password-recommendation}
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  *       → バナーを 7 日間非表示化</li>
  * </ul>
  *
- * <p>認証必須。レート制限は RateLimitFilter 経由（Issue#95 / Phase 4h で適用）。
+ * <p>認証必須。レート制限は RateLimitFilter 経由（Spec#95 / Phase 4h で適用）。
  */
 @RestController
 @RequestMapping("/api/v1/users/me/password-recommendation")

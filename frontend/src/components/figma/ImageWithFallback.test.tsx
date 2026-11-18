@@ -89,10 +89,10 @@ describe('ImageWithFallback', () => {
   })
 
   // ============================================================
-  // Issue#75: サムネイルフォールバック
+  // Spec#75: サムネイルフォールバック
   // ============================================================
 
-  it('Issue#75 - サムネイルURL読み込み失敗時にfallbackSrcにフォールバックする', () => {
+  it('Spec#75 - サムネイルURL読み込み失敗時にfallbackSrcにフォールバックする', () => {
     render(
       <ImageWithFallback
         src="https://cdn.example.com/thumbnails/uploads/1/test.webp"
@@ -112,7 +112,7 @@ describe('ImageWithFallback', () => {
     expect(fallbackImg).toHaveAttribute('src', 'https://cdn.example.com/uploads/1/test.jpg')
   })
 
-  it('Issue#75 - fallbackSrcも失敗した場合はエラープレースホルダーが表示される', () => {
+  it('Spec#75 - fallbackSrcも失敗した場合はエラープレースホルダーが表示される', () => {
     const { container } = render(
       <ImageWithFallback
         src="https://cdn.example.com/thumbnails/uploads/1/test.webp"
@@ -133,7 +133,7 @@ describe('ImageWithFallback', () => {
     expect(fallbackDiv).toBeInTheDocument()
   })
 
-  it('Issue#75 - fallbackSrcが未指定の場合は従来通りエラープレースホルダーが表示される', () => {
+  it('Spec#75 - fallbackSrcが未指定の場合は従来通りエラープレースホルダーが表示される', () => {
     const { container } = render(
       <ImageWithFallback {...defaultProps} />,
     )

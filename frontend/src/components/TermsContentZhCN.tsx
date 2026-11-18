@@ -1,8 +1,8 @@
 /**
  * TermsContentZhCN コンポーネント
- * Issue#101: 服务条款正文 (简体中文)
+ * Spec#101: 服务条款正文 (简体中文)
  *
- * 注: Issue#101 Phase: 機械翻訳ベースで作成。法的妥当性については、
+ * 注: Spec#101 Phase: 機械翻訳ベースで作成。法的妥当性については、
  * 海外ユーザー本格対応時に専門家レビューを実施予定。
  */
 export function TermsContentZhCN() {
@@ -50,7 +50,7 @@ export function TermsContentZhCN() {
         <h2 className="mb-3">第3条 (用户注册)</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
           <li>
-            {/* Issue#105: 13岁以上的使用限制 (与隐私政策第12条整合) */}
+            {/* Spec#105: 13岁以上的使用限制 (与隐私政策第12条整合) */}
             本服务面向<span className="font-semibold">年满 13周岁</span>的用户提供。未满 13周岁的人不能进行用户注册及本服务的使用。
           </li>
           <li>
@@ -108,7 +108,7 @@ export function TermsContentZhCN() {
           <li>
             其他用户判断投稿数据中包含的拍摄地点位置信息不准确时,可指出认为正确的地点。投稿者应确认指正,作出接受或拒绝的判断。投稿者接受指正时,拍摄地点的位置信息将被更新。
           </li>
-          {/* Issue#119: 运营方对 AI 分类信息的修改 */}
+          {/* Spec#119: 运营方对 AI 分类信息的修改 */}
           <li>
             运营方可能会为提高搜索准确性而修改分配给帖子的类别和天气等分类信息。
           </li>
@@ -148,7 +148,7 @@ export function TermsContentZhCN() {
           <li>可能妨碍本服务运营的行为</li>
           <li>其他运营方判断不适当的行为</li>
         </ol>
-        {/* Issue#105: 投稿者责任的强化 (拍摄地国法律遵守) */}
+        {/* Spec#105: 投稿者责任的强化 (拍摄地国法律遵守) */}
         <p className="text-sm text-gray-700 mt-3 font-semibold">投稿者的责任 (关于国际使用的附加事项)</p>
         <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 mt-1">
           <li>
@@ -321,7 +321,7 @@ export function TermsContentZhCN() {
           <li>
             就本服务发生纠纷时,以东京地方法院为第一审的专属合意管辖法院。
           </li>
-          {/* Issue#105: 国际使用的提示 */}
+          {/* Spec#105: 国际使用的提示 */}
           <li>
             本服务由设立于日本的运营方提供,但接受来自全球的访问。用户在使用本服务时,应自行负责确认是否可以根据<span className="font-semibold">本国的法律</span>使用本服务。
           </li>

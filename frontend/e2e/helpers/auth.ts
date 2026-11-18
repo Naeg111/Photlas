@@ -39,7 +39,7 @@ export async function initCookieConsent(page: Page): Promise<void> {
 /**
  * スプラッシュ画面の終了を待機
  *
- * Issue#156: スプラッシュはピン取得完了まで待つようになり、表示時間が
+ * Spec#156: スプラッシュはピン取得完了まで待つようになり、表示時間が
  * 最短 2 秒〜最長 10 秒（＋地図ロード遅延）の可変になった。固定待機だと
  * 取得が遅い環境で「スプラッシュ表示中にアサーションが走る」ため、
  * スプラッシュ要素の消滅をポーリングで待つ方式に変更する。
@@ -68,7 +68,7 @@ export const SIGN_UP_HEADING = 'アカウントを新規登録'
 
 /**
  * 新規登録ダイアログを開く
- * Issue#104 でメニューの「新規アカウント作成」はなくなり、ログインダイアログの「新規登録」から開く。
+ * Spec#104 でメニューの「新規アカウント作成」はなくなり、ログインダイアログの「新規登録」から開く。
  */
 export async function openSignUpDialog(page: Page): Promise<void> {
   await openLoginDialog(page)
@@ -97,7 +97,7 @@ export async function performLogin(
 }
 
 /**
- * 新規登録フォームの同意のチェックボックス（Issue#109: 利用規約・プライバシーポリシー・13 歳以上）
+ * 新規登録フォームの同意のチェックボックス（Spec#109: 利用規約・プライバシーポリシー・13 歳以上）
  */
 export const SIGN_UP_CONSENT_CHECKBOXES = {
   terms: '#terms',

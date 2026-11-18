@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Issue#93: GlobalExceptionHandler がすべてのエラーレスポンスに code を付けることを確かめる。
+ * Spec#93: GlobalExceptionHandler がすべてのエラーレスポンスに code を付けることを確かめる。
  * フロントエンドは code から表示言語の文言を出すため、code が無いと日本語の message しか出せない。
  */
 class GlobalExceptionHandlerTest {
@@ -27,7 +27,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 409 は例外が持つコードをそのまま返す（CONFLICT に丸めない）")
+    @DisplayName("Spec#93 - 409 は例外が持つコードをそのまま返す（CONFLICT に丸めない）")
     void conflict_returnsCodeOfException() {
         assertError(handler.handleConflictException(
                         new ConflictException(ErrorCodes.EMAIL_PENDING_DELETION, "退会処理中")),
@@ -38,7 +38,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 409 の例外はコード無しでは作れない（code: null のレスポンスを防ぐ）")
+    @DisplayName("Spec#93 - 409 の例外はコード無しでは作れない（code: null のレスポンスを防ぐ）")
     void conflict_requiresCode() {
         assertThatThrownBy(() -> new ConflictException(null, "x"))
                 .isInstanceOf(NullPointerException.class);
@@ -47,7 +47,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - コード付きの 400 の例外もコード無しでは作れない")
+    @DisplayName("Spec#93 - コード付きの 400 の例外もコード無しでは作れない")
     void codedBadRequestExceptions_requireCode() {
         assertThatThrownBy(() -> new InvalidRequestException(null, "x"))
                 .isInstanceOf(NullPointerException.class);
@@ -56,7 +56,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 見つからない系の 404 にそれぞれのコードが付く")
+    @DisplayName("Spec#93 - 見つからない系の 404 にそれぞれのコードが付く")
     void notFound_returnsSpecificCodes() {
         assertError(handler.handleFavoriteNotFoundException(new FavoriteNotFoundException("x")),
                 HttpStatus.NOT_FOUND, ErrorCodes.FAVORITE_NOT_FOUND);
@@ -69,7 +69,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 自分の通報・アクセス拒否にコードが付く")
+    @DisplayName("Spec#93 - 自分の通報・アクセス拒否にコードが付く")
     void selfReportAndAccessDenied_returnCodes() {
         assertError(handler.handleSelfReportException(new SelfReportException("x")),
                 HttpStatus.BAD_REQUEST, ErrorCodes.SELF_REPORT);
@@ -78,7 +78,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - コード付きの InvalidRequestException はそのコードと message を返す")
+    @DisplayName("Spec#93 - コード付きの InvalidRequestException はそのコードと message を返す")
     void invalidRequest_returnsCodeAndMessage() {
         ResponseEntity<ErrorResponse> response = handler.handleInvalidRequestException(
                 new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "トークンが無効または期限切れです"));
@@ -87,7 +87,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - コードの無い IllegalArgumentException は BAD_REQUEST で、内部の message を返さない")
+    @DisplayName("Spec#93 - コードの無い IllegalArgumentException は BAD_REQUEST で、内部の message を返さない")
     void illegalArgument_uncoded_hidesInternalMessage() {
         ResponseEntity<ErrorResponse> response = handler.handleIllegalArgumentException(
                 new IllegalArgumentException("不明な OAuthProvider コード: 99"));
@@ -98,14 +98,14 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - カテゴリが見つからないときは 400 と CATEGORY_NOT_FOUND")
+    @DisplayName("Spec#93 - カテゴリが見つからないときは 400 と CATEGORY_NOT_FOUND")
     void categoryNotFound_returnsCode() {
         assertError(handler.handleCategoryNotFoundException(new CategoryNotFoundException("x")),
                 HttpStatus.BAD_REQUEST, ErrorCodes.CATEGORY_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("Issue#93 - コード付きの InvalidStateException は 400 とそのコード")
+    @DisplayName("Spec#93 - コード付きの InvalidStateException は 400 とそのコード")
     void invalidState_returnsCode() {
         assertError(handler.handleInvalidStateException(
                         new InvalidStateException(ErrorCodes.SUGGESTION_ALREADY_RESOLVED, "解決済み")),
@@ -113,14 +113,14 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 想定外のエラーは INTERNAL_ERROR")
+    @DisplayName("Spec#93 - 想定外のエラーは INTERNAL_ERROR")
     void generic_returnsInternalError() {
         assertError(handler.handleGenericException(new RuntimeException("boom")),
                 HttpStatus.INTERNAL_SERVER_ERROR, ErrorCodes.INTERNAL_ERROR);
     }
 
     @Test
-    @DisplayName("Issue#93 - 既存のコード（認証・停止・禁止・未認証・エクスポート）は変わらない")
+    @DisplayName("Spec#93 - 既存のコード（認証・停止・禁止・未認証・エクスポート）は変わらない")
     void existingCodes_unchanged() {
         assertError(handler.handleUnauthorizedException(new UnauthorizedException("x")),
                 HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS");

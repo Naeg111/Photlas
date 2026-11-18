@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Date;
 
 /**
- * Issue#119: AI 予測結果の一時保管リポジトリ。
+ * Spec#119: AI 予測結果の一時保管リポジトリ。
  */
 @Repository
 public interface AiPredictionCacheRepository extends JpaRepository<AiPredictionCache, String> {

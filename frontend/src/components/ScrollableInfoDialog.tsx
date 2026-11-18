@@ -17,7 +17,7 @@ interface ScrollableInfoDialogProps {
 }
 
 /**
- * Issue#114: 情報系ダイアログの共通レイアウト
+ * Spec#114: 情報系ダイアログの共通レイアウト
  *
  * 固定ヘッダー + スクロール可能なコンテンツ領域を提供する。
  * AboutDialog / HowToUseDialog / ContactDialog で共有。

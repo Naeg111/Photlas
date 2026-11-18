@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#93: 画面に出るエラーがエラーコード付きで返ることを、実際のエンドポイントで確かめる。
+ * Spec#93: 画面に出るエラーがエラーコード付きで返ることを、実際のエンドポイントで確かめる。
  * フロントエンドは code から表示言語の文言を出す（Spec#93 2.3 方式 B）。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
@@ -88,7 +88,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 入力チェックエラーは VALIDATION_ERROR（フィールド別の errors も残る）")
+    @DisplayName("Spec#93 - 入力チェックエラーは VALIDATION_ERROR（フィールド別の errors も残る）")
     void validationError() throws Exception {
         mockMvc.perform(post(AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -99,7 +99,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 壊れた JSON（Spring 標準の例外）も BAD_REQUEST と固定の文言で返す")
+    @DisplayName("Spec#93 - 壊れた JSON（Spring 標準の例外）も BAD_REQUEST と固定の文言で返す")
     void malformedJson_returnsBadRequestCode() throws Exception {
         mockMvc.perform(post(AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -110,7 +110,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 対応していないメソッド（405）も BAD_REQUEST を付け、Allow ヘッダーは残す")
+    @DisplayName("Spec#93 - 対応していないメソッド（405）も BAD_REQUEST を付け、Allow ヘッダーは残す")
     void methodNotAllowed_returnsBadRequestCodeWithAllowHeader() throws Exception {
         mockMvc.perform(get(AUTH + "/register"))
                 .andExpect(status().isMethodNotAllowed())
@@ -119,7 +119,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 必須パラメーターが無い（Spring 標準の例外）も BAD_REQUEST")
+    @DisplayName("Spec#93 - 必須パラメーターが無い（Spring 標準の例外）も BAD_REQUEST")
     void missingParameter_returnsBadRequestCode() throws Exception {
         mockMvc.perform(get(AUTH + "/verify-email"))
                 .andExpect(status().isBadRequest())
@@ -127,7 +127,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 登録済みのメールアドレスで新規登録すると EMAIL_ALREADY_IN_USE")
+    @DisplayName("Spec#93 - 登録済みのメールアドレスで新規登録すると EMAIL_ALREADY_IN_USE")
     void register_emailAlreadyInUse() throws Exception {
         saveUser(true, null);
 
@@ -139,7 +139,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 退会処理中のメールアドレスで新規登録すると EMAIL_PENDING_DELETION")
+    @DisplayName("Spec#93 - 退会処理中のメールアドレスで新規登録すると EMAIL_PENDING_DELETION")
     void register_emailPendingDeletion() throws Exception {
         saveUser(true, LocalDateTime.now().minusDays(1));
 
@@ -151,7 +151,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - メール認証のトークンが無効なら INVALID_TOKEN")
+    @DisplayName("Spec#93 - メール認証のトークンが無効なら INVALID_TOKEN")
     void verifyEmail_invalidToken() throws Exception {
         mockMvc.perform(get(AUTH + "/verify-email").param("token", "no-such-token"))
                 .andExpect(status().isBadRequest())
@@ -159,7 +159,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - パスワード再設定のトークンが無効なら INVALID_TOKEN")
+    @DisplayName("Spec#93 - パスワード再設定のトークンが無効なら INVALID_TOKEN")
     void resetPassword_invalidToken() throws Exception {
         ResetPasswordRequest request = new ResetPasswordRequest("no-such-token", PASSWORD, PASSWORD);
 
@@ -171,7 +171,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - メールアドレス変更確定のトークンが無効なら INVALID_TOKEN")
+    @DisplayName("Spec#93 - メールアドレス変更確定のトークンが無効なら INVALID_TOKEN")
     void confirmEmailChange_invalidToken() throws Exception {
         mockMvc.perform(get(AUTH + "/confirm-email-change").param("token", "no-such-token"))
                 .andExpect(status().isBadRequest())
@@ -179,7 +179,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - アカウント連携確認のトークンが無効なら INVALID_TOKEN")
+    @DisplayName("Spec#93 - アカウント連携確認のトークンが無効なら INVALID_TOKEN")
     void confirmLink_invalidToken() throws Exception {
         mockMvc.perform(post(AUTH + "/oauth2/confirm-link")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -189,7 +189,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 認証メール再送でメールアドレスが空なら EMAIL_REQUIRED")
+    @DisplayName("Spec#93 - 認証メール再送でメールアドレスが空なら EMAIL_REQUIRED")
     void resendVerification_emailRequired() throws Exception {
         mockMvc.perform(post(AUTH + "/resend-verification")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -199,7 +199,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - コードの無い 400（SNS リンクの未対応プラットフォーム）は BAD_REQUEST と固定の文言で、内部の message を返さない")
+    @DisplayName("Spec#93 - コードの無い 400（SNS リンクの未対応プラットフォーム）は BAD_REQUEST と固定の文言で、内部の message を返さない")
     void uncodedBadRequest_returnsGenericMessage() throws Exception {
         User user = saveUser(true, null);
         String body = "{\"snsLinks\":[{\"platform\":9999,\"url\":\"https://example.com/u\"}]}";
@@ -214,7 +214,7 @@ class ErrorCodeResponseTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 認証済みのメールアドレスに認証メールを再送すると EMAIL_ALREADY_VERIFIED")
+    @DisplayName("Spec#93 - 認証済みのメールアドレスに認証メールを再送すると EMAIL_ALREADY_VERIFIED")
     void resendVerification_alreadyVerified() throws Exception {
         saveUser(true, null);
 

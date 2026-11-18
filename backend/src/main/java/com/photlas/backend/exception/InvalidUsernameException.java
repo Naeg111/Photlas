@@ -2,7 +2,7 @@ package com.photlas.backend.exception;
 
 /**
  * 表示名バリデーション失敗時に投げる例外。
- * Issue#98: 表示名バリデーション強化。
+ * Spec#98: 表示名バリデーション強化。
  *
  * <p>エラーキー（例: {@code USERNAME_RESERVED}）をペイロードとして保持し、
  * {@code UsernameConstraintValidator} が {@code errors.USERNAME_*} 形式の

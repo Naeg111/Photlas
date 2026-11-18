@@ -1,13 +1,13 @@
 /**
  * 共通定数ファイル
- * Issue#27: パネル・ダイアログ群の移行 - Refactor段階
+ * Spec#27: パネル・ダイアログ群の移行 - Refactor段階
  *
  * アプリケーション全体で使用される定数を集約
  */
 
 /**
  * 写真ジャンル一覧
- * Issue#63: 被写体種別→ジャンルに名称変更、14種類に拡充
+ * Spec#63: 被写体種別→ジャンルに名称変更、14種類に拡充
  * FilterPanel, PhotoContributionDialog で使用
  */
 export const PHOTO_CATEGORIES = [

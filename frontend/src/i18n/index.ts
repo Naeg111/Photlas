@@ -25,7 +25,7 @@ export const MAPBOX_LANGUAGE_MAP: Record<SupportedLanguage, string> = {
 }
 
 /**
- * Issue#130: 5 言語分の翻訳 JSON (≈137KB) を全部同期 import すると initial bundle が肥大化するため、
+ * Spec#130: 5 言語分の翻訳 JSON (≈137KB) を全部同期 import すると initial bundle が肥大化するため、
  * Vite ネイティブの import.meta.glob で動的 import に切り替えた。
  * 起動時は検出言語 1 つだけロードし、言語切替時に追加ロードする。
  */
@@ -121,7 +121,7 @@ export async function applyAccountLanguage(language: string | null | undefined):
   // 先に保存しておけば、直後に画面を読み直しても（PWA の OAuth 等）この言語で起動する
   localStorage.setItem(LANGUAGE_STORAGE_KEY, language)
   try {
-    // Issue#130: 言語リソースは動的 import なので、changeLanguage 前にロードする
+    // Spec#130: 言語リソースは動的 import なので、changeLanguage 前にロードする
     await loadLanguageResource(language)
     await i18n.changeLanguage(language)
   } catch {

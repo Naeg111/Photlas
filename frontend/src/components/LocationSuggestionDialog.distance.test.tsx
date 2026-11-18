@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { LocationSuggestionDialog } from './LocationSuggestionDialog'
 
 /**
- * Issue#146: 撮影場所指摘の距離バリデーション
+ * Spec#146: 撮影場所指摘の距離バリデーション
  *
  * - 下限: 元の撮影場所から 30m 未満は「近すぎ」エラー（全写真共通）
  * - 上限: GPS 写真（locationFromExif=true）は 1km 超で「離れすぎ」エラー
@@ -50,7 +50,7 @@ const baseProps = {
 
 const submitButton = () => screen.getByRole('button', { name: '送信' })
 
-describe('LocationSuggestionDialog 距離バリデーション (Issue#146)', () => {
+describe('LocationSuggestionDialog 距離バリデーション (Spec#146)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })

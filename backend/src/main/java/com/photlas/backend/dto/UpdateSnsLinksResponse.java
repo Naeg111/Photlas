@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * SNSリンク更新レスポンスDTO
- * Issue#29: プロフィール機能強化
+ * Spec#29: プロフィール機能強化
  */
 public class UpdateSnsLinksResponse {
 

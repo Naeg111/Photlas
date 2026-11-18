@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * Issue#112: スポット写真ID一覧取得レスポンス DTO（ページネーション対応）
+ * Spec#112: スポット写真ID一覧取得レスポンス DTO（ページネーション対応）
  *
  * POST /api/v1/spots/photos のレスポンス Body。
  * - ids: 撮影日時降順でマージした写真IDのページ

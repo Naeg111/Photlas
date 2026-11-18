@@ -5,7 +5,7 @@ import jakarta.validation.Payload;
 import java.lang.annotation.*;
 
 /**
- * Issue#19: ReportReasonの値を検証するアノテーション
+ * Spec#19: ReportReasonの値を検証するアノテーション
  */
 @Documented
 @Constraint(validatedBy = ReportReasonValidator.class)

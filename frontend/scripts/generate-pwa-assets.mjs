@@ -1,5 +1,5 @@
 /**
- * Issue#70: PWAアセット（アイコン・スプラッシュ画像）生成スクリプト
+ * Spec#70: PWAアセット（アイコン・スプラッシュ画像）生成スクリプト
  *
  * Playwrightのブラウザを使い、HTMLをレンダリングしてPNGにキャプチャする。
  * 使用方法: npx playwright test --config=scripts/generate-pwa-assets.mjs (ではなく直接実行)

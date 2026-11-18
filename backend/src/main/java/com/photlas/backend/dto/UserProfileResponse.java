@@ -11,9 +11,9 @@ public class UserProfileResponse {
     private String language; // GET /users/me のみ
     private String profileImageUrl;
     private List<SnsLink> snsLinks;
-    // Issue#104: 利用規約・プライバシーポリシーへの同意要否（GET /users/me のみ）
+    // Spec#104: 利用規約・プライバシーポリシーへの同意要否（GET /users/me のみ）
     private boolean requiresTermsAgreement;
-    // Issue#104: 仮表示名状態フラグ（GET /users/me のみ。F5 エッジケース対応）
+    // Spec#104: 仮表示名状態フラグ（GET /users/me のみ。F5 エッジケース対応）
     private boolean usernameTemporary;
 
     public static class SnsLink {

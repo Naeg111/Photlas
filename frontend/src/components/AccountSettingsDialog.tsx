@@ -13,8 +13,8 @@ import { API_V1_URL } from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
 
 /**
- * Issue#20: アカウント設定ダイアログ
- * Issue#38: 認証トークン取得をAuthContextから行うよう修正
+ * Spec#20: アカウント設定ダイアログ
+ * Spec#38: 認証トークン取得をAuthContextから行うよう修正
  */
 
 interface AccountSettingsDialogProps {
@@ -63,7 +63,7 @@ export function AccountSettingsDialog({
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isDeletionComplete, setIsDeletionComplete] = useState(false);
 
-  // Issue#108: データエクスポート
+  // Spec#108: データエクスポート
   const [exportPassword, setExportPassword] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [receivedBytes, setReceivedBytes] = useState(0);
@@ -78,7 +78,7 @@ export function AccountSettingsDialog({
 
     setIsEmailLoading(true);
     try {
-      // Issue#38: AuthContextからトークンを取得
+      // Spec#38: AuthContextからトークンを取得
       const token = getAuthToken();
       if (!token) {
         toast.error(t('settings.loginRequired'));
@@ -132,7 +132,7 @@ export function AccountSettingsDialog({
       return;
     }
 
-    // Issue#21: パスワードバリデーション統一
+    // Spec#21: パスワードバリデーション統一
     if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z0-9]{8,20}$/.test(newPassword)) {
       toast.error(t('settings.passwordFormatError'));
       return;
@@ -140,7 +140,7 @@ export function AccountSettingsDialog({
 
     setIsPasswordLoading(true);
     try {
-      // Issue#38: AuthContextからトークンを取得
+      // Spec#38: AuthContextからトークンを取得
       const token = getAuthToken();
       if (!token) {
         toast.error(t('settings.loginRequired'));
@@ -171,7 +171,7 @@ export function AccountSettingsDialog({
       } else if (response.status === 401) {
         toast.error(t('settings.currentPasswordWrong'));
       } else if (response.status === 400) {
-        // Issue#93: 400 は入力チェックエラー（VALIDATION_ERROR）。message は日本語固定のため出さない。
+        // Spec#93: 400 は入力チェックエラー（VALIDATION_ERROR）。message は日本語固定のため出さない。
         // フィールド別に出したくなったら、errors[] を ApiError.getFieldErrorMessage と同じ形で拾える
         toast.error(t('settings.passwordInvalidFormat'));
       } else {
@@ -193,7 +193,7 @@ export function AccountSettingsDialog({
 
     setIsDeleteLoading(true);
     try {
-      // Issue#38: AuthContextからトークンを取得
+      // Spec#38: AuthContextからトークンを取得
       const token = getAuthToken();
       if (!token) {
         toast.error(t('settings.loginRequired'));
@@ -215,7 +215,7 @@ export function AccountSettingsDialog({
       );
 
       if (response.status === 204) {
-        // Issue#72: 退会完了メッセージを表示
+        // Spec#72: 退会完了メッセージを表示
         setIsDeletionComplete(true);
       } else if (response.status === 401) {
         toast.error(t('settings.wrongPassword'));
@@ -232,7 +232,7 @@ export function AccountSettingsDialog({
     }
   };
 
-  // Issue#108: データエクスポート処理
+  // Spec#108: データエクスポート処理
   const handleDataExport = async () => {
     if (!exportPassword) {
       toast.error(t('settings.exportPasswordRequired'));
@@ -495,7 +495,7 @@ export function AccountSettingsDialog({
 
           <Separator />
 
-          {/* Issue#108: データのエクスポート */}
+          {/* Spec#108: データのエクスポート */}
           <div className="space-y-3">
             <h3 className="font-medium">{t('settings.exportData')}</h3>
             <p className="text-sm text-gray-500">

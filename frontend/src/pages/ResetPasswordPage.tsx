@@ -20,7 +20,7 @@ const CARD_CLASS = 'max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8'
 /**
  * パスワードリセット完了ページ
  *
- * Issue#56: メール内のリセットリンクからアクセスされるページ。
+ * Spec#56: メール内のリセットリンクからアクセスされるページ。
  * 新しいパスワードを入力してリセットを完了する。
  */
 export default function ResetPasswordPage() {

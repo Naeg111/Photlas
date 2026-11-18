@@ -5,8 +5,8 @@ import { TermsOfServicePage } from './TermsOfServicePage'
 
 /**
  * TermsOfServicePage コンポーネントのテスト
- * Issue#51: 利用規約の文面改訂
- * Issue#101: 多言語対応 + ハードコード日本語の i18n 化
+ * Spec#51: 利用規約の文面改訂
+ * Spec#101: 多言語対応 + ハードコード日本語の i18n 化
  */
 
 describe('TermsOfServicePage', () => {
@@ -75,7 +75,7 @@ describe('TermsOfServicePage', () => {
     })
   })
 
-  describe('Issue#53: 外部サービス利用規約リンク', () => {
+  describe('Spec#53: 外部サービス利用規約リンク', () => {
     it('renders Mapbox terms of service link', () => {
       render(<TermsOfServicePage {...defaultProps} />)
 
@@ -92,9 +92,9 @@ describe('TermsOfServicePage', () => {
   })
 
   /**
-   * Issue#101: 5 言語対応 + ハードコード日本語の i18n 化のテスト。
+   * Spec#101: 5 言語対応 + ハードコード日本語の i18n 化のテスト。
    */
-  describe('Issue#101 - 多言語対応', () => {
+  describe('Spec#101 - 多言語対応', () => {
     afterEach(async () => {
       await i18n.changeLanguage('ja')
     })

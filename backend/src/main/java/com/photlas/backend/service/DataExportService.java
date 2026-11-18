@@ -33,7 +33,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * Issue#108: ユーザー向けデータエクスポートのコアサービス。
+ * Spec#108: ユーザー向けデータエクスポートのコアサービス。
  *
  * <p>Controller から下記の流れで呼ばれる想定:
  * <ol>

@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Issue#72: 退会済みアカウントの90日後物理削除サービス
+ * Spec#72: 退会済みアカウントの90日後物理削除サービス
  * deleted_atから90日以上経過したユーザーを物理削除する。
  */
 @Service
@@ -69,7 +69,7 @@ public class AccountCleanupService {
     }
 
     /**
-     * Issue#73: 単一ユーザーの物理削除（即時削除用に公開）
+     * Spec#73: 単一ユーザーの物理削除（即時削除用に公開）
      */
     @Transactional
     public void deleteUserPermanently(User user) {

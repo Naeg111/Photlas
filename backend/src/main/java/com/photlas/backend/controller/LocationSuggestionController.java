@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * Issue#65: 位置情報修正の指摘コントローラー
+ * Spec#65: 位置情報修正の指摘コントローラー
  *
- * <p>Issue#93: エラーは GlobalExceptionHandler がエラーコード付きで返す
+ * <p>Spec#93: エラーは GlobalExceptionHandler がエラーコード付きで返す
  * （コード付きの InvalidRequestException / InvalidStateException は 400、コードの無い IllegalStateException は 500）。
  */
 @RestController

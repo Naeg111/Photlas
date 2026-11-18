@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 #
 # Specification-driven tests for scripts/setup-alb-access-logs.sh
-# Source of truth: documents/04_Issues/Issue#95.md §3.6
+# Source of truth: documents/spec/SPEC-0095.md §3.6
 #
 # Verifies the script:
 #   - is syntactically valid (shellcheck passes)

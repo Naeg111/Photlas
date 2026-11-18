@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { FilterPanel } from './FilterPanel'
 
 /**
- * Issue#63: フィルター機能の見直し
+ * Spec#63: フィルター機能の見直し
  * TDD Red段階: 新仕様に合わせたテストケース定義
  *
  * 変更点:
@@ -24,11 +24,11 @@ describe('FilterPanel', () => {
     vi.clearAllMocks()
   })
 
-  describe('Issue#63: ジャンルフィルター', () => {
+  describe('Spec#63: ジャンルフィルター', () => {
     it('15種類のジャンルボタンが表示される', { timeout: 30000 }, () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
-      // Issue#159: 星空→星に改名、レジャー・施設(215)を追加 → 15種
+      // Spec#159: 星空→星に改名、レジャー・施設(215)を追加 → 15種
       const genres = [
         '自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物', '動物',
         '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星', 'レジャー・施設', 'その他',
@@ -65,7 +65,7 @@ describe('FilterPanel', () => {
     })
   })
 
-  describe('Issue#63: セクションラベル', () => {
+  describe('Spec#63: セクションラベル', () => {
     it('通常フィルターにセクションラベルが表示される', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
@@ -78,7 +78,7 @@ describe('FilterPanel', () => {
     })
   })
 
-  describe('Issue#63: 投稿の新しさ（通常フィルターに移動）', () => {
+  describe('Spec#63: 投稿の新しさ（通常フィルターに移動）', () => {
     it('上級者向けフィルターを開かずに経過期間の選択肢が表示される', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
@@ -90,7 +90,7 @@ describe('FilterPanel', () => {
     })
   })
 
-  describe('Issue#63: 撮影の向き（通常フィルターに移動）', () => {
+  describe('Spec#63: 撮影の向き（通常フィルターに移動）', () => {
     it('上級者向けフィルターを開かずに撮影の向きの選択肢が表示される', () => {
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
@@ -107,7 +107,7 @@ describe('FilterPanel', () => {
     })
   })
 
-  describe('Issue#63: 上級者向けフィルター（3項目のみ）', () => {
+  describe('Spec#63: 上級者向けフィルター（3項目のみ）', () => {
     it('上級者向けフィルターを開くと機材種別・焦点距離・ISO感度のみ表示される', async () => {
       const user = userEvent.setup()
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
@@ -131,7 +131,7 @@ describe('FilterPanel', () => {
       expect(screen.getByText('ISO 12800以下')).toBeInTheDocument()
     })
 
-    it('Issue#67 - 機材種別ボタンが指定の順序で並んでいる', async () => {
+    it('Spec#67 - 機材種別ボタンが指定の順序で並んでいる', async () => {
       const user = userEvent.setup()
       render(<FilterPanel open={true} onOpenChange={mockOnOpenChange} />)
 
@@ -184,7 +184,7 @@ describe('FilterPanel', () => {
     })
   })
 
-  describe('Issue#63: maxAgeDays（APIパラメータ変更）', () => {
+  describe('Spec#63: maxAgeDays（APIパラメータ変更）', () => {
     it('onApplyコールバックにmaxAgeDaysが含まれる（maxAgeYearsではない）', async () => {
       const mockOnApply = vi.fn()
       const user = userEvent.setup()
@@ -214,7 +214,7 @@ describe('FilterPanel', () => {
     })
   })
 
-  describe('Issue#63: クリア動作', () => {
+  describe('Spec#63: クリア動作', () => {
     it('クリアボタンで全フィルター（通常+上級者）がリセットされる', async () => {
       const mockOnApply = vi.fn()
       const user = userEvent.setup()

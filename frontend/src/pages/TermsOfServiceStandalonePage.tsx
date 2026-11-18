@@ -9,8 +9,8 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
 
 /**
- * Issue#99 - 利用規約の単独ページ。
- * Issue#101 - 5 言語対応 + ハードコード日本語の i18n 化、既存バグ修正
+ * Spec#99 - 利用規約の単独ページ。
+ * Spec#101 - 5 言語対応 + ハードコード日本語の i18n 化、既存バグ修正
  *
  * Google OAuth 同意画面に登録する利用規約 URL
  * (https://photlas.jp/terms-of-service) が直接アクセス可能であることを保証する。
@@ -50,7 +50,7 @@ export default function TermsOfServiceStandalonePage() {
       {/* 本文 */}
       <main className="flex-1">
         <article className="max-w-3xl mx-auto px-6 py-12">
-          {/* Issue#101: h1 を i18n 化 */}
+          {/* Spec#101: h1 を i18n 化 */}
           <h1 className="text-3xl font-bold mb-8">{t('auth.termsOfService')}</h1>
           {selectTermsContent(i18n.language)}
         </article>
@@ -61,7 +61,7 @@ export default function TermsOfServiceStandalonePage() {
         <div className="max-w-3xl mx-auto px-6 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-gray-600">
           <div>&copy; Photlas</div>
           <nav className="flex gap-4">
-            {/* Issue#101: フッターリンクを i18n 化 */}
+            {/* Spec#101: フッターリンクを i18n 化 */}
             <Link to="/about" className="underline hover:text-gray-900">
               {t('menu.about')}
             </Link>

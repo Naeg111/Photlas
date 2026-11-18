@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Issue#54: モデレーション詳細エンティティ
+ * Spec#54: モデレーション詳細エンティティ
  * AI検知結果や隔離日時などの詳細情報を管理する
  */
 @Entity

@@ -20,7 +20,7 @@ interface PasswordResetRequestModalProps {
 
 /**
  * パスワードリセットリクエストモーダルコンポーネント
- * Issue#6: パスワードリセット機能
+ * Spec#6: パスワードリセット機能
  */
 export default function PasswordResetRequestModal({ open, onClose, onShowLogin }: Readonly<PasswordResetRequestModalProps>) {
   const { t } = useTranslation()

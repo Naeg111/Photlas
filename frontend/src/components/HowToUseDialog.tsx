@@ -15,7 +15,7 @@ interface HowToUseDialogProps {
 }
 
 /**
- * Issue#114: 操作方法ダイアログ
+ * Spec#114: 操作方法ダイアログ
  *
  * 4カテゴリ（基本の使い方・マップの操作・写真の投稿・その他の機能）を
  * アコーディオン形式で表示。type="single" + collapsible で1つだけ開く挙動。
@@ -80,7 +80,7 @@ export function HowToUseDialog({ open, onOpenChange }: Readonly<HowToUseDialogPr
                   <p>{t('howToUse.currentLocationText')}</p>
                 </div>
               </div>
-              {/* Issue#115: 方角インジケーター ON/OFF トグルの説明 */}
+              {/* Spec#115: 方角インジケーター ON/OFF トグルの説明 */}
               <div className="flex items-start gap-2">
                 <Navigation className="w-5 h-5 shrink-0 mt-0.5" />
                 <div>

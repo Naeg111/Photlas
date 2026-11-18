@@ -19,8 +19,8 @@ import { computeBoundsForPins } from '../utils/geoBounds'
 import { API_V1_URL } from '../config/api'
 
 /**
- * Issue#65, Issue#54: 位置情報修正のレビューページ（ダイアログスタイル）
- * Issue#145: 共通 Dialog 化・正方形サムネ・投稿者アイコン・地図言語・白黒/赤ピン・自動フィット・共通 Button
+ * Spec#65, Spec#54: 位置情報修正のレビューページ（ダイアログスタイル）
+ * Spec#145: 共通 Dialog 化・正方形サムネ・投稿者アイコン・地図言語・白黒/赤ピン・自動フィット・共通 Button
  */
 
 interface ReviewData {
@@ -41,7 +41,7 @@ interface ReviewData {
   cropZoom: number | null
 }
 
-// Issue#145: ピンの配色（形状・サイズは共通で色のみ差別化）
+// Spec#145: ピンの配色（形状・サイズは共通で色のみ差別化）
 const ORIGINAL_PIN = { fill: '#ffffff', stroke: '#000000' } // 元の登録位置（白黒・投稿詳細と同じ）
 const SUGGESTED_PIN = { fill: '#EF4444', stroke: '#B91C1C' } // 指摘位置（赤）
 // ピン寸法（ミニマップ／全画面プレビュー）
@@ -54,7 +54,7 @@ const PREVIEW_FIT_OPTIONS = { padding: 60, maxZoom: 16 }
 const MAP_READY_DELAY_MS = 500
 
 /**
- * Issue#145: 元位置（白黒ピン）と指摘位置（赤ピン）の 2 ピンを描画する。
+ * Spec#145: 元位置（白黒ピン）と指摘位置（赤ピン）の 2 ピンを描画する。
  * 形状・サイズは同一で色だけ差別化し、赤（指摘）を後に描画して手前に重ねる。
  * ミニマップと全画面プレビューで共通利用する。
  */
@@ -92,7 +92,7 @@ function ReviewMarkers({
 }
 
 /**
- * Issue#145: 確認画面のミニマップ。
+ * Spec#145: 確認画面のミニマップ。
  * - 2 ピンが必ず収まるよう bounds で自動フィット
  * - ユーザー言語で地名ラベル表示（language）
  * - Dialog 開閉アニメーション中の Marker 位置ずれを防ぐため 500ms 遅延描画（DetailMiniMap と同じ）

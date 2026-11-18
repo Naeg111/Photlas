@@ -3,7 +3,7 @@ import { extractExif, ExifData } from './extractExif'
 
 /**
  * EXIF情報自動抽出ユーティリティのテスト
- * Issue#41: EXIF情報の自動抽出（フロントエンド）
+ * Spec#41: EXIF情報の自動抽出（フロントエンド）
  */
 
 // exifrのモック

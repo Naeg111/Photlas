@@ -68,7 +68,7 @@ public class FavoriteService {
     private static final String ERROR_NOT_FAVORITED = "お気に入り登録されていません";
 
     /**
-     * お気に入りに登録する（Issue#30）
+     * お気に入りに登録する（Spec#30）
      * @throws ConflictException 既に登録済みの場合
      * @throws InvalidStateException 写真が公開中でない場合（PHOTO_NOT_PUBLIC）
      */
@@ -80,7 +80,7 @@ public class FavoriteService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
-        // Issue#54: 公開中の写真のみお気に入り登録可能
+        // Spec#54: 公開中の写真のみお気に入り登録可能
         if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
             throw new InvalidStateException(ErrorCodes.PHOTO_NOT_PUBLIC, "公開中の写真のみお気に入り登録できます");
         }
@@ -107,7 +107,7 @@ public class FavoriteService {
     }
 
     /**
-     * お気に入りを解除する（Issue#30）
+     * お気に入りを解除する（Spec#30）
      * @throws FavoriteNotFoundException お気に入り登録されていない場合
      */
     @Transactional
@@ -126,7 +126,7 @@ public class FavoriteService {
     }
 
     /**
-     * 写真のお気に入り数を取得する（Issue#30）
+     * 写真のお気に入り数を取得する（Spec#30）
      */
     @Transactional(readOnly = true)
     public long getFavoriteCount(Long photoId) {

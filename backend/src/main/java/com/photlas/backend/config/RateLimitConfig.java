@@ -9,8 +9,8 @@ import java.time.Duration;
 
 /**
  * レート制限の設定
- * Issue#22: API Rate Limiting の実装
- * Issue#95: sensitive カテゴリ新設、general のデフォルトを 80 に引き上げ
+ * Spec#22: API Rate Limiting の実装
+ * Spec#95: sensitive カテゴリ新設、general のデフォルトを 80 に引き上げ
  */
 @Configuration
 public class RateLimitConfig {
@@ -21,7 +21,7 @@ public class RateLimitConfig {
     private static int authRateLimit = 10;
 
     /**
-     * Issue#95: センシティブエンドポイント（メール送信系）のレート制限（デフォルト: 3リクエスト/分）
+     * Spec#95: センシティブエンドポイント（メール送信系）のレート制限（デフォルト: 3リクエスト/分）
      */
     private static int sensitiveRateLimit = 3;
 
@@ -31,7 +31,7 @@ public class RateLimitConfig {
     private static int photoRateLimit = 30;
 
     /**
-     * 一般エンドポイントのレート制限（デフォルト: 80リクエスト/分、Issue#95 で 60→80）
+     * 一般エンドポイントのレート制限（デフォルト: 80リクエスト/分、Spec#95 で 60→80）
      */
     private static int generalRateLimit = 80;
 

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * Issue#119: AI 画像認識結果のリポジトリ。
+ * Spec#119: AI 画像認識結果のリポジトリ。
  */
 @Repository
 public interface PhotoAiPredictionRepository extends JpaRepository<PhotoAiPrediction, Long> {

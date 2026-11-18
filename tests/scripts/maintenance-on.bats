@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
 #
-# Issue#117: scripts/maintenance-on.sh の動作を検証する。
+# Spec#117: scripts/maintenance-on.sh の動作を検証する。
 # このスクリプトはメンテナンスモード ON 切替で、毎リリース時に実行する。
 # **ON 時の順序: フロント → API**（ユーザーが「フロントは生きてるのに API 失敗」
 # 状態を見ないようにするため）。
 #
-# Source of truth: documents/04_Issues/Issue#117.md §3.3, §4.6
+# Source of truth: documents/spec/SPEC-0117.md §3.3, §4.6
 
 load helpers
 

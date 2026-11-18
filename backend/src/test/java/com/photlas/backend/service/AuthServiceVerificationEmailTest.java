@@ -22,7 +22,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 /**
- * Issue#113 フェーズ 1 - AuthService.sendVerificationEmail の 5 言語化テスト。
+ * Spec#113 フェーズ 1 - AuthService.sendVerificationEmail の 5 言語化テスト。
  *
  * <p>新規登録時に送信されるメール認証リンクが、ユーザーの登録言語に応じて
  * 適切な言語で送信されることを検証する。グループ A (HTTP 失敗扱い) のため、
@@ -44,7 +44,7 @@ class AuthServiceVerificationEmailTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - ja ユーザー登録時に日本語の認証メールが送信される")
+    @DisplayName("Spec#113 - ja ユーザー登録時に日本語の認証メールが送信される")
     void registersAndSendsJapaneseVerificationEmail() {
         RegisterRequest req = makeRequest("ja_user", "ja@example.com", "ja");
         authService.registerUser(req, "ja");
@@ -59,7 +59,7 @@ class AuthServiceVerificationEmailTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - en ユーザー登録時に英語の認証メールが送信される")
+    @DisplayName("Spec#113 - en ユーザー登録時に英語の認証メールが送信される")
     void registersAndSendsEnglishVerificationEmail() {
         RegisterRequest req = makeRequest("en_user", "en@example.com", "en");
         authService.registerUser(req, "en");
@@ -70,7 +70,7 @@ class AuthServiceVerificationEmailTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - ko ユーザー登録時に韓国語の認証メールが送信される")
+    @DisplayName("Spec#113 - ko ユーザー登録時に韓国語の認証メールが送信される")
     void registersAndSendsKoreanVerificationEmail() {
         RegisterRequest req = makeRequest("ko_user", "ko@example.com", "ko");
         authService.registerUser(req, "ko");
@@ -82,7 +82,7 @@ class AuthServiceVerificationEmailTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - zh-CN ユーザー登録時に簡体中文の認証メールが送信される")
+    @DisplayName("Spec#113 - zh-CN ユーザー登録時に簡体中文の認証メールが送信される")
     void registersAndSendsChineseSimplifiedVerificationEmail() {
         RegisterRequest req = makeRequest("zh_cn_user", "zhcn@example.com", "zh-CN");
         authService.registerUser(req, "zh-CN");
@@ -93,7 +93,7 @@ class AuthServiceVerificationEmailTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - zh-TW ユーザー登録時に繁体中文の認証メールが送信される")
+    @DisplayName("Spec#113 - zh-TW ユーザー登録時に繁体中文の認証メールが送信される")
     void registersAndSendsChineseTraditionalVerificationEmail() {
         RegisterRequest req = makeRequest("zh_tw_user", "zhtw@example.com", "zh-TW");
         authService.registerUser(req, "zh-TW");
@@ -104,7 +104,7 @@ class AuthServiceVerificationEmailTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - グループ A: メール送信失敗時に例外が呼び出し元へ伝播する")
+    @DisplayName("Spec#113 - グループ A: メール送信失敗時に例外が呼び出し元へ伝播する")
     void groupAFailurePropagatesException() {
         doThrow(new RuntimeException("SMTP server unreachable"))
                 .when(emailService).send(anyString(), anyString(), anyString());
@@ -121,7 +121,7 @@ class AuthServiceVerificationEmailTest {
         req.setUsername(username);
         req.setEmail(email);
         req.setPassword("Password1");
-        // Issue#109: 同意・年齢確認フィールドを true でセット
+        // Spec#109: 同意・年齢確認フィールドを true でセット
         req.setAgreedToTerms(true);
         req.setAgreedToPrivacy(true);
         req.setAgeConfirmed(true);

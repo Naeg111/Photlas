@@ -3,11 +3,11 @@ import { describe, it, expect } from 'vitest'
 import { PrivacyContentEn } from './PrivacyContentEn'
 
 /**
- * Issue#94 §4: Privacy policy revision to disclose WAF log collection.
+ * Spec#94 §4: Privacy policy revision to disclose WAF log collection.
  * Replaces the prior "IP address temporarily collected; not stored permanently"
  * wording with explicit WAF-log retention (up to 90 days, auto-deleted after).
  */
-describe('PrivacyContentEn - Issue#94 WAF log disclosure', () => {
+describe('PrivacyContentEn - Spec#94 WAF log disclosure', () => {
   it('Article 2 (7) Technical Information mentions "WAF logs"', () => {
     const { container } = render(<PrivacyContentEn />)
     expect(container.textContent).toContain('WAF logs')
@@ -46,11 +46,11 @@ describe('PrivacyContentEn - Issue#94 WAF log disclosure', () => {
 })
 
 /**
- * Issue#99: With Google OAuth scope reduced to email only,
+ * Spec#99: With Google OAuth scope reduced to email only,
  * the privacy policy must remove "name" from the Google data list.
  * The profile scope is no longer requested, so name is not actually obtained.
  */
-describe('PrivacyContentEn - Issue#99 Google scope minimization', () => {
+describe('PrivacyContentEn - Spec#99 Google scope minimization', () => {
   it('Article 2(8) Google data is "email address, Google user ID" only', () => {
     const { container } = render(<PrivacyContentEn />)
     const text = container.textContent ?? ''
@@ -71,10 +71,10 @@ describe('PrivacyContentEn - Issue#99 Google scope minimization', () => {
 })
 
 /**
- * Issue#105: International upgrade.
+ * Spec#105: International upgrade.
  * Add provisions following industry best practices for international users.
  */
-describe('PrivacyContentEn - Issue#105 International upgrade', () => {
+describe('PrivacyContentEn - Spec#105 International upgrade', () => {
   // A. Article 12 - 13 years minimum age
   it('Article 12 states the 13 years of age requirement', () => {
     const { container } = render(<PrivacyContentEn />)
@@ -90,12 +90,12 @@ describe('PrivacyContentEn - Issue#105 International upgrade', () => {
     expect(text).toMatch(/moderation[\s\S]*?180 days|180 days[\s\S]*?moderation/i)
   })
 
-  // C. Article 16 - Issue#108 Data portability self-service via Account Settings
+  // C. Article 16 - Spec#108 Data portability self-service via Account Settings
   it('Article 16 clarifies data portability is exercised via self-service ZIP download from Account Settings', () => {
     const { container } = render(<PrivacyContentEn />)
     const text = container.textContent ?? ''
     expect(text).toContain('data portability')
-    // Issue#108: Self-service download path mentioned
+    // Spec#108: Self-service download path mentioned
     expect(text).toMatch(/data portability[\s\S]*?ZIP[\s\S]*?Export Data[\s\S]*?Account Settings/i)
   })
 

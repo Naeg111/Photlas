@@ -16,7 +16,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#81 Phase 3d - {@link CustomOAuth2AuthorizationRequestResolver} のテスト（Red 段階）。
+ * Spec#81 Phase 3d - {@link CustomOAuth2AuthorizationRequestResolver} のテスト（Red 段階）。
  *
  * <p>リゾルバは {@link OAuth2AuthorizationRequestResolver} を wrap し、クライアントから
  * 渡された {@code lang} パラメータを HttpSession に保存する役割を持つ。保存キーは

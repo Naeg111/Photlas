@@ -24,8 +24,8 @@ import java.util.Set;
 
 /**
  * API レート制限フィルタ
- * Issue#22: API Rate Limiting の実装
- * Issue#95: カテゴリ整理（sensitive 新設・フォールバック方式・URL デコード対策・JSON ボディ）
+ * Spec#22: API Rate Limiting の実装
+ * Spec#95: カテゴリ整理（sensitive 新設・フォールバック方式・URL デコード対策・JSON ボディ）
  *
  * Token Bucket アルゴリズムでエンドポイント別のレート制限を適用する。
  * Caffeine キャッシュにより、一定時間アクセスがないエントリは自動的に削除される。
@@ -44,15 +44,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /**
      * センシティブなエンドポイント（完全一致）
      * メール送信や外部通知などコスト／悪用リスクの高いもの。
-     * Issue#95: auth カテゴリから切り出して 3 req/分の厳格制限を適用する。
+     * Spec#95: auth カテゴリから切り出して 3 req/分の厳格制限を適用する。
      */
     private static final Set<String> SENSITIVE_PATHS = Set.of(
             "/api/v1/auth/password-reset-request",
             "/api/v1/auth/resend-verification",
-            // Issue#81 Phase 4h: OAuth 初回パスワード設定とバナー dismiss は短時間連打を抑止
+            // Spec#81 Phase 4h: OAuth 初回パスワード設定とバナー dismiss は短時間連打を抑止
             "/api/v1/auth/oauth2/set-password",
             "/api/v1/users/me/password-recommendation/dismiss",
-            // Issue#108: データエクスポートはパスワードを受け取るため総当たり防止
+            // Spec#108: データエクスポートはパスワードを受け取るため総当たり防止
             "/api/v1/users/me/export"
     );
 
@@ -75,7 +75,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     /**
      * 429 レスポンスの JSON ボディ。
-     * Issue#95: WAF（Issue#94）の CustomResponseBodies と同一構造に揃えて、
+     * Spec#95: WAF（Spec#94）の CustomResponseBodies と同一構造に揃えて、
      * CDN 層／アプリ層どちらで弾かれてもクライアント側で同じハンドリングができるようにする。
      */
     private static final String RATE_LIMIT_EXCEEDED_JSON_BODY =
@@ -119,7 +119,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     /**
      * リクエストパスを解決する。
-     * Issue#95: /api/v1/auth/password%2Dreset%2Drequest のような URL エンコードでの
+     * Spec#95: /api/v1/auth/password%2Dreset%2Drequest のような URL エンコードでの
      * SENSITIVE_PATHS 回避攻撃を防ぐため、getServletPath()（本番では通常デコード済み）を優先し、
      * さらに明示的に URL デコードを最大 3 回まで反復して正規化する。
      *
@@ -186,7 +186,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     /**
      * /api/v1/auth/ 以下はフォールバックで auth カテゴリ扱い。
-     * Issue#95: SENSITIVE にも個別登録にも無い /api/v1/auth/* はセキュア側（10 req/分）に寄せる。
+     * Spec#95: SENSITIVE にも個別登録にも無い /api/v1/auth/* はセキュア側（10 req/分）に寄せる。
      */
     private boolean isAuthEndpoint(String path) {
         return path.startsWith(AUTH_PATH_PREFIX);
@@ -194,7 +194,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     /**
      * /api/v1/photos 完全一致、または /api/v1/photos/ 配下のみを photo カテゴリとする。
-     * Issue#95: startsWith("/api/v1/photos") 単独だと /api/v1/photos-sitemap 等を
+     * Spec#95: startsWith("/api/v1/photos") 単独だと /api/v1/photos-sitemap 等を
      * 誤って photo カテゴリ（30 req/分）で縛ってしまうため、exact + prefix/ で分離。
      */
     private boolean isPhotoEndpoint(String path) {
@@ -204,7 +204,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /**
      * ユーザー識別子を取得する。
      * 認証済みユーザーの場合は user:{email}、未認証の場合は ip:{address} を返す。
-     * Issue#95: SecurityConfig で JwtAuthenticationFilter → RateLimitFilter の順に並べたため、
+     * Spec#95: SecurityConfig で JwtAuthenticationFilter → RateLimitFilter の順に並べたため、
      * ここから SecurityContext 経由で認証情報を参照できる。
      */
     private String getUserIdentifier(HttpServletRequest request) {

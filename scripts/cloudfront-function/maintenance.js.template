@@ -1,4 +1,4 @@
-// Issue#117: メンテナンス時の CloudFront Function コードのテンプレート。
+// Spec#117: メンテナンス時の CloudFront Function コードのテンプレート。
 // `scripts/build-maintenance-function.sh` が `__MAINTENANCE_HTML__` を
 // `scripts/maintenance.html` のエスケープ済み内容に置換して
 // `maintenance.js` を生成する。

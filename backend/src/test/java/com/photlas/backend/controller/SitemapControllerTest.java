@@ -102,7 +102,7 @@ public class SitemapControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - QUARANTINED写真は写真サイトマップに含まれない")
+    @DisplayName("Spec#54 - QUARANTINED写真は写真サイトマップに含まれない")
     void testGetSitemap_ExcludesQuarantinedPhotos() throws Exception {
         createPhoto("photos/published-q.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
         Photo quarantinedPhoto = createPhoto("photos/quarantined.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -114,7 +114,7 @@ public class SitemapControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PUBLISHED写真のみが写真サイトマップに含まれる")
+    @DisplayName("Spec#54 - PUBLISHED写真のみが写真サイトマップに含まれる")
     void testGetSitemap_OnlyPublishedPhotosIncluded() throws Exception {
         Photo publishedPhoto = createPhoto("photos/published.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
         Photo removedPhoto = createPhoto("photos/removed.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
@@ -129,7 +129,7 @@ public class SitemapControllerTest {
     // ===== サイトマップインデックス方式テスト =====
 
     @Test
-    @DisplayName("Issue#54 - サイトマップインデックスが返る（sitemapindex形式）")
+    @DisplayName("Spec#54 - サイトマップインデックスが返る（sitemapindex形式）")
     void testGetSitemap_ReturnsSitemapIndex() throws Exception {
         mockMvc.perform(get(ENDPOINT_SITEMAP))
                 .andExpect(status().isOk())
@@ -138,7 +138,7 @@ public class SitemapControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 静的サイトマップにトップページが含まれる")
+    @DisplayName("Spec#54 - 静的サイトマップにトップページが含まれる")
     void testGetStaticSitemap_ContainsTopPage() throws Exception {
         mockMvc.perform(get("/api/v1/sitemap-static.xml"))
                 .andExpect(status().isOk())
@@ -147,7 +147,7 @@ public class SitemapControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 写真サイトマップにPUBLISHED写真が含まれる")
+    @DisplayName("Spec#54 - 写真サイトマップにPUBLISHED写真が含まれる")
     void testGetPhotosSitemap_ContainsPublishedPhotos() throws Exception {
         Photo photo = createPhoto("photos/idx-test.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
@@ -157,7 +157,7 @@ public class SitemapControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 退会済みユーザーの写真はサイトマップに含まれない")
+    @DisplayName("Spec#54 - 退会済みユーザーの写真はサイトマップに含まれない")
     void testGetPhotosSitemap_ExcludesDeletedUserPhotos() throws Exception {
         Photo photo = createPhoto("photos/deleted-user.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
         testUser.setDeletedAt(LocalDateTime.now());
@@ -174,7 +174,7 @@ public class SitemapControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 存在しないページ番号は404を返す")
+    @DisplayName("Spec#54 - 存在しないページ番号は404を返す")
     void testGetPhotosSitemap_InvalidPage_Returns404() throws Exception {
         mockMvc.perform(get("/api/v1/sitemap-photos-999.xml"))
                 .andExpect(status().isNotFound());

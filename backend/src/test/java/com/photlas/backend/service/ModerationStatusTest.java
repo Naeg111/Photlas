@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Issue#54: 投稿ステータス管理のテスト
+ * Spec#54: 投稿ステータス管理のテスト
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -112,7 +112,7 @@ public class ModerationStatusTest {
     // ===== 投稿ステータスのデフォルト値テスト =====
 
     @Test
-    @DisplayName("Issue#54 - 新規投稿のモデレーションステータスがPENDING_REVIEWになる")
+    @DisplayName("Spec#54 - 新規投稿のモデレーションステータスがPENDING_REVIEWになる")
     void testCreatePhoto_DefaultModerationStatus_IsPendingReview() {
         CreatePhotoRequest request = createPhotoRequest("photos/mod001.jpg");
 
@@ -126,7 +126,7 @@ public class ModerationStatusTest {
     // ===== 投稿一覧のステータスフィルタリングテスト =====
 
     @Test
-    @DisplayName("Issue#54 - 他ユーザーの投稿一覧ではPUBLISHEDの投稿のみ表示される")
+    @DisplayName("Spec#54 - 他ユーザーの投稿一覧ではPUBLISHEDの投稿のみ表示される")
     @SuppressWarnings("unchecked")
     void testGetUserPhotos_OtherUser_OnlyPublishedVisible() {
         // Given: testUserの投稿を各ステータスで作成
@@ -149,7 +149,7 @@ public class ModerationStatusTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 投稿者本人にはPENDING_REVIEW, PUBLISHED, QUARANTINEDの投稿が表示される")
+    @DisplayName("Spec#54 - 投稿者本人にはPENDING_REVIEW, PUBLISHED, QUARANTINEDの投稿が表示される")
     @SuppressWarnings("unchecked")
     void testGetUserPhotos_OwnUser_PendingPublishedQuarantinedVisible() {
         // Given: testUserの投稿を各ステータスで作成
@@ -171,7 +171,7 @@ public class ModerationStatusTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 未認証ユーザーにはPUBLISHEDの投稿のみ表示される")
+    @DisplayName("Spec#54 - 未認証ユーザーにはPUBLISHEDの投稿のみ表示される")
     @SuppressWarnings("unchecked")
     void testGetUserPhotos_UnauthenticatedUser_OnlyPublishedVisible() {
         // Given
@@ -193,7 +193,7 @@ public class ModerationStatusTest {
     // ===== 写真詳細のステータスフィルタリングテスト =====
 
     @Test
-    @DisplayName("Issue#54 - REMOVED状態の写真は詳細取得できない")
+    @DisplayName("Spec#54 - REMOVED状態の写真は詳細取得できない")
     void testGetPhotoDetail_RemovedPhoto_ThrowsException() {
         Spot spot = createSpot();
         Photo removed = createPhotoWithStatus(spot, "photos/rem010.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
@@ -205,7 +205,7 @@ public class ModerationStatusTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PENDING_REVIEW状態の写真は投稿者本人のみ詳細取得できる")
+    @DisplayName("Spec#54 - PENDING_REVIEW状態の写真は投稿者本人のみ詳細取得できる")
     void testGetPhotoDetail_PendingPhoto_OnlyOwnerCanView() {
         Spot spot = createSpot();
         Photo pending = createPhotoWithStatus(spot, "photos/pend010.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
@@ -222,7 +222,7 @@ public class ModerationStatusTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - QUARANTINED状態の写真は投稿者本人のみ詳細取得できる")
+    @DisplayName("Spec#54 - QUARANTINED状態の写真は投稿者本人のみ詳細取得できる")
     void testGetPhotoDetail_QuarantinedPhoto_OnlyOwnerCanView() {
         Spot spot = createSpot();
         Photo quarantined = createPhotoWithStatus(spot, "photos/quar010.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -239,7 +239,7 @@ public class ModerationStatusTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PUBLISHED状態の写真は誰でも詳細取得できる")
+    @DisplayName("Spec#54 - PUBLISHED状態の写真は誰でも詳細取得できる")
     void testGetPhotoDetail_PublishedPhoto_AnyoneCanView() {
         Spot spot = createSpot();
         Photo published = createPhotoWithStatus(spot, "photos/pub010.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
@@ -256,7 +256,7 @@ public class ModerationStatusTest {
     // ===== レスポンスにモデレーションステータスが含まれるテスト =====
 
     @Test
-    @DisplayName("Issue#54 - 写真詳細レスポンスにmoderation_statusが含まれる")
+    @DisplayName("Spec#54 - 写真詳細レスポンスにmoderation_statusが含まれる")
     void testGetPhotoDetail_ResponseContainsModerationStatus() {
         Spot spot = createSpot();
         Photo quarantined = createPhotoWithStatus(spot, "photos/quar020.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -267,7 +267,7 @@ public class ModerationStatusTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PENDING_REVIEW写真のレスポンスにmoderation_statusが含まれる")
+    @DisplayName("Spec#54 - PENDING_REVIEW写真のレスポンスにmoderation_statusが含まれる")
     void testGetPhotoDetail_PendingReviewResponseContainsModerationStatus() {
         Spot spot = createSpot();
         Photo pending = createPhotoWithStatus(spot, "photos/pend020.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
@@ -278,7 +278,7 @@ public class ModerationStatusTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PUBLISHED写真のレスポンスにmoderation_statusがPUBLISHEDで含まれる")
+    @DisplayName("Spec#54 - PUBLISHED写真のレスポンスにmoderation_statusがPUBLISHEDで含まれる")
     void testGetPhotoDetail_PublishedResponseContainsModerationStatus() {
         Spot spot = createSpot();
         Photo published = createPhotoWithStatus(spot, "photos/pub020.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
@@ -291,7 +291,7 @@ public class ModerationStatusTest {
     // ===== REMOVED写真の投稿者本人アクセステスト =====
 
     @Test
-    @DisplayName("Issue#54 - REMOVED状態の写真は投稿者本人でも詳細取得できない")
+    @DisplayName("Spec#54 - REMOVED状態の写真は投稿者本人でも詳細取得できない")
     void testGetPhotoDetail_RemovedPhoto_OwnerCannotView() {
         Spot spot = createSpot();
         Photo removed = createPhotoWithStatus(spot, "photos/rem011.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
@@ -304,7 +304,7 @@ public class ModerationStatusTest {
     // ===== getPhotoForOwnerテスト =====
 
     @Test
-    @DisplayName("Issue#54 - getPhotoForOwnerで投稿者本人は写真を取得できる")
+    @DisplayName("Spec#54 - getPhotoForOwnerで投稿者本人は写真を取得できる")
     void testGetPhotoForOwner_Owner_ReturnsPhoto() {
         Spot spot = createSpot();
         Photo photo = createPhotoWithStatus(spot, "photos/owner001.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
@@ -316,7 +316,7 @@ public class ModerationStatusTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - getPhotoForOwnerで他ユーザーは写真を取得できない")
+    @DisplayName("Spec#54 - getPhotoForOwnerで他ユーザーは写真を取得できない")
     void testGetPhotoForOwner_OtherUser_ThrowsException() {
         Spot spot = createSpot();
         Photo photo = createPhotoWithStatus(spot, "photos/owner002.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
@@ -327,7 +327,7 @@ public class ModerationStatusTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - getPhotoForOwnerで存在しない写真IDは例外")
+    @DisplayName("Spec#54 - getPhotoForOwnerで存在しない写真IDは例外")
     void testGetPhotoForOwner_NonExistentPhoto_ThrowsException() {
         assertThatThrownBy(() ->
                 photoService.getPhotoForOwner(99999L, testUser.getId())
@@ -337,7 +337,7 @@ public class ModerationStatusTest {
     // ===== アカウント停止チェックテスト =====
 
     @Test
-    @DisplayName("Issue#54 - 永久停止ユーザーは写真を投稿できない")
+    @DisplayName("Spec#54 - 永久停止ユーザーは写真を投稿できない")
     void testCreatePhoto_PermanentlySuspendedUser_ThrowsException() {
         testUser.setRole(CodeConstants.ROLE_SUSPENDED);
         userRepository.save(testUser);
@@ -350,7 +350,7 @@ public class ModerationStatusTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 一時停止中のユーザーは写真を投稿できない")
+    @DisplayName("Spec#54 - 一時停止中のユーザーは写真を投稿できない")
     void testCreatePhoto_TemporarilySuspendedUser_ThrowsException() {
         AccountSanction sanction = new AccountSanction();
         sanction.setUserId(testUser.getId());
@@ -367,7 +367,7 @@ public class ModerationStatusTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 一時停止期間が終了したユーザーは写真を投稿できる")
+    @DisplayName("Spec#54 - 一時停止期間が終了したユーザーは写真を投稿できる")
     void testCreatePhoto_ExpiredTemporarySuspension_CanPost() {
         AccountSanction sanction = new AccountSanction();
         sanction.setUserId(testUser.getId());

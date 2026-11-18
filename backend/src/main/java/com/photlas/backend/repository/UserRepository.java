@@ -40,7 +40,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 
     /**
-     * Issue#54: プロフィール画像S3キーでユーザーを検索
+     * Spec#54: プロフィール画像S3キーでユーザーを検索
      *
      * @param profileImageS3Key プロフィール画像のS3オブジェクトキー
      * @return ユーザー（存在しない場合はOptional.empty()）
@@ -48,18 +48,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByProfileImageS3Key(String profileImageS3Key);
 
     /**
-     * Issue#72: 退会済みで指定日時より前にdeleted_atが設定されたユーザーを取得
+     * Spec#72: 退会済みで指定日時より前にdeleted_atが設定されたユーザーを取得
      */
     List<User> findByDeletedAtIsNotNullAndDeletedAtBefore(LocalDateTime cutoff);
 
     /**
-     * Issue#73: 退会済みユーザー一覧（退会日の新しい順）
+     * Spec#73: 退会済みユーザー一覧（退会日の新しい順）
      */
     org.springframework.data.domain.Page<User> findByDeletedAtIsNotNullOrderByDeletedAtDesc(
             org.springframework.data.domain.Pageable pageable);
 
     /**
-     * Issue#73: 退会済みユーザーをメールアドレスまたは元表示名で検索
+     * Spec#73: 退会済みユーザーをメールアドレスまたは元表示名で検索
      */
     @org.springframework.data.jpa.repository.Query(
             "SELECT u FROM User u WHERE u.deletedAt IS NOT NULL AND " +
@@ -71,7 +71,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             org.springframework.data.domain.Pageable pageable);
 
     /**
-     * Issue#73: 退会済みで保持期間延長を考慮した物理削除対象ユーザーを取得
+     * Spec#73: 退会済みで保持期間延長を考慮した物理削除対象ユーザーを取得
      */
     @org.springframework.data.jpa.repository.Query(
             "SELECT u FROM User u WHERE u.deletedAt IS NOT NULL AND u.deletedAt < :cutoff " +
@@ -80,7 +80,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @org.springframework.data.repository.query.Param("cutoff") LocalDateTime cutoff);
 
     /**
-     * Issue#108 §4.5: 同時実行ロック取得 + 頻度制限チェックを 1 つの UPDATE で原子的に行う。
+     * Spec#108 §4.5: 同時実行ロック取得 + 頻度制限チェックを 1 つの UPDATE で原子的に行う。
      *
      * <p>WHERE 句で「export_in_progress_at が未セット または 30 分以上前（ストール扱い）」
      * かつ「last_exported_at が未設定 または 168 時間以上前」の両方を満たすときだけ

@@ -4,7 +4,7 @@ import React from 'react'
  * 画像のダウンロード保護を適用する画像コンポーネント。
  * 右クリック保存・長押し保存・ドラッグ保存を防止する。
  *
- * Issue#126: loading 属性のデフォルトを "lazy" にする。fold above の画像
+ * Spec#126: loading 属性のデフォルトを "lazy" にする。fold above の画像
  * （PhotoDetailDialog のメイン写真、プロフィール画像、ロゴ等）は呼び出し側で
  * loading="eager" を明示指定して上書きする。
  */

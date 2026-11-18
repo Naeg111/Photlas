@@ -53,7 +53,7 @@ public class UserServiceTest {
     @Mock private JwtService jwtService;
     @Mock private JavaMailSender mailSender;
     @Mock private EmailVerificationTokenRepository emailVerificationTokenRepository;
-    // Issue#113: 共通基盤に移行したため、件名・本文をリアルな文字列で stub する
+    // Spec#113: 共通基盤に移行したため、件名・本文をリアルな文字列で stub する
     @Mock private EmailTemplateService emailTemplateService;
     @InjectMocks private AuthService authService;
 
@@ -71,7 +71,7 @@ public class UserServiceTest {
     @Mock private PhotoRepository photoRepository;
     @Mock private com.photlas.backend.repository.EmailChangeTokenRepository emailChangeTokenRepository;
     @Mock private EmailService emailService;
-    // Issue#81 Phase 4d: 退会時 OAuth 連携検出 + revoke 用
+    // Spec#81 Phase 4d: 退会時 OAuth 連携検出 + revoke 用
     @Mock private com.photlas.backend.repository.UserOAuthConnectionRepository userOAuthConnectionRepository;
     @Mock private OAuthTokenRevokeService oauthTokenRevokeService;
     // Hotfix: AccountService が ObjectProvider で optional 注入するため、
@@ -80,7 +80,7 @@ public class UserServiceTest {
     @InjectMocks private AccountService accountService;
 
     /**
-     * Issue#113: 共通基盤 EmailTemplateService が件名・本文を返す挙動を
+     * Spec#113: 共通基盤 EmailTemplateService が件名・本文を返す挙動を
      * テスト用にスタブする。既存テストが特定の文面（"パスワード" / "Password Changed" 等）を
      * 期待しているため、key + language から代表的な文面を生成して返す。
      */
@@ -183,7 +183,7 @@ public class UserServiceTest {
     // ===== SNSリンクバリデーション (ProfileService.updateSnsLinks) =====
 
     @Test
-    @DisplayName("Issue#29 - SNSリンク: 未対応プラットフォームでIllegalArgumentException")
+    @DisplayName("Spec#29 - SNSリンク: 未対応プラットフォームでIllegalArgumentException")
     void testUpdateSnsLinks_UnsupportedPlatform_ThrowsException() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -198,7 +198,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - SNSリンク: 重複プラットフォームでIllegalArgumentException")
+    @DisplayName("Spec#29 - SNSリンク: 重複プラットフォームでIllegalArgumentException")
     void testUpdateSnsLinks_DuplicatePlatform_ThrowsException() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -214,7 +214,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - SNSリンク: プラットフォームとURL不一致でIllegalArgumentException")
+    @DisplayName("Spec#29 - SNSリンク: プラットフォームとURL不一致でIllegalArgumentException")
     void testUpdateSnsLinks_InvalidUrlForPlatform_ThrowsException() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -229,7 +229,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - SNSリンク: twitter + x.com URLは正常に通る")
+    @DisplayName("Spec#29 - SNSリンク: twitter + x.com URLは正常に通る")
     void testUpdateSnsLinks_TwitterWithXUrl_Passes() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -247,7 +247,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - SNSリンク: twitter + twitter.com URLは正常に通る")
+    @DisplayName("Spec#29 - SNSリンク: twitter + twitter.com URLは正常に通る")
     void testUpdateSnsLinks_TwitterWithTwitterUrl_Passes() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -312,7 +312,7 @@ public class UserServiceTest {
     // ===== メールアドレス変更リクエスト (AccountService.requestEmailChange) =====
 
     @Test
-    @DisplayName("Issue#86 - メール変更: パスワード不一致でUnauthorizedException")
+    @DisplayName("Spec#86 - メール変更: パスワード不一致でUnauthorizedException")
     void testRequestEmailChange_WrongPassword_ThrowsUnauthorized() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -324,7 +324,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#86 - メール変更: 同じメールアドレスでIllegalArgumentException")
+    @DisplayName("Spec#86 - メール変更: 同じメールアドレスでIllegalArgumentException")
     void testRequestEmailChange_SameEmail_ThrowsException() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -336,7 +336,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#86 - メール変更: 重複メールアドレスでConflictException")
+    @DisplayName("Spec#86 - メール変更: 重複メールアドレスでConflictException")
     void testRequestEmailChange_DuplicateEmail_ThrowsConflict() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         User existingUser = createMockUser(2L, OTHER_EMAIL, "otheruser");
@@ -352,7 +352,7 @@ public class UserServiceTest {
     // ===== パスワード変更 (PasswordService.updatePassword) =====
 
     @Test
-    @DisplayName("Issue#20 - パスワード変更: 現在のパスワード不一致でUnauthorizedException")
+    @DisplayName("Spec#20 - パスワード変更: 現在のパスワード不一致でUnauthorizedException")
     void testUpdatePassword_WrongCurrentPassword_ThrowsUnauthorized() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -365,7 +365,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - パスワード変更: 成功時に通知メールが送信される")
+    @DisplayName("Spec#20 - パスワード変更: 成功時に通知メールが送信される")
     void testUpdatePassword_Success_SendsNotificationEmail() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -377,10 +377,10 @@ public class UserServiceTest {
         verify(emailService).send(eq(TEST_EMAIL), contains("パスワード"), anyString());
     }
 
-    // ===== Issue#81 Phase 4e: setInitialPassword / OAuth のみユーザーの updatePassword 拒否 =====
+    // ===== Spec#81 Phase 4e: setInitialPassword / OAuth のみユーザーの updatePassword 拒否 =====
 
     @Test
-    @DisplayName("[Issue#81 4e] OAuth のみユーザーの updatePassword は OAUTH_USER_NO_PASSWORD で拒否")
+    @DisplayName("[Spec#81 4e] OAuth のみユーザーの updatePassword は OAUTH_USER_NO_PASSWORD で拒否")
     void testUpdatePassword_OAuthOnlyUser_Rejected() {
         User oauthOnly = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         oauthOnly.setPasswordHash(null);
@@ -396,7 +396,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("[Issue#81 4e] setInitialPassword: OAuth のみユーザー向け、ハッシュ化して保存 + dismissed_at を NULL リセット + 通知メール")
+    @DisplayName("[Spec#81 4e] setInitialPassword: OAuth のみユーザー向け、ハッシュ化して保存 + dismissed_at を NULL リセット + 通知メール")
     void testSetInitialPassword_OAuthOnlyUser_HashesAndResetsDismissedAt() {
         User oauthOnly = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         oauthOnly.setPasswordHash(null);
@@ -415,7 +415,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("[Issue#81 4e] setInitialPassword: password_hash が既に設定済みのユーザーは拒否")
+    @DisplayName("[Spec#81 4e] setInitialPassword: password_hash が既に設定済みのユーザーは拒否")
     void testSetInitialPassword_UserAlreadyHasPassword_Rejected() {
         User normal = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         // password_hash != null がデフォルト
@@ -430,7 +430,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("[Issue#81 4e] setInitialPassword: ユーザーが見つからない場合 UnauthorizedException")
+    @DisplayName("[Spec#81 4e] setInitialPassword: ユーザーが見つからない場合 UnauthorizedException")
     void testSetInitialPassword_UserNotFound_ThrowsUnauthorized() {
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.empty());
 
@@ -441,7 +441,7 @@ public class UserServiceTest {
     // ===== パスワードリセット (PasswordService.resetPassword) =====
 
     @Test
-    @DisplayName("Issue#6 - パスワードリセット: 成功時に通知メールが送信される")
+    @DisplayName("Spec#6 - パスワードリセット: 成功時に通知メールが送信される")
     void testResetPassword_Success_SendsNotificationEmail() {
         String token = "valid-reset-token";
         PasswordResetToken resetToken = new PasswordResetToken(
@@ -460,7 +460,7 @@ public class UserServiceTest {
     // ===== アカウント削除 (AccountService.deleteAccount) =====
 
     @Test
-    @DisplayName("Issue#20 - アカウント削除: パスワード不一致でUnauthorizedException")
+    @DisplayName("Spec#20 - アカウント削除: パスワード不一致でUnauthorizedException")
     void testDeleteAccount_WrongPassword_ThrowsUnauthorized() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -474,7 +474,7 @@ public class UserServiceTest {
     // ===== ログイン (AuthService.loginUser) =====
 
     @Test
-    @DisplayName("Issue#54 - ログイン: メール未認証でEmailNotVerifiedException")
+    @DisplayName("Spec#54 - ログイン: メール未認証でEmailNotVerifiedException")
     void testLoginUser_UnverifiedEmail_ThrowsException() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         user.setEmailVerified(false);
@@ -489,7 +489,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - ログイン: SUSPENDEDロールでAccountSuspendedException")
+    @DisplayName("Spec#54 - ログイン: SUSPENDEDロールでAccountSuspendedException")
     void testLoginUser_SuspendedRole_ThrowsAccountSuspended() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         user.setEmailVerified(true);
@@ -507,7 +507,7 @@ public class UserServiceTest {
     // ===== 表示名更新 (ProfileService.updateUsername) =====
 
     @Test
-    @DisplayName("Issue#29 - 表示名更新: 他ユーザーと同じ表示名でも更新成功する（重複許可）")
+    @DisplayName("Spec#29 - 表示名更新: 他ユーザーと同じ表示名でも更新成功する（重複許可）")
     void testUpdateUsername_DuplicateUsername_Succeeds() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -520,7 +520,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - 表示名更新: 新しい表示名が正常に更新される")
+    @DisplayName("Spec#29 - 表示名更新: 新しい表示名が正常に更新される")
     void testUpdateUsername_NewUsername_Succeeds() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -532,10 +532,10 @@ public class UserServiceTest {
         verify(userRepository).save(argThat(u -> NEW_USERNAME.equals(u.getUsername())));
     }
 
-    // ===== Issue#72: ソフトデリート（論理削除） =====
+    // ===== Spec#72: ソフトデリート（論理削除） =====
 
     @Test
-    @DisplayName("Issue#72 - アカウント削除: deleted_atが設定され、物理削除されない")
+    @DisplayName("Spec#72 - アカウント削除: deleted_atが設定され、物理削除されない")
     void testDeleteAccount_SetsDeletedAt_DoesNotPhysicallyDelete() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -549,7 +549,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#72 - アカウント削除: 表示名がランダム文字列に書き換わり、original_usernameに元の値が保存される")
+    @DisplayName("Spec#72 - アカウント削除: 表示名がランダム文字列に書き換わり、original_usernameに元の値が保存される")
     void testDeleteAccount_RandomizesUsername_PreservesOriginal() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -566,7 +566,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#92 - ログイン: 退会済みユーザーが誤ったパスワードでログインすると汎用エラーで拒否される")
+    @DisplayName("Spec#92 - ログイン: 退会済みユーザーが誤ったパスワードでログインすると汎用エラーで拒否される")
     void testLoginUser_DeletedUser_WrongPassword_ThrowsGenericError() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         user.setEmailVerified(true);
@@ -580,12 +580,12 @@ public class UserServiceTest {
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessage("メールアドレスまたはパスワードが正しくありません");
 
-        // パスワード検証が呼ばれていることを確認（Issue#92: パスワード検証を先に実行）
+        // パスワード検証が呼ばれていることを確認（Spec#92: パスワード検証を先に実行）
         verify(passwordEncoder).matches(CURRENT_PASSWORD, TEST_PASSWORD_HASH);
     }
 
     @Test
-    @DisplayName("Issue#72 - 登録: 退会済みメールアドレスで登録すると専用エラーメッセージ")
+    @DisplayName("Spec#72 - 登録: 退会済みメールアドレスで登録すると専用エラーメッセージ")
     void testRegisterUser_DeletedEmail_ThrowsSpecificError() {
         User deletedUser = createMockUser(1L, TEST_EMAIL, "deleted_abc123");
         deletedUser.setDeletedAt(java.time.LocalDateTime.now().minusDays(10));
@@ -596,7 +596,7 @@ public class UserServiceTest {
         request.setEmail(TEST_EMAIL);
         request.setPassword(CURRENT_PASSWORD);
         request.setUsername("newuser");
-        // Issue#109: 同意・年齢確認フィールドを true でセット
+        // Spec#109: 同意・年齢確認フィールドを true でセット
         request.setAgreedToTerms(true);
         request.setAgreedToPrivacy(true);
         request.setAgeConfirmed(true);
@@ -607,7 +607,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#72 - 退会時にスポットのcreated_by_user_idが他ユーザーに切り替わる")
+    @DisplayName("Spec#72 - 退会時にスポットのcreated_by_user_idが他ユーザーに切り替わる")
     void testDeleteAccount_TransfersSpotOwnership() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         User otherUser = createMockUser(2L, OTHER_EMAIL, "otheruser");
@@ -627,10 +627,10 @@ public class UserServiceTest {
         assertThat(spot.getCreatedByUserId()).isEqualTo(2L);
     }
 
-    // ===== Issue#90: アカウント削除確認メール =====
+    // ===== Spec#90: アカウント削除確認メール =====
 
     @Test
-    @DisplayName("Issue#90 - アカウント削除: 確認メールが送信される（元の表示名で宛名が記載される）")
+    @DisplayName("Spec#90 - アカウント削除: 確認メールが送信される（元の表示名で宛名が記載される）")
     void testDeleteAccount_SendsConfirmationEmail() {
         // Arrange
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
@@ -650,7 +650,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#90 - アカウント削除: メール送信失敗時も削除処理は成功する")
+    @DisplayName("Spec#90 - アカウント削除: メール送信失敗時も削除処理は成功する")
     void testDeleteAccount_EmailFailure_DoesNotAffectDeletion() {
         // Arrange
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
@@ -666,10 +666,10 @@ public class UserServiceTest {
         verify(userRepository).save(argThat(u -> u.getDeletedAt() != null));
     }
 
-    // ===== Issue#91: メールの英語対応 =====
+    // ===== Spec#91: メールの英語対応 =====
 
     @Test
-    @DisplayName("Issue#91 - アカウント削除: 英語ユーザーには英語の確認メールが送信される")
+    @DisplayName("Spec#91 - アカウント削除: 英語ユーザーには英語の確認メールが送信される")
     void testDeleteAccount_EnglishUser_SendsEnglishEmail() {
         // Arrange
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
@@ -691,7 +691,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#91 - パスワード変更通知: 英語ユーザーには英語の通知メールが送信される")
+    @DisplayName("Spec#91 - パスワード変更通知: 英語ユーザーには英語の通知メールが送信される")
     void testPasswordChanged_EnglishUser_SendsEnglishEmail() {
         // Arrange
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
@@ -711,10 +711,10 @@ public class UserServiceTest {
         );
     }
 
-    // ===== Issue#81 Phase 4b: OAuth のみユーザーの退会（password_hash == null） =====
+    // ===== Spec#81 Phase 4b: OAuth のみユーザーの退会（password_hash == null） =====
 
     @Test
-    @DisplayName("[Issue#81 4-A-T4] OAuth のみユーザーの退会: passwordEncoder.matches() は呼ばれず confirmationChecked=true で削除成功")
+    @DisplayName("[Spec#81 4-A-T4] OAuth のみユーザーの退会: passwordEncoder.matches() は呼ばれず confirmationChecked=true で削除成功")
     void testDeleteAccount_OAuthOnlyUser_SkipsPasswordValidation() {
         // Arrange: password_hash == null の OAuth のみユーザー
         User oauthOnlyUser = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
@@ -732,10 +732,10 @@ public class UserServiceTest {
         verify(userRepository).save(argThat(u -> u.getDeletedAt() != null));
     }
 
-    // ===== Issue#81 Phase 4h: changeEmail / updateUsername の OAuth 対応 =====
+    // ===== Spec#81 Phase 4h: changeEmail / updateUsername の OAuth 対応 =====
 
     @Test
-    @DisplayName("[Issue#81 4h] requestEmailChange: OAuth のみユーザー (password_hash == null) は OAUTH_USER_EMAIL_CHANGE_FORBIDDEN で拒否")
+    @DisplayName("[Spec#81 4h] requestEmailChange: OAuth のみユーザー (password_hash == null) は OAUTH_USER_EMAIL_CHANGE_FORBIDDEN で拒否")
     void testRequestEmailChange_OAuthOnlyUser_Rejected() {
         User oauthOnly = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         oauthOnly.setPasswordHash(null);
@@ -751,7 +751,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("[Issue#81 4h] updateUsername: 成功時に usernameTemporary が false に更新される")
+    @DisplayName("[Spec#81 4h] updateUsername: 成功時に usernameTemporary が false に更新される")
     void testUpdateUsername_ClearsUsernameTemporary() {
         User user = createMockUser(1L, TEST_EMAIL, TEST_USERNAME);
         user.setUsernameTemporary(true);
@@ -764,12 +764,12 @@ public class UserServiceTest {
                 "confirmed_name".equals(u.getUsername()) && !u.isUsernameTemporary()));
     }
 
-    // ===== Issue#81 Phase 4d: 退会メール 3 パターン × 2 言語 + revoke 統合 =====
+    // ===== Spec#81 Phase 4d: 退会メール 3 パターン × 2 言語 + revoke 統合 =====
 
     @Test
-    @DisplayName("[Issue#81 4-B NORMAL ja] 通常ユーザー ja: 退会メールが email.accountDeletion.normal キーで送信される")
+    @DisplayName("[Spec#81 4-B NORMAL ja] 通常ユーザー ja: 退会メールが email.accountDeletion.normal キーで送信される")
     void testDeleteAccount_NormalUser_Ja_UsesNormalDeletionKey() {
-        // Issue#113 で本文文言は properties ファイル (email.accountDeletion.normal.{subject,body}) へ移行。
+        // Spec#113 で本文文言は properties ファイル (email.accountDeletion.normal.{subject,body}) へ移行。
         // 本テストは「NORMAL ユーザーは normal キーで送信される」という委譲契約を検証する。
         // 実際の文面ロックは AccountServiceMultiLanguageTest（@SpringBootTest で properties を読む）と
         // EmailTemplateConsistencyTest（5 言語ファイルのキー集合検証）で担保する。
@@ -786,7 +786,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("[Issue#81 4-B NORMAL en] 通常ユーザー en: 既存英文面のキーワードを含む")
+    @DisplayName("[Spec#81 4-B NORMAL en] 通常ユーザー en: 既存英文面のキーワードを含む")
     void testDeleteAccount_NormalUser_En_ContainsExistingKeywords() {
         User user = normalUserJa();
         user.setLanguage("en");
@@ -807,7 +807,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("[Issue#81 4-B HYBRID ja] パスワード + Google 連携ユーザー ja: 両方の復旧経路を案内")
+    @DisplayName("[Spec#81 4-B HYBRID ja] パスワード + Google 連携ユーザー ja: 両方の復旧経路を案内")
     void testDeleteAccount_HybridUser_Ja_ContainsBothRouteWording() {
         User user = normalUserJa();
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -829,7 +829,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("[Issue#81 4-B HYBRID en] パスワード + LINE 連携ユーザー en: 両方の復旧経路を案内")
+    @DisplayName("[Spec#81 4-B HYBRID en] パスワード + LINE 連携ユーザー en: 両方の復旧経路を案内")
     void testDeleteAccount_HybridUser_En_ContainsBothRouteWording() {
         User user = normalUserJa();
         user.setLanguage("en");
@@ -851,7 +851,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("[Issue#81 4-B OAUTH_ONLY ja] OAuth のみ (Google) ユーザー ja: プロバイダ再サインインのみ案内")
+    @DisplayName("[Spec#81 4-B OAUTH_ONLY ja] OAuth のみ (Google) ユーザー ja: プロバイダ再サインインのみ案内")
     void testDeleteAccount_OAuthOnlyUser_Ja_ContainsOnlyOAuthRoute() {
         User user = oauthOnlyUserJa();
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));
@@ -872,7 +872,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("[Issue#81 4-B OAUTH_ONLY en] OAuth のみ (LINE) ユーザー en: プロバイダ再サインインのみ案内")
+    @DisplayName("[Spec#81 4-B OAUTH_ONLY en] OAuth のみ (LINE) ユーザー en: プロバイダ再サインインのみ案内")
     void testDeleteAccount_OAuthOnlyUser_En_ContainsOnlyOAuthRoute() {
         User user = oauthOnlyUserJa();
         user.setLanguage("en");
@@ -894,7 +894,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("[Issue#81 Q9] 退会成功時は OAuthTokenRevokeService.revokeForUser(userId) が呼ばれる")
+    @DisplayName("[Spec#81 Q9] 退会成功時は OAuthTokenRevokeService.revokeForUser(userId) が呼ばれる")
     void testDeleteAccount_InvokesTokenRevokeService() {
         User user = normalUserJa();
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(user));

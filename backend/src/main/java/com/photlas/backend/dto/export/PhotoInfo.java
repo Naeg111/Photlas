@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Issue#108: 写真メタデータ。photos.json に対応する。
+ * Spec#108: 写真メタデータ。photos.json に対応する。
  *
  * <p>spotId、cropCenter*、s3ObjectKey は含めない（内部実装情報のため）。
  * s3ObjectKey は ZIP 内のファイルパス決定にのみ使用するため、別途

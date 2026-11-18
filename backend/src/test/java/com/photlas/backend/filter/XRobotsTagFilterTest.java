@@ -12,11 +12,11 @@ import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#136 §9 / #58 §6: {@link XRobotsTagFilter} のテスト。
+ * Spec#136 §9 / #58 §6: {@link XRobotsTagFilter} のテスト。
  *
  * <p>本番（{@code app.frontend-url=https://photlas.jp}）では SEO 対象の SSR ページ
  * （{@code /tags/**}・{@code /photo-viewer/**}）に {@code X-Robots-Tag: noindex} を付けない。
- * それ以外のパス（{@code /api/*}・{@code /robots.txt} 等）と、ステージング全体（Issue#143）は
+ * それ以外のパス（{@code /api/*}・{@code /robots.txt} 等）と、ステージング全体（Spec#143）は
  * 従来どおり {@code noindex, nofollow} を維持する。</p>
  */
 class XRobotsTagFilterTest {
@@ -36,19 +36,19 @@ class XRobotsTagFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §9 - 本番の /tags/{slug} には noindex を付けない")
+    @DisplayName("Spec#136 §9 - 本番の /tags/{slug} には noindex を付けない")
     void prodTagsHasNoNoindex() throws Exception {
         assertThat(headerFor(PROD, "/tags/mountain")).isNull();
     }
 
     @Test
-    @DisplayName("Issue#58 §6 - 本番の /photo-viewer/{id} には noindex を付けない")
+    @DisplayName("Spec#58 §6 - 本番の /photo-viewer/{id} には noindex を付けない")
     void prodPhotoViewerHasNoNoindex() throws Exception {
         assertThat(headerFor(PROD, "/photo-viewer/1")).isNull();
     }
 
     @Test
-    @DisplayName("Issue#136 §9 - 本番の /api/* は従来どおり noindex を付与")
+    @DisplayName("Spec#136 §9 - 本番の /api/* は従来どおり noindex を付与")
     void prodApiKeepsNoindex() throws Exception {
         assertThat(headerFor(PROD, "/api/v1/spots")).isEqualTo(NOINDEX);
     }
@@ -60,13 +60,13 @@ class XRobotsTagFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#143 - ステージングは /tags も含め全レスポンスで noindex を維持")
+    @DisplayName("Spec#143 - ステージングは /tags も含め全レスポンスで noindex を維持")
     void stagingTagsKeepsNoindex() throws Exception {
         assertThat(headerFor(STAGING, "/tags/mountain")).isEqualTo(NOINDEX);
     }
 
     @Test
-    @DisplayName("Issue#143 - ステージングの /photo-viewer も noindex を維持")
+    @DisplayName("Spec#143 - ステージングの /photo-viewer も noindex を維持")
     void stagingPhotoViewerKeepsNoindex() throws Exception {
         assertThat(headerFor(STAGING, "/photo-viewer/1")).isEqualTo(NOINDEX);
     }

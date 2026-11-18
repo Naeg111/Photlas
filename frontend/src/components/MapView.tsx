@@ -25,7 +25,7 @@ export interface MapViewHandle {
   /**
    * 地図上のスポット情報を再取得して描画する。
    *
-   * Issue#127: bypassCache=true を渡すと、URL に使い捨てクエリパラメータ `_t=<timestamp>`
+   * Spec#127: bypassCache=true を渡すと、URL に使い捨てクエリパラメータ `_t=<timestamp>`
    * を付与して CloudFront キャッシュをバイパスし、必ずバックエンドから最新データを取得する。
    * 投稿成功・写真削除直後など、自分の操作を即座に地図に反映したい場合に使う。
    * 通常の地図移動・フィルタ変更等では bypassCache を指定せず、CloudFront キャッシュを利用する。
@@ -36,26 +36,26 @@ export interface MapViewHandle {
   resetNorthHeading: () => void
   showShootingLocationPin: (lat: number, lng: number) => void
   clearShootingLocationPin: () => void
-  /** Issue#69: 場所検索結果にマップを移動する */
+  /** Spec#69: 場所検索結果にマップを移動する */
   flyToPlace: (lng: number, lat: number, zoom: number) => void
   /**
-   * Issue#106: 初期表示位置をユーザーの現在地またはIP国判定結果に自動的に移動する。
-   * Issue#111: skipMinView=true で AUTO_CENTER_MIN_VIEW_MS の最低表示待機をスキップする
+   * Spec#106: 初期表示位置をユーザーの現在地またはIP国判定結果に自動的に移動する。
+   * Spec#111: skipMinView=true で AUTO_CENTER_MIN_VIEW_MS の最低表示待機をスキップする
    * （位置情報が granted/denied 既知のときにスプラッシュの裏で実行する用途）。
    */
   autoCenter: (options?: { skipMinView?: boolean }) => Promise<void>
   /**
-   * Issue#111: 5秒のアイドル待機をせず即時に地球儀回転を開始する。
+   * Spec#111: 5秒のアイドル待機をせず即時に地球儀回転を開始する。
    * App.tsx で permission=prompt のときにスプラッシュ解除と同時に呼ぶ。
    */
   startGlobeRotationImmediately: () => void
 }
 
 /**
- * Issue#13: 地図検索機能のインタラクション改善とピン表示制御
- * Issue#16: フィルター機能統合
- * Issue#53: Google Maps API → Mapbox API 移行
- * Issue#55: Symbol Layer移行 + クラスタリングアニメーション
+ * Spec#13: 地図検索機能のインタラクション改善とピン表示制御
+ * Spec#16: フィルター機能統合
+ * Spec#53: Google Maps API → Mapbox API 移行
+ * Spec#55: Symbol Layer移行 + クラスタリングアニメーション
  */
 
 // Spot APIレスポンスの型定義
@@ -68,7 +68,7 @@ interface SpotResponse {
   photoCount: number
 }
 
-// フィルター条件の型定義（Issue#16, Issue#46, Issue#87, Issue#141）
+// フィルター条件の型定義（Spec#16, Spec#46, Spec#87, Spec#141）
 export interface MapViewFilterParams {
   subject_categories?: number[]
   months?: number[]
@@ -79,33 +79,33 @@ export interface MapViewFilterParams {
   aspect_ratios?: string[]
   focal_length_ranges?: string[]
   max_iso?: number
-  /** Issue#141: キーワードフィルタ (Q-new-1 でバックエンド配線済) */
+  /** Spec#141: キーワードフィルタ (Q-new-1 でバックエンド配線済) */
   tag_ids?: number[]
 }
 
 // 地図の初期設定
 const DEFAULT_CENTER = { lat: 35.6585, lng: 139.7454 } // 東京
-// Issue#106: 初期ズームは0（地球全体）。autoCenterで現在地/IP国判定結果にワープする
+// Spec#106: 初期ズームは0（地球全体）。autoCenterで現在地/IP国判定結果にワープする
 const DEFAULT_ZOOM = 0
-// Issue#106: 初期ズーム0表示時の緯度。
-// Issue#111: 経度（INITIAL_VIEW_LNG）は削除し、コンポーネント内で 0〜359 のランダム値に切替える。
-// Issue#111-followup: 緯度は「初回マウント時の見た目」と「方位リセット時の戻り先」の2用途で 10 度を使う。
+// Spec#106: 初期ズーム0表示時の緯度。
+// Spec#111: 経度（INITIAL_VIEW_LNG）は削除し、コンポーネント内で 0〜359 のランダム値に切替える。
+// Spec#111-followup: 緯度は「初回マウント時の見た目」と「方位リセット時の戻り先」の2用途で 10 度を使う。
 // 回転中は現在の center.lat を維持（ユーザーが緯度をいじれば、その緯度で回転を続ける）。
 const INITIAL_VIEW_LAT = 10
 const GLOBE_RESET_LAT = INITIAL_VIEW_LAT
-// Issue#106: autoCenter のフォールバック用（位置情報・IP国判定がすべて失敗した場合）
+// Spec#106: autoCenter のフォールバック用（位置情報・IP国判定がすべて失敗した場合）
 const FALLBACK_TOKYO_ZOOM = 11
-// Issue#106: 位置情報取得成功時のズームレベル
+// Spec#106: 位置情報取得成功時のズームレベル
 const GEOLOCATION_ZOOM = 14
-// Issue#106: getCurrentPosition のタイムアウト
+// Spec#106: getCurrentPosition のタイムアウト
 const GEOLOCATION_TIMEOUT_MS = 10000
-// Issue#106: 初回起動時、ユーザーが「地球全体（ズーム0）」を視認できる最低時間（ミリ秒）。
+// Spec#106: 初回起動時、ユーザーが「地球全体（ズーム0）」を視認できる最低時間（ミリ秒）。
 // 位置情報がすでに許可済みのケースでは getCurrentPosition が即座に成功するため、
 // この時間を確保しないとユーザーがズーム0を見る間もなく現在地に飛ばされてしまう。
-// Issue#111: skipMinView=true でこの待機をスキップできるようにした。
+// Spec#111: skipMinView=true でこの待機をスキップできるようにした。
 const AUTO_CENTER_MIN_VIEW_MS = 1000
 
-// Issue#111: 地球儀回転の設定
+// Spec#111: 地球儀回転の設定
 /** 地球 1 周にかかる秒数 */
 const GLOBE_ROTATION_SECONDS_PER_REV = 60
 /** マップ操作なしで回転開始するまでの待機時間（ミリ秒） */
@@ -115,11 +115,11 @@ const GLOBE_ROTATION_MAX_ZOOM = 4
 /** 1秒あたりの経度変化量（度）。1周60秒なら 6度/秒。 */
 const DEGREES_PER_SECOND = 360 / GLOBE_ROTATION_SECONDS_PER_REV
 
-// クラスタリング設定（Issue#39, Issue#55, Issue#103: 全ズームレベル対応）
+// クラスタリング設定（Spec#39, Spec#55, Spec#103: 全ズームレベル対応）
 const CLUSTER_RADIUS = 70
 const CLUSTER_MAX_ZOOM = 17
 
-// Issue#121: ベースタイル先読み設定
+// Spec#121: ベースタイル先読み設定
 /** タイルキャッシュ上限（案 B）。デフォルト動的算出より大幅に増やし、再表示時の白タイムを減らす。 */
 const MAX_TILE_CACHE_SIZE = 500
 /** preload で先取りする「現在ズームより何段階下」のズーム差分（案 C） */
@@ -130,11 +130,11 @@ const TOAST_DURATION_MS = 3000
 const TOP_UI_HEIGHT = 56
 /** 長距離移動の閾値（緯度経度の度数、約500km） */
 const LONG_DISTANCE_THRESHOLD = 4.5
-/** Issue#116: 撮影地点プレビューの目標ズーム（行き先 + 暗転判定基準） */
+/** Spec#116: 撮影地点プレビューの目標ズーム（行き先 + 暗転判定基準） */
 const SHOOTING_PREVIEW_TARGET_ZOOM = 16
-/** Issue#116: 撮影地点プレビューの暗転判定ズーム差（|現在ズーム - 16| ≥ 5 で暗転） */
+/** Spec#116: 撮影地点プレビューの暗転判定ズーム差（|現在ズーム - 16| ≥ 5 で暗転） */
 const SHOOTING_PREVIEW_ZOOM_DIFF_THRESHOLD = 5
-/** Issue#158: 目標が現在の表示とほぼ同じ（この距離以内かつズーム差以内）なら何もしない。度数ユークリッド距離で比較 */
+/** Spec#158: 目標が現在の表示とほぼ同じ（この距離以内かつズーム差以内）なら何もしない。度数ユークリッド距離で比較 */
 const NEGLIGIBLE_MOVE_DEG = 0.0003
 const NEGLIGIBLE_ZOOM_DIFF = 0.5
 const TRANSITION_FADE_MS = 500
@@ -168,7 +168,7 @@ function createTransitionCompleter(
 const TRANSITION_TIMEOUT_MS = 5000
 
 /**
- * Issue#106 リファクタリング: ワープアニメーション（フェードアウト → 瞬時ジャンプ → フェードイン）を実行する共通ヘルパー。
+ * Spec#106 リファクタリング: ワープアニメーション（フェードアウト → 瞬時ジャンプ → フェードイン）を実行する共通ヘルパー。
  * centerOnUserLocation・flyToPlace（長距離分岐）・autoCenter で重複していた処理を抽出。
  */
 function performWarpAnimation(
@@ -191,10 +191,10 @@ function performWarpAnimation(
 const FETCH_SPOTS_DEBOUNCE_MS = 500
 
 /**
- * Issue#156: 初回（スプラッシュ裏）フェッチ専用の固定全世界 bounds。
+ * Spec#156: 初回（スプラッシュ裏）フェッチ専用の固定全世界 bounds。
  * 実ビューポートの bounds は端末・画面サイズごとに小数が異なり CDN キャッシュキー
  * (URL) が分散してしまうため、初回だけこの固定値を送って全ユーザーで URL を一致させ、
- * CloudFront 共有キャッシュ（Issue#127, TTL 60秒）を効かせる。moveend 以降は実 bounds。
+ * CloudFront 共有キャッシュ（Spec#127, TTL 60秒）を効かせる。moveend 以降は実 bounds。
  */
 const INITIAL_WORLD_BOUNDS = { north: 90, south: -90, east: 180, west: -180 } as const
 const SHOOTING_PIN_SCALE = 1.4
@@ -207,7 +207,7 @@ function roundToEven(n: number): number {
 }
 
 /**
- * Issue#116 リファクタリング: 緯度経度の度数空間における2点間距離。
+ * Spec#116 リファクタリング: 緯度経度の度数空間における2点間距離。
  * 暗転判定（LONG_DISTANCE_THRESHOLD ≒ 4.5度）の比較用なので球面補正は不要。
  * showShootingLocationPin / clearShootingLocationPin / flyToPlace / centerOnUserLocation で共用する。
  */
@@ -244,7 +244,7 @@ const SHOOTING_PIN_STROKE = '#000000'
 const PIN_IMAGE_SCALE = 1.4
 // Symbol Layer共通: ズームレベルに応じたアイコンサイズ
 // Canvas画像は最大スケール(1.4倍)+SHADOW_PADDING分で生成されるため、
-// icon-sizeで縮小補正してIssue#55以前のPinSvg（32x38px表示）と同じサイズにする
+// icon-sizeで縮小補正してSpec#55以前のPinSvg（32x38px表示）と同じサイズにする
 const PIN_IMAGE_LOGICAL_WIDTH = Math.round(BASE_PIN_SIZE * PIN_IMAGE_SCALE) + SHADOW_PADDING
 const PIN_SIZE_CORRECTION = BASE_PIN_SIZE / PIN_IMAGE_LOGICAL_WIDTH
 
@@ -258,7 +258,7 @@ const ICON_SIZE_EXPRESSION: ExpressionSpecification = [
 
 /**
  * 投稿件数プロパティからピン色HEXを決定するMapbox Expression
- * Issue#103: 閾値を引き上げ、1,000 件以上の Purple を追加
+ * Spec#103: 閾値を引き上げ、1,000 件以上の Purple を追加
  * @param countProperty - 件数を取得するプロパティ名
  */
 function buildPinColorExpression(countProperty: string): ExpressionSpecification {
@@ -282,20 +282,20 @@ interface MapViewProps {
   onMapClick?: () => void
   onMapReady?: () => void
   /**
-   * Issue#156: 初回（スプラッシュ裏）のスポット取得が「試行完了」した時に呼ばれる。
+   * Spec#156: 初回（スプラッシュ裏）のスポット取得が「試行完了」した時に呼ばれる。
    * 成功・失敗（エラー/レート制限/bounds なし）いずれでも発火する（＝スプラッシュ解除の
    * ゲート用シグナル）。App 側はこれと最低表示時間・地図ロード完了を合わせて解除する。
    */
   onInitialSpotsLoaded?: () => void
   /**
-   * Issue#111-followup §8: 投稿詳細ダイアログが表示中かどうか。
+   * Spec#111-followup §8: 投稿詳細ダイアログが表示中かどうか。
    * true の間は地球儀回転と 5 秒タイマーを停止する。
    * false に戻った時、ズーム 0〜4 なら 5 秒タイマーをセットする。
    */
   isPhotoDialogOpen?: boolean
-  /** Issue#115: 方角インジケーターの ON/OFF */
+  /** Spec#115: 方角インジケーターの ON/OFF */
   headingIndicatorEnabled?: boolean
-  /** Issue#115: 現在の方角（度数、0=北、時計回り）。null は未取得 */
+  /** Spec#115: 現在の方角（度数、0=北、時計回り）。null は未取得 */
   heading?: number | null
 }
 
@@ -387,7 +387,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const [mapTransitioning, setMapTransitioning] = useState(false)
   const [mapTransitionFading, setMapTransitionFading] = useState(false)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-  // Issue#115: マップの bearing（0=北上）。HeadingIndicator が画面上の回転角を補正するために使う
+  // Spec#115: マップの bearing（0=北上）。HeadingIndicator が画面上の回転角を補正するために使う
   const [mapBearing, setMapBearing] = useState<number>(0)
   const [shootingLocationPin, setShootingLocationPin] = useState<{ lat: number; lng: number } | null>(null)
   const savedMapStateRef = useRef<{ center: [number, number]; zoom: number } | null>(null)
@@ -401,9 +401,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const watchIdRef = useRef<number | null>(null)
   const layersInitializedRef = useRef(false)
 
-  // Issue#111: 地球儀回転の制御用 ref。
+  // Spec#111: 地球儀回転の制御用 ref。
   // - rotationFrameRef: 実行中の requestAnimationFrame ID。null = ループ停止中。
-  //   （Issue#111-followup: setInterval から rAF に切り替え。
+  //   （Spec#111-followup: setInterval から rAF に切り替え。
   //    rAF はブラウザの描画タイミングと同期するため、ユーザー入力イベントとの競合が減る）
   // - lastTickTimestampRef: 直前の rAF コールバックが呼ばれた時刻 (performance.now)。
   //   フレーム間の経過時間に応じて経度を進めることで、フレームレート差異を吸収する。
@@ -441,7 +441,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     },
   }), [])
 
-  // Issue#111: 初期表示経度をマウント時に一度だけランダム化する（毎回違う面が正面に見える）。
+  // Spec#111: 初期表示経度をマウント時に一度だけランダム化する（毎回違う面が正面に見える）。
   // モジュールトップレベルで Math.random() を呼ぶと SPA で MapView が再マウントされても
   // 同じ値が使われ続けるため useMemo を使う。
   const initialLongitude = useMemo(() => Math.floor(Math.random() * 360), [])
@@ -477,7 +477,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }
   }, [])
 
-  // Issue#111: アイドル予約タイマーを止める（再スケジュール経路でも、停止経路でも使う）
+  // Spec#111: アイドル予約タイマーを止める（再スケジュール経路でも、停止経路でも使う）
   const clearIdleRotationTimer = useCallback(() => {
     if (idleTimerRef.current !== null) {
       clearTimeout(idleTimerRef.current)
@@ -485,7 +485,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }
   }, [])
 
-  // Issue#111-followup Bug5: rAF ループを止めるだけのヘルパー。
+  // Spec#111-followup Bug5: rAF ループを止めるだけのヘルパー。
   // 「完全停止」と「角度操作中の一時停止」の両方で使う。
   const cancelRotationFrame = useCallback(() => {
     if (rotationFrameRef.current !== null) {
@@ -494,7 +494,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }
   }, [])
 
-  // Issue#111: 地球儀回転を完全停止する。アイドル予約タイマーも一緒に止めて
+  // Spec#111: 地球儀回転を完全停止する。アイドル予約タイマーも一緒に止めて
   // 「停止したら確実に動かない」状態にする（再開は呼び出し側が明示的に scheduleGlobeRotation を呼ぶ）。
   const stopGlobeRotation = useCallback(() => {
     cancelRotationFrame()
@@ -502,11 +502,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     isRotatingRef.current = false
   }, [cancelRotationFrame, clearIdleRotationTimer])
 
-  // Issue#111-followup Bug5: rAF ループのコールバック本体。
+  // Spec#111-followup Bug5: rAF ループのコールバック本体。
   // 直前のフレームから経過した実時間に比例した経度変化を加算する。
   const rotationLoop = useCallback((mapInstance: MapboxMap) => {
     const tick = (now: number) => {
-      // Issue#111-followup: 回転中にホイールズームインなどでズームが 5 以上に上がったら
+      // Spec#111-followup: 回転中にホイールズームインなどでズームが 5 以上に上がったら
       // 自身でループを終了する（startGlobeRotation のガードは「開始時」しかチェックしないため）
       if (mapInstance.getZoom() > GLOBE_ROTATION_MAX_ZOOM) {
         rotationFrameRef.current = null
@@ -517,7 +517,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       lastTickTimestampRef.current = now
       const deltaDegrees = (DEGREES_PER_SECOND * elapsedMs) / 1000
       const center = mapInstance.getCenter()
-      // Issue#111-followup（仕様変更4回目）: 緯度は強制スナップせず、現在の center.lat を維持する。
+      // Spec#111-followup（仕様変更4回目）: 緯度は強制スナップせず、現在の center.lat を維持する。
       // ユーザーが任意の緯度に panning した場合はその緯度で回転を続ける。
       // 緯度を 10 度に戻すのは方位リセットボタンを押した時のみ。
       mapInstance.setCenter([center.lng + deltaDegrees, center.lat])
@@ -527,23 +527,23 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     rotationFrameRef.current = requestAnimationFrame(tick)
   }, [])
 
-  // Issue#111: 地球儀回転を即時開始する。ズームが GLOBE_ROTATION_MAX_ZOOM を超えていたら何もしない。
+  // Spec#111: 地球儀回転を即時開始する。ズームが GLOBE_ROTATION_MAX_ZOOM を超えていたら何もしない。
   const startGlobeRotation = useCallback((mapInstance: MapboxMap) => {
     if (rotationFrameRef.current !== null) return
     if (mapInstance.getZoom() > GLOBE_ROTATION_MAX_ZOOM) return
-    // Issue#111-followup §8: 投稿詳細ダイアログ表示中は回転を開始しない
+    // Spec#111-followup §8: 投稿詳細ダイアログ表示中は回転を開始しない
     if (isPhotoDialogOpenRef.current) return
     isRotatingRef.current = true
-    // Issue#111-followup（仕様変更4回目）: 回転開始時に緯度をリセットしない。
+    // Spec#111-followup（仕様変更4回目）: 回転開始時に緯度をリセットしない。
     // 「現在いる地点を視点に回転を始める」仕様。
-    // Issue#111-followup §8: 回転中もピン（クラスタ）を表示し続ける。
+    // Spec#111-followup §8: 回転中もピン（クラスタ）を表示し続ける。
     // 既存の spots state は触らず、ピンが画面上で経度方向に流れて見える状態にする。
     rotationLoop(mapInstance)
   }, [rotationLoop])
 
-  // Issue#111: GLOBE_ROTATION_IDLE_DELAY_MS のアイドル待機後に回転を開始するスケジュールを立てる
+  // Spec#111: GLOBE_ROTATION_IDLE_DELAY_MS のアイドル待機後に回転を開始するスケジュールを立てる
   const scheduleGlobeRotation = useCallback((mapInstance: MapboxMap) => {
-    // Issue#111-followup §8: 投稿詳細ダイアログ表示中はタイマーすら立てない
+    // Spec#111-followup §8: 投稿詳細ダイアログ表示中はタイマーすら立てない
     if (isPhotoDialogOpenRef.current) return
     clearIdleRotationTimer()
     idleTimerRef.current = setTimeout(() => {
@@ -552,19 +552,19 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }, GLOBE_ROTATION_IDLE_DELAY_MS)
   }, [clearIdleRotationTimer, startGlobeRotation])
 
-  // Issue#111-followup §8: ユーザー操作完了直後の fetchSpots を呼ぶための ref 経由参照。
+  // Spec#111-followup §8: ユーザー操作完了直後の fetchSpots を呼ぶための ref 経由参照。
   // `debouncedFetchSpots` は本コンポーネント内で後ろの位置に定義されるため、
   // ここから直接参照すると JS の declaration 順序制約に当たる。ref を経由して回避する。
   const debouncedFetchSpotsRef = useRef<((map: MapboxMap) => void) | null>(null)
 
-  // Issue#111-followup §8: 投稿詳細ダイアログ表示状態を ref で常に最新化。
+  // Spec#111-followup §8: 投稿詳細ダイアログ表示状態を ref で常に最新化。
   // handleLoad は MapMock の onLoad / 実 Mapbox の load イベントから同期的に呼ばれる。
   // 初期表示時に prop=true でも、useEffect が走る前に handleLoad → scheduleGlobeRotation
   // が走るため、render 中に ref を更新して最新値を読めるようにする（refs は同期更新可）。
   const isPhotoDialogOpenRef = useRef(false)
   isPhotoDialogOpenRef.current = isPhotoDialogOpen ?? false
 
-  // Issue#111-followup: ユーザーのあらゆるカメラ操作で回転を停止し、5秒タイマーを引き直す。
+  // Spec#111-followup: ユーザーのあらゆるカメラ操作で回転を停止し、5秒タイマーを引き直す。
   // 仕様変更（2回目）: 当初は左クリック/1本指タップだけが停止トリガーだったが、
   // 「右ドラッグや2本指による角度変更、ズーム変更」も停止対象に拡張した。
   // これにより rAF ループとユーザー入力の競合がなくなり、操作の取りこぼしも解消する。
@@ -577,7 +577,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     if (mapInstance.getZoom() <= GLOBE_ROTATION_MAX_ZOOM) {
       scheduleGlobeRotation(mapInstance)
     }
-    // Issue#111-followup §8: ユーザー操作完了直後に最新スポットを 1 回 fetch（debounced 500ms）。
+    // Spec#111-followup §8: ユーザー操作完了直後に最新スポットを 1 回 fetch（debounced 500ms）。
     // ズーム/方位リセットの一時停止経路（cancelRotationFrame 単独）では呼ばれないようにこの場所のみ。
     debouncedFetchSpotsRef.current?.(mapInstance)
   }, [stopGlobeRotation, scheduleGlobeRotation])
@@ -611,7 +611,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       }
     })
 
-    // クラスタ用 Symbol Layer (Issue#103: minzoom 制約を撤廃)
+    // クラスタ用 Symbol Layer (Spec#103: minzoom 制約を撤廃)
     mapInstance.addLayer({
       id: CLUSTER_LAYER_ID,
       type: 'symbol',
@@ -631,7 +631,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       },
     })
 
-    // 個別ピン用 Symbol Layer (Issue#103: minzoom 制約を撤廃, Purple 追加)
+    // 個別ピン用 Symbol Layer (Spec#103: minzoom 制約を撤廃, Purple 追加)
     mapInstance.addLayer({
       id: UNCLUSTERED_LAYER_ID,
       type: 'symbol',
@@ -675,7 +675,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   // spotsをGeoJSON形式にメモ化（spots参照が変わっても中身が同じなら再生成しない）
   const geoJsonData = useMemo(() => spotsToGeoJson(spots), [spots])
 
-  // Issue#107: 表示言語に追従して地名ラベルを切り替える
+  // Spec#107: 表示言語に追従して地名ラベルを切り替える
   useMapboxLanguageSync(map, mapboxLang)
 
   // スポットデータが変更されたらSource/画像を更新
@@ -705,7 +705,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     }
   }, [map, shootingLocationPin])
 
-  // Issue#115: マップ bearing 変化を追跡（HeadingIndicator の角度補正用）。
+  // Spec#115: マップ bearing 変化を追跡（HeadingIndicator の角度補正用）。
   // headingIndicatorEnabled が false の間は購読しない（不要な再レンダリングを防ぐ）。
   useEffect(() => {
     if (!map || !headingIndicatorEnabled) return
@@ -716,14 +716,14 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     return () => { map.off('rotate', handleRotate) }
   }, [map, headingIndicatorEnabled])
 
-  // Issue#156: 各 fetchSpots 呼び出しに連番を振り、応答反映時に「最新か」を判定する（stale 応答ガード）。
+  // Spec#156: 各 fetchSpots 呼び出しに連番を振り、応答反映時に「最新か」を判定する（stale 応答ガード）。
   // 許可済みユーザーで初回①（全世界）とワープ後②（現在地）が並行した際、先発①の遅延応答が
   // 後発②の表示を上書きするのを防ぐ。高速パン/ズームの古い応答上書きも同時に防止する。
   const fetchSeqRef = useRef(0)
 
   // スポットデータを取得
-  // Issue#127: bypassCache=true で _t=<timestamp> を付与し CloudFront キャッシュをバイパスする
-  // Issue#156: boundsOverride で実測 bounds の代わりに固定 bounds を送れる（初回の全世界正規化）。
+  // Spec#127: bypassCache=true で _t=<timestamp> を付与し CloudFront キャッシュをバイパスする
+  // Spec#156: boundsOverride で実測 bounds の代わりに固定 bounds を送れる（初回の全世界正規化）。
   //           suppressErrorToast=true で初回先読み失敗時のエラートーストを抑制する。
   const fetchSpots = useCallback(async (
     mapInstance: MapboxMap,
@@ -734,7 +734,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     // このフェッチのシーケンス番号。setSpots 前に fetchSeqRef.current と一致するか確認する。
     const seq = ++fetchSeqRef.current
     try {
-      // Issue#156: boundsOverride があればそれを、無ければ実測 getBounds() を使う。
+      // Spec#156: boundsOverride があればそれを、無ければ実測 getBounds() を使う。
       // LngLatBounds のメソッド API（getNorth 等）とプレーンオブジェクトの差を吸収するため
       // 先に4つの数値へ正規化し、params / mineParams 双方でこの数値を使う。
       const rawBounds = boundsOverride ? null : mapInstance.getBounds()
@@ -763,11 +763,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         appendArrayParams(params, 'aspect_ratios', filterParams.aspect_ratios)
         appendArrayParams(params, 'focal_length_ranges', filterParams.focal_length_ranges)
         appendScalarParam(params, 'max_iso', filterParams.max_iso)
-        // Issue#141 Phase 5: tag_ids も送る
+        // Spec#141 Phase 5: tag_ids も送る
         appendArrayParams(params, 'tag_ids', filterParams.tag_ids)
       }
 
-      // Issue#127: 投稿直後の自分自身向けに使い捨てクエリパラメータで CloudFront キャッシュをバイパス
+      // Spec#127: 投稿直後の自分自身向けに使い捨てクエリパラメータで CloudFront キャッシュをバイパス
       if (bypassCache) {
         params.append('_t', String(Date.now()))
       }
@@ -789,7 +789,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
       const publishedSpots = await response.json()
 
-      // Issue#156: この応答が返る前に後発フェッチが始まっていたら破棄する（stale 応答ガード）。
+      // Spec#156: この応答が返る前に後発フェッチが始まっていたら破棄する（stale 応答ガード）。
       if (seq !== fetchSeqRef.current) return
 
       // 緊急対応: /spots 結果は即座に画面反映し、mine-pending の完走は待たない。
@@ -798,7 +798,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       // 完了次第マージする方式に変更。
       setSpots(publishedSpots)
 
-      // Issue#127: 認証済みユーザーは自分の PENDING 投稿があるスポットを別 API で取得して
+      // Spec#127: 認証済みユーザーは自分の PENDING 投稿があるスポットを別 API で取得して
       // マージする。重い /spots は CloudFront 共有キャッシュを保ちつつ、本人差分だけを
       // 軽量に取得する（他人の PENDING はバックエンドで除外されるためここでは何もしない）。
       const auth = getAuthHeaders()
@@ -807,7 +807,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
       // bounds と filter は /spots と完全に同じ条件で取りに行く
       // （ただしモデレーション状態と本人 user_id でさらに絞られる）
-      // Issue#141 Phase 5: 全フィルタを mine-pending にも転送 (UX 一貫性, Q-new-5/7)
+      // Spec#141 Phase 5: 全フィルタを mine-pending にも転送 (UX 一貫性, Q-new-5/7)
       const mineParams = new URLSearchParams({
         north: b.north.toString(),
         south: b.south.toString(),
@@ -839,7 +839,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           if (!mineResponse.ok) return
           const minePending = await mineResponse.json()
           if (!Array.isArray(minePending) || minePending.length === 0) return
-          // Issue#156: マージ反映時も後発フェッチが始まっていたら破棄する（stale 応答ガード）。
+          // Spec#156: マージ反映時も後発フェッチが始まっていたら破棄する（stale 応答ガード）。
           if (seq !== fetchSeqRef.current) return
           // spotId 衝突時は published を優先（既に公開済みのものに重ねない）。
           // mine-pending 専用の spot（新規投稿でまだ他に PUBLISHED 写真がない場所）
@@ -856,7 +856,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           // mine-pending 失敗 / hang はピン表示に影響させない
         })
     } catch {
-      // Issue#156: 初回先読み（suppressErrorToast=true）ではエラートーストを出さない。
+      // Spec#156: 初回先読み（suppressErrorToast=true）ではエラートーストを出さない。
       // 起動直後にスプラッシュ裏で失敗してもトーストで邪魔せず、後続の取得で回復させる。
       if (!suppressErrorToast) {
         setShowToast(true)
@@ -870,7 +870,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     centerOnUserLocation: async () => {
       if (!map) return
 
-      // Issue#115: 旧 requestOrientationPermission 呼出を削除（結果未使用のデッドコードだった）。
+      // Spec#115: 旧 requestOrientationPermission 呼出を削除（結果未使用のデッドコードだった）。
       // 方角センサーの許可は useHeadingIndicator のスイッチ ON 時に取得する。
 
       if ('geolocation' in navigator) {
@@ -886,12 +886,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               lng: position.coords.longitude,
             }
             setUserLocation(newLocation)
-            // Issue#111: 現在位置ボタンで取得した位置も lastGeolocationCache に保存し、
+            // Spec#111: 現在位置ボタンで取得した位置も lastGeolocationCache に保存し、
             // 写真投稿マップ（InlineMapPicker）が同期的に読み出せるようにする。
             setLastGeolocationCache(newLocation.lat, newLocation.lng)
             if (isFirstUpdate) {
               const distance = calculateMapDistance(map.getCenter(), newLocation.lng, newLocation.lat)
-              // Issue#158: 微小移動（ほぼ同じ表示）は何もしない。それ以外は距離に関係なく常にワープ。
+              // Spec#158: 微小移動（ほぼ同じ表示）は何もしない。それ以外は距離に関係なく常にワープ。
               // （centerOnUserLocation はズームを変えないため距離のみで判定）
               if (distance > NEGLIGIBLE_MOVE_DEG) {
                 performWarpAnimation(
@@ -924,7 +924,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     zoomOut: () => {
       if (map) {
         const current = map.getZoom() ?? DEFAULT_ZOOM
-        // Issue#111-followup Bug1: ズーム下限（DEFAULT_ZOOM=0）にクランプする。
+        // Spec#111-followup Bug1: ズーム下限（DEFAULT_ZOOM=0）にクランプする。
         // easeTo はネイティブ minZoom 制約を無視するため、ボタン経由ではマイナス値にも
         // なれてしまう（ホイールズームは Mapbox 内部でクランプされる）。
         map.easeTo({ zoom: Math.max(DEFAULT_ZOOM, current - 1), duration: 375 })
@@ -932,11 +932,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     },
     resetNorthHeading: () => {
       if (!map) return
-      // Issue#111-followup Bug4: 地球儀表示時（ズーム 0〜4）に方位リセットを押した場合、
+      // Spec#111-followup Bug4: 地球儀表示時（ズーム 0〜4）に方位リセットを押した場合、
       // 緯度（lat）も GLOBE_RESET_LAT（北緯10度）に戻す。
       // 写真スポットなど高ズーム時は従来通り bearing/pitch のみリセット。
       //
-      // Issue#111-followup（仕様変更5回目）: 回転中の rAF tick による setCenter は
+      // Spec#111-followup（仕様変更5回目）: 回転中の rAF tick による setCenter は
       // easeTo の進行をキャンセルしてしまう（Mapbox 仕様）。緯度差が大きい時に
       // 「方位リセットが効かない」現象を防ぐため、easeTo 中は rAF を一時停止し、
       // moveend で再開する。`+/-` ボタンの zoomstart/zoomend 一時停止と同じパターン。
@@ -972,7 +972,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         zoom: map.getZoom(),
       }
       const distance = calculateMapDistance(map.getCenter(), lng, lat)
-      // Issue#116: ズーム差（target=16 との絶対差）も暗転判定の対象にする
+      // Spec#116: ズーム差（target=16 との絶対差）も暗転判定の対象にする
       const zoomDiff = Math.abs(map.getZoom() - SHOOTING_PREVIEW_TARGET_ZOOM)
       const padding = { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 }
       if (
@@ -996,7 +996,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         const savedZoom = savedMapStateRef.current.zoom
         const savedCenter = savedMapStateRef.current.center
         const distance = calculateMapDistance(map.getCenter(), savedCenter[0], savedCenter[1])
-        // Issue#116: 行きと同じ判定基準（距離 OR ズーム差）で戻りも暗転制御する
+        // Spec#116: 行きと同じ判定基準（距離 OR ズーム差）で戻りも暗転制御する
         const zoomDiff = Math.abs(map.getZoom() - savedZoom)
         const padding = { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 }
         if (
@@ -1023,7 +1023,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       const zoomDiff = Math.abs(map.getZoom() - zoom)
       const padding = { top: TOP_UI_HEIGHT, bottom: 0, left: 0, right: 0 }
 
-      // Issue#158: 微小移動（目標がほぼ現在の表示と同じ）は何もしない。それ以外は距離に関係なく常にワープ。
+      // Spec#158: 微小移動（目標がほぼ現在の表示と同じ）は何もしない。それ以外は距離に関係なく常にワープ。
       if (distance <= NEGLIGIBLE_MOVE_DEG && zoomDiff <= NEGLIGIBLE_ZOOM_DIFF) return
       performWarpAnimation(
         map,
@@ -1034,7 +1034,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       )
     },
     /**
-     * Issue#106: 初期表示位置をユーザーの現在地またはIP国判定結果に自動的に移動する。
+     * Spec#106: 初期表示位置をユーザーの現在地またはIP国判定結果に自動的に移動する。
      * スプラッシュ画面が閉じた後に App.tsx から呼び出される想定。
      *
      * フロー:
@@ -1061,7 +1061,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       }
 
       const warpToLocation = (lng: number, lat: number, zoom: number) => {
-        // Issue#111: ワープ開始時に地球儀回転を停止する（idle タイマーも内部で止まる）
+        // Spec#111: ワープ開始時に地球儀回転を停止する（idle タイマーも内部で止まる）
         stopGlobeRotation()
         // Mapbox の jumpTo は moveend イベントを発火するため、handleMoveEnd 経由で
         // fetchSpots が呼ばれる（zoom > 0 のフィルタにより、autoCenter 後のズーム5～14で動作）
@@ -1103,7 +1103,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
           lng: geolocationResult.coords.longitude,
         }
         setUserLocation(userPos)
-        // Issue#111: ユーザーの最後の位置情報を localStorage に保存し、
+        // Spec#111: ユーザーの最後の位置情報を localStorage に保存し、
         // 写真投稿マップ（InlineMapPicker）が同期的に初期表示位置として使えるようにする
         setLastGeolocationCache(userPos.lat, userPos.lng)
         await waitForMinViewDuration()
@@ -1132,7 +1132,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       warpToLocation(DEFAULT_CENTER.lng, DEFAULT_CENTER.lat, FALLBACK_TOKYO_ZOOM)
     },
     /**
-     * Issue#111: 5秒のアイドル待機をスキップして地球儀回転を即時開始する。
+     * Spec#111: 5秒のアイドル待機をスキップして地球儀回転を即時開始する。
      * 位置情報の許可状態が prompt の場合に、許可ポップアップ表示中の待ち時間を
      * 視覚的に楽しませるため、App.tsx から呼び出す。
      */
@@ -1175,7 +1175,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
 
     setMap(mapInstance)
 
-    // Issue#111-followup（仕様変更3回目）: ズーム 0〜4（地球儀表示中）では角度・ピッチ変更ジェスチャーを無効化する。
+    // Spec#111-followup（仕様変更3回目）: ズーム 0〜4（地球儀表示中）では角度・ピッチ変更ジェスチャーを無効化する。
     // - dragRotate: 右ボタンドラッグでの bearing 変更
     // - touchPitch: 2本指でのピッチ変更（iOS / Android）
     // - touchZoomRotate.disableRotation(): 2本指での回転（ピンチズーム自体は維持）
@@ -1197,7 +1197,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     // ジェスチャー有効/無効が切り替わる
     mapInstance.on('zoom', updateGlobeGestureHandlers)
 
-    // Issue#111-followup（仕様変更4回目）: ズームアニメーション中は rAF ループを一時停止する。
+    // Spec#111-followup（仕様変更4回目）: ズームアニメーション中は rAF ループを一時停止する。
     // rAF tick の setCenter が easeTo（+/-ボタンや wheel zoom）の進行をキャンセルしてしまい、
     // ズームインが「ほんの少しずつしか進まない」現象を防ぐため。
     // isRotatingRef は維持し、zoomend で rAF を再開する。
@@ -1207,13 +1207,13 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         rotationFrameRef.current = null
       }
     }
-    // Issue#111-followup（仕様変更6回目）: wheel イベントを直接 listen して即時 rAF をキャンセルする。
+    // Spec#111-followup（仕様変更6回目）: wheel イベントを直接 listen して即時 rAF をキャンセルする。
     // scrollZoom が小さな delta を smooth 処理する関係で、zoomstart 発火前に rAF tick の setCenter が
     // 走り、scrollZoom の内部 easeTo を即キャンセルしてしまうケース（特にズーム4境界付近）を防ぐ。
     mapInstance.on('wheel', cancelRotationFrameForZoom)
     mapInstance.on('zoomstart', cancelRotationFrameForZoom)
     mapInstance.on('zoomend', () => {
-      // Issue#111-followup（仕様変更6回目）: ズームが回転範囲外（>4）に出た場合、
+      // Spec#111-followup（仕様変更6回目）: ズームが回転範囲外（>4）に出た場合、
       // 回転状態フラグをクリアする。rAF tick の auto-stop は rAF が動いている時しか働かないため、
       // 「zoomstart で rAF を止めた直後にズームが 4 を超えた」ケースで isRotatingRef が
       // true のまま残り、handleMoveEnd で fetchSpots がスキップされてピンが表示されない問題を防ぐ。
@@ -1227,7 +1227,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       }
     })
 
-    // Issue#111-followup（仕様変更3回目）: 「タップ/クリック/左ドラッグ」だけで停止する仕様に戻す。
+    // Spec#111-followup（仕様変更3回目）: 「タップ/クリック/左ドラッグ」だけで停止する仕様に戻す。
     // ホイールズーム・+/-ボタン・ピンチズームでは回転を継続し、
     // 右ドラッグ・2本指角度操作はそもそも別箇所（updateGestureHandlers）で無効化済み。
     //
@@ -1244,19 +1244,19 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
       stopRotationOnUserInteraction(mapInstance)
     })
 
-    // Issue#111: 初期表示はズーム 0（地球全体）のため、5秒経過で地球儀回転を開始するスケジュールを立てる。
+    // Spec#111: 初期表示はズーム 0（地球全体）のため、5秒経過で地球儀回転を開始するスケジュールを立てる。
     // ただし granted/denied 既知のケースでは autoCenter が即座に warp するため、
     // 回転は始まらない（warp 前にズームが上がる）。
     if (mapInstance.getZoom() <= GLOBE_ROTATION_MAX_ZOOM) {
       scheduleGlobeRotation(mapInstance)
     }
 
-    // Issue#111-followup §8: 全ズームレベルで fetchSpots を許可（Issue#106 のズーム 0 スキップを撤廃）。
+    // Spec#111-followup §8: 全ズームレベルで fetchSpots を許可（Spec#106 のズーム 0 スキップを撤廃）。
     // バックエンドの MAX_SPOTS_LIMIT=50 でレスポンス件数が保護されているため、
     // 世界全体クエリでもペイロードは大きくならない。
-    // 巨大クラスタを安全に開く仕組みは Issue#112 のページネーションで担保済み。
+    // 巨大クラスタを安全に開く仕組みは Spec#112 のページネーションで担保済み。
     //
-    // Issue#156: 初回だけ固定の全世界 bounds（INITIAL_WORLD_BOUNDS）で取得して CDN 共有キャッシュを
+    // Spec#156: 初回だけ固定の全世界 bounds（INITIAL_WORLD_BOUNDS）で取得して CDN 共有キャッシュを
     // 効かせる。エラートーストは抑制し、試行完了（成功/失敗問わず）で onInitialSpotsLoaded を呼んで
     // スプラッシュ解除のゲートを解く。
     fetchSpots(mapInstance, false, INITIAL_WORLD_BOUNDS, true).finally(() => {
@@ -1274,16 +1274,16 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     (mapInstance: MapboxMap) => fetchSpots(mapInstance),
     FETCH_SPOTS_DEBOUNCE_MS
   )
-  // Issue#111-followup §8: stopRotationOnUserInteraction から ref 経由で参照するため登録
+  // Spec#111-followup §8: stopRotationOnUserInteraction から ref 経由で参照するため登録
   debouncedFetchSpotsRef.current = debouncedFetchSpots
 
-  // Issue#121 案C: ユーザーのマップ操作完了後、ズームアウト方向のベースタイルを裏で先取りする。
+  // Spec#121 案C: ユーザーのマップ操作完了後、ズームアウト方向のベースタイルを裏で先取りする。
   // jumpTo({preloadOnly:true}) は内部 transform を clone() して使うため、実カメラは動かず、
   // movestart/zoomstart/zoomend/moveend 等のイベントも一切発火しない（mapbox-gl-unminified.js
-  // 84381〜84425 行で確認済み）。Issue#111 の rAF/zoomstart/zoomend ハンドラとは衝突しない。
+  // 84381〜84425 行で確認済み）。Spec#111 の rAF/zoomstart/zoomend ハンドラとは衝突しない。
   // 低ズーム（GLOBE_ROTATION_MAX_ZOOM 以下）では下位タイルの概念がないためスキップする。
   //
-  // Issue#121 Cycle2: jumpTo は内部で this.stop() を「preloadOnly チェックの前に」呼ぶ
+  // Spec#121 Cycle2: jumpTo は内部で this.stop() を「preloadOnly チェックの前に」呼ぶ
   // （mapbox-gl-unminified.js 84381〜84382 行）。このため preload を進行中アニメーション
   // と同じタイミングで発射すると、ユーザーのズーム操作が強制停止される（iPhone XR で再現）。
   // isEasing()/isMoving() で進行中ならスキップ（次の moveend で再度 debounce が立つので
@@ -1304,13 +1304,13 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     const mapInstance = e.target
     const zoom = mapInstance.getZoom()
-    // Issue#111-followup（仕様変更6回目）: 回転範囲外に出た時のフェイルセーフ。
+    // Spec#111-followup（仕様変更6回目）: 回転範囲外に出た時のフェイルセーフ。
     // zoomend が万が一発火しないケースでも、moveend で isRotatingRef をクリアし、
     // fetchSpots が必ず走るようにする。
     if (zoom > GLOBE_ROTATION_MAX_ZOOM && isRotatingRef.current) {
       isRotatingRef.current = false
     }
-    // Issue#111-followup: ユーザーが（例えばズームアウトボタンで）ズーム 0〜4 の範囲に入って
+    // Spec#111-followup: ユーザーが（例えばズームアウトボタンで）ズーム 0〜4 の範囲に入って
     // かつ回転中でも回転予約中でもない場合、5秒後の回転を予約する。
     // movestart リスナーを廃止した影響で、UI ボタン経由のズーム変化では
     // 回転予約のトリガーが失われていた問題（Bug followup）への対策。
@@ -1321,11 +1321,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     ) {
       scheduleGlobeRotation(mapInstance)
     }
-    // Issue#111-followup §8: ズーム0でも fetchSpots を許可（旧 Issue#106 のスキップ撤廃）。
+    // Spec#111-followup §8: ズーム0でも fetchSpots を許可（旧 Spec#106 のスキップ撤廃）。
     // 回転中は moveend が連続で走るためスキップする方は維持。
     if (isRotatingRef.current) return
     debouncedFetchSpots(mapInstance)
-    // Issue#121 案C: ベースタイル先読みも同タイミングで予約。debounce 内部で低ズームをスキップする。
+    // Spec#121 案C: ベースタイル先読みも同タイミングで予約。debounce 内部で低ズームをスキップする。
     debouncedPreloadLowerZoom(mapInstance)
   }, [debouncedFetchSpots, debouncedPreloadLowerZoom, scheduleGlobeRotation])
 
@@ -1342,7 +1342,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterParams])
 
-  // Issue#111-followup §8: 投稿詳細ダイアログ表示中は地球儀回転と 5 秒タイマーを停止する。
+  // Spec#111-followup §8: 投稿詳細ダイアログ表示中は地球儀回転と 5 秒タイマーを停止する。
   // ダイアログを閉じた瞬間、ズーム 0〜4 なら 5 秒タイマーを再セットする。
   // 他のダイアログ（FilterPanel, TopMenu 等）は対象外。
   useEffect(() => {
@@ -1379,10 +1379,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         language={mapboxLang}
         fadeDuration={CLUSTER_FADE_DURATION_MS}
         attributionControl={false}
-        // Issue#111-followup Bug1: ズームイン/アウトボタンの下限制約と
+        // Spec#111-followup Bug1: ズームイン/アウトボタンの下限制約と
         // ホイールズームの下限を一致させる
         minZoom={DEFAULT_ZOOM}
-        // Issue#121 案B: タイルキャッシュ上限を拡張して、ズームアウト→再ズームインや
+        // Spec#121 案B: タイルキャッシュ上限を拡張して、ズームアウト→再ズームインや
         // 隣接エリアへのパン→戻りでの白タイムを減らす
         maxTileCacheSize={MAX_TILE_CACHE_SIZE}
         onLoad={handleLoad}
@@ -1390,7 +1390,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
         onClick={() => onMapClickRef.current?.()}
       >
         <AttributionControl position="bottom-left" />
-        {/* Issue#55: スポットピンはSymbol Layerで描画（DOMなし） */}
+        {/* Spec#55: スポットピンはSymbol Layerで描画（DOMなし） */}
         {/* クラスタリングはMapbox GL JSネイティブのGeoJSON Source cluster機能で処理 */}
 
         {/* 撮影地点プレビューピン（DOM Marker維持） */}
@@ -1437,7 +1437,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView({ filte
               className="relative"
               style={{ width: '80px', height: '80px' }}
             >
-              {/* Issue#115: 方角インジケーター（背面に配置、ON 時かつ heading 取得済のみ表示） */}
+              {/* Spec#115: 方角インジケーター（背面に配置、ON 時かつ heading 取得済のみ表示） */}
               {headingIndicatorEnabled && heading !== null && (
                 <HeadingIndicator heading={heading} mapBearing={mapBearing} />
               )}

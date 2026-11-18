@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Issue#86: メールアドレス変更時の確認メール送信機能
+ * Spec#86: メールアドレス変更時の確認メール送信機能
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -88,7 +88,7 @@ public class EmailChangeTest {
     // ===== メールアドレス変更リクエスト =====
 
     @Test
-    @DisplayName("Issue#86 - メール変更リクエスト: 確認メール送信のメッセージが返る（即座に変更されない）")
+    @DisplayName("Spec#86 - メール変更リクエスト: 確認メール送信のメッセージが返る（即座に変更されない）")
     void testEmailChangeRequest_ReturnsConfirmationMessage() throws Exception {
         String requestBody = String.format(
                 "{\"new_email\":\"%s\",\"current_password\":\"%s\"}", NEW_EMAIL, TEST_PASSWORD);
@@ -107,7 +107,7 @@ public class EmailChangeTest {
     }
 
     @Test
-    @DisplayName("Issue#86 - メール変更リクエスト: 確認トークンがDBに保存される")
+    @DisplayName("Spec#86 - メール変更リクエスト: 確認トークンがDBに保存される")
     void testEmailChangeRequest_SavesTokenToDb() throws Exception {
         String requestBody = String.format(
                 "{\"new_email\":\"%s\",\"current_password\":\"%s\"}", NEW_EMAIL, TEST_PASSWORD);
@@ -128,7 +128,7 @@ public class EmailChangeTest {
     }
 
     @Test
-    @DisplayName("Issue#86 - メール変更リクエスト: パスワード不正の場合は401を返す")
+    @DisplayName("Spec#86 - メール変更リクエスト: パスワード不正の場合は401を返す")
     void testEmailChangeRequest_WrongPassword_ReturnsUnauthorized() throws Exception {
         String requestBody = String.format(
                 "{\"new_email\":\"%s\",\"current_password\":\"WrongPass1\"}", NEW_EMAIL);
@@ -142,7 +142,7 @@ public class EmailChangeTest {
     }
 
     @Test
-    @DisplayName("Issue#86 - メール変更リクエスト: 同じメールアドレスの場合は400を返す")
+    @DisplayName("Spec#86 - メール変更リクエスト: 同じメールアドレスの場合は400を返す")
     void testEmailChangeRequest_SameEmail_ReturnsBadRequest() throws Exception {
         String requestBody = String.format(
                 "{\"new_email\":\"%s\",\"current_password\":\"%s\"}", TEST_EMAIL, TEST_PASSWORD);
@@ -158,7 +158,7 @@ public class EmailChangeTest {
     // ===== メールアドレス変更確認 =====
 
     @Test
-    @DisplayName("Issue#86 - メール変更確認: 有効なトークンでメールアドレスが変更される")
+    @DisplayName("Spec#86 - メール変更確認: 有効なトークンでメールアドレスが変更される")
     void testEmailChangeConfirm_ValidToken_ChangesEmail() throws Exception {
         // トークンを直接DBに作成
         EmailChangeToken token = new EmailChangeToken(
@@ -178,7 +178,7 @@ public class EmailChangeTest {
     }
 
     @Test
-    @DisplayName("Issue#86 - メール変更確認: 無効なトークンの場合は400を返す")
+    @DisplayName("Spec#86 - メール変更確認: 無効なトークンの場合は400を返す")
     void testEmailChangeConfirm_InvalidToken_ReturnsBadRequest() throws Exception {
         mockMvc.perform(get(EMAIL_CHANGE_CONFIRM_ENDPOINT)
                 .param("token", "invalid-token"))
@@ -186,7 +186,7 @@ public class EmailChangeTest {
     }
 
     @Test
-    @DisplayName("Issue#86 - メール変更確認: 期限切れトークンの場合は400を返す")
+    @DisplayName("Spec#86 - メール変更確認: 期限切れトークンの場合は400を返す")
     void testEmailChangeConfirm_ExpiredToken_ReturnsBadRequest() throws Exception {
         EmailChangeToken token = new EmailChangeToken(
                 testUser.getId(), NEW_EMAIL, "expired-token",
@@ -199,7 +199,7 @@ public class EmailChangeTest {
     }
 
     @Test
-    @DisplayName("Issue#86 - メール変更確認: 確認後にトークンが削除される")
+    @DisplayName("Spec#86 - メール変更確認: 確認後にトークンが削除される")
     void testEmailChangeConfirm_DeletesTokenAfterConfirmation() throws Exception {
         EmailChangeToken token = new EmailChangeToken(
                 testUser.getId(), NEW_EMAIL, "delete-test-token",
@@ -215,7 +215,7 @@ public class EmailChangeTest {
     }
 
     @Test
-    @DisplayName("Issue#86 - メール変更確認: 新メールが他ユーザーに使用中の場合は409を返す")
+    @DisplayName("Spec#86 - メール変更確認: 新メールが他ユーザーに使用中の場合は409を返す")
     void testEmailChangeConfirm_EmailTaken_ReturnsConflict() throws Exception {
         // 別ユーザーが新メールアドレスを使用
         User otherUser = new User();

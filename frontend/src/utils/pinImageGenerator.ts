@@ -1,5 +1,5 @@
 /**
- * Issue#55: Symbol Layer移行 - ピン画像生成ユーティリティ
+ * Spec#55: Symbol Layer移行 - ピン画像生成ユーティリティ
  *
  * Canvas APIを使用して、Mapbox GL JSのSymbol Layerで使用する
  * ティアドロップ形状のピン画像を動的に生成する。
@@ -8,7 +8,7 @@
 
 /**
  * ピンの色をHEXカラーにマッピング
- * Issue#103: 1,000 件以上の Purple を追加
+ * Spec#103: 1,000 件以上の Purple を追加
  */
 export const PIN_COLOR_MAP: Record<string, string> = {
   Green: '#00d68f',
@@ -29,7 +29,7 @@ export const PIN_PIXEL_RATIO = Math.max(2, Math.ceil(window.devicePixelRatio || 
 
 /**
  * 投稿件数からピン色のHEXカラーを決定
- * Issue#103 で閾値を全体的に引き上げ、Purple (1,000 件以上) を追加
+ * Spec#103 で閾値を全体的に引き上げ、Purple (1,000 件以上) を追加
  */
 export function determinePinColor(count: number): string {
   if (count >= 1000) return PIN_COLOR_MAP.Purple
@@ -140,7 +140,7 @@ export function generatePinImage(
   ctx.stroke()
 
   // 3. 件数テキスト描画
-  // Issue#103: Purple ピンはテキスト非表示（ピン形状のみ）。
+  // Spec#103: Purple ピンはテキスト非表示（ピン形状のみ）。
   // 色ベース判定にしたことで「フィルター適用時に黄ピン + 999+ が出る」既存不整合も解消。
   if (color !== PIN_COLOR_MAP.Purple) {
     const centerX = SHADOW_PADDING / 2 + 16 * pathScale

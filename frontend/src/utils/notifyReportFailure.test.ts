@@ -25,17 +25,17 @@ describe('notifyReportFailure', () => {
     expect(toast.error).toHaveBeenCalledWith('通報に失敗しました')
   })
 
-  it('Issue#93: 400 でエラーコードに翻訳があれば、その文言を出してダイアログを閉じる', () => {
+  it('Spec#93: 400 でエラーコードに翻訳があれば、その文言を出してダイアログを閉じる', () => {
     expect(notifyReportFailure(400, t, 'PHOTO_NOT_PUBLIC')).toBe(true)
     expect(toast.error).toHaveBeenCalledWith('この写真は公開中ではないため操作できません')
   })
 
-  it('Issue#93: 400 で翻訳の無いコード（VALIDATION_ERROR など）は汎用の文言を出す', () => {
+  it('Spec#93: 400 で翻訳の無いコード（VALIDATION_ERROR など）は汎用の文言を出す', () => {
     expect(notifyReportFailure(400, t, 'VALIDATION_ERROR')).toBe(true)
     expect(toast.error).toHaveBeenCalledWith('通報に失敗しました')
   })
 
-  it('Issue#93: 英語の設定では、400 のエラーコードの文言も英語で出す', async () => {
+  it('Spec#93: 英語の設定では、400 のエラーコードの文言も英語で出す', async () => {
     await i18n.changeLanguage('en')
     try {
       expect(notifyReportFailure(400, t, 'PHOTO_NOT_PUBLIC')).toBe(true)

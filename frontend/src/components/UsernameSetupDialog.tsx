@@ -20,7 +20,7 @@ interface UsernameSetupDialogProps {
 }
 
 /**
- * Issue#81 Phase 5c - 仮表示名の確定ダイアログ。
+ * Spec#81 Phase 5c - 仮表示名の確定ダイアログ。
  *
  * OAuth 新規登録時は user_<7桁英数字> の仮表示名が割り当てられ、
  * 初回ログイン後にこのダイアログで確定させる。
@@ -43,7 +43,7 @@ export default function UsernameSetupDialog({
 
   const handleSave = async () => {
     if (!username.trim()) return
-    // Issue#98: 軽量バリデーション
+    // Spec#98: 軽量バリデーション
     const errorKey = validateUsername(username.trim())
     if (errorKey) {
       setErrorMessage(t(`errors.${errorKey}`))
@@ -66,7 +66,7 @@ export default function UsernameSetupDialog({
       onClose()
     } catch (err) {
       if (err instanceof ApiError) {
-        // Issue#98: 400 Bad Request の field-level エラー（i18n キー）を優先表示
+        // Spec#98: 400 Bad Request の field-level エラー（i18n キー）を優先表示
         const usernameErr = err.getFieldErrorMessage('username')
         if (usernameErr) {
           setErrorMessage(localizeFieldError(usernameErr, t))

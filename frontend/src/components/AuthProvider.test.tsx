@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
 
-// Issue#118: 登録壁ユーティリティをモックし、login() からのクリア呼び出しを観測する
+// Spec#118: 登録壁ユーティリティをモックし、login() からのクリア呼び出しを観測する
 const { mockClearViewedPhotoIds } = vi.hoisted(() => ({
   mockClearViewedPhotoIds: vi.fn(),
 }))
@@ -12,8 +12,8 @@ vi.mock('../utils/registrationWall', () => ({
 }))
 
 /**
- * Issue#5: ログイン・ログアウト機能 - 認証コンテキスト テスト
- * Issue#36: ユーザー情報更新機能追加
+ * Spec#5: ログイン・ログアウト機能 - 認証コンテキスト テスト
+ * Spec#36: ユーザー情報更新機能追加
  * TDD Red段階: 実装前のテストケース定義
  *
  * 機能要件:
@@ -21,7 +21,7 @@ vi.mock('../utils/registrationWall', () => ({
  * - JWT トークンの保管・削除
  * - ログアウト機能
  * - ログイン状態の永続化
- * - ユーザー情報の部分更新 (Issue#36)
+ * - ユーザー情報の部分更新 (Spec#36)
  */
 
 // テスト用のコンポーネント
@@ -65,7 +65,7 @@ const TestComponent = () => {
       <button onClick={logout} data-testid="logout-button">
         Logout
       </button>
-      {/* Issue#36: updateUser テスト用ボタン */}
+      {/* Spec#36: updateUser テスト用ボタン */}
       <button
         onClick={() => updateUser({ username: 'newusername' })}
         data-testid="update-username-button"
@@ -434,8 +434,8 @@ describe('AuthProvider', () => {
     })
   })
 
-  // Issue#36: ユーザー情報更新機能テスト
-  describe('User Update Functionality (Issue#36)', () => {
+  // Spec#36: ユーザー情報更新機能テスト
+  describe('User Update Functionality (Spec#36)', () => {
     it('updates username while keeping other user info', async () => {
       render(
         <MockedAuthProvider>
@@ -570,12 +570,12 @@ describe('AuthProvider', () => {
     })
   })
 
-  describe('Issue#118 - 登録壁の閲覧履歴クリア連携', () => {
+  describe('Spec#118 - 登録壁の閲覧履歴クリア連携', () => {
     beforeEach(() => {
       mockClearViewedPhotoIds.mockClear()
     })
 
-    it('Issue#118 - login() 呼び出し時に clearViewedPhotoIds が呼ばれる', () => {
+    it('Spec#118 - login() 呼び出し時に clearViewedPhotoIds が呼ばれる', () => {
       render(
         <MockedAuthProvider>
           <TestComponent />
@@ -591,7 +591,7 @@ describe('AuthProvider', () => {
       expect(mockClearViewedPhotoIds).toHaveBeenCalledTimes(1)
     })
 
-    it('Issue#118 - logout() ではクリアされない（ログアウト後は再度10件閲覧可能になる仕様）', () => {
+    it('Spec#118 - logout() ではクリアされない（ログアウト後は再度10件閲覧可能になる仕様）', () => {
       render(
         <MockedAuthProvider>
           <TestComponent />

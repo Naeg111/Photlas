@@ -16,7 +16,7 @@ import java.util.TimeZone;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#132 - {@link ExifReader} の単体テスト。
+ * Spec#132 - {@link ExifReader} の単体テスト。
  *
  * <p>Metadata からの解析ロジックを直接テストする（package-private な
  * {@code parseMetadata} メソッドを使用）。バイト列入力の happy path は
@@ -31,10 +31,10 @@ class ExifReaderTest {
         reader = new ExifReader();
     }
 
-    // ========== fromClientValues（Issue#142: クライアント送信 EXIF の検証） ==========
+    // ========== fromClientValues（Spec#142: クライアント送信 EXIF の検証） ==========
 
     @Test
-    @DisplayName("Issue#142 - fromClientValues: 妥当な値はそのまま ExifData に入る")
+    @DisplayName("Spec#142 - fromClientValues: 妥当な値はそのまま ExifData に入る")
     void fromClientValuesAcceptsValidValues() {
         AnalyzeExifInput input = new AnalyzeExifInput(
                 400, 1600, 15.0, "2026-05-16T22:30:15", 1500.0);
@@ -49,7 +49,7 @@ class ExifReaderTest {
     }
 
     @Test
-    @DisplayName("Issue#142 - fromClientValues: 範囲外/不正値は Optional.empty に落とす（read と同じ閾値）")
+    @DisplayName("Spec#142 - fromClientValues: 範囲外/不正値は Optional.empty に落とす（read と同じ閾値）")
     void fromClientValuesRejectsOutOfRange() {
         AnalyzeExifInput input = new AnalyzeExifInput(
                 0,            // focal ≤ 0
@@ -64,7 +64,7 @@ class ExifReaderTest {
     }
 
     @Test
-    @DisplayName("Issue#142 - fromClientValues: null / 空入力は ExifData.empty()")
+    @DisplayName("Spec#142 - fromClientValues: null / 空入力は ExifData.empty()")
     void fromClientValuesNullReturnsEmpty() {
         assertThat(reader.fromClientValues(null)).isEqualTo(ExifData.empty());
         assertThat(reader.fromClientValues(AnalyzeExifInput.empty())).isEqualTo(ExifData.empty());
@@ -73,7 +73,7 @@ class ExifReaderTest {
     // ========== 不正バイト列 ==========
 
     @Test
-    @DisplayName("Issue#132 - 空バイト列を読んでも例外を投げず ExifData.empty() を返す")
+    @DisplayName("Spec#132 - 空バイト列を読んでも例外を投げず ExifData.empty() を返す")
     void readEmptyBytesReturnsEmpty() {
         ExifData result = reader.read(new byte[0]);
 
@@ -81,7 +81,7 @@ class ExifReaderTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 不正バイト列を読んでも例外を投げず ExifData.empty() を返す")
+    @DisplayName("Spec#132 - 不正バイト列を読んでも例外を投げず ExifData.empty() を返す")
     void readInvalidBytesReturnsEmpty() {
         ExifData result = reader.read(new byte[]{1, 2, 3, 4, 5});
 
@@ -91,7 +91,7 @@ class ExifReaderTest {
     // ========== Metadata からの解析 (正常系) ==========
 
     @Test
-    @DisplayName("Issue#132 - 全タグ揃った Metadata から ExifData を構築できる")
+    @DisplayName("Spec#132 - 全タグ揃った Metadata から ExifData を構築できる")
     void parseMetadataExtractsAllTags() {
         Metadata metadata = new Metadata();
         ExifSubIFDDirectory exif = new ExifSubIFDDirectory();
@@ -116,7 +116,7 @@ class ExifReaderTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - EXIF Directory が無い Metadata は ExifData.empty() を返す")
+    @DisplayName("Spec#132 - EXIF Directory が無い Metadata は ExifData.empty() を返す")
     void parseMetadataReturnsEmptyWhenNoExif() {
         Metadata metadata = new Metadata();
 
@@ -128,7 +128,7 @@ class ExifReaderTest {
     // ========== Metadata からの解析 (不正値) ==========
 
     @Test
-    @DisplayName("Issue#132 - DateTimeOriginal が \"0000:00:00 00:00:00\" の場合 Optional.empty()")
+    @DisplayName("Spec#132 - DateTimeOriginal が \"0000:00:00 00:00:00\" の場合 Optional.empty()")
     void invalidDateTimeOriginalReturnsEmpty() {
         Metadata metadata = metadataWithExifSubIFD(exif -> {
             exif.setString(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL, "0000:00:00 00:00:00");
@@ -140,7 +140,7 @@ class ExifReaderTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - ExposureTime が 0 以下なら Optional.empty()")
+    @DisplayName("Spec#132 - ExposureTime が 0 以下なら Optional.empty()")
     void exposureTimeZeroReturnsEmpty() {
         Metadata metadata = metadataWithExifSubIFD(exif -> {
             exif.setObject(ExifSubIFDDirectory.TAG_EXPOSURE_TIME, new Rational(0, 1));
@@ -152,7 +152,7 @@ class ExifReaderTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - ExposureTime が 3600 秒超なら Optional.empty()")
+    @DisplayName("Spec#132 - ExposureTime が 3600 秒超なら Optional.empty()")
     void exposureTimeAboveLimitReturnsEmpty() {
         Metadata metadata = metadataWithExifSubIFD(exif -> {
             exif.setObject(ExifSubIFDDirectory.TAG_EXPOSURE_TIME, new Rational(3601, 1));
@@ -164,7 +164,7 @@ class ExifReaderTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - ISO が 0 以下なら Optional.empty()")
+    @DisplayName("Spec#132 - ISO が 0 以下なら Optional.empty()")
     void isoZeroReturnsEmpty() {
         Metadata metadata = metadataWithExifSubIFD(exif -> {
             exif.setInt(ExifSubIFDDirectory.TAG_ISO_EQUIVALENT, 0);
@@ -176,7 +176,7 @@ class ExifReaderTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - FocalLengthIn35mmFilm が 0 以下なら Optional.empty()")
+    @DisplayName("Spec#132 - FocalLengthIn35mmFilm が 0 以下なら Optional.empty()")
     void focalLength35mmZeroReturnsEmpty() {
         Metadata metadata = metadataWithExifSubIFD(exif -> {
             exif.setInt(ExifSubIFDDirectory.TAG_35MM_FILM_EQUIV_FOCAL_LENGTH, 0);
@@ -188,7 +188,7 @@ class ExifReaderTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - GPSAltitude の絶対値が 10000m 超なら Optional.empty()")
+    @DisplayName("Spec#132 - GPSAltitude の絶対値が 10000m 超なら Optional.empty()")
     void gpsAltitudeOutOfRangeReturnsEmpty() {
         Metadata metadata = new Metadata();
         GpsDirectory gps = new GpsDirectory();

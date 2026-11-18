@@ -6,7 +6,7 @@ import { CompassIcon } from './CompassIcon'
  * CompassIcon コンポーネントのテスト
  * TDD Red-Green-Refactor サイクルでの開発
  *
- * Issue#64 要件:
+ * Spec#64 要件:
  * - 方位磁針アイコン（N極=赤、S極=青）
  * - classNameを受け取れる
  */

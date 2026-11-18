@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 #
 # Specification-driven tests for scripts/setup-waf.sh
-# Source of truth: documents/04_Issues/Issue#94.md §3.1
+# Source of truth: documents/spec/SPEC-0094.md §3.1
 #
 # Verifies the script:
 #   - is syntactically valid (shellcheck passes)

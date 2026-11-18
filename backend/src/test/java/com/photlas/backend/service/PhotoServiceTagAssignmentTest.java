@@ -31,7 +31,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#135 Phase 7: PhotoService#createPhoto がリクエストの tagIds から
+ * Spec#135 Phase 7: PhotoService#createPhoto がリクエストの tagIds から
  * photo_tags を保存する振る舞いを検証する。
  *
  * <p>S3Service だけモック化し、他は本物の repository を使う統合テスト。</p>
@@ -82,7 +82,7 @@ class PhotoServiceTagAssignmentTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - createPhoto: tagIds で指定されたタグが photo_tags に保存される")
+    @DisplayName("Spec#135 - createPhoto: tagIds で指定されたタグが photo_tags に保存される")
     void createPhoto_savesTagAssignments() {
         CreatePhotoRequest req = baseRequest();
         req.setTagIds(List.of(tagCherry.getId(), tagSushi.getId()));
@@ -96,7 +96,7 @@ class PhotoServiceTagAssignmentTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - createPhoto: aiOriginatedTagIds に含まれるタグは assigned_by='AI'、それ以外は 'USER'")
+    @DisplayName("Spec#135 - createPhoto: aiOriginatedTagIds に含まれるタグは assigned_by='AI'、それ以外は 'USER'")
     void createPhoto_distinguishesAiVsUserOrigin() {
         CreatePhotoRequest req = baseRequest();
         // 全部選択
@@ -118,7 +118,7 @@ class PhotoServiceTagAssignmentTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - createPhoto: tagIds が null/空 なら photo_tags は作成されない（任意項目）")
+    @DisplayName("Spec#135 - createPhoto: tagIds が null/空 なら photo_tags は作成されない（任意項目）")
     void createPhoto_emptyTagIds_doesNotCreatePhotoTagsRow() {
         CreatePhotoRequest req = baseRequest();
         // tagIds は未設定（null）
@@ -129,7 +129,7 @@ class PhotoServiceTagAssignmentTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - createPhoto: aiOriginatedTagIds 指定なしの場合は全タグが USER 扱い")
+    @DisplayName("Spec#135 - createPhoto: aiOriginatedTagIds 指定なしの場合は全タグが USER 扱い")
     void createPhoto_withoutAiOriginated_treatsAllAsUser() {
         CreatePhotoRequest req = baseRequest();
         req.setTagIds(List.of(tagMaple.getId()));
@@ -142,10 +142,10 @@ class PhotoServiceTagAssignmentTest {
         assertThat(saved.get(0).getAssignedBy()).isEqualTo(PhotoTag.ASSIGNED_BY_USER);
     }
 
-    // ========== Issue#135 追補: updatePhoto によるタグ置き換え（編集対応） ==========
+    // ========== Spec#135 追補: updatePhoto によるタグ置き換え（編集対応） ==========
 
     @Test
-    @DisplayName("Issue#135 - updatePhoto: tagIds で photo_tags が置き換わる（USER 割当）")
+    @DisplayName("Spec#135 - updatePhoto: tagIds で photo_tags が置き換わる（USER 割当）")
     void updatePhoto_replacesTagAssignments() {
         CreatePhotoRequest createReq = baseRequest();
         createReq.setTagIds(List.of(tagCherry.getId(), tagSushi.getId()));
@@ -161,7 +161,7 @@ class PhotoServiceTagAssignmentTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - updatePhoto: 空の tagIds で全タグが消去される")
+    @DisplayName("Spec#135 - updatePhoto: 空の tagIds で全タグが消去される")
     void updatePhoto_emptyTagIds_clearsAllTags() {
         CreatePhotoRequest createReq = baseRequest();
         createReq.setTagIds(List.of(tagCherry.getId()));
@@ -175,7 +175,7 @@ class PhotoServiceTagAssignmentTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - updatePhoto: tagIds=null なら既存タグは変更されない")
+    @DisplayName("Spec#135 - updatePhoto: tagIds=null なら既存タグは変更されない")
     void updatePhoto_nullTagIds_leavesTagsUnchanged() {
         CreatePhotoRequest createReq = baseRequest();
         createReq.setTagIds(List.of(tagCherry.getId()));
@@ -211,10 +211,10 @@ class PhotoServiceTagAssignmentTest {
         return req;
     }
 
-    // ========== Issue#136 §3.5: AI 由来 tag_id の ai_confidence が NULL でなく実数値 ==========
+    // ========== Spec#136 §3.5: AI 由来 tag_id の ai_confidence が NULL でなく実数値 ==========
 
     @Test
-    @DisplayName("Issue#136 - createPhoto: AI 由来 tag は cache の suggestedTags から ai_confidence が入る")
+    @DisplayName("Spec#136 - createPhoto: AI 由来 tag は cache の suggestedTags から ai_confidence が入る")
     void createPhoto_aiOriginatedTag_setsAiConfidenceFromCache() {
         // cache に Cherry を suggestedTags として保存（confidence=92.5）
         String token = aiPredictionCacheService.save(new CachedAnalyzeResult(

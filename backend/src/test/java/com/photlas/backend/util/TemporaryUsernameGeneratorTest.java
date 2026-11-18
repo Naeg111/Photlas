@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#81 Phase 3 - TemporaryUsernameGenerator のテスト
+ * Spec#81 Phase 3 - TemporaryUsernameGenerator のテスト
  *
  * OAuth 初回ログイン時に仮表示名（表示名確定画面までの中継値）を生成する。
  * User.username は 2-12 文字の制約があるため、仮名もこれに従う。
@@ -22,21 +22,21 @@ class TemporaryUsernameGeneratorTest {
     private static final Pattern EXPECTED = Pattern.compile("^user_[a-z0-9]{7}$");
 
     @Test
-    @DisplayName("Issue#81 - 生成された仮表示名が 12 文字である（User.username の最大長）")
+    @DisplayName("Spec#81 - 生成された仮表示名が 12 文字である（User.username の最大長）")
     void generatedUsernameIs12Chars() {
         String username = TemporaryUsernameGenerator.generate();
         assertThat(username).hasSize(12);
     }
 
     @Test
-    @DisplayName("Issue#81 - 生成された仮表示名が `user_` で始まる")
+    @DisplayName("Spec#81 - 生成された仮表示名が `user_` で始まる")
     void generatedUsernameStartsWithUserPrefix() {
         String username = TemporaryUsernameGenerator.generate();
         assertThat(username).startsWith("user_");
     }
 
     @Test
-    @DisplayName("Issue#81 - 生成された仮表示名がフォーマット user_[a-z0-9]{7} に一致する")
+    @DisplayName("Spec#81 - 生成された仮表示名がフォーマット user_[a-z0-9]{7} に一致する")
     void generatedUsernameMatchesPattern() {
         String username = TemporaryUsernameGenerator.generate();
         assertThat(EXPECTED.matcher(username).matches())
@@ -45,7 +45,7 @@ class TemporaryUsernameGeneratorTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - 1000 回生成しても重複が発生しない（36^7 の広さ ≒ 780 億）")
+    @DisplayName("Spec#81 - 1000 回生成しても重複が発生しない（36^7 の広さ ≒ 780 億）")
     void noDuplicateIn1000Generations() {
         Set<String> generated = new HashSet<>();
         for (int i = 0; i < 1000; i++) {

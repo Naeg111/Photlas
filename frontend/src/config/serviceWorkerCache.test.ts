@@ -1,5 +1,5 @@
 /**
- * Issue#129: Service Worker による写真画像キャッシュ URL パターンのテスト
+ * Spec#129: Service Worker による写真画像キャッシュ URL パターンのテスト
  *
  * vite.config.ts の VitePWA runtimeCaching から参照される正規表現の振る舞いを保証する。
  * 特に「本番ドメイン cdn.photlas.jp が確実にマッチすること」を恒久的に守ることが目的。
@@ -16,7 +16,7 @@ import {
 } from './serviceWorkerCache'
 
 describe('PHOTO_CACHE_URL_PATTERN', () => {
-  describe('Issue#129 - マッチすべきURL（キャッシュ対象）', () => {
+  describe('Spec#129 - マッチすべきURL（キャッシュ対象）', () => {
     it.each([
       ['本番 uploads jpg', 'https://cdn.photlas.jp/uploads/123/abc.jpg'],
       ['本番 uploads jpeg', 'https://cdn.photlas.jp/uploads/123/abc.jpeg'],
@@ -33,12 +33,12 @@ describe('PHOTO_CACHE_URL_PATTERN', () => {
     })
   })
 
-  describe('Issue#129 - マッチすべきでないURL（キャッシュ対象外）', () => {
+  describe('Spec#129 - マッチすべきでないURL（キャッシュ対象外）', () => {
     it.each([
       // 3.1 決定事項: profile-images はキャッシュしない（可変リソース）
       ['本番のプロフィール画像', 'https://cdn.photlas.jp/profile-images/123/abc.jpg'],
       ['ステージングのプロフィール画像', 'https://test-cdn.photlas.jp/profile-images/123/abc.jpg'],
-      // 3.1 重要: API は絶対にキャッシュしない（Issue#127 の _t= バイパス機構を壊さないため）
+      // 3.1 重要: API は絶対にキャッシュしない（Spec#127 の _t= バイパス機構を壊さないため）
       ['同一オリジン API', 'https://photlas.jp/api/v1/spots'],
       ['同一オリジン API _t= 付き', 'https://photlas.jp/api/v1/spots?_t=12345'],
       ['ステージング API', 'https://test.photlas.jp/api/v1/spots'],
@@ -61,7 +61,7 @@ describe('PHOTO_CACHE_URL_PATTERN', () => {
     })
   })
 
-  describe('Issue#129 - 旧版バグの再発防止（致命的）', () => {
+  describe('Spec#129 - 旧版バグの再発防止（致命的）', () => {
     it('本番ドメイン cdn.photlas.jp に必ずマッチすること（旧 [^.]+-cdn では本番がマッチせず、本番でキャッシュが全く効かなかった）', () => {
       const productionUrl = 'https://cdn.photlas.jp/uploads/1/test.jpg'
       expect(PHOTO_CACHE_URL_PATTERN.test(productionUrl)).toBe(true)
@@ -75,32 +75,32 @@ describe('PHOTO_CACHE_URL_PATTERN', () => {
 })
 
 describe('PHOTO_CACHE_NAME', () => {
-  it('Issue#129 - キャッシュ名はバージョン番号を含む（4.6 のバージョニング運用に必要）', () => {
+  it('Spec#129 - キャッシュ名はバージョン番号を含む（4.6 のバージョニング運用に必要）', () => {
     expect(PHOTO_CACHE_NAME).toMatch(/-v\d+$/)
   })
 })
 
 describe('PHOTO_CACHE_MAX_ENTRIES', () => {
-  it('Issue#129 - HEIC 大容量を考慮し 200 件以下に抑えられている（モバイルストレージ枯渇対策）', () => {
+  it('Spec#129 - HEIC 大容量を考慮し 200 件以下に抑えられている（モバイルストレージ枯渇対策）', () => {
     expect(PHOTO_CACHE_MAX_ENTRIES).toBeLessThanOrEqual(200)
     expect(PHOTO_CACHE_MAX_ENTRIES).toBeGreaterThan(0)
   })
 })
 
 describe('PHOTO_CACHE_MAX_AGE_SECONDS', () => {
-  it('Issue#129 - 30 日相当の秒数（モデレーション削除リスクと再訪問効果のバランス点）', () => {
+  it('Spec#129 - 30 日相当の秒数（モデレーション削除リスクと再訪問効果のバランス点）', () => {
     const THIRTY_DAYS_IN_SECONDS = 60 * 60 * 24 * 30
     expect(PHOTO_CACHE_MAX_AGE_SECONDS).toBe(THIRTY_DAYS_IN_SECONDS)
   })
 })
 
 describe('PHOTO_CACHEABLE_STATUSES', () => {
-  it('Issue#129 - opaque (0) と 通常成功 (200) の両方を許容する', () => {
+  it('Spec#129 - opaque (0) と 通常成功 (200) の両方を許容する', () => {
     expect(PHOTO_CACHEABLE_STATUSES).toContain(0)
     expect(PHOTO_CACHEABLE_STATUSES).toContain(200)
   })
 
-  it('Issue#129 - エラーレスポンスはキャッシュしない（404 / 500 等を含めない）', () => {
+  it('Spec#129 - エラーレスポンスはキャッシュしない（404 / 500 等を含めない）', () => {
     expect(PHOTO_CACHEABLE_STATUSES).not.toContain(404)
     expect(PHOTO_CACHEABLE_STATUSES).not.toContain(500)
   })
@@ -115,7 +115,7 @@ describe('NAVIGATE_FALLBACK_DENYLIST', () => {
   const matches = (path: string): boolean =>
     NAVIGATE_FALLBACK_DENYLIST.some((pattern) => pattern.test(path))
 
-  describe('Issue#99 - SW がバイパスすべき（バックエンドへ素通しする）パス', () => {
+  describe('Spec#99 - SW がバイパスすべき（バックエンドへ素通しする）パス', () => {
     it.each([
       ['Google OAuth 認可', '/api/v1/auth/oauth2/authorization/google'],
       ['LINE OAuth 認可', '/api/v1/auth/oauth2/authorization/line'],
@@ -128,7 +128,7 @@ describe('NAVIGATE_FALLBACK_DENYLIST', () => {
     })
   })
 
-  describe('Issue#99 - SW がフォールバックすべき（index.html を返す）SPA ルート', () => {
+  describe('Spec#99 - SW がフォールバックすべき（index.html を返す）SPA ルート', () => {
     it.each([
       ['トップ', '/'],
       ['OAuth コールバック画面', '/oauth/callback'],

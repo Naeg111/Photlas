@@ -13,7 +13,7 @@ import AboutPage from './pages/AboutPage'
 import PrivacyPolicyStandalonePage from './pages/PrivacyPolicyStandalonePage'
 import TermsOfServiceStandalonePage from './pages/TermsOfServiceStandalonePage'
 
-// Issue#130: 管理者・指摘ページは通常ユーザーが到達しないため lazy 化して初回バンドルから除外
+// Spec#130: 管理者・指摘ページは通常ユーザーが到達しないため lazy 化して初回バンドルから除外
 const AdminModerationPage = lazy(() => import('./pages/AdminModerationPage'))
 const AdminDeletedUsersPage = lazy(() => import('./pages/AdminDeletedUsersPage'))
 const AdminDeletedUserDetailPage = lazy(() => import('./pages/AdminDeletedUserDetailPage'))
@@ -28,7 +28,7 @@ import { TopMenuPanel } from './components/TopMenuPanel'
 import { LoginRequiredDialog } from './components/LoginRequiredDialog'
 import { LoginDialog } from './components/LoginDialog'
 import { SignUpDialog } from './components/SignUpDialog'
-// Issue#104: SignUpMethodDialog / OAuthSignUpDialog を削除（新規登録フロー簡素化）
+// Spec#104: SignUpMethodDialog / OAuthSignUpDialog を削除（新規登録フロー簡素化）
 import LinkAccountConfirmDialog from './components/LinkAccountConfirmDialog'
 import UsernameSetupDialog from './components/UsernameSetupDialog'
 import TermsAgreementDialog from './components/TermsAgreementDialog'
@@ -37,13 +37,13 @@ import { PrivacyPolicyPage } from './components/PrivacyPolicyPage'
 import PasswordResetRequestModal from './components/PasswordResetRequestModal'
 import ProfileDialog from './components/ProfileDialog'
 import { lazyOrStatic } from './utils/lazyOrStatic'
-// Issue#130: Vitest 環境では React.lazy + Suspense の解決サイクルが既存テストと相性が悪いため、
+// Spec#130: Vitest 環境では React.lazy + Suspense の解決サイクルが既存テストと相性が悪いため、
 // テスト時は静的 import 側を、本番時は lazy() 側を使う（lazyOrStatic ヘルパーで切り替え）。
 import { PhotoContributionDialog as PhotoContributionDialogStatic } from './components/PhotoContributionDialog'
 import { AccountSettingsDialog as AccountSettingsDialogStatic } from './components/AccountSettingsDialog'
 import PhotoDetailDialogStatic from './components/PhotoDetailDialog'
 
-// Issue#130: 重いダイアログは open のときだけマウントすることで初回バンドルから除外
+// Spec#130: 重いダイアログは open のときだけマウントすることで初回バンドルから除外
 const PhotoContributionDialog = lazyOrStatic(
   () =>
     import('./components/PhotoContributionDialog').then((m) => ({
@@ -94,7 +94,7 @@ import { API_V1_URL } from './config/api'
 
 /**
  * App コンポーネント
- * Issue#28: App.tsx再構築と不要ファイル削除
+ * Spec#28: App.tsx再構築と不要ファイル削除
  *
  * React Routerを削除し、モーダルベースのナビゲーションに移行。
  * 全てのダイアログ状態をuseDialogStateフックで集中管理。
@@ -111,9 +111,9 @@ const FLOATING_BUTTON_STYLES = {
 
 interface MainContentProps {
   onMapReady?: () => void
-  /** Issue#156: 初回ピン取得の試行完了時に呼ばれる（スプラッシュ解除ゲート用） */
+  /** Spec#156: 初回ピン取得の試行完了時に呼ばれる（スプラッシュ解除ゲート用） */
   onInitialSpotsLoaded?: () => void
-  /** Issue#106: スプラッシュ画面が閉じたタイミングで autoCenter をトリガーするためのフラグ */
+  /** Spec#106: スプラッシュ画面が閉じたタイミングで autoCenter をトリガーするためのフラグ */
   isSplashClosed?: boolean
 }
 
@@ -127,32 +127,32 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
   const navigate = useNavigate()
   const location = useLocation()
   const dialog = useDialogState()
-  // Issue#115: 方角インジケーター（メニューのスイッチと MapView のマーカーで共有）
+  // Spec#115: 方角インジケーター（メニューのスイッチと MapView のマーカーで共有）
   const headingIndicator = useHeadingIndicator()
-  // Issue#115 §4: デスクトップPC等のセンサー非対応端末ではスイッチを非活性にする
+  // Spec#115 §4: デスクトップPC等のセンサー非対応端末ではスイッチを非活性にする
   const [headingIndicatorAvailable] = useState(isHeadingIndicatorAvailable)
   const mapRef = useRef<MapViewHandle>(null)
-  // Issue#106: autoCenter を一度だけ呼び出すためのガード
+  // Spec#106: autoCenter を一度だけ呼び出すためのガード
   const autoCenterCalledRef = useRef(false)
-  // Issue#111: マップ読み込み完了の追跡（granted/denied 時にスプラッシュ解除前に autoCenter を呼ぶため）
+  // Spec#111: マップ読み込み完了の追跡（granted/denied 時にスプラッシュ解除前に autoCenter を呼ぶため）
   const [isMapReady, setIsMapReady] = useState(false)
-  // Issue#111: 位置情報の許可状態。Permissions API 非対応ブラウザは 'unknown'。
+  // Spec#111: 位置情報の許可状態。Permissions API 非対応ブラウザは 'unknown'。
   const [permissionState, setPermissionState] = useState<'granted' | 'denied' | 'prompt' | 'unknown' | null>(null)
 
-  // Issue#118: 登録壁の表示判定 + 写真閲覧カウントを集約フックで管理
+  // Spec#118: 登録壁の表示判定 + 写真閲覧カウントを集約フックで管理
   const registrationWall = useRegistrationWall(isAuthenticated)
 
-  // Issue#118: 登録壁経由で開かれた SignUp / Login ダイアログの目印。
+  // Spec#118: 登録壁経由で開かれた SignUp / Login ダイアログの目印。
   // 成功イベント (registration_wall_*_success) の送信判定に使用する。
   // ダイアログを閉じた時点で個別にリセットする。
   const [signUpFromWall, setSignUpFromWall] = useState(false)
   const [loginFromWall, setLoginFromWall] = useState(false)
 
-  // Issue#118: 登録壁が他の関連ダイアログ（about / login / signUp）と重なるのを避ける
+  // Spec#118: 登録壁が他の関連ダイアログ（about / login / signUp）と重なるのを避ける
   const isRelatedDialogOpen =
     dialog.isOpen('about') || dialog.isOpen('login') || dialog.isOpen('signUp')
 
-  // Issue#111: マウント時に Permissions API で位置情報の許可状態を事前判定
+  // Spec#111: マウント時に Permissions API で位置情報の許可状態を事前判定
   useEffect(() => {
     let cancelled = false
     const queryPermission = async () => {
@@ -171,13 +171,13 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
     return () => { cancelled = true }
   }, [])
 
-  // Issue#111: MapView の onMapReady をラップして isMapReady 状態も更新する
+  // Spec#111: MapView の onMapReady をラップして isMapReady 状態も更新する
   const handleMapReadyInternal = useCallback(() => {
     setIsMapReady(true)
     onMapReady?.()
   }, [onMapReady])
 
-  // Issue#106 + Issue#111: 許可状態に応じて autoCenter のタイミングを変える
+  // Spec#106 + Spec#111: 許可状態に応じて autoCenter のタイミングを変える
   // - granted/denied: スプラッシュ解除前にバックグラウンドで実行（最低表示時間スキップ）
   // - prompt/unknown: 従来通りスプラッシュ解除後に実行 + 即時に地球儀回転を開始
   useEffect(() => {
@@ -196,12 +196,12 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
       mapRef.current.autoCenter().catch((err) => {
         console.error('autoCenter failed:', err)
       })
-      // Issue#111: 許可ポップアップ待ちの間、地球儀をゆっくり回転させて視覚的な楽しさを提供する
+      // Spec#111: 許可ポップアップ待ちの間、地球儀をゆっくり回転させて視覚的な楽しさを提供する
       mapRef.current.startGlobeRotationImmediately()
     }
   }, [isMapReady, permissionState, isSplashClosed])
 
-  // Issue#99: アカウントリンク確認フロー用の state
+  // Spec#99: アカウントリンク確認フロー用の state
   // OAuthCallbackPage が `/` に linkConfirmationToken / provider 付き state で
   // 遷移してきた場合に LinkAccountConfirmDialog を開く。
   const [linkConfirmation, setLinkConfirmation] = useState<{
@@ -209,14 +209,14 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
     provider: string
   } | null>(null)
 
-  // Issue#99: OAuth 新規登録時の仮表示名設定ダイアログ表示制御。
-  // Issue#104: マウント時 /users/me チェックで usernameTemporary=true なら表示。
+  // Spec#99: OAuth 新規登録時の仮表示名設定ダイアログ表示制御。
+  // Spec#104: マウント時 /users/me チェックで usernameTemporary=true なら表示。
   const [showUsernameDialog, setShowUsernameDialog] = useState(false)
 
-  // Issue#104: 利用規約同意ダイアログ表示制御（マウント時 /users/me チェックで requiresTermsAgreement=true なら表示）
+  // Spec#104: 利用規約同意ダイアログ表示制御（マウント時 /users/me チェックで requiresTermsAgreement=true なら表示）
   const [showTermsDialog, setShowTermsDialog] = useState(false)
 
-  // Issue#144: OAuth ログイン操作完了時の「ログインしました」トースト発火を司るフック。
+  // Spec#144: OAuth ログイン操作完了時の「ログインしました」トースト発火を司るフック。
   // isSplashClosed は optional（未指定はスプラッシュ未解除扱い）のため boolean に確定させる。
   const { beginIfOauthLogin, cancelPendingLoginToast } = useOAuthLoginToast({
     showTermsDialog,
@@ -238,7 +238,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
   // 他ユーザーのプロフィール表示用の状態
   const [viewingUser, setViewingUser] = useState<{ userId: number; username: string } | null>(null)
 
-  // Issue#57: プロフィール投稿一覧からPhotoDetailDialogを開いたかのフラグ
+  // Spec#57: プロフィール投稿一覧からPhotoDetailDialogを開いたかのフラグ
   const [isPhotoFromProfile, setIsPhotoFromProfile] = useState(false)
   // 写真削除後のプロフィール写真一覧再取得トリガー
   const [refreshPhotosKey, setRefreshPhotosKey] = useState(0)
@@ -248,7 +248,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
   // プロフィールから開いた写真のID（deepLinkPhotoIdとは別管理でnavigate不要）
   const [profilePhotoId, setProfilePhotoId] = useState<number | undefined>(undefined)
 
-  // Issue#58: ディープリンク用の写真ID
+  // Spec#58: ディープリンク用の写真ID
   const { photoId: deepLinkPhotoIdParam } = useParams<{ photoId?: string }>()
   const [deepLinkPhotoId, setDeepLinkPhotoId] = useState<number | undefined>(
     deepLinkPhotoIdParam ? Number(deepLinkPhotoIdParam) : undefined
@@ -263,7 +263,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
   const [shootingLocationPreview, setShootingLocationPreview] = useState<{ lat: number; lng: number } | null>(null)
   const shootingLocationPreviewRef = useRef(shootingLocationPreview)
   shootingLocationPreviewRef.current = shootingLocationPreview
-  // Issue#50: プレビューモード中フラグ（Radix flushSync対策）
+  // Spec#50: プレビューモード中フラグ（Radix flushSync対策）
   // Radix DismissableLayerのdispatchDiscreteCustomEventはflushSyncを使用し、
   // state更新を強制コミットする。このためモバイルタッチ時にisSlideDownがfalseに
   // なった状態でonPointerDownOutsideが評価され、ダイアログが閉じてしまう。
@@ -271,7 +271,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
   // プレビュー期間中ずっとonCloseを確実にガードできる。
   const isInPreviewRef = useRef(false)
 
-  // Issue#54: モデレーションステータスポーリング
+  // Spec#54: モデレーションステータスポーリング
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // 実行中の setInterval が古い t を閉じ込めないよう、お知らせの文言は ref 経由で今の言語の t を使う
   // （ポーリング中に言語を切り替えても、切り替え後の言語で出す）
@@ -339,7 +339,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
     }
   }, [])
 
-  // Issue#56: パスワードリセット完了後のLoginDialog自動表示
+  // Spec#56: パスワードリセット完了後のLoginDialog自動表示
   useEffect(() => {
     if (location.state?.openLogin) {
       dialog.open('login')
@@ -347,7 +347,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
     }
   }, [location.state])
 
-  // Issue#110: 別タブのメール認証ページ / メアド変更確認ページが localStorage に
+  // Spec#110: 別タブのメール認証ページ / メアド変更確認ページが localStorage に
   // マーカーを書き込んだとき、storage イベントを介してこのタブの認証状態を更新する。
   //
   // - email_just_verified: 新規登録のメール認証完了。未ログインならログインダイアログを開く。
@@ -370,7 +370,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
     return () => window.removeEventListener('storage', handler)
   }, [isAuthenticated, logout, dialog])
 
-  // Issue#99: OAuthCallbackPage 経由で linkConfirmationToken が渡された場合に
+  // Spec#99: OAuthCallbackPage 経由で linkConfirmationToken が渡された場合に
   // リンク確認ダイアログを開く。再オープン防止のため state は読み取り後にクリアする。
   useEffect(() => {
     const token = location.state?.linkConfirmationToken
@@ -382,7 +382,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
     }
   }, [location.state])
 
-  // Issue#104: マウント時 /users/me チェック（メインメカニズム、§4.14）
+  // Spec#104: マウント時 /users/me チェック（メインメカニズム、§4.14）
   // ログイン済みユーザーに対して /users/me を 1 回呼び、以下を判定：
   // - requiresTermsAgreement=true → 利用規約同意ダイアログを表示（§4.14）+ ホームに強制リダイレクト（§4.16）
   // - usernameTemporary=true → 仮表示名設定ダイアログを表示（§4.18）
@@ -404,13 +404,13 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         if (!response.ok) {
           if (response.status === 401) {
             // §4.17: 401 はセッション切れ → 自動ログアウト
-            // Issue#144: ログインは成立していないので保留トースト・OAuth フラグを破棄
+            // Spec#144: ログインは成立していないので保留トースト・OAuth フラグを破棄
             cancelPendingLoginToast()
             toast(t('auth.sessionExpired'))
             logout()
             return
           }
-          // §4.17: 5xx 等は再試行可能（Issue#144: OAuth フラグは消さず残し、再試行成功時に発火）
+          // §4.17: 5xx 等は再試行可能（Spec#144: OAuth フラグは消さず残し、再試行成功時に発火）
           toast.error(t('errors.userInfoFetchFailed'), {
             action: {
               label: t('common.retry'),
@@ -420,7 +420,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           return
         }
         const userData = await response.json()
-        // Issue#144: OAuth ログイン操作直後ならトーストを保留する（実際の発火は
+        // Spec#144: OAuth ログイン操作直後ならトーストを保留する（実際の発火は
         // オンボーディングのダイアログが全て閉じ、かつスプラッシュ解除後）。
         beginIfOauthLogin()
         if (userData.requiresTermsAgreement) {
@@ -446,7 +446,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated])  // 認証状態が確定したら 1 度だけ実行（usersMeCheckedRef で多重実行防止）
 
-  // Issue#99: リンク確認成功時のハンドラ。
+  // Spec#99: リンク確認成功時のハンドラ。
   // ダイアログから受け取った token + email で /users/me を取得し、auth.login で認証状態を反映する。
   const handleLinked = useCallback(async (token: string, email: string) => {
     try {
@@ -464,7 +464,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         role: userData.role,
         language: userData.language,
       }, token, true)
-      // Issue#144: 連携フローは「ログインしました」を別途出さず、この1トーストに集約する
+      // Spec#144: 連携フローは「ログインしました」を別途出さず、この1トーストに集約する
       toast.success(t('auth.linkedAndLoggedIn'))
     } catch {
       toast.error(t('auth.linkedUserFetchFailed'))
@@ -473,7 +473,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
     }
   }, [login, t])
 
-  // Issue#58: ディープリンクでPhotoDetailDialogを自動表示
+  // Spec#58: ディープリンクでPhotoDetailDialogを自動表示
   useEffect(() => {
     if (deepLinkPhotoId) {
       dialog.open('photoDetail')
@@ -513,7 +513,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
       aspect_ratios: conditions.aspectRatios && conditions.aspectRatios.length > 0 ? conditions.aspectRatios : undefined,
       focal_length_ranges: conditions.focalLengthRanges && conditions.focalLengthRanges.length > 0 ? conditions.focalLengthRanges : undefined,
       max_iso: conditions.maxIso,
-      // Issue#141 Phase 5 (Q-new-1): キーワードフィルタをバックエンドに転送
+      // Spec#141 Phase 5 (Q-new-1): キーワードフィルタをバックエンドに転送
       tag_ids: conditions.tagIds && conditions.tagIds.length > 0 ? conditions.tagIds : undefined,
     }
 
@@ -531,7 +531,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
 
   /**
    * 写真投稿ハンドラー
-   * Issue#9: 写真アップロード処理
+   * Spec#9: 写真アップロード処理
    *
    * バックエンドの createPhoto は S3 上に対象ファイルが存在することを前提
    * （existsInS3 チェック + status タグ更新）にしているため、
@@ -555,7 +555,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
     cropCenterY?: number
     cropZoom?: number
     locationFromExif?: boolean
-    // Issue#135/#136: 詳細カテゴリー（キーワード）と AI 解析トークン。
+    // Spec#135/#136: 詳細カテゴリー（キーワード）と AI 解析トークン。
     // これらを createPhoto へ転送しないと photo_tags / photo_ai_predictions に保存されない。
     tagIds?: number[]
     aiOriginatedTagIds?: number[]
@@ -584,7 +584,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
       const extension = contentType === 'image/png' ? 'png' : 'jpg'
 
       // 3. Presigned URL取得（変換後の content-type で署名する）
-      // Issue#131: crop 情報を一緒にバックエンドへ送り、S3 metadata の署名対象に含める。
+      // Spec#131: crop 情報を一緒にバックエンドへ送り、S3 metadata の署名対象に含める。
       // フロントは続く S3 PUT で同じ crop をヘッダ送信し、Lambda が指定範囲でクロップする。
       const cropForUpload =
         data.cropCenterX !== undefined &&
@@ -630,7 +630,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         cropCenterY: data.cropCenterY,
         cropZoom: data.cropZoom,
         locationFromExif: data.locationFromExif,
-        // Issue#135/#136: 選択タグと AI トークンを backend へ転送（未転送だと photo_tags が空のままになる）
+        // Spec#135/#136: 選択タグと AI トークンを backend へ転送（未転送だと photo_tags が空のままになる）
         tagIds: data.tagIds,
         aiOriginatedTagIds: data.aiOriginatedTagIds,
         analyzeToken: data.analyzeToken,
@@ -639,7 +639,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
       // 5. マップ更新
       mapRef.current?.refreshSpots({ bypassCache: true })
 
-      // 6. Issue#54: モデレーションステータスのポーリング開始
+      // 6. Spec#54: モデレーションステータスのポーリング開始
       if (photoResponse?.photo?.photo_id) {
         startModerationPolling(photoResponse.photo.photo_id)
       }
@@ -662,7 +662,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
   }
 
   /**
-   * Issue#104: 新規登録ボタン共通ハンドラ。
+   * Spec#104: 新規登録ボタン共通ハンドラ。
    *
    * SignUpMethodDialog / OAuthSignUpDialog を削除し、SignUpDialog を直接開く。
    * OAuth 経由の新規登録は LoginDialog の OAuth ボタンから行う。
@@ -701,7 +701,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
     dialog.open('photoDetail')
   }
 
-  // Issue#77: プロフィール投稿一覧からの写真クリックハンドラー（photoId方式）
+  // Spec#77: プロフィール投稿一覧からの写真クリックハンドラー（photoId方式）
   const handleProfilePhotoClick = (photoId: number) => {
     isPhotoFromProfileRef.current = true
     setIsPhotoFromProfile(true)
@@ -770,9 +770,9 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           onMapClick={handleReturnFromPreview}
           onMapReady={handleMapReadyInternal}
           onInitialSpotsLoaded={onInitialSpotsLoaded}
-          // Issue#111-followup §8: 投稿詳細ダイアログ表示中は地球儀回転を停止する
+          // Spec#111-followup §8: 投稿詳細ダイアログ表示中は地球儀回転を停止する
           isPhotoDialogOpen={dialog.isOpen('photoDetail')}
-          // Issue#115: 方角インジケーター
+          // Spec#115: 方角インジケーター
           headingIndicatorEnabled={headingIndicator.enabled}
           heading={headingIndicator.heading}
         />
@@ -806,7 +806,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         className="absolute right-6 z-10 flex flex-col items-center gap-3"
         style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
       >
-        {/* Issue#69: 場所検索ボタン（PC表示: ズームボタンの上） */}
+        {/* Spec#69: 場所検索ボタン（PC表示: ズームボタンの上） */}
         <Button
           variant="secondary"
           className="hidden md:flex rounded-full shadow-lg hover:bg-secondary"
@@ -839,7 +839,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
           </Button>
         </div>
 
-        {/* Issue#69: 場所検索ボタン（モバイル表示: ノースヘディングの上） */}
+        {/* Spec#69: 場所検索ボタン（モバイル表示: ノースヘディングの上） */}
         <Button
           variant="secondary"
           className="md:hidden rounded-full shadow-lg hover:bg-secondary"
@@ -884,7 +884,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         )}
       </div>
 
-      {/* Issue#69: 場所検索ダイアログ */}
+      {/* Spec#69: 場所検索ダイアログ */}
       <PlaceSearchDialog
         {...dialog.getProps('placeSearch')}
         onPlaceSelect={(lng, lat, zoom) => {
@@ -913,7 +913,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         headingIndicatorEnabled={headingIndicator.enabled}
         headingIndicatorAvailable={headingIndicatorAvailable}
         onHeadingIndicatorChange={async (next) => {
-          // Issue#115: ON 化時の OS 許可拒否はトーストで通知（フックがスイッチ自体は OFF に戻す）
+          // Spec#115: ON 化時の OS 許可拒否はトーストで通知（フックがスイッチ自体は OFF に戻す）
           const result = await headingIndicator.setEnabled(next)
           if (next && !result.granted) {
             toast.error(t('errors.HEADING_PERMISSION_DENIED'))
@@ -941,7 +941,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         open={dialog.isOpen('login')}
         onOpenChange={(open) => {
           dialog.getProps('login').onOpenChange(open)
-          // Issue#118: 閉じる時に登録壁の起点フラグをクリア（成功時は閉じる前に送信済み）
+          // Spec#118: 閉じる時に登録壁の起点フラグをクリア（成功時は閉じる前に送信済み）
           if (!open) setLoginFromWall(false)
         }}
         onShowSignUp={handleSignUpClick}
@@ -949,19 +949,19 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         triggeredFromWall={loginFromWall}
       />
 
-      {/* Issue#104: SignUpMethodDialog / OAuthSignUpDialog を削除（新規登録フロー簡素化） */}
+      {/* Spec#104: SignUpMethodDialog / OAuthSignUpDialog を削除（新規登録フロー簡素化） */}
       <SignUpDialog
         open={dialog.isOpen('signUp')}
         onOpenChange={(open) => {
           dialog.getProps('signUp').onOpenChange(open)
-          // Issue#118: 閉じる時に登録壁の起点フラグをクリア
+          // Spec#118: 閉じる時に登録壁の起点フラグをクリア
           if (!open) setSignUpFromWall(false)
         }}
         onShowTerms={() => dialog.open('terms')}
         onShowPrivacyPolicy={() => dialog.open('privacy')}
         onShowLogin={() => dialog.open('login')}
         onBack={
-          // Issue#104: SignUpMethodDialog 削除に伴い、戻る先を LoginDialog に変更
+          // Spec#104: SignUpMethodDialog 削除に伴い、戻る先を LoginDialog に変更
           () => {
             dialog.close('signUp')
             dialog.open('login')
@@ -970,7 +970,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         triggeredFromWall={signUpFromWall}
       />
 
-      {/* Issue#99: 既存メールアカウントとの OAuth リンク確認ダイアログ */}
+      {/* Spec#99: 既存メールアカウントとの OAuth リンク確認ダイアログ */}
       {linkConfirmation && (
         <LinkAccountConfirmDialog
           open={true}
@@ -981,8 +981,8 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         />
       )}
 
-      {/* Issue#99 / Issue#104: OAuth 新規登録直後の仮表示名設定ダイアログ */}
-      {/* Issue#104 §4.9: 利用規約同意ダイアログ表示中は UsernameSetupDialog を抑制（同意完了後に開く） */}
+      {/* Spec#99 / Spec#104: OAuth 新規登録直後の仮表示名設定ダイアログ */}
+      {/* Spec#104 §4.9: 利用規約同意ダイアログ表示中は UsernameSetupDialog を抑制（同意完了後に開く） */}
       {user && !showTermsDialog && (
         <UsernameSetupDialog
           open={showUsernameDialog}
@@ -991,12 +991,12 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         />
       )}
 
-      {/* Issue#104: 利用規約同意ダイアログ */}
+      {/* Spec#104: 利用規約同意ダイアログ */}
       <TermsAgreementDialog
         open={showTermsDialog}
         onAgreed={() => setShowTermsDialog(false)}
         onCancelled={() => {
-          // Issue#144: 規約キャンセル（アカウント削除＋ログアウト）はログイン不成立。
+          // Spec#144: 規約キャンセル（アカウント削除＋ログアウト）はログイン不成立。
           // 保留トーストと OAuth フラグを破棄し、未確定のユーザー名ダイアログも閉じる。
           setShowTermsDialog(false)
           setShowUsernameDialog(false)
@@ -1019,7 +1019,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
         onShowLogin={() => dialog.open('login')}
       />
 
-      {/* Issue#130: 開いた瞬間にロード（lazy chunk + react-easy-crop + heic2any/exifr の重い依存を含む） */}
+      {/* Spec#130: 開いた瞬間にロード（lazy chunk + react-easy-crop + heic2any/exifr の重い依存を含む） */}
       {dialog.isOpen('photoContribution') && (
         <Suspense fallback={null}>
           <PhotoContributionDialog
@@ -1037,7 +1037,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
       <WantToGoListDialog {...dialog.getProps('wantToGoList')} />
       */}
 
-      {/* Issue#130: ログイン中かつダイアログ open のときだけマウント */}
+      {/* Spec#130: ログイン中かつダイアログ open のときだけマウント */}
       {user && dialog.isOpen('accountSettings') && (
         <Suspense fallback={null}>
           <AccountSettingsDialog
@@ -1078,7 +1078,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
       )}
 
       {/* PhotoDetailDialog - 写真詳細表示 */}
-      {/* Issue#130: 元々条件付きマウントだったため、Suspense でラップするだけで lazy 化対応 */}
+      {/* Spec#130: 元々条件付きマウントだったため、Suspense でラップするだけで lazy 化対応 */}
       {(selectedSpotIds !== null || deepLinkPhotoId || profilePhotoId) && (
         <Suspense fallback={null}>
           <PhotoDetailDialog
@@ -1097,7 +1097,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
               setIsPhotoFromProfile(false)
               // Radix DismissableLayerのフォーカス復帰処理完了後にrefクリア
               setTimeout(() => { isPhotoFromProfileRef.current = false }, 300)
-              // Issue#58: ディープリンクから閉じた場合はトップページに遷移
+              // Spec#58: ディープリンクから閉じた場合はトップページに遷移
               if (deepLinkPhotoId) {
                 setDeepLinkPhotoId(undefined)
                 navigate('/', { replace: true })
@@ -1133,7 +1133,7 @@ function MainContent({ onMapReady, onInitialSpotsLoaded, isSplashClosed }: Reado
       />
 
       {/*
-        Issue#118: 登録壁オーバーレイ
+        Spec#118: 登録壁オーバーレイ
         about / login / signUp のいずれかが開いている間は壁を一時的に隠す。
         - 上記ダイアログは shadcn Dialog (z-50) で壁 (z-70) より下に出るため、
           視覚的衝突を避けるために suppression する
@@ -1171,11 +1171,11 @@ function MainApp() {
   const [isLoading, setIsLoading] = useState(true)
   const isMapReadyRef = useRef(false)
   const isMinDurationPassedRef = useRef(false)
-  // Issue#156: 初回ピン取得の試行完了フラグ。スプラッシュ解除の第3条件。
+  // Spec#156: 初回ピン取得の試行完了フラグ。スプラッシュ解除の第3条件。
   const arePinsFetchedRef = useRef(false)
 
   const tryDismissSplash = useCallback(() => {
-    // Issue#156: 地図ロード完了・最低表示時間・初回ピン取得完了の3条件が揃ったら解除。
+    // Spec#156: 地図ロード完了・最低表示時間・初回ピン取得完了の3条件が揃ったら解除。
     if (isMapReadyRef.current && isMinDurationPassedRef.current && arePinsFetchedRef.current) {
       setIsLoading(false)
     }
@@ -1186,7 +1186,7 @@ function MainApp() {
     tryDismissSplash()
   }, [tryDismissSplash])
 
-  // Issue#156: 初回ピン取得（成功/失敗問わず試行完了）でゲートの1条件を満たす。
+  // Spec#156: 初回ピン取得（成功/失敗問わず試行完了）でゲートの1条件を満たす。
   const handleInitialSpotsLoaded = useCallback(() => {
     arePinsFetchedRef.current = true
     tryDismissSplash()
@@ -1200,7 +1200,7 @@ function MainApp() {
     return () => clearTimeout(timer)
   }, [tryDismissSplash])
 
-  // Issue#156: ピン取得が遅い/固まった場合の待ち上限。ここで強制するのは arePinsFetchedRef のみで、
+  // Spec#156: ピン取得が遅い/固まった場合の待ち上限。ここで強制するのは arePinsFetchedRef のみで、
   // 地図ロード完了(isMapReadyRef)は必須のまま残す（未ロードの真っ白な地図を見せない安全側）。
   // よって地図ロードが極端に遅い場合はスプラッシュがこの上限を超えることがある。
   useEffect(() => {
@@ -1216,7 +1216,7 @@ function MainApp() {
       <AnimatePresence>
         {isLoading && <SplashScreen />}
       </AnimatePresence>
-      {/* Issue#81 Phase 5e: OAuth のみユーザー向けパスワード設定推奨バナー */}
+      {/* Spec#81 Phase 5e: OAuth のみユーザー向けパスワード設定推奨バナー */}
       <PasswordRecommendationBanner />
       <MainContent
         onMapReady={handleMapReady}
@@ -1237,7 +1237,7 @@ function App() {
     <AuthProvider>
       {/* スマホ横向き時は全ページ共通で縦向きを促す（レイアウトが崩れるため） */}
       <RotateToPortraitOverlay />
-      {/* Issue#130: lazy 化したページの読み込み中は RouteFallback を表示 */}
+      {/* Spec#130: lazy 化したページの読み込み中は RouteFallback を表示 */}
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/" element={<MainApp />} />

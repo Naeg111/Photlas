@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Issue#106: IPアドレスからの国判定APIのレスポンスDTO
+ * Spec#106: IPアドレスからの国判定APIのレスポンスDTO
  * GET /api/v1/geo/my-country の戻り値
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)

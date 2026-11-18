@@ -9,8 +9,8 @@ import { TermsContentZhTW } from './TermsContentZhTW'
 
 /**
  * TermsOfServicePage コンポーネント
- * Issue#51: 利用規約の文面改訂
- * Issue#101: 5 言語対応 + ハードコード日本語の i18n 化
+ * Spec#51: 利用規約の文面改訂
+ * Spec#101: 5 言語対応 + ハードコード日本語の i18n 化
  *
  * 利用規約を表示するダイアログ。
  * 言語設定に応じて 5 言語 (ja / en / ko / zh-CN / zh-TW) を切り替える。
@@ -44,7 +44,7 @@ export function TermsOfServicePage({
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            {/* Issue#101: i18n 化（auth.termsOfService） */}
+            {/* Spec#101: i18n 化（auth.termsOfService） */}
             <DialogTitle>{t('auth.termsOfService')}</DialogTitle>
             <DialogDescription className="sr-only">
               {t('auth.termsOfService')}

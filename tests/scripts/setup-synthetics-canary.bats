@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 #
 # Specification-driven tests for scripts/setup-synthetics-canary.sh
-# Source of truth: documents/04_Issues/Issue#148.md §4 / §4.1 / §4.2 / §6.1
+# Source of truth: documents/spec/SPEC-0148.md §4 / §4.1 / §4.2 / §6.1
 #
 # Verifies the script:
 #   - is syntactically valid (shellcheck passes), bash + strict mode
@@ -71,7 +71,7 @@ SCRIPT="$SCRIPTS_DIR/setup-synthetics-canary.sh"
   assert_contains "$SCRIPT" 'aws synthetics update-canary'
 }
 
-# --- SNS topic reuse (Issue + setup-cloudwatch-alarms.sh) -------------------
+# --- SNS topic reuse (Spec + setup-cloudwatch-alarms.sh) -------------------
 
 @test "setup-synthetics-canary.sh: reuses the existing SNS topic photlas-waf-alerts" {
   assert_contains "$SCRIPT" 'photlas-waf-alerts'

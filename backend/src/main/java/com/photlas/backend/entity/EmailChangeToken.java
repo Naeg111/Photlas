@@ -8,7 +8,7 @@ import java.util.Objects;
 
 /**
  * メールアドレス変更確認トークンのエンティティ
- * Issue#86: メールアドレス変更時の確認メール送信機能
+ * Spec#86: メールアドレス変更時の確認メール送信機能
  */
 @Entity
 @Table(name = "email_change_tokens")

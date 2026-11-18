@@ -21,9 +21,9 @@ import java.util.List;
  * グローバル例外ハンドラー
  * アプリケーション全体の例外を一元的に処理します。
  * ResponseEntityExceptionHandlerを継承してSpring MVC標準例外を適切に処理します。
- * Issue#19, Issue#20
+ * Spec#19, Spec#20
  *
- * <p>Issue#93: すべてのエラーレスポンスに {@code code}（{@link ErrorCodes}）を付ける。
+ * <p>Spec#93: すべてのエラーレスポンスに {@code code}（{@link ErrorCodes}）を付ける。
  * フロントエンドはこのコードから表示言語の文言を出し、{@code message} は画面に出さない。
  */
 @RestControllerAdvice
@@ -31,10 +31,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /** Issue#93: コードの無い 400 で返す固定の message（内部の message は返さない） */
+    /** Spec#93: コードの無い 400 で返す固定の message（内部の message は返さない） */
     static final String BAD_REQUEST_MESSAGE = "リクエストが正しくありません";
 
-    /** Issue#93: 想定外のエラー（500）で返す固定の message */
+    /** Spec#93: 想定外のエラー（500）で返す固定の message */
     static final String INTERNAL_ERROR_MESSAGE = "サーバーエラーが発生しました";
 
     /**
@@ -59,7 +59,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#93: Spring MVC 標準の例外（壊れた JSON、必須パラメーターの欠落、型の不一致、405、415 など）にも
+     * Spec#93: Spring MVC 標準の例外（壊れた JSON、必須パラメーターの欠落、型の不一致、405、415 など）にも
      * code を付ける。既定の本文（ProblemDetail）の代わりに、4xx は {@code BAD_REQUEST}、5xx は
      * {@code INTERNAL_ERROR} と固定の文言を返す（フロントは画面ごとの汎用の文言で表示する）。
      * 入力チェックエラーは {@link #handleMethodArgumentNotValid} が {@code VALIDATION_ERROR} で返す。
@@ -83,9 +83,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#20: 認証エラー（401 Unauthorized）をハンドリング
+     * Spec#20: 認証エラー（401 Unauthorized）をハンドリング
      *
-     * <p>Issue#93 注意: {@link UnauthorizedException} は「メールアドレスかパスワードが違う」のほか、
+     * <p>Spec#93 注意: {@link UnauthorizedException} は「メールアドレスかパスワードが違う」のほか、
      * 「ユーザーが見つからない」「現在のパスワードが違う」などにも使われており、すべて
      * {@code INVALID_CREDENTIALS} になる。今のフロントで 401 の code から文言を出すのはログイン画面だけ。
      * ほかの画面で 401 の code を使うときは、場面ごとにコードを分けること。
@@ -97,7 +97,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#19, Issue#20: 競合エラー（409 Conflict）をハンドリング
+     * Spec#19, Spec#20: 競合エラー（409 Conflict）をハンドリング
      */
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
@@ -106,7 +106,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#30: お気に入りが見つからない（404 Not Found）をハンドリング
+     * Spec#30: お気に入りが見つからない（404 Not Found）をハンドリング
      */
     @ExceptionHandler(FavoriteNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleFavoriteNotFoundException(FavoriteNotFoundException ex) {
@@ -142,7 +142,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#54: 自分のコンテンツ通報エラー（400 Bad Request）をハンドリング
+     * Spec#54: 自分のコンテンツ通報エラー（400 Bad Request）をハンドリング
      */
     @ExceptionHandler(SelfReportException.class)
     public ResponseEntity<ErrorResponse> handleSelfReportException(SelfReportException ex) {
@@ -151,7 +151,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#54: アカウント停止エラー（403 Forbidden）をハンドリング
+     * Spec#54: アカウント停止エラー（403 Forbidden）をハンドリング
      */
     @ExceptionHandler(AccountSuspendedException.class)
     public ResponseEntity<ErrorResponse> handleAccountSuspendedException(AccountSuspendedException ex) {
@@ -160,7 +160,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#104: 操作禁止エラー（403 Forbidden）をハンドリング
+     * Spec#104: 操作禁止エラー（403 Forbidden）をハンドリング
      */
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException ex) {
@@ -169,7 +169,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#54: アクセス拒否エラー（403 Forbidden）をハンドリング
+     * Spec#54: アクセス拒否エラー（403 Forbidden）をハンドリング
      */
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(
@@ -188,7 +188,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#93: コード付きの不正な入力（400 Bad Request）をハンドリング
+     * Spec#93: コード付きの不正な入力（400 Bad Request）をハンドリング
      * そのコードと固定の message を返す。
      */
     @ExceptionHandler(InvalidRequestException.class)
@@ -198,7 +198,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#93: カテゴリが見つからない（400 Bad Request）をハンドリング
+     * Spec#93: カテゴリが見つからない（400 Bad Request）をハンドリング
      * 写真の投稿・編集で、存在しないカテゴリを指定したとき。
      */
     @ExceptionHandler(CategoryNotFoundException.class)
@@ -210,7 +210,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /**
      * コードの無い不正な引数エラー（400 Bad Request）をハンドリング
      *
-     * <p>Issue#93: コードの無い例外の message はライブラリ等の内部向けのことがあるため返さず、
+     * <p>Spec#93: コードの無い例外の message はライブラリ等の内部向けのことがあるため返さず、
      * 固定の文言にしてログにだけ残す。コード付きの {@link InvalidRequestException} は上のハンドラーが扱う。
      */
     @ExceptionHandler(IllegalArgumentException.class)
@@ -221,7 +221,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#93: 今の状態ではできない操作（400 Bad Request）をハンドリング
+     * Spec#93: 今の状態ではできない操作（400 Bad Request）をハンドリング
      *
      * <p>コード付きの {@link InvalidStateException} だけを 400 にする。
      * コードの無い {@link IllegalStateException} は想定外のエラーとして 500 のまま扱う。
@@ -233,7 +233,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#108: データエクスポート同時実行（409 Conflict）をハンドリング
+     * Spec#108: データエクスポート同時実行（409 Conflict）をハンドリング
      */
     @ExceptionHandler(ExportInProgressException.class)
     public ResponseEntity<ErrorResponse> handleExportInProgressException(ExportInProgressException ex) {
@@ -242,7 +242,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Issue#108: データエクスポート頻度制限（429 Too Many Requests + Retry-After）をハンドリング
+     * Spec#108: データエクスポート頻度制限（429 Too Many Requests + Retry-After）をハンドリング
      */
     @ExceptionHandler(ExportRateLimitException.class)
     public ResponseEntity<ErrorResponse> handleExportRateLimitException(ExportRateLimitException ex) {

@@ -5,7 +5,7 @@ import { useOAuthLoginToast } from './useOAuthLoginToast'
 import { OAUTH_LOGIN_TOAST_FLAG_KEY } from '../config/app'
 
 /**
- * Issue#144: useOAuthLoginToast のユニットテスト。
+ * Spec#144: useOAuthLoginToast のユニットテスト。
  * App.tsx 統合テスト（App.test.tsx）でカバーする発火条件を、フック単体で素早く検証する。
  */
 

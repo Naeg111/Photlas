@@ -4,7 +4,7 @@ import { PinSvg } from './PinSvg'
 
 /**
  * PinSvg コンポーネントのテスト
- * Issue#53: Mapbox移行に伴い共通化されたピンSVGの描画を検証する
+ * Spec#53: Mapbox移行に伴い共通化されたピンSVGの描画を検証する
  */
 describe('PinSvg', () => {
   const defaultProps = {

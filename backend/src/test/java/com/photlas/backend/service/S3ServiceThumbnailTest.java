@@ -7,12 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Issue#59: S3ServiceのサムネイルURL生成テスト
+ * Spec#59: S3ServiceのサムネイルURL生成テスト
  */
 public class S3ServiceThumbnailTest {
 
     @Test
-    @DisplayName("Issue#59 - JPEGのS3キーからサムネイルCDN URLが生成される")
+    @DisplayName("Spec#59 - JPEGのS3キーからサムネイルCDN URLが生成される")
     void generateThumbnailCdnUrl_jpeg() {
         S3Service s3Service = new S3Service();
         setField(s3Service, "cloudFrontDomain", "cdn.photlas.jp");
@@ -23,7 +23,7 @@ public class S3ServiceThumbnailTest {
     }
 
     @Test
-    @DisplayName("Issue#59 - PNGのS3キーからサムネイルCDN URLが生成される")
+    @DisplayName("Spec#59 - PNGのS3キーからサムネイルCDN URLが生成される")
     void generateThumbnailCdnUrl_png() {
         S3Service s3Service = new S3Service();
         setField(s3Service, "cloudFrontDomain", "cdn.photlas.jp");
@@ -34,7 +34,7 @@ public class S3ServiceThumbnailTest {
     }
 
     @Test
-    @DisplayName("Issue#59 - HEICのS3キーからサムネイルCDN URLが生成される")
+    @DisplayName("Spec#59 - HEICのS3キーからサムネイルCDN URLが生成される")
     void generateThumbnailCdnUrl_heic() {
         S3Service s3Service = new S3Service();
         setField(s3Service, "cloudFrontDomain", "cdn.photlas.jp");
@@ -45,7 +45,7 @@ public class S3ServiceThumbnailTest {
     }
 
     @Test
-    @DisplayName("Issue#59 - nullが渡された場合はnullを返す")
+    @DisplayName("Spec#59 - nullが渡された場合はnullを返す")
     void generateThumbnailCdnUrl_null() {
         S3Service s3Service = new S3Service();
         setField(s3Service, "cloudFrontDomain", "cdn.photlas.jp");

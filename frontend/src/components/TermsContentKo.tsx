@@ -1,8 +1,8 @@
 /**
  * TermsContentKo コンポーネント
- * Issue#101: 이용약관 본문 (한국어)
+ * Spec#101: 이용약관 본문 (한국어)
  *
- * 注: Issue#101 Phase: 機械翻訳ベースで作成。法的妥当性については、
+ * 注: Spec#101 Phase: 機械翻訳ベースで作成。法的妥当性については、
  * 海外ユーザー本格対応時に専門家レビューを実施予定。
  */
 export function TermsContentKo() {
@@ -50,7 +50,7 @@ export function TermsContentKo() {
         <h2 className="mb-3">제3조 (사용자 등록)</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
           <li>
-            {/* Issue#105: 만 13세 이상의 이용 제한을 명시 (개인정보 처리방침 제12조와 정합) */}
+            {/* Spec#105: 만 13세 이상의 이용 제한을 명시 (개인정보 처리방침 제12조와 정합) */}
             본 서비스는 <span className="font-semibold">만 13세 이상</span>의 분을 대상으로 제공합니다. 만 13세 미만의 분은 사용자 등록 및 본 서비스의 이용을 할 수 없습니다.
           </li>
           <li>
@@ -108,7 +108,7 @@ export function TermsContentKo() {
           <li>
             다른 사용자는 게시 데이터에 포함된 촬영 지점의 위치 정보가 정확하지 않다고 판단한 경우, 정확하다고 생각되는 지점을 지적할 수 있습니다. 게시자는 지적을 확인하고 수용 또는 거부의 판단을 행하는 것으로 합니다. 게시자가 지적을 수용한 경우, 촬영 지점의 위치 정보가 갱신됩니다.
           </li>
-          {/* Issue#119: AI 분류 정보의 운영자에 의한 수정 */}
+          {/* Spec#119: AI 분류 정보의 운영자에 의한 수정 */}
           <li>
             운영자는 게시물에 부여된 카테고리와 날씨 등의 분류 정보를, 검색 정확도 향상을 위해 수정하는 경우가 있습니다.
           </li>
@@ -148,7 +148,7 @@ export function TermsContentKo() {
           <li>본 서비스의 운영을 방해할 우려가 있는 행위</li>
           <li>기타 운영자가 부적절하다고 판단하는 행위</li>
         </ol>
-        {/* Issue#105: 게시자 책임의 강화 (촬영지국의 법령 준수) */}
+        {/* Spec#105: 게시자 책임의 강화 (촬영지국의 법령 준수) */}
         <p className="text-sm text-gray-700 mt-3 font-semibold">게시자의 책임 (국제 이용에 관한 추가 사항)</p>
         <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 mt-1">
           <li>
@@ -321,7 +321,7 @@ export function TermsContentKo() {
           <li>
             본 서비스에 관해 분쟁이 발생한 경우에는 도쿄 지방재판소를 제1심의 전속적 합의 관할 법원으로 합니다.
           </li>
-          {/* Issue#105: 국제 이용의 주의사항 */}
+          {/* Spec#105: 국제 이용의 주의사항 */}
           <li>
             본 서비스는 일본에 거점을 둔 사업자에 의해 제공되지만, 전 세계로부터의 액세스를 받아들이고 있습니다. 사용자는 본 서비스의 이용에 있어서 <span className="font-semibold">자국의 법률</span>에 기초하여 본 서비스를 이용하는 것이 가능한지를, 자신의 책임으로 확인하는 것으로 합니다.
           </li>

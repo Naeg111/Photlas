@@ -23,7 +23,7 @@ import { findPinsAndClusters, clickFirstPin, waitForPinsOrClusters } from './hel
  * - テスト環境（test.photlas.jp）が稼働していること
  * - テスト用の投稿データが存在すること
  *
- * Issue#55: Symbol Layer移行に伴い、ピン検出を queryRenderedFeatures ベースに変更
+ * Spec#55: Symbol Layer移行に伴い、ピン検出を queryRenderedFeatures ベースに変更
  */
 
 /**
@@ -63,7 +63,7 @@ async function zoomInToShowPins(page: Page): Promise<void> {
 
 /**
  * ピンをクリックして写真詳細ダイアログを開く
- * Issue#55: queryRenderedFeatures + map.project でピンクリック
+ * Spec#55: queryRenderedFeatures + map.project でピンクリック
  */
 async function openPhotoDetailFromPin(page: Page): Promise<boolean> {
   // ピンがレンダリングされるまで待機
@@ -97,7 +97,7 @@ async function createTestPost(page: Page, title: string): Promise<void> {
   const truncatedTitle = title.slice(0, 18)
   await page.getByPlaceholder('例：夕暮れの東京タワー').fill(truncatedTitle)
 
-  // カテゴリを選択（Issue#63: 風景→自然風景に変更）
+  // カテゴリを選択（Spec#63: 風景→自然風景に変更）
   await page.getByRole('checkbox', { name: '自然風景' }).click()
   await expect(page.getByRole('checkbox', { name: '自然風景' })).toBeChecked()
 

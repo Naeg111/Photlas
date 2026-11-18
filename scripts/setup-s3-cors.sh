@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Issue#88: S3バケットのCORS設定スクリ���ト
+# Spec#88: S3バケットのCORS設定スクリ���ト
 #
 # ライトボックスでオリジナル画像を fetch + ReadableStream で読み込むために、
 # S3バケットのCORSポリシーを設定する。

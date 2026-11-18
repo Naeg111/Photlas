@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * Issue#135: キーワード ↔ カテゴリ多対多リポジトリ。
+ * Spec#135: キーワード ↔ カテゴリ多対多リポジトリ。
  */
 @Repository
 public interface TagCategoryRepository extends JpaRepository<TagCategory, TagCategory.TagCategoryId> {
@@ -22,7 +22,7 @@ public interface TagCategoryRepository extends JpaRepository<TagCategory, TagCat
     List<TagCategory> findByTagIdIn(List<Long> tagIds);
 
     /**
-     * Issue#136 Phase 8: 複数カテゴリに紐づく全 tag_id を一括取得（関連キーワード抽出用）。
+     * Spec#136 Phase 8: 複数カテゴリに紐づく全 tag_id を一括取得（関連キーワード抽出用）。
      * 多対多で同じ tag_id が複数回ヒットしうるので、呼び出し側で distinct すること。
      */
     List<TagCategory> findByCategoryCodeIn(List<Integer> categoryCodes);

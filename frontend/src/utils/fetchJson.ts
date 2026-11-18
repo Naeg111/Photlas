@@ -1,5 +1,5 @@
 /**
- * Issue#96: fetch 共通ラッパー `fetchJson<T>`
+ * Spec#96: fetch 共通ラッパー `fetchJson<T>`
  *
  * - non-OK レスポンスで `ApiError` を throw
  * - 429 は `Retry-After` ヘッダから秒数を解析（欠落時は 60 秒）

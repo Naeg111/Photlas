@@ -1,5 +1,5 @@
 /**
- * Issue#135 Phase 11: FilterPanel にキーワードセクションが組み込まれていることのテスト。
+ * Spec#135 Phase 11: FilterPanel にキーワードセクションが組み込まれていることのテスト。
  *
  * - 開いた時に /api/v1/tags がフェッチされる
  * - KeywordSection が表示される（AI 提案エリアは非表示、文脈連動 + アコーディオン のみ）
@@ -15,7 +15,7 @@ vi.mock('../utils/tagsApi', () => ({
   fetchTags: (...args: unknown[]) => mockFetchTags(...args),
 }))
 
-describe('FilterPanel - Issue#135 キーワードフィルタ組込', () => {
+describe('FilterPanel - Spec#135 キーワードフィルタ組込', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFetchTags.mockResolvedValue({
@@ -25,7 +25,7 @@ describe('FilterPanel - Issue#135 キーワードフィルタ組込', () => {
     })
   })
 
-  it('Issue#135 - パネル open=true で fetchTags が呼ばれる', async () => {
+  it('Spec#135 - パネル open=true で fetchTags が呼ばれる', async () => {
     render(<FilterPanel open onOpenChange={vi.fn()} />)
 
     await waitFor(() => {
@@ -33,7 +33,7 @@ describe('FilterPanel - Issue#135 キーワードフィルタ組込', () => {
     })
   })
 
-  it('Issue#135 - KeywordSection が表示される（カテゴリの下、AI 提案エリアは無し）', async () => {
+  it('Spec#135 - KeywordSection が表示される（カテゴリの下、AI 提案エリアは無し）', async () => {
     render(<FilterPanel open onOpenChange={vi.fn()} />)
 
     await waitFor(() => {
@@ -44,9 +44,9 @@ describe('FilterPanel - Issue#135 キーワードフィルタ組込', () => {
     expect(screen.queryByTestId('keyword-section-ai-suggestions')).not.toBeInTheDocument()
   })
 
-  // ========== Issue#141 Phase 8: autoSelectByCategoryMode 統合 ==========
+  // ========== Spec#141 Phase 8: autoSelectByCategoryMode 統合 ==========
 
-  it('Issue#141 - カテゴリ選択で配下キーワードが自動選択され、onApply の tagIds に含まれる', async () => {
+  it('Spec#141 - カテゴリ選択で配下キーワードが自動選択され、onApply の tagIds に含まれる', async () => {
     // 植物カテゴリ (206) 配下に「桜 (1)」「もみじ (4)」がある fixture
     mockFetchTags.mockResolvedValue({
       tags: [
@@ -77,7 +77,7 @@ describe('FilterPanel - Issue#135 キーワードフィルタ組込', () => {
     expect(conditions.tagIds).toEqual(expect.arrayContaining([1, 4]))
   })
 
-  it('Issue#141 - 個別チップ再クリックで auto-select 状態から外せる', async () => {
+  it('Spec#141 - 個別チップ再クリックで auto-select 状態から外せる', async () => {
     mockFetchTags.mockResolvedValue({
       tags: [
         { tagId: 1, slug: 'cherry-blossom', displayName: '桜', categoryCodes: [206], sortOrder: 10 },

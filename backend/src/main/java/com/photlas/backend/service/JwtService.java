@@ -14,14 +14,14 @@ import java.util.function.Function;
 
 /**
  * JWT認証サービス
- * Issue#23: JWT Secretの環境変数化対応
+ * Spec#23: JWT Secretの環境変数化対応
  */
 @Service
 public class JwtService {
 
     /**
      * JWT署名用秘密鍵
-     * Issue#23: デフォルト値なし（application.propertiesまたは環境変数から必須取得）
+     * Spec#23: デフォルト値なし（application.propertiesまたは環境変数から必須取得）
      */
     @Value("${jwt.secret}")
     private String secret;
@@ -67,7 +67,7 @@ public class JwtService {
     }
 
     /**
-     * Issue#54: 表示名とロール情報からJWTトークンを生成
+     * Spec#54: 表示名とロール情報からJWTトークンを生成
      *
      * @param username 表示名（email）
      * @param role ユーザーロール（USER, ADMIN）
@@ -80,7 +80,7 @@ public class JwtService {
     }
 
     /**
-     * Issue#54: トークンからロール情報を抽出
+     * Spec#54: トークンからロール情報を抽出
      *
      * @param token JWTトークン
      * @return ロール文字列（存在しない場合は"USER"）

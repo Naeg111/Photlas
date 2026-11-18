@@ -15,7 +15,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#81 Phase 3 - SecurityAuditLogger のテスト
+ * Spec#81 Phase 3 - SecurityAuditLogger のテスト
  *
  * OAuth / 認証まわりの監査ログを出力する集約ロガー。PII を含めない形で
  * user_id、event、provider などのフィールドを構造化ログに出す。
@@ -42,7 +42,7 @@ class SecurityAuditLoggerTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - OAuth アカウント作成イベントが INFO レベルで監査ログに出力される")
+    @DisplayName("Spec#81 - OAuth アカウント作成イベントが INFO レベルで監査ログに出力される")
     void logOAuthAccountCreated() {
         auditLogger.log(
                 SecurityAuditLogger.Event.OAUTH_ACCOUNT_CREATED,
@@ -59,7 +59,7 @@ class SecurityAuditLoggerTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - OAuth リンクイベントが監査ログに出力される")
+    @DisplayName("Spec#81 - OAuth リンクイベントが監査ログに出力される")
     void logOAuthAccountLinked() {
         auditLogger.log(
                 SecurityAuditLogger.Event.OAUTH_ACCOUNT_LINKED,
@@ -73,7 +73,7 @@ class SecurityAuditLoggerTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - OAuth リボークイベントが WARN レベルで出力される（失敗時）")
+    @DisplayName("Spec#81 - OAuth リボークイベントが WARN レベルで出力される（失敗時）")
     void logOAuthRevokeFailure() {
         auditLogger.logWarn(
                 SecurityAuditLogger.Event.OAUTH_TOKEN_REVOKE_FAILED,
@@ -89,7 +89,7 @@ class SecurityAuditLoggerTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - PII（email / access_token / ipv4）は監査ログに含まれない")
+    @DisplayName("Spec#81 - PII（email / access_token / ipv4）は監査ログに含まれない")
     void logDoesNotContainPii() {
         auditLogger.log(
                 SecurityAuditLogger.Event.OAUTH_ACCOUNT_CREATED,
@@ -102,7 +102,7 @@ class SecurityAuditLoggerTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - 複数フィールドが key=value 形式で順序安定に出力される")
+    @DisplayName("Spec#81 - 複数フィールドが key=value 形式で順序安定に出力される")
     void logFormatsFieldsStably() {
         auditLogger.log(
                 SecurityAuditLogger.Event.OAUTH_ACCOUNT_RECOVERED,

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Issue#54: モデレーション用Lambda関数のセットアップスクリプト
+# Spec#54: モデレーション用Lambda関数のセットアップスクリプト
 #
 # 前提条件:
 #   - AWS CLIが設定済み

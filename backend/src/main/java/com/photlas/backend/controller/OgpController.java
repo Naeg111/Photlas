@@ -61,12 +61,12 @@ public class OgpController {
 
         Photo photo = photoOpt.get();
 
-        // Issue#54: 非公開写真のOGPは404を返す
+        // Spec#54: 非公開写真のOGPは404を返す
         if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
             return ResponseEntity.notFound().build();
         }
 
-        // Issue#54: 退会済み・永久停止ユーザーの写真のOGPは404を返す
+        // Spec#54: 退会済み・永久停止ユーザーの写真のOGPは404を返す
         User owner = userRepository.findById(photo.getUserId()).orElse(null);
         if (owner == null
                 || owner.getDeletedAt() != null

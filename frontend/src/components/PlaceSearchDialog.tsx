@@ -6,7 +6,7 @@ import { MAPBOX_ACCESS_TOKEN } from '../config/mapbox'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 
 /**
- * Issue#69: 場所検索ダイアログ
+ * Spec#69: 場所検索ダイアログ
  *
  * SearchBoxCore（POI・住所）とGeocodingCore（行政区分）を併用し、
  * 都道府県・市区町村から駅・店舗まで網羅的に検索可能にする。

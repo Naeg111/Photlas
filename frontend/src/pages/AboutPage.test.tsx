@@ -5,7 +5,7 @@ import AboutPage from './AboutPage'
 import i18n from '../i18n'
 
 /**
- * Issue#99 - Google OAuth 検証要件: ホームページが
+ * Spec#99 - Google OAuth 検証要件: ホームページが
  *   1. アプリ名「Photlas」を可視テキストで表示
  *   2. アプリの目的を説明する文章を含む
  *   3. プライバシーポリシーへの可視 <a href> リンクを含む
@@ -25,7 +25,7 @@ describe('AboutPage', () => {
     )
   }
 
-  it('Issue#143 - コンテンツページなので noindex メタは付与されない', () => {
+  it('Spec#143 - コンテンツページなので noindex メタは付与されない', () => {
     renderPage()
     expect(document.querySelector('meta[name="robots"]')).toBeNull()
   })

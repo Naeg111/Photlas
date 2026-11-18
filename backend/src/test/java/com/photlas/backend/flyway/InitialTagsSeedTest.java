@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#135 Phase 3: 初期キーワード語彙の投入マイグレーション（V36）の存在・内容チェック。
+ * Spec#135 Phase 3: 初期キーワード語彙の投入マイグレーション（V36）の存在・内容チェック。
  *
  * <p>{@link OAuthMigrationFilesTest} と同じ理由で H2 上で Flyway 実行検証は行わず、
  * SQL ファイルの構造のみを確認する。</p>
@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>検証観点:</p>
  * <ol>
  *   <li>V36 ファイルが存在</li>
- *   <li>tags への INSERT が 100 行以上（Issue#135 3.1 の「200〜500」の最低限）</li>
+ *   <li>tags への INSERT が 100 行以上（Spec#135 3.1 の「200〜500」の最低限）</li>
  *   <li>tag_categories への INSERT が含まれる</li>
  *   <li>代表的なキーワード（cherry-blossom, mountain, sushi 等）の slug が出てくる</li>
  *   <li>13 カテゴリ全ての category_code が tag_categories に出てくる</li>
@@ -34,7 +34,7 @@ class InitialTagsSeedTest {
             Paths.get("src/main/resources/db/migration");
 
     @Test
-    @DisplayName("Issue#135 Phase 3: V36 マイグレーションファイルが存在する（initial tag seed 想定）")
+    @DisplayName("Spec#135 Phase 3: V36 マイグレーションファイルが存在する（initial tag seed 想定）")
     void v36MigrationFileExists() {
         assertThat(findMigrationByVersion("36"))
                 .as("V36__*.sql が db/migration/ に存在すること")
@@ -42,7 +42,7 @@ class InitialTagsSeedTest {
     }
 
     @Test
-    @DisplayName("Issue#135 Phase 3: V36 が tags への INSERT を 100 行以上含む（Issue 3.1 の最低限）")
+    @DisplayName("Spec#135 Phase 3: V36 が tags への INSERT を 100 行以上含む（Spec 3.1 の最低限）")
     void v36ContainsAtLeastOneHundredTagInserts() {
         String content = readV36();
 
@@ -53,7 +53,7 @@ class InitialTagsSeedTest {
     }
 
     @Test
-    @DisplayName("Issue#135 Phase 3: V36 が tag_categories への INSERT を含む")
+    @DisplayName("Spec#135 Phase 3: V36 が tag_categories への INSERT を含む")
     void v36ContainsTagCategoriesInsert() {
         String content = readV36();
 
@@ -62,7 +62,7 @@ class InitialTagsSeedTest {
     }
 
     @Test
-    @DisplayName("Issue#135 Phase 3: V36 に代表的なキーワード slug (cherry-blossom / mountain / sushi 等) が含まれる")
+    @DisplayName("Spec#135 Phase 3: V36 に代表的なキーワード slug (cherry-blossom / mountain / sushi 等) が含まれる")
     void v36ContainsRepresentativeTagSlugs() {
         String content = readV36();
 
@@ -89,7 +89,7 @@ class InitialTagsSeedTest {
     }
 
     @Test
-    @DisplayName("Issue#135 Phase 3: V36 が 13 カテゴリ全ての category_code (201〜213) と紐付けを含む")
+    @DisplayName("Spec#135 Phase 3: V36 が 13 カテゴリ全ての category_code (201〜213) と紐付けを含む")
     void v36LinksAllThirteenCategories() {
         String content = readV36();
 
@@ -101,7 +101,7 @@ class InitialTagsSeedTest {
     }
 
     @Test
-    @DisplayName("Issue#135 Phase 3: V36 の tags VALUES 行が 5 言語表示名カラムを埋めている (NULL や ' 抜けが無い)")
+    @DisplayName("Spec#135 Phase 3: V36 の tags VALUES 行が 5 言語表示名カラムを埋めている (NULL や ' 抜けが無い)")
     void v36TagInsertsLooksWellFormed() {
         String content = readV36();
         // 1 行に少なくとも 5 個の '...' が含まれる事を期待（rekognition_label/slug + 5 言語 + sort_order を考慮し

@@ -5,7 +5,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
 
 /**
- * Issue#99 - Photlas のランディング/概要ページ。
+ * Spec#99 - Photlas のランディング/概要ページ。
  *
  * Google OAuth 公開審査において、OAuth 同意画面に登録する「アプリのホームページ」
  * URL が以下を満たす必要があるため、本ページを `/about` に配置して登録 URL を

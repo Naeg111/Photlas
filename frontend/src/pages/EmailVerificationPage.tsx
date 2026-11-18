@@ -10,7 +10,7 @@ import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { isInAppBrowser } from '../utils/isInAppBrowser'
 
 /**
- * Issue#110: メール認証完了マーカーの localStorage キー。
+ * Spec#110: メール認証完了マーカーの localStorage キー。
  * 認証成功時にこのキーへタイムスタンプを書き込むことで、
  * 同一ブラウザの別タブにある App.tsx が `storage` イベントで検知し、
  * ログインダイアログを自動で開く。
@@ -23,7 +23,7 @@ export const EMAIL_JUST_VERIFIED_KEY = 'email_just_verified'
  * メール認証リンクからアクセスされるページ。
  * URL の token パラメータを使って認証 API を呼び出し、結果を表示する。
  *
- * Issue#110 の対応により以下の動作になる:
+ * Spec#110 の対応により以下の動作になる:
  * - 認証成功時に localStorage へマーカーを書き込み、別タブのログインダイアログを誘発する
  * - 自動遷移は行わない。ユーザーが自分で元のページに戻るか「Photlasを開く」リンクを使う
  * - アプリ内ブラウザでは「Photlasを開く」「ホーム」リンクを非表示にする（メインブラウザでの利用を促す）
@@ -52,7 +52,7 @@ export default function EmailVerificationPage() {
           `${API_V1_URL}/auth/verify-email?token=${encodeURIComponent(token)}`
         )
         setStatus('success')
-        // Issue#110: 別タブに認証完了を通知するためのマーカー
+        // Spec#110: 別タブに認証完了を通知するためのマーカー
         localStorage.setItem(EMAIL_JUST_VERIFIED_KEY, String(Date.now()))
       } catch (err) {
         setStatus('error')
@@ -72,7 +72,7 @@ export default function EmailVerificationPage() {
   }, [searchParams, t])
 
   const handleOpenPhotlas = () => {
-    // Issue#110: ログインダイアログを自動表示するため state を渡して遷移する
+    // Spec#110: ログインダイアログを自動表示するため state を渡して遷移する
     navigate('/', { state: { openLogin: true } })
   }
 

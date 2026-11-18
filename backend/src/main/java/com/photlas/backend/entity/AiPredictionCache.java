@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.Objects;
 
 /**
- * Issue#119: AI 解析結果の一時保管エンティティ。
+ * Spec#119: AI 解析結果の一時保管エンティティ。
  *
  * <p>{@code POST /api/v1/photos/analyze} で得た AI 結果を、後の正式投稿
  * （{@code POST /api/v1/photos}）まで一時保管する。フロントは analyzeToken（UUID）のみ持ち、

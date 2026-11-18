@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Issue#148: 死活監視 CloudWatch Synthetics canary セットアップスクリプト（冪等）
+# Spec#148: 死活監視 CloudWatch Synthetics canary セットアップスクリプト（冪等）
 #
 # 本番 photlas.jp の SEO 重要 URL を 30 分おきに外形監視し、退化したらアラートする。
 #   - /tags/{slug}?lang=ja        … SSR ランディング（hreflang / canonical / X-Robots-Tag）
@@ -23,7 +23,7 @@
 #     で作成済みのトピックを流用する。
 #
 # 備考:
-#   - 通知先 SNS topic は新設せず流用する（Issue#148 §4.1）。
+#   - 通知先 SNS topic は新設せず流用する（Spec#148 §4.1）。
 #   - 発報時の対応手順は scripts/canary/README.md（triage runbook）を参照。
 
 set -euo pipefail
@@ -284,7 +284,7 @@ log "Creating/updating alarm: $ALARM_NAME"
 aws cloudwatch put-metric-alarm \
   --region "$AWS_REGION" \
   --alarm-name "$ALARM_NAME" \
-  --alarm-description "Issue#148: photlas.jp /tags SSR & /photo-viewer OGP death monitoring (fires after 2 consecutive canary failures)" \
+  --alarm-description "Spec#148: photlas.jp /tags SSR & /photo-viewer OGP death monitoring (fires after 2 consecutive canary failures)" \
   --namespace "CloudWatchSynthetics" \
   --metric-name "SuccessPercent" \
   --dimensions "Name=CanaryName,Value=${CANARY_NAME}" \

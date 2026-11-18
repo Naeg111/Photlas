@@ -20,7 +20,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
     /**
      * 指定された緯度経度から半径200m以内のスポットを検索し、距離が近い順に返す。
      *
-     * <p>Issue#149: PostGIS（geography + GiST 空間インデックス）で実装。
+     * <p>Spec#149: PostGIS（geography + GiST 空間インデックス）で実装。
      * {@code ST_DWithin(geom, point, 200)} が GiST 索引（{@code idx_spots_geom}）を使い
      * 半径 200m 判定を、{@code geom <-> point}（KNN）が近い順を、いずれも索引付きで行う
      * （旧 Haversine 全件スキャンを解消）。</p>
@@ -51,17 +51,17 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
     );
 
     /**
-     * Issue#72: 指定ユーザーが作成者であるスポットを検索
+     * Spec#72: 指定ユーザーが作成者であるスポットを検索
      */
     List<Spot> findByCreatedByUserId(Long createdByUserId);
 
     /**
-     * Issue#108: 指定ユーザーが作成者であるスポットを新しい順に取得する
+     * Spec#108: 指定ユーザーが作成者であるスポットを新しい順に取得する
      */
     List<Spot> findByCreatedByUserIdOrderByCreatedAtDesc(Long createdByUserId);
 
     /**
-     * Issue#72: 写真が0件の孤立スポットを削除
+     * Spec#72: 写真が0件の孤立スポットを削除
      */
     @org.springframework.data.jpa.repository.Modifying
     @Query("DELETE FROM Spot s WHERE s.spotId NOT IN (SELECT DISTINCT p.spotId FROM Photo p)")
@@ -134,7 +134,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
     );
 
     /**
-     * Issue#46: 詳細フィルター対応版スポット検索
+     * Spec#46: 詳細フィルター対応版スポット検索
      *
      * 基本フィルターに加え、以下の詳細フィルターに対応:
      * - 解像度（最小長辺px）
@@ -247,7 +247,7 @@ public interface SpotRepository extends JpaRepository<Spot, Long> {
     );
 
     /**
-     * Issue#127: 認証ユーザー本人の PENDING_REVIEW（=1001）投稿だけを集計してスポット一覧を返す。
+     * Spec#127: 認証ユーザー本人の PENDING_REVIEW（=1001）投稿だけを集計してスポット一覧を返す。
      *
      * 通常の /api/v1/spots は CloudFront 共有キャッシュ前提で PUBLISHED のみを返すため、
      * 投稿直後の本人が自分の審査中投稿をすぐに地図上で確認できない。本クエリは

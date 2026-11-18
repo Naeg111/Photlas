@@ -3,7 +3,7 @@ package com.photlas.backend.dto;
 import java.util.List;
 
 /**
- * Issue#136 §4.4: AI 予測キャッシュに保存する全体構造。
+ * Spec#136 §4.4: AI 予測キャッシュに保存する全体構造。
  *
  * <p>従来は {@link LabelMappingResult} 単体を JSON 化していたが、
  * {@code ai_confidence} を投稿時に補完するため AI 提案キーワード ({@link TagSuggestion}) も

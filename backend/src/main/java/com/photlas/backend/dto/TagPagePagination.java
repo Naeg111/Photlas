@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Issue#136 Phase 5: 省略付きページ番号 (Q8 / §4.9) を表現するページネーション情報。
+ * Spec#136 Phase 5: 省略付きページ番号 (Q8 / §4.9) を表現するページネーション情報。
  *
  * <p>{@code displayPages} は表示するページ番号を順番に並べたリスト。
  * 省略 ("…") は {@code 0} で表現する（ページ番号は 1 以上のため安全に区別可能）。</p>

@@ -1,5 +1,5 @@
 /**
- * Issue#64: ノースヘディングボタン用の方位磁針アイコン
+ * Spec#64: ノースヘディングボタン用の方位磁針アイコン
  * N極（赤）が上、S極（青）が下のカーナビ風デザイン
  */
 export function CompassIcon({ className }: Readonly<{ className?: string }>) {

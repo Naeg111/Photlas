@@ -5,7 +5,7 @@ import i18n from '../i18n'
 import { REASON_ADULT_CONTENT, REASON_COPYRIGHT_INFRINGEMENT } from '../utils/codeConstants'
 
 /**
- * Issue#54: 通報ダイアログ
+ * Spec#54: 通報ダイアログ
  *
  * UI要件:
  * - ダイアログタイトル: 「この投稿を通報」

@@ -9,7 +9,7 @@ interface ContactDialogProps {
 const CONTACT_EMAIL = "support@photlas.jp";
 
 /**
- * Issue#114: お問い合わせダイアログ
+ * Spec#114: お問い合わせダイアログ
  *
  * 案内文 + mailto リンク（i18n 対応の subject / body 自動入力付き）。
  * シンプル構成（種別選択・返信目安なし）。

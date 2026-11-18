@@ -5,7 +5,7 @@ import RegisterSuccessPage from './RegisterSuccessPage'
 
 /**
  * RegisterSuccessPage コンポーネントのテスト
- * Issue#2: ユーザー登録機能 (UI) - 登録完了ページ
+ * Spec#2: ユーザー登録機能 (UI) - 登録完了ページ
  * 
  * TDD Red段階: 実装前のテストケース定義
  */

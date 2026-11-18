@@ -14,10 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
 
 /**
- * Issue#119 - {@link RekognitionLabelMapper} の単体テスト。
+ * Spec#119 - {@link RekognitionLabelMapper} の単体テスト。
  *
  * <p>AWS Rekognition のラベル検出結果を Photlas のカテゴリ・天候コードへ
- * マッピングするロジックを検証する。マッピングルール詳細は Issue#119 の 4.1 / 4.2 を参照。</p>
+ * マッピングするロジックを検証する。マッピングルール詳細は Spec#119 の 4.1 / 4.2 を参照。</p>
  *
  * <p>本テストは Spring を起動せず、純粋なロジックとして高速に実行する。</p>
  */
@@ -34,7 +34,7 @@ class RekognitionLabelMapperTest {
         return Label.builder().name(name).confidence(confidence).build();
     }
 
-    /** Issue#132: 親ラベルを持つ Rekognition Label を構築するヘルパー。 */
+    /** Spec#132: 親ラベルを持つ Rekognition Label を構築するヘルパー。 */
     private Label labelWithParents(String name, float confidence, String... parentNames) {
         List<Parent> parents = java.util.Arrays.stream(parentNames)
                 .map(p -> Parent.builder().name(p).build())
@@ -45,7 +45,7 @@ class RekognitionLabelMapperTest {
     // ========== カテゴリマッピング ==========
 
     @Test
-    @DisplayName("Issue#119 - 自然風景: Mountain ラベル80%で 201 が返る")
+    @DisplayName("Spec#119 - 自然風景: Mountain ラベル80%で 201 が返る")
     void natureFromMountain() {
         LabelMappingResult result = mapper.map(List.of(label("Mountain", 80f)));
 
@@ -53,7 +53,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 自然風景: Sea / River / Forest / Landscape も 201 を返す")
+    @DisplayName("Spec#119 - 自然風景: Sea / River / Forest / Landscape も 201 を返す")
     void natureFromOtherLabels() {
         assertThat(mapper.map(List.of(label("Sea", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_NATURE);
@@ -66,7 +66,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 街並み: City / Skyline / Urban / Cityscape は 202 を返す")
+    @DisplayName("Spec#119 - 街並み: City / Skyline / Urban / Cityscape は 202 を返す")
     void cityscapeFromCityLabels() {
         assertThat(mapper.map(List.of(label("City", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_CITYSCAPE);
@@ -79,7 +79,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 建造物: Building / Architecture / Bridge / Tower / Skyscraper は 203 を返す")
+    @DisplayName("Spec#119 - 建造物: Building / Architecture / Bridge / Tower / Skyscraper は 203 を返す")
     void architectureFromBuildingLabels() {
         assertThat(mapper.map(List.of(label("Building", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_ARCHITECTURE);
@@ -94,20 +94,20 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#159 ② - 夜景: Night(90) + City(80) は単一化で 204(夜景) を返す")
+    @DisplayName("Spec#159 ② - 夜景: Night(90) + City(80) は単一化で 204(夜景) を返す")
     void nightViewFromNightAndCity() {
         LabelMappingResult result = mapper.map(List.of(
                 label("Night", 90f),
                 label("City", 80f)
         ));
 
-        // Issue#159 ②: 複合解決で 204 を成立させ、夜景の信頼度(=Night=90) が街並み(80)を上回るため 204 に単一化
+        // Spec#159 ②: 複合解決で 204 を成立させ、夜景の信頼度(=Night=90) が街並み(80)を上回るため 204 に単一化
         assertThat(result.categories())
                 .containsExactly(CodeConstants.CATEGORY_NIGHT_VIEW);
     }
 
     @Test
-    @DisplayName("Issue#159 ② - 夜景: Night(90) + Building(80) も単一化で 204(夜景) を返す")
+    @DisplayName("Spec#159 ② - 夜景: Night(90) + Building(80) も単一化で 204(夜景) を返す")
     void nightViewFromNightAndBuilding() {
         LabelMappingResult result = mapper.map(List.of(
                 label("Night", 90f),
@@ -119,7 +119,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 夜景: Night 単独（City/Building/Architecture なし）では 204 にならない")
+    @DisplayName("Spec#119 - 夜景: Night 単独（City/Building/Architecture なし）では 204 にならない")
     void nightAloneDoesNotMapToNightView() {
         LabelMappingResult result = mapper.map(List.of(label("Night", 90f)));
 
@@ -127,7 +127,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - グルメ: Food / Meal / Restaurant / Dish / Cuisine は 205 を返す")
+    @DisplayName("Spec#119 - グルメ: Food / Meal / Restaurant / Dish / Cuisine は 205 を返す")
     void gourmetFromFoodLabels() {
         assertThat(mapper.map(List.of(label("Food", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_GOURMET);
@@ -142,22 +142,22 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 + Issue#159 - 植物: Flower / Plant は 206 を返す (Garden は 215 へ移動、Tree は削除済)")
+    @DisplayName("Spec#119 + Spec#159 - 植物: Flower / Plant は 206 を返す (Garden は 215 へ移動、Tree は削除済)")
     void plantsFromPlantLabels() {
         assertThat(mapper.map(List.of(label("Flower", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_PLANTS);
         assertThat(mapper.map(List.of(label("Plant", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_PLANTS);
-        // Issue#141 後追い (#4): Tree は削除済
+        // Spec#141 後追い (#4): Tree は削除済
         assertThat(mapper.map(List.of(label("Tree", 80f))).categories()).isEmpty();
-        // Issue#159 ③-5: Garden はレジャー・施設(215)へ付け替え
+        // Spec#159 ③-5: Garden はレジャー・施設(215)へ付け替え
         assertThat(mapper.map(List.of(label("Garden", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_LEISURE_FACILITY);
     }
 
     @Test
-    @DisplayName("Issue#159 ③ - 辞書変更: 215新設 / ③-4判定除外 / parrot付替 / 各カテゴリー◎追加 / 判定維持")
-    void issue159DictionaryChanges() {
+    @DisplayName("Spec#159 ③ - 辞書変更: 215新設 / ③-4判定除外 / parrot付替 / 各カテゴリー◎追加 / 判定維持")
+    void spec159DictionaryChanges() {
         // ③-5 レジャー・施設(215) の新ラベル
         for (String name : List.of("Park", "Zoo", "Aquarium", "Farm", "Ranch", "Pasture",
                 "Amusement Park", "Theme Park", "Ski", "Marina", "Harbor", "Golf Course", "Orchard", "Campground")) {
@@ -223,7 +223,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 + Issue#141 後追い - 動物: Animal / Dog / Cat は 207 を返す (Mammal は削除済)")
+    @DisplayName("Spec#119 + Spec#141 後追い - 動物: Animal / Dog / Cat は 207 を返す (Mammal は削除済)")
     void animalsFromAnimalLabels() {
         assertThat(mapper.map(List.of(label("Animal", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_ANIMALS);
@@ -231,40 +231,40 @@ class RekognitionLabelMapperTest {
                 .containsExactly(CodeConstants.CATEGORY_ANIMALS);
         assertThat(mapper.map(List.of(label("Cat", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_ANIMALS);
-        // Issue#141 後追い: Mammal は「動物全般」に含めるため CategoryDictionary から削除
+        // Spec#141 後追い: Mammal は「動物全般」に含めるため CategoryDictionary から削除
         assertThat(mapper.map(List.of(label("Mammal", 80f))).categories()).isEmpty();
     }
 
     @Test
-    @DisplayName("Issue#119 + Issue#141 後追い - 野鳥: Bird は 208 のみを返す (207 動物からは外した)")
+    @DisplayName("Spec#119 + Spec#141 後追い - 野鳥: Bird は 208 のみを返す (207 動物からは外した)")
     void birdMapsToWildBirdsOnly() {
         LabelMappingResult result = mapper.map(List.of(label("Bird", 80f)));
 
-        // Issue#141 後追い (#3): bird は野鳥カテゴリのみへ。動物カテゴリからは外した
+        // Spec#141 後追い (#3): bird は野鳥カテゴリのみへ。動物カテゴリからは外した
         assertThat(result.categories())
                 .containsExactly(CodeConstants.CATEGORY_WILD_BIRDS);
     }
 
     @Test
-    @DisplayName("Issue#119 + Issue#141 後追い - 自動車: Car / Automobile は 209 を返す (Vehicle は削除済)")
+    @DisplayName("Spec#119 + Spec#141 後追い - 自動車: Car / Automobile は 209 を返す (Vehicle は削除済)")
     void carsFromCarLabels() {
         assertThat(mapper.map(List.of(label("Car", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_CARS);
-        // Issue#141 後追い: Vehicle は削除済
+        // Spec#141 後追い: Vehicle は削除済
         assertThat(mapper.map(List.of(label("Vehicle", 80f))).categories()).isEmpty();
         assertThat(mapper.map(List.of(label("Automobile", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_CARS);
     }
 
     @Test
-    @DisplayName("Issue#119 - バイク: Motorcycle は 210 を返す")
+    @DisplayName("Spec#119 - バイク: Motorcycle は 210 を返す")
     void motorcyclesFromMotorcycleLabel() {
         assertThat(mapper.map(List.of(label("Motorcycle", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_MOTORCYCLES);
     }
 
     @Test
-    @DisplayName("Issue#119 - 鉄道: Train / Railway / Locomotive / Subway は 211 を返す")
+    @DisplayName("Spec#119 - 鉄道: Train / Railway / Locomotive / Subway は 211 を返す")
     void railwaysFromTrainLabels() {
         assertThat(mapper.map(List.of(label("Train", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_RAILWAYS);
@@ -277,7 +277,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 飛行機: Aircraft / Airplane / Helicopter は 212 を返す")
+    @DisplayName("Spec#119 - 飛行機: Aircraft / Airplane / Helicopter は 212 を返す")
     void aircraftFromAircraftLabels() {
         assertThat(mapper.map(List.of(label("Aircraft", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_AIRCRAFT);
@@ -288,7 +288,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 星空: Star / Night Sky / Milky Way は 213 を返す")
+    @DisplayName("Spec#119 - 星空: Star / Night Sky / Milky Way は 213 を返す")
     void starrySkyFromStarLabels() {
         assertThat(mapper.map(List.of(label("Star", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_STARRY_SKY);
@@ -301,7 +301,7 @@ class RekognitionLabelMapperTest {
     // ========== 信頼度閾値 ==========
 
     @Test
-    @DisplayName("Issue#119 - 信頼度80%未満のラベルはマッピングから除外される")
+    @DisplayName("Spec#119 - 信頼度80%未満のラベルはマッピングから除外される")
     void belowThresholdLabelsAreExcluded() {
         LabelMappingResult result = mapper.map(List.of(label("Mountain", 79f)));
 
@@ -309,7 +309,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 信頼度80%ちょうどのラベルは含める（境界値）")
+    @DisplayName("Spec#119 - 信頼度80%ちょうどのラベルは含める（境界値）")
     void exactlyThresholdLabelIsIncluded() {
         LabelMappingResult result = mapper.map(List.of(label("Mountain", 80f)));
 
@@ -319,21 +319,21 @@ class RekognitionLabelMapperTest {
     // ========== 複数・重複 ==========
 
     @Test
-    @DisplayName("Issue#159 ② - 複数カテゴリ候補は最高信頼度の1件へ単一化する（Mountain90 > Food80 → 201）")
+    @DisplayName("Spec#159 ② - 複数カテゴリ候補は最高信頼度の1件へ単一化する（Mountain90 > Food80 → 201）")
     void multipleDifferentCategoriesAreReturned() {
         LabelMappingResult result = mapper.map(List.of(
                 label("Mountain", 90f),
                 label("Food", 80f)
         ));
 
-        // Issue#159 ②(Q4): 最高信頼度の 1 カテゴリーのみ採用
+        // Spec#159 ②(Q4): 最高信頼度の 1 カテゴリーのみ採用
         assertThat(result.categories())
                 .containsExactly(CodeConstants.CATEGORY_NATURE);
     }
 
     @Test
-    @DisplayName("Issue#159 ② - 単一化: 包含関係(動物207 vs 野鳥208)は信頼度に関わらず野鳥を優先")
-    void issue159SingleCategory_prefersWildBirdsOverAnimals() {
+    @DisplayName("Spec#159 ② - 単一化: 包含関係(動物207 vs 野鳥208)は信頼度に関わらず野鳥を優先")
+    void spec159SingleCategory_prefersWildBirdsOverAnimals() {
         // Dog→207(95), Sparrow→208(80)。両立時は具体的な野鳥(208)を優先（信頼度が低くても）。
         LabelMappingResult result = mapper.map(List.of(
                 label("Dog", 95f),
@@ -343,14 +343,14 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#159 ② - 単一化: 該当カテゴリーが無ければ空を返す")
-    void issue159SingleCategory_emptyWhenNoMatch() {
+    @DisplayName("Spec#159 ② - 単一化: 該当カテゴリーが無ければ空を返す")
+    void spec159SingleCategory_emptyWhenNoMatch() {
         LabelMappingResult result = mapper.map(List.of(label("Person", 95f)));
         assertThat(result.categories()).isEmpty();
     }
 
     @Test
-    @DisplayName("Issue#119 - 同じカテゴリに該当する複数ラベル: 重複なく1回だけ含める")
+    @DisplayName("Spec#119 - 同じカテゴリに該当する複数ラベル: 重複なく1回だけ含める")
     void duplicateCategoryIsDeduplicated() {
         LabelMappingResult result = mapper.map(List.of(
                 label("Dog", 80f),
@@ -363,7 +363,7 @@ class RekognitionLabelMapperTest {
     // ========== 天候マッピング ==========
 
     @Test
-    @DisplayName("Issue#119 - 天候: Blue Sky / Sunshine / Clear は 401 を返す")
+    @DisplayName("Spec#119 - 天候: Blue Sky / Sunshine / Clear は 401 を返す")
     void sunnyFromBlueSkyLabels() {
         assertThat(mapper.map(List.of(label("Blue Sky", 80f))).weather())
                 .isEqualTo(CodeConstants.WEATHER_SUNNY);
@@ -374,7 +374,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 天候: Cloud / Overcast は 402 を返す")
+    @DisplayName("Spec#119 - 天候: Cloud / Overcast は 402 を返す")
     void cloudyFromCloudLabels() {
         assertThat(mapper.map(List.of(label("Cloud", 80f))).weather())
                 .isEqualTo(CodeConstants.WEATHER_CLOUDY);
@@ -383,7 +383,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 天候: Rain / Wet は 403 を返す")
+    @DisplayName("Spec#119 - 天候: Rain / Wet は 403 を返す")
     void rainFromRainLabels() {
         assertThat(mapper.map(List.of(label("Rain", 80f))).weather())
                 .isEqualTo(CodeConstants.WEATHER_RAIN);
@@ -392,7 +392,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 天候: Snow / Winter は 404 を返す")
+    @DisplayName("Spec#119 - 天候: Snow / Winter は 404 を返す")
     void snowFromSnowLabels() {
         assertThat(mapper.map(List.of(label("Snow", 80f))).weather())
                 .isEqualTo(CodeConstants.WEATHER_SNOW);
@@ -401,7 +401,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 天候複数: 信頼度が最も高いラベルが採用される")
+    @DisplayName("Spec#119 - 天候複数: 信頼度が最も高いラベルが採用される")
     void weatherWithHighestConfidenceWins() {
         LabelMappingResult result = mapper.map(List.of(
                 label("Blue Sky", 85f),
@@ -412,7 +412,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 天候: 信頼度80%未満は採用されず null")
+    @DisplayName("Spec#119 - 天候: 信頼度80%未満は採用されず null")
     void weatherBelowThresholdReturnsNull() {
         LabelMappingResult result = mapper.map(List.of(label("Blue Sky", 79f)));
 
@@ -420,7 +420,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - 天候ラベルなし: weather は null")
+    @DisplayName("Spec#119 - 天候ラベルなし: weather は null")
     void noWeatherLabelReturnsNull() {
         LabelMappingResult result = mapper.map(List.of(label("Mountain", 80f)));
 
@@ -430,7 +430,7 @@ class RekognitionLabelMapperTest {
     // ========== 信頼度マップ ==========
 
     @Test
-    @DisplayName("Issue#119 - confidence マップ: 採用されたカテゴリのキー（コード文字列）と信頼度が含まれる")
+    @DisplayName("Spec#119 - confidence マップ: 採用されたカテゴリのキー（コード文字列）と信頼度が含まれる")
     void confidenceMapContainsCategoryEntries() {
         LabelMappingResult result = mapper.map(List.of(label("Mountain", 85.5f)));
 
@@ -441,7 +441,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - confidence マップ: 採用された天候のキーと信頼度が含まれる")
+    @DisplayName("Spec#119 - confidence マップ: 採用された天候のキーと信頼度が含まれる")
     void confidenceMapContainsWeatherEntry() {
         LabelMappingResult result = mapper.map(List.of(label("Blue Sky", 88.0f)));
 
@@ -454,7 +454,7 @@ class RekognitionLabelMapperTest {
     // ========== 空入力 ==========
 
     @Test
-    @DisplayName("Issue#119 - 空ラベル入力: categories は空、weather は null、confidence は空")
+    @DisplayName("Spec#119 - 空ラベル入力: categories は空、weather は null、confidence は空")
     void emptyLabelsReturnEmptyResult() {
         LabelMappingResult result = mapper.map(List.of());
 
@@ -466,17 +466,17 @@ class RekognitionLabelMapperTest {
     // ========== ケース大文字小文字 ==========
 
     @Test
-    @DisplayName("Issue#119 - ラベル名は大文字小文字を区別しない（Rekognition のレスポンス揺れ対策）")
+    @DisplayName("Spec#119 - ラベル名は大文字小文字を区別しない（Rekognition のレスポンス揺れ対策）")
     void labelMatchingIsCaseInsensitive() {
         LabelMappingResult result = mapper.map(List.of(label("mountain", 80f)));
 
         assertThat(result.categories()).containsExactly(CodeConstants.CATEGORY_NATURE);
     }
 
-    // ========== Issue#132 辞書拡充: 各カテゴリの追加ラベル ==========
+    // ========== Spec#132 辞書拡充: 各カテゴリの追加ラベル ==========
 
     @Test
-    @DisplayName("Issue#132 - 自然風景: 拡充ラベル (Waterfall/Cliff/Beach/Valley/Lake/Coast/Pond/Glacier/Canyon/Desert/Field/Meadow/Hill) は 201 を返す")
+    @DisplayName("Spec#132 - 自然風景: 拡充ラベル (Waterfall/Cliff/Beach/Valley/Lake/Coast/Pond/Glacier/Canyon/Desert/Field/Meadow/Hill) は 201 を返す")
     void natureFromExpandedLabels() {
         for (String name : List.of("Waterfall", "Cliff", "Beach", "Valley", "Lake", "Coast",
                 "Pond", "Glacier", "Canyon", "Desert", "Field", "Meadow", "Hill")) {
@@ -487,7 +487,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 街並み: 拡充ラベル (Downtown/Town/Metropolis/Neighborhood/Street) は 202 を返す")
+    @DisplayName("Spec#132 - 街並み: 拡充ラベル (Downtown/Town/Metropolis/Neighborhood/Street) は 202 を返す")
     void cityscapeFromExpandedLabels() {
         for (String name : List.of("Downtown", "Town", "Metropolis", "Neighborhood", "Street")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
@@ -497,7 +497,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 建造物: 拡充ラベル (Castle/Temple/Shrine/Church/Tunnel/Lighthouse/Stadium/Arena) は 203 を返す")
+    @DisplayName("Spec#132 - 建造物: 拡充ラベル (Castle/Temple/Shrine/Church/Tunnel/Lighthouse/Stadium/Arena) は 203 を返す")
     void architectureFromExpandedLabels() {
         for (String name : List.of("Castle", "Temple", "Shrine", "Church", "Tunnel",
                 "Lighthouse", "Stadium", "Arena")) {
@@ -508,9 +508,9 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 + Issue#141 後追い - グルメ: 拡充ラベル (Bread/Cake/Coffee/.../Beverage) は 205 を返す (Vegetable は削除済、Udon/Soba は追加)")
+    @DisplayName("Spec#132 + Spec#141 後追い - グルメ: 拡充ラベル (Bread/Cake/Coffee/.../Beverage) は 205 を返す (Vegetable は削除済、Udon/Soba は追加)")
     void gourmetFromExpandedLabels() {
-        // Issue#141 後追い (#5): Vegetable は削除済。Beverage は「グルメ全般」に含める意図で CategoryDictionary 維持。
+        // Spec#141 後追い (#5): Vegetable は削除済。Beverage は「グルメ全般」に含める意図で CategoryDictionary 維持。
         // Udon / Soba を追加。
         for (String name : List.of("Bread", "Cake", "Coffee", "Sushi", "Ramen", "Dessert",
                 "Beverage", "Fruit", "Pasta", "Pizza", "Sandwich",
@@ -524,24 +524,24 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 + Issue#141 後追い - 植物: 拡充ラベル (Branch) は 206 を返す (Leaf/Petal 等は削除済、Vineyard は 214 へ移動)")
+    @DisplayName("Spec#132 + Spec#141 後追い - 植物: 拡充ラベル (Branch) は 206 を返す (Leaf/Petal 等は削除済、Vineyard は 214 へ移動)")
     void plantsFromExpandedLabels() {
-        // Issue#141 後追い (#4): Leaf/Petal/Vegetation/Moss/Bush は削除済
+        // Spec#141 後追い (#4): Leaf/Petal/Vegetation/Moss/Bush は削除済
         assertThat(mapper.map(List.of(label("Branch", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_PLANTS);
         for (String removed : List.of("Leaf", "Petal", "Vegetation", "Moss", "Bush")) {
             assertThat(mapper.map(List.of(label(removed, 80f))).categories())
                     .as("削除済ラベル '%s' は空", removed).isEmpty();
         }
-        // Issue#159 ③-5: Vineyard(果樹園) はレジャー・施設(215)へ付け替え
+        // Spec#159 ③-5: Vineyard(果樹園) はレジャー・施設(215)へ付け替え
         assertThat(mapper.map(List.of(label("Vineyard", 80f))).categories())
                 .containsExactly(CodeConstants.CATEGORY_LEISURE_FACILITY);
     }
 
     @Test
-    @DisplayName("Issue#132 + Issue#141 後追い - 動物: 拡充ラベル (Fox/Bear/Deer/Squirrel/Rabbit/Lion/Tiger) は 207 を返す (Wildlife/Pet は削除済)")
+    @DisplayName("Spec#132 + Spec#141 後追い - 動物: 拡充ラベル (Fox/Bear/Deer/Squirrel/Rabbit/Lion/Tiger) は 207 を返す (Wildlife/Pet は削除済)")
     void animalsFromExpandedLabels() {
-        // Issue#141 後追い (#3): Wildlife/Pet は「動物全般」に含めるため削除済
+        // Spec#141 後追い (#3): Wildlife/Pet は「動物全般」に含めるため削除済
         for (String name : List.of("Fox", "Bear", "Deer", "Squirrel",
                 "Rabbit", "Lion", "Tiger")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
@@ -556,9 +556,9 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 + Issue#141 後追い - 野鳥: 拡充ラベル (Sparrow/Eagle/Hawk/Heron/Crane) は 208 のみを返す (Owl は 207 へ移動、Crow は削除済)")
+    @DisplayName("Spec#132 + Spec#141 後追い - 野鳥: 拡充ラベル (Sparrow/Eagle/Hawk/Heron/Crane) は 208 のみを返す (Owl は 207 へ移動、Crow は削除済)")
     void wildBirdsFromExpandedLabels() {
-        // Issue#141 後追い (#3): 207 から外して 208 のみへ
+        // Spec#141 後追い (#3): 207 から外して 208 のみへ
         for (String name : List.of("Sparrow", "Eagle", "Hawk", "Heron", "Crane")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
                     .as("ラベル '%s' は野鳥 (208) のみにマッピングされるべき", name)
@@ -572,9 +572,9 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 + Issue#141 後追い - 自動車: 拡充ラベル (Suv/Truck/Sports Car) は 209 を返す (Sedan は削除済)")
+    @DisplayName("Spec#132 + Spec#141 後追い - 自動車: 拡充ラベル (Suv/Truck/Sports Car) は 209 を返す (Sedan は削除済)")
     void carsFromExpandedLabels() {
-        // Issue#141 後追い (#3): Sedan は削除済
+        // Spec#141 後追い (#3): Sedan は削除済
         for (String name : List.of("Suv", "Truck", "Sports Car")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
                     .as("ラベル '%s' は自動車 (209) にマッピングされるべき", name)
@@ -584,7 +584,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 鉄道: 拡充ラベル (Tram/Cable Car/Monorail) は 211 を返す")
+    @DisplayName("Spec#132 - 鉄道: 拡充ラベル (Tram/Cable Car/Monorail) は 211 を返す")
     void railwaysFromExpandedLabels() {
         for (String name : List.of("Tram", "Cable Car", "Monorail")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
@@ -594,7 +594,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 飛行機: 拡充ラベル (Jet/Airliner/Biplane) は 212 を返す")
+    @DisplayName("Spec#132 - 飛行機: 拡充ラベル (Jet/Airliner/Biplane) は 212 を返す")
     void aircraftFromExpandedLabels() {
         for (String name : List.of("Jet", "Airliner", "Biplane")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
@@ -604,9 +604,9 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 + Issue#141 後追い - 星空: 拡充ラベル (Galaxy/Constellation/Nebula) は 213 を返す (Astronomy は削除済)")
+    @DisplayName("Spec#132 + Spec#141 後追い - 星空: 拡充ラベル (Galaxy/Constellation/Nebula) は 213 を返す (Astronomy は削除済)")
     void starrySkyFromExpandedLabels() {
-        // Issue#141 後追い (#3): Astronomy は削除済
+        // Spec#141 後追い (#3): Astronomy は削除済
         for (String name : List.of("Galaxy", "Constellation", "Nebula")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
                     .as("ラベル '%s' は星空 (213) にマッピングされるべき", name)
@@ -616,7 +616,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 夜景: 拡充ラベル (Lighting/Illumination/Nightlife) は単独で 204 を返す")
+    @DisplayName("Spec#132 - 夜景: 拡充ラベル (Lighting/Illumination/Nightlife) は単独で 204 を返す")
     void nightViewFromExpandedLabels() {
         for (String name : List.of("Lighting", "Illumination", "Nightlife")) {
             assertThat(mapper.map(List.of(label(name, 80f))).categories())
@@ -625,10 +625,10 @@ class RekognitionLabelMapperTest {
         }
     }
 
-    // ========== Issue#132 親子ラベル フォールバック ==========
+    // ========== Spec#132 親子ラベル フォールバック ==========
 
     @Test
-    @DisplayName("Issue#132 - 親子フォールバック: 子ラベル未マッチ + 親 Dog で 207 にマッピングされる")
+    @DisplayName("Spec#132 - 親子フォールバック: 子ラベル未マッチ + 親 Dog で 207 にマッピングされる")
     void parentFallbackFromUnknownChildToDog() {
         // Husky は辞書に無い。親に Dog があり Dog は 207 へマッピング。
         Label husky = labelWithParents("Husky", 90f, "Dog", "Mammal", "Animal");
@@ -639,7 +639,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 親子フォールバック: 親経由の信頼度は子ラベルの 0.8 倍に減衰される")
+    @DisplayName("Spec#132 - 親子フォールバック: 親経由の信頼度は子ラベルの 0.8 倍に減衰される")
     void parentFallbackConfidenceIsDecayedByPointEight() {
         Label husky = labelWithParents("Husky", 90f, "Dog", "Mammal", "Animal");
 
@@ -652,7 +652,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 親子フォールバック: 子ラベルが辞書ヒットしたら親は使わない（従来動作維持）")
+    @DisplayName("Spec#132 - 親子フォールバック: 子ラベルが辞書ヒットしたら親は使わない（従来動作維持）")
     void parentFallbackSkippedWhenChildMatches() {
         // Dog 自体が辞書にある。Dog が直接マッチして信頼度はそのまま採用される。
         Label dog = labelWithParents("Dog", 90f, "Mammal", "Animal");
@@ -666,7 +666,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 親子フォールバック: 親なしの未マッチ子ラベルは無視される")
+    @DisplayName("Spec#132 - 親子フォールバック: 親なしの未マッチ子ラベルは無視される")
     void unknownChildWithoutParentsIsIgnored() {
         Label unknownLabel = label("Unobtainium", 95f);
 
@@ -676,7 +676,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 親子フォールバック: 親リストにマッチが無い場合は無視される")
+    @DisplayName("Spec#132 - 親子フォールバック: 親リストにマッチが無い場合は無視される")
     void unknownChildWithUnknownParentsIsIgnored() {
         Label label = labelWithParents("MysteryThing", 95f, "FooParent", "BarParent");
 
@@ -685,12 +685,12 @@ class RekognitionLabelMapperTest {
         assertThat(result.categories()).isEmpty();
     }
 
-    // ========== Issue#132 ブラックリスト親ラベル ==========
+    // ========== Spec#132 ブラックリスト親ラベル ==========
 
     @Test
-    @DisplayName("Issue#132 - ブラックリスト: 親 Mammal は辞書に存在するが、親としては BL でスキップされる")
+    @DisplayName("Spec#132 - ブラックリスト: 親 Mammal は辞書に存在するが、親としては BL でスキップされる")
     void mammalAsParentIsBlacklistedEvenWhenInDictionary() {
-        // 「mammal」は辞書に登録されており、直接ラベルなら 207 へマッピング (Issue#119 互換)。
+        // 「mammal」は辞書に登録されており、直接ラベルなら 207 へマッピング (Spec#119 互換)。
         // しかし「親」として現れた場合は BL でスキップされ、フォールバックは発動しない。
         // 他の親が無いので結果は空になる。
         Label labelObj = labelWithParents("UnknownFurryThing", 95f, "Mammal");
@@ -701,7 +701,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - ブラックリスト: Person/Human/Adult/People/Face/Portrait は親としてスキップ")
+    @DisplayName("Spec#132 - ブラックリスト: Person/Human/Adult/People/Face/Portrait は親としてスキップ")
     void humanRelatedParentsAreBlacklisted() {
         // 子は辞書に無く、親も Person 系のみ → カテゴリは付かない
         for (String human : List.of("Person", "Human", "Adult", "People", "Face", "Portrait")) {
@@ -716,7 +716,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - ブラックリスト: Outdoors/Nature/Object/Indoors などの広すぎる親はスキップ")
+    @DisplayName("Spec#132 - ブラックリスト: Outdoors/Nature/Object/Indoors などの広すぎる親はスキップ")
     void broadParentsAreBlacklisted() {
         for (String broad : List.of("Outdoors", "Nature", "Object", "Indoors", "Living Thing",
                 "Organism", "Creature", "Vertebrate")) {
@@ -731,7 +731,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - ブラックリスト: Accessories/Apparel/Clothing もスキップ")
+    @DisplayName("Spec#132 - ブラックリスト: Accessories/Apparel/Clothing もスキップ")
     void apparelParentsAreBlacklisted() {
         for (String apparel : List.of("Accessories", "Apparel", "Clothing")) {
             Label labelObj = labelWithParents("UnknownThing", 95f, apparel);
@@ -745,9 +745,9 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 + Issue#141 後追い - 親 Wildlife は CategoryDictionary から削除済 (親フォールバック不可)")
+    @DisplayName("Spec#132 + Spec#141 後追い - 親 Wildlife は CategoryDictionary から削除済 (親フォールバック不可)")
     void wildlifeAsParentIsNotBlacklisted() {
-        // Issue#141 後追い (#3): Wildlife は「動物全般」に含めるため CategoryDictionary から削除。
+        // Spec#141 後追い (#3): Wildlife は「動物全般」に含めるため CategoryDictionary から削除。
         // 親フォールバックでも 207 にマッピングされなくなる。
         Label labelObj = labelWithParents("UnknownBird", 90f, "Wildlife");
 
@@ -757,7 +757,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 親フォールバック: 親順で最初のヒットを採用する")
+    @DisplayName("Spec#132 - 親フォールバック: 親順で最初のヒットを採用する")
     void parentFallbackPicksFirstHitInOrder() {
         // 親順: [Mammal (BL), Dog (HIT 207), Animal (HIT 207)] → Dog が採用される
         Label labelObj = labelWithParents("Beagle", 90f, "Mammal", "Dog", "Animal");
@@ -768,7 +768,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 親フォールバック: 信頼度80%未満の子ラベルは親フォールバック対象外")
+    @DisplayName("Spec#132 - 親フォールバック: 信頼度80%未満の子ラベルは親フォールバック対象外")
     void belowThresholdLabelDoesNotTriggerParentFallback() {
         // 79% は閾値未満。親があっても親フォールバックは発動しない。
         Label labelObj = labelWithParents("Husky", 79f, "Dog");
@@ -779,7 +779,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - 親フォールバック: 複数の子から同じ親経由カテゴリが派生した場合は最大信頼度を採用")
+    @DisplayName("Spec#132 - 親フォールバック: 複数の子から同じ親経由カテゴリが派生した場合は最大信頼度を採用")
     void parentFallbackMergesByMaxConfidence() {
         // 2 つの未マッチ子。両方とも親 Dog 経由で 207 にマップ。
         Label child1 = labelWithParents("Beagle", 90f, "Dog");
@@ -793,10 +793,10 @@ class RekognitionLabelMapperTest {
         assertThat(conf).isCloseTo(72.0f, offset(0.01f));
     }
 
-    // ========== Issue#132 mapWithEvents: 親フォールバック発火イベントの追跡 ==========
+    // ========== Spec#132 mapWithEvents: 親フォールバック発火イベントの追跡 ==========
 
     @Test
-    @DisplayName("Issue#132 mapWithEvents - 親フォールバック発火時に ParentFallback イベントを返す")
+    @DisplayName("Spec#132 mapWithEvents - 親フォールバック発火時に ParentFallback イベントを返す")
     void mapWithEventsReturnsParentFallbackEvents() {
         Label husky = labelWithParents("Husky", 90f, "Dog");
 
@@ -812,7 +812,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 mapWithEvents - 子ラベルが直接マッチした場合は parentFallbacks は空")
+    @DisplayName("Spec#132 mapWithEvents - 子ラベルが直接マッチした場合は parentFallbacks は空")
     void mapWithEventsEmptyWhenChildDirectlyMatches() {
         Label dog = labelWithParents("Dog", 90f, "Mammal", "Animal");
 
@@ -823,9 +823,9 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 + Issue#141 後追い mapWithEvents - 親フォールバック発火イベント (Sparrow は 208 のみ)")
+    @DisplayName("Spec#132 + Spec#141 後追い mapWithEvents - 親フォールバック発火イベント (Sparrow は 208 のみ)")
     void mapWithEventsEmitsOneEventPerMappedCategory() {
-        // Issue#141 後追い (#3): Sparrow は 207 から外して 208 のみ。
+        // Spec#141 後追い (#3): Sparrow は 207 から外して 208 のみ。
         // 子未マッチの "MysteryBird" の親に Sparrow を置く → 1 つのカテゴリイベントが期待される。
         Label mysteryBird = labelWithParents("MysteryBird", 90f, "Sparrow");
 
@@ -837,7 +837,7 @@ class RekognitionLabelMapperTest {
     }
 
     @Test
-    @DisplayName("Issue#132 mapWithEvents - BL の親はスキップされ、parentFallbacks にも記録されない")
+    @DisplayName("Spec#132 mapWithEvents - BL の親はスキップされ、parentFallbacks にも記録されない")
     void mapWithEventsSkipsBlacklistedParents() {
         Label labelObj = labelWithParents("UnknownThing", 95f, "Mammal");
 

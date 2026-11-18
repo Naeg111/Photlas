@@ -14,7 +14,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Issue#81 Phase 3e / Issue#99 - OAuth ログイン失敗時のハンドラ。
+ * Spec#81 Phase 3e / Spec#99 - OAuth ログイン失敗時のハンドラ。
  *
  * <p>通常の {@link OAuth2AuthenticationException} はエラーコードを
  * フラグメント {@code #error=<code>} に詰めて
@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
  * それ以外の {@link AuthenticationException} は汎用コード
  * {@code OAUTH_UNKNOWN_ERROR} にフォールバックする。
  *
- * <p>Issue#99 - 例外が {@link OAuth2LinkConfirmationException} の場合は
+ * <p>Spec#99 - 例外が {@link OAuth2LinkConfirmationException} の場合は
  * エラー扱いではなくリンク確認フロー扱いとし、
  * {@code #link_confirmation_token=<token>&provider=<PROVIDER>} 形式で
  * リダイレクトする。フロントエンドはこれを検出して

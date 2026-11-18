@@ -16,16 +16,16 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Issue#119: AWS Rekognition のラベル検出結果を Photlas のカテゴリ・天候コードにマッピングする。
+ * Spec#119: AWS Rekognition のラベル検出結果を Photlas のカテゴリ・天候コードにマッピングする。
  *
- * <p>マッピングルール詳細は Issue#119 の 4.1 / 4.2、Issue#132 の 3.2 を参照。
+ * <p>マッピングルール詳細は Spec#119 の 4.1 / 4.2、Spec#132 の 3.2 を参照。
  * 辞書（ラベル → カテゴリ/天候/BL）は {@link CategoryDictionary} に分離している。</p>
  *
  * <p>主な責務:</p>
  * <ul>
  *   <li>信頼度80%未満のラベルを除外</li>
  *   <li>ラベル名 → Photlas カテゴリ/天候コードへの辞書ベース変換（大文字小文字を無視）</li>
- *   <li>Issue#132: 子ラベル未マッチ時の親ラベルフォールバック（信頼度 × 0.8、BL あり）</li>
+ *   <li>Spec#132: 子ラベル未マッチ時の親ラベルフォールバック（信頼度 × 0.8、BL あり）</li>
  *   <li>「夜景」の組合せ判定（Night + City/Building/Architecture）</li>
  *   <li>「野鳥」の二重候補（Bird → 動物 207 + 野鳥 208）</li>
  *   <li>天候は信頼度最高ラベルを単一採用</li>
@@ -34,7 +34,7 @@ import java.util.Set;
 @Component
 public class RekognitionLabelMapper {
 
-    /** Issue#119 4.5: Rekognition 呼び出し時の MinConfidence と同値。80% 未満は除外する。 */
+    /** Spec#119 4.5: Rekognition 呼び出し時の MinConfidence と同値。80% 未満は除外する。 */
     private static final float CONFIDENCE_THRESHOLD = 80f;
 
     /** 「夜景」組合せ判定用の親ラベル（このラベル単独ではマッピングしない）。 */
@@ -46,7 +46,7 @@ public class RekognitionLabelMapper {
     );
 
     /**
-     * Issue#132 3.2: 親ラベル経由マッピングの信頼度減衰係数。
+     * Spec#132 3.2: 親ラベル経由マッピングの信頼度減衰係数。
      * 親は子より広い概念なので不確実性が高いため 0.8 倍する。
      */
     private static final float PARENT_FALLBACK_DECAY = 0.8f;
@@ -62,7 +62,7 @@ public class RekognitionLabelMapper {
     }
 
     /**
-     * Issue#132: マッピング結果に加え、親フォールバック発火イベントも返す。
+     * Spec#132: マッピング結果に加え、親フォールバック発火イベントも返す。
      * GA4 への送信用イベント情報を必要とする呼び出し元はこちらを使う。
      */
     public MappingResult mapWithEvents(List<Label> labels) {
@@ -74,7 +74,7 @@ public class RekognitionLabelMapper {
     }
 
     /**
-     * Issue#132: {@link #mapWithEvents} の戻り値。
+     * Spec#132: {@link #mapWithEvents} の戻り値。
      *
      * @param result          従来のカテゴリ・天候マッピング結果
      * @param parentFallbacks 親ラベル経由でマッピングが成立した発火イベント一覧
@@ -93,7 +93,7 @@ public class RekognitionLabelMapper {
     }
 
     /**
-     * ラベル群からカテゴリ群を構築する（夜景の組合せ判定と Issue#132 親フォールバックを含む）。
+     * ラベル群からカテゴリ群を構築する（夜景の組合せ判定と Spec#132 親フォールバックを含む）。
      * 親フォールバックの発火は引数 {@code parentFallbacks} に追記する。
      */
     private static CategoryMapping mapCategories(
@@ -120,10 +120,10 @@ public class RekognitionLabelMapper {
                 continue;
             }
 
-            // Issue#132 3.2: 子ラベル未マッチ → 親ラベルを順に検索（最初のヒットを採用）
+            // Spec#132 3.2: 子ラベル未マッチ → 親ラベルを順に検索（最初のヒットを採用）
             findParentFallbackCodes(label).ifPresent(parentHit -> {
                 applyCodes(codes, confidence, parentHit.codes(), conf * PARENT_FALLBACK_DECAY);
-                // Issue#132 3.4.1: 1 つの子から複数カテゴリへマッピングされる場合は各カテゴリで別イベント
+                // Spec#132 3.4.1: 1 つの子から複数カテゴリへマッピングされる場合は各カテゴリで別イベント
                 for (Integer code : parentHit.codes()) {
                     parentFallbacks.add(new ParentFallback(label.name(), parentHit.parentDisplayName(), code));
                 }
@@ -145,7 +145,7 @@ public class RekognitionLabelMapper {
     }
 
     /**
-     * Issue#132 3.2: 親ラベルを順に検索し、ブラックリストでない最初のヒットを返す。
+     * Spec#132 3.2: 親ラベルを順に検索し、ブラックリストでない最初のヒットを返す。
      * 該当なしなら空 Optional。
      */
     private static Optional<ParentHit> findParentFallbackCodes(Label label) {
@@ -188,7 +188,7 @@ public class RekognitionLabelMapper {
     }
 
     private static LabelMappingResult combine(CategoryMapping categories, WeatherMapping weather) {
-        // Issue#159 ②(案A/Q4): 複合判定(夜景等)は既に codes へ反映済み。ここで最終的に
+        // Spec#159 ②(案A/Q4): 複合判定(夜景等)は既に codes へ反映済み。ここで最終的に
         // 「最高信頼度の 1 カテゴリー」へ絞り込む（単一選択化）。
         List<Integer> single = reduceToSingle(categories.codes(), categories.confidence());
         Map<String, Float> confidence = new LinkedHashMap<>();
@@ -206,7 +206,7 @@ public class RekognitionLabelMapper {
     }
 
     /**
-     * Issue#159 ②(Q4): 候補カテゴリー群を最高信頼度の 1 件へ絞り込む。
+     * Spec#159 ②(Q4): 候補カテゴリー群を最高信頼度の 1 件へ絞り込む。
      *
      * <ol>
      *   <li>複合判定（夜景 204 等）は呼び出し前に codes へ反映済み（本メソッドの対象に含む）。</li>
@@ -270,7 +270,7 @@ public class RekognitionLabelMapper {
                 return;
             }
             codes.add(CodeConstants.CATEGORY_NIGHT_VIEW);
-            // Issue#159 ②(Q4): 夜景の信頼度は「夜であることの確信度」= Night ラベルの信頼度とする。
+            // Spec#159 ②(Q4): 夜景の信頼度は「夜であることの確信度」= Night ラベルの信頼度とする。
             // partner(City/Building 等) が揃って初めて成立する前提は満たしつつ、単一選択化では
             // 夜景写真が partner の街並み/建造物より優先されるようにする。
             confidenceMap.put(

@@ -1,4 +1,4 @@
-// Issue#117: scripts/maintenance.html を JS 文字列リテラル向けにエスケープし、
+// Spec#117: scripts/maintenance.html を JS 文字列リテラル向けにエスケープし、
 // scripts/cloudfront-function/maintenance.js.template の `__MAINTENANCE_HTML__`
 // を置換して scripts/cloudfront-function/maintenance.js を生成する。
 //

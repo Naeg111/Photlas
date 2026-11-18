@@ -7,12 +7,12 @@ import MenuButton from './MenuButton'
  * MenuButton コンポーネントのテスト
  * TDD Red-Green-Refactor サイクルでの開発
  *
- * Issue#1 要件:
+ * Spec#1 要件:
  * - メニューボタンの表示
  * - 右上に配置
  * - クリック可能
  *
- * Issue#20 要件:
+ * Spec#20 要件:
  * - メニューシートの表示
  * - アカウント設定メニュー項目
  * - AccountSettingsDialog の統合
@@ -74,7 +74,7 @@ describe('MenuButton', () => {
     vi.clearAllMocks()
   })
 
-  describe('Basic UI - Issue#1', () => {
+  describe('Basic UI - Spec#1', () => {
     it('renders menu button', () => {
       render(<MockedMenuButton />)
       expect(screen.getByRole('button', { name: /メニュー/i })).toBeInTheDocument()
@@ -99,7 +99,7 @@ describe('MenuButton', () => {
     })
   })
 
-  describe('Component Integration - Issue#20', () => {
+  describe('Component Integration - Spec#20', () => {
     it('renders menu button that opens sheet', () => {
       render(<MockedMenuButton />)
       const button = screen.getByRole('button', { name: /メニュー/i })

@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * AsyncConfig のテスト
- * Issue#95: @Async 実行時の MDC（トレース ID）を非同期スレッドに伝搬する TaskDecorator の検証
+ * Spec#95: @Async 実行時の MDC（トレース ID）を非同期スレッドに伝搬する TaskDecorator の検証
  *
  * TDD Red段階: 実装前のテストケース定義
  */
@@ -40,7 +40,7 @@ public class AsyncConfigTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - 呼び出し元の MDC が @Async スレッドに伝搬される")
+    @DisplayName("Spec#95 - 呼び出し元の MDC が @Async スレッドに伝搬される")
     void testAsyncExecution_PropagatesMdcFromCallerThread() throws Exception {
         String expectedTraceId = "Root=1-5759e988-bd862e3fe1be46a994272793";
         MDC.put("traceId", expectedTraceId);
@@ -58,7 +58,7 @@ public class AsyncConfigTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - 非同期処理完了後は呼び出し元スレッドの MDC が元の状態に戻る")
+    @DisplayName("Spec#95 - 非同期処理完了後は呼び出し元スレッドの MDC が元の状態に戻る")
     void testAsyncExecution_CallerMdcUnchangedAfterCompletion() throws Exception {
         String callerTraceId = "Root=caller-thread-value";
         MDC.put("traceId", callerTraceId);
@@ -71,7 +71,7 @@ public class AsyncConfigTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - MDC が空の状態で @Async を呼ぶと、非同期スレッドでも空になる")
+    @DisplayName("Spec#95 - MDC が空の状態で @Async を呼ぶと、非同期スレッドでも空になる")
     void testAsyncExecution_NullMdcPropagatesAsNull() throws Exception {
         MDC.clear();
 

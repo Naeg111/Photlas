@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * Issue#135: 写真 ↔ キーワード多対多リポジトリ。
+ * Spec#135: 写真 ↔ キーワード多対多リポジトリ。
  */
 @Repository
 public interface PhotoTagRepository extends JpaRepository<PhotoTag, PhotoTag.PhotoTagId> {
@@ -19,7 +19,7 @@ public interface PhotoTagRepository extends JpaRepository<PhotoTag, PhotoTag.Pho
     List<PhotoTag> findByPhotoId(Long photoId);
 
     /**
-     * Issue#135 追補（編集対応）: 1 枚の写真の全キーワード関連を一括削除する。
+     * Spec#135 追補（編集対応）: 1 枚の写真の全キーワード関連を一括削除する。
      * 写真編集時にタグを置き換える（全削除 → 再登録）ために使う。
      */
     @Modifying
@@ -33,7 +33,7 @@ public interface PhotoTagRepository extends JpaRepository<PhotoTag, PhotoTag.Pho
     long countByTagId(Long tagId);
 
     /**
-     * Issue#136 Phase 3: SSR ランディング表示用に「件数とグリッド表示の一致」を保証する COUNT。
+     * Spec#136 Phase 3: SSR ランディング表示用に「件数とグリッド表示の一致」を保証する COUNT。
      * PUBLISHED かつ退会済みユーザー除外フィルタを通した上での件数を返す。
      * {@link PhotoRepository#findActivePublishedByTagId} と同じフィルタ条件で完全に一致する。
      */
@@ -49,7 +49,7 @@ public interface PhotoTagRepository extends JpaRepository<PhotoTag, PhotoTag.Pho
             @Param("publishedStatus") Integer publishedStatus);
 
     /**
-     * Issue#141 後追い: 全 tag の PUBLISHED + 退会済除外フィルタ済写真数を 1 本のクエリで取得。
+     * Spec#141 後追い: 全 tag の PUBLISHED + 退会済除外フィルタ済写真数を 1 本のクエリで取得。
      * {@code GET /api/v1/tags} レスポンスに photoCount を含めるための N+1 回避用。
      * 戻り値の各 Object[] は [Long tagId, Long photoCount]。
      */

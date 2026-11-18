@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Issue#135: キーワードマスタのリポジトリ。
+ * Spec#135: キーワードマスタのリポジトリ。
  */
 @Repository
 public interface TagRepository extends JpaRepository<Tag, Long> {
@@ -23,7 +23,7 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
 
     /**
      * slug から検索（is_active=TRUE のみ）。
-     * Issue#135 3.6: ランディングページ等の公開経路ではこちらを使う。
+     * Spec#135 3.6: ランディングページ等の公開経路ではこちらを使う。
      */
     @Query("SELECT t FROM Tag t WHERE t.slug = :slug AND t.isActive = TRUE")
     Optional<Tag> findActiveBySlug(@Param("slug") String slug);

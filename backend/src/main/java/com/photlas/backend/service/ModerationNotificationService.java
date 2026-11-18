@@ -16,10 +16,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 /**
- * Issue#54: モデレーション関連のメール通知サービス
+ * Spec#54: モデレーション関連のメール通知サービス
  * 隔離・警告・停止・永久停止時にユーザーへメール通知を送信する
  *
- * <p>Issue#113: テンプレートを {@link EmailTemplateService} 経由 (5 言語対応) に
+ * <p>Spec#113: テンプレートを {@link EmailTemplateService} 経由 (5 言語対応) に
  * 移行。{@code MAIL_SIGNATURE_JA} / {@code MAIL_SIGNATURE_EN} 定数は properties
  * ファイルの {@code email.signature} に統合済み。</p>
  *
@@ -167,7 +167,7 @@ public class ModerationNotificationService {
             mailSender.send(message);
             logger.info("モデレーション通知メール送信完了: type={} to={}", emailType, to);
         } catch (Exception e) {
-            // Issue#113 §4.5 B-1: [ALERT] 接頭辞 + 構造化フィールドで監視可能にする。
+            // Spec#113 §4.5 B-1: [ALERT] 接頭辞 + 構造化フィールドで監視可能にする。
             // PII 配慮: email アドレス本体はログに残さず emailType のみ記録。
             logger.error("[ALERT] {} email send failed: error={}", emailType, e.getMessage(), e);
         }

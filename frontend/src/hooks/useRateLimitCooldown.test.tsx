@@ -1,7 +1,7 @@
 /**
- * Issue#96: useRateLimitCooldown フックのテスト
+ * Spec#96: useRateLimitCooldown フックのテスト
  *
- * 仕様（Issue#96 3.1-4）:
+ * 仕様（Spec#96 3.1-4）:
  *   - ApiError の retryAfterSeconds からカウントダウン state を生成
  *   - null を渡した場合は常に isOnCooldown: false / remainingSeconds: 0
  *   - 秒数経過後に isOnCooldown が false に戻る

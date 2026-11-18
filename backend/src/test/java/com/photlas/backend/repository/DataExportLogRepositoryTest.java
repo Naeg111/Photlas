@@ -18,7 +18,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#108 - DataExportLogRepository のテスト
+ * Spec#108 - DataExportLogRepository のテスト
  *
  * 要件:
  *   - エクスポート処理開始時に IN_PROGRESS で行を作成・取得できる
@@ -54,7 +54,7 @@ class DataExportLogRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - IN_PROGRESS のエクスポート履歴を作成・取得できる")
+    @DisplayName("Spec#108 - IN_PROGRESS のエクスポート履歴を作成・取得できる")
     void createAndFindInProgressLog() {
         DataExportLog log = new DataExportLog();
         log.setUserId(user.getId());
@@ -78,7 +78,7 @@ class DataExportLogRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - エクスポート履歴を COMPLETED へ更新できる")
+    @DisplayName("Spec#108 - エクスポート履歴を COMPLETED へ更新できる")
     void updateLogToCompleted() {
         DataExportLog log = new DataExportLog();
         log.setUserId(user.getId());
@@ -100,7 +100,7 @@ class DataExportLogRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - エクスポート履歴を FAILED へ更新できる（failure_reason 含む）")
+    @DisplayName("Spec#108 - エクスポート履歴を FAILED へ更新できる（failure_reason 含む）")
     void updateLogToFailed() {
         DataExportLog log = new DataExportLog();
         log.setUserId(user.getId());
@@ -118,7 +118,7 @@ class DataExportLogRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - ユーザーの履歴を新しい順で取得できる")
+    @DisplayName("Spec#108 - ユーザーの履歴を新しい順で取得できる")
     void findByUserIdOrderedByRequestedAtDesc() {
         LocalDateTime base = LocalDateTime.now().minusDays(10);
         for (int i = 0; i < 3; i++) {
@@ -137,7 +137,7 @@ class DataExportLogRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - failure_reason は最大 1000 文字まで保存可能")
+    @DisplayName("Spec#108 - failure_reason は最大 1000 文字まで保存可能")
     void failureReasonAllowsUpTo1000Chars() {
         DataExportLog log = new DataExportLog();
         log.setUserId(user.getId());

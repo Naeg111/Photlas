@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * Issue#54: 通報リクエストDTO
- * Issue#87: reason を数値コード（800番台）に変更
+ * Spec#54: 通報リクエストDTO
+ * Spec#87: reason を数値コード（800番台）に変更
  */
 public class ReportRequest {
 

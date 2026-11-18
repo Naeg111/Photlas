@@ -46,7 +46,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#119 - {@link PhotoAnalyzeService} のユニットテスト。
+ * Spec#119 - {@link PhotoAnalyzeService} のユニットテスト。
  *
  * <p>Rekognition と AiPredictionCacheService は Mockito でモック化し、
  * RekognitionLabelMapper は実体を使用する（純粋ロジックのため）。</p>
@@ -87,10 +87,10 @@ class PhotoAnalyzeServiceTest {
         // ExifReader はデフォルトで空 EXIF を返す（必要なテストでのみ上書き）
         org.mockito.Mockito.lenient().when(exifReader.read(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(ExifData.empty());
-        // Issue#142: クライアント EXIF はデフォルトで空（必要なテストでのみ上書き）
+        // Spec#142: クライアント EXIF はデフォルトで空（必要なテストでのみ上書き）
         org.mockito.Mockito.lenient().when(exifReader.fromClientValues(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(ExifData.empty());
-        // Issue#135: TagService.extractSuggestions はデフォルトで空配列
+        // Spec#135: TagService.extractSuggestions はデフォルトで空配列
         org.mockito.Mockito.lenient().when(tagService.extractSuggestions(
                         org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(List.of());
@@ -99,7 +99,7 @@ class PhotoAnalyzeServiceTest {
     // ========== 正常系: Rekognition 呼び出しとマッピング ==========
 
     @Test
-    @DisplayName("Issue#119 - analyze: 有効な JPEG で Rekognition を呼び出し、マッピング結果を返す")
+    @DisplayName("Spec#119 - analyze: 有効な JPEG で Rekognition を呼び出し、マッピング結果を返す")
     void analyze_validJpeg_returnsMappedCategories() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder()
@@ -117,7 +117,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - analyze: PNG 形式も受け付ける")
+    @DisplayName("Spec#119 - analyze: PNG 形式も受け付ける")
     void analyze_validPng_returnsMappedCategories() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder()
@@ -132,7 +132,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - analyze: Rekognition 呼び出しに MinConfidence=80, MaxLabels=30 が設定される")
+    @DisplayName("Spec#119 - analyze: Rekognition 呼び出しに MinConfidence=80, MaxLabels=30 が設定される")
     void analyze_setsRekognitionRequestParameters() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
@@ -150,7 +150,7 @@ class PhotoAnalyzeServiceTest {
     // ========== 画像縮小 ==========
 
     @Test
-    @DisplayName("Issue#119 - analyze: 長辺 1280px を超える画像は縮小して Rekognition に送る")
+    @DisplayName("Spec#119 - analyze: 長辺 1280px を超える画像は縮小して Rekognition に送る")
     void analyze_largeImage_isResizedTo1280px() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
@@ -168,7 +168,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - analyze: 長辺 1280px 以下の画像はそのまま Rekognition に送る（縮小しない）")
+    @DisplayName("Spec#119 - analyze: 長辺 1280px 以下の画像はそのまま Rekognition に送る（縮小しない）")
     void analyze_smallImage_isNotResized() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
@@ -189,7 +189,7 @@ class PhotoAnalyzeServiceTest {
     // ========== analyzeToken / キャッシュ連携 ==========
 
     @Test
-    @DisplayName("Issue#119 - analyze: 解析結果を AiPredictionCacheService.save() に渡してキャッシュする")
+    @DisplayName("Spec#119 - analyze: 解析結果を AiPredictionCacheService.save() に渡してキャッシュする")
     void analyze_cachesResultViaCacheService() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder()
@@ -203,7 +203,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - analyze: 空のラベル結果でもトークンは発行される")
+    @DisplayName("Spec#119 - analyze: 空のラベル結果でもトークンは発行される")
     void analyze_emptyLabels_stillIssuesToken() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
@@ -219,7 +219,7 @@ class PhotoAnalyzeServiceTest {
     // ========== フォーマット検証 ==========
 
     @Test
-    @DisplayName("Issue#119 - analyze: JPEG/PNG 以外の Content-Type は IllegalArgumentException")
+    @DisplayName("Spec#119 - analyze: JPEG/PNG 以外の Content-Type は IllegalArgumentException")
     void analyze_unsupportedContentType_throws() {
         byte[] anyBytes = "fake".getBytes();
 
@@ -232,7 +232,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - analyze: 不正なバイト列は IllegalArgumentException")
+    @DisplayName("Spec#119 - analyze: 不正なバイト列は IllegalArgumentException")
     void analyze_invalidImageBytes_throws() {
         byte[] notImage = "not an image at all".getBytes();
 
@@ -241,7 +241,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - analyze: 不正な入力では Rekognition を呼び出さない")
+    @DisplayName("Spec#119 - analyze: 不正な入力では Rekognition を呼び出さない")
     void analyze_invalidInput_doesNotCallRekognition() {
         byte[] notImage = "not an image".getBytes();
 
@@ -258,7 +258,7 @@ class PhotoAnalyzeServiceTest {
     // ========== Rekognition エラー ==========
 
     @Test
-    @DisplayName("Issue#119 - analyze: Rekognition が例外を投げた場合、空レスポンスを返す（フォーム空欄でフォールバック）")
+    @DisplayName("Spec#119 - analyze: Rekognition が例外を投げた場合、空レスポンスを返す（フォーム空欄でフォールバック）")
     void analyze_rekognitionThrows_returnsEmptyResponse() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenThrow(RekognitionException.builder().message("AWS service down").build());
@@ -272,7 +272,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - analyze: Rekognition エラー時はキャッシュにも保存しない")
+    @DisplayName("Spec#119 - analyze: Rekognition エラー時はキャッシュにも保存しない")
     void analyze_rekognitionError_doesNotCache() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenThrow(RekognitionException.builder().message("AWS service down").build());
@@ -282,10 +282,10 @@ class PhotoAnalyzeServiceTest {
         verify(cacheService, never()).save(any());
     }
 
-    // ========== Issue#132: 親子フォールバック・EXIF 連携 ==========
+    // ========== Spec#132: 親子フォールバック・EXIF 連携 ==========
 
     @Test
-    @DisplayName("Issue#132 - analyze: 親フォールバックが発火した場合、response.parentFallbacks に記録される")
+    @DisplayName("Spec#132 - analyze: 親フォールバックが発火した場合、response.parentFallbacks に記録される")
     void analyze_parentFallback_isTrackedInResponse() throws IOException {
         Label husky = Label.builder()
                 .name("Husky").confidence(90f)
@@ -307,7 +307,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - analyze: EXIF R1 (星空) が発火した場合、response.exifRulesFired と categories に反映される")
+    @DisplayName("Spec#132 - analyze: EXIF R1 (星空) が発火した場合、response.exifRulesFired と categories に反映される")
     void analyze_exifRuleR1_isTrackedInResponse() throws IOException {
         ExifData starrySky = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 22, 0))
@@ -328,7 +328,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#142 - analyze: クライアント送信 EXIF（非空）は fromClientValues 経由で適用される")
+    @DisplayName("Spec#142 - analyze: クライアント送信 EXIF（非空）は fromClientValues 経由で適用される")
     void analyze_clientExif_isAppliedViaFromClientValues() throws IOException {
         ExifData starrySky = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 22, 0))
@@ -350,7 +350,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - analyze: 発火なしの場合、parentFallbacks/exifRulesFired は空配列")
+    @DisplayName("Spec#132 - analyze: 発火なしの場合、parentFallbacks/exifRulesFired は空配列")
     void analyze_noFallbackOrExifRule_returnsEmptyArrays() throws IOException {
         Label dog = Label.builder().name("Dog").confidence(90f).build();
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
@@ -364,7 +364,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - analyze: Rekognition 失敗時の empty レスポンスでも新規フィールドは空配列")
+    @DisplayName("Spec#132 - analyze: Rekognition 失敗時の empty レスポンスでも新規フィールドは空配列")
     void analyze_rekognitionError_hasEmptyNewArrays() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenThrow(RekognitionException.builder().message("AWS down").build());
@@ -376,7 +376,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - analyze: EXIF はリサイズ前の元画像から読み取る")
+    @DisplayName("Spec#132 - analyze: EXIF はリサイズ前の元画像から読み取る")
     void analyze_exifIsReadFromOriginalBytesBeforeResize() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
@@ -392,7 +392,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#132 - PhotoAnalyzeResponse.empty(): 新規フィールドも空配列で返す")
+    @DisplayName("Spec#132 - PhotoAnalyzeResponse.empty(): 新規フィールドも空配列で返す")
     void emptyResponse_hasEmptyNewArrays() {
         PhotoAnalyzeResponse empty = PhotoAnalyzeResponse.empty();
 
@@ -401,10 +401,10 @@ class PhotoAnalyzeServiceTest {
         assertThat(empty.suggestedTags()).isEmpty();
     }
 
-    // ========== Issue#135: AI キーワード提案 ==========
+    // ========== Spec#135: AI キーワード提案 ==========
 
     @Test
-    @DisplayName("Issue#135 - analyze: TagService から取得した suggestedTags をレスポンスに含める")
+    @DisplayName("Spec#135 - analyze: TagService から取得した suggestedTags をレスポンスに含める")
     void analyze_suggestedTags_areIncludedInResponse() throws IOException {
         Label cherryLabel = Label.builder().name("Cherry Blossom").confidence(92.0f).build();
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
@@ -421,7 +421,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - analyze: TagService が空配列を返したら suggestedTags も空配列")
+    @DisplayName("Spec#135 - analyze: TagService が空配列を返したら suggestedTags も空配列")
     void analyze_emptySuggestions_isReturnedAsEmptyArray() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());
@@ -433,7 +433,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - analyze: Rekognition 失敗時の empty レスポンスでも suggestedTags は空配列")
+    @DisplayName("Spec#135 - analyze: Rekognition 失敗時の empty レスポンスでも suggestedTags は空配列")
     void analyze_rekognitionError_hasEmptySuggestedTags() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenThrow(RekognitionException.builder().message("AWS down").build());
@@ -469,10 +469,10 @@ class PhotoAnalyzeServiceTest {
         return baos.toByteArray();
     }
 
-    // ========== Issue#136 Phase 11: CachedAnalyzeResult への切替検証 ==========
+    // ========== Spec#136 Phase 11: CachedAnalyzeResult への切替検証 ==========
 
     @Test
-    @DisplayName("Issue#136 - analyze: cacheService.save に CachedAnalyzeResult が渡され、suggestedTags が含まれる")
+    @DisplayName("Spec#136 - analyze: cacheService.save に CachedAnalyzeResult が渡され、suggestedTags が含まれる")
     void analyze_savesCachedAnalyzeResultWithSuggestedTags() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder()
@@ -495,7 +495,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - analyze: cacheService.save の labelMapping が PhotoAnalyzeResponse と一致")
+    @DisplayName("Spec#136 - analyze: cacheService.save の labelMapping が PhotoAnalyzeResponse と一致")
     void analyze_savesLabelMappingMatchingResponse() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder()
@@ -515,7 +515,7 @@ class PhotoAnalyzeServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - analyze: 空 suggestedTags のときも CachedAnalyzeResult.suggestedTags は空リスト")
+    @DisplayName("Spec#136 - analyze: 空 suggestedTags のときも CachedAnalyzeResult.suggestedTags は空リスト")
     void analyze_emptySuggestedTags_savesEmptyList() throws IOException {
         when(rekognitionClient.detectLabels(any(DetectLabelsRequest.class)))
                 .thenReturn(DetectLabelsResponse.builder().labels(List.of()).build());

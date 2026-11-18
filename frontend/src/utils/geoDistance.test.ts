@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { geoDistance } from './geoDistance'
 
 /**
- * Issue#146: 2 点間の距離（メートル）を返す haversine 純粋関数。
+ * Spec#146: 2 点間の距離（メートル）を返す haversine 純粋関数。
  * 撮影場所指摘の距離バリデーション（30m 下限・1km 上限）に使う。
  * バックエンド（SpotRepository）と同じ地球半径 6371000m を用いる。
  */

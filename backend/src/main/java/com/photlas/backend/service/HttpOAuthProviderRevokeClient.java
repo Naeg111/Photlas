@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 /**
- * Issue#81 Phase 4c - {@link OAuthProviderRevokeClient} のプロダクション実装。
+ * Spec#81 Phase 4c - {@link OAuthProviderRevokeClient} のプロダクション実装。
  *
  * <p>Google / LINE の revoke エンドポイントへ HTTP POST する。タイムアウトは connect=3s / read=5s
  * （best-effort のため短め）。失敗時は例外を投げ、{@link OAuthTokenRevokeService} 側で WARN ログに落とす。

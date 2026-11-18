@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Issue#106: IPアドレスからの国判定エンドポイント
+ * Spec#106: IPアドレスからの国判定エンドポイント
  *
  * フロントエンドのマップ初期表示位置の最適化のために使用される。
  * 認証不要（ログイン前でも呼び出し可能）。

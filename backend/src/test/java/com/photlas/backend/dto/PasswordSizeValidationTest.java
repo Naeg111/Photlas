@@ -16,11 +16,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * パスワード関連 DTO のサイズ上限（max=20）バリデーションを統一的に検証するテスト。
  *
- * <p>Photlas のパスワード要件は 8〜20 文字（Issue#21）。本テストは「すべてのパスワード
+ * <p>Photlas のパスワード要件は 8〜20 文字（Spec#21）。本テストは「すべてのパスワード
  * フィールドが 21 文字以上を拒否する」ことを保証する。フィールドごとに DTO 単体で
  * Validator を呼び出し、HTTP 層・DB 層なしで直接検証する。</p>
  *
- * <p>背景: Issue#108 完了後の調査で、複数の DTO に max 上限が抜けていることが判明。
+ * <p>背景: Spec#108 完了後の調査で、複数の DTO に max 上限が抜けていることが判明。
  * 統一して max=20 を付与する。</p>
  */
 @SpringBootTest

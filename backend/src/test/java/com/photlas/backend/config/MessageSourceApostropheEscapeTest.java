@@ -13,7 +13,7 @@ import java.util.Locale;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#136 §3.6: messages*.properties で MessageFormat の {@code '} エスケープが正しく
+ * Spec#136 §3.6: messages*.properties で MessageFormat の {@code '} エスケープが正しく
  * 適用されることを保証する回帰テスト。
  *
  * <p>Spring の {@link MessageSource} は、引数 (args) が non-null のとき内部で
@@ -39,7 +39,7 @@ class MessageSourceApostropheEscapeTest {
     private MessageSource messageSource;
 
     @Test
-    @DisplayName("Issue#136 §3.6: '' エスケープでリテラルのアポストロフィが描画される")
+    @DisplayName("Spec#136 §3.6: '' エスケープでリテラルのアポストロフィが描画される")
     void doubleApostropheRendersSingleApostrophe() {
         // 注入した messageSource はキー解決時に Spring が下流の MessageFormat 処理を行う。
         // 本番 messages にキー追加せずに振る舞いだけ確認するため、StaticMessageSource で
@@ -53,7 +53,7 @@ class MessageSourceApostropheEscapeTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §3.6: 単独 ' は MessageFormat 規約上エスケープ扱いとなり {0} が置換されない")
+    @DisplayName("Spec#136 §3.6: 単独 ' は MessageFormat 規約上エスケープ扱いとなり {0} が置換されない")
     void singleApostropheBlocksPlaceholderSubstitution() {
         StaticMessageSource sms = new StaticMessageSource();
         // 開発者が誤って '' ではなく ' で書いてしまった場合の振る舞いを文書化
@@ -66,7 +66,7 @@ class MessageSourceApostropheEscapeTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §3.6: 引数 null のときは MessageFormat を使わず ' はリテラル扱い")
+    @DisplayName("Spec#136 §3.6: 引数 null のときは MessageFormat を使わず ' はリテラル扱い")
     void noArgsKeepsApostropheAsLiteral() {
         StaticMessageSource sms = new StaticMessageSource();
         sms.addMessage("test.noarg", Locale.ENGLISH, "It's a test");
@@ -78,7 +78,7 @@ class MessageSourceApostropheEscapeTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §3.6: 本番 messages*.properties にアポストロフィを含む文言が無いことを確認")
+    @DisplayName("Spec#136 §3.6: 本番 messages*.properties にアポストロフィを含む文言が無いことを確認")
     void productionMessagesDoNotContainUnescapedApostrophes() {
         // 既存 tag.page.* キーに args を渡しても {N} が正しく置換されていることを確認
         // → アポストロフィ未エスケープのバグが本番 messages に混入していないことの証跡

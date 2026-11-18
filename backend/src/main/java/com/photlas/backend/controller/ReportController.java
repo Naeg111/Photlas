@@ -13,7 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Issue#54: 通報コントローラー
+ * Spec#54: 通報コントローラー
  */
 @RestController
 @RequestMapping("/api/v1")
@@ -50,7 +50,7 @@ public class ReportController {
     }
 
     /**
-     * Issue#54: プロフィールを通報する
+     * Spec#54: プロフィールを通報する
      *
      * @param userId 通報対象ユーザーID
      * @param request 通報リクエスト

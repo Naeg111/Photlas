@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 
 /**
- * Issue#54: REMOVED投稿の180日後物理削除サービスのテスト
+ * Spec#54: REMOVED投稿の180日後物理削除サービスのテスト
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -79,7 +79,7 @@ public class RemovedPhotoCleanupServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 180日以上前にREMOVEDされた写真が物理削除される")
+    @DisplayName("Spec#54 - 180日以上前にREMOVEDされた写真が物理削除される")
     void testCleanup_RemovesOldRemovedPhotos() {
         Photo oldRemoved = createPhoto("old-removed.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
         // updated_atを181日前に設定
@@ -91,7 +91,7 @@ public class RemovedPhotoCleanupServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 180日未満のREMOVED写真は削除されない")
+    @DisplayName("Spec#54 - 180日未満のREMOVED写真は削除されない")
     void testCleanup_KeepsRecentRemovedPhotos() {
         Photo recentRemoved = createPhoto("recent-removed.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
         // updated_atを179日前に設定
@@ -103,7 +103,7 @@ public class RemovedPhotoCleanupServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PUBLISHED写真は削除されない")
+    @DisplayName("Spec#54 - PUBLISHED写真は削除されない")
     void testCleanup_KeepsPublishedPhotos() {
         Photo published = createPhoto("published.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
         // 古い写真でもPUBLISHEDなら削除されない
@@ -115,7 +115,7 @@ public class RemovedPhotoCleanupServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 複数のREMOVED写真のうち古いものだけ削除される")
+    @DisplayName("Spec#54 - 複数のREMOVED写真のうち古いものだけ削除される")
     void testCleanup_OnlyDeletesOldOnes() {
         Photo old1 = createPhoto("old1.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
         Photo old2 = createPhoto("old2.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
@@ -132,10 +132,10 @@ public class RemovedPhotoCleanupServiceTest {
         assertThat(photoRepository.findById(recent.getPhotoId())).isPresent();
     }
 
-    // ===== Issue#62: S3削除テスト =====
+    // ===== Spec#62: S3削除テスト =====
 
     @Test
-    @DisplayName("Issue#62 - 物理削除時にS3の元画像とサムネイルが削除される")
+    @DisplayName("Spec#62 - 物理削除時にS3の元画像とサムネイルが削除される")
     void testCleanup_deletesS3Objects() {
         Photo photo = createPhoto("uploads/1/abc.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
         updateUpdatedAt(photo.getPhotoId(), LocalDateTime.now().minusDays(200));
@@ -148,7 +148,7 @@ public class RemovedPhotoCleanupServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#62 - 削除対象がない場合はS3削除が呼ばれない")
+    @DisplayName("Spec#62 - 削除対象がない場合はS3削除が呼ばれない")
     void testCleanup_noPhotos_noS3Delete() {
         cleanupService.cleanupRemovedPhotos();
 

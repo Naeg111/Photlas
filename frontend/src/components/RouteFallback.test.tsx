@@ -11,12 +11,12 @@ describe('RouteFallback', () => {
     vi.useRealTimers()
   })
 
-  it('Issue#130 - 初期表示は何も出ない（ちらつき防止の delay）', () => {
+  it('Spec#130 - 初期表示は何も出ない（ちらつき防止の delay）', () => {
     const { container } = render(<RouteFallback />)
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('Issue#130 - delay 経過後にローディングインジケータが表示される', () => {
+  it('Spec#130 - delay 経過後にローディングインジケータが表示される', () => {
     render(<RouteFallback />)
 
     act(() => {

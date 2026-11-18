@@ -32,7 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#81 Phase 4g - {@link OAuthLinkConfirmationService} のテスト（Red 段階）。
+ * Spec#81 Phase 4g - {@link OAuthLinkConfirmationService} のテスト（Red 段階）。
  *
  * <p>Round 12 / [4-B-T6] を含む:
  * <ul>
@@ -193,7 +193,7 @@ class OAuthLinkConfirmationServiceTest {
     // ---------- consume: T6 ソフトデリート ----------
 
     @Test
-    @DisplayName("[Issue#81 4-B-T6] consume: トークン発行後にユーザーがソフトデリートされた場合は拒否")
+    @DisplayName("[Spec#81 4-B-T6] consume: トークン発行後にユーザーがソフトデリートされた場合は拒否")
     void consume_afterUserSoftDeleted_rejected() {
         String rawToken = generateRawToken();
         OAuthLinkConfirmation record = newRecord(

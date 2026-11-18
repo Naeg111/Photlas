@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#81 Phase 4f - {@link PasswordRecommendationService} のテスト（Red 段階）。
+ * Spec#81 Phase 4f - {@link PasswordRecommendationService} のテスト（Red 段階）。
  *
  * <p>推奨条件（Round 12 / Q8 / [2-G]）:
  * <ul>

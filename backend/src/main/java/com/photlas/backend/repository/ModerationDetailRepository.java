@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * Issue#54: モデレーション詳細リポジトリ
+ * Spec#54: モデレーション詳細リポジトリ
  */
 @Repository
 public interface ModerationDetailRepository extends JpaRepository<ModerationDetail, Long> {
@@ -18,7 +18,7 @@ public interface ModerationDetailRepository extends JpaRepository<ModerationDeta
     Optional<ModerationDetail> findByTargetTypeAndTargetId(Integer targetType, Long targetId);
 
     /**
-     * Issue#57: 対象種別・対象IDでモデレーション詳細を全て削除する
+     * Spec#57: 対象種別・対象IDでモデレーション詳細を全て削除する
      */
     void deleteByTargetTypeAndTargetId(Integer targetType, Long targetId);
 }

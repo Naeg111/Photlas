@@ -18,7 +18,7 @@ interface DeletedUser {
 }
 
 /**
- * Issue#73: 退会済みユーザー管理ページ
+ * Spec#73: 退会済みユーザー管理ページ
  */
 export default function AdminDeletedUsersPage() {
   useRobotsNoindex()

@@ -1,4 +1,4 @@
-# Terraform CI（Issue#147 決定 F / §5.5：ハイブリッド運用）
+# Terraform CI（Spec#147 決定 F / §5.5：ハイブリッド運用）
 #
 # - PR で infra/terraform/ 配下が変わると、4 つの env(shared/prod/staging/dns-email)について
 #   fmt -check / validate / plan を実行し、plan 結果を PR にコメントする（差分レビュー）。

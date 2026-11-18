@@ -1,5 +1,5 @@
 #!/bin/bash
-# Issue#117: メンテナンス画面の HTML を CloudFront Function 用 JS に埋め込む
+# Spec#117: メンテナンス画面の HTML を CloudFront Function 用 JS に埋め込む
 # ラッパースクリプト。
 #
 # 入力:

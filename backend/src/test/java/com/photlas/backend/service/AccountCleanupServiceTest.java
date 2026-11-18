@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#72: アカウント退会90日後物理削除バッチのテスト
+ * Spec#72: アカウント退会90日後物理削除バッチのテスト
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -56,7 +56,7 @@ public class AccountCleanupServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#72 - 90日以上経過した退会済みユーザーが物理削除される")
+    @DisplayName("Spec#72 - 90日以上経過した退会済みユーザーが物理削除される")
     void testCleanup_DeletesExpiredUsers() {
         User deletedUser = createDeletedUser("expired@example.com", "expired",
                 LocalDateTime.now().minusDays(91));
@@ -67,7 +67,7 @@ public class AccountCleanupServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#72 - 90日未満の退会済みユーザーは削除されない")
+    @DisplayName("Spec#72 - 90日未満の退会済みユーザーは削除されない")
     void testCleanup_KeepsRecentlyDeletedUsers() {
         User recentlyDeleted = createDeletedUser("recent@example.com", "recent",
                 LocalDateTime.now().minusDays(89));
@@ -78,7 +78,7 @@ public class AccountCleanupServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#72 - 物理削除後に孤立スポットが削除される")
+    @DisplayName("Spec#72 - 物理削除後に孤立スポットが削除される")
     void testCleanup_DeletesOrphanedSpots() {
         // アクティブユーザー（スポットの所有者になる）
         User activeUser = new User();

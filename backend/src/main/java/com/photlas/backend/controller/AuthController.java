@@ -132,7 +132,7 @@ public class AuthController {
     }
 
     /**
-     * Issue#86: メールアドレス変更確認
+     * Spec#86: メールアドレス変更確認
      * トークンを検証し、メールアドレスを更新してJWTを再発行する。
      */
     @GetMapping("/confirm-email-change")
@@ -146,7 +146,7 @@ public class AuthController {
     }
 
     /**
-     * Issue#81 Phase 4g: OAuth アカウントリンク確認エンドポイント（Q1）。
+     * Spec#81 Phase 4g: OAuth アカウントリンク確認エンドポイント（Q1）。
      *
      * <p>既存パスワードアカウントに OAuth 連携を結ぶ際、ユーザーが LinkAccountConfirmDialog で
      * 「連携する」を選択すると本エンドポイントが呼ばれる。短命トークンを消費して
@@ -165,7 +165,7 @@ public class AuthController {
     }
 
     /**
-     * Issue#81 Phase 4h: OAuth のみユーザー向け初回パスワード設定エンドポイント。
+     * Spec#81 Phase 4h: OAuth のみユーザー向け初回パスワード設定エンドポイント。
      *
      * <p>認証済み OAuth のみユーザー (password_hash == null) が任意でパスワードを設定する。
      * 内部的には {@link PasswordService#setInitialPassword} を呼び、成功時は

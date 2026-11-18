@@ -27,7 +27,7 @@ interface UserDetail {
 }
 
 /**
- * Issue#73: 退会済みユーザー詳細ページ
+ * Spec#73: 退会済みユーザー詳細ページ
  */
 export default function AdminDeletedUserDetailPage() {
   useRobotsNoindex()

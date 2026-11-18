@@ -18,7 +18,7 @@ vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
 }))
 
-// Issue#96 PR3: sonner のモック（429 トースト検証用）
+// Spec#96 PR3: sonner のモック（429 トースト検証用）
 const { mockToast } = vi.hoisted(() => ({
   mockToast: {
     success: vi.fn(),
@@ -44,7 +44,7 @@ const TEST_PHOTO_ID = 123
 const TEST_PLACE_NAME = '東京タワー'
 const API_PHOTOS = '/api/v1/photos'
 
-// Issue#88: モックAPIレスポンス（PhotoDetailResponse形式）
+// Spec#88: モックAPIレスポンス（PhotoDetailResponse形式）
 function createMockPhotoResponse(overrides?: { photoId?: number; placeName?: string }) {
   return {
     photoId: overrides?.photoId ?? TEST_PHOTO_ID,
@@ -164,7 +164,7 @@ describe('PhotoViewerPage', () => {
     })
   })
 
-  // Issue#96 PR3: 429 レート制限ハンドリング（パターンB: トースト通知）
+  // Spec#96 PR3: 429 レート制限ハンドリング（パターンB: トースト通知）
   describe('Rate Limit (429) - レート制限', () => {
     it('429 受信時に rate-limit トースト通知を表示する', async () => {
       mockFetch.mockResolvedValueOnce(

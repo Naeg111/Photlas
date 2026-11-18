@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.hamcrest.Matchers.is;
 
 /**
- * Issue#5: ログイン・ログアウト機能 - ログインAPI テスト
+ * Spec#5: ログイン・ログアウト機能 - ログインAPI テスト
  * TDD Red段階: 実装前のテストケース定義
  *
  * 対象エンドポイント: POST /api/v1/auth/login
@@ -226,10 +226,10 @@ public class AuthControllerLoginTest {
                 .andExpect(jsonPath("$.email", is("test@example.com")));
     }
 
-    // ===== Issue#93: ログインレスポンスのlanguage・Accept-Language自動更新削除 =====
+    // ===== Spec#93: ログインレスポンスのlanguage・Accept-Language自動更新削除 =====
 
     @Test
-    @DisplayName("Issue#93 - ログインレスポンスにlanguageフィールドが含まれる")
+    @DisplayName("Spec#93 - ログインレスポンスにlanguageフィールドが含まれる")
     void testLogin_ResponseIncludesLanguageField() throws Exception {
         LoginRequest request = new LoginRequest();
         request.setEmail("test@example.com");
@@ -243,7 +243,7 @@ public class AuthControllerLoginTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - ログイン時にAccept-Languageで言語が自動更新されない")
+    @DisplayName("Spec#93 - ログイン時にAccept-Languageで言語が自動更新されない")
     void testLogin_DoesNotUpdateLanguageFromAcceptLanguage() throws Exception {
         assertThat(testUser.getLanguage()).isEqualTo("ja");
 
@@ -262,10 +262,10 @@ public class AuthControllerLoginTest {
         assertThat(updatedUser.getLanguage()).isEqualTo("ja");
     }
 
-    // ===== Issue#92: アカウント復旧機能 =====
+    // ===== Spec#92: アカウント復旧機能 =====
 
     @Test
-    @DisplayName("Issue#92 - ソフトデリート済みユーザーが正しいパスワードでログイン → アカウント復旧、200 OK")
+    @DisplayName("Spec#92 - ソフトデリート済みユーザーが正しいパスワードでログイン → アカウント復旧、200 OK")
     void testLogin_SoftDeletedUser_CorrectPassword_RestoresAccountAndReturnsOk() throws Exception {
         // Given: ソフトデリート済みユーザー
         User deletedUser = new User();
@@ -293,7 +293,7 @@ public class AuthControllerLoginTest {
     }
 
     @Test
-    @DisplayName("Issue#92 - ソフトデリート済みユーザーの復旧後、全フィールドが正しくリストアされる")
+    @DisplayName("Spec#92 - ソフトデリート済みユーザーの復旧後、全フィールドが正しくリストアされる")
     void testLogin_SoftDeletedUser_CorrectPassword_RestoresUserFields() throws Exception {
         // Given: ソフトデリート済みユーザー（deletionHoldUntil設定あり）
         User deletedUser = new User();
@@ -326,7 +326,7 @@ public class AuthControllerLoginTest {
     }
 
     @Test
-    @DisplayName("Issue#92 - ソフトデリート済みユーザーが誤ったパスワードでログイン → 復旧されず認証エラー")
+    @DisplayName("Spec#92 - ソフトデリート済みユーザーが誤ったパスワードでログイン → 復旧されず認証エラー")
     void testLogin_SoftDeletedUser_WrongPassword_DoesNotRestoreAccount() throws Exception {
         // Given: ソフトデリート済みユーザー
         User deletedUser = new User();
@@ -358,7 +358,7 @@ public class AuthControllerLoginTest {
     }
 
     @Test
-    @DisplayName("Issue#92 - 停止済み＋ソフトデリート済みユーザーが正しいパスワードでログイン → 復旧されるが停止エラー")
+    @DisplayName("Spec#92 - 停止済み＋ソフトデリート済みユーザーが正しいパスワードでログイン → 復旧されるが停止エラー")
     void testLogin_SuspendedAndSoftDeletedUser_CorrectPassword_RestoresButReturnsSuspended() throws Exception {
         // Given: 停止済み＋ソフトデリート済みユーザー
         User deletedUser = new User();

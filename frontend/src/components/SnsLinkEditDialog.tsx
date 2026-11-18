@@ -13,7 +13,7 @@ import threadsLogo from '../assets/threads-logo.svg'
 import xLogo from '../assets/x-logo.svg'
 
 /**
- * Issue#102: SNSリンク編集ダイアログ
+ * Spec#102: SNSリンク編集ダイアログ
  *
  * 固定3行UI（Instagram → Threads → X）。
  * 各行にブランドガイドライン準拠の黒単色SVGロゴを配置。

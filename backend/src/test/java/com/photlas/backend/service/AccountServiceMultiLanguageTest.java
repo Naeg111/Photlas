@@ -28,7 +28,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 
 /**
- * Issue#113 フェーズ 3 - AccountService の 5 言語化テスト。
+ * Spec#113 フェーズ 3 - AccountService の 5 言語化テスト。
  *
  * <p>3 メール（メール変更確認リンク・旧アドレス通知・アカウント削除完了通知）の
  * 言語別出力 + メール変更時の送信順序 (旧アドレス先 → 新アドレス後) +
@@ -57,7 +57,7 @@ class AccountServiceMultiLanguageTest {
     // ========== メールアドレス変更 (グループ A) ==========
 
     @Test
-    @DisplayName("Issue#113 - メール変更: 旧アドレスへのアラートが新アドレスへのリンクより先に送信される")
+    @DisplayName("Spec#113 - メール変更: 旧アドレスへのアラートが新アドレスへのリンクより先に送信される")
     void emailChangeAlertSentBeforeLink() {
         User user = seedUser("ja", "old-order@example.com");
 
@@ -72,7 +72,7 @@ class AccountServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - メール変更 ko: 5 言語化されたメールが送信される（ハングル件名）")
+    @DisplayName("Spec#113 - メール変更 ko: 5 言語化されたメールが送信される（ハングル件名）")
     void emailChangeKo() {
         User user = seedUser("ko", "old-ko@example.com");
 
@@ -89,7 +89,7 @@ class AccountServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - メール変更 zh-CN: 簡体中文の件名が送信される")
+    @DisplayName("Spec#113 - メール変更 zh-CN: 簡体中文の件名が送信される")
     void emailChangeZhCn() {
         User user = seedUser("zh-CN", "old-zhcn@example.com");
 
@@ -102,7 +102,7 @@ class AccountServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - メール変更 zh-TW: 繁体中文の件名が送信される")
+    @DisplayName("Spec#113 - メール変更 zh-TW: 繁体中文の件名が送信される")
     void emailChangeZhTw() {
         User user = seedUser("zh-TW", "old-zhtw@example.com");
 
@@ -115,7 +115,7 @@ class AccountServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - メール変更 (グループ A): 旧アドレス送信失敗時に例外伝播し新アドレスは送信されない")
+    @DisplayName("Spec#113 - メール変更 (グループ A): 旧アドレス送信失敗時に例外伝播し新アドレスは送信されない")
     void emailChangeOldAddrFailureBlocksNewAddr() {
         User user = seedUser("ja", "old-fail@example.com");
         // 旧アドレスへの送信のみ失敗させる
@@ -135,7 +135,7 @@ class AccountServiceMultiLanguageTest {
     // ========== アカウント削除 (グループ C) ==========
 
     @Test
-    @DisplayName("Issue#113 - アカウント削除 NORMAL ja: 通常ユーザーの日本語確認メール")
+    @DisplayName("Spec#113 - アカウント削除 NORMAL ja: 通常ユーザーの日本語確認メール")
     void deletionNormalJa() {
         User user = seedUser("ja", "del-normal-ja@example.com");
 
@@ -149,7 +149,7 @@ class AccountServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - アカウント削除 NORMAL en: 通常ユーザーの英語確認メール")
+    @DisplayName("Spec#113 - アカウント削除 NORMAL en: 通常ユーザーの英語確認メール")
     void deletionNormalEn() {
         User user = seedUser("en", "del-normal-en@example.com");
 
@@ -163,7 +163,7 @@ class AccountServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - アカウント削除 HYBRID ja: パスワード + プロバイダ両方の復旧経路を案内")
+    @DisplayName("Spec#113 - アカウント削除 HYBRID ja: パスワード + プロバイダ両方の復旧経路を案内")
     void deletionHybridJa() {
         User user = seedUser("ja", "del-hybrid-ja@example.com");
         addOauthConnection(user, OAuthProvider.GOOGLE);
@@ -179,7 +179,7 @@ class AccountServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - アカウント削除 OAUTH_ONLY ja: プロバイダ再サインインのみ案内")
+    @DisplayName("Spec#113 - アカウント削除 OAUTH_ONLY ja: プロバイダ再サインインのみ案内")
     void deletionOauthOnlyJa() {
         User user = seedOauthOnlyUser("ja", "del-oauth-ja@example.com");
         addOauthConnection(user, OAuthProvider.GOOGLE);
@@ -196,7 +196,7 @@ class AccountServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - アカウント削除 ko: ハングル件名")
+    @DisplayName("Spec#113 - アカウント削除 ko: ハングル件名")
     void deletionKo() {
         User user = seedUser("ko", "del-ko@example.com");
 
@@ -208,7 +208,7 @@ class AccountServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - アカウント削除 (グループ C): メール送信失敗でも削除処理は完了する")
+    @DisplayName("Spec#113 - アカウント削除 (グループ C): メール送信失敗でも削除処理は完了する")
     void deletionGroupCFailureSwallowed() {
         User user = seedUser("ja", "del-fail@example.com");
         doThrow(new RuntimeException("SMTP error"))

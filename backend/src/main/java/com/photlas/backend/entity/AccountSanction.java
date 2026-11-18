@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Issue#54: アカウント制裁エンティティ
+ * Spec#54: アカウント制裁エンティティ
  */
 @Entity
 @Table(name = "account_sanctions", indexes = {

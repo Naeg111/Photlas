@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
 #
 # Specification-driven tests for scripts/setup-app-ratelimit-alarm.sh
-# Source of truth: documents/04_Issues/Issue#95.md §3.7
+# Source of truth: documents/spec/SPEC-0095.md §3.7
 #
 # Verifies the script:
 #   - is syntactically valid (shellcheck passes)
-#   - reuses the Issue#94 SNS topic photlas-waf-alerts (does NOT create a new one)
+#   - reuses the Spec#94 SNS topic photlas-waf-alerts (does NOT create a new one)
 #   - creates a CloudWatch Logs metric filter
 #     photlas-app-ratelimit-exceeded-filter on log group /photlas/prod/backend
 #     with pattern "レート制限超過", namespace Photlas/RateLimit,
@@ -41,9 +41,9 @@ SCRIPT="$SCRIPTS_DIR/setup-app-ratelimit-alarm.sh"
   assert_contains "$SCRIPT" 'ap-northeast-1'
 }
 
-# --- SNS topic reuse (Issue#94 既存) ----------------------------------------
+# --- SNS topic reuse (Spec#94 既存) ----------------------------------------
 
-@test "setup-app-ratelimit-alarm.sh: reuses the Issue#94 SNS topic photlas-waf-alerts" {
+@test "setup-app-ratelimit-alarm.sh: reuses the Spec#94 SNS topic photlas-waf-alerts" {
   assert_contains "$SCRIPT" 'photlas-waf-alerts'
 }
 
@@ -66,7 +66,7 @@ SCRIPT="$SCRIPTS_DIR/setup-app-ratelimit-alarm.sh"
   assert_contains "$SCRIPT" 'photlas-app-ratelimit-exceeded-filter'
 }
 
-# NOTE(Issue#148): @test 名は ASCII のみにする。テスト名に日本語（マルチバイト）が
+# NOTE(Spec#148): @test 名は ASCII のみにする。テスト名に日本語（マルチバイト）が
 # 含まれると bats 1.13 がそのテストを取りこぼし、ディレクトリ実行が exit 1 になるため。
 # 検証対象の日本語ログ文言（レート制限超過）は下の assert 側でそのまま確認する。
 @test "setup-app-ratelimit-alarm.sh: filter pattern matches the rate-limit-exceeded log message" {

@@ -4,7 +4,7 @@ import { TopMenuPanel } from './TopMenuPanel'
 import { AuthProvider } from '../contexts/AuthContext'
 
 /**
- * Issue#11: フロントエンドデザインのコード導入 - トップメニューパネル
+ * Spec#11: フロントエンドデザインのコード導入 - トップメニューパネル
  * TDD Red段階: 実装前のテストケース定義
  *
  * UI要件:
@@ -29,7 +29,7 @@ describe('TopMenuPanel', () => {
   const mockOnTermsClick = vi.fn()
   const mockOnPrivacyClick = vi.fn()
   const mockOnLoginClick = vi.fn()
-  // Issue#104: onSignUpClick を削除
+  // Spec#104: onSignUpClick を削除
   const mockOnLogout = vi.fn()
 
   const defaultProps = {
@@ -81,7 +81,7 @@ describe('TopMenuPanel', () => {
 
       expect(screen.getByText(/Photlasとは？/)).toBeInTheDocument()
       expect(screen.getByText(/ログイン/)).toBeInTheDocument()
-      // Issue#104: 「新規アカウント作成」ボタンを削除
+      // Spec#104: 「新規アカウント作成」ボタンを削除
       expect(screen.queryByText(/新規アカウント作成/)).not.toBeInTheDocument()
       expect(screen.getByText(/利用規約/)).toBeInTheDocument()
       expect(screen.getByText(/プライバシーポリシー/)).toBeInTheDocument()
@@ -123,8 +123,8 @@ describe('TopMenuPanel', () => {
     })
   })
 
-  // Issue#114: メニュー再構成 - 「操作方法」「お知らせ」「お問い合わせ」ボタンの新設
-  describe('Issue#114 - 新規メニューボタン', () => {
+  // Spec#114: メニュー再構成 - 「操作方法」「お知らせ」「お問い合わせ」ボタンの新設
+  describe('Spec#114 - 新規メニューボタン', () => {
     it('「操作方法」ボタンが表示される（ログイン時）', () => {
       renderWithProvider(<TopMenuPanel {...defaultProps} />)
       expect(screen.getByText(/操作方法/)).toBeInTheDocument()
@@ -174,8 +174,8 @@ describe('TopMenuPanel', () => {
     })
   })
 
-  // Issue#115: 方角インジケーター ON/OFF スイッチ
-  describe('Issue#115 - 方角インジケーター スイッチ', () => {
+  // Spec#115: 方角インジケーター ON/OFF スイッチ
+  describe('Spec#115 - 方角インジケーター スイッチ', () => {
     it('「向いている方角」ラベルが表示される', () => {
       renderWithProvider(<TopMenuPanel {...defaultProps} />)
       expect(screen.getByText(/向いている方角/)).toBeInTheDocument()

@@ -8,7 +8,7 @@ import { TopMenuPanel } from './TopMenuPanel'
 import TermsAgreementDialog from './TermsAgreementDialog'
 
 /**
- * Issue#104: 新規登録フロー簡素化 & 利用規約同意ダイアログのテスト
+ * Spec#104: 新規登録フロー簡素化 & 利用規約同意ダイアログのテスト
  *
  * <p>Phase A (Red) 段階：実装前のテスト。Phase B (Green) で本実装後にすべて成功する想定。
  */
@@ -49,7 +49,7 @@ const renderWithI18n = (ui: React.ReactElement) => {
   return render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>)
 }
 
-describe('Issue#104: LoginDialog OAuth ボタン文言変更', () => {
+describe('Spec#104: LoginDialog OAuth ボタン文言変更', () => {
   const defaultProps = {
     open: true,
     onOpenChange: vi.fn(),
@@ -79,7 +79,7 @@ describe('Issue#104: LoginDialog OAuth ボタン文言変更', () => {
   })
 })
 
-describe('Issue#104: TopMenuPanel から「新規アカウント作成」ボタンを削除', () => {
+describe('Spec#104: TopMenuPanel から「新規アカウント作成」ボタンを削除', () => {
   const defaultProps = {
     open: true,
     onOpenChange: vi.fn(),
@@ -109,7 +109,7 @@ describe('Issue#104: TopMenuPanel から「新規アカウント作成」ボタ�
   })
 })
 
-describe('Issue#104: TermsAgreementDialog', () => {
+describe('Spec#104: TermsAgreementDialog', () => {
   const defaultProps = {
     open: true,
     onAgreed: vi.fn(),
@@ -145,7 +145,7 @@ describe('Issue#104: TermsAgreementDialog', () => {
   })
 
   it('チェックボックス 3 つすべてチェックすると「利用を開始する」ボタンが活性化', async () => {
-    // Issue#109: 年齢確認チェックボックスが追加されたため、チェックボックス数が 2 → 3 に変更
+    // Spec#109: 年齢確認チェックボックスが追加されたため、チェックボックス数が 2 → 3 に変更
     const user = userEvent.setup()
     renderWithI18n(<TermsAgreementDialog {...defaultProps} />)
     const checkboxes = screen.getAllByRole('checkbox')

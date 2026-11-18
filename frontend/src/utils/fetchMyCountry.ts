@@ -1,5 +1,5 @@
 /**
- * Issue#106: IP国判定APIの呼び出し関数
+ * Spec#106: IP国判定APIの呼び出し関数
  *
  * GET /api/v1/geo/my-country を呼び出し、リクエスト元のIPアドレスから判定された
  * 国コード（ISO 3166-1 alpha-2）を返す。

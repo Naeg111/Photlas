@@ -5,11 +5,11 @@ import i18n from 'i18next'
 import TermsOfServiceStandalonePage from './TermsOfServiceStandalonePage'
 
 /**
- * Issue#99 - Google OAuth 検証要件: 利用規約 URL
+ * Spec#99 - Google OAuth 検証要件: 利用規約 URL
  * (https://photlas.jp/terms-of-service) が単独ページとしてアクセス可能で、
  * 利用規約の本文が表示されることを検証する。
  *
- * Issue#101 - 5 言語対応 + ハードコード日本語テキストの i18n 化
+ * Spec#101 - 5 言語対応 + ハードコード日本語テキストの i18n 化
  */
 describe('TermsOfServiceStandalonePage', () => {
   function renderPage() {
@@ -31,7 +31,7 @@ describe('TermsOfServiceStandalonePage', () => {
   })
 })
 
-describe('Issue#101 - TermsOfServiceStandalonePage 多言語対応', () => {
+describe('Spec#101 - TermsOfServiceStandalonePage 多言語対応', () => {
   function renderPage() {
     return render(
       <MemoryRouter>

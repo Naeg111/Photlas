@@ -1,10 +1,10 @@
-# SEO 死活監視 canary（Issue#148）
+# SEO 死活監視 canary（Spec#148）
 
 本番 `https://photlas.jp` の SEO 重要 URL を **30 分おき**に外形監視する CloudWatch Synthetics canary。
 「CloudFront 経路漏れで S3 の SPA 殻が無言で返る」「`X-Robots-Tag: noindex` 誤付与」等、
 **デプロイとは無関係に発生する配信障害**を継続検知する（デプロイ時スモークテストは別途 `deploy.yml`）。
 
-- 設計の真実: `documents/04_Issues/Issue#148.md`
+- 設計の真実: `documents/spec/SPEC-0148.md`
 - 受け入れ基準: 同 §6.1
 
 ## 構成

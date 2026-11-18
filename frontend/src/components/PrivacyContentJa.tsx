@@ -1,6 +1,6 @@
 /**
  * PrivacyContentJa コンポーネント
- * Issue#52: プライバシーポリシーの文面（日本語）
+ * Spec#52: プライバシーポリシーの文面（日本語）
  *
  * プライバシーポリシーの本文コンテンツを提供する
  */
@@ -122,7 +122,7 @@ export function PrivacyContentJa() {
           <li>利用規約違反への対応</li>
           <li>本サービスの広告・宣伝・プロモーション（投稿データの利用）</li>
           <li>ユーザーからのお問い合わせへの対応</li>
-          {/* Issue#106: IPアドレスからの国判定（マップの初期表示位置の最適化） */}
+          {/* Spec#106: IPアドレスからの国判定（マップの初期表示位置の最適化） */}
           <li>IPアドレスに基づくユーザーの所在国の判定（マップの初期表示位置の最適化のため。IPアドレスはサーバー上に保存せず、国コードへの変換のみに使用します）</li>
           <li>上記の利用目的に付随する目的</li>
         </ul>
@@ -145,7 +145,7 @@ export function PrivacyContentJa() {
       <section>
         <h2 className="mb-3">第6条（第三者提供・外部サービスの利用）</h2>
         <p className="text-sm text-gray-700 mb-2">
-          {/* Issue#105: Do Not Sell 宣言 */}
+          {/* Spec#105: Do Not Sell 宣言 */}
           運営者は、ユーザーの個人情報を第三者に販売しません。
         </p>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
@@ -182,7 +182,7 @@ export function PrivacyContentJa() {
                 <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">こちら</a>{' '}
                 をご参照ください。
               </li>
-              {/* Issue#106: MaxMind GeoLite2（IPアドレスからの国判定） */}
+              {/* Spec#106: MaxMind GeoLite2（IPアドレスからの国判定） */}
               <li>
                 <span className="font-semibold">MaxMind GeoLite2</span>：IPアドレスからユーザーの所在国を判定し、マップの初期表示位置を最適化するために使用します。判定処理はサーバー上で実行され、IPアドレスは国コードへの変換にのみ使用され、保存されません。本サービスは GeoLite2 データを使用しています（Includes GeoLite2 data created by MaxMind, available from{' '}
                 <a href="https://www.maxmind.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">https://www.maxmind.com</a>
@@ -250,7 +250,7 @@ export function PrivacyContentJa() {
         </ol>
       </section>
 
-      {/* Issue#119: AI 画像認識によるカテゴリ・天候の自動判定 */}
+      {/* Spec#119: AI 画像認識によるカテゴリ・天候の自動判定 */}
       <section>
         <h2 className="mb-3">第8条の2（カテゴリ・天候の自動判定）</h2>
         <p className="text-sm text-gray-700">
@@ -320,7 +320,7 @@ export function PrivacyContentJa() {
             削除後のデータの復旧はできません。
           </li>
           <li>
-            {/* Issue#105: モデレーション削除写真の 180 日保持を開示 */}
+            {/* Spec#105: モデレーション削除写真の 180 日保持を開示 */}
             コンテンツモデレーションにより削除された写真およびそのメタデータは、再審査・異議申立への対応を目的として180日間保持された後、完全に削除されます。
           </li>
         </ol>
@@ -329,7 +329,7 @@ export function PrivacyContentJa() {
       <section>
         <h2 className="mb-3">第12条（未成年者の利用）</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-          {/* Issue#105: 13歳以上の利用制限を明示（COPPA 準拠） */}
+          {/* Spec#105: 13歳以上の利用制限を明示（COPPA 準拠） */}
           <li>
             本サービスは、<span className="font-semibold">13歳以上</span>の方を対象として提供します。13歳未満の方は本サービスを利用することはできません。誤って 13歳未満の方が登録したことが判明した場合、運営者はアカウントおよび関連するデータを削除する措置を講じます。
           </li>
@@ -395,7 +395,7 @@ export function PrivacyContentJa() {
       <section>
         <h2 className="mb-3">第17条（国際データ移転）</h2>
         <p className="text-sm text-gray-700 mb-2">
-          {/* Issue#105: 国際ユーザー向けの包括的注意書きを追加 */}
+          {/* Spec#105: 国際ユーザー向けの包括的注意書きを追加 */}
           本サービスは日本に拠点を置く事業者により提供されており、世界中からアクセス可能です。日本国外からアクセスされた場合でも、ユーザーの個人データは日本のサーバーに転送のうえ処理されます。
         </p>
         <p className="text-sm text-gray-700 mb-2">
@@ -409,7 +409,7 @@ export function PrivacyContentJa() {
           これらのサービス提供者は、それぞれのプライバシーポリシーおよびデータ処理契約に基づき、適切なデータ保護措置を講じています。
         </p>
         <p className="text-sm text-gray-700 mt-2">
-          {/* Issue#105: ユーザー居住国の法律に基づく権利を尊重する旨 */}
+          {/* Spec#105: ユーザー居住国の法律に基づく権利を尊重する旨 */}
           ユーザーが居住する国の法律に基づき、本ポリシーに記載のない追加の権利を有する場合、運営者はそれらの権利を尊重し、適用法令の定めに従って対応します。
         </p>
       </section>

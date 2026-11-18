@@ -5,7 +5,7 @@ import { LogIn, UserPlus } from 'lucide-react'
 
 /**
  * LoginRequiredDialog コンポーネント
- * Issue#27: パネル・ダイアログ群の移行
+ * Spec#27: パネル・ダイアログ群の移行
  *
  * 未ログイン時に投稿ボタンを押したときに表示されるダイアログ
  */

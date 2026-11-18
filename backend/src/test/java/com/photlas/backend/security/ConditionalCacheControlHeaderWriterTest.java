@@ -10,7 +10,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#127: ConditionalCacheControlHeaderWriter のテスト
+ * Spec#127: ConditionalCacheControlHeaderWriter のテスト
  *
  * パスごとの個別 TTL（60s/300s/3600s）でキャッシュ可能化される対象パス、
  * および対象外（POST, /me, /photos/{id} 等）が従来どおり no-cache に
@@ -31,7 +31,7 @@ class ConditionalCacheControlHeaderWriterTest {
     // ============================================================
 
     @Test
-    @DisplayName("Issue#127 (a) - GET /api/v1/spots は max-age=60 でキャッシュ可能化（Pragma/Expires は空に上書き）")
+    @DisplayName("Spec#127 (a) - GET /api/v1/spots は max-age=60 でキャッシュ可能化（Pragma/Expires は空に上書き）")
     void spotsGet200ShouldBeCacheable60() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/spots", 200);
 
@@ -41,7 +41,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (b) - GET /api/v1/categories は max-age=300 でキャッシュ可能化")
+    @DisplayName("Spec#127 (b) - GET /api/v1/categories は max-age=300 でキャッシュ可能化")
     void categoriesGet200ShouldBeCacheable300() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/categories", 200);
 
@@ -51,7 +51,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (c) - GET /api/v1/ogp/photo/{id} は max-age=300 でキャッシュ可能化")
+    @DisplayName("Spec#127 (c) - GET /api/v1/ogp/photo/{id} は max-age=300 でキャッシュ可能化")
     void ogpPhotoGet200ShouldBeCacheable300() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/ogp/photo/123", 200);
 
@@ -61,7 +61,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (d) - GET /api/v1/sitemap.xml は max-age=3600 でキャッシュ可能化")
+    @DisplayName("Spec#127 (d) - GET /api/v1/sitemap.xml は max-age=3600 でキャッシュ可能化")
     void sitemapIndexGet200ShouldBeCacheable3600() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/sitemap.xml", 200);
 
@@ -71,7 +71,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (e) - GET /api/v1/sitemap-static.xml は max-age=3600 でキャッシュ可能化")
+    @DisplayName("Spec#127 (e) - GET /api/v1/sitemap-static.xml は max-age=3600 でキャッシュ可能化")
     void sitemapStaticGet200ShouldBeCacheable3600() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/sitemap-static.xml", 200);
 
@@ -79,7 +79,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (f) - GET /api/v1/sitemap-photos-{n}.xml は max-age=3600 でキャッシュ可能化")
+    @DisplayName("Spec#127 (f) - GET /api/v1/sitemap-photos-{n}.xml は max-age=3600 でキャッシュ可能化")
     void sitemapPhotosGet200ShouldBeCacheable3600() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/sitemap-photos-0.xml", 200);
 
@@ -98,7 +98,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (g) - GET /api/v1/users/{userId} は max-age=60 でキャッシュ可能化")
+    @DisplayName("Spec#127 (g) - GET /api/v1/users/{userId} は max-age=60 でキャッシュ可能化")
     void usersByIdGet200ShouldBeCacheable60() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/users/123", 200);
 
@@ -106,7 +106,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (h) - GET /api/v1/users/{userId}/photos は max-age=60 でキャッシュ可能化")
+    @DisplayName("Spec#127 (h) - GET /api/v1/users/{userId}/photos は max-age=60 でキャッシュ可能化")
     void usersByIdPhotosGet200ShouldBeCacheable60() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/users/123/photos", 200);
 
@@ -114,7 +114,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §9 - GET /tags/{slug} (SSR ランディング) は max-age=300 でキャッシュ可能化")
+    @DisplayName("Spec#136 §9 - GET /tags/{slug} (SSR ランディング) は max-age=300 でキャッシュ可能化")
     void tagPageGet200ShouldBeCacheable300() throws Exception {
         MockHttpServletResponse res = invokeForGet("/tags/cherry-blossom", 200);
 
@@ -124,7 +124,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#58 §6 - GET /photo-viewer/{id} (OGP/SPA) は max-age=300 でキャッシュ可能化")
+    @DisplayName("Spec#58 §6 - GET /photo-viewer/{id} (OGP/SPA) は max-age=300 でキャッシュ可能化")
     void photoViewerGet200ShouldBeCacheable300() throws Exception {
         MockHttpServletResponse res = invokeForGet("/photo-viewer/123", 200);
 
@@ -138,7 +138,7 @@ class ConditionalCacheControlHeaderWriterTest {
     // ============================================================
 
     @Test
-    @DisplayName("Issue#127 (i) - 対象パスで 4xx エラーになっても Cache-Control は max-age=60（forward direction で status 不明のため設定済み）")
+    @DisplayName("Spec#127 (i) - 対象パスで 4xx エラーになっても Cache-Control は max-age=60（forward direction で status 不明のため設定済み）")
     void spotsGet400StillCacheable() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/spots", 400);
 
@@ -150,7 +150,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (j) - 対象パスでも GET 以外（POST 等）は Spring Security デフォルトのまま")
+    @DisplayName("Spec#127 (j) - 対象パスでも GET 以外（POST 等）は Spring Security デフォルトのまま")
     void spotsPostShouldRemainNoCache() throws Exception {
         MockHttpServletRequest req = buildRequest("POST", "/api/v1/spots/photos");
         MockHttpServletResponse res = new MockHttpServletResponse();
@@ -161,7 +161,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (k) - 対象外パス /api/v1/photos/{id} は Spring Security デフォルトのまま")
+    @DisplayName("Spec#127 (k) - 対象外パス /api/v1/photos/{id} は Spring Security デフォルトのまま")
     void photosByIdShouldNotBeCacheable() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/photos/123", 200);
 
@@ -170,7 +170,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (l) - /api/v1/users/me は \\d+ にマッチせず no-cache のまま（個人情報のため意図的除外）")
+    @DisplayName("Spec#127 (l) - /api/v1/users/me は \\d+ にマッチせず no-cache のまま（個人情報のため意図的除外）")
     void usersMeShouldNotBeCacheable() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/users/me", 200);
 
@@ -179,7 +179,7 @@ class ConditionalCacheControlHeaderWriterTest {
     }
 
     @Test
-    @DisplayName("Issue#127 (m) - /api/v1/users/me/photos も同様に no-cache のまま")
+    @DisplayName("Spec#127 (m) - /api/v1/users/me/photos も同様に no-cache のまま")
     void usersMePhotosShouldNotBeCacheable() throws Exception {
         MockHttpServletResponse res = invokeForGet("/api/v1/users/me/photos", 200);
 
@@ -192,7 +192,7 @@ class ConditionalCacheControlHeaderWriterTest {
     // ============================================================
 
     @Test
-    @DisplayName("Issue#127 (n) - controller が後から Cache-Control を上書きすればその値が勝つ（forward direction setHeader は replace 仕様）")
+    @DisplayName("Spec#127 (n) - controller が後から Cache-Control を上書きすればその値が勝つ（forward direction setHeader は replace 仕様）")
     void controllerCanOverrideCacheControl() throws Exception {
         MockHttpServletRequest req = buildRequest("GET", "/api/v1/spots");
         MockHttpServletResponse res = new MockHttpServletResponse();

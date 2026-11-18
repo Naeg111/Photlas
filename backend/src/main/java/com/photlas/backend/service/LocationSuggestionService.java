@@ -36,9 +36,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Issue#65: 位置情報修正の指摘サービス
+ * Spec#65: 位置情報修正の指摘サービス
  *
- * <p>Issue#93: 利用者に知らせるエラーは、コード付きの {@link InvalidRequestException} /
+ * <p>Spec#93: 利用者に知らせるエラーは、コード付きの {@link InvalidRequestException} /
  * {@link InvalidStateException} で投げること。コードの無い {@link IllegalArgumentException} は
  * 固定の文言の 400、{@link IllegalStateException} は想定外のエラーとして 500 になる。
  */
@@ -49,7 +49,7 @@ public class LocationSuggestionService {
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
     private static final String ERROR_PHOTO_NOT_FOUND = "写真が見つかりません";
 
-    // Issue#146: 撮影場所指摘の距離制限（SpotRepository の haversine と同じ地球半径を使用）
+    // Spec#146: 撮影場所指摘の距離制限（SpotRepository の haversine と同じ地球半径を使用）
     private static final double EARTH_RADIUS_METERS = 6371000.0;
     /** Spec#169: 「1日あたりの指摘件数」の「1日」の区切りに使うタイムゾーン。 */
     private static final ZoneId JAPAN_ZONE = ZoneId.of("Asia/Tokyo");
@@ -123,7 +123,7 @@ public class LocationSuggestionService {
             throw new InvalidStateException(ErrorCodes.SUGGESTION_ALREADY_SENT, "この写真に対して既に撮影場所の指摘を行っています");
         }
 
-        // Issue#146: 指摘の距離バリデーション（フロントをすり抜けても弾く安全網）。
+        // Spec#146: 指摘の距離バリデーション（フロントをすり抜けても弾く安全網）。
         // 基準点は写真のスポット座標（指摘ダイアログが赤マーカーで表示している座標と一致させる）。
         validateSuggestionDistance(photo, latitude, longitude);
 
@@ -184,7 +184,7 @@ public class LocationSuggestionService {
     }
 
     /**
-     * Issue#113 グループ C: 指摘承認通知メールを送信。失敗時は WARN ログのみ。
+     * Spec#113 グループ C: 指摘承認通知メールを送信。失敗時は WARN ログのみ。
      */
     private void sendAcceptanceNotification(String suggesterEmail, Long photoId, String language) {
         try {
@@ -253,7 +253,7 @@ public class LocationSuggestionService {
             User photoOwner = userRepository.findById(photo.getUserId()).orElse(null);
             if (photoOwner != null) {
                 response.setUsername(photoOwner.getUsername());
-                // Issue#145: 確認画面に投稿者アイコンを表示するため、プロフィール画像URLを返す
+                // Spec#145: 確認画面に投稿者アイコンを表示するため、プロフィール画像URLを返す
                 if (photoOwner.getProfileImageS3Key() != null) {
                     response.setProfileImageUrl(s3Service.generateCdnUrl(photoOwner.getProfileImageS3Key()));
                 }
@@ -296,7 +296,7 @@ public class LocationSuggestionService {
             throw new AccessDeniedException("この指摘をレビューする権限がありません");
         }
 
-        // Issue#54: QUARANTINED/REMOVED写真への操作をブロック
+        // Spec#54: QUARANTINED/REMOVED写真への操作をブロック
         if (Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(photo.getModerationStatus())) {
             throw new InvalidStateException(ErrorCodes.PHOTO_UNDER_REVIEW, "この写真は現在審査中のため操作できません");
         }
@@ -304,7 +304,7 @@ public class LocationSuggestionService {
             throw new InvalidStateException(ErrorCodes.PHOTO_DELETED, "この写真は削除されたため操作できません");
         }
 
-        // Issue#65: 解決済みの指摘への再操作を防止
+        // Spec#65: 解決済みの指摘への再操作を防止
         if (!Integer.valueOf(CodeConstants.SUGGESTION_STATUS_PENDING).equals(suggestion.getStatus())) {
             throw new InvalidStateException(ErrorCodes.SUGGESTION_ALREADY_RESOLVED, "この指摘は既に解決済みです");
         }
@@ -313,7 +313,7 @@ public class LocationSuggestionService {
     }
 
     /**
-     * Issue#146: 指摘地点の距離をバリデーションする。
+     * Spec#146: 指摘地点の距離をバリデーションする。
      *
      * <p>基準点は写真のスポット座標（指摘ダイアログの赤マーカー＝写真の現在位置）。
      * 元の場所から 30m 未満（近すぎ）は全写真で拒否し、GPS 由来写真は 1km 超（離れすぎ）も
@@ -384,7 +384,7 @@ public class LocationSuggestionService {
     }
 
     /**
-     * Issue#113: 撮影場所指摘通知を写真投稿者に送信。
+     * Spec#113: 撮影場所指摘通知を写真投稿者に送信。
      *
      * <p>本メソッドは boolean を返す既存の契約を維持する（呼び出し側が emailSent
      * フラグで再送制御するため、グループ A 化せずに既存設計を維持）。失敗時は
@@ -408,7 +408,7 @@ public class LocationSuggestionService {
     }
 
     /**
-     * Issue#113 グループ C: 指摘拒否通知メールを送信。失敗時は WARN ログのみ。
+     * Spec#113 グループ C: 指摘拒否通知メールを送信。失敗時は WARN ログのみ。
      */
     private void sendRejectionNotification(String suggesterEmail, String language) {
         try {

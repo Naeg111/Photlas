@@ -3,7 +3,7 @@ package com.photlas.backend.util;
 import java.security.SecureRandom;
 
 /**
- * Issue#81 Phase 3 - 仮表示名生成器。
+ * Spec#81 Phase 3 - 仮表示名生成器。
  *
  * OAuth 初回ログイン時、表示名確定画面までの中継値として仮名を生成する。
  * フォーマット: `user_` + 7 文字の英数字ランダム列（合計 12 文字、User.username の最大長と一致）。

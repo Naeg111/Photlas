@@ -1,4 +1,4 @@
-# Issue#117: メンテナンスモード関連スクリプトの共通定義
+# Spec#117: メンテナンスモード関連スクリプトの共通定義
 #
 # scripts/setup-maintenance-function.sh / maintenance-on.sh /
 # maintenance-off.sh / maintenance-status.sh から source される。

@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Issue#54: 通報サービス
+ * Spec#54: 通報サービス
  */
 @Service
 public class ReportService {
@@ -62,19 +62,19 @@ public class ReportService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
 
-        // Issue#54: 公開中の写真のみ通報可能
+        // Spec#54: 公開中の写真のみ通報可能
         if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
             throw new InvalidStateException(ErrorCodes.PHOTO_NOT_PUBLIC, "公開中の写真のみ通報できます");
         }
 
-        // Issue#54: 自分の投稿は通報できない
+        // Spec#54: 自分の投稿は通報できない
         if (photo.getUserId().equals(userId)) {
             throw new SelfReportException("自分の投稿を通報することはできません");
         }
 
         Report savedReport = saveReport(userId, CodeConstants.TARGET_TYPE_PHOTO, photoId, request);
 
-        // Issue#54: 通報件数が閾値に達したらQUARANTINEDに変更
+        // Spec#54: 通報件数が閾値に達したらQUARANTINEDに変更
         long reportCount = reportRepository.countByTargetTypeAndTargetId(
                 CodeConstants.TARGET_TYPE_PHOTO, photoId);
         if (reportCount >= QUARANTINE_THRESHOLD
@@ -92,7 +92,7 @@ public class ReportService {
     }
 
     /**
-     * Issue#54: プロフィールを通報する
+     * Spec#54: プロフィールを通報する
      *
      * @param targetUserId 通報対象ユーザーID
      * @param request 通報リクエスト

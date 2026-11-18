@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { SplashScreen } from './SplashScreen'
 
 /**
- * Issue#85: スプラッシュ画面のデザインリニューアル（ドロップバウンスアニメーション）
+ * Spec#85: スプラッシュ画面のデザインリニューアル（ドロップバウンスアニメーション）
  *
  * UI要件:
  * - アイコン（ピンとカメラ）のみを画面中央に配置

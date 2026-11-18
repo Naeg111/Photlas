@@ -6,7 +6,7 @@ import ReviewLocationPage from './ReviewLocationPage'
 import i18n from '../i18n'
 
 /**
- * Issue#65, Issue#54: ReviewLocationPage のテスト
+ * Spec#65, Spec#54: ReviewLocationPage のテスト
  *
  * 要件:
  * - トークンなしでアクセスするとエラー表示
@@ -18,7 +18,7 @@ import i18n from '../i18n'
  */
 
 // react-map-glのモック
-// Issue#145: language と initialViewState.bounds を data 属性で公開し、
+// Spec#145: language と initialViewState.bounds を data 属性で公開し、
 // 言語切替・自動フィットの assert を可能にする。
 vi.mock('react-map-gl', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -122,14 +122,14 @@ describe('ReviewLocationPage', () => {
     expect(screen.getByText('無効なリンクです')).toBeInTheDocument()
   })
 
-  // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+  // Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
   const resolvedError = () => ({
     ok: false,
     status: 400,
     json: async () => ({ code: 'SUGGESTION_ALREADY_RESOLVED', message: 'この指摘は既に解決済みです' }),
   })
 
-  it('Issue#93 - レビュー情報の取得に失敗したらエラーコードに応じたメッセージを出す', async () => {
+  it('Spec#93 - レビュー情報の取得に失敗したらエラーコードに応じたメッセージを出す', async () => {
     mockFetch.mockResolvedValue(resolvedError())
 
     renderWithToken('valid-token')
@@ -138,7 +138,7 @@ describe('ReviewLocationPage', () => {
     expect(screen.queryByText('この指摘は既に解決済みです')).not.toBeInTheDocument()
   })
 
-  it('Issue#93 - 英語の設定ではレビュー情報の取得エラーが英語で表示される', async () => {
+  it('Spec#93 - 英語の設定ではレビュー情報の取得エラーが英語で表示される', async () => {
     mockFetch.mockResolvedValue(resolvedError())
     await i18n.changeLanguage('en')
     try {
@@ -153,7 +153,7 @@ describe('ReviewLocationPage', () => {
     }
   })
 
-  it('Issue#93 - コードが無い取得エラーは汎用のメッセージを出す', async () => {
+  it('Spec#93 - コードが無い取得エラーは汎用のメッセージを出す', async () => {
     mockFetch.mockResolvedValue({
       ok: false,
       status: 500,
@@ -379,7 +379,7 @@ describe('ReviewLocationPage', () => {
     })
   })
 
-  // Issue#96 PR2c: 429 レート制限ハンドリング（パターンA: インラインメッセージ + ボタンcooldown）
+  // Spec#96 PR2c: 429 レート制限ハンドリング（パターンA: インラインメッセージ + ボタンcooldown）
   describe('Rate Limit (429) - レート制限', () => {
     it('handleAction で 429 を受信したらインライン rate-limit メッセージが表示される', async () => {
       mockFetch
@@ -425,9 +425,9 @@ describe('ReviewLocationPage', () => {
   })
 
   // ============================================================
-  // Issue#145: 確認画面 UI 改修
+  // Spec#145: 確認画面 UI 改修
   // ============================================================
-  describe('Issue#145 - 確認画面 UI 改修', () => {
+  describe('Spec#145 - 確認画面 UI 改修', () => {
     const loadReview = async () => {
       mockFetch.mockResolvedValue({ ok: true, json: async () => mockReviewData })
       renderWithToken('valid-token')

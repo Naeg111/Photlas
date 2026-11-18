@@ -85,13 +85,13 @@ public class AuthControllerTest {
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
-        // Issue#23: レート制限キャッシュをクリアしてテスト間の干渉を防ぐ
+        // Spec#23: レート制限キャッシュをクリアしてテスト間の干渉を防ぐ
         rateLimitFilter.clearCache();
     }
 
     /**
      * RegisterRequestオブジェクトを生成するヘルパーメソッド
-     * Issue#109: 同意・年齢確認フィールドはデフォルトで true として設定する
+     * Spec#109: 同意・年齢確認フィールドはデフォルトで true として設定する
      */
     private RegisterRequest createRegisterRequest(String username, String email, String password) {
         RegisterRequest request = new RegisterRequest();
@@ -244,7 +244,7 @@ public class AuthControllerTest {
                 .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_PASSWORD)));
     }
 
-    // Issue#21: パスワードバリデーション統一 - 記号禁止チェック
+    // Spec#21: パスワードバリデーション統一 - 記号禁止チェック
     @Test
     @DisplayName("バリデーションエラー - password記号禁止")
     void testRegisterUser_PasswordWithSpecialCharacters_ReturnsBadRequest() throws Exception {
@@ -258,7 +258,7 @@ public class AuthControllerTest {
                 .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_PASSWORD)));
     }
 
-    // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
+    // Spec#21: パスワードバリデーション統一 - 最大文字数チェック
     @Test
     @DisplayName("バリデーションエラー - password最大文字数超過")
     void testRegisterUser_PasswordTooLong_ReturnsBadRequest() throws Exception {
@@ -323,10 +323,10 @@ public class AuthControllerTest {
                 .andExpect(jsonPath(JSON_PATH_ERROR_FIELD, is(FIELD_PASSWORD)));
     }
 
-    // ===== Issue#91: Accept-Languageによる言語設定 =====
+    // ===== Spec#91: Accept-Languageによる言語設定 =====
 
     @Test
-    @DisplayName("Issue#91 - 登録: Accept-Language が en-US の場合、language に en が保存される")
+    @DisplayName("Spec#91 - 登録: Accept-Language が en-US の場合、language に en が保存される")
     void testRegister_AcceptLanguageEn_SetsLanguageEn() throws Exception {
         RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
 
@@ -341,7 +341,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#91 - 登録: Accept-Language が ja の場合、language に ja が保存される")
+    @DisplayName("Spec#91 - 登録: Accept-Language が ja の場合、language に ja が保存される")
     void testRegister_AcceptLanguageJa_SetsLanguageJa() throws Exception {
         RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
 
@@ -356,7 +356,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#91 - 登録: Accept-Language ヘッダーなしの場合、language に ja がデフォルト設定される")
+    @DisplayName("Spec#91 - 登録: Accept-Language ヘッダーなしの場合、language に ja がデフォルト設定される")
     void testRegister_NoAcceptLanguage_DefaultsToJa() throws Exception {
         RegisterRequest request = createRegisterRequest(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
 
@@ -404,11 +404,11 @@ public class AuthControllerTest {
         assertThat(savedUser.getLanguage()).isEqualTo("zh-TW");
     }
 
-    // ===== Issue#109: 同意・年齢確認フィールドの検証 =====
+    // ===== Spec#109: 同意・年齢確認フィールドの検証 =====
 
     /**
      * 同意・年齢確認フィールドを含むリクエストボディの JSON を生成する。
-     * Issue#109 で追加された RegisterRequest の新フィールドの検証用。
+     * Spec#109 で追加された RegisterRequest の新フィールドの検証用。
      */
     private String createRegisterRequestJson(String username, String email, String password,
                                               boolean agreedToTerms, boolean agreedToPrivacy,
@@ -424,7 +424,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#109 - ageConfirmed が false の場合 400 エラーが返ること")
+    @DisplayName("Spec#109 - ageConfirmed が false の場合 400 エラーが返ること")
     void testRegisterUser_AgeNotConfirmed_ReturnsBadRequest() throws Exception {
         String body = createRegisterRequestJson(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD,
                 true, true, false);
@@ -438,7 +438,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#109 - agreedToTerms が false の場合 400 エラーが返ること")
+    @DisplayName("Spec#109 - agreedToTerms が false の場合 400 エラーが返ること")
     void testRegisterUser_TermsNotAgreed_ReturnsBadRequest() throws Exception {
         String body = createRegisterRequestJson(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD,
                 false, true, true);
@@ -452,7 +452,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#109 - agreedToPrivacy が false の場合 400 エラーが返ること")
+    @DisplayName("Spec#109 - agreedToPrivacy が false の場合 400 エラーが返ること")
     void testRegisterUser_PrivacyNotAgreed_ReturnsBadRequest() throws Exception {
         String body = createRegisterRequestJson(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD,
                 true, false, true);
@@ -466,7 +466,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#109 - 3 つとも true の場合、age_confirmed_at が記録されること")
+    @DisplayName("Spec#109 - 3 つとも true の場合、age_confirmed_at が記録されること")
     void testRegisterUser_AllAgreementsTrue_RecordsAgeConfirmedAt() throws Exception {
         String body = createRegisterRequestJson(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD,
                 true, true, true);
@@ -482,10 +482,10 @@ public class AuthControllerTest {
         assertThat(savedUser.getPrivacyPolicyAgreedAt()).isNotNull();
     }
 
-    // ===== Issue#54: アカウント停止テスト =====
+    // ===== Spec#54: アカウント停止テスト =====
 
     @Test
-    @DisplayName("Issue#54 - 永久停止アカウントのログインが403で拒否される")
+    @DisplayName("Spec#54 - 永久停止アカウントのログインが403で拒否される")
     void testLogin_SuspendedAccount_ReturnsForbidden() throws Exception {
         // Given: 永久停止アカウントを作成
         User suspendedUser = new User();

@@ -5,8 +5,8 @@ import com.photlas.backend.validation.PasswordMatch;
 import jakarta.validation.constraints.*;
 
 /**
- * Issue#20: アカウント設定機能 - パスワード変更リクエスト
- * Issue#21: パスワードバリデーション統一
+ * Spec#20: アカウント設定機能 - パスワード変更リクエスト
+ * Spec#21: パスワードバリデーション統一
  */
 @PasswordMatch(passwordField = "newPassword", confirmField = "newPasswordConfirm")
 public class UpdatePasswordRequest {
@@ -18,7 +18,7 @@ public class UpdatePasswordRequest {
     @JsonProperty("new_password")
     @NotNull(message = "新しいパスワードは必須です")
     @Size(min = 8, max = 20, message = "パスワードは8文字以上20文字以内で入力してください")
-    // Issue#21: パスワードバリデーション統一 - 記号禁止、英数字のみ
+    // Spec#21: パスワードバリデーション統一 - 記号禁止、英数字のみ
     @Pattern(
         regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]+$",
         message = "パスワードには数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません"

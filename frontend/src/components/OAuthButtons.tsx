@@ -6,8 +6,8 @@ import { GoogleIcon } from './icons/GoogleIcon'
 import { LineIcon } from './icons/LineIcon'
 
 /**
- * Issue#81 Phase 5b - Google / LINE 認証ボタン。
- * Issue#104 で variant プロパティを削除し、ラベルを「〇〇で続ける」に統一。
+ * Spec#81 Phase 5b - Google / LINE 認証ボタン。
+ * Spec#104 で variant プロパティを削除し、ラベルを「〇〇で続ける」に統一。
  *
  * <p>Phase 8a (Q4) 以降の仕様（継続）:
  * - {@code enabled=false}（OAuth 環境無効）でもボタンは表示し、{@code disabled} 状態にする。

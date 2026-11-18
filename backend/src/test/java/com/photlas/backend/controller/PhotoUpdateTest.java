@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Issue#61: 写真メタデータ編集機能のテスト
+ * Spec#61: 写真メタデータ編集機能のテスト
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -145,7 +145,7 @@ public class PhotoUpdateTest {
     }
 
     @Test
-    @DisplayName("Issue#61 - 天気・場所名を更新すると200が返る")
+    @DisplayName("Spec#61 - 天気・場所名を更新すると200が返る")
     void updatePhoto_success_returns200() throws Exception {
         Photo photo = createPhoto("uploads/1/test.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
@@ -163,7 +163,7 @@ public class PhotoUpdateTest {
     }
 
     @Test
-    @DisplayName("Issue#61 - 天気のみ変更時はmoderation_statusが変わらない")
+    @DisplayName("Spec#61 - 天気のみ変更時はmoderation_statusが変わらない")
     void updatePhoto_weatherChanged_statusUnchanged() throws Exception {
         Photo photo = createPhoto("uploads/1/test3.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
@@ -183,7 +183,7 @@ public class PhotoUpdateTest {
     }
 
     @Test
-    @DisplayName("Issue#61 - 非オーナーが編集しようとすると403が返る")
+    @DisplayName("Spec#61 - 非オーナーが編集しようとすると403が返る")
     void updatePhoto_nonOwner_returns403() throws Exception {
         Photo photo = createPhoto("uploads/1/test4.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
@@ -198,7 +198,7 @@ public class PhotoUpdateTest {
     }
 
     @Test
-    @DisplayName("Issue#61 - 存在しない写真を編集しようとすると404が返る")
+    @DisplayName("Spec#61 - 存在しない写真を編集しようとすると404が返る")
     void updatePhoto_notFound_returns404() throws Exception {
         Map<String, Object> request = Map.of("weather", CodeConstants.WEATHER_SUNNY);
 
@@ -211,7 +211,7 @@ public class PhotoUpdateTest {
     }
 
     @Test
-    @DisplayName("Issue#61 - REMOVEDの写真を編集しようとすると404が返る")
+    @DisplayName("Spec#61 - REMOVEDの写真を編集しようとすると404が返る")
     void updatePhoto_removed_returns404() throws Exception {
         Photo photo = createPhoto("uploads/1/test5.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
 
@@ -226,7 +226,7 @@ public class PhotoUpdateTest {
     }
 
     @Test
-    @DisplayName("Issue#61 - 未認証ユーザーが編集しようとすると401が返る")
+    @DisplayName("Spec#61 - 未認証ユーザーが編集しようとすると401が返る")
     void updatePhoto_unauthenticated_returns401() throws Exception {
         Photo photo = createPhoto("uploads/1/test6.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 

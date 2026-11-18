@@ -16,9 +16,9 @@ import {
 } from '../utils/geoDistance'
 
 /**
- * Issue#65: 位置情報修正の指摘ダイアログ
- * Issue#76: 固定ピン方式に変更
- * Issue#146: 距離バリデーション（30m 下限・GPS 写真は 1km 上限）を追加
+ * Spec#65: 位置情報修正の指摘ダイアログ
+ * Spec#76: 固定ピン方式に変更
+ * Spec#146: 距離バリデーション（30m 下限・GPS 写真は 1km 上限）を追加
  */
 
 interface LocationSuggestionDialogProps {
@@ -27,7 +27,7 @@ interface LocationSuggestionDialogProps {
   photoId: number
   currentLatitude: number
   currentLongitude: number
-  /** Issue#146: 写真が GPS 由来かどうか。true の場合は上限 1km を適用する */
+  /** Spec#146: 写真が GPS 由来かどうか。true の場合は上限 1km を適用する */
   locationFromExif?: boolean
   onSubmit?: (latitude: number, longitude: number) => void | Promise<void>
 }
@@ -50,7 +50,7 @@ export function LocationSuggestionDialog({
     setSuggestedLng(position.lng)
   }, [])
 
-  // Issue#146: 「元の撮影場所」から指摘地点までの距離で送信可否を判定する
+  // Spec#146: 「元の撮影場所」から指摘地点までの距離で送信可否を判定する
   const distance = (suggestedLat !== null && suggestedLng !== null)
     ? geoDistance(currentLatitude, currentLongitude, suggestedLat, suggestedLng)
     : null

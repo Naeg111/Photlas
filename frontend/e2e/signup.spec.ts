@@ -191,7 +191,7 @@ test.describe('アカウント作成フロー E2Eテスト', () => {
       })
 
       test('表示名の先頭が数字の場合、サーバーの入力チェックのエラーが赤い文字で表示される', async ({ page }) => {
-        // 先頭の文字の確認はサーバーだけが行う（Issue#98）。サーバーのエラーが表示名の欄に出ることを確かめる
+        // 先頭の文字の確認はサーバーだけが行う（Spec#98）。サーバーのエラーが表示名の欄に出ることを確かめる
         await openSignUpPage(page)
 
         await fillValidForm(page, { displayName: '123456789012', email: generateUniqueEmail('signup-name-digit') })

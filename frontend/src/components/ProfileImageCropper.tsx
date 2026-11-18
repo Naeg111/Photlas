@@ -22,7 +22,7 @@ interface ProfileImageCropperProps {
 
 /**
  * 画像をcanvasでトリミング・リサイズ処理
- * Issue#35: プロフィール画像トリミング機能
+ * Spec#35: プロフィール画像トリミング機能
  */
 const createCroppedImage = async (
   imageSrc: string,
@@ -81,7 +81,7 @@ const createCroppedImage = async (
 
 /**
  * プロフィール画像トリミングコンポーネント
- * Issue#35: 1:1アスペクト比でのトリミング機能を提供
+ * Spec#35: 1:1アスペクト比でのトリミング機能を提供
  */
 const ProfileImageCropper: React.FC<ProfileImageCropperProps> = ({
   imageSrc,

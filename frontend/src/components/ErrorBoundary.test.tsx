@@ -86,7 +86,7 @@ describe('ErrorBoundary', () => {
     consoleSpy.mockRestore()
   })
 
-  describe('Issue#130 - ChunkLoadError 自動リロード', () => {
+  describe('Spec#130 - ChunkLoadError 自動リロード', () => {
     let reloadMock: ReturnType<typeof vi.fn>
     let setItemMock: ReturnType<typeof vi.fn>
     let getItemMock: ReturnType<typeof vi.fn>
@@ -197,7 +197,7 @@ describe('ErrorBoundary', () => {
     })
   })
 
-  describe('Issue#130 - isChunkLoadError ヘルパー', () => {
+  describe('Spec#130 - isChunkLoadError ヘルパー', () => {
     it('name が ChunkLoadError ならば true', () => {
       const error = new Error('any message')
       error.name = 'ChunkLoadError'

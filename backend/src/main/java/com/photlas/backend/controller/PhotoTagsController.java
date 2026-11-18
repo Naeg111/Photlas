@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Issue#135: 写真ごとのキーワード取得 API。
+ * Spec#135: 写真ごとのキーワード取得 API。
  *
  * <p>写真詳細ページとキーワードランディングページの内部リンクのため、
  * 認証不要 (SecurityConfig で permitAll)。</p>

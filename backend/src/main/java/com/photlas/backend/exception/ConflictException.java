@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import java.util.Objects;
 
 /**
- * Issue#19: 競合エラー（409 Conflict）を表す例外
+ * Spec#19: 競合エラー（409 Conflict）を表す例外
  *
- * <p>Issue#93: 409 は意味の違う複数の場面で使われるため、エラーコード（{@link ErrorCodes}）を必ず持たせる。
+ * <p>Spec#93: 409 は意味の違う複数の場面で使われるため、エラーコード（{@link ErrorCodes}）を必ず持たせる。
  */
 @ResponseStatus(HttpStatus.CONFLICT)
 public class ConflictException extends RuntimeException implements CodedException {

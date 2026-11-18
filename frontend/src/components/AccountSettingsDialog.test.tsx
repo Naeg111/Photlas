@@ -6,8 +6,8 @@ import i18n from '../i18n'
 import { toast } from 'sonner'
 
 /**
- * Issue#20: アカウント設定機能 - AccountSettingsDialog テスト
- * Issue#38: 認証トークン不具合修正
+ * Spec#20: アカウント設定機能 - AccountSettingsDialog テスト
+ * Spec#38: 認証トークン不具合修正
  *
  * テスト対象:
  * - メールアドレス変更機能
@@ -178,7 +178,7 @@ vi.mock('sonner', () => ({
   },
 }))
 
-// Issue#38: AuthContext のモック
+// Spec#38: AuthContext のモック
 const mockGetAuthToken = vi.fn()
 const mockLogout = vi.fn()
 vi.mock('../contexts/AuthContext', () => ({
@@ -213,7 +213,7 @@ describe('AccountSettingsDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockNavigate.mockClear()
-    // Issue#38: AuthContextからトークンを取得するようモック設定
+    // Spec#38: AuthContextからトークンを取得するようモック設定
     mockGetAuthToken.mockReturnValue(MOCK_TOKEN)
 
     // localStorage のモック
@@ -341,7 +341,7 @@ describe('AccountSettingsDialog', () => {
       expect(screen.getByLabelText(LABEL_NEW_PASSWORD_CONFIRM)).toHaveAttribute('maxLength', '20')
     })
 
-    it('Issue#108 - データエクスポートのパスワード入力の maxLength 属性が 20 である', () => {
+    it('Spec#108 - データエクスポートのパスワード入力の maxLength 属性が 20 である', () => {
       render(
         <MockedAccountSettingsDialog
           open={true}
@@ -371,8 +371,8 @@ describe('AccountSettingsDialog', () => {
     })
   })
 
-  // Issue#38: AuthContextからトークン取得のテスト
-  describe('Token Authentication (Issue#38)', () => {
+  // Spec#38: AuthContextからトークン取得のテスト
+  describe('Token Authentication (Spec#38)', () => {
     it('uses getAuthToken from AuthContext for email change', async () => {
       mockFetch.mockResolvedValueOnce(
         createMockFetchResponse(true, 200, { email: NEW_EMAIL })
@@ -579,14 +579,14 @@ describe('AccountSettingsDialog', () => {
       })
     })
 
-    // Issue#93: 400 は入力チェックエラー。バックエンドの message（日本語固定）は出さない
+    // Spec#93: 400 は入力チェックエラー。バックエンドの message（日本語固定）は出さない
     const validationError = () =>
       createMockFetchResponse(false, 400, {
         code: 'VALIDATION_ERROR',
         message: '入力内容が無効です。',
       })
 
-    it('Issue#93 - 400 のときはパスワードの形式エラーを出し、サーバーの日本語メッセージは出さない', async () => {
+    it('Spec#93 - 400 のときはパスワードの形式エラーを出し、サーバーの日本語メッセージは出さない', async () => {
       mockFetch.mockResolvedValueOnce(validationError())
 
       render(
@@ -609,7 +609,7 @@ describe('AccountSettingsDialog', () => {
       expect(toast.error).not.toHaveBeenCalledWith('入力内容が無効です。')
     })
 
-    it('Issue#93 - 英語の設定では 400 のエラーが英語で表示される', async () => {
+    it('Spec#93 - 英語の設定では 400 のエラーが英語で表示される', async () => {
       mockFetch.mockResolvedValueOnce(validationError())
       await i18n.changeLanguage('en')
       try {
@@ -635,7 +635,7 @@ describe('AccountSettingsDialog', () => {
       }
     })
 
-    // Issue#21: パスワードバリデーション統一 - 記号禁止チェック
+    // Spec#21: パスワードバリデーション統一 - 記号禁止チェック
     it('shows error when new password contains special characters', async () => {
       render(
         <MockedAccountSettingsDialog
@@ -659,7 +659,7 @@ describe('AccountSettingsDialog', () => {
       expectNoFetchCall()
     })
 
-    // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
+    // Spec#21: パスワードバリデーション統一 - 最大文字数チェック
     it('shows error when new password is longer than 20 characters', async () => {
       render(
         <MockedAccountSettingsDialog
@@ -728,7 +728,7 @@ describe('AccountSettingsDialog', () => {
         })
       })
 
-      // Issue#72: 退会完了メッセージが表示される
+      // Spec#72: 退会完了メッセージが表示される
       await waitFor(() => {
         expect(screen.getByText(/アカウントの削除を受け付けました/)).toBeInTheDocument()
         expect(screen.getByText(/90日後にすべてのデータが完全に削除されます/)).toBeInTheDocument()

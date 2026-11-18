@@ -9,10 +9,10 @@ import App from './App.tsx'
 
 initSentry()
 
-// Issue#129: SW 登録は vite-plugin-pwa の injectRegister: 'auto' が
+// Spec#129: SW 登録は vite-plugin-pwa の injectRegister: 'auto' が
 // ビルド時に index.html へ自動注入するため、ここでの手動登録は不要
 
-// Issue#130: i18n を非同期初期化（初期言語の翻訳 JSON だけを動的 import）してから render
+// Spec#130: i18n を非同期初期化（初期言語の翻訳 JSON だけを動的 import）してから render
 initI18n().then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Issue#54: 管理者モデレーションコントローラー
+ * Spec#54: 管理者モデレーションコントローラー
  * 管理者権限を持つユーザーのみアクセス可能
  */
 @RestController
@@ -85,7 +85,7 @@ public class AdminModerationController {
         // Spec#169: UTC（末尾 Z）で返す。オフセットなしだとブラウザが現地時刻とみなして 9 時間ずれるため
         String createdAt = ServerTime.toUtcIsoString(photo.getCreatedAt());
 
-        // Issue#54: 通報情報を取得
+        // Spec#54: 通報情報を取得
         List<Report> reports = reportRepository.findByTargetTypeAndTargetId(
                 CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId());
         int reportCount = reports.size();

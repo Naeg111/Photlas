@@ -135,7 +135,7 @@ export function PrivacyContentEn() {
           <li>Responding to violations of the Terms of Service</li>
           <li>Advertising, promotion, and marketing of the Service (using posted data)</li>
           <li>Responding to user inquiries</li>
-          {/* Issue#106: Country detection from IP address */}
+          {/* Spec#106: Country detection from IP address */}
           <li>Determining the user&apos;s country from their IP address to optimize the map&apos;s initial display location (the IP address is not stored on the server and is used only for conversion to a country code)</li>
           <li>Purposes incidental to the above</li>
         </ul>
@@ -159,7 +159,7 @@ export function PrivacyContentEn() {
       <section>
         <h2 className="mb-3">Article 6 (Third-Party Disclosure and External Services)</h2>
         <p className="text-sm text-gray-700 mb-2">
-          {/* Issue#105: Do Not Sell declaration */}
+          {/* Spec#105: Do Not Sell declaration */}
           The Operator does not sell users&apos; personal information to third parties.
         </p>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
@@ -208,7 +208,7 @@ export function PrivacyContentEn() {
                 occur (only a portion of all errors). Please refer to{' '}
                 <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Sentry&apos;s Privacy Policy</a>{' '}.
               </li>
-              {/* Issue#106: MaxMind GeoLite2 (IP-based country detection) */}
+              {/* Spec#106: MaxMind GeoLite2 (IP-based country detection) */}
               <li>
                 <span className="font-semibold">MaxMind GeoLite2</span>: Used to determine the user&apos;s country from their IP address in order to optimize the map&apos;s initial display location. The detection is performed on the server, and the IP address is used only for conversion to a country code and is not stored. This product includes GeoLite2 data created by MaxMind, available from{' '}
                 <a href="https://www.maxmind.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">https://www.maxmind.com</a>
@@ -295,7 +295,7 @@ export function PrivacyContentEn() {
         </ol>
       </section>
 
-      {/* Issue#119: AI image analysis for category/weather auto-detection */}
+      {/* Spec#119: AI image analysis for category/weather auto-detection */}
       <section>
         <h2 className="mb-3">Article 8.2 (Automatic Detection of Categories and Weather)</h2>
         <p className="text-sm text-gray-700">
@@ -383,7 +383,7 @@ export function PrivacyContentEn() {
             Data cannot be recovered after deletion.
           </li>
           <li>
-            {/* Issue#105: 180-day retention for moderated photos */}
+            {/* Spec#105: 180-day retention for moderated photos */}
             Photos and their metadata removed by content moderation are retained for 180 days for re-review and appeal purposes, after which they are permanently deleted.
           </li>
         </ol>
@@ -392,7 +392,7 @@ export function PrivacyContentEn() {
       <section>
         <h2 className="mb-3">Article 12 (Use by Minors)</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-          {/* Issue#105: 13 years minimum age (COPPA aligned) */}
+          {/* Spec#105: 13 years minimum age (COPPA aligned) */}
           <li>
             The Service is intended for users aged <span className="font-semibold">13 years</span> of age or older. Persons under 13 years of age may not use the Service. If the Operator becomes aware that a person under 13 has registered, the Operator will delete the account and related data.
           </li>
@@ -464,7 +464,7 @@ export function PrivacyContentEn() {
       <section>
         <h2 className="mb-3">Article 17 (International Data Transfers)</h2>
         <p className="text-sm text-gray-700 mb-2">
-          {/* Issue#105: International user notice */}
+          {/* Spec#105: International user notice */}
           The Service is provided by an operator based in Japan and is accessible worldwide. Even when accessed from outside Japan, your personal data is transferred to and processed on servers located in Japan.
         </p>
         <p className="text-sm text-gray-700 mb-2">
@@ -478,7 +478,7 @@ export function PrivacyContentEn() {
           These service providers implement appropriate data protection measures in accordance with their respective privacy policies and data processing agreements.
         </p>
         <p className="text-sm text-gray-700 mt-2">
-          {/* Issue#105: Respect rights under user's country of residence */}
+          {/* Spec#105: Respect rights under user's country of residence */}
           If you have additional rights under the law of your country of residence that are not described in this Policy, the Operator will respect those rights and respond in accordance with applicable law.
         </p>
       </section>

@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Issue#108: ユーザーのエクスポート対象データをまとめて収集するサービス。
+ * Spec#108: ユーザーのエクスポート対象データをまとめて収集するサービス。
  *
  * <p>ユーザー向けエクスポート（DataExportService）と管理者向けエクスポート
  * （AdminDeletedUserController#exportData）の両方から利用される。</p>
