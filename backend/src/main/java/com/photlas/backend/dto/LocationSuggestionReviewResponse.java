@@ -3,7 +3,7 @@ package com.photlas.backend.dto;
 import java.math.BigDecimal;
 
 /**
- * Issue#65: レビューページ用レスポンスDTO
+ * Spec#65: レビューページ用レスポンスDTO
  */
 public class LocationSuggestionReviewResponse {
 

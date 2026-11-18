@@ -17,8 +17,8 @@ import { getLastGeolocationCache } from '../utils/lastGeolocationCache'
 
 /**
  * InlineMapPicker コンポーネント
- * Issue#9: 写真投稿時の位置選択用インライン地図ピッカー
- * Issue#53: Google Maps API → Mapbox API 移行（センタリングのみ方式）
+ * Spec#9: 写真投稿時の位置選択用インライン地図ピッカー
+ * Spec#53: Google Maps API → Mapbox API 移行（センタリングのみ方式）
  *
  * 地図をドラッグして中央のピンで位置を選択する
  * 検索候補はMapbox Search Box APIで取得し、コンポーネント内に描画する
@@ -42,7 +42,7 @@ interface MarkerConfig {
 interface InlineMapPickerProps {
   position: { lat: number; lng: number } | null
   onPositionChange: (position: { lat: number; lng: number }) => void
-  /** Issue#158: ユーザーが能動的に選んだ位置のみ通知（検索候補選択・ドラッグ・現在地ボタン）。自動移動（EXIF/自動現在地寄せ）では発火しない */
+  /** Spec#158: ユーザーが能動的に選んだ位置のみ通知（検索候補選択・ドラッグ・現在地ボタン）。自動移動（EXIF/自動現在地寄せ）では発火しない */
   onUserPositionChange?: (position: { lat: number; lng: number }) => void
   /** 固定中央ピンの色（デフォルト: '#ef4444' 赤） */
   pinColor?: string
@@ -66,10 +66,10 @@ interface SearchSuggestion {
 // 地図の初期設定
 export const DEFAULT_CENTER = { lat: 35.6812, lng: 139.7671 } // 東京駅
 const DEFAULT_ZOOM = 15
-// Issue#106: ブラウザ位置情報取得時のズームレベル
+// Spec#106: ブラウザ位置情報取得時のズームレベル
 const GEOLOCATION_ZOOM = 15
 const SEARCH_DEBOUNCE_MS = 300
-/** Issue#158: 目標が現在の表示とほぼ同じ（この距離以内かつズーム差以内）なら何もしない。既存の距離式と同じ度数ユークリッド距離で比較 */
+/** Spec#158: 目標が現在の表示とほぼ同じ（この距離以内かつズーム差以内）なら何もしない。既存の距離式と同じ度数ユークリッド距離で比較 */
 const NEGLIGIBLE_MOVE_DEG = 0.0003
 const NEGLIGIBLE_ZOOM_DIFF = 0.5
 const TRANSITION_FADE_MS = 500
@@ -133,12 +133,12 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
   const { t, i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const mapRef = useRef<MapboxMap | null>(null)
-  // Issue#107: 言語切替時に setLanguage を呼ぶ useEffect の依存対象として、
+  // Spec#107: 言語切替時に setLanguage を呼ぶ useEffect の依存対象として、
   // ref とは別にロード済みの map インスタンスを state でも保持する。
   const [mapForLanguage, setMapForLanguage] = useState<MapboxMap | null>(null)
   const onPositionChangeRef = useRef(onPositionChange)
   onPositionChangeRef.current = onPositionChange
-  // Issue#158: 能動選択（検索・ドラッグ・現在地）のみ通知するコールバックの ref
+  // Spec#158: 能動選択（検索・ドラッグ・現在地）のみ通知するコールバックの ref
   const onUserPositionChangeRef = useRef(onUserPositionChange)
   onUserPositionChangeRef.current = onUserPositionChange
   // moveMapTo呼び出し時のターゲット座標（onMoveEndで正確な座標を返すため）
@@ -255,7 +255,7 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
     }, SEARCH_DEBOUNCE_MS)
   }, [searchBox, geocoding, mapboxLang])
 
-  // Issue#158: 「別の場所へ飛ぶ」移動は距離に関係なく常に暗転ワープに統一する。
+  // Spec#158: 「別の場所へ飛ぶ」移動は距離に関係なく常に暗転ワープに統一する。
   // ただし目標が現在の表示とほぼ同じ（微小移動）なら何もしない（無駄な黒フラッシュを防ぐ）。
   // userInitiated=true（検索候補選択・現在地ボタン）は、カメラが動くかに関わらず「能動選択」として通知する。
   const moveMapTo = useCallback((lng: number, lat: number, zoom: number = DEFAULT_ZOOM, userInitiated = false) => {
@@ -338,7 +338,7 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
     setMapForLanguage(mapInstance)
   }, [])
 
-  // Issue#107: 表示言語に追従して地名ラベルを切り替える
+  // Spec#107: 表示言語に追従して地名ラベルを切り替える
   // （mapRef は依存配列に含められないため、handleLoad で同 map を state にも保持して渡す）
   useMapboxLanguageSync(mapForLanguage, mapboxLang)
 
@@ -371,7 +371,7 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
     }
   }, [])
 
-  // Issue#158: ユーザーのドラッグ操作のみ「能動選択」として通知（プログラム移動〈flyTo/jumpTo〉では発火しない）
+  // Spec#158: ユーザーのドラッグ操作のみ「能動選択」として通知（プログラム移動〈flyTo/jumpTo〉では発火しない）
   const handleDragEnd = useCallback((e: ViewStateChangeEvent) => {
     const center = e.target.getCenter()
     if (center) {
@@ -415,7 +415,7 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
     }
   }, [isDropdownOpen])
 
-  // Issue#106 + Issue#111: position（EXIF座標）がない場合のフォールバック。
+  // Spec#106 + Spec#111: position（EXIF座標）がない場合のフォールバック。
   // 優先順位:
   //   1. position（EXIF座標）
   //   2. lastGeolocationCache（ユーザーの最後の位置情報。MapView が autoCenter / 現在位置ボタンで保存）
@@ -426,7 +426,7 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
   //   ブラウザ位置情報（許可済み）は別 useEffect で取得し、取得できたら map.flyTo で移動する。
   const initialCenter = useMemo(() => {
     if (position) return { center: position, zoom: DEFAULT_ZOOM }
-    // Issue#111: ユーザーの最後の位置情報キャッシュを優先利用
+    // Spec#111: ユーザーの最後の位置情報キャッシュを優先利用
     const lastGeo = getLastGeolocationCache()
     if (lastGeo) {
       return { center: lastGeo, zoom: DEFAULT_ZOOM }
@@ -439,7 +439,7 @@ export function InlineMapPicker({ position, onPositionChange, onUserPositionChan
     return { center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM }
   }, [position])
 
-  // Issue#106: ブラウザ位置情報（許可済み）を取得して、得られたらマップを移動する
+  // Spec#106: ブラウザ位置情報（許可済み）を取得して、得られたらマップを移動する
   useEffect(() => {
     if (position) return // EXIF 座標が指定済みなら何もしない
 

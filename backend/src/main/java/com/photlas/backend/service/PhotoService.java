@@ -67,7 +67,7 @@ public class PhotoService {
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
     private static final String ERROR_SPOT_NOT_FOUND = "スポットが見つかりません";
 
-    /** Issue#119: photo_ai_predictions.model_name の固定値（現状 Rekognition のみ）。 */
+    /** Spec#119: photo_ai_predictions.model_name の固定値（現状 Rekognition のみ）。 */
     private static final String AI_MODEL_NAME = "rekognition-detect-labels";
 
     private final PhotoRepository photoRepository;
@@ -130,7 +130,7 @@ public class PhotoService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
-        // Issue#54: アカウント停止チェック
+        // Spec#54: アカウント停止チェック
         validateAccountNotSuspended(user);
 
         // S3ファイル存在確認
@@ -150,7 +150,7 @@ public class PhotoService {
         LocalDateTime takenAt = LocalDateTime.parse(request.getTakenAt(), DateTimeFormatter.ISO_DATE_TIME);
         Integer weather = request.getWeather();
 
-        // Issue#100: DB 保存の前に元画像のタグを registered に更新する。
+        // Spec#100: DB 保存の前に元画像のタグを registered に更新する。
         // タグ更新が失敗した場合は DB 保存を行わずエラーを返す
         // （ファイルが pending タグのまま残れば、ライフサイクルルールで自動削除される）。
         s3Service.updateObjectTag(
@@ -182,7 +182,7 @@ public class PhotoService {
         photo.setCropCenterX(request.getCropCenterX());
         photo.setCropCenterY(request.getCropCenterY());
         photo.setCropZoom(request.getCropZoom());
-        // Issue#146: 撮影場所が EXIF GPS 由来かどうか（null は false 扱い）
+        // Spec#146: 撮影場所が EXIF GPS 由来かどうか（null は false 扱い）
         photo.setLocationFromExif(Boolean.TRUE.equals(request.getLocationFromExif()));
 
         Photo savedPhoto = photoRepository.save(photo);
@@ -190,7 +190,7 @@ public class PhotoService {
         logger.info("写真を投稿しました: photoId={}, userId={}, spotId={}",
                    savedPhoto.getPhotoId(), user.getId(), spot.getSpotId());
 
-        // Issue#136 §4.4.2: cache を一度だけ取得して両処理で共有
+        // Spec#136 §4.4.2: cache を一度だけ取得して両処理で共有
         // （savePhotoAiPrediction が中で delete してしまうと savePhotoTags が
         //  ai_confidence を引けず、常に NULL になるバグを防ぐ）
         Optional<CachedAnalyzeResult> cached = Optional.empty();
@@ -198,11 +198,11 @@ public class PhotoService {
             cached = aiPredictionCacheService.findValid(request.getAnalyzeToken());
         }
 
-        // Issue#119: photo_ai_predictions 保存（pre-fetched 値を渡す）
+        // Spec#119: photo_ai_predictions 保存（pre-fetched 値を渡す）
         cached.ifPresent(c ->
                 savePhotoAiPrediction(savedPhoto.getPhotoId(), request, categories, c.labelMapping()));
 
-        // Issue#135 + #136: photo_tags 保存（suggestedTags は cache 不在時は空リスト）
+        // Spec#135 + #136: photo_tags 保存（suggestedTags は cache 不在時は空リスト）
         List<TagSuggestion> suggestedTags =
                 cached.map(CachedAnalyzeResult::suggestedTags).orElse(List.of());
         savePhotoTags(savedPhoto.getPhotoId(), request, suggestedTags);
@@ -212,7 +212,7 @@ public class PhotoService {
             aiPredictionCacheService.delete(request.getAnalyzeToken());
         }
 
-        // Issue#100: サムネイルのタグもベストエフォートで registered に更新する。
+        // Spec#100: サムネイルのタグもベストエフォートで registered に更新する。
         // Lambda が先にサムネイルを生成済みであれば即座に追従し、まだ未生成なら本処理は失敗するが
         // その場合は Lambda 側が二重チェック方式で源画像の registered タグをコピーする。
         String thumbnailKey = s3Service.deriveThumbnailKey(request.getS3ObjectKey());
@@ -238,7 +238,7 @@ public class PhotoService {
      * @return 写真の詳細情報
      */
     /**
-     * Issue#122: 写真詳細をバッチ取得する。
+     * Spec#122: 写真詳細をバッチ取得する。
      *
      * 認可されていない写真（モデレーションステータス・退会済みオーナー・存在しない photoId）は
      * silent skip し、認可された写真の詳細だけを返す（best-effort prefetch 用）。
@@ -271,7 +271,7 @@ public class PhotoService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
-        // Issue#54: モデレーションステータスによるアクセス制御
+        // Spec#54: モデレーションステータスによるアクセス制御
         User currentUser = (email != null) ? userRepository.findByEmail(email).orElse(null) : null;
         validatePhotoVisibility(photo, currentUser);
 
@@ -281,7 +281,7 @@ public class PhotoService {
         User user = userRepository.findById(photo.getUserId())
                 .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
-        // Issue#72: 退会済みユーザーの写真は非公開
+        // Spec#72: 退会済みユーザーの写真は非公開
         if (user.getDeletedAt() != null) {
             throw new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND);
         }
@@ -292,7 +292,7 @@ public class PhotoService {
             isFavorited = favoriteRepository.findByUserIdAndPhotoId(currentUser.getId(), photoId).isPresent();
         }
 
-        // Issue#30: お気に入り数を取得
+        // Spec#30: お気に入り数を取得
         long favoriteCount = favoriteRepository.countByPhotoId(photoId);
 
         return buildPhotoDetailResponse(photo, spot, user, isFavorited, favoriteCount);
@@ -315,7 +315,7 @@ public class PhotoService {
             currentUser = userRepository.findByEmail(email).orElse(null);
         }
 
-        // Issue#54: モデレーションステータスによるフィルタリング
+        // Spec#54: モデレーションステータスによるフィルタリング
         Collection<Integer> visibleStatuses = getVisibleStatuses(userId, currentUser);
         Page<Photo> photoPage = photoRepository.findByUserIdAndModerationStatusInOrderByCreatedAtDesc(
                 userId, visibleStatuses, pageable);
@@ -354,7 +354,7 @@ public class PhotoService {
     }
 
     /**
-     * Issue#54: 投稿者本人用に写真を取得する（ポーリング用）
+     * Spec#54: 投稿者本人用に写真を取得する（ポーリング用）
      * 投稿者本人でない場合は例外をスロー
      *
      * @param photoId 写真ID
@@ -375,7 +375,7 @@ public class PhotoService {
     }
 
     /**
-     * Issue#57: ユーザーが自分の写真を削除する（ソフトデリート）
+     * Spec#57: ユーザーが自分の写真を削除する（ソフトデリート）
      *
      * @param photoId 写真ID
      * @param email ログイン中ユーザーのメールアドレス
@@ -411,7 +411,7 @@ public class PhotoService {
     }
 
     /**
-     * Issue#61: 写真メタデータを更新する
+     * Spec#61: 写真メタデータを更新する
      *
      * @param photoId 写真ID
      * @param request 更新リクエスト
@@ -450,7 +450,7 @@ public class PhotoService {
 
         Photo savedPhoto = photoRepository.save(photo);
 
-        // Issue#135 追補（編集対応）: 詳細カテゴリー（キーワード）を置き換える。
+        // Spec#135 追補（編集対応）: 詳細カテゴリー（キーワード）を置き換える。
         // null は「変更なし」、空リストは「全消去」、要素ありは「その内容へ置換」。
         if (request.getTagIds() != null) {
             tagService.replacePhotoTags(photoId, request.getTagIds());
@@ -551,17 +551,17 @@ public class PhotoService {
         photoDTO.setCropCenterY(photo.getCropCenterY());
         photoDTO.setCropZoom(photo.getCropZoom());
 
-        // Issue#54: モデレーションステータスを設定
+        // Spec#54: モデレーションステータスを設定
         if (photo.getModerationStatus() != null) {
             photoDTO.setModerationStatus(photo.getModerationStatus());
         }
 
-        // Issue#59: サムネイルURLを設定（ブロック時は黒色画像）
+        // Spec#59: サムネイルURLを設定（ブロック時は黒色画像）
         photoDTO.setThumbnailUrl(isBlocked
                 ? s3Service.generateCdnUrl(CodeConstants.BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey()));
 
-        // Issue#125: LQIP（低品質プレースホルダー）を設定。ブロック時は null（実画像漏れ防止）
+        // Spec#125: LQIP（低品質プレースホルダー）を設定。ブロック時は null（実画像漏れ防止）
         if (!isBlocked) {
             photoDTO.setLqipDataUrl(photo.getLqipDataUrl());
         }
@@ -597,7 +597,7 @@ public class PhotoService {
     }
 
     /**
-     * Issue#54: 写真の閲覧権限を検証する
+     * Spec#54: 写真の閲覧権限を検証する
      * REMOVED: 誰も閲覧不可
      * PENDING_REVIEW, QUARANTINED: 投稿者本人のみ閲覧可能
      * PUBLISHED: 誰でも閲覧可能
@@ -623,7 +623,7 @@ public class PhotoService {
     }
 
     /**
-     * Issue#54: リクエスト者に対して表示可能なモデレーションステータスを返す
+     * Spec#54: リクエスト者に対して表示可能なモデレーションステータスを返す
      *
      * @param targetUserId 対象ユーザーのID
      * @param currentUser リクエスト者（未認証の場合はnull）
@@ -639,7 +639,7 @@ public class PhotoService {
     }
 
     /**
-     * Issue#54: アカウントが停止されていないか検証する
+     * Spec#54: アカウントが停止されていないか検証する
      * 永久停止またはアクティブな一時停止中の場合は例外をスローする
      *
      * @param user ユーザー
@@ -716,7 +716,7 @@ public class PhotoService {
     }
 
     /**
-     * Issue#88: PhotoDetailResponseを構築する
+     * Spec#88: PhotoDetailResponseを構築する
      *
      * @param photo 写真エンティティ
      * @param spot スポットエンティティ
@@ -735,7 +735,7 @@ public class PhotoService {
         String thumbnailUrl = isBlocked
                 ? s3Service.generateCdnUrl(CodeConstants.BLOCKED_CONTENT_IMAGE_KEY)
                 : s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey());
-        // Issue#125: ブロック中の写真は LQIP も漏らさない（thumbnail URL と同じ整合）
+        // Spec#125: ブロック中の写真は LQIP も漏らさない（thumbnail URL と同じ整合）
         String lqip = isBlocked ? null : photo.getLqipDataUrl();
 
         PhotoDetailResponse response = new PhotoDetailResponse();
@@ -752,7 +752,7 @@ public class PhotoService {
         response.setCropCenterY(photo.getCropCenterY());
         response.setCropZoom(photo.getCropZoom());
         response.setModerationStatus(photo.getModerationStatus());
-        // Issue#146: 指摘ダイアログが上限 1km 判定に使う
+        // Spec#146: 指摘ダイアログが上限 1km 判定に使う
         response.setLocationFromExif(photo.getLocationFromExif());
 
         if (photo.getCategories() != null && !photo.getCategories().isEmpty()) {
@@ -779,7 +779,7 @@ public class PhotoService {
     }
 
     /**
-     * Issue#88: Photo エンティティからCameraInfoを構築する
+     * Spec#88: Photo エンティティからCameraInfoを構築する
      * カメラ情報が全てnullの場合はnullを返す
      */
     private PhotoDetailResponse.CameraInfo buildCameraInfo(Photo photo) {
@@ -809,11 +809,11 @@ public class PhotoService {
         return cameraInfo;
     }
 
-    // ========== Issue#119: AI 予測結果の保存 ==========
+    // ========== Spec#119: AI 予測結果の保存 ==========
 
     /**
      * analyzeToken に紐づく AI 予測結果を {@code photo_ai_predictions} に保存する。
-     * トークンが期限切れ・不存在の場合は黙って無視する（Issue#119 4.4.1: AI 結果なし扱い）。
+     * トークンが期限切れ・不存在の場合は黙って無視する（Spec#119 4.4.1: AI 結果なし扱い）。
      * 保存後にキャッシュから当該トークンを削除する（使い切り）。
      *
      * @param photoId        既に保存済みの写真 ID
@@ -821,7 +821,7 @@ public class PhotoService {
      * @param userCategories ユーザー選択カテゴリの実体（{@code user_diff_flag} 計算に使用）
      */
     /**
-     * Issue#119 + Issue#136 §4.4.2/§4.4.3: photo_ai_predictions に AI 予測結果を保存する。
+     * Spec#119 + Spec#136 §4.4.2/§4.4.3: photo_ai_predictions に AI 予測結果を保存する。
      * cache の取得・削除は {@link #createPhoto} 側で一元化し、本メソッドは引数で受け取った
      * {@link LabelMappingResult} を使うだけにする。
      */
@@ -844,10 +844,10 @@ public class PhotoService {
     }
 
     /**
-     * Issue#135 + Issue#136 §4.4.4: リクエストの tagIds を photo_tags へ保存する。
+     * Spec#135 + Spec#136 §4.4.4: リクエストの tagIds を photo_tags へ保存する。
      * aiOriginatedTagIds に含まれる tag_id は {@code assigned_by='AI'}、それ以外は 'USER'。
      *
-     * <p>Issue#136: {@code suggestedTags} を引数で受け取り、AI 由来 tagId に対して
+     * <p>Spec#136: {@code suggestedTags} を引数で受け取り、AI 由来 tagId に対して
      * cache 由来の {@code ai_confidence} を付ける。cache に含まれない AI tagId は NULL のまま。
      * USER 由来は常に NULL。</p>
      */
@@ -870,7 +870,7 @@ public class PhotoService {
                 userTagIds.add(tagId);
             }
         }
-        // Issue#136 §4.4.4: suggestedTags から AI tagId 用 confidence マップを作る
+        // Spec#136 §4.4.4: suggestedTags から AI tagId 用 confidence マップを作る
         Map<Long, Double> confidenceByTagId = suggestedTags.stream()
                 .collect(Collectors.toMap(
                         TagSuggestion::tagId,
@@ -885,7 +885,7 @@ public class PhotoService {
     }
 
     /**
-     * Issue#119 3.3: ユーザー選択カテゴリと AI 予測カテゴリの「重複ゼロ」判定。
+     * Spec#119 3.3: ユーザー選択カテゴリと AI 予測カテゴリの「重複ゼロ」判定。
      *
      * <ul>
      *   <li>AI 予測が空の場合: 比較対象がないので {@code false}</li>

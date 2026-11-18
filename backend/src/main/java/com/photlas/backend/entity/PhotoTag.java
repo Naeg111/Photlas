@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * Issue#135: 写真 ↔ キーワード多対多の中間エンティティ。
+ * Spec#135: 写真 ↔ キーワード多対多の中間エンティティ。
  *
  * <p>{@code assigned_by} で AI 自動付与か手動追加かを区別する。
  * AI 由来時のみ {@code aiConfidence} に Rekognition 信頼度（0〜100）を保存。</p>

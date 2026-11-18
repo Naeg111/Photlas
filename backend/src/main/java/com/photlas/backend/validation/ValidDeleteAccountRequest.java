@@ -9,7 +9,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Issue#81 Phase 4a - 退会リクエストのクラスレベル複合バリデーション。
+ * Spec#81 Phase 4a - 退会リクエストのクラスレベル複合バリデーション。
  *
  * <p>通常ユーザー (password_hash != null): {@code password} 必須（空文字不可）、
  * {@code confirmationChecked} は不問。

@@ -1,5 +1,5 @@
 """
-Issue#125 Cycle2: LQIP（低品質プレースホルダー）生成 + コールバックのテスト
+Spec#125 Cycle2: LQIP（低品質プレースホルダー）生成 + コールバックのテスト
 
 テスト実行: cd lambda/thumbnail-generator && python3 -m pytest test_lqip.py -v
 
@@ -44,7 +44,7 @@ def create_s3_event(key, bucket=TEST_BUCKET):
 
 
 class TestLqipConstants:
-    """Issue#125 - LQIP モジュール定数の値が想定通り。"""
+    """Spec#125 - LQIP モジュール定数の値が想定通り。"""
 
     def test_lqip_size_is_20(self):
         assert LQIP_SIZE == 20
@@ -58,7 +58,7 @@ class TestLqipConstants:
 
 
 class TestGenerateLqip:
-    """Issue#125 - generate_lqip(image) が WebP 形式で小さなバイト列を返す。"""
+    """Spec#125 - generate_lqip(image) が WebP 形式で小さなバイト列を返す。"""
 
     def test_starts_with_webp_magic_bytes(self):
         """出力は WebP マジックバイト RIFF...WEBP で始まる。"""
@@ -95,7 +95,7 @@ class TestGenerateLqip:
 
 
 class TestPostLqipToBackend:
-    """Issue#125 - post_lqip_to_backend がリトライ + 最終 False を正しく扱う。"""
+    """Spec#125 - post_lqip_to_backend がリトライ + 最終 False を正しく扱う。"""
 
     def setup_method(self):
         """各テスト前に環境変数を設定（urlopen が呼ばれる前提条件）。"""
@@ -161,7 +161,7 @@ class TestPostLqipToBackend:
 
 
 class TestLambdaHandlerIntegratesLqip:
-    """Issue#125 - lambda_handler がサムネ生成後に LQIP コールバックを呼ぶ。"""
+    """Spec#125 - lambda_handler がサムネ生成後に LQIP コールバックを呼ぶ。"""
 
     @patch("lambda_function.post_lqip_to_backend")
     @patch("lambda_function.s3_client")

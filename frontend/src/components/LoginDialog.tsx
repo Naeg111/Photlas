@@ -18,7 +18,7 @@ import { trackRegistrationWallEvent } from '../utils/registrationWallAnalytics'
 
 /**
  * LoginDialog コンポーネント
- * Issue#26: 認証機能のモーダルベース移行
+ * Spec#26: 認証機能のモーダルベース移行
  *
  * マップ画面を離れることなくログインを行えるダイアログ
  */
@@ -29,7 +29,7 @@ interface LoginDialogProps {
   onShowSignUp: () => void
   onShowPasswordReset: () => void
   /**
-   * Issue#118: 登録壁から開かれた場合 true。
+   * Spec#118: 登録壁から開かれた場合 true。
    * ログイン成功時に registration_wall_login_success イベントを送信する目印。
    */
   triggeredFromWall?: boolean
@@ -105,7 +105,7 @@ export function LoginDialog({
         data.token,
         rememberMe
       )
-      // Issue#118: 登録壁経由のログイン成功は別イベントとして計測
+      // Spec#118: 登録壁経由のログイン成功は別イベントとして計測
       if (triggeredFromWall) {
         trackRegistrationWallEvent('registration_wall_login_success')
       }
@@ -122,13 +122,13 @@ export function LoginDialog({
             setIsEmailNotVerified(true)
             setError(t('errors.EMAIL_NOT_VERIFIED'))
           } else if (code === 'ACCOUNT_SUSPENDED') {
-            // Issue#54: 永久停止アカウント
+            // Spec#54: 永久停止アカウント
             setError(t('auth.accountSuspended'))
           } else {
             setError(t('auth.loginFailed'))
           }
         } else if (err.status === 401) {
-          // Issue#72: 退会済みアカウントの場合はバックエンドのメッセージを表示
+          // Spec#72: 退会済みアカウントの場合はバックエンドのメッセージを表示
           const code = (err.responseData as { code?: string } | undefined)?.code
           setError(code ? t('errors.' + code) : t('errors.INVALID_CREDENTIALS'))
         } else {
@@ -191,10 +191,10 @@ export function LoginDialog({
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-6 pb-6">
         <div className="space-y-5 mt-4">
-          {/* Issue#81 Phase 8d: SNS ログインボタンを最上部に配置、次に <hr> 区切り線 */}
-          {/* Issue#104: variant プロパティを削除（ラベル「〇〇で続ける」に統一） */}
+          {/* Spec#81 Phase 8d: SNS ログインボタンを最上部に配置、次に <hr> 区切り線 */}
+          {/* Spec#104: variant プロパティを削除（ラベル「〇〇で続ける」に統一） */}
           <OAuthButtons hideDivider={true} />
-          {/* Issue#104: OAuth ボタン下に注記テキストを表示（同意の sign-in-wrap パターン） */}
+          {/* Spec#104: OAuth ボタン下に注記テキストを表示（同意の sign-in-wrap パターン） */}
           <p className="text-xs text-gray-500 text-center mt-2">
             {t('auth.oauth.consentNotice')}
           </p>

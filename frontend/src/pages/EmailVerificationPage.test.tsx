@@ -101,7 +101,7 @@ describe('EmailVerificationPage', () => {
     })
   })
 
-  describe('Issue#110 - 背景色', () => {
+  describe('Spec#110 - 背景色', () => {
     it('ページ全体の外側コンテナの背景が bg-black である', () => {
       mockFetch.mockImplementation(() => new Promise(() => {}))
 
@@ -149,7 +149,7 @@ describe('EmailVerificationPage', () => {
       })
     })
 
-    it('Issue#110 - 成功後に自動遷移しない（3秒経過しても navigate されない）', async () => {
+    it('Spec#110 - 成功後に自動遷移しない（3秒経過しても navigate されない）', async () => {
       vi.useFakeTimers()
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
@@ -175,7 +175,7 @@ describe('EmailVerificationPage', () => {
       expect(mockNavigate).not.toHaveBeenCalled()
     })
 
-    it('Issue#110 - 「Photlasを開く」クリックで state.openLogin=true を渡して遷移する', async () => {
+    it('Spec#110 - 「Photlasを開く」クリックで state.openLogin=true を渡して遷移する', async () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
       const user = userEvent.setup()
 
@@ -187,7 +187,7 @@ describe('EmailVerificationPage', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/', { state: { openLogin: true } })
     })
 
-    it('Issue#110 - 認証成功時に localStorage にマーカーが書き込まれる', async () => {
+    it('Spec#110 - 認証成功時に localStorage にマーカーが書き込まれる', async () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
       renderWithToken(VALID_TOKEN)
@@ -204,7 +204,7 @@ describe('EmailVerificationPage', () => {
     })
   })
 
-  describe('Issue#110 - アプリ内ブラウザの場合', () => {
+  describe('Spec#110 - アプリ内ブラウザの場合', () => {
     beforeEach(() => {
       setUserAgent(UA_IN_APP)
     })
@@ -250,7 +250,7 @@ describe('EmailVerificationPage', () => {
   })
 
   describe('認証失敗', () => {
-    // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+    // Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
     const invalidTokenError = () =>
       new Response(JSON.stringify({ code: 'INVALID_TOKEN', message: TEXT_API_ERROR }), {
         status: 400,
@@ -271,7 +271,7 @@ describe('EmailVerificationPage', () => {
       expect(screen.queryByText(TEXT_API_ERROR)).not.toBeInTheDocument()
     })
 
-    it('Issue#93 - 英語の設定ではエラーが英語で表示される', async () => {
+    it('Spec#93 - 英語の設定ではエラーが英語で表示される', async () => {
       mockFetch.mockResolvedValueOnce(invalidTokenError())
 
       await i18n.changeLanguage('en')
@@ -301,7 +301,7 @@ describe('EmailVerificationPage', () => {
       })
     })
 
-    it('Issue#110 - 認証失敗時はマーカーが書き込まれない', async () => {
+    it('Spec#110 - 認証失敗時はマーカーが書き込まれない', async () => {
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify({ message: TEXT_API_ERROR }), {
           status: 400,
@@ -338,7 +338,7 @@ describe('EmailVerificationPage', () => {
     })
   })
 
-  // Issue#96 PR2b: 429 レート制限ハンドリング（パターンA: ページロード時のAPI呼び出し）
+  // Spec#96 PR2b: 429 レート制限ハンドリング（パターンA: ページロード時のAPI呼び出し）
   describe('Rate Limit (429) - レート制限', () => {
     it('メール認証で429を受信したらレート制限メッセージがエラー画面に表示される', async () => {
       mockFetch.mockResolvedValueOnce(

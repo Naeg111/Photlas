@@ -1,7 +1,7 @@
 package com.photlas.backend.dto;
 
 /**
- * Issue#58 §6: /photo-viewer/{id} に差し込む写真個別の OGP メタ値。
+ * Spec#58 §6: /photo-viewer/{id} に差し込む写真個別の OGP メタ値。
  *
  * @param title       og:title / twitter:title 用（例: "東京タワー - Photlas"）
  * @param description og:description / twitter:description / meta description 用

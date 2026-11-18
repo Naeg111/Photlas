@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Issue#119: AWS Rekognition のラベル検出結果を Photlas のカテゴリ・天候コードにマッピングした結果。
+ * Spec#119: AWS Rekognition のラベル検出結果を Photlas のカテゴリ・天候コードにマッピングした結果。
  *
  * <p>{@link com.photlas.backend.service.RekognitionLabelMapper} の出力。</p>
  *

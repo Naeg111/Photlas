@@ -28,7 +28,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Issue#108 §4.1: ユーザー向けデータエクスポートのエンドポイント。
+ * Spec#108 §4.1: ユーザー向けデータエクスポートのエンドポイント。
  *
  * <p>POST /api/v1/users/me/export — リクエストボディの password が必要
  * （OAuth のみユーザーは省略可）。検証順序は

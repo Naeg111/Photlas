@@ -7,8 +7,8 @@ import i18n from '../i18n'
 
 /**
  * PhotoLightbox コンポーネントのテスト
- * Issue#27: パネル・ダイアログ群の移行
- * Issue#88: ローディング表示テスト追加
+ * Spec#27: パネル・ダイアログ群の移行
+ * Spec#88: ローディング表示テスト追加
  *
  * 写真を全画面で拡大表示するライトボックス
  */
@@ -21,7 +21,7 @@ vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
 
-// Issue#65: sonnerのモック
+// Spec#65: sonnerのモック
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }))
@@ -125,7 +125,7 @@ describe('PhotoLightbox', () => {
 
       await waitFor(() => {
         const image = screen.getByAltText('フルサイズ写真')
-        // Issue#88: BlobURLで表示されるため、src属性はblob:で始まる
+        // Spec#88: BlobURLで表示されるため、src属性はblob:で始まる
         expect(image).toHaveAttribute('src', expect.stringContaining('blob:'))
       })
     })
@@ -167,8 +167,8 @@ describe('PhotoLightbox', () => {
     })
   })
 
-  // ===== Issue#88: ローディング表示テスト =====
-  describe('Issue#88: オリジナル画像ローディング表示', () => {
+  // ===== Spec#88: ローディング表示テスト =====
+  describe('Spec#88: オリジナル画像ローディング表示', () => {
     it('画像読み込み中にローディング画面が表示される（200ms超過時）', async () => {
       // fetch をモックして遅延させる（ReadableStreamで進捗取得を想定）
       const mockFetch = vi.fn().mockImplementation(

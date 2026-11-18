@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Issue#81 Phase 2 - UserOAuthConnectionRepository のテスト
+ * Spec#81 Phase 2 - UserOAuthConnectionRepository のテスト
  *
  * 要件:
  *   - user_id で連携情報を取得できる（findByUserId）
@@ -57,7 +57,7 @@ class UserOAuthConnectionRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - user_id で連携情報を取得できる")
+    @DisplayName("Spec#81 - user_id で連携情報を取得できる")
     void findByUserIdReturnsConnection() {
         UserOAuthConnection conn = new UserOAuthConnection();
         conn.setUserId(user.getId());
@@ -75,7 +75,7 @@ class UserOAuthConnectionRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - プロバイダコード + プロバイダユーザー ID で連携情報を取得できる")
+    @DisplayName("Spec#81 - プロバイダコード + プロバイダユーザー ID で連携情報を取得できる")
     void findByProviderCodeAndProviderUserIdReturnsConnection() {
         UserOAuthConnection conn = new UserOAuthConnection();
         conn.setUserId(user.getId());
@@ -93,7 +93,7 @@ class UserOAuthConnectionRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - 存在しない連携情報の検索は空を返す")
+    @DisplayName("Spec#81 - 存在しない連携情報の検索は空を返す")
     void findByProviderCodeAndProviderUserIdReturnsEmptyForUnknown() {
         Optional<UserOAuthConnection> found = userOAuthConnectionRepository
                 .findByProviderCodeAndProviderUserId(OAuthProvider.GOOGLE.getCode(), "unknown");
@@ -102,7 +102,7 @@ class UserOAuthConnectionRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - 1 ユーザーが同じプロバイダに 2 度連携しようとすると DataIntegrityViolationException")
+    @DisplayName("Spec#81 - 1 ユーザーが同じプロバイダに 2 度連携しようとすると DataIntegrityViolationException")
     void sameUserSameProviderDuplicateFails() {
         UserOAuthConnection first = new UserOAuthConnection();
         first.setUserId(user.getId());
@@ -120,7 +120,7 @@ class UserOAuthConnectionRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - 同じプロバイダ内で同じ provider_user_id の重複が拒否される")
+    @DisplayName("Spec#81 - 同じプロバイダ内で同じ provider_user_id の重複が拒否される")
     void sameProviderSameProviderUserIdDuplicateFails() {
         UserOAuthConnection first = new UserOAuthConnection();
         first.setUserId(user.getId());
@@ -145,7 +145,7 @@ class UserOAuthConnectionRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - user_id で連携情報を全削除できる")
+    @DisplayName("Spec#81 - user_id で連携情報を全削除できる")
     void deleteByUserIdRemovesAllConnections() {
         UserOAuthConnection googleConn = new UserOAuthConnection();
         googleConn.setUserId(user.getId());
@@ -159,7 +159,7 @@ class UserOAuthConnectionRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - 暗号化された access_token / IV / 有効期限を保存・取得できる")
+    @DisplayName("Spec#81 - 暗号化された access_token / IV / 有効期限を保存・取得できる")
     void savesEncryptedAccessTokenFields() {
         byte[] encryptedToken = new byte[] {1, 2, 3, 4};
         byte[] iv = new byte[] {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};

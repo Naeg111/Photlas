@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { useHeadingIndicator, HEADING_INDICATOR_STORAGE_KEY, isHeadingIndicatorAvailable } from './useHeadingIndicator'
 
 /**
- * Issue#115: 方角インジケーターのフックテスト
+ * Spec#115: 方角インジケーターのフックテスト
  * Phase1 Red段階: sessionStorage 連携 + ON/OFF 状態 + リスナー登録/解除
  *
  * iOS 許可フローは Phase4 で別途追加するため本テストでは扱わない
@@ -269,7 +269,7 @@ describe('useHeadingIndicator', () => {
   })
 })
 
-// Issue#115 §4: デスクトップ等センサー非対応端末の検出
+// Spec#115 §4: デスクトップ等センサー非対応端末の検出
 describe('isHeadingIndicatorAvailable', () => {
   it('matchMedia("(any-pointer: coarse)") が true（タッチ端末）を返す場合、true を返す', () => {
     vi.spyOn(window, 'matchMedia').mockReturnValue({

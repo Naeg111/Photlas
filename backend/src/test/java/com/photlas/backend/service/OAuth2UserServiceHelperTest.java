@@ -36,7 +36,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#81 Phase 3b Red - OAuth2UserServiceHelper#processOAuthUser() のテスト。
+ * Spec#81 Phase 3b Red - OAuth2UserServiceHelper#processOAuthUser() のテスト。
  *
  * 想定シナリオ（技術設計書 3.3 / 実装手順書 Phase 3）:
  * <ul>
@@ -87,7 +87,7 @@ class OAuth2UserServiceHelperTest {
     class NewUserCreation {
 
         @Test
-        @DisplayName("Issue#81 - OAuth接続・メールどちらも未登録なら仮表示名で新規作成し User を返す")
+        @DisplayName("Spec#81 - OAuth接続・メールどちらも未登録なら仮表示名で新規作成し User を返す")
         void createsNewUserWithTemporaryUsername() {
             OAuth2UserInfo info = new OAuth2UserInfo(
                     OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL, "access-token-xyz", null, "ja");
@@ -122,7 +122,7 @@ class OAuth2UserServiceHelperTest {
         }
 
         @Test
-        @DisplayName("Issue#81 - 新規ユーザー作成時は OAUTH_ACCOUNT_CREATED 監査ログを出力する")
+        @DisplayName("Spec#81 - 新規ユーザー作成時は OAUTH_ACCOUNT_CREATED 監査ログを出力する")
         void auditLogsOauthAccountCreated() {
             OAuth2UserInfo info = new OAuth2UserInfo(
                     OAuthProvider.LINE, "line-uid-1", EMAIL, null, null, "ja");
@@ -146,7 +146,7 @@ class OAuth2UserServiceHelperTest {
         }
 
         @Test
-        @DisplayName("Issue#81 - 不正な language は LanguageValidator により 'ja' にフォールバックする")
+        @DisplayName("Spec#81 - 不正な language は LanguageValidator により 'ja' にフォールバックする")
         void unsupportedLanguageFallsBackToJa() {
             OAuth2UserInfo info = new OAuth2UserInfo(
                     OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL, null, null, "xx");
@@ -172,7 +172,7 @@ class OAuth2UserServiceHelperTest {
     class ExistingOAuthUserLogin {
 
         @Test
-        @DisplayName("Issue#81 - OAuth接続が既にある場合、紐付いた User をそのまま返す（新規作成しない）")
+        @DisplayName("Spec#81 - OAuth接続が既にある場合、紐付いた User をそのまま返す（新規作成しない）")
         void returnsExistingUserWithoutCreate() {
             OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL);
 
@@ -198,7 +198,7 @@ class OAuth2UserServiceHelperTest {
         }
 
         @Test
-        @DisplayName("Issue#81 - OAuthログイン成功時は OAUTH_LOGIN_SUCCESS 監査ログを出力する")
+        @DisplayName("Spec#81 - OAuthログイン成功時は OAUTH_LOGIN_SUCCESS 監査ログを出力する")
         void auditLogsLoginSuccess() {
             OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL);
 
@@ -226,7 +226,7 @@ class OAuth2UserServiceHelperTest {
     /* 3. SUSPENDED ユーザーの拒否                                     */
     /* -------------------------------------------------------------- */
     @Test
-    @DisplayName("Issue#81 - OAuth接続済みユーザーの role が SUSPENDED なら OAuth2AuthenticationException（USER_SUSPENDED）")
+    @DisplayName("Spec#81 - OAuth接続済みユーザーの role が SUSPENDED なら OAuth2AuthenticationException（USER_SUSPENDED）")
     void suspendedUserIsRejected() {
         OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL);
 
@@ -250,7 +250,7 @@ class OAuth2UserServiceHelperTest {
     /* 4. ソフトデリート済みユーザーの復旧                              */
     /* -------------------------------------------------------------- */
     @Test
-    @DisplayName("Issue#81 - OAuth接続済みユーザーの deletedAt != null なら AuthService.recoverSoftDeletedUser を呼ぶ")
+    @DisplayName("Spec#81 - OAuth接続済みユーザーの deletedAt != null なら AuthService.recoverSoftDeletedUser を呼ぶ")
     void softDeletedUserTriggersRecovery() {
         OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL);
 
@@ -280,7 +280,7 @@ class OAuth2UserServiceHelperTest {
     /* 5. 未認証メール一致                                              */
     /* -------------------------------------------------------------- */
     @Test
-    @DisplayName("Issue#81 - メール一致・email_verified=false なら OAUTH_EMAIL_VERIFICATION_REQUIRED")
+    @DisplayName("Spec#81 - メール一致・email_verified=false なら OAUTH_EMAIL_VERIFICATION_REQUIRED")
     void unverifiedEmailMatchIsRejected() {
         OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.LINE, "line-uid-2", EMAIL);
 
@@ -304,7 +304,7 @@ class OAuth2UserServiceHelperTest {
     /* 6. 管理者メール一致                                              */
     /* -------------------------------------------------------------- */
     @Test
-    @DisplayName("Issue#81 - メール一致・role=ADMIN なら OAUTH_ADMIN_NOT_ALLOWED")
+    @DisplayName("Spec#81 - メール一致・role=ADMIN なら OAUTH_ADMIN_NOT_ALLOWED")
     void adminEmailMatchIsRejected() {
         OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL);
 
@@ -327,7 +327,7 @@ class OAuth2UserServiceHelperTest {
     /* 7. 認証済み非管理者メール一致 → リンク確認フロー                 */
     /* -------------------------------------------------------------- */
     @Test
-    @DisplayName("Issue#99 - メール一致・email_verified=true・非管理者 なら OAuth2LinkConfirmationException を投げトークンを発行する")
+    @DisplayName("Spec#99 - メール一致・email_verified=true・非管理者 なら OAuth2LinkConfirmationException を投げトークンを発行する")
     void verifiedEmailMatchTriggersLinkConfirmation() {
         OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL);
 
@@ -361,7 +361,7 @@ class OAuth2UserServiceHelperTest {
     /* 8. info の email が空                                            */
     /* -------------------------------------------------------------- */
     @Test
-    @DisplayName("Issue#81 - OAuth2UserInfo.email が null なら OAUTH_EMAIL_REQUIRED")
+    @DisplayName("Spec#81 - OAuth2UserInfo.email が null なら OAUTH_EMAIL_REQUIRED")
     void nullEmailIsRejected() {
         OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.LINE, "line-uid-3", null);
 
@@ -371,7 +371,7 @@ class OAuth2UserServiceHelperTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - OAuth2UserInfo.email が空白のみなら OAUTH_EMAIL_REQUIRED")
+    @DisplayName("Spec#81 - OAuth2UserInfo.email が空白のみなら OAUTH_EMAIL_REQUIRED")
     void blankEmailIsRejected() {
         OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.LINE, "line-uid-3", "   ");
 
@@ -384,7 +384,7 @@ class OAuth2UserServiceHelperTest {
     /* 9. info の providerUserId が空                                   */
     /* -------------------------------------------------------------- */
     @Test
-    @DisplayName("Issue#81 - OAuth2UserInfo.providerUserId が null なら OAuth2AuthenticationException")
+    @DisplayName("Spec#81 - OAuth2UserInfo.providerUserId が null なら OAuth2AuthenticationException")
     void nullProviderUserIdIsRejected() {
         OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.GOOGLE, null, EMAIL);
 
@@ -393,7 +393,7 @@ class OAuth2UserServiceHelperTest {
     }
 
     @Test
-    @DisplayName("Issue#81 - OAuth2UserInfo.providerUserId が空白のみなら OAuth2AuthenticationException")
+    @DisplayName("Spec#81 - OAuth2UserInfo.providerUserId が空白のみなら OAuth2AuthenticationException")
     void blankProviderUserIdIsRejected() {
         OAuth2UserInfo info = new OAuth2UserInfo(OAuthProvider.GOOGLE, "  ", EMAIL);
 
@@ -405,7 +405,7 @@ class OAuth2UserServiceHelperTest {
     /* 10. レース条件                                                   */
     /* -------------------------------------------------------------- */
     @Test
-    @DisplayName("Issue#81 - userRepository.save で DataIntegrityViolationException が投げられたら findByEmail で再検索し、同じユーザーで続行")
+    @DisplayName("Spec#81 - userRepository.save で DataIntegrityViolationException が投げられたら findByEmail で再検索し、同じユーザーで続行")
     void raceConditionFindsExistingUserAfterDIVE() {
         OAuth2UserInfo info = new OAuth2UserInfo(
                 OAuthProvider.GOOGLE, GOOGLE_SUB, EMAIL, null, null, "ja");

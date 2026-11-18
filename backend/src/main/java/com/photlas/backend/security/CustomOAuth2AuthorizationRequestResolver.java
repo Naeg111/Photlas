@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Issue#81 Phase 3d - {@link OAuth2AuthorizationRequestResolver} のカスタム実装。
+ * Spec#81 Phase 3d - {@link OAuth2AuthorizationRequestResolver} のカスタム実装。
  *
  * <p>OAuth 認可リクエスト開始時（{@code /oauth2/authorization/{registrationId}}）に
  * フロントエンドから渡される {@code lang} クエリパラメータを HttpSession に保存する。

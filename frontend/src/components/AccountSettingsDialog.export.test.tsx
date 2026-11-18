@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { AccountSettingsDialog } from './AccountSettingsDialog'
 
 /**
- * Issue#108: アカウント設定ダイアログ - データエクスポート機能のテスト
+ * Spec#108: アカウント設定ダイアログ - データエクスポート機能のテスト
  *
  * 範囲:
  *   - 「データのエクスポート」セクションが表示される
@@ -99,7 +99,7 @@ function makeBodyStream(bytes: Uint8Array): ReadableStream<Uint8Array> {
   })
 }
 
-describe('AccountSettingsDialog - データエクスポート (Issue#108)', () => {
+describe('AccountSettingsDialog - データエクスポート (Spec#108)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetAuthToken.mockReturnValue(MOCK_TOKEN)

@@ -1,5 +1,5 @@
 /**
- * Issue#119 - photoAnalyzeApi の単体テスト。
+ * Spec#119 - photoAnalyzeApi の単体テスト。
  *
  * globalThis.fetch を vi.fn() で差し替えて HTTP 層の挙動を検証する
  * （apiClient.test.ts と同じパターン）。
@@ -24,7 +24,7 @@ describe('analyzePhoto', () => {
     weather: 401,
     confidence: { '201': 92.5, '204': 78.0, '401': 85.0 },
     analyzeToken: 'token-uuid-1234',
-    // Issue#132: 新規フィールドを含む（発火なし時は空配列）
+    // Spec#132: 新規フィールドを含む（発火なし時は空配列）
     parentFallbacks: [],
     exifRulesFired: [],
   }
@@ -66,7 +66,7 @@ describe('analyzePhoto', () => {
 
   // ========== 正常系 ==========
 
-  it('Issue#119 - 成功時にパース済みレスポンスを返す', async () => {
+  it('Spec#119 - 成功時にパース済みレスポンスを返す', async () => {
     mockOk(validResponseBody)
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
 
@@ -75,7 +75,7 @@ describe('analyzePhoto', () => {
     expect(response).toEqual(validResponseBody)
   })
 
-  it('Issue#119 - POST /api/v1/photos/analyze に送信される', async () => {
+  it('Spec#119 - POST /api/v1/photos/analyze に送信される', async () => {
     mockOk(validResponseBody)
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
 
@@ -87,7 +87,7 @@ describe('analyzePhoto', () => {
     expect((init as RequestInit).method).toBe('POST')
   })
 
-  it('Issue#119 - FormData に file パートが含まれる', async () => {
+  it('Spec#119 - FormData に file パートが含まれる', async () => {
     mockOk(validResponseBody)
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
 
@@ -103,7 +103,7 @@ describe('analyzePhoto', () => {
 
   // ========== 認証 ==========
 
-  it('Issue#119 - localStorage の auth_token を Authorization ヘッダーに付与する', async () => {
+  it('Spec#119 - localStorage の auth_token を Authorization ヘッダーに付与する', async () => {
     localStorageGetItemMock.mockImplementation((key: string) =>
       key === 'auth_token' ? 'jwt-test-token' : null
     )
@@ -120,7 +120,7 @@ describe('analyzePhoto', () => {
 
   // ========== AbortSignal ==========
 
-  it('Issue#119 - AbortSignal が fetch に伝播する', async () => {
+  it('Spec#119 - AbortSignal が fetch に伝播する', async () => {
     mockOk(validResponseBody)
     const controller = new AbortController()
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
@@ -133,7 +133,7 @@ describe('analyzePhoto', () => {
 
   // ========== エラーハンドリング ==========
 
-  it('Issue#119 - 401 で ApiError(isUnauthorized=true) を throw する', async () => {
+  it('Spec#119 - 401 で ApiError(isUnauthorized=true) を throw する', async () => {
     mockError(401, { message: 'unauthorized' })
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
 
@@ -144,7 +144,7 @@ describe('analyzePhoto', () => {
     })
   })
 
-  it('Issue#119 - 429 で ApiError(isRateLimited=true, retryAfterSeconds 解析) を throw する', async () => {
+  it('Spec#119 - 429 で ApiError(isRateLimited=true, retryAfterSeconds 解析) を throw する', async () => {
     mockError(429, { message: 'rate limited' }, '60')
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
 
@@ -162,7 +162,7 @@ describe('analyzePhoto', () => {
     expect(err.retryAfterSeconds).toBe(60)
   })
 
-  it('Issue#119 - 500 で ApiError を throw する', async () => {
+  it('Spec#119 - 500 で ApiError を throw する', async () => {
     mockError(500, { message: 'server error' })
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
 
@@ -172,10 +172,10 @@ describe('analyzePhoto', () => {
     })
   })
 
-  // ========== Issue#132: 拡張フィールド ==========
+  // ========== Spec#132: 拡張フィールド ==========
 
-  it('Issue#132 - レスポンスに parentFallbacks / exifRulesFired が含まれてもパースできる', async () => {
-    const bodyWithIssue132 = {
+  it('Spec#132 - レスポンスに parentFallbacks / exifRulesFired が含まれてもパースできる', async () => {
+    const bodyWithSpec132 = {
       categories: [207],
       weather: null,
       confidence: { '207': 80 },
@@ -185,7 +185,7 @@ describe('analyzePhoto', () => {
         { rule: 'R1', categoryCode: 213, boostValue: 30, createdNewCandidate: true },
       ],
     }
-    mockOk(bodyWithIssue132)
+    mockOk(bodyWithSpec132)
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
 
     const response = await analyzePhoto(file)
@@ -198,9 +198,9 @@ describe('analyzePhoto', () => {
     ])
   })
 
-  // ========== Issue#142: EXIF 別送 ==========
+  // ========== Spec#142: EXIF 別送 ==========
 
-  it('Issue#142 - options.exif の値が FormData に EXIF フィールドとして付与される', async () => {
+  it('Spec#142 - options.exif の値が FormData に EXIF フィールドとして付与される', async () => {
     mockOk(validResponseBody)
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
 
@@ -223,7 +223,7 @@ describe('analyzePhoto', () => {
     expect(formData.get('gpsAltitude')).toBe('1500')
   })
 
-  it('Issue#142 - exif 未指定なら EXIF フィールドは付与されない / GPS 緯度経度も送らない', async () => {
+  it('Spec#142 - exif 未指定なら EXIF フィールドは付与されない / GPS 緯度経度も送らない', async () => {
     mockOk(validResponseBody)
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
 
@@ -237,7 +237,7 @@ describe('analyzePhoto', () => {
     expect(formData.get('longitude')).toBeNull()
   })
 
-  it('Issue#142 - null/未指定のフィールドは省略される', async () => {
+  it('Spec#142 - null/未指定のフィールドは省略される', async () => {
     mockOk(validResponseBody)
     const file = new Blob(['fake-jpeg'], { type: 'image/jpeg' })
 

@@ -1,5 +1,5 @@
 /**
- * Issue#93: バックエンドのエラーコードを表示言語の文言にするヘルパーのテスト
+ * Spec#93: バックエンドのエラーコードを表示言語の文言にするヘルパーのテスト
  */
 import { describe, it, expect, vi } from 'vitest'
 import i18n from '../i18n'

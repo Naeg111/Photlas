@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 /**
- * Cookie同意バナーテスト（Issue#71: GDPR対応）
+ * Cookie同意バナーテスト（Spec#71: GDPR対応）
  * 同意/拒否ボタン、表示言語での説明文、再表示防止を確認
  */
 test.describe('Cookie Consent Banner Tests', () => {

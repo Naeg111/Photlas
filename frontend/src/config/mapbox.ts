@@ -1,6 +1,6 @@
 /**
  * Mapbox設定
- * Issue#53: Google Maps API → Mapbox API 移行
+ * Spec#53: Google Maps API → Mapbox API 移行
  */
 
 /** Mapbox アクセストークン */

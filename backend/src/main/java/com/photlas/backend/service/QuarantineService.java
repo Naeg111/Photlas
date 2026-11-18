@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * Issue#54: S3隔離/復元サービス
+ * Spec#54: S3隔離/復元サービス
  * 写真の隔離（quarantined/プレフィックスへの移動）と復元を管理する
  */
 @Service

@@ -4,8 +4,8 @@ import com.photlas.backend.validation.ValidDeleteAccountRequest;
 import jakarta.validation.constraints.Size;
 
 /**
- * Issue#20: アカウント設定機能 - アカウント削除リクエスト
- * Issue#81 Phase 4a: OAuth のみユーザー対応のため {@code confirmationChecked} を追加、
+ * Spec#20: アカウント設定機能 - アカウント削除リクエスト
+ * Spec#81 Phase 4a: OAuth のみユーザー対応のため {@code confirmationChecked} を追加、
  * {@code password} の {@code @NotNull} を除去。クラスレベル複合バリデーションは
  * {@link ValidDeleteAccountRequest} が current user の {@code password_hash} 有無に応じて分岐する。
  */

@@ -6,7 +6,7 @@ const CONSENT_KEY = 'cookie_consent'
 /**
  * Cookie同意バナー
  *
- * Issue#71: GDPR対応。同意取得モデルに変更。
+ * Spec#71: GDPR対応。同意取得モデルに変更。
  * 「同意する」でGA4のConsent Modeをgrantedに更新。
  * 「拒否する」でGA4はdenied（匿名基本計測のみ）のまま。
  * Sentryはサービス運営の正当な利益として常に有効。

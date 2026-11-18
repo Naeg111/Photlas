@@ -1,5 +1,5 @@
 /**
- * Issue#135 Phase 10: PhotoContributionDialog にキーワードセクションが組み込まれていることのテスト。
+ * Spec#135 Phase 10: PhotoContributionDialog にキーワードセクションが組み込まれていることのテスト。
  *
  * - 開いた時に /api/v1/tags がフェッチされる
  * - analyzePhoto の suggestedTags が KeywordSection の AI 提案として渡る
@@ -59,7 +59,7 @@ vi.mock('../utils/cropImageToBlob', () => ({
   resizeImageToBlobForAnalyze: vi.fn().mockResolvedValue(new Blob(['r'])),
 }))
 
-describe('PhotoContributionDialog - Issue#135 キーワードセクション組込', () => {
+describe('PhotoContributionDialog - Spec#135 キーワードセクション組込', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFetchTags.mockResolvedValue({
@@ -82,7 +82,7 @@ describe('PhotoContributionDialog - Issue#135 キーワードセクション組�
     })
   })
 
-  it('Issue#135 - ダイアログ表示時に /api/v1/tags がフェッチされる', async () => {
+  it('Spec#135 - ダイアログ表示時に /api/v1/tags がフェッチされる', async () => {
     render(<PhotoContributionDialog open onOpenChange={vi.fn()} />)
 
     await waitFor(() => {
@@ -90,7 +90,7 @@ describe('PhotoContributionDialog - Issue#135 キーワードセクション組�
     })
   })
 
-  it('Issue#135 / 統合: ファイル選択後、analyzePhoto の suggestedTags は「選択中の小カテゴリー」エリアに表示される', async () => {
+  it('Spec#135 / 統合: ファイル選択後、analyzePhoto の suggestedTags は「選択中の小カテゴリー」エリアに表示される', async () => {
     const user = userEvent.setup()
     render(<PhotoContributionDialog open onOpenChange={vi.fn()} />)
 
@@ -111,9 +111,9 @@ describe('PhotoContributionDialog - Issue#135 キーワードセクション組�
     })
   })
 
-  // ========== Issue#141 Phase 9: 投稿フォーム互換確認 (Q2) ==========
+  // ========== Spec#141 Phase 9: 投稿フォーム互換確認 (Q2) ==========
 
-  it('Issue#141 Phase 9: 投稿フォームでカテゴリを選択しても tagIds は auto-select されない (Q2)', async () => {
+  it('Spec#141 Phase 9: 投稿フォームでカテゴリを選択しても tagIds は auto-select されない (Q2)', async () => {
     // 植物カテゴリ配下に複数 tag を持つ fixture
     mockFetchTags.mockResolvedValue({
       tags: [

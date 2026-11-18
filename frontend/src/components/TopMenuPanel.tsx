@@ -23,14 +23,14 @@ interface TopMenuPanelProps {
   onAboutClick: () => void;
   onHowToUseClick: () => void;
   onContactClick: () => void;
-  /** Issue#115: 方角インジケーター ON/OFF 状態 */
+  /** Spec#115: 方角インジケーター ON/OFF 状態 */
   headingIndicatorEnabled: boolean;
-  /** Issue#115: 方角インジケーター ON/OFF 切替（OS 許可リクエストを含む） */
+  /** Spec#115: 方角インジケーター ON/OFF 切替（OS 許可リクエストを含む） */
   onHeadingIndicatorChange: (enabled: boolean) => void;
-  /** Issue#115: 方角インジケーターが利用可能か（デスクトップ等の非対応環境では false → スイッチ disabled）。既定: true */
+  /** Spec#115: 方角インジケーターが利用可能か（デスクトップ等の非対応環境では false → スイッチ disabled）。既定: true */
   headingIndicatorAvailable?: boolean;
   onLoginClick: () => void;
-  // Issue#104: onSignUpClick を削除（メニューから「新規アカウント作成」ボタンを削除）
+  // Spec#104: onSignUpClick を削除（メニューから「新規アカウント作成」ボタンを削除）
   onLogout: () => void;
 }
 
@@ -160,7 +160,7 @@ export function TopMenuPanel({
                 <Separator />
               </>
             )}
-            {/* 2. お知らせ（非活性、中身は別Issueで実装） */}
+            {/* 2. お知らせ（非活性、中身は別Specで実装） */}
             <Button
               variant="ghost"
               className="justify-start gap-3"
@@ -249,7 +249,7 @@ export function TopMenuPanel({
               />
             </div>
             <Separator />
-            {/* Issue#93: 言語スイッチ */}
+            {/* Spec#93: 言語スイッチ */}
             <div className="flex justify-center py-2">
               <LanguageSwitcher
                 currentLanguage={i18n.language as SupportedLanguage}

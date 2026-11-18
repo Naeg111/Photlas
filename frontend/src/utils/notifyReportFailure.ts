@@ -15,7 +15,7 @@ import { translateErrorCode } from './apiErrorMessage'
  * レート制限（429）は呼び出し側で notifyIfRateLimited を先に使う。
  *
  * @param status HTTP ステータス。通信エラーなどで応答が無いときは null
- * @param code エラーレスポンスの code（Issue#93）。400 のときだけ使う
+ * @param code エラーレスポンスの code（Spec#93）。400 のときだけ使う
  * @returns ダイアログを閉じるべきなら true
  */
 export function notifyReportFailure(status: number | null, t: TFunction, code?: string): boolean {

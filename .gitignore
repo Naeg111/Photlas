@@ -110,5 +110,5 @@ design-backup/
 CLAUDE.md
 **/CLAUDE.md
 
-# Issue#117: build-maintenance-function.sh が生成する CloudFront Function 成果物
+# Spec#117: build-maintenance-function.sh が生成する CloudFront Function 成果物
 scripts/cloudfront-function/maintenance.js

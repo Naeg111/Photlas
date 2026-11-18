@@ -1,5 +1,5 @@
 /**
- * Issue#96: 429 レート制限 cooldown カスタムフック
+ * Spec#96: 429 レート制限 cooldown カスタムフック
  *
  * 引数の `ApiError`（429 時に発行されたもの）を受け取り、
  * `retryAfterSeconds` に基づいたカウントダウン state を提供する。

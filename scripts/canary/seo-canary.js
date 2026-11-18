@@ -1,11 +1,11 @@
-// Issue#148: CloudWatch Synthetics canary 本体（Synthetics ランタイムで実行される handler）。
+// Spec#148: CloudWatch Synthetics canary 本体（Synthetics ランタイムで実行される handler）。
 //
 // 本番 photlas.jp の /tags（SSR）・/photo-viewer（個別 OGP）を 30 分おきに外形監視する。
 // 検証ロジックは checks.mjs（単体テスト済み）に委譲し、ここは「sitemap から監視対象を選ぶ →
 // HTTP 取得 → checks に渡す → 失敗があれば throw」だけの薄いラッパー。
 // Synthetics ランタイム（Synthetics/SyntheticsLogger）依存のため単体テスト対象外。
 //
-// 設計（documents/04_Issues/Issue#148.md §3 / §4.2）:
+// 設計（documents/spec/SPEC-0148.md §3 / §4.2）:
 //   - リダイレクトは追わず、canonical な ?lang=ja を叩く（/tags の 1 ホップ 301 を回避）
 //   - sitemap が「壊れている」なら fail、「正常だが空」ならその URL をスキップ（ハイブリッド）
 

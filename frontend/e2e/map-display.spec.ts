@@ -160,11 +160,11 @@ test.describe('地図表示・ピン表示機能', () => {
   // ============================================================
 
   test.describe('ピン表示', () => {
-    test('Issue#103 - 低ズームレベル（5）でクラスタピンが表示される', async ({ page }) => {
+    test('Spec#103 - 低ズームレベル（5）でクラスタピンが表示される', async ({ page }) => {
       await zoomOut(page, 5)
       await page.waitForTimeout(3000)
 
-      // バナーが存在しない（Issue#103 で廃止）
+      // バナーが存在しない（Spec#103 で廃止）
       const banner = page.getByText('投稿を表示するには')
       await expect(banner).not.toBeVisible()
 
@@ -173,7 +173,7 @@ test.describe('地図表示・ピン表示機能', () => {
       expect(clusterCount).toBeGreaterThan(0)
     })
 
-    test('Issue#103 - ズームレベル0（世界全体）でもクラスタピンが表示される', async ({ page }) => {
+    test('Spec#103 - ズームレベル0（世界全体）でもクラスタピンが表示される', async ({ page }) => {
       await zoomOut(page, 12)
       await page.waitForTimeout(3000)
 
@@ -334,7 +334,7 @@ test.describe('地図表示・ピン表示機能', () => {
       // 詳細フィルターを開く
       await page.getByRole('button', { name: '上級者向けフィルター' }).click()
 
-      // Issue#63: 上級者向けフィルターには機材種別・焦点距離・ISO感度のみ
+      // Spec#63: 上級者向けフィルターには機材種別・焦点距離・ISO感度のみ
       await expect(page.getByText('機材種別')).toBeVisible()
       await expect(page.getByText('焦点距離（フルサイズ換算）')).toBeVisible()
       await expect(page.getByText('ISO感度')).toBeVisible()
@@ -357,7 +357,7 @@ test.describe('地図表示・ピン表示機能', () => {
 
     test('撮影日からの経過期間フィルターで絞り込みができる', async ({ page }) => {
       await openFilterPanel(page)
-      // Issue#63: 撮影日からの経過期間は通常フィルターに移動（上級者向けフィルターを開く必要なし）
+      // Spec#63: 撮影日からの経過期間は通常フィルターに移動（上級者向けフィルターを開く必要なし）
 
       // 1年以内を選択
       await page.getByText('1年以内', { exact: true }).click()
@@ -371,7 +371,7 @@ test.describe('地図表示・ピン表示機能', () => {
 
     test('写真の向きフィルターで絞り込みができる', async ({ page }) => {
       await openFilterPanel(page)
-      // Issue#63: 写真の向きは通常フィルターに移動（上級者向けフィルターを開く必要なし）
+      // Spec#63: 写真の向きは通常フィルターに移動（上級者向けフィルターを開く必要なし）
 
       // 横向きを選択
       await page.getByText('横向き', { exact: true }).click()
@@ -401,7 +401,7 @@ test.describe('地図表示・ピン表示機能', () => {
       await openFilterPanel(page)
       await page.getByRole('button', { name: '上級者向けフィルター' }).click()
 
-      // Issue#63: ラベル変更に対応
+      // Spec#63: ラベル変更に対応
       await page.getByText('ISO 400以下', { exact: true }).click()
       await page.waitForTimeout(500)
 
@@ -414,7 +414,7 @@ test.describe('地図表示・ピン表示機能', () => {
     test('基本フィルターと詳細フィルターを組み合わせて絞り込みができる', async ({ page }) => {
       await openFilterPanel(page)
 
-      // 基本フィルター（Issue#63: 写真の向きは通常フィルターに移動）
+      // 基本フィルター（Spec#63: 写真の向きは通常フィルターに移動）
       await page.getByText('自然風景', { exact: true }).click()
       await page.getByText('晴れ', { exact: true }).click()
       await page.getByText('横向き', { exact: true }).click()

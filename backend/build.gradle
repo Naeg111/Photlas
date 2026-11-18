@@ -21,7 +21,7 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'  // Issue#135: /tags/{slug} SSR
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'  // Spec#135: /tags/{slug} SSR
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
@@ -31,15 +31,15 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 	implementation 'software.amazon.awssdk:s3:2.20.26'
-	implementation 'software.amazon.awssdk:rekognition:2.20.26'  // Issue#119: 写真カテゴリ自動入力
-	implementation 'net.coobird:thumbnailator:0.4.20'  // Issue#119: Rekognition 送信前の画像縮小
-	implementation 'com.drewnoakes:metadata-extractor:2.19.0'  // Issue#132: EXIF 撮影情報の読み取り
+	implementation 'software.amazon.awssdk:rekognition:2.20.26'  // Spec#119: 写真カテゴリ自動入力
+	implementation 'net.coobird:thumbnailator:0.4.20'  // Spec#119: Rekognition 送信前の画像縮小
+	implementation 'com.drewnoakes:metadata-extractor:2.19.0'  // Spec#132: EXIF 撮影情報の読み取り
 	implementation 'com.bucket4j:bucket4j-core:8.7.0'
 	implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
-	implementation 'com.maxmind.geoip2:geoip2:4.2.0'  // Issue#106: IPアドレスからの国判定
+	implementation 'com.maxmind.geoip2:geoip2:4.2.0'  // Spec#106: IPアドレスからの国判定
 	implementation 'org.flywaydb:flyway-core'
 	implementation 'org.flywaydb:flyway-database-postgresql'
-	// Issue#120: テスト/ローカルも PostgreSQL(+PostGIS) に統一。H2 は廃止。
+	// Spec#120: テスト/ローカルも PostgreSQL(+PostGIS) に統一。H2 は廃止。
 	runtimeOnly 'org.postgresql:postgresql'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
@@ -48,7 +48,7 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
-	// Issue#120: 全テストを test プロファイル(PostgreSQL+PostGIS / application-test.properties)で実行する。
+	// Spec#120: 全テストを test プロファイル(PostgreSQL+PostGIS / application-test.properties)で実行する。
 	// @ActiveProfiles("test") を付けていないテスト(コンテキストロード等)が、既定プロファイルの
 	// 旧 H2 設定や開発用 DB(photlas_dev)に流れないようにするための明示指定。
 	systemProperty 'spring.profiles.active', 'test'

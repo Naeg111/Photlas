@@ -26,7 +26,7 @@ public class SpotService {
 
     private static final Logger logger = LoggerFactory.getLogger(SpotService.class);
     /**
-     * Issue#103: ピン色閾値を全体的に引き上げ、1,000 件以上の Purple を追加。
+     * Spec#103: ピン色閾値を全体的に引き上げ、1,000 件以上の Purple を追加。
      * 全ズームレベルでクラスタリングピンを表示するようになり、低ズームで
      * 巨大クラスタが発生するため、色のレンジを広げてバランスを取る。
      */
@@ -55,7 +55,7 @@ public class SpotService {
     }
 
     /**
-     * Issue#46: 詳細フィルター対応版
+     * Spec#46: 詳細フィルター対応版
      * 機材種別はphotos.device_typeカラムを直接参照してフィルタリングする
      */
     @Transactional(readOnly = true)
@@ -64,13 +64,13 @@ public class SpotService {
                                        List<Integer> timesOfDay, List<Integer> weathers,
                                        Integer minResolution, List<Integer> deviceTypes, Integer maxAgeDays,
                                        List<String> aspectRatios, List<String> focalLengthRanges, Integer maxIso) {
-        // Issue#141: tagIds 未対応の旧シグネチャ。新規実装側は tagIds 受け取り版を呼ぶこと
+        // Spec#141: tagIds 未対応の旧シグネチャ。新規実装側は tagIds 受け取り版を呼ぶこと
         return getSpots(north, south, east, west, subjectCategories, months, timesOfDay, weathers,
                 minResolution, deviceTypes, maxAgeDays, aspectRatios, focalLengthRanges, maxIso, null);
     }
 
     /**
-     * Issue#141 Phase 1: tagIds でも絞り込めるバージョン (Q-new-1 で本実装に切替)。
+     * Spec#141 Phase 1: tagIds でも絞り込めるバージョン (Q-new-1 で本実装に切替)。
      * tagIds が null/空のときはセンチネル {@code [-1L]} を渡し、SQL 側で全件通過する。
      */
     @Transactional(readOnly = true)
@@ -128,7 +128,7 @@ public class SpotService {
         Integer totalPhotoCount = ((Number) result[4]).intValue();
         String s3ObjectKey = (String) result[5];
 
-        // Issue#59: S3キーからサムネイルCDN URLに変換
+        // Spec#59: S3キーからサムネイルCDN URLに変換
         String thumbnailUrl = s3Service.generateThumbnailCdnUrl(s3ObjectKey);
 
         // ピンの色はフィルター条件に合致する写真数で決定
@@ -142,7 +142,7 @@ public class SpotService {
     }
 
     /**
-     * Issue#103: ピン色を投稿件数に応じて決定する。
+     * Spec#103: ピン色を投稿件数に応じて決定する。
      * 1〜9: Green / 10〜49: Yellow / 50〜99: Orange / 100〜999: Red / 1000以上: Purple
      * <p>
      * パッケージプライベート可視性は SpotServiceTest からの単体テストを可能にするため。
@@ -162,7 +162,7 @@ public class SpotService {
     }
 
     /**
-     * Issue#112: 複数スポットを横断した写真ID一覧をページング取得（撮影日時降順）
+     * Spec#112: 複数スポットを横断した写真ID一覧をページング取得（撮影日時降順）
      *
      * @param spotIds 対象スポットID（1件以上）
      * @param limit 取得件数（1〜100）
@@ -176,7 +176,7 @@ public class SpotService {
     }
 
     /**
-     * Issue#141 Phase 4 (Q-new-6/7): tagIds + 既存全フィルタを受け取る /spots/photos 版。
+     * Spec#141 Phase 4 (Q-new-6/7): tagIds + 既存全フィルタを受け取る /spots/photos 版。
      * フィルタロジックは {@link #getSpots} (15 引数版) と同等。
      */
     @Transactional(readOnly = true)
@@ -256,8 +256,8 @@ public class SpotService {
     }
 
     /**
-     * Issue#127: 認証ユーザー本人の PENDING_REVIEW 投稿も結果に含めるバージョン (旧シグネチャ)。
-     * Issue#141: 新版に filter=null で委譲する形に変更。
+     * Spec#127: 認証ユーザー本人の PENDING_REVIEW 投稿も結果に含めるバージョン (旧シグネチャ)。
+     * Spec#141: 新版に filter=null で委譲する形に変更。
      */
     @Transactional(readOnly = true)
     public SpotPhotosResponse getSpotPhotos(List<Long> spotIds, int limit, int offset,
@@ -268,20 +268,20 @@ public class SpotService {
     }
 
     /**
-     * Issue#127: 認証ユーザー本人の PENDING_REVIEW 投稿だけを集計してスポット一覧で返す。
+     * Spec#127: 認証ユーザー本人の PENDING_REVIEW 投稿だけを集計してスポット一覧で返す。
      * /api/v1/spots とは別の軽量経路。CloudFront キャッシュ対象外。
      */
     @Transactional(readOnly = true)
     public List<SpotResponse> getMinePendingSpots(BigDecimal north, BigDecimal south,
                                                   BigDecimal east, BigDecimal west,
                                                   Long viewerUserId) {
-        // Issue#141: フィルタ未対応の旧シグネチャ。新実装側は filter 受け取り版を呼ぶこと
+        // Spec#141: フィルタ未対応の旧シグネチャ。新実装側は filter 受け取り版を呼ぶこと
         return getMinePendingSpots(north, south, east, west, viewerUserId,
                 null, null, null, null, null, null, null, null, null, null, null);
     }
 
     /**
-     * Issue#141 Phase 3 (Q-new-5/7): 全フィルタを受け取れる本人 PENDING 版。
+     * Spec#141 Phase 3 (Q-new-5/7): 全フィルタを受け取れる本人 PENDING 版。
      * フィルタロジックは {@link #getSpots} (15 引数版) と同等。
      */
     @Transactional(readOnly = true)
@@ -337,7 +337,7 @@ public class SpotService {
         return (list == null || list.isEmpty()) ? List.of("__NONE__") : list;
     }
 
-    /** Issue#141: null/空リストをセンチネル値（-1L）に変換 (tagIds 用) */
+    /** Spec#141: null/空リストをセンチネル値（-1L）に変換 (tagIds 用) */
     private List<Long> safeLongList(List<Long> list) {
         return (list == null || list.isEmpty()) ? List.of(-1L) : list;
     }

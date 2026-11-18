@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#135 Phase 12: 写真ごとのキーワード取得 API のテスト。
+ * Spec#135 Phase 12: 写真ごとのキーワード取得 API のテスト。
  *
  * <p>{@code GET /api/v1/photos/{id}/tags?lang=xx} で、指定写真に紐づく
  * is_active=TRUE のキーワードを言語別表示名つきで返す。</p>
@@ -83,7 +83,7 @@ class PhotoTagsControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /api/v1/photos/{id}/tags?lang=ja: アクティブなタグだけを返す")
+    @DisplayName("Spec#135 - GET /api/v1/photos/{id}/tags?lang=ja: アクティブなタグだけを返す")
     void getPhotoTags_returnsActiveTagsOnly() throws Exception {
         mockMvc.perform(get("/api/v1/photos/{id}/tags", photo.getPhotoId()).param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -94,7 +94,7 @@ class PhotoTagsControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /api/v1/photos/{id}/tags?lang=en: 英語表示名を返す")
+    @DisplayName("Spec#135 - GET /api/v1/photos/{id}/tags?lang=en: 英語表示名を返す")
     void getPhotoTags_returnsEnglishDisplayName() throws Exception {
         mockMvc.perform(get("/api/v1/photos/{id}/tags", photo.getPhotoId()).param("lang", "en"))
                 .andExpect(status().isOk())
@@ -102,7 +102,7 @@ class PhotoTagsControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /api/v1/photos/{id}/tags: 存在しない photoId でも空配列を返す（404 にはしない）")
+    @DisplayName("Spec#135 - GET /api/v1/photos/{id}/tags: 存在しない photoId でも空配列を返す（404 にはしない）")
     void getPhotoTags_returnsEmptyForNonexistentPhoto() throws Exception {
         mockMvc.perform(get("/api/v1/photos/{id}/tags", 99_999L).param("lang", "ja"))
                 .andExpect(status().isOk())

@@ -1,7 +1,7 @@
 package com.photlas.backend.dto;
 
 /**
- * Issue#19: レポート作成レスポンスDTO
+ * Spec#19: レポート作成レスポンスDTO
  */
 public class ReportResponse {
 

@@ -1,7 +1,7 @@
 import { Page, expect } from '@playwright/test'
 
 /**
- * Issue#55: Symbol Layer移行後のE2Eテスト用ヘルパー
+ * Spec#55: Symbol Layer移行後のE2Eテスト用ヘルパー
  *
  * Symbol Layerで描画されたピンはDOMに存在しないため、
  * Mapbox GL JSの queryRenderedFeatures API を使用して

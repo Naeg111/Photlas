@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * Issue#5: ログイン・ログアウト機能 - ログインリクエスト DTO
+ * Spec#5: ログイン・ログアウト機能 - ログインリクエスト DTO
  */
 public class LoginRequest {
 

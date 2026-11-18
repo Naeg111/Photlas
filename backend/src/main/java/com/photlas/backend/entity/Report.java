@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Issue#54: 通報エンティティ
+ * Spec#54: 通報エンティティ
  * 投稿およびプロフィール画像に対する通報を管理する
  */
 @Entity

@@ -11,8 +11,8 @@ import { useLatest } from '../hooks/useLatest'
 
 /**
  * PhotoLightbox コンポーネント
- * Issue#27: パネル・ダイアログ群の移行
- * Issue#88: オリジナル画像のfetch+ReadableStreamローディング表示
+ * Spec#27: パネル・ダイアログ群の移行
+ * Spec#88: オリジナル画像のfetch+ReadableStreamローディング表示
  */
 
 /** ローディング画面を表示するまでの遅延（ms） */
@@ -61,7 +61,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
     })
   }, [scale, clampPan])
 
-  // Issue#88: ローディング状態管理
+  // Spec#88: ローディング状態管理
   const [isLoading, setIsLoading] = useState(false)
   const [showLoading, setShowLoading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -69,7 +69,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
   const [loadError, setLoadError] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Issue#88: fetch + ReadableStream でオリジナル画像を読み込む
+  // Spec#88: fetch + ReadableStream でオリジナル画像を読み込む
   const fetchImage = useCallback(async (url: string) => {
     setIsLoading(true)
     setShowLoading(false)
@@ -259,7 +259,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
           className="fixed inset-0 bg-black/90 z-[60] pointer-events-auto"
           onClick={() => onOpenChange(false)}
         >
-          {/* Issue#88: ローディング画面 */}
+          {/* Spec#88: ローディング画面 */}
           {showLoading && isLoading && (
             <div
               data-testid="lightbox-loading"

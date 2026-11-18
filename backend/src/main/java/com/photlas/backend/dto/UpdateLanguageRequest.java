@@ -3,7 +3,7 @@ package com.photlas.backend.dto;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * Issue#93: 言語設定変更リクエストDTO
+ * Spec#93: 言語設定変更リクエストDTO
  */
 public class UpdateLanguageRequest {
 

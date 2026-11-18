@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <!-- Issue#70: iOS PWAスタンドアロンモード検出（CSS適用前に実行） -->
+    <!-- Spec#70: iOS PWAスタンドアロンモード検出（CSS適用前に実行） -->
     <script>if(navigator.standalone)document.documentElement.classList.add('standalone')</script>
     <meta name="theme-color" content="#000000" />
 
@@ -53,7 +53,7 @@
     <meta property="og:url" content="https://photlas.jp/" />
     <meta property="og:site_name" content="Photlas" />
     <meta property="og:locale" content="ja_JP" />
-    <!-- Issue#58 §7: SVG は多くの SNS クローラが描画しないため PNG(1200x630) に変更 -->
+    <!-- Spec#58 §7: SVG は多くの SNS クローラが描画しないため PNG(1200x630) に変更 -->
     <meta property="og:image" content="https://photlas.jp/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -75,7 +75,7 @@
     }
     </script>
 
-    <!-- Google Analytics 4 with Consent Mode (Issue#71: GDPR対応) -->
+    <!-- Google Analytics 4 with Consent Mode (Spec#71: GDPR対応) -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}

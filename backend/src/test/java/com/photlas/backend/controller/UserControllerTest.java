@@ -238,7 +238,7 @@ public class UserControllerTest {
     }
 
     /**
-     * Issue#81 Phase 4b: OAuth のみユーザー用に confirmationChecked を送るための拡張版。
+     * Spec#81 Phase 4b: OAuth のみユーザー用に confirmationChecked を送るための拡張版。
      * @param password          通常ユーザーのパスワード (null 可 - OAuth のみユーザー)
      * @param confirmationChecked 退会確認チェックボックスの状態 (null 可)
      */
@@ -536,12 +536,12 @@ public class UserControllerTest {
     }
 
     // ============================================================
-    // Issue#20: アカウント設定機能のテスト
+    // Spec#20: アカウント設定機能のテスト
     // ============================================================
 
     // PUT /api/v1/users/me/email のテスト
     @Test
-    @DisplayName("Issue#86 - PUT /api/v1/users/me/email - メール変更リクエストで確認メッセージが返る")
+    @DisplayName("Spec#86 - PUT /api/v1/users/me/email - メール変更リクエストで確認メッセージが返る")
     void testUpdateEmail_ValidRequest_ReturnsConfirmationMessage() throws Exception {
         String requestBody = buildEmailUpdateRequestBody(NEW_EMAIL, TEST_PASSWORD);
 
@@ -551,7 +551,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - パスワード誤りの場合は401を返す")
+    @DisplayName("Spec#20 - PUT /api/v1/users/me/email - パスワード誤りの場合は401を返す")
     void testUpdateEmail_WrongPassword_ReturnsUnauthorized() throws Exception {
         String requestBody = buildEmailUpdateRequestBody(NEW_EMAIL, WRONG_PASSWORD);
 
@@ -561,7 +561,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - メールアドレス重複の場合は409を返す")
+    @DisplayName("Spec#20 - PUT /api/v1/users/me/email - メールアドレス重複の場合は409を返す")
     void testUpdateEmail_DuplicateEmail_ReturnsConflict() throws Exception {
         // 別のユーザーを作成
         createTestUser(OTHER_USERNAME, OTHER_EMAIL);
@@ -574,7 +574,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#86 - PUT /api/v1/users/me/email - 同じメールアドレスの場合は400を返す")
+    @DisplayName("Spec#86 - PUT /api/v1/users/me/email - 同じメールアドレスの場合は400を返す")
     void testUpdateEmail_SameEmail_ReturnsBadRequest() throws Exception {
         String requestBody = buildEmailUpdateRequestBody(TEST_EMAIL, TEST_PASSWORD);
 
@@ -583,7 +583,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - メール形式不正の場合は400を返す")
+    @DisplayName("Spec#20 - PUT /api/v1/users/me/email - メール形式不正の場合は400を返す")
     void testUpdateEmail_InvalidEmailFormat_ReturnsBadRequest() throws Exception {
         String requestBody = buildEmailUpdateRequestBody(INVALID_EMAIL, TEST_PASSWORD);
 
@@ -592,7 +592,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - PUT /api/v1/users/me/email - 未認証の場合は401を返す")
+    @DisplayName("Spec#20 - PUT /api/v1/users/me/email - 未認証の場合は401を返す")
     void testUpdateEmail_Unauthenticated_ReturnsUnauthorized() throws Exception {
         String requestBody = buildEmailUpdateRequestBody(NEW_EMAIL, TEST_PASSWORD);
 
@@ -605,7 +605,7 @@ public class UserControllerTest {
 
     // PUT /api/v1/users/me/password のテスト
     @Test
-    @DisplayName("Issue#20 - PUT /api/v1/users/me/password - パスワード変更成功")
+    @DisplayName("Spec#20 - PUT /api/v1/users/me/password - パスワード変更成功")
     void testUpdatePassword_ValidRequest_ReturnsOk() throws Exception {
         String requestBody = buildPasswordUpdateRequestBody(TEST_PASSWORD, NEW_PASSWORD, NEW_PASSWORD);
 
@@ -614,7 +614,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - PUT /api/v1/users/me/password - 現在のパスワード誤りの場合は401を返す")
+    @DisplayName("Spec#20 - PUT /api/v1/users/me/password - 現在のパスワード誤りの場合は401を返す")
     void testUpdatePassword_WrongCurrentPassword_ReturnsUnauthorized() throws Exception {
         String requestBody = buildPasswordUpdateRequestBody(WRONG_PASSWORD, NEW_PASSWORD, NEW_PASSWORD);
 
@@ -624,7 +624,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - PUT /api/v1/users/me/password - パスワード不一致の場合は400を返す")
+    @DisplayName("Spec#20 - PUT /api/v1/users/me/password - パスワード不一致の場合は400を返す")
     void testUpdatePassword_PasswordMismatch_ReturnsBadRequest() throws Exception {
         String requestBody = buildPasswordUpdateRequestBody(TEST_PASSWORD, NEW_PASSWORD, DIFFERENT_PASSWORD);
 
@@ -633,7 +633,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - PUT /api/v1/users/me/password - パスワード形式不正の場合は400を返す")
+    @DisplayName("Spec#20 - PUT /api/v1/users/me/password - パスワード形式不正の場合は400を返す")
     void testUpdatePassword_InvalidPasswordFormat_ReturnsBadRequest() throws Exception {
         String requestBody = buildPasswordUpdateRequestBody(TEST_PASSWORD, SHORT_PASSWORD, SHORT_PASSWORD);
 
@@ -641,9 +641,9 @@ public class UserControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // Issue#21: パスワードバリデーション統一 - 記号禁止チェック
+    // Spec#21: パスワードバリデーション統一 - 記号禁止チェック
     @Test
-    @DisplayName("Issue#21 - PUT /api/v1/users/me/password - 記号を含むパスワードの場合は400を返す")
+    @DisplayName("Spec#21 - PUT /api/v1/users/me/password - 記号を含むパスワードの場合は400を返す")
     void testUpdatePassword_PasswordWithSpecialCharacters_ReturnsBadRequest() throws Exception {
         String requestBody = buildPasswordUpdateRequestBody(TEST_PASSWORD, PASSWORD_WITH_SPECIAL, PASSWORD_WITH_SPECIAL);
 
@@ -652,9 +652,9 @@ public class UserControllerTest {
                 .andExpect(jsonPath(JSON_PATH_ERRORS_0_FIELD, is("newPassword")));
     }
 
-    // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
+    // Spec#21: パスワードバリデーション統一 - 最大文字数チェック
     @Test
-    @DisplayName("Issue#21 - PUT /api/v1/users/me/password - 21文字以上のパスワードの場合は400を返す（newPassword と newPasswordConfirm 両方が違反）")
+    @DisplayName("Spec#21 - PUT /api/v1/users/me/password - 21文字以上のパスワードの場合は400を返す（newPassword と newPasswordConfirm 両方が違反）")
     void testUpdatePassword_PasswordTooLong_ReturnsBadRequest() throws Exception {
         // 同じ 21 文字を newPassword と newPasswordConfirm に送ると、両方 @Size(max=20) 違反
         // （パスワード入力上限統一対応で newPasswordConfirm にも max=20 を付けたため）
@@ -667,7 +667,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - PUT /api/v1/users/me/password - 未認証の場合は401を返す")
+    @DisplayName("Spec#20 - PUT /api/v1/users/me/password - 未認証の場合は401を返す")
     void testUpdatePassword_Unauthenticated_ReturnsUnauthorized() throws Exception {
         String requestBody = buildPasswordUpdateRequestBody(TEST_PASSWORD, NEW_PASSWORD, NEW_PASSWORD);
 
@@ -680,7 +680,7 @@ public class UserControllerTest {
 
     // DELETE /api/v1/users/me のテスト
     @Test
-    @DisplayName("Issue#20 - DELETE /api/v1/users/me - アカウント削除成功")
+    @DisplayName("Spec#20 - DELETE /api/v1/users/me - アカウント削除成功")
     void testDeleteAccount_ValidRequest_ReturnsNoContent() throws Exception {
         String requestBody = buildDeleteAccountRequestBody(TEST_PASSWORD);
 
@@ -689,7 +689,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - DELETE /api/v1/users/me - パスワード誤りの場合は401を返す")
+    @DisplayName("Spec#20 - DELETE /api/v1/users/me - パスワード誤りの場合は401を返す")
     void testDeleteAccount_WrongPassword_ReturnsUnauthorized() throws Exception {
         String requestBody = buildDeleteAccountRequestBody(WRONG_PASSWORD);
 
@@ -699,7 +699,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#20 - DELETE /api/v1/users/me - 未認証の場合は401を返す")
+    @DisplayName("Spec#20 - DELETE /api/v1/users/me - 未認証の場合は401を返す")
     void testDeleteAccount_Unauthenticated_ReturnsUnauthorized() throws Exception {
         String requestBody = buildDeleteAccountRequestBody(TEST_PASSWORD);
 
@@ -711,10 +711,10 @@ public class UserControllerTest {
     }
 
     // ============================================================
-    // Issue#29: プロフィール機能強化のテスト
+    // Spec#29: プロフィール機能強化のテスト
     // ============================================================
 
-    // Endpoint Constants for Issue#29
+    // Endpoint Constants for Spec#29
     private static final String PROFILE_IMAGE_PRESIGNED_URL_ENDPOINT = "/api/v1/users/me/profile-image/presigned-url";
     private static final String PROFILE_IMAGE_ENDPOINT = "/api/v1/users/me/profile-image";
     private static final String SNS_LINKS_ENDPOINT = "/api/v1/users/me/sns-links";
@@ -726,13 +726,13 @@ public class UserControllerTest {
     private static final String PLATFORM_YOUTUBE = "youtube";
     private static final String PLATFORM_TIKTOK = "tiktok";
 
-    // SNS URL Constants for Issue#29
+    // SNS URL Constants for Spec#29
     private static final String SNS_URL_YOUTUBE = "https://youtube.com/@testuser";
     private static final String SNS_URL_TIKTOK = "https://tiktok.com/@testuser";
 
     // --- プロフィール画像 Presigned URL取得 ---
     @Test
-    @DisplayName("Issue#29 - POST /api/v1/users/me/profile-image/presigned-url - 署名付きURL発行成功")
+    @DisplayName("Spec#29 - POST /api/v1/users/me/profile-image/presigned-url - 署名付きURL発行成功")
     void testGetProfileImagePresignedUrl_ValidRequest_ReturnsUploadUrl() throws Exception {
         String requestBody = "{\"extension\":\"jpg\",\"contentType\":\"image/jpeg\"}";
 
@@ -747,7 +747,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - POST /api/v1/users/me/profile-image/presigned-url - 未認証の場合は401を返す")
+    @DisplayName("Spec#29 - POST /api/v1/users/me/profile-image/presigned-url - 未認証の場合は401を返す")
     void testGetProfileImagePresignedUrl_Unauthenticated_ReturnsUnauthorized() throws Exception {
         String requestBody = "{\"extension\":\"jpg\",\"contentType\":\"image/jpeg\"}";
 
@@ -759,7 +759,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - POST /api/v1/users/me/profile-image/presigned-url - 不正な拡張子の場合は400を返す")
+    @DisplayName("Spec#29 - POST /api/v1/users/me/profile-image/presigned-url - 不正な拡張子の場合は400を返す")
     void testGetProfileImagePresignedUrl_InvalidExtension_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"extension\":\"exe\",\"contentType\":\"application/octet-stream\"}";
 
@@ -773,7 +773,7 @@ public class UserControllerTest {
 
     // --- プロフィール画像登録 ---
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/profile-image - プロフィール画像キー登録成功")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/profile-image - プロフィール画像キー登録成功")
     void testUpdateProfileImage_ValidRequest_ReturnsOk() throws Exception {
         String requestBody = "{\"objectKey\":\"profile-images/" + testUser.getId() + "/test-uuid.jpg\"}";
 
@@ -787,7 +787,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/profile-image - 未認証の場合は401を返す")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/profile-image - 未認証の場合は401を返す")
     void testUpdateProfileImage_Unauthenticated_ReturnsUnauthorized() throws Exception {
         String requestBody = "{\"objectKey\":\"profile-images/1/test-uuid.jpg\"}";
 
@@ -800,7 +800,7 @@ public class UserControllerTest {
 
     // --- プロフィール画像削除 ---
     @Test
-    @DisplayName("Issue#29 - DELETE /api/v1/users/me/profile-image - プロフィール画像削除成功")
+    @DisplayName("Spec#29 - DELETE /api/v1/users/me/profile-image - プロフィール画像削除成功")
     void testDeleteProfileImage_ValidRequest_ReturnsNoContent() throws Exception {
         mockMvc.perform(delete(PROFILE_IMAGE_ENDPOINT)
                 .with(csrf())
@@ -809,7 +809,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - DELETE /api/v1/users/me/profile-image - 未認証の場合は401を返す")
+    @DisplayName("Spec#29 - DELETE /api/v1/users/me/profile-image - 未認証の場合は401を返す")
     void testDeleteProfileImage_Unauthenticated_ReturnsUnauthorized() throws Exception {
         mockMvc.perform(delete(PROFILE_IMAGE_ENDPOINT)
                 .with(csrf()))
@@ -818,7 +818,7 @@ public class UserControllerTest {
 
     // --- SNSリンク保存 ---
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - SNSリンク保存成功")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/sns-links - SNSリンク保存成功")
     void testUpdateSnsLinks_ValidRequest_ReturnsOk() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
                 "{\"platform\":" + CodeConstants.PLATFORM_TWITTER + ",\"url\":\"https://x.com/testuser\"}," +
@@ -835,7 +835,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - PUT /api/v1/users/me/sns-links - 許可された3種類のSNS（X/Instagram/Threads）を登録可能")
+    @DisplayName("Spec#102 - PUT /api/v1/users/me/sns-links - 許可された3種類のSNS（X/Instagram/Threads）を登録可能")
     void testUpdateSnsLinks_AllowedPlatforms_ReturnsOk() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
                 "{\"platform\":" + CodeConstants.PLATFORM_TWITTER + ",\"url\":\"https://x.com/testuser\"}," +
@@ -853,7 +853,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - PUT /api/v1/users/me/sns-links - YouTube は ALLOWED_PLATFORMS から除外されているため拒否")
+    @DisplayName("Spec#102 - PUT /api/v1/users/me/sns-links - YouTube は ALLOWED_PLATFORMS から除外されているため拒否")
     void testUpdateSnsLinks_YouTube_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
                 "{\"platform\":" + CodeConstants.PLATFORM_YOUTUBE + ",\"url\":\"https://youtube.com/@testuser\"}" +
@@ -868,7 +868,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - PUT /api/v1/users/me/sns-links - TikTok は ALLOWED_PLATFORMS から除外されているため拒否")
+    @DisplayName("Spec#102 - PUT /api/v1/users/me/sns-links - TikTok は ALLOWED_PLATFORMS から除外されているため拒否")
     void testUpdateSnsLinks_TikTok_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
                 "{\"platform\":" + CodeConstants.PLATFORM_TIKTOK + ",\"url\":\"https://tiktok.com/@testuser\"}" +
@@ -883,7 +883,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#102 - GET /api/v1/users/me - SNSリンクのレスポンスに platform フィールドが含まれる")
+    @DisplayName("Spec#102 - GET /api/v1/users/me - SNSリンクのレスポンスに platform フィールドが含まれる")
     void testGetMyProfile_SnsLinkIncludesPlatform() throws Exception {
         UserSnsLink link = new UserSnsLink(testUser.getId(),
                 CodeConstants.PLATFORM_THREADS,
@@ -899,7 +899,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - 未対応プラットフォームの場合は400を返す")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/sns-links - 未対応プラットフォームの場合は400を返す")
     void testUpdateSnsLinks_InvalidPlatform_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
                 "{\"platform\":999,\"url\":\"https://facebook.com/testuser\"}" +
@@ -914,7 +914,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - URLがプラットフォームと不一致の場合は400を返す")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/sns-links - URLがプラットフォームと不一致の場合は400を返す")
     void testUpdateSnsLinks_UrlMismatch_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
                 "{\"platform\":" + CodeConstants.PLATFORM_TWITTER + ",\"url\":\"https://instagram.com/testuser\"}" +
@@ -929,7 +929,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - 同一プラットフォームが重複している場合は400を返す")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/sns-links - 同一プラットフォームが重複している場合は400を返す")
     void testUpdateSnsLinks_DuplicatePlatform_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"snsLinks\":[" +
                 "{\"platform\":\"twitter\",\"url\":\"https://x.com/testuser1\"}," +
@@ -945,7 +945,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/sns-links - 未認証の場合は401を返す")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/sns-links - 未認証の場合は401を返す")
     void testUpdateSnsLinks_Unauthenticated_ReturnsUnauthorized() throws Exception {
         String requestBody = "{\"snsLinks\":[]}";
 
@@ -958,7 +958,7 @@ public class UserControllerTest {
 
     // --- 表示名変更 ---
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 表示名変更成功")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/username - 表示名変更成功")
     void testUpdateUsername_ValidRequest_ReturnsOk() throws Exception {
         String requestBody = "{\"username\":\"newusername\"}";
 
@@ -972,7 +972,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 表示名が空の場合は400を返す")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/username - 表示名が空の場合は400を返す")
     void testUpdateUsername_EmptyUsername_ReturnsBadRequest() throws Exception {
         String requestBody = "{\"username\":\"\"}";
 
@@ -985,7 +985,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 表示名が30文字を超える場合は400を返す")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/username - 表示名が30文字を超える場合は400を返す")
     void testUpdateUsername_TooLongUsername_ReturnsBadRequest() throws Exception {
         String longUsername = "a".repeat(31);
         String requestBody = "{\"username\":\"" + longUsername + "\"}";
@@ -999,7 +999,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 他ユーザーと同じ表示名でも更新成功する（重複許可）")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/username - 他ユーザーと同じ表示名でも更新成功する（重複許可）")
     void testUpdateUsername_DuplicateUsername_ReturnsOk() throws Exception {
         // 別のユーザーを作成
         createTestUser("existingname", "existing@example.com");
@@ -1015,7 +1015,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - PUT /api/v1/users/me/username - 未認証の場合は401を返す")
+    @DisplayName("Spec#29 - PUT /api/v1/users/me/username - 未認証の場合は401を返す")
     void testUpdateUsername_Unauthenticated_ReturnsUnauthorized() throws Exception {
         String requestBody = "{\"username\":\"newusername\"}";
 
@@ -1028,7 +1028,7 @@ public class UserControllerTest {
 
     // --- プロフィール取得（プロフィール画像URL・SNSリンク含む） ---
     @Test
-    @DisplayName("Issue#29 - GET /api/v1/users/me - プロフィール画像URLフィールドが含まれる")
+    @DisplayName("Spec#29 - GET /api/v1/users/me - プロフィール画像URLフィールドが含まれる")
     void testGetMyProfile_IncludesProfileImageUrl() throws Exception {
         performGetMyProfile()
                 .andExpect(status().isOk())
@@ -1036,7 +1036,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#29 - GET /api/v1/users/{userId} - 他ユーザーのプロフィール画像URLフィールドが含まれる")
+    @DisplayName("Spec#29 - GET /api/v1/users/{userId} - 他ユーザーのプロフィール画像URLフィールドが含まれる")
     void testGetUserProfile_IncludesProfileImageUrl() throws Exception {
         performGetUserProfile(testUser.getId())
                 .andExpect(status().isOk())

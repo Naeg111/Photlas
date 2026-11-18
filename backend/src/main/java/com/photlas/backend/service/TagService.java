@@ -31,7 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Issue#135: キーワード機能の業務ロジックを担うサービス。
+ * Spec#135: キーワード機能の業務ロジックを担うサービス。
  *
  * <ul>
  *   <li>Rekognition ラベルから AI 提案キーワード抽出 (直接マッチのみ、80% 閾値、最大 10 件)</li>
@@ -45,13 +45,13 @@ public class TagService {
 
     private static final Logger logger = LoggerFactory.getLogger(TagService.class);
 
-    /** Issue#119/132 と統一: 80%。 */
+    /** Spec#119/132 と統一: 80%。 */
     private static final float CONFIDENCE_THRESHOLD = 80f;
 
-    /** Issue#135 3.4.1: AI 提案キーワードの最大数。 */
+    /** Spec#135 3.4.1: AI 提案キーワードの最大数。 */
     private static final int MAX_SUGGESTIONS = 10;
 
-    /** Issue#142: 動物(207)配下の中立な鳥タグ「鳥」の slug（焦点距離リマップで注入）。 */
+    /** Spec#142: 動物(207)配下の中立な鳥タグ「鳥」の slug（焦点距離リマップで注入）。 */
     private static final String COMPANION_BIRD_SLUG = "companion-bird";
 
     /** デフォルト言語（フォールバックチェーンの中継）。 */
@@ -74,7 +74,7 @@ public class TagService {
     }
 
     /**
-     * Issue#136 Phase 4: SSR ランディングページ用にタグ別 PUBLISHED 写真を Page で返す。
+     * Spec#136 Phase 4: SSR ランディングページ用にタグ別 PUBLISHED 写真を Page で返す。
      * フィルタ条件 (PUBLISHED + 退会済みユーザー除外) は {@link PhotoRepository} 側で実装済み。
      */
     @Transactional(readOnly = true)
@@ -84,7 +84,7 @@ public class TagService {
     }
 
     /**
-     * Issue#136 Phase 8: SSR ランディング 0 件時の関連キーワード取得 (Q5)。
+     * Spec#136 Phase 8: SSR ランディング 0 件時の関連キーワード取得 (Q5)。
      *
      * <p>挙動:</p>
      * <ol>
@@ -120,9 +120,9 @@ public class TagService {
     }
 
     /**
-     * Rekognition ラベル群から AI 提案キーワードを抽出する（Issue#142: 焦点距離リマップ付き）。
+     * Rekognition ラベル群から AI 提案キーワードを抽出する（Spec#142: 焦点距離リマップ付き）。
      *
-     * <p>Issue#135 3.4.1 のベース抽出に加え、Issue#142 で焦点距離による後処理リマップを行う:</p>
+     * <p>Spec#135 3.4.1 のベース抽出に加え、Spec#142 で焦点距離による後処理リマップを行う:</p>
      * <ul>
      *   <li>{@code focalLength35mm ≥ 300mm}: 従来どおり（野鳥全般＋種別タグをそのまま提案）</li>
      *   <li>{@code <300mm} または欠落: 候補のうち 208(野鳥)のみに属する野鳥系タグを除去し、
@@ -142,12 +142,12 @@ public class TagService {
                 focalLength35mm.filter(f -> f >= ExifBasedCategoryHints.R3_5_MIN_FOCAL_35MM).isPresent()
                         ? base
                         : remapWildBirdToCompanion(base);
-        // Issue#159 ③-9: 鉄道「その他」の特殊サジェスト（一般鉄道ラベル→その他／特定種があれば抑制）
+        // Spec#159 ③-9: 鉄道「その他」の特殊サジェスト（一般鉄道ラベル→その他／特定種があれば抑制）
         return remapRailwayOther(afterBird, labels);
     }
 
     /**
-     * Issue#135 3.4.1: 直接マッチのみ・信頼度 {@value #CONFIDENCE_THRESHOLD}% 以上・
+     * Spec#135 3.4.1: 直接マッチのみ・信頼度 {@value #CONFIDENCE_THRESHOLD}% 以上・
      * {@code is_active=TRUE} のタグのみ・最大 {@value #MAX_SUGGESTIONS} 件（信頼度上位）。
      */
     private List<TagSuggestion> extractBaseSuggestions(List<Label> labels) {
@@ -182,7 +182,7 @@ public class TagService {
     }
 
     /**
-     * Issue#142: 候補のうち「208(野鳥)に属し 207(動物)に属さない」野鳥専用タグを除去し、
+     * Spec#142: 候補のうち「208(野鳥)に属し 207(動物)に属さない」野鳥専用タグを除去し、
      * 中立な「鳥」({@code companion-bird}, 207) を 1 件注入する。野鳥専用候補が無ければ何もしない。
      * companion-bird が未投入（通常は V43 で存在）なら安全側で base をそのまま返す。
      */
@@ -231,7 +231,7 @@ public class TagService {
         return kept;
     }
 
-    /** Issue#159 ③-9: 鉄道「その他」判定用の一般鉄道ラベル（小文字比較）。 */
+    /** Spec#159 ③-9: 鉄道「その他」判定用の一般鉄道ラベル（小文字比較）。 */
     private static final Set<String> GENERAL_RAIL_LABELS =
             Set.of("train", "railway", "subway", "freight train");
     /** 特定種の slug（提案にあれば「その他」は出さない）。 */
@@ -241,7 +241,7 @@ public class TagService {
     private static final String RAILWAY_OTHER_SLUG = "railway";
 
     /**
-     * Issue#159 ③-9 / Q14: 鉄道「その他」の特殊サジェスト。
+     * Spec#159 ③-9 / Q14: 鉄道「その他」の特殊サジェスト。
      *
      * <ul>
      *   <li>提案に特定種（新幹線/機関車/路面電車/モノレール/ケーブルカー）が含まれる場合は
@@ -353,7 +353,7 @@ public class TagService {
 
     /**
      * slug からアクティブなキーワード 1 件を取得（指定言語の表示名つき）。
-     * Issue#135 3.6: 公開経路では必ず is_active=TRUE のみ。
+     * Spec#135 3.6: 公開経路では必ず is_active=TRUE のみ。
      */
     @Transactional(readOnly = true)
     public Optional<TagDisplay> findActiveBySlugForDisplay(String slug, String lang) {
@@ -362,7 +362,7 @@ public class TagService {
     }
 
     /**
-     * Issue#135: 指定写真に紐づく is_active=TRUE のタグを言語別表示名つきで返す。
+     * Spec#135: 指定写真に紐づく is_active=TRUE のタグを言語別表示名つきで返す。
      * 並び順は sort_order 昇順 + alphabetical（slug 基準）。
      */
     @Transactional(readOnly = true)
@@ -380,7 +380,7 @@ public class TagService {
     }
 
     /**
-     * Issue#135 + Issue#141 後追い: 全アクティブタグを取得し、カテゴリ紐付け + photoCount 付きで返す。
+     * Spec#135 + Spec#141 後追い: 全アクティブタグを取得し、カテゴリ紐付け + photoCount 付きで返す。
      * フロントは KeywordSection の文脈連動表示・アコーディオン・検索 BOX で使う。
      * photoCount=0 のタグはフィルタ画面で非活性表示される。
      */
@@ -399,7 +399,7 @@ public class TagService {
             categoriesByTagId.computeIfAbsent(tc.getTagId(), k -> new ArrayList<>())
                     .add(tc.getCategoryCode());
         }
-        // Issue#141 後追い: tag_id → photoCount (PUBLISHED + 退会済除外)。
+        // Spec#141 後追い: tag_id → photoCount (PUBLISHED + 退会済除外)。
         // 1 本のクエリで一括取得して N+1 を回避。0 件 tag は countMap に登場しないため getOrDefault(0L)
         Map<Long, Long> countByTagId = new java.util.HashMap<>();
         for (var row : photoTagRepository.countActivePublishedGroupedByTagId(
@@ -419,7 +419,7 @@ public class TagService {
     }
 
     /**
-     * Issue#135 3.3: 翻訳欠落時のフォールバックチェーン
+     * Spec#135 3.3: 翻訳欠落時のフォールバックチェーン
      * <p>{@code 指定言語 → 英語 → rekognition_label}</p>
      *
      * @param tag  対象 Tag

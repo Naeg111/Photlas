@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Issue#54: 通報によるモデレーション連携テスト
+ * Spec#54: 通報によるモデレーション連携テスト
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -76,7 +76,7 @@ public class ReportModerationTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 自分の投稿を通報できない")
+    @DisplayName("Spec#54 - 自分の投稿を通報できない")
     void testCreateReport_SelfReport_ThrowsException() {
         ReportRequest request = new ReportRequest(CodeConstants.REASON_ADULT_CONTENT, "テスト");
 
@@ -86,7 +86,7 @@ public class ReportModerationTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 1件目の通報ではステータスがPUBLISHEDのまま")
+    @DisplayName("Spec#54 - 1件目の通報ではステータスがPUBLISHEDのまま")
     void testCreateReport_FirstReport_StatusRemainsPublished() {
         ReportRequest request = new ReportRequest(CodeConstants.REASON_ADULT_CONTENT, "不適切な画像です");
 
@@ -97,7 +97,7 @@ public class ReportModerationTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 異なるユーザーからの通報が2件で写真がQUARANTINEDになる")
+    @DisplayName("Spec#54 - 異なるユーザーからの通報が2件で写真がQUARANTINEDになる")
     void testCreateReport_TwoReportsFromDifferentUsers_StatusBecomesQuarantined() {
         ReportRequest request1 = new ReportRequest(CodeConstants.REASON_ADULT_CONTENT, "不適切な画像です");
         ReportRequest request2 = new ReportRequest(CodeConstants.REASON_VIOLENCE, "暴力的な内容です");
@@ -110,7 +110,7 @@ public class ReportModerationTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 新しい通報理由カテゴリが使用できる")
+    @DisplayName("Spec#54 - 新しい通報理由カテゴリが使用できる")
     void testCreateReport_NewReasonCategories_Accepted() {
         ReportRequest request = new ReportRequest(CodeConstants.REASON_SPAM, "スパム投稿です");
 
@@ -122,7 +122,7 @@ public class ReportModerationTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 同じユーザーが同じ写真を2回通報するとConflictExceptionが発生する")
+    @DisplayName("Spec#54 - 同じユーザーが同じ写真を2回通報するとConflictExceptionが発生する")
     void testCreateReport_DuplicateReport_ThrowsConflictException() {
         ReportRequest request1 = new ReportRequest(CodeConstants.REASON_ADULT_CONTENT, "不適切な画像です");
         ReportRequest request2 = new ReportRequest(CodeConstants.REASON_VIOLENCE, "暴力的な内容です");
@@ -135,7 +135,7 @@ public class ReportModerationTest {
     }
 
     @Test
-    @DisplayName("Issue#54 / Issue#93 - すでにQUARANTINEDの写真への通報はPHOTO_NOT_PUBLICのInvalidStateExceptionがスローされる")
+    @DisplayName("Spec#54 / Spec#93 - すでにQUARANTINEDの写真への通報はPHOTO_NOT_PUBLICのInvalidStateExceptionがスローされる")
     void testCreateReport_AlreadyQuarantined_ThrowsInvalidStateException() {
         // Given: 写真を事前にQUARANTINEDに設定
         testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -151,10 +151,10 @@ public class ReportModerationTest {
                 .extracting("code").isEqualTo(ErrorCodes.PHOTO_NOT_PUBLIC);
     }
 
-    // ===== Issue#54: S3隔離フロー整合性テスト =====
+    // ===== Spec#54: S3隔離フロー整合性テスト =====
 
     @Test
-    @DisplayName("Issue#54 - 通報2件でQUARANTINED時にs3_object_keyがquarantined/プレフィックス付きに更新される")
+    @DisplayName("Spec#54 - 通報2件でQUARANTINED時にs3_object_keyがquarantined/プレフィックス付きに更新される")
     void testCreateReport_TwoReports_S3ObjectKeyUpdated() {
         ReportRequest request1 = new ReportRequest(CodeConstants.REASON_ADULT_CONTENT, "不適切");
         ReportRequest request2 = new ReportRequest(CodeConstants.REASON_VIOLENCE, "暴力的");

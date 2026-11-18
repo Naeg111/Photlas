@@ -19,7 +19,7 @@ interface LinkAccountConfirmDialogProps {
 }
 
 /**
- * Issue#81 Phase 5d - 既存アカウントとの OAuth 連携確認ダイアログ。
+ * Spec#81 Phase 5d - 既存アカウントとの OAuth 連携確認ダイアログ。
  *
  * OAuth ログイン時に email が既存のパスワードアカウントに一致した場合、
  * バックエンドが短命トークンを発行して `/oauth/callback#link_confirmation_token=...`

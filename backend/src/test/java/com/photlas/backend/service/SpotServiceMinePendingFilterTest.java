@@ -27,7 +27,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#141 Phase 3 (Q-new-5/7): {@link SpotService#getMinePendingSpots} の
+ * Spec#141 Phase 3 (Q-new-5/7): {@link SpotService#getMinePendingSpots} の
  * tagIds + 既存全フィルタが本人 PENDING 検索にも適用されることを検証する統合テスト。
  */
 @SpringBootTest
@@ -108,7 +108,7 @@ class SpotServiceMinePendingFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getMinePendingSpots: tagIds 指定でいずれかの tag が付いた PENDING 写真を持つスポットだけ返る")
+    @DisplayName("Spec#141 - getMinePendingSpots: tagIds 指定でいずれかの tag が付いた PENDING 写真を持つスポットだけ返る")
     void minePending_filtersByTagIds() {
         Spot spotCherry = saveSpot("35.0", "139.0");
         Spot spotSushi = saveSpot("35.1", "139.1");
@@ -127,7 +127,7 @@ class SpotServiceMinePendingFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getMinePendingSpots: 全フィルタ null/空のとき従来挙動 (本人 PENDING 全件)")
+    @DisplayName("Spec#141 - getMinePendingSpots: 全フィルタ null/空のとき従来挙動 (本人 PENDING 全件)")
     void minePending_nullFilters_returnsAll() {
         Spot spotA = saveSpot("35.0", "139.0");
         Spot spotB = saveSpot("35.1", "139.1");
@@ -144,7 +144,7 @@ class SpotServiceMinePendingFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getMinePendingSpots: 他人の PENDING は依然として除外される (本人 user_id 絞り込み維持)")
+    @DisplayName("Spec#141 - getMinePendingSpots: 他人の PENDING は依然として除外される (本人 user_id 絞り込み維持)")
     void minePending_excludesOtherUsersPending() {
         String shortId = String.valueOf(System.nanoTime()).substring(0, 9);
         User other = new User();

@@ -29,7 +29,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#135 Phase 5: {@link TagService} の統合テスト。
+ * Spec#135 Phase 5: {@link TagService} の統合テスト。
  *
  * <p>Spring と PostgreSQL(+PostGIS) を起動し、{@link TagRepository} 等と連携した
  * 振る舞いを検証する。</p>
@@ -71,7 +71,7 @@ class TagServiceTest {
     // ========== extractSuggestions ==========
 
     @Test
-    @DisplayName("Issue#135 - extractSuggestions: Rekognition ラベルが辞書にあれば TagSuggestion を返す")
+    @DisplayName("Spec#135 - extractSuggestions: Rekognition ラベルが辞書にあれば TagSuggestion を返す")
     void extractSuggestionsDirectMatch() {
         Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
         linkCategory(cherry.getId(), CodeConstants.CATEGORY_PLANTS);
@@ -87,7 +87,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - extractSuggestions: 信頼度 80% 未満は除外")
+    @DisplayName("Spec#135 - extractSuggestions: 信頼度 80% 未満は除外")
     void extractSuggestionsFiltersLowConfidence() {
         saveTag("Mountain", "mountain", "山", "Mountain");
 
@@ -99,7 +99,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - extractSuggestions: 親フォールバックは Phase 1 では使わない（直接マッチのみ）")
+    @DisplayName("Spec#135 - extractSuggestions: 親フォールバックは Phase 1 では使わない（直接マッチのみ）")
     void extractSuggestionsDoesNotFallBackToParents() {
         // Husky は辞書に無いが Dog はある
         saveTag("Dog", "dog", "犬", "Dog");
@@ -115,7 +115,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - extractSuggestions: is_active=FALSE のタグは候補から除外")
+    @DisplayName("Spec#135 - extractSuggestions: is_active=FALSE のタグは候補から除外")
     void extractSuggestionsExcludesInactiveTags() {
         Tag t = saveTag("Mountain", "mountain", "山", "Mountain");
         t.setIsActive(false);
@@ -129,7 +129,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - extractSuggestions: 提案は最大 10 個。信頼度上位を採用")
+    @DisplayName("Spec#135 - extractSuggestions: 提案は最大 10 個。信頼度上位を採用")
     void extractSuggestionsLimitsToTopTen() {
         // 12 個のタグを辞書に追加
         for (int i = 0; i < 12; i++) {
@@ -148,7 +148,7 @@ class TagServiceTest {
         assertThat(result).allSatisfy(s -> assertThat(s.confidence()).isGreaterThanOrEqualTo(82f));
     }
 
-    // ========== extractSuggestions: 鉄道「その他」特殊サジェスト (Issue#159 ③-9) ==========
+    // ========== extractSuggestions: 鉄道「その他」特殊サジェスト (Spec#159 ③-9) ==========
 
     private void seedRailwayTags() {
         Tag other = saveTag("Railway", "railway", "その他", "Other");
@@ -158,7 +158,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#159 ③-9 - 一般鉄道ラベル(Train)のみ検知で「その他」が提案される")
+    @DisplayName("Spec#159 ③-9 - 一般鉄道ラベル(Train)のみ検知で「その他」が提案される")
     void railwayGeneralLabelSuggestsOther() {
         seedRailwayTags();
         List<TagSuggestion> result = tagService.extractSuggestions(List.of(
@@ -169,7 +169,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#159 ③-9 - 特定種(新幹線)がある時は「その他」を提案しない")
+    @DisplayName("Spec#159 ③-9 - 特定種(新幹線)がある時は「その他」を提案しない")
     void railwaySpecificTypeSuppressesOther() {
         seedRailwayTags();
         // Railway と Bullet Train を両方検知 → 新幹線のみ（その他は抑制）
@@ -182,7 +182,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#159 ③-9 - 特定種(新幹線)のみなら新幹線を返し「その他」は追加しない")
+    @DisplayName("Spec#159 ③-9 - 特定種(新幹線)のみなら新幹線を返し「その他」は追加しない")
     void railwaySpecificOnlyNoOther() {
         seedRailwayTags();
         List<TagSuggestion> result = tagService.extractSuggestions(List.of(
@@ -191,7 +191,7 @@ class TagServiceTest {
         assertThat(result).extracting(TagSuggestion::slug).containsExactly("bullet-train");
     }
 
-    // ========== extractSuggestions: 焦点距離リマップ (Issue#142) ==========
+    // ========== extractSuggestions: 焦点距離リマップ (Spec#142) ==========
 
     /** companion-bird(207 のみ) を投入するヘルパー。 */
     private Tag saveCompanionBird() {
@@ -201,7 +201,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#142 - <300mm の鳥: 208専用タグを除去し companion-bird を注入（confidence 引き継ぎ）")
+    @DisplayName("Spec#142 - <300mm の鳥: 208専用タグを除去し companion-bird を注入（confidence 引き継ぎ）")
     void remapBelow300ReplacesWildBirdWithCompanion() {
         Tag companion = saveCompanionBird();
         Tag hawk = saveTag("Hawk", "hawk", "タカ", "Hawk");
@@ -221,7 +221,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#142 - ≥300mm の鳥: 野鳥タグをそのまま提案し companion-bird は注入しない")
+    @DisplayName("Spec#142 - ≥300mm の鳥: 野鳥タグをそのまま提案し companion-bird は注入しない")
     void remapAt300OrMoreKeepsWildBird() {
         saveCompanionBird();
         Tag hawk = saveTag("Hawk", "hawk", "タカ", "Hawk");
@@ -237,7 +237,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#142 - 焦点距離欠落の鳥: <300mm と同じ（companion-bird に置換）")
+    @DisplayName("Spec#142 - 焦点距離欠落の鳥: <300mm と同じ（companion-bird に置換）")
     void remapMissingFocalReplacesWildBird() {
         saveCompanionBird();
         Tag eagle = saveTag("Eagle", "eagle", "鷲", "Eagle");
@@ -253,7 +253,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#142 - 非鳥タグは <300mm でもリマップされない")
+    @DisplayName("Spec#142 - 非鳥タグは <300mm でもリマップされない")
     void remapDoesNotAffectNonBird() {
         saveCompanionBird();
         Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
@@ -268,7 +268,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#142 - 207+208 二重所属の鳥は除去対象外（208 専用のみリマップ）")
+    @DisplayName("Spec#142 - 207+208 二重所属の鳥は除去対象外（208 専用のみリマップ）")
     void remapKeepsDualMembershipBird() {
         saveCompanionBird();
         Tag duck = saveTag("Duck", "duck", "カモ", "Duck");
@@ -287,7 +287,7 @@ class TagServiceTest {
     // ========== assignTagsToPhoto ==========
 
     @Test
-    @DisplayName("Issue#135 - assignTagsToPhoto: 指定タグを photo_tags に保存（assigned_by + ai_confidence 反映）")
+    @DisplayName("Spec#135 - assignTagsToPhoto: 指定タグを photo_tags に保存（assigned_by + ai_confidence 反映）")
     void assignTagsToPhotoPersistsAssignedByAndConfidence() {
         Photo photo = createPhoto();
         Tag t1 = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
@@ -309,7 +309,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - assignTagsToPhoto: USER 由来は ai_confidence が NULL でも保存される")
+    @DisplayName("Spec#135 - assignTagsToPhoto: USER 由来は ai_confidence が NULL でも保存される")
     void assignTagsToPhotoUserOriginatedHasNullConfidence() {
         Photo photo = createPhoto();
         Tag t = saveTag("Mountain", "mountain", "山", "Mountain");
@@ -330,7 +330,7 @@ class TagServiceTest {
     // ========== getTopTagsForCategory ==========
 
     @Test
-    @DisplayName("Issue#135 - getTopTagsForCategory: 文脈連動表示用に sort_order 昇順で上限 N 件")
+    @DisplayName("Spec#135 - getTopTagsForCategory: 文脈連動表示用に sort_order 昇順で上限 N 件")
     void getTopTagsForCategoryRespectsSortOrderAndLimit() {
         Tag a = saveTag("AAA", "aaa", "A", "AAA"); a.setSortOrder(20); tagRepository.saveAndFlush(a);
         Tag b = saveTag("BBB", "bbb", "B", "BBB"); b.setSortOrder(10); tagRepository.saveAndFlush(b);
@@ -349,7 +349,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - getTopTagsForCategory: is_active=FALSE は除外")
+    @DisplayName("Spec#135 - getTopTagsForCategory: is_active=FALSE は除外")
     void getTopTagsForCategoryExcludesInactive() {
         Tag a = saveTag("AAA", "aaa", "A", "AAA");
         Tag b = saveTag("BBB", "bbb", "B", "BBB");
@@ -366,7 +366,7 @@ class TagServiceTest {
     // ========== findActiveBySlugForDisplay / pickDisplayName ==========
 
     @Test
-    @DisplayName("Issue#135 - findActiveBySlugForDisplay: 指定言語の表示名で返す")
+    @DisplayName("Spec#135 - findActiveBySlugForDisplay: 指定言語の表示名で返す")
     void findActiveBySlugForDisplayReturnsLocalizedName() {
         Tag t = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
         t.setDisplayNameZh("樱花");
@@ -384,7 +384,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - findActiveBySlugForDisplay: 翻訳欠落時は英語 → rekognition_label にフォールバック")
+    @DisplayName("Spec#135 - findActiveBySlugForDisplay: 翻訳欠落時は英語 → rekognition_label にフォールバック")
     void findActiveBySlugForDisplayFallsBackToEnglishThenLabel() {
         // 中国語のみ NULL
         Tag t = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
@@ -396,7 +396,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - findActiveBySlugForDisplay: 存在しない / is_active=FALSE は空")
+    @DisplayName("Spec#135 - findActiveBySlugForDisplay: 存在しない / is_active=FALSE は空")
     void findActiveBySlugForDisplayReturnsEmptyForMissingOrInactive() {
         assertThat(tagService.findActiveBySlugForDisplay("nope", "ja")).isEmpty();
 
@@ -406,10 +406,10 @@ class TagServiceTest {
         assertThat(tagService.findActiveBySlugForDisplay("mountain", "ja")).isEmpty();
     }
 
-    // ========== Issue#136 Phase 4: findPhotosForTag ==========
+    // ========== Spec#136 Phase 4: findPhotosForTag ==========
 
     @Test
-    @DisplayName("Issue#136 - findPhotosForTag: 該当タグの PUBLISHED 写真を Page で返す")
+    @DisplayName("Spec#136 - findPhotosForTag: 該当タグの PUBLISHED 写真を Page で返す")
     void findPhotosForTagReturnsPublishedPhotos() {
         Tag tag = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
 
@@ -433,7 +433,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - findPhotosForTag: 該当タグが無ければ空ページ")
+    @DisplayName("Spec#136 - findPhotosForTag: 該当タグが無ければ空ページ")
     void findPhotosForTagReturnsEmptyForUnknownTag() {
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 48);
         org.springframework.data.domain.Page<Photo> page = tagService.findPhotosForTag(99999L, pageable);
@@ -472,10 +472,10 @@ class TagServiceTest {
         return photoRepository.saveAndFlush(photo);
     }
 
-    // ========== Issue#136 Phase 8: findRelatedActiveTags ==========
+    // ========== Spec#136 Phase 8: findRelatedActiveTags ==========
 
     @Test
-    @DisplayName("Issue#136 - findRelatedActiveTags: 同カテゴリの別タグを返し、自分自身は除外")
+    @DisplayName("Spec#136 - findRelatedActiveTags: 同カテゴリの別タグを返し、自分自身は除外")
     void findRelatedActiveTags_returnsOthersInSameCategory() {
         Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
         Tag tulip = saveTag("Tulip", "tulip", "チューリップ", "Tulip");
@@ -491,7 +491,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - findRelatedActiveTags: 多カテゴリ重複時は distinct で重複排除")
+    @DisplayName("Spec#136 - findRelatedActiveTags: 多カテゴリ重複時は distinct で重複排除")
     void findRelatedActiveTags_deduplicatesAcrossCategories() {
         Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
         Tag tulip = saveTag("Tulip", "tulip", "チューリップ", "Tulip");
@@ -509,7 +509,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - findRelatedActiveTags: is_active=FALSE のタグは除外")
+    @DisplayName("Spec#136 - findRelatedActiveTags: is_active=FALSE のタグは除外")
     void findRelatedActiveTags_excludesInactiveTags() {
         Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
         Tag tulip = saveTag("Tulip", "tulip", "チューリップ", "Tulip");
@@ -524,7 +524,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - findRelatedActiveTags: sort_order 昇順 + slug 二次ソート")
+    @DisplayName("Spec#136 - findRelatedActiveTags: sort_order 昇順 + slug 二次ソート")
     void findRelatedActiveTags_sortedBySortOrderThenSlug() {
         Tag base = saveTag("Base", "base", "基準", "Base");
         Tag a = saveTag("AAA", "aaa", "A", "AAA"); a.setSortOrder(20); tagRepository.saveAndFlush(a);
@@ -542,7 +542,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - findRelatedActiveTags: limit が尊重される")
+    @DisplayName("Spec#136 - findRelatedActiveTags: limit が尊重される")
     void findRelatedActiveTags_respectsLimit() {
         Tag base = saveTag("Base", "base", "基準", "Base");
         linkCategory(base.getId(), CodeConstants.CATEGORY_OTHER);
@@ -559,7 +559,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - findRelatedActiveTags: カテゴリ未紐付け tag は空リスト")
+    @DisplayName("Spec#136 - findRelatedActiveTags: カテゴリ未紐付け tag は空リスト")
     void findRelatedActiveTags_noCategoriesReturnsEmpty() {
         Tag lone = saveTag("Lone", "lone", "孤独", "Lone");
 
@@ -569,7 +569,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - findRelatedActiveTags: 関連 0 件のとき空リスト")
+    @DisplayName("Spec#136 - findRelatedActiveTags: 関連 0 件のとき空リスト")
     void findRelatedActiveTags_noPeersReturnsEmpty() {
         Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
         linkCategory(cherry.getId(), CodeConstants.CATEGORY_PLANTS);
@@ -580,7 +580,7 @@ class TagServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - findRelatedActiveTags: 言語別表示名でフォールバック")
+    @DisplayName("Spec#136 - findRelatedActiveTags: 言語別表示名でフォールバック")
     void findRelatedActiveTags_displayNamePickedByLang() {
         Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom");
         Tag tulip = saveTag("Tulip", "tulip", "チューリップ", "Tulip");

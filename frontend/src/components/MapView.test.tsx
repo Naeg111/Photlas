@@ -6,8 +6,8 @@ import { _resetRateLimitBurstTracker } from '../utils/notifyIfRateLimited'
 import i18n from '../i18n'
 
 /**
- * Issue#53: Google Maps API から Mapbox API への移行
- * Issue#55: Symbol Layer移行 + クラスタリングアニメーション
+ * Spec#53: Google Maps API から Mapbox API への移行
+ * Spec#55: Symbol Layer移行 + クラスタリングアニメーション
  */
 
 // API設定のモック
@@ -15,7 +15,7 @@ vi.mock('../config/api', () => ({
   API_V1_URL: 'http://localhost:3000/api/v1',
 }))
 
-// Issue#106: IP国判定キャッシュ・APIのモック（autoCenter テスト用）
+// Spec#106: IP国判定キャッシュ・APIのモック（autoCenter テスト用）
 const { mockGetGeoCountryCache, mockSetGeoCountryCache, mockFetchMyCountry } = vi.hoisted(() => ({
   mockGetGeoCountryCache: vi.fn(),
   mockSetGeoCountryCache: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock('../utils/fetchMyCountry', () => ({
   fetchMyCountry: mockFetchMyCountry,
 }))
 
-// Issue#111: ユーザーの最後の位置情報キャッシュのモック
+// Spec#111: ユーザーの最後の位置情報キャッシュのモック
 const { mockGetLastGeolocationCache, mockSetLastGeolocationCache } = vi.hoisted(() => ({
   mockGetLastGeolocationCache: vi.fn(),
   mockSetLastGeolocationCache: vi.fn(),
@@ -43,7 +43,7 @@ vi.mock('../utils/lastGeolocationCache', () => ({
   LAST_GEOLOCATION_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
 }))
 
-// Issue#96 PR3: sonner のモック（429 バーストトースト検証用）
+// Spec#96 PR3: sonner のモック（429 バーストトースト検証用）
 const { mockToast } = vi.hoisted(() => ({
   mockToast: {
     success: vi.fn(),
@@ -89,9 +89,9 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitial
   const eventHandlers: Record<string, Record<string, Function>> = {}
   // GeoJSONソースのsetData呼び出しを記録
   let lastSetData: any = null
-  // Issue#111: ランダム経度の検証用に initialViewState をキャプチャする
+  // Spec#111: ランダム経度の検証用に initialViewState をキャプチャする
   let capturedInitialViewState: any = null
-  // Issue#121: maxTileCacheSize prop をキャプチャする
+  // Spec#121: maxTileCacheSize prop をキャプチャする
   let capturedMaxTileCacheSize: number | undefined = undefined
 
   const mockMap = {
@@ -107,12 +107,12 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitial
     })),
     flyTo: vi.fn(),
     jumpTo: vi.fn(),
-    // Issue#121 Cycle2: preload 発火前のアニメーション進行中チェック用
+    // Spec#121 Cycle2: preload 発火前のアニメーション進行中チェック用
     isMoving: vi.fn(() => false),
     isEasing: vi.fn(() => false),
     once: vi.fn(),
     setLanguage: vi.fn(),
-    // Issue#111: 地球儀回転時に setCenter を呼び出す
+    // Spec#111: 地球儀回転時に setCenter を呼び出す
     setCenter: vi.fn(),
     on: vi.fn((event: string, layerOrHandler: string | Function, handler?: Function) => {
       if (typeof layerOrHandler === 'string' && handler) {
@@ -120,7 +120,7 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitial
         if (!eventHandlers[event]) eventHandlers[event] = {}
         eventHandlers[event][layerOrHandler] = handler
       } else if (typeof layerOrHandler === 'function') {
-        // map.on('movestart', handler) 形式（Issue#111: 地球儀回転）
+        // map.on('movestart', handler) 形式（Spec#111: 地球儀回転）
         if (!eventHandlers[event]) eventHandlers[event] = {}
         eventHandlers[event]['__no_layer__'] = layerOrHandler
       }
@@ -150,7 +150,7 @@ const { mockMap, mockSourceData, MapMock, resetMockMountFlag, getCapturedInitial
     getLayer: vi.fn(() => undefined),
     queryRenderedFeatures: vi.fn(() => []),
     setLayoutProperty: vi.fn(),
-    // Issue#111-followup: ジェスチャー有効/無効の切替用
+    // Spec#111-followup: ジェスチャー有効/無効の切替用
     dragRotate: { enable: vi.fn(), disable: vi.fn() },
     touchPitch: { enable: vi.fn(), disable: vi.fn() },
     touchZoomRotate: { enableRotation: vi.fn(), disableRotation: vi.fn() },
@@ -234,12 +234,12 @@ function setupFetchMock(spots: typeof TEST_SPOT[] = []) {
   return mockFetch
 }
 
-describe('MapView Component - Issue#53, Issue#55', () => {
+describe('MapView Component - Spec#53, Spec#55', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     resetMockMountFlag()
     mockMap.getZoom.mockReturnValue(11)
-    // Issue#121 Cycle2: isEasing/isMoving は各テストで明示上書きしない限り false
+    // Spec#121 Cycle2: isEasing/isMoving は各テストで明示上書きしない限り false
     mockMap.isMoving.mockReturnValue(false)
     mockMap.isEasing.mockReturnValue(false)
   })
@@ -283,7 +283,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#127: 投稿者本人の PENDING ピン即時反映', () => {
+  describe('Spec#127: 投稿者本人の PENDING ピン即時反映', () => {
     /**
      * URL ごとに異なるレスポンスを返せる fetch モック。
      * - /spots は通常スポット配列
@@ -415,7 +415,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#156: スプラッシュ裏ピン先読み・bounds正規化・stale応答ガード', () => {
+  describe('Spec#156: スプラッシュ裏ピン先読み・bounds正規化・stale応答ガード', () => {
     it('初回フェッチは固定の全世界 bounds (north=90/south=-90/east=180/west=-180) を送る', async () => {
       const mockFetch = setupFetchMock([TEST_SPOT])
 
@@ -532,7 +532,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
   })
 
   describe('ズームレベルによる表示制御と誘導UI', () => {
-    it('Issue#103 - ズームレベル5でクラスタレイヤーが表示される（minzoom 制約なし）', async () => {
+    it('Spec#103 - ズームレベル5でクラスタレイヤーが表示される（minzoom 制約なし）', async () => {
       setupFetchMock([TEST_SPOT])
       mockMap.getZoom.mockReturnValue(5)
 
@@ -548,7 +548,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#103 - 個別ピンレイヤーも minzoom 制約なしで追加される', async () => {
+    it('Spec#103 - 個別ピンレイヤーも minzoom 制約なしで追加される', async () => {
       setupFetchMock([TEST_SPOT])
 
       render(<MapView />)
@@ -562,7 +562,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#103 修正 - icon-size 式は件数による分岐なしの単純な step 式（紫ピンも 1.4 倍拡大）', async () => {
+    it('Spec#103 修正 - icon-size 式は件数による分岐なしの単純な step 式（紫ピンも 1.4 倍拡大）', async () => {
       setupFetchMock([TEST_SPOT])
 
       render(<MapView />)
@@ -596,7 +596,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       assertSimpleStepIconSize(unclusteredIconSize)
     })
 
-    it('Issue#103 - 「投稿を表示するには地図を拡大してください」バナーが存在しない', async () => {
+    it('Spec#103 - 「投稿を表示するには地図を拡大してください」バナーが存在しない', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(5)
 
@@ -608,7 +608,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(screen.queryByText(/投稿を表示するには地図を拡大してください/)).not.toBeInTheDocument()
     })
 
-    it('Issue#70 - エラートーストがsafe-area-inset-topを考慮した位置にある', async () => {
+    it('Spec#70 - エラートーストがsafe-area-inset-topを考慮した位置にある', async () => {
       mockMap.getZoom.mockReturnValue(12)
       setupFetchMock([])
       // fetch失敗でトーストを表示
@@ -625,7 +625,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#55: Symbol Layer によるピン描画', () => {
+  describe('Spec#55: Symbol Layer によるピン描画', () => {
     it('GeoJSON SourceがクラスタリングONで登録される', async () => {
       setupFetchMock([TEST_SPOT])
 
@@ -926,7 +926,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  // Issue#96 PR3: 429 レート制限ハンドリング（パターンC: サイレント + 頻度制御通知）
+  // Spec#96 PR3: 429 レート制限ハンドリング（パターンC: サイレント + 頻度制御通知）
   describe('Rate Limit (429) - レート制限（パターンC）', () => {
     beforeEach(() => {
       _resetRateLimitBurstTracker()
@@ -961,7 +961,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#111-followup Bug1: ズームボタンの下限制約', () => {
+  describe('Spec#111-followup Bug1: ズームボタンの下限制約', () => {
     it('zoomOut はズーム 0 を下回らない（負のズーム値は渡さない）', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0) // 既に最小ズーム
@@ -1003,7 +1003,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#64: ノースヘディング', () => {
+  describe('Spec#64: ノースヘディング', () => {
     it('resetNorthHeadingメソッドがrefから呼び出せる', async () => {
       setupFetchMock()
 
@@ -1038,7 +1038,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#111-followup Bug4 - ズーム0〜4のとき resetNorthHeading で緯度が 10（GLOBE_RESET_LAT）に戻る', async () => {
+    it('Spec#111-followup Bug4 - ズーム0〜4のとき resetNorthHeading で緯度が 10（GLOBE_RESET_LAT）に戻る', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(2) // 地球儀表示中
       mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 }) // 高緯度
@@ -1061,7 +1061,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#111-followup（5回目仕様変更）- 極端な緯度（南極大陸）でも resetNorthHeading が緯度 10 に戻す easeTo を呼ぶ', async () => {
+    it('Spec#111-followup（5回目仕様変更）- 極端な緯度（南極大陸）でも resetNorthHeading が緯度 10 に戻す easeTo を呼ぶ', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
       // 南極大陸を中心にした状態（lat=-80）
@@ -1085,7 +1085,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#111-followup（5回目仕様変更）- 回転中に resetNorthHeading を呼ぶと easeTo 完了まで rAF を一時停止する', async () => {
+    it('Spec#111-followup（5回目仕様変更）- 回転中に resetNorthHeading を呼ぶと easeTo 完了まで rAF を一時停止する', async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true })
       try {
         setupFetchMock()
@@ -1133,7 +1133,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#106: autoCenter（初期表示位置の自動決定）', () => {
+  describe('Spec#106: autoCenter（初期表示位置の自動決定）', () => {
     let originalGeolocation: Geolocation | undefined
     const mockGetCurrentPosition = vi.fn()
 
@@ -1159,7 +1159,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }
     })
 
-    it('Issue#106 - autoCenter メソッドが MapViewHandle に存在する', async () => {
+    it('Spec#106 - autoCenter メソッドが MapViewHandle に存在する', async () => {
       setupFetchMock()
       const ref = { current: null as any }
       render(<MapView ref={ref} />)
@@ -1171,7 +1171,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(typeof ref.current.autoCenter).toBe('function')
     })
 
-    it('Issue#106 - 位置情報取得成功時にワープアニメーション（jumpTo）でユーザー座標へ移動する', async () => {
+    it('Spec#106 - 位置情報取得成功時にワープアニメーション（jumpTo）でユーザー座標へ移動する', async () => {
       setupFetchMock()
       mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
       // 位置情報取得を成功させる（東京から離れた位置 = 大阪）
@@ -1197,7 +1197,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#106 - 位置情報取得失敗 + キャッシュからの国コード取得成功時、国の中心座標にワープ', async () => {
+    it('Spec#106 - 位置情報取得失敗 + キャッシュからの国コード取得成功時、国の中心座標にワープ', async () => {
       setupFetchMock()
       mockMap.getCenter.mockReturnValue({ lng: 0, lat: 0 })
       // 位置情報取得を失敗させる
@@ -1228,7 +1228,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#106 - 位置情報取得失敗 + キャッシュなし + API成功時、APIからの国コードを使ってワープ', async () => {
+    it('Spec#106 - 位置情報取得失敗 + キャッシュなし + API成功時、APIからの国コードを使ってワープ', async () => {
       setupFetchMock()
       mockMap.getCenter.mockReturnValue({ lng: 0, lat: 0 })
       mockGetCurrentPosition.mockImplementation((_success: PositionCallback, error?: PositionErrorCallback) => {
@@ -1252,7 +1252,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#106 - 位置情報失敗 + 国コードが COUNTRY_COORDINATES に存在しない場合、東京（ズーム11）にフォールバック', async () => {
+    it('Spec#106 - 位置情報失敗 + 国コードが COUNTRY_COORDINATES に存在しない場合、東京（ズーム11）にフォールバック', async () => {
       setupFetchMock()
       mockMap.getCenter.mockReturnValue({ lng: 0, lat: 0 })
       mockGetCurrentPosition.mockImplementation((_success: PositionCallback, error?: PositionErrorCallback) => {
@@ -1279,7 +1279,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#106 - 位置情報・キャッシュ・API すべて失敗時、東京（ズーム11）にフォールバック', async () => {
+    it('Spec#106 - 位置情報・キャッシュ・API すべて失敗時、東京（ズーム11）にフォールバック', async () => {
       setupFetchMock()
       mockMap.getCenter.mockReturnValue({ lng: 0, lat: 0 })
       mockGetCurrentPosition.mockImplementation((_success: PositionCallback, error?: PositionErrorCallback) => {
@@ -1304,10 +1304,10 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#111-followup §8: 全ズームレベル fetchSpots 許可', () => {
-    it('Issue#111-followup - 初期ズームレベルが0でも fetchSpots が呼ばれる', async () => {
-      // Issue#106 では「ズーム 0 では全世界 fetch を避けるためスキップ」していたが、
-      // Issue#112 でクラスタクリック時のページネーションが入ったため、
+  describe('Spec#111-followup §8: 全ズームレベル fetchSpots 許可', () => {
+    it('Spec#111-followup - 初期ズームレベルが0でも fetchSpots が呼ばれる', async () => {
+      // Spec#106 では「ズーム 0 では全世界 fetch を避けるためスキップ」していたが、
+      // Spec#112 でクラスタクリック時のページネーションが入ったため、
       // ズーム 0 でも fetch を許可する仕様に変更した。
       // バックエンドの MAX_SPOTS_LIMIT=50 でレスポンス件数は保護される。
       const mockFetch = setupFetchMock()
@@ -1325,8 +1325,8 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#69: flyToPlace 距離判定', () => {
-    it('近距離移動でも常にワープ（jumpTo）で移動する（Issue#158）', async () => {
+  describe('Spec#69: flyToPlace 距離判定', () => {
+    it('近距離移動でも常にワープ（jumpTo）で移動する（Spec#158）', async () => {
       setupFetchMock()
       mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
 
@@ -1442,7 +1442,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#111: ユーザー位置情報キャッシュ（lastGeolocationCache）', () => {
+  describe('Spec#111: ユーザー位置情報キャッシュ（lastGeolocationCache）', () => {
     let originalGeolocation: Geolocation | undefined
     const mockGetCurrentPosition = vi.fn()
     const mockWatchPosition = vi.fn()
@@ -1477,7 +1477,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }
     })
 
-    it('Issue#111 - autoCenter で位置情報取得成功時に setLastGeolocationCache が呼ばれる', async () => {
+    it('Spec#111 - autoCenter で位置情報取得成功時に setLastGeolocationCache が呼ばれる', async () => {
       setupFetchMock()
       mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
       mockGetCurrentPosition.mockImplementation((success: PositionCallback) => {
@@ -1501,7 +1501,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#111 - centerOnUserLocation の watchPosition 成功時に setLastGeolocationCache が呼ばれる', async () => {
+    it('Spec#111 - centerOnUserLocation の watchPosition 成功時に setLastGeolocationCache が呼ばれる', async () => {
       setupFetchMock()
       mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
       mockWatchPosition.mockImplementation((success: PositionCallback) => {
@@ -1527,8 +1527,8 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#111: 初期経度のランダム化', () => {
-    it('Issue#111 - 初回マウント時に Math.random が呼ばれる（経度のランダム化）', async () => {
+  describe('Spec#111: 初期経度のランダム化', () => {
+    it('Spec#111 - 初回マウント時に Math.random が呼ばれる（経度のランダム化）', async () => {
       setupFetchMock()
       const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5)
       try {
@@ -1544,7 +1544,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }
     })
 
-    it('Issue#111-followup - initialViewState の latitude は 10（球体の見え方が自然になる固定値）', async () => {
+    it('Spec#111-followup - initialViewState の latitude は 10（球体の見え方が自然になる固定値）', async () => {
       setupFetchMock()
       render(<MapView />)
 
@@ -1557,7 +1557,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(initialViewState.latitude).toBe(10)
     })
 
-    it('Issue#111 - initialViewState の longitude は 0〜359 の範囲', async () => {
+    it('Spec#111 - initialViewState の longitude は 0〜359 の範囲', async () => {
       setupFetchMock()
       render(<MapView />)
 
@@ -1572,7 +1572,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#111: autoCenter の skipMinView オプション', () => {
+  describe('Spec#111: autoCenter の skipMinView オプション', () => {
     let originalGeolocation: Geolocation | undefined
     const mockGetCurrentPosition = vi.fn()
 
@@ -1598,7 +1598,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }
     })
 
-    it('Issue#111 - autoCenter({ skipMinView: true }) で AUTO_CENTER_MIN_VIEW_MS の待機がスキップされる', async () => {
+    it('Spec#111 - autoCenter({ skipMinView: true }) で AUTO_CENTER_MIN_VIEW_MS の待機がスキップされる', async () => {
       setupFetchMock()
       mockMap.getCenter.mockReturnValue({ lng: 0, lat: 0 })
       mockGetCurrentPosition.mockImplementation((success: PositionCallback) => {
@@ -1629,7 +1629,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#111: 地球儀回転アニメーション', () => {
+  describe('Spec#111: 地球儀回転アニメーション', () => {
     beforeEach(() => {
       vi.useFakeTimers({ shouldAdvanceTime: true })
       mockMap.setCenter.mockReset()
@@ -1639,7 +1639,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       vi.useRealTimers()
     })
 
-    it('Issue#111 - ズーム0で5秒間操作なしの場合、setCenter が呼ばれる（回転開始）', async () => {
+    it('Spec#111 - ズーム0で5秒間操作なしの場合、setCenter が呼ばれる（回転開始）', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
 
@@ -1654,7 +1654,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter).toHaveBeenCalled()
     })
 
-    it('Issue#111 - ズーム5以上では 5秒経過しても setCenter は呼ばれない（回転しない）', async () => {
+    it('Spec#111 - ズーム5以上では 5秒経過しても setCenter は呼ばれない（回転しない）', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(5)
 
@@ -1667,7 +1667,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter).not.toHaveBeenCalled()
     })
 
-    // Issue#111-followup（仕様変更3回目）: 「タップ/クリック/左ドラッグ」だけ停止対象に戻す。
+    // Spec#111-followup（仕様変更3回目）: 「タップ/クリック/左ドラッグ」だけ停止対象に戻す。
     // ホイールズーム・ピンチズーム・角度操作は停止対象外（角度操作はそもそも無効化される）。
     const setupRotationActive = async () => {
       setupFetchMock()
@@ -1686,7 +1686,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       )
     }
 
-    it('Issue#111-followup - mousedown（左ボタン）で回転が停止する', async () => {
+    it('Spec#111-followup - mousedown（左ボタン）で回転が停止する', async () => {
       const callsBeforeStop = await setupRotationActive()
       const handler = findHandler('mousedown')![1] as Function
       await act(async () => {
@@ -1696,7 +1696,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter.mock.calls.length).toBe(callsBeforeStop)
     })
 
-    it('Issue#111-followup - mousedown（右ボタン）では回転が停止しない（角度操作は無効化済みのため）', async () => {
+    it('Spec#111-followup - mousedown（右ボタン）では回転が停止しない（角度操作は無効化済みのため）', async () => {
       const callsBeforeStop = await setupRotationActive()
       const handler = findHandler('mousedown')![1] as Function
       await act(async () => {
@@ -1706,7 +1706,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter.mock.calls.length).toBeGreaterThan(callsBeforeStop)
     })
 
-    it('Issue#111-followup - touchstart（1本指）で回転が停止する', async () => {
+    it('Spec#111-followup - touchstart（1本指）で回転が停止する', async () => {
       const callsBeforeStop = await setupRotationActive()
       const handler = findHandler('touchstart')![1] as Function
       await act(async () => {
@@ -1716,7 +1716,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter.mock.calls.length).toBe(callsBeforeStop)
     })
 
-    it('Issue#111-followup - touchstart（2本指）では回転が停止しない（ピンチズームは継続）', async () => {
+    it('Spec#111-followup - touchstart（2本指）では回転が停止しない（ピンチズームは継続）', async () => {
       const callsBeforeStop = await setupRotationActive()
       const handler = findHandler('touchstart')![1] as Function
       await act(async () => {
@@ -1726,7 +1726,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter.mock.calls.length).toBeGreaterThan(callsBeforeStop)
     })
 
-    it('Issue#111-followup - rotatestart / pitchstart のリスナーは登録されない', () => {
+    it('Spec#111-followup - rotatestart / pitchstart のリスナーは登録されない', () => {
       setupFetchMock()
       render(<MapView />)
       // これらのイベントは「回転を停止させない」ため、リスナー自体を登録しない
@@ -1734,7 +1734,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(findHandler('pitchstart')).toBeUndefined()
     })
 
-    it('Issue#111-followup - wheel / zoomstart / zoomend のリスナーは登録される（rAF 一時停止用）', () => {
+    it('Spec#111-followup - wheel / zoomstart / zoomend のリスナーは登録される（rAF 一時停止用）', () => {
       setupFetchMock()
       render(<MapView />)
       expect(findHandler('wheel')).toBeDefined()
@@ -1742,7 +1742,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(findHandler('zoomend')).toBeDefined()
     })
 
-    it('Issue#111-followup（6回目仕様変更）- wheel イベントで rAF が一時停止する（zoomstart 前に）', async () => {
+    it('Spec#111-followup（6回目仕様変更）- wheel イベントで rAF が一時停止する（zoomstart 前に）', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
 
@@ -1763,7 +1763,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter.mock.calls.length).toBe(callsBeforeWheel)
     })
 
-    it('Issue#111-followup（6回目仕様変更）- zoomend で zoom > 4 の場合 isRotatingRef がクリアされる（fetchSpots スキップ防止）', async () => {
+    it('Spec#111-followup（6回目仕様変更）- zoomend で zoom > 4 の場合 isRotatingRef がクリアされる（fetchSpots スキップ防止）', async () => {
       const mockFetch = setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
 
@@ -1803,7 +1803,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       void mockFetch // fetchSpots が呼ばれることはここではテストせず、fetch スキップのフェイルセーフは別途
     })
 
-    it('Issue#111-followup - 回転中の setCenter は現在の緯度を維持する（強制スナップしない）', async () => {
+    it('Spec#111-followup - 回転中の setCenter は現在の緯度を維持する（強制スナップしない）', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
       // ユーザーが緯度 35 度に panning した状態を再現
@@ -1823,7 +1823,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }
     })
 
-    it('Issue#111-followup - zoomstart で rAF が一時停止し、zoomend で再開する（+/-ボタン対応）', async () => {
+    it('Spec#111-followup - zoomstart で rAF が一時停止し、zoomend で再開する（+/-ボタン対応）', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
 
@@ -1859,7 +1859,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter.mock.calls.length).toBeGreaterThan(callsDuringPause)
     })
 
-    it('Issue#111-followup - ズーム0〜4では dragRotate / touchPitch / touchZoomRotate.rotation が無効化される', () => {
+    it('Spec#111-followup - ズーム0〜4では dragRotate / touchPitch / touchZoomRotate.rotation が無効化される', () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
       render(<MapView />)
@@ -1868,7 +1868,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.touchZoomRotate.disableRotation).toHaveBeenCalled()
     })
 
-    it('Issue#111-followup - ズーム5以上では dragRotate / touchPitch / touchZoomRotate.rotation が有効化される', () => {
+    it('Spec#111-followup - ズーム5以上では dragRotate / touchPitch / touchZoomRotate.rotation が有効化される', () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(11)
       render(<MapView />)
@@ -1877,7 +1877,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.touchZoomRotate.enableRotation).toHaveBeenCalled()
     })
 
-    it('Issue#111-followup - moveend でズームが 0〜4 に下がったら 5秒後の回転を予約する', async () => {
+    it('Spec#111-followup - moveend でズームが 0〜4 に下がったら 5秒後の回転を予約する', async () => {
       // 高ズームで起動 → autoCenter 後を想定
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(11)
@@ -1902,7 +1902,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter).toHaveBeenCalled()
     })
 
-    it('Issue#111-followup - 回転中にズームが 5 以上に上がると rAF ループが自身で停止する', async () => {
+    it('Spec#111-followup - 回転中にズームが 5 以上に上がると rAF ループが自身で停止する', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
 
@@ -1928,7 +1928,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(diff).toBeLessThanOrEqual(1) // 検出までに最大 1 ティック分の余裕
     })
 
-    it('Issue#111 - startGlobeRotationImmediately() で 5秒待たずに即時回転開始', async () => {
+    it('Spec#111 - startGlobeRotationImmediately() で 5秒待たずに即時回転開始', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
 
@@ -1939,7 +1939,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(ref.current).not.toBeNull()
       })
 
-      // 即時回転開始メソッド（Issue#111 で追加予定）
+      // 即時回転開始メソッド（Spec#111 で追加予定）
       ref.current.startGlobeRotationImmediately()
 
       await act(async () => {
@@ -1950,7 +1950,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setCenter).toHaveBeenCalled()
     })
 
-    it('Issue#111 - 回転中の handleMoveEnd は fetchSpots をスキップする', async () => {
+    it('Spec#111 - 回転中の handleMoveEnd は fetchSpots をスキップする', async () => {
       const mockFetch = setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
 
@@ -1989,11 +1989,11 @@ describe('MapView Component - Issue#53, Issue#55', () => {
   })
 
   // ============================================================
-  // Issue#111-followup §8: 回転中のクラスタ表示・ダイアログ中の停止
+  // Spec#111-followup §8: 回転中のクラスタ表示・ダイアログ中の停止
   // ============================================================
-  describe('Issue#111-followup §8: 回転中のクラスタ表示', () => {
-    it('Issue#111-followup - 回転開始時に setData(空配列) で既存ピンをクリアしない', async () => {
-      // Issue#111 では setSpots([]) で回転開始時にピンをクリアしていたが、
+  describe('Spec#111-followup §8: 回転中のクラスタ表示', () => {
+    it('Spec#111-followup - 回転開始時に setData(空配列) で既存ピンをクリアしない', async () => {
+      // Spec#111 では setSpots([]) で回転開始時にピンをクリアしていたが、
       // §8 では「回転中もクラスタを表示する」仕様に変更したため、クリアしない。
       const mockFetch = setupFetchMock([
         { spotId: 1, latitude: 35.6, longitude: 139.7, pinColor: 'Green' as const, thumbnailUrl: 'thumb', photoCount: 1 },
@@ -2020,7 +2020,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       void mockFetch
     })
 
-    it('Issue#111-followup - ユーザー操作で停止した直後に fetchSpots（debounced）が呼ばれる', async () => {
+    it('Spec#111-followup - ユーザー操作で停止した直後に fetchSpots（debounced）が呼ばれる', async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true })
       try {
         const mockFetch = setupFetchMock()
@@ -2057,7 +2057,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }
     })
 
-    it('Issue#111-followup - zoomstart 経由の一時停止では fetchSpots は呼ばれない', async () => {
+    it('Spec#111-followup - zoomstart 経由の一時停止では fetchSpots は呼ばれない', async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true })
       try {
         const mockFetch = setupFetchMock()
@@ -2094,8 +2094,8 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#111-followup §8: 投稿詳細ダイアログ表示中の回転停止', () => {
-    it('Issue#111-followup - isPhotoDialogOpen=true の間、5秒タイマー経過しても回転が始まらない', async () => {
+  describe('Spec#111-followup §8: 投稿詳細ダイアログ表示中の回転停止', () => {
+    it('Spec#111-followup - isPhotoDialogOpen=true の間、5秒タイマー経過しても回転が始まらない', async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true })
       try {
         setupFetchMock()
@@ -2115,7 +2115,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }
     })
 
-    it('Issue#111-followup - 動いている回転中に isPhotoDialogOpen=true になると停止する', async () => {
+    it('Spec#111-followup - 動いている回転中に isPhotoDialogOpen=true になると停止する', async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true })
       try {
         setupFetchMock()
@@ -2142,7 +2142,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }
     })
 
-    it('Issue#111-followup - isPhotoDialogOpen が true→false に変わった時、ズーム 0〜4 なら 5秒後に回転が始まる', async () => {
+    it('Spec#111-followup - isPhotoDialogOpen が true→false に変わった時、ズーム 0〜4 なら 5秒後に回転が始まる', async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true })
       try {
         setupFetchMock()
@@ -2167,7 +2167,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }
     })
 
-    it('Issue#111-followup - isPhotoDialogOpen が true→false に変わった時、ズーム 5+ なら回転は始まらない', async () => {
+    it('Spec#111-followup - isPhotoDialogOpen が true→false に変わった時、ズーム 5+ なら回転は始まらない', async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true })
       try {
         setupFetchMock()
@@ -2188,17 +2188,17 @@ describe('MapView Component - Issue#53, Issue#55', () => {
   })
 
   // ============================================================
-  // Issue#107: マップの地名ラベルを表示言語と連動させる
+  // Spec#107: マップの地名ラベルを表示言語と連動させる
   // 表示言語を切り替えると map.setLanguage(newLang) が呼ばれ、
   // マップ上の地名ラベルが新しい言語で表示されることを検証する
   // ============================================================
-  describe('Issue#107: 表示言語と連動するマップ言語', () => {
+  describe('Spec#107: 表示言語と連動するマップ言語', () => {
     afterEach(async () => {
       // 他テストへの影響を避けるため日本語に戻す
       await i18n.changeLanguage('ja')
     })
 
-    it('Issue#107 - 言語を ja → en に切り替えると map.setLanguage("en") が呼ばれる', async () => {
+    it('Spec#107 - 言語を ja → en に切り替えると map.setLanguage("en") が呼ばれる', async () => {
       await i18n.changeLanguage('ja')
       setupFetchMock()
 
@@ -2215,7 +2215,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(mockMap.setLanguage).toHaveBeenCalledWith('en')
     })
 
-    it('Issue#107 - 言語を ja → zh-CN に切り替えると map.setLanguage("zh-Hans") が呼ばれる（Mapbox言語コードに変換）', async () => {
+    it('Spec#107 - 言語を ja → zh-CN に切り替えると map.setLanguage("zh-Hans") が呼ばれる（Mapbox言語コードに変換）', async () => {
       await i18n.changeLanguage('ja')
       setupFetchMock()
 
@@ -2233,7 +2233,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
   })
 
   // ============================================================
-  // Issue#116: flyTo のズームレベル差による暗転制御
+  // Spec#116: flyTo のズームレベル差による暗転制御
   //
   // showShootingLocationPin / clearShootingLocationPin / flyToPlace に
   // 「距離 OR ズーム差」の暗転判定を追加する。
@@ -2243,12 +2243,12 @@ describe('MapView Component - Issue#53, Issue#55', () => {
   // - flyTo 呼び出しに speed: 0.8 と padding: { top: 56, ... } を統一
   // - performWarpAnimation の jumpTo にも padding を指定
   // ============================================================
-  describe('Issue#116: flyTo のズームレベル差による暗転制御', () => {
-    /** Issue#116: TOP_UI_HEIGHT (= 56) に合わせた padding */
+  describe('Spec#116: flyTo のズームレベル差による暗転制御', () => {
+    /** Spec#116: TOP_UI_HEIGHT (= 56) に合わせた padding */
     const EXPECTED_PADDING = { top: 56, bottom: 0, left: 0, right: 0 }
 
     describe('showShootingLocationPin（撮影地点プレビュー・行き）', () => {
-      it('Issue#116 - 現在ズーム=16・距離=0 → flyTo（条件外）', async () => {
+      it('Spec#116 - 現在ズーム=16・距離=0 → flyTo（条件外）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(16)
@@ -2273,7 +2273,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.jumpTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 現在ズーム=11・距離=0 → 暗転（ズーム差5以上）', async () => {
+      it('Spec#116 - 現在ズーム=11・距離=0 → 暗転（ズーム差5以上）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(11)
@@ -2299,7 +2299,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.flyTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 現在ズーム=12・距離=0 → flyTo（ズーム差4で閾値未満）', async () => {
+      it('Spec#116 - 現在ズーム=12・距離=0 → flyTo（ズーム差4で閾値未満）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(12)
@@ -2317,7 +2317,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.jumpTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 現在ズーム=21・距離=0 → 暗転（ズーム差5、ズームアウト方向）', async () => {
+      it('Spec#116 - 現在ズーム=21・距離=0 → 暗転（ズーム差5、ズームアウト方向）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(21)
@@ -2337,7 +2337,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.flyTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 現在ズーム=16・距離=10度 → 暗転（距離超過）', async () => {
+      it('Spec#116 - 現在ズーム=16・距離=10度 → 暗転（距離超過）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(16)
@@ -2358,7 +2358,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.flyTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 現在ズーム=11・距離=10度 → 暗転（両方の条件に該当）', async () => {
+      it('Spec#116 - 現在ズーム=11・距離=10度 → 暗転（両方の条件に該当）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(11)
@@ -2380,7 +2380,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
 
     describe('clearShootingLocationPin（撮影地点プレビュー・戻り）', () => {
-      it('Issue#116 - 元ズーム=16・距離=0 → flyTo', async () => {
+      it('Spec#116 - 元ズーム=16・距離=0 → flyTo', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(16)
@@ -2409,7 +2409,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.jumpTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 元ズーム=11・距離=0 → 暗転（ズーム差5以上）', async () => {
+      it('Spec#116 - 元ズーム=11・距離=0 → 暗転（ズーム差5以上）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(11)  // 行く前: zoom=11
@@ -2443,7 +2443,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.flyTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 元ズーム=21・距離=0 → 暗転（ズーム差5、ズームアウト方向）', async () => {
+      it('Spec#116 - 元ズーム=21・距離=0 → 暗転（ズーム差5、ズームアウト方向）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(21)  // 行く前: zoom=21
@@ -2468,7 +2468,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.flyTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 元ズーム=16・距離=10度 → 暗転（距離超過）', async () => {
+      it('Spec#116 - 元ズーム=16・距離=10度 → 暗転（距離超過）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(16)
@@ -2495,7 +2495,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
 
     describe('flyToPlace（場所検索）', () => {
-      it('Issue#158 - 距離=0・ズーム差=0（ほぼ同じ表示）→ 何もしない（no-op）', async () => {
+      it('Spec#158 - 距離=0・ズーム差=0（ほぼ同じ表示）→ 何もしない（no-op）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(14)
@@ -2515,7 +2515,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.jumpTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#158 - 距離=0・ズーム差=3（ズームは変わる）→ 常にワープ（jumpTo）', async () => {
+      it('Spec#158 - 距離=0・ズーム差=3（ズームは変わる）→ 常にワープ（jumpTo）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(14)
@@ -2535,7 +2535,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.flyTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 現在ズーム=14・飛び先ズーム=10・距離=0 → 暗転（差4）', async () => {
+      it('Spec#116 - 現在ズーム=14・飛び先ズーム=10・距離=0 → 暗転（差4）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(14)
@@ -2555,7 +2555,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.flyTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 現在ズーム=14・飛び先ズーム=14・距離=10度 → 暗転（距離超過）', async () => {
+      it('Spec#116 - 現在ズーム=14・飛び先ズーム=14・距離=10度 → 暗転（距離超過）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(14)
@@ -2575,7 +2575,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
         expect(mockMap.flyTo).not.toHaveBeenCalled()
       })
 
-      it('Issue#116 - 現在ズーム=18・飛び先ズーム=14・距離=0 → 暗転（差4、ズームアウト方向）', async () => {
+      it('Spec#116 - 現在ズーム=18・飛び先ズーム=14・距離=0 → 暗転（差4、ズームアウト方向）', async () => {
         setupFetchMock()
         mockMap.getCenter.mockReturnValue({ lng: 139.7, lat: 35.6 })
         mockMap.getZoom.mockReturnValue(18)
@@ -2597,7 +2597,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#127 - refreshSpots の CloudFront キャッシュバイパス', () => {
+  describe('Spec#127 - refreshSpots の CloudFront キャッシュバイパス', () => {
     it('refreshSpots() を引数なしで呼んだ場合、URL に _t= が付与されない（CloudFront キャッシュを利用）', async () => {
       const mockFetch = setupFetchMock([TEST_SPOT])
       const ref = { current: null as any }
@@ -2664,7 +2664,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
     })
   })
 
-  describe('Issue#121 - ベースタイル先読み（maxTileCacheSize + preloadOnly）', () => {
+  describe('Spec#121 - ベースタイル先読み（maxTileCacheSize + preloadOnly）', () => {
     /** preloadOnly: true 付きの jumpTo 呼び出しを抜き出すヘルパー */
     const findPreloadCall = () => {
       return mockMap.jumpTo.mock.calls.find(
@@ -2672,7 +2672,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       )
     }
 
-    it('Issue#121 案B - <Map> プロップに maxTileCacheSize=500 が指定されている', async () => {
+    it('Spec#121 案B - <Map> プロップに maxTileCacheSize=500 が指定されている', async () => {
       setupFetchMock()
       render(<MapView />)
       await waitFor(() => {
@@ -2680,7 +2680,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       })
     })
 
-    it('Issue#121 案C - 高ズーム (zoom=12) では moveend 後に jumpTo({preloadOnly:true, zoom:8}) が呼ばれる', async () => {
+    it('Spec#121 案C - 高ズーム (zoom=12) では moveend 後に jumpTo({preloadOnly:true, zoom:8}) が呼ばれる', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(12)
       render(<MapView />)
@@ -2696,7 +2696,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }, { timeout: 2000 })
     })
 
-    it('Issue#121 案C - 高ズーム (zoom=10) では preload zoom = 6 (10 - 4) で呼ばれる', async () => {
+    it('Spec#121 案C - 高ズーム (zoom=10) では preload zoom = 6 (10 - 4) で呼ばれる', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(10)
       render(<MapView />)
@@ -2711,7 +2711,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       }, { timeout: 2000 })
     })
 
-    it('Issue#121 案C - 境界 (zoom=4) では preloadOnly:true の jumpTo は呼ばれない（GLOBE_ROTATION_MAX_ZOOM 以下）', async () => {
+    it('Spec#121 案C - 境界 (zoom=4) では preloadOnly:true の jumpTo は呼ばれない（GLOBE_ROTATION_MAX_ZOOM 以下）', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(4)
       render(<MapView />)
@@ -2722,7 +2722,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(findPreloadCall()).toBeUndefined()
     })
 
-    it('Issue#121 案C - 地球儀ビュー (zoom=0) では preloadOnly:true の jumpTo は呼ばれない', async () => {
+    it('Spec#121 案C - 地球儀ビュー (zoom=0) では preloadOnly:true の jumpTo は呼ばれない', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(0)
       render(<MapView />)
@@ -2732,10 +2732,10 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(findPreloadCall()).toBeUndefined()
     })
 
-    // Issue#121 Cycle2: jumpTo 内部の this.stop() がユーザーの進行中ズームアニメーションを
+    // Spec#121 Cycle2: jumpTo 内部の this.stop() がユーザーの進行中ズームアニメーションを
     // 強制停止してしまう問題（iPhone XR で再現）への対策。
     // アニメーション中（isMoving / isEasing が true）は preload をスキップする。
-    it('Issue#121 Cycle2 - isMoving=true（パン等の操作中）の間は preloadOnly:true の jumpTo は呼ばれない', async () => {
+    it('Spec#121 Cycle2 - isMoving=true（パン等の操作中）の間は preloadOnly:true の jumpTo は呼ばれない', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(12)
       mockMap.isMoving.mockReturnValue(true) // 操作進行中をシミュレート
@@ -2747,7 +2747,7 @@ describe('MapView Component - Issue#53, Issue#55', () => {
       expect(findPreloadCall()).toBeUndefined()
     })
 
-    it('Issue#121 Cycle2 - isEasing=true（easeTo/flyTo 進行中）の間は preloadOnly:true の jumpTo は呼ばれない', async () => {
+    it('Spec#121 Cycle2 - isEasing=true（easeTo/flyTo 進行中）の間は preloadOnly:true の jumpTo は呼ばれない', async () => {
       setupFetchMock()
       mockMap.getZoom.mockReturnValue(12)
       mockMap.isEasing.mockReturnValue(true) // ズーム/フライト進行中をシミュレート

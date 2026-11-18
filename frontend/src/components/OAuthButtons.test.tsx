@@ -25,7 +25,7 @@ describe('OAuthButtons', () => {
     })
   })
 
-  // ---------- 基本レンダリング（Issue#104 でラベル「〇〇で続ける」に統一） ----------
+  // ---------- 基本レンダリング（Spec#104 でラベル「〇〇で続ける」に統一） ----------
 
   it('enabled=true の場合、Google と LINE ボタンをレンダリングする（「続ける」文言）', () => {
     render(<OAuthButtons enabled={true} />)

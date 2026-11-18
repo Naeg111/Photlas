@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Issue#73: 退会済みユーザー管理コントローラー
+ * Spec#73: 退会済みユーザー管理コントローラー
  * 管理者権限を持つユーザーのみアクセス可能
  */
 @RestController
@@ -162,7 +162,7 @@ public class AdminDeletedUserController {
 
     /**
      * データエクスポート（管理者用）。
-     * Issue#108 §4.14: UserDataCollectorService 経由で取得し camelCase + UTC ISO 8601(Z) で返す。
+     * Spec#108 §4.14: UserDataCollectorService 経由で取得し camelCase + UTC ISO 8601(Z) で返す。
      */
     @GetMapping("/{userId}/export")
     public ResponseEntity<UserExportData> exportData(@PathVariable Long userId) {

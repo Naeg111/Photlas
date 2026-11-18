@@ -33,7 +33,7 @@ public class CreatePhotoRequest {
     @DecimalMax(value = "180.0", message = "経度は180以下である必要があります")
     private BigDecimal longitude;
 
-    // Issue#159 ②(Q6): カテゴリーは「ちょうど1つ」。0件は 400、2件以上も 400。
+    // Spec#159 ②(Q6): カテゴリーは「ちょうど1つ」。0件は 400、2件以上も 400。
     @NotEmpty(message = "カテゴリーは1つ選択してください")
     @Size(max = 1, message = "カテゴリーは1つのみ選択できます")
     private List<String> categories;
@@ -67,14 +67,14 @@ public class CreatePhotoRequest {
     private Double cropZoom;
 
     /**
-     * Issue#146: 撮影場所が写真の EXIF GPS 由来かどうか（任意・既定 false）。
+     * Spec#146: 撮影場所が写真の EXIF GPS 由来かどうか（任意・既定 false）。
      * フロントは EXIF に GPS があり、その座標を初期配置に使った場合に true を送る。
      * バックエンドはこの値を {@code Photo.location_from_exif} に保存し、指摘の距離上限判定に使う。
      */
     private Boolean locationFromExif;
 
     /**
-     * Issue#119: AI 解析で発行された analyzeToken（任意）。
+     * Spec#119: AI 解析で発行された analyzeToken（任意）。
      * フロントが {@code POST /api/v1/photos/analyze} で受け取り、投稿時にそのまま送信する。
      * 本フィールドが設定されている場合、バックエンドは {@code ai_prediction_cache} から
      * AI 結果を取り出して {@code photo_ai_predictions} に保存する。
@@ -82,13 +82,13 @@ public class CreatePhotoRequest {
     private String analyzeToken;
 
     /**
-     * Issue#135: ユーザーが投稿時に選んだ全キーワードの tag_id 一覧（任意）。
+     * Spec#135: ユーザーが投稿時に選んだ全キーワードの tag_id 一覧（任意）。
      * AI 提案を残したもの + 手動追加したもの両方を含む。null/空は「キーワードなし投稿」扱い。
      */
     private List<Long> tagIds;
 
     /**
-     * Issue#135: 上記 {@code tagIds} のうち、元々 AI 提案だったタグの subset。
+     * Spec#135: 上記 {@code tagIds} のうち、元々 AI 提案だったタグの subset。
      * ここに含まれる tag_id は {@code photo_tags.assigned_by='AI'} で保存される。
      * それ以外の tag_id は {@code assigned_by='USER'} 扱い。
      */

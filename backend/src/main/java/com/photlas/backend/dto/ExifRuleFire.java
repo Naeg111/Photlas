@@ -1,7 +1,7 @@
 package com.photlas.backend.dto;
 
 /**
- * Issue#132 3.4.1: EXIF ベースのスコア補正ルール (R1〜R5) 発火イベント。
+ * Spec#132 3.4.1: EXIF ベースのスコア補正ルール (R1〜R5) 発火イベント。
  *
  * <p>GA4 アナリティクスイベント {@code ai_exif_rule_fired} のパラメータとして
  * フロントエンドへ返却され、フロントが GA4 へ送信する。</p>

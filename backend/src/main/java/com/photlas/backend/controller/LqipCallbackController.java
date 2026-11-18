@@ -14,12 +14,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * Issue#125: Lambda→バックエンドの LQIP コールバックコントローラー。
+ * Spec#125: Lambda→バックエンドの LQIP コールバックコントローラー。
  *
  * サムネイル生成 Lambda が LQIP（低品質プレースホルダー、data URL 形式）を生成し、
  * このエンドポイントにコールバックして DB の photos.lqip_data_url に書き込ませる。
  *
- * APIキーは既存の moderation コールバック (Issue#54) と共用。
+ * APIキーは既存の moderation コールバック (Spec#54) と共用。
  * 同じ "Lambda → Backend internal" 用途であり、ローテーション運用も統一できる。
  */
 @RestController

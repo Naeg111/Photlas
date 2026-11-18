@@ -1,14 +1,14 @@
 #!/bin/bash
 #
-# AWS WAF マネージドルール用 CloudWatch アラーム セットアップスクリプト (Issue#97)
+# AWS WAF マネージドルール用 CloudWatch アラーム セットアップスクリプト (Spec#97)
 #
 # 実行内容:
 #   Count モード期間中、4 つの AWS マネージドルールごとに
 #   CountedRequests を監視する CloudWatch アラームを作成する。
-#   SNS トピックは Issue#94 で作成済みの photlas-waf-alerts を流用する
+#   SNS トピックは Spec#94 で作成済みの photlas-waf-alerts を流用する
 #   (新規 SNS は作成しない)。
 #
-# 作成するアラーム (Issue#97 §3.5):
+# 作成するアラーム (Spec#97 §3.5):
 #   photlas-waf-IpReputation-Counted    閾値: 5 分間で 100 件以上
 #   photlas-waf-KnownBadInputs-Counted  閾値: 5 分間で  20 件以上
 #   photlas-waf-SQLi-Counted            閾値: 5 分間で   5 件以上
@@ -20,7 +20,7 @@
 # 前提:
 #   - ./scripts/setup-waf.sh が既に実行済みで、WebACL photlas-waf-main に
 #     Section 2 (マネージドルール 4 種) が Count モードで追加済みであること
-#   - SNS トピック photlas-waf-alerts が Issue#94 setup-waf-alarms.sh で作成済み
+#   - SNS トピック photlas-waf-alerts が Spec#94 setup-waf-alarms.sh で作成済み
 #
 # 冪等性:
 #   put-metric-alarm は同名が存在すれば上書き更新する(新規作成と同じ挙動)。
@@ -30,7 +30,7 @@
 #   本スクリプトは Count モード用アラームの初期作成にのみ使用する。
 #
 # 関連ドキュメント:
-#   documents/04_Issues/Issue#97.md §3.5
+#   documents/spec/SPEC-0097.md §3.5
 #
 
 set -euo pipefail
@@ -47,7 +47,7 @@ AWS_REGION="ap-northeast-1"
 WEBACL_NAME="photlas-waf-main"
 SNS_TOPIC_NAME="photlas-waf-alerts"
 
-# リソースタグ (Issue#97 §3.5):
+# リソースタグ (Spec#97 §3.5):
 #   Project=Photlas
 #   Environment=production
 #   ManagedBy=Issue-97     (AWS タグ値に '#' は使えないためハイフン表記)
@@ -125,18 +125,18 @@ WEBACL_ID="$(aws wafv2 list-web-acls \
 
 if [ -z "$WEBACL_ID" ] || [ "$WEBACL_ID" = "None" ]; then
   echo "ERROR: WebACL '$WEBACL_NAME' not found." >&2
-  echo "Run ./scripts/setup-waf.sh first (which sets up both Issue#94 rate limit rules and Issue#97 managed rules)." >&2
+  echo "Run ./scripts/setup-waf.sh first (which sets up both Spec#94 rate limit rules and Spec#97 managed rules)." >&2
   exit 1
 fi
 log "WebACL found: $WEBACL_NAME (ID: $WEBACL_ID)"
 
 # -----------------------------------------------------------------------------
-# 1. SNS トピック lookup (Issue#94 既存、新規作成しない)
+# 1. SNS トピック lookup (Spec#94 既存、新規作成しない)
 # -----------------------------------------------------------------------------
 
-section "Step 1: Look up existing SNS topic (Issue#94 reuse)"
+section "Step 1: Look up existing SNS topic (Spec#94 reuse)"
 
-# Issue#97 §3.5: 「既存 SNS photlas-waf-alerts (Issue#94 既存) を流用」
+# Spec#97 §3.5: 「既存 SNS photlas-waf-alerts (Spec#94 既存) を流用」
 # このスクリプトでは create-topic は呼ばず、既存トピックの ARN を取得するのみ。
 SNS_TOPIC_ARN="$(aws sns list-topics \
   --region "$AWS_REGION" \
@@ -145,7 +145,7 @@ SNS_TOPIC_ARN="$(aws sns list-topics \
 
 if [ -z "$SNS_TOPIC_ARN" ] || [ "$SNS_TOPIC_ARN" = "None" ]; then
   echo "ERROR: SNS topic '$SNS_TOPIC_NAME' not found." >&2
-  echo "Run ./scripts/setup-waf-alarms.sh first (Issue#94 alarm setup creates this topic)." >&2
+  echo "Run ./scripts/setup-waf-alarms.sh first (Spec#94 alarm setup creates this topic)." >&2
   exit 1
 fi
 log "SNS topic: $SNS_TOPIC_ARN"
@@ -172,7 +172,7 @@ while IFS= read -r RULE; do
     "$ALARM_NAME" \
     "$RULE" \
     "$THRESHOLD" \
-    "Issue#97: WAF $RULE counted requests (Count mode)"
+    "Spec#97: WAF $RULE counted requests (Count mode)"
 done < <(waf_managed_rule_names)
 
 # -----------------------------------------------------------------------------
@@ -183,7 +183,7 @@ section "Setup complete"
 
 cat <<EOF
 
-Issue#97 managed rule Count-mode alarms created.
+Spec#97 managed rule Count-mode alarms created.
 
   WebACL:         ${WEBACL_NAME}
   SNS topic:      ${SNS_TOPIC_ARN}
@@ -194,7 +194,7 @@ Issue#97 managed rule Count-mode alarms created.
 
 Next steps:
   1. Observe Count-mode metrics for 1-2 weeks
-     (see Issue#97 §4 phase B for Athena analysis queries).
+     (see Spec#97 §4 phase B for Athena analysis queries).
   2. When ready, switch rules to Block mode one at a time:
        ./scripts/waf-block-switch.sh block SQLiRuleSet
        ./scripts/waf-block-switch.sh block AmazonIpReputationList

@@ -24,7 +24,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#119 - {@link AiPredictionCacheService} の統合テスト。
+ * Spec#119 - {@link AiPredictionCacheService} の統合テスト。
  *
  * <p>UUID 発行、TTL 15分、期限切れの除外、使い切り削除、定期クリーンアップ、
  * Jackson による JSON ラウンドトリップを検証する。</p>
@@ -52,7 +52,7 @@ class AiPredictionCacheServiceTest {
         );
     }
 
-    /** Issue#136 Phase 10: 既存テストの最小修正用ヘルパー (LabelMappingResult を CachedAnalyzeResult で包んで保存)。 */
+    /** Spec#136 Phase 10: 既存テストの最小修正用ヘルパー (LabelMappingResult を CachedAnalyzeResult で包んで保存)。 */
     private String save(LabelMappingResult result) {
         return service.save(new CachedAnalyzeResult(result, List.of()));
     }
@@ -60,7 +60,7 @@ class AiPredictionCacheServiceTest {
     // ========== save ==========
 
     @Test
-    @DisplayName("Issue#119 - save: 非 null の UUID 文字列を返す")
+    @DisplayName("Spec#119 - save: 非 null の UUID 文字列を返す")
     void saveReturnsNonNullUuidToken() {
         String token = save(sampleResult());
 
@@ -70,7 +70,7 @@ class AiPredictionCacheServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - save: 各回ユニークなトークンを返す")
+    @DisplayName("Spec#119 - save: 各回ユニークなトークンを返す")
     void saveReturnsUniqueTokens() {
         String token1 = save(sampleResult());
         String token2 = save(sampleResult());
@@ -79,7 +79,7 @@ class AiPredictionCacheServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - save: ai_prediction_cache テーブルにエントリを永続化する")
+    @DisplayName("Spec#119 - save: ai_prediction_cache テーブルにエントリを永続化する")
     void savePersistsEntry() {
         String token = save(sampleResult());
 
@@ -89,7 +89,7 @@ class AiPredictionCacheServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - save: expires_at を現在時刻 + 15分の前後に設定する")
+    @DisplayName("Spec#119 - save: expires_at を現在時刻 + 15分の前後に設定する")
     void saveSetsExpiresAtFifteenMinutesAhead() {
         Date before = new Date();
         String token = save(sampleResult());
@@ -107,7 +107,7 @@ class AiPredictionCacheServiceTest {
     // ========== findValid ==========
 
     @Test
-    @DisplayName("Issue#119 - findValid: 有効なトークンに対して保存した結果を返す")
+    @DisplayName("Spec#119 - findValid: 有効なトークンに対して保存した結果を返す")
     void findValidReturnsResultForValidToken() {
         LabelMappingResult original = sampleResult();
         String token = save(original);
@@ -122,7 +122,7 @@ class AiPredictionCacheServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - findValid: 存在しないトークンに対して空を返す")
+    @DisplayName("Spec#119 - findValid: 存在しないトークンに対して空を返す")
     void findValidReturnsEmptyForUnknownToken() {
         Optional<CachedAnalyzeResult> found = service.findValid(UUID.randomUUID().toString());
 
@@ -130,7 +130,7 @@ class AiPredictionCacheServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - findValid: 期限切れトークンに対して空を返す")
+    @DisplayName("Spec#119 - findValid: 期限切れトークンに対して空を返す")
     void findValidReturnsEmptyForExpiredToken() {
         // 期限切れエントリを直接 repository に保存（旧形式 JSON でも互換読み取りされる）
         String expiredToken = UUID.randomUUID().toString();
@@ -151,7 +151,7 @@ class AiPredictionCacheServiceTest {
     // ========== delete ==========
 
     @Test
-    @DisplayName("Issue#119 - delete: 指定トークンのエントリを削除する")
+    @DisplayName("Spec#119 - delete: 指定トークンのエントリを削除する")
     void deleteRemovesEntry() {
         String token = save(sampleResult());
         assertThat(repository.findById(token)).isPresent();
@@ -162,7 +162,7 @@ class AiPredictionCacheServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - delete: 存在しないトークンを指定しても例外を投げない")
+    @DisplayName("Spec#119 - delete: 存在しないトークンを指定しても例外を投げない")
     void deleteIgnoresUnknownToken() {
         // 例外が出なければ OK
         service.delete(UUID.randomUUID().toString());
@@ -171,7 +171,7 @@ class AiPredictionCacheServiceTest {
     // ========== cleanupExpired ==========
 
     @Test
-    @DisplayName("Issue#119 - cleanupExpired: 期限切れエントリだけを削除し、有効なものは残す")
+    @DisplayName("Spec#119 - cleanupExpired: 期限切れエントリだけを削除し、有効なものは残す")
     void cleanupExpiredRemovesOnlyExpiredEntries() {
         // 有効: now + 15min（save() 経由）
         String validToken = save(sampleResult());
@@ -193,7 +193,7 @@ class AiPredictionCacheServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - cleanupExpired: 期限切れがない場合は何もしない（例外も出さない）")
+    @DisplayName("Spec#119 - cleanupExpired: 期限切れがない場合は何もしない（例外も出さない）")
     void cleanupExpiredHandlesEmptyState() {
         save(sampleResult()); // 有効なエントリのみ
 
@@ -203,7 +203,7 @@ class AiPredictionCacheServiceTest {
     // ========== JSON ラウンドトリップ ==========
 
     @Test
-    @DisplayName("Issue#119 - JSON ラウンドトリップ: weather=null と空 confidence でも壊れない")
+    @DisplayName("Spec#119 - JSON ラウンドトリップ: weather=null と空 confidence でも壊れない")
     void roundTripHandlesNullWeatherAndEmptyConfidence() {
         LabelMappingResult original = new LabelMappingResult(List.of(), null, Map.of());
         String token = save(original);
@@ -217,7 +217,7 @@ class AiPredictionCacheServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - JSON ラウンドトリップ: confidence の Float 値が精度劣化なく復元される")
+    @DisplayName("Spec#119 - JSON ラウンドトリップ: confidence の Float 値が精度劣化なく復元される")
     void roundTripPreservesFloatPrecision() {
         LabelMappingResult original = new LabelMappingResult(
                 List.of(CodeConstants.CATEGORY_NATURE),
@@ -233,10 +233,10 @@ class AiPredictionCacheServiceTest {
                 .isEqualTo(92.5f);
     }
 
-    // ========== Issue#136 Phase 10: CachedAnalyzeResult 拡張と後方互換 ==========
+    // ========== Spec#136 Phase 10: CachedAnalyzeResult 拡張と後方互換 ==========
 
     @Test
-    @DisplayName("Issue#136 - findValidCached: 新形式 (labelMapping + suggestedTags) JSON を正しく復元")
+    @DisplayName("Spec#136 - findValidCached: 新形式 (labelMapping + suggestedTags) JSON を正しく復元")
     void findValidCached_newFormatRoundTrip() {
         // labelMapping キーを持つ新形式 JSON を直接 repository に保存
         String newJson = "{"
@@ -263,7 +263,7 @@ class AiPredictionCacheServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - 後方互換 (Q11): 旧形式 (LabelMappingResult 単体 JSON) は suggestedTags=[] で復元")
+    @DisplayName("Spec#136 - 後方互換 (Q11): 旧形式 (LabelMappingResult 単体 JSON) は suggestedTags=[] で復元")
     void backwardCompat_oldFormatReturnsEmptySuggestedTags() {
         // 旧形式 JSON を直接 repository に保存（labelMapping キーを含まない）
         String oldJson = "{\"categories\":[201,204],\"weather\":401,\"confidence\":{\"201\":92.5,\"204\":78.0}}";
@@ -282,7 +282,7 @@ class AiPredictionCacheServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - findValidCached: 存在しないトークンに対して空を返す")
+    @DisplayName("Spec#136 - findValidCached: 存在しないトークンに対して空を返す")
     void findValidCached_emptyForUnknownToken() {
         Optional<CachedAnalyzeResult> found = service.findValid(UUID.randomUUID().toString());
 
@@ -290,7 +290,7 @@ class AiPredictionCacheServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - findValidCached: 期限切れトークンに対して空を返す")
+    @DisplayName("Spec#136 - findValidCached: 期限切れトークンに対して空を返す")
     void findValidCached_emptyForExpiredToken() {
         String expiredToken = UUID.randomUUID().toString();
         Date past = Date.from(Instant.now().minus(Duration.ofMinutes(1)));

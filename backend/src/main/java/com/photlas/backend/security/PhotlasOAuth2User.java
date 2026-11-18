@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * Issue#81 Phase 3c - Photlas 独自の {@link OAuth2User} 実装。
+ * Spec#81 Phase 3c - Photlas 独自の {@link OAuth2User} 実装。
  *
  * Spring Security の認証チェーン上で {@link OAuth2User} として扱われるが、
  * 内部に Photlas の {@link User} エンティティを保持し、

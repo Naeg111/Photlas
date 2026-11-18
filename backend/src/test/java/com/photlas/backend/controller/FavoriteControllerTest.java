@@ -183,11 +183,11 @@ public class FavoriteControllerTest {
     }
 
     // ============================================================
-    // Issue#30: お気に入り追加API テスト
+    // Spec#30: お気に入り追加API テスト
     // ============================================================
 
     @Test
-    @DisplayName("Issue#30 - お気に入り登録成功時は201 Createdを返す")
+    @DisplayName("Spec#30 - お気に入り登録成功時は201 Createdを返す")
     void testAddFavorite_ReturnsCreated() throws Exception {
         mockMvc.perform(post(getFavoriteEndpoint(testPhoto.getPhotoId()))
                 .with(csrf())
@@ -196,7 +196,7 @@ public class FavoriteControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#30 - 既にお気に入り済みの場合は409 Conflictを返す")
+    @DisplayName("Spec#30 - 既にお気に入り済みの場合は409 Conflictを返す")
     void testAddFavorite_AlreadyFavorited_ReturnsConflict() throws Exception {
         // 1回目の登録
         mockMvc.perform(post(getFavoriteEndpoint(testPhoto.getPhotoId()))
@@ -212,7 +212,7 @@ public class FavoriteControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 公開中でない写真のお気に入り登録は 400 と PHOTO_NOT_PUBLIC を返す")
+    @DisplayName("Spec#93 - 公開中でない写真のお気に入り登録は 400 と PHOTO_NOT_PUBLIC を返す")
     void testAddFavorite_PhotoNotPublic_ReturnsBadRequestWithCode() throws Exception {
         testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
         photoRepository.save(testPhoto);
@@ -235,11 +235,11 @@ public class FavoriteControllerTest {
     }
 
     // ============================================================
-    // Issue#30: お気に入り削除API テスト
+    // Spec#30: お気に入り削除API テスト
     // ============================================================
 
     @Test
-    @DisplayName("Issue#30 - お気に入り解除成功時は204 No Contentを返す")
+    @DisplayName("Spec#30 - お気に入り解除成功時は204 No Contentを返す")
     void testRemoveFavorite_ReturnsNoContent() throws Exception {
         // まずお気に入り登録
         mockMvc.perform(post(getFavoriteEndpoint(testPhoto.getPhotoId()))
@@ -255,7 +255,7 @@ public class FavoriteControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#30 - お気に入り登録していない写真を解除すると404 Not Foundを返す")
+    @DisplayName("Spec#30 - お気に入り登録していない写真を解除すると404 Not Foundを返す")
     void testRemoveFavorite_NotFavorited_ReturnsNotFound() throws Exception {
         // お気に入り登録していない状態で解除
         mockMvc.perform(delete(getFavoriteEndpoint(testPhoto.getPhotoId()))
@@ -327,11 +327,11 @@ public class FavoriteControllerTest {
     }
 
     // ============================================================
-    // Issue#75: お気に入り一覧のthumbnail_urlテスト
+    // Spec#75: お気に入り一覧のthumbnail_urlテスト
     // ============================================================
 
     @Test
-    @DisplayName("Issue#75 - お気に入り一覧でthumbnail_urlが返される")
+    @DisplayName("Spec#75 - お気に入り一覧でthumbnail_urlが返される")
     void testGetFavorites_ReturnsThumbnailUrl() throws Exception {
         // Given: お気に入り登録
         performAddFavorite(testPhoto.getPhotoId());
@@ -345,14 +345,14 @@ public class FavoriteControllerTest {
     }
 
     // ============================================================
-    // Issue#30: 写真詳細API拡張テスト（favoriteCount）
+    // Spec#30: 写真詳細API拡張テスト（favoriteCount）
     // ============================================================
 
     private static final String PHOTO_DETAIL_ENDPOINT = "/api/v1/photos/";
     private static final String JSON_PATH_FAVORITE_COUNT = "$.favoriteCount";
 
     @Test
-    @DisplayName("Issue#30 - 写真詳細APIでfavoriteCountが返される（0件の場合）")
+    @DisplayName("Spec#30 - 写真詳細APIでfavoriteCountが返される（0件の場合）")
     void testPhotoDetail_ReturnsFavoriteCount_Zero() throws Exception {
         mockMvc.perform(get(PHOTO_DETAIL_ENDPOINT + testPhoto.getPhotoId())
                 .header(HEADER_AUTHORIZATION, getBearerToken(token)))
@@ -361,7 +361,7 @@ public class FavoriteControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#30 - 写真詳細APIでfavoriteCountが返される（1件の場合）")
+    @DisplayName("Spec#30 - 写真詳細APIでfavoriteCountが返される（1件の場合）")
     void testPhotoDetail_ReturnsFavoriteCount_One() throws Exception {
         // お気に入り登録
         performAddFavorite(testPhoto.getPhotoId());
@@ -374,7 +374,7 @@ public class FavoriteControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#30 - 写真詳細APIでfavoriteCountが複数ユーザーの合計を返す")
+    @DisplayName("Spec#30 - 写真詳細APIでfavoriteCountが複数ユーザーの合計を返す")
     void testPhotoDetail_ReturnsFavoriteCount_Multiple() throws Exception {
         // 1人目のユーザーがお気に入り登録
         performAddFavorite(testPhoto.getPhotoId());

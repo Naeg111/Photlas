@@ -1,4 +1,4 @@
-# Issue#4: Docker環境の導入 - Backend Dockerfile
+# Spec#4: Docker環境の導入 - Backend Dockerfile
 # TDD Red段階: 実装前のDockerfile定義
 
 # Multi-stage build for optimization

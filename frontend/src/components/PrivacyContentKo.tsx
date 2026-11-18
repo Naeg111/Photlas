@@ -1,8 +1,8 @@
 /**
  * PrivacyContentKo コンポーネント
- * Issue#101: 프라이버시 정책 본문 (한국어)
+ * Spec#101: 프라이버시 정책 본문 (한국어)
  *
- * 注: Issue#101 Phase: 機械翻訳ベースで作成。法的妥当性については、
+ * 注: Spec#101 Phase: 機械翻訳ベースで作成。法的妥当性については、
  * 海外ユーザー本格対応時に専門家レビューを実施予定。
  */
 export function PrivacyContentKo() {
@@ -123,7 +123,7 @@ export function PrivacyContentKo() {
           <li>이용약관 위반 대응</li>
           <li>본 서비스의 광고·홍보·프로모션 (게시 데이터의 이용)</li>
           <li>사용자 문의 대응</li>
-          {/* Issue#106: IP 주소로부터의 국가 판정 */}
+          {/* Spec#106: IP 주소로부터의 국가 판정 */}
           <li>IP 주소를 기반으로 한 사용자의 소재 국가 판정 (지도의 초기 표시 위치 최적화를 위함. IP 주소는 서버에 저장되지 않으며, 국가 코드로의 변환에만 사용됩니다)</li>
           <li>위 이용 목적에 부수하는 목적</li>
         </ul>
@@ -146,7 +146,7 @@ export function PrivacyContentKo() {
       <section>
         <h2 className="mb-3">제6조 (제3자 제공·외부 서비스 이용)</h2>
         <p className="text-sm text-gray-700 mb-2">
-          {/* Issue#105: Do Not Sell 선언 */}
+          {/* Spec#105: Do Not Sell 선언 */}
           운영자는 사용자의 개인정보를 제3자에게 판매하지 않습니다.
         </p>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
@@ -183,7 +183,7 @@ export function PrivacyContentKo() {
                 <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">여기</a>{' '}
                 를 참조하십시오.
               </li>
-              {/* Issue#106: MaxMind GeoLite2 (IP 주소로부터의 국가 판정) */}
+              {/* Spec#106: MaxMind GeoLite2 (IP 주소로부터의 국가 판정) */}
               <li>
                 <span className="font-semibold">MaxMind GeoLite2</span>: IP 주소로부터 사용자의 소재 국가를 판정하여 지도의 초기 표시 위치를 최적화하기 위해 사용합니다. 판정 처리는 서버에서 실행되며, IP 주소는 국가 코드로의 변환에만 사용되고 저장되지 않습니다. 본 서비스는 GeoLite2 데이터를 사용합니다(Includes GeoLite2 data created by MaxMind, available from{' '}
                 <a href="https://www.maxmind.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline ml-1">https://www.maxmind.com</a>
@@ -251,7 +251,7 @@ export function PrivacyContentKo() {
         </ol>
       </section>
 
-      {/* Issue#119: AI 이미지 인식에 의한 카테고리・날씨 자동 판별 */}
+      {/* Spec#119: AI 이미지 인식에 의한 카테고리・날씨 자동 판별 */}
       <section>
         <h2 className="mb-3">제8조의2 (카테고리와 날씨의 자동 판별)</h2>
         <p className="text-sm text-gray-700">
@@ -321,7 +321,7 @@ export function PrivacyContentKo() {
             삭제 후 데이터 복구는 불가능합니다.
           </li>
           <li>
-            {/* Issue#105: 모더레이션 삭제 사진의 180일 보유 공개 */}
+            {/* Spec#105: 모더레이션 삭제 사진의 180일 보유 공개 */}
             콘텐츠 모더레이션에 의해 삭제된 사진 및 그 메타데이터는 재심사·이의 신청 대응을 목적으로 180일간 보관한 후 완전히 삭제됩니다.
           </li>
         </ol>
@@ -330,7 +330,7 @@ export function PrivacyContentKo() {
       <section>
         <h2 className="mb-3">제12조 (미성년자의 이용)</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-          {/* Issue#105: 만 13세 이상의 이용 제한을 명시 (COPPA 준거) */}
+          {/* Spec#105: 만 13세 이상의 이용 제한을 명시 (COPPA 준거) */}
           <li>
             본 서비스는 <span className="font-semibold">만 13세 이상</span>인 분을 대상으로 제공합니다. 만 13세 미만의 분은 본 서비스를 이용할 수 없습니다. 잘못하여 만 13세 미만의 분이 등록한 것이 판명된 경우, 운영자는 계정 및 관련 데이터를 삭제하는 조치를 취합니다.
           </li>
@@ -396,7 +396,7 @@ export function PrivacyContentKo() {
       <section>
         <h2 className="mb-3">제17조 (국제 데이터 이전)</h2>
         <p className="text-sm text-gray-700 mb-2">
-          {/* Issue#105: 국제 사용자를 위한 포괄적 주의사항을 추가 */}
+          {/* Spec#105: 국제 사용자를 위한 포괄적 주의사항을 추가 */}
           본 서비스는 일본에 거점을 둔 사업자에 의해 제공되며, 전 세계에서 액세스 가능합니다. 일본 국외에서 액세스된 경우에도 사용자의 개인 데이터는 일본의 서버로 전송된 후 처리됩니다.
         </p>
         <p className="text-sm text-gray-700 mb-2">
@@ -410,7 +410,7 @@ export function PrivacyContentKo() {
           이러한 서비스 제공자는 각각의 개인정보 처리방침 및 데이터 처리 계약에 기초하여 적절한 데이터 보호 조치를 강구하고 있습니다.
         </p>
         <p className="text-sm text-gray-700 mt-2">
-          {/* Issue#105: 사용자가 거주하는 국가의 법률에 의한 권리를 존중 */}
+          {/* Spec#105: 사용자가 거주하는 국가의 법률에 의한 권리를 존중 */}
           사용자가 거주하는 국가의 법률에 의해 본 방침에 기재되지 않은 추가 권리를 가지는 경우, 운영자는 그러한 권리를 존중하고 적용 법령의 정한 바에 따라 대응합니다.
         </p>
       </section>

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * TraceIdFilter のテスト
- * Issue#95: ログの相関性改善（X-Amzn-Trace-Id の MDC 格納とレスポンスヘッダ付与）
+ * Spec#95: ログの相関性改善（X-Amzn-Trace-Id の MDC 格納とレスポンスヘッダ付与）
  *
  * TDD Red段階: 実装前のテストケース定義
  */
@@ -31,7 +31,7 @@ public class TraceIdFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - Root= 部分のみが MDC に格納される")
+    @DisplayName("Spec#95 - Root= 部分のみが MDC に格納される")
     void testDoFilterInternal_ExtractsRootIdFromAlbHeader() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -49,7 +49,7 @@ public class TraceIdFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - Root= を含まない想定外形式の場合はヘッダ値全体がフォールバック")
+    @DisplayName("Spec#95 - Root= を含まない想定外形式の場合はヘッダ値全体がフォールバック")
     void testDoFilterInternal_FallsBackToFullHeaderWhenNoRootPrefix() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -66,7 +66,7 @@ public class TraceIdFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - ヘッダ欠落時は Root=local-{UUID} 形式のフォールバック値が生成される")
+    @DisplayName("Spec#95 - ヘッダ欠落時は Root=local-{UUID} 形式のフォールバック値が生成される")
     void testDoFilterInternal_GeneratesLocalUuidWhenHeaderMissing() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -82,7 +82,7 @@ public class TraceIdFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - レスポンスヘッダ X-Trace-Id に MDC と同じ値が設定される")
+    @DisplayName("Spec#95 - レスポンスヘッダ X-Trace-Id に MDC と同じ値が設定される")
     void testDoFilterInternal_SetsResponseTraceIdHeader() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -97,7 +97,7 @@ public class TraceIdFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - フィルタ通過後は MDC がクリアされる")
+    @DisplayName("Spec#95 - フィルタ通過後は MDC がクリアされる")
     void testDoFilterInternal_ClearsMdcAfterFilterChain() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();

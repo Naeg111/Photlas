@@ -28,7 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#81 Phase 4c - {@link OAuthTokenRevokeService} のテスト（Red 段階）。
+ * Spec#81 Phase 4c - {@link OAuthTokenRevokeService} のテスト（Red 段階）。
  *
  * <p>Round 12 / Q9（退会時 revoke）および [4-B-T5]（期限切れ token は revoke スキップ）の TDD ケース。
  *
@@ -137,7 +137,7 @@ class OAuthTokenRevokeServiceTest {
     // ---------- [T5] 期限切れ token ----------
 
     @Test
-    @DisplayName("[Issue#81 4-B-T5] token_expires_at < 現在: revoke はスキップされ WARN ログが出る")
+    @DisplayName("[Spec#81 4-B-T5] token_expires_at < 現在: revoke はスキップされ WARN ログが出る")
     void tokenExpired_skipsRevokeAndLogsWarn() {
         UserOAuthConnection conn = googleConnection(ENCRYPTED_BYTES_GOOGLE, IV_GOOGLE, pastExpiry());
         when(userOAuthConnectionRepository.findByUserId(USER_ID)).thenReturn(List.of(conn));

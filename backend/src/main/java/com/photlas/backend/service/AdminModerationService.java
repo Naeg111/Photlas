@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Issue#54: 管理者モデレーションサービス
+ * Spec#54: 管理者モデレーションサービス
  * 隔離画像の承認・拒否操作を提供する
  */
 @Service
@@ -91,7 +91,7 @@ public class AdminModerationService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
 
-        // Issue#54: S3ファイルをquarantined/から元の場所に復元
+        // Spec#54: S3ファイルをquarantined/から元の場所に復元
         if (quarantineService.isQuarantined(photo.getS3ObjectKey())) {
             quarantineService.restorePhoto(photo);
         }

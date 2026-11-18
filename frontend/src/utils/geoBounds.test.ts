@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { computeBoundsForPins } from './geoBounds'
 
 /**
- * Issue#145: 確認画面ミニマップの自動フィット用 bounds 計算
+ * Spec#145: 確認画面ミニマップの自動フィット用 bounds 計算
  * 2 点を内包する [[minLng, minLat], [maxLng, maxLat]] を返す純粋関数。
  */
 describe('computeBoundsForPins', () => {

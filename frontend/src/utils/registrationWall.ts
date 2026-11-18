@@ -1,10 +1,10 @@
 /**
- * Issue#118: 登録壁（Registration Wall）の閲覧履歴管理ユーティリティ。
+ * Spec#118: 登録壁（Registration Wall）の閲覧履歴管理ユーティリティ。
  *
  * 未ログインユーザーが写真詳細を閲覧した履歴を localStorage に蓄積し、
  * 一定件数（REGISTRATION_WALL_VIEW_LIMIT）に達したら登録壁を表示する。
  *
- * 設計方針は documents/04_Issues/Issue#118.md の 3.1 を参照。
+ * 設計方針は documents/spec/SPEC-0118.md の 3.1 を参照。
  */
 
 export const REGISTRATION_WALL_VIEW_LIMIT = 10

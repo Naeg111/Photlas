@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 /**
- * Issue#54: 違反履歴リポジトリ
+ * Spec#54: 違反履歴リポジトリ
  */
 @Repository
 public interface ViolationRepository extends JpaRepository<Violation, Long> {
@@ -16,7 +16,7 @@ public interface ViolationRepository extends JpaRepository<Violation, Long> {
     long countByUserId(Long userId);
 
     /**
-     * Issue#73: ユーザーIDで違反履歴を検索（新しい順）
+     * Spec#73: ユーザーIDで違反履歴を検索（新しい順）
      */
     java.util.List<Violation> findByUserIdOrderByCreatedAtDesc(Long userId);
 }

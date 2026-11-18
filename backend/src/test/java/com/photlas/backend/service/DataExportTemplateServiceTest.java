@@ -12,7 +12,7 @@ import java.time.ZonedDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#108 §4.19 / §4.12 - README.md と通知メールの多言語テンプレート読み込みのテスト。
+ * Spec#108 §4.19 / §4.12 - README.md と通知メールの多言語テンプレート読み込みのテスト。
  *
  * 要件:
  *   - README.md は 5 言語（ja / en / ko / zh / th）すべてで生成できる
@@ -32,7 +32,7 @@ class DataExportTemplateServiceTest {
             ZonedDateTime.of(2026, 5, 3, 5, 30, 0, 0, ZoneId.of("UTC"));
 
     @Test
-    @DisplayName("Issue#108 - README.md が日本語で生成される")
+    @DisplayName("Spec#108 - README.md が日本語で生成される")
     void renderReadmeJa() {
         String readme = dataExportTemplateService.renderReadme("ja", "苗木", EXPORTED_AT_UTC);
 
@@ -45,7 +45,7 @@ class DataExportTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - README.md が英語で生成される")
+    @DisplayName("Spec#108 - README.md が英語で生成される")
     void renderReadmeEn() {
         String readme = dataExportTemplateService.renderReadme("en", "naegi", EXPORTED_AT_UTC);
 
@@ -56,7 +56,7 @@ class DataExportTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - README.md が韓国語で生成される")
+    @DisplayName("Spec#108 - README.md が韓国語で生成される")
     void renderReadmeKo() {
         String readme = dataExportTemplateService.renderReadme("ko", "naegi", EXPORTED_AT_UTC);
         assertThat(readme).contains("Photlas");
@@ -65,7 +65,7 @@ class DataExportTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - README.md が中国語で生成される")
+    @DisplayName("Spec#108 - README.md が中国語で生成される")
     void renderReadmeZh() {
         String readme = dataExportTemplateService.renderReadme("zh", "naegi", EXPORTED_AT_UTC);
         assertThat(readme).contains("Photlas");
@@ -74,7 +74,7 @@ class DataExportTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - README.md がタイ語で生成される")
+    @DisplayName("Spec#108 - README.md がタイ語で生成される")
     void renderReadmeTh() {
         String readme = dataExportTemplateService.renderReadme("th", "naegi", EXPORTED_AT_UTC);
         assertThat(readme).contains("Photlas");
@@ -83,7 +83,7 @@ class DataExportTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 未対応言語は en にフォールバック")
+    @DisplayName("Spec#108 - 未対応言語は en にフォールバック")
     void renderReadmeUnknownFallsBackToEn() {
         String fallback = dataExportTemplateService.renderReadme("fr", "naegi", EXPORTED_AT_UTC);
         String englishReadme = dataExportTemplateService.renderReadme("en", "naegi", EXPORTED_AT_UTC);
@@ -91,7 +91,7 @@ class DataExportTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 通知メール件名が 5 言語で生成される")
+    @DisplayName("Spec#108 - 通知メール件名が 5 言語で生成される")
     void emailSubjectIsLocalized() {
         assertThat(dataExportTemplateService.renderEmailSubject("ja"))
                 .contains("Photlas").contains("エクスポート");
@@ -106,7 +106,7 @@ class DataExportTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 通知メール本文に IP / User-Agent / 完了日時が含まれる")
+    @DisplayName("Spec#108 - 通知メール本文に IP / User-Agent / 完了日時が含まれる")
     void emailBodyContainsRequestInfo() {
         String body = dataExportTemplateService.renderEmailBody(
                 "ja", "苗木", EXPORTED_AT_UTC, "192.0.2.1", "Mozilla/5.0");
@@ -121,7 +121,7 @@ class DataExportTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 通知メール本文も未対応言語は en にフォールバック")
+    @DisplayName("Spec#108 - 通知メール本文も未対応言語は en にフォールバック")
     void emailBodyUnknownFallsBackToEn() {
         String fallback = dataExportTemplateService.renderEmailBody(
                 "fr", "naegi", EXPORTED_AT_UTC, "192.0.2.1", "Mozilla/5.0");

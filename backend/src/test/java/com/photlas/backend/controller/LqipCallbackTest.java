@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#125 Cycle1: LQIP コールバック内部 API テスト
+ * Spec#125 Cycle1: LQIP コールバック内部 API テスト
  * POST /api/v1/internal/photos/lqip
  *
  * Lambda が生成した LQIP（data URL 形式）をバックエンド DB に書き込むための
@@ -107,7 +107,7 @@ public class LqipCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#125 Cycle1 - 正常な LQIP コールバックは 200 を返す")
+    @DisplayName("Spec#125 Cycle1 - 正常な LQIP コールバックは 200 を返す")
     void testCallback_Valid_Returns200() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put(FIELD_S3_OBJECT_KEY, testPhoto.getS3ObjectKey());
@@ -121,7 +121,7 @@ public class LqipCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#125 Cycle1 - 不正な API キーは 401 を返す")
+    @DisplayName("Spec#125 Cycle1 - 不正な API キーは 401 を返す")
     void testCallback_InvalidApiKey_Returns401() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put(FIELD_S3_OBJECT_KEY, testPhoto.getS3ObjectKey());
@@ -135,7 +135,7 @@ public class LqipCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#125 Cycle1 - 存在しない s3_object_key は 404 を返す（レース条件用）")
+    @DisplayName("Spec#125 Cycle1 - 存在しない s3_object_key は 404 を返す（レース条件用）")
     void testCallback_NonExistentS3Key_Returns404() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put(FIELD_S3_OBJECT_KEY, "uploads/999/nonexistent.jpg");
@@ -149,7 +149,7 @@ public class LqipCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#125 Cycle1 - 10KB を超える lqip_data_url は 400 を返す（防御的措置）")
+    @DisplayName("Spec#125 Cycle1 - 10KB を超える lqip_data_url は 400 を返す（防御的措置）")
     void testCallback_OversizedLqip_Returns400() throws Exception {
         // 10KB ちょうど超え（10241 文字）の data URL を生成
         StringBuilder oversized = new StringBuilder("data:image/webp;base64,");
@@ -169,7 +169,7 @@ public class LqipCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#125 Cycle1 - s3_object_key が必須")
+    @DisplayName("Spec#125 Cycle1 - s3_object_key が必須")
     void testCallback_MissingS3Key_Returns400() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put(FIELD_LQIP_DATA_URL, SAMPLE_LQIP_DATA_URL);
@@ -182,7 +182,7 @@ public class LqipCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#125 Cycle1 - lqip_data_url が必須")
+    @DisplayName("Spec#125 Cycle1 - lqip_data_url が必須")
     void testCallback_MissingLqipDataUrl_Returns400() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put(FIELD_S3_OBJECT_KEY, testPhoto.getS3ObjectKey());
@@ -195,7 +195,7 @@ public class LqipCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#125 Cycle1 - API キーヘッダがないと 400 を返す")
+    @DisplayName("Spec#125 Cycle1 - API キーヘッダがないと 400 を返す")
     void testCallback_NoApiKeyHeader_Returns400() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put(FIELD_S3_OBJECT_KEY, testPhoto.getS3ObjectKey());

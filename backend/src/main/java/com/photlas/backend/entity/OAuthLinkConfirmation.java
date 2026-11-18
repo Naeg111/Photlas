@@ -8,7 +8,7 @@ import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 /**
- * Issue#81 Phase 4g - OAuth アカウントリンク確認トークン（Q1 / V25）。
+ * Spec#81 Phase 4g - OAuth アカウントリンク確認トークン（Q1 / V25）。
  *
  * <p>既存パスワードアカウントと OAuth 連携を確立する際の短命トークンを管理する。
  * 生トークンはクライアントに渡し、DB には SHA-256 ハッシュ（64 文字 hex）のみ保存する。

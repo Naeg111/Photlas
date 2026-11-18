@@ -9,7 +9,7 @@ import { SPLASH_SCREEN_DURATION_MS, INITIAL_SPOTS_SPLASH_TIMEOUT_MS } from './co
 
 /**
  * App コンポーネントのテスト
- * Issue#28: App.tsx再構築と不要ファイル削除
+ * Spec#28: App.tsx再構築と不要ファイル削除
  *
  * モーダルベースのナビゲーションを使用
  */
@@ -83,7 +83,7 @@ vi.mock('@mapbox/search-js-core', () => ({
   SessionToken: vi.fn(),
 }))
 
-// sonner (toast) のモック（Issue#144: ログイン完了トーストの発火を検証するため）
+// sonner (toast) のモック（Spec#144: ログイン完了トーストの発火を検証するため）
 // App.tsx は toast(...) / toast.success / toast.error / toast.info を使うため callable + サブメソッドにする。
 // ui/sonner ラッパーが 'sonner' の Toaster を参照するため Toaster も提供する。
 vi.mock('sonner', () => ({
@@ -134,7 +134,7 @@ vi.stubGlobal('Image', MockImage)
  * fake timersが有効な状態で呼び出す必要がある
  */
 function skipSplashScreen() {
-  // Issue#156: スプラッシュ解除条件に「初回ピン取得完了」が加わった。テスト環境では実フェッチの
+  // Spec#156: スプラッシュ解除条件に「初回ピン取得完了」が加わった。テスト環境では実フェッチの
   // マイクロタスク解決タイミングに依存しないよう、ピン待ち上限(INITIAL_SPOTS_SPLASH_TIMEOUT_MS)まで
   // 進めてフォールバック解除を確実に発火させる（最低表示 2 秒もこの間に経過する）。
   act(() => {
@@ -163,7 +163,7 @@ function renderApp(initialEntries: string[] = ['/']) {
   )
 }
 
-describe('App - Issue#28: App.tsx再構築', () => {
+describe('App - Spec#28: App.tsx再構築', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers({ shouldAdvanceTime: true })
@@ -197,7 +197,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
   })
 
-  describe('Issue#156: スプラッシュはピン取得完了まで待つ', () => {
+  describe('Spec#156: スプラッシュはピン取得完了まで待つ', () => {
     it('初回ピン取得が完了しないうちは、2秒経過してもスプラッシュは解除されない', () => {
       // 初回フェッチが永遠に resolve しない（hang）→ onInitialSpotsLoaded が発火しない
       global.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch
@@ -254,7 +254,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
     it('renders filter button in top-left area', () => {
       renderApp()
       skipSplashScreen()
-      // Issue#28: フィルターボタンはSlidersHorizontalアイコンを使用
+      // Spec#28: フィルターボタンはSlidersHorizontalアイコンを使用
       const filterButton = screen.getByRole('button', { name: /フィルター/i })
       expect(filterButton).toBeInTheDocument()
     })
@@ -262,7 +262,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
     it('renders menu button in top-right area', () => {
       renderApp()
       skipSplashScreen()
-      // Issue#28: メニューボタンはMenuアイコンを使用
+      // Spec#28: メニューボタンはMenuアイコンを使用
       const menuButton = screen.getByRole('button', { name: /メニュー/i })
       expect(menuButton).toBeInTheDocument()
     })
@@ -270,7 +270,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
     it('renders post button (FAB) in bottom-right area', () => {
       renderApp()
       skipSplashScreen()
-      // Issue#28: 投稿ボタンはPlusアイコンを使用
+      // Spec#28: 投稿ボタンはPlusアイコンを使用
       const postButton = screen.getByRole('button', { name: /投稿/i })
       expect(postButton).toBeInTheDocument()
     })
@@ -292,7 +292,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       }
     })
 
-    it('Issue#70 - フィルター/メニューボタンのコンテナがsafe-area-inset-topを考慮している', () => {
+    it('Spec#70 - フィルター/メニューボタンのコンテナがsafe-area-inset-topを考慮している', () => {
       renderApp()
       skipSplashScreen()
       const filterButton = screen.getByRole('button', { name: /フィルター/i })
@@ -369,7 +369,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('[Issue#104] transitions from LoginRequiredDialog directly to SignUpDialog when signup button is clicked', async () => {
+    it('[Spec#104] transitions from LoginRequiredDialog directly to SignUpDialog when signup button is clicked', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
@@ -386,7 +386,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
       await user.click(signUpButton)
 
-      // Issue#104: SignUpMethodDialog 削除に伴い、SignUpDialog が直接開く
+      // Spec#104: SignUpMethodDialog 削除に伴い、SignUpDialog が直接開く
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'アカウントを新規登録' })).toBeInTheDocument()
       })
@@ -415,7 +415,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('[Issue#104] TopMenuPanel does not have signup button (removed)', async () => {
+    it('[Spec#104] TopMenuPanel does not have signup button (removed)', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
@@ -429,7 +429,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
         expect(screen.getByRole('button', { name: /ログイン/i })).toBeInTheDocument()
       })
 
-      // Issue#104: 「新規アカウント作成」ボタンは削除されている
+      // Spec#104: 「新規アカウント作成」ボタンは削除されている
       expect(screen.queryByRole('button', { name: /新規アカウント作成/i })).not.toBeInTheDocument()
     })
 
@@ -463,7 +463,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('[Issue#104] transitions from LoginDialog directly to SignUpDialog', async () => {
+    it('[Spec#104] transitions from LoginDialog directly to SignUpDialog', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
@@ -483,7 +483,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
         expect(screen.getByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
       })
 
-      // Issue#104: 「新規登録」リンクから SignUpDialog に直接遷移（SignUpMethodDialog 経由なし）
+      // Spec#104: 「新規登録」リンクから SignUpDialog に直接遷移（SignUpMethodDialog 経由なし）
       const signUpLink = screen.getByText(/新規登録/i)
       await user.click(signUpLink)
 
@@ -492,7 +492,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('[Issue#104] transitions from SignUpDialog to LoginDialog (LoginRequired → SignUp → Login)', async () => {
+    it('[Spec#104] transitions from SignUpDialog to LoginDialog (LoginRequired → SignUp → Login)', async () => {
       renderApp()
       skipSplashScreen()
       const user = switchToRealTimers()
@@ -508,7 +508,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
       await user.click(signUpButton)
 
-      // Issue#104: SignUpDialog が直接開く（SignUpMethodDialog 経由なし）
+      // Spec#104: SignUpDialog が直接開く（SignUpMethodDialog 経由なし）
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'アカウントを新規登録' })).toBeInTheDocument()
       })
@@ -541,7 +541,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       const signUpButton = screen.getByRole('button', { name: /新規アカウント作成/i })
       await user.click(signUpButton)
 
-      // Issue#104: SignUpDialog が直接開く（SignUpMethodDialog 経由なし）
+      // Spec#104: SignUpDialog が直接開く（SignUpMethodDialog 経由なし）
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'アカウントを新規登録' })).toBeInTheDocument()
       })
@@ -651,13 +651,13 @@ describe('App - Issue#28: App.tsx再構築', () => {
   })
 
   /**
-   * Issue#99: アカウントリンク確認フロー統合テスト
+   * Spec#99: アカウントリンク確認フロー統合テスト
    *
    * OAuthCallbackPage が `/` に linkConfirmationToken / provider 付き state で
    * 遷移してきた場合、App.tsx は LinkAccountConfirmDialog を開く。
-   * これは Issue#81 で実装漏れていたフローで、Issue#99 で修正対象。
+   * これは Spec#81 で実装漏れていたフローで、Spec#99 で修正対象。
    */
-  describe('Issue#99: アカウントリンク確認フロー', () => {
+  describe('Spec#99: アカウントリンク確認フロー', () => {
     function renderAppWithLinkState(state: {
       linkConfirmationToken: string
       provider: string
@@ -714,13 +714,13 @@ describe('App - Issue#28: App.tsx再構築', () => {
   })
 
   /**
-   * Issue#99: OAuth 新規登録直後の仮表示名設定ダイアログ表示。
+   * Spec#99: OAuth 新規登録直後の仮表示名設定ダイアログ表示。
    * OAuthCallbackPage が `/?requires_username_setup=1` に遷移してきた場合、
-   * App.tsx で {@link UsernameSetupDialog} を開くべき（Issue#81 の実装漏れ）。
+   * App.tsx で {@link UsernameSetupDialog} を開くべき（Spec#81 の実装漏れ）。
    *
    * テスト前提: 認証済みユーザーが localStorage に存在することをモックする。
    */
-  describe('Issue#99: OAuth 新規登録の仮表示名設定ダイアログ', () => {
+  describe('Spec#99: OAuth 新規登録の仮表示名設定ダイアログ', () => {
     function renderAppAtPath(path: string) {
       return render(
         <MemoryRouter initialEntries={[path]}>
@@ -745,9 +745,9 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     }
 
-    it('[Issue#104] /users/me が usernameTemporary=true を返すと UsernameSetupDialog が開く', async () => {
+    it('[Spec#104] /users/me が usernameTemporary=true を返すと UsernameSetupDialog が開く', async () => {
       setAuthenticatedUser()
-      // /users/me が usernameTemporary=true を返すモック（Issue#104 §4.18）
+      // /users/me が usernameTemporary=true を返すモック（Spec#104 §4.18）
       ;(global.fetch as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
         if (typeof url === 'string' && url.includes('/users/me')) {
           return Promise.resolve({
@@ -774,7 +774,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       })
     })
 
-    it('[Issue#104] /users/me が usernameTemporary=false の場合、UsernameSetupDialog は開かない', async () => {
+    it('[Spec#104] /users/me が usernameTemporary=false の場合、UsernameSetupDialog は開かない', async () => {
       setAuthenticatedUser()
       ;(global.fetch as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
         if (typeof url === 'string' && url.includes('/users/me')) {
@@ -814,14 +814,14 @@ describe('App - Issue#28: App.tsx再構築', () => {
   })
 
   /**
-   * Issue#110: メール認証完了マーカーによるログインダイアログ自動表示
+   * Spec#110: メール認証完了マーカーによるログインダイアログ自動表示
    *
    * メール認証ページ（タブ2）が localStorage に email_just_verified を書き込むと、
    * 元のタブ（タブ1）の App.tsx が storage イベントを検知してログインダイアログを開く。
    * 既にログイン中の場合は無視する（誤動作防止）。
    * ダイアログを開いた直後にマーカーを削除する。
    */
-  describe('Issue#110: メール認証完了によるログインダイアログ自動表示', () => {
+  describe('Spec#110: メール認証完了によるログインダイアログ自動表示', () => {
     const EMAIL_JUST_VERIFIED_KEY = 'email_just_verified'
 
     /**
@@ -926,14 +926,14 @@ describe('App - Issue#28: App.tsx再構築', () => {
   })
 
   /**
-   * Issue#110: メールアドレス変更完了マーカーによる強制ログアウト＋ログインダイアログ表示
+   * Spec#110: メールアドレス変更完了マーカーによる強制ログアウト＋ログインダイアログ表示
    *
    * メールアドレス変更確認ページが localStorage に email_just_changed を書き込むと、
    * 元のタブの App.tsx が storage イベントを検知して既存セッションをログアウトし、
    * ログインダイアログを開く（新メアドで再ログインを強制する）。
    * email_just_verified と異なり、ログイン中の場合も処理を実行する（むしろログイン中が前提）。
    */
-  describe('Issue#110: メールアドレス変更完了による再ログイン強制', () => {
+  describe('Spec#110: メールアドレス変更完了による再ログイン強制', () => {
     const EMAIL_JUST_CHANGED_KEY = 'email_just_changed'
 
     function dispatchEmailChangedStorageEvent() {
@@ -1004,7 +1004,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
     })
   })
 
-  describe('Issue#111: 位置情報許可状態に応じた autoCenter のタイミング', () => {
+  describe('Spec#111: 位置情報許可状態に応じた autoCenter のタイミング', () => {
     let originalGeolocation: Geolocation | undefined
     let originalPermissions: Permissions | undefined
     const mockGetCurrentPosition = vi.fn()
@@ -1034,7 +1034,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       }
     })
 
-    it('Issue#111 - permissions=granted の場合、スプラッシュ解除前に getCurrentPosition が呼ばれる', async () => {
+    it('Spec#111 - permissions=granted の場合、スプラッシュ解除前に getCurrentPosition が呼ばれる', async () => {
       Object.defineProperty(navigator, 'permissions', {
         value: {
           query: vi.fn().mockResolvedValue({ state: 'granted' }),
@@ -1054,7 +1054,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       expect(screen.queryByTestId('splash-screen')).toBeInTheDocument()
     })
 
-    it('Issue#111 - permissions=denied の場合、スプラッシュ解除前に IP国判定が走る', async () => {
+    it('Spec#111 - permissions=denied の場合、スプラッシュ解除前に IP国判定が走る', async () => {
       Object.defineProperty(navigator, 'permissions', {
         value: {
           query: vi.fn().mockResolvedValue({ state: 'denied' }),
@@ -1077,7 +1077,7 @@ describe('App - Issue#28: App.tsx再構築', () => {
       expect(screen.queryByTestId('splash-screen')).toBeInTheDocument()
     })
 
-    it('Issue#111 - permissions=prompt の場合、スプラッシュ解除前は getCurrentPosition を呼ばない', async () => {
+    it('Spec#111 - permissions=prompt の場合、スプラッシュ解除前は getCurrentPosition を呼ばない', async () => {
       Object.defineProperty(navigator, 'permissions', {
         value: {
           query: vi.fn().mockResolvedValue({ state: 'prompt' }),
@@ -1106,13 +1106,13 @@ describe('App - Issue#28: App.tsx再構築', () => {
   })
 
   /**
-   * Issue#144: OAuth ログイン完了トーストの発火タイミング。
+   * Spec#144: OAuth ログイン完了トーストの発火タイミング。
    *
    * - 既存ユーザー（ダイアログ無し）: OAuthフラグあり + スプラッシュ解除後に「ログインしました」
    * - 新規ユーザー（ユーザー名ダイアログ）: ダイアログを閉じた時に1回だけ
    * - 再訪/後回し（OAuthフラグ無し）: 誤発火しない
    */
-  describe('Issue#144: OAuth ログイン完了トースト', () => {
+  describe('Spec#144: OAuth ログイン完了トースト', () => {
     const OAUTH_FLAG = 'photlas_oauth_login_just_completed'
 
     function setAuthenticatedUser() {

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ContactDialog } from './ContactDialog'
 
 /**
- * Issue#114: お問い合わせダイアログ
+ * Spec#114: お問い合わせダイアログ
  * TDD Red段階
  */
 describe('ContactDialog', () => {

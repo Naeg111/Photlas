@@ -1,7 +1,7 @@
 /**
  * バリデーションユーティリティ
- * Issue#21: パスワードバリデーション統一
- * Issue#26: 認証ダイアログ用バリデーション
+ * Spec#21: パスワードバリデーション統一
+ * Spec#26: 認証ダイアログ用バリデーション
  */
 
 /** パスワード最小文字数 */
@@ -13,11 +13,11 @@ export const PASSWORD_MAX_LENGTH = 20
 /** 強いパスワードの最小文字数 */
 export const PASSWORD_STRONG_MIN_LENGTH = 12
 
-/** SNSリンク最大数 (Issue#102: 将来の5サービス対応用) */
+/** SNSリンク最大数 (Spec#102: 将来の5サービス対応用) */
 export const MAX_SNS_LINKS = 5
 
 /**
- * Issue#21: パスワードバリデーション統一
+ * Spec#21: パスワードバリデーション統一
  * 8〜20文字、数字・小文字・大文字をそれぞれ1文字以上、記号は使用不可
  */
 export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z0-9]{8,20}$/
@@ -77,7 +77,7 @@ function invalid(errorKey: ValidationErrorKey, errorParams?: Record<string, numb
 const VALID: ValidationResult = { isValid: true, errorKey: null }
 
 /**
- * パスワードをバリデーション（Issue#21統一要件）
+ * パスワードをバリデーション（Spec#21統一要件）
  */
 export function validatePassword(password: string): ValidationResult {
   if (!password) {

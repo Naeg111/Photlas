@@ -1,5 +1,5 @@
 # ===== 画像アップロードバケット（CloudFront E10V のオリジン）=====
-# versioning 有効・CORS・lifecycle(glacier移行 + pending削除×3 Issue#100)・ポリシー(EC2/CloudFront)。
+# versioning 有効・CORS・lifecycle(glacier移行 + pending削除×3 Spec#100)・ポリシー(EC2/CloudFront)。
 # ※ Lambda 通知(moderation/thumbnail トリガー)は Lambda 増分で aws_s3_bucket_notification として追加。
 
 resource "aws_s3_bucket" "uploads_prod" {

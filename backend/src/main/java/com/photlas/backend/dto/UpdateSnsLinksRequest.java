@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * SNSリンク更新リクエストDTO
- * Issue#29: プロフィール機能強化
+ * Spec#29: プロフィール機能強化
  */
 public class UpdateSnsLinksRequest {
 

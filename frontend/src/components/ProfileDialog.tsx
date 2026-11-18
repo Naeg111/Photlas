@@ -31,7 +31,7 @@ import { fetchJson } from '../utils/fetchJson'
 import { notifyIfRateLimited } from '../utils/notifyIfRateLimited'
 import { notifyReportFailure } from '../utils/notifyReportFailure'
 
-// Issue#130: react-easy-crop 依存を初回バンドルから除外（プロフィール画像トリミング時のみロード）
+// Spec#130: react-easy-crop 依存を初回バンドルから除外（プロフィール画像トリミング時のみロード）
 const ProfileImageCropper = lazy(() => import('./ProfileImageCropper'))
 import { ReportDialog } from './ReportDialog'
 import { SnsLinkEditDialog } from './SnsLinkEditDialog'
@@ -79,7 +79,7 @@ interface UserPhotoItem {
     crop_center_x?: number | null
     crop_center_y?: number | null
     crop_zoom?: number | null
-    /** Issue#125: LQIP（低品質プレースホルダー）の data URL。モデレーション制限中は null。 */
+    /** Spec#125: LQIP（低品質プレースホルダー）の data URL。モデレーション制限中は null。 */
     lqip_data_url?: string | null
   }
   spot: {
@@ -98,7 +98,7 @@ interface UserPhotosResponse {
   last?: boolean
 }
 
-// Issue#30: お気に入り一覧API用インターフェース
+// Spec#30: お気に入り一覧API用インターフェース
 interface FavoritePhoto {
   photo: {
     photo_id: number
@@ -133,7 +133,7 @@ interface ProfileDialogProps {
   onClose: () => void
   userProfile: UserProfile
   isOwnProfile: boolean
-  /** Issue#77: 写真クリック時にphotoIdを渡すコールバック */
+  /** Spec#77: 写真クリック時にphotoIdを渡すコールバック */
   onPhotoClick?: (photoId: number) => void
   initialTab?: 'posts' | 'favorites'
   /** 撮影地点プレビュー時にダイアログを画面下部にスライドする */
@@ -145,7 +145,7 @@ interface ProfileDialogProps {
 }
 
 /**
- * Issue#102: SNSアイコン画像マッピング（外部SVG・ブランドガイドライン準拠の黒単色）
+ * Spec#102: SNSアイコン画像マッピング（外部SVG・ブランドガイドライン準拠の黒単色）
  * YouTube/TikTok は許可未取得のため掲載せず、表示時にフィルタリングする。
  */
 const SNS_ICON_MAP: Record<number, string> = {
@@ -162,7 +162,7 @@ const SNS_DISPLAY_ORDER: ReadonlyArray<number> = [
 
 /**
  * プロフィールダイアログコンポーネント
- * Issue#29: プロフィール機能強化
+ * Spec#29: プロフィール機能強化
  */
 const ProfileDialog: React.FC<ProfileDialogProps> = ({
   open,
@@ -255,7 +255,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     }
   }, [isOwnProfile, userProfile.userId])
 
-  // Issue#80: ダイアログが閉じたら取得済みフラグをリセット（再度開いた時に再取得させる）
+  // Spec#80: ダイアログが閉じたら取得済みフラグをリセット（再度開いた時に再取得させる）
   useEffect(() => {
     if (!open) {
       setPhotosFetched(false)
@@ -281,14 +281,14 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     }
   }, [refreshPhotosKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Issue#30: お気に入り一覧状態
+  // Spec#30: お気に入り一覧状態
   const [favorites, setFavorites] = useState<FavoritePhoto[]>([])
   const [favoritesLoading, setFavoritesLoading] = useState(false)
   const [favoritesFetched, setFavoritesFetched] = useState(false)
   const [favoritesTotalPages, setFavoritesTotalPages] = useState(0)
   const [favoritesPage, setFavoritesPage] = useState(0)
 
-  // Issue#30: お気に入り一覧を取得
+  // Spec#30: お気に入り一覧を取得
   const fetchFavorites = useCallback(async (page = 0) => {
     setFavoritesLoading(true)
     try {
@@ -309,8 +309,8 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     }
   }, [])
 
-  // Issue#30: お気に入りタブがクリックされた時
-  // Issue#72: タブをcontrolled化（E2Eテストの安定性向上）
+  // Spec#30: お気に入りタブがクリックされた時
+  // Spec#72: タブをcontrolled化（E2Eテストの安定性向上）
   const [activeTab, setActiveTab] = useState(initialTab)
 
   const handleTabChange = useCallback((value: string) => {
@@ -330,7 +330,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   // SNSリンク編集ダイアログ状態管理
   const [isSnsEditDialogOpen, setIsSnsEditDialogOpen] = useState(false)
 
-  // Issue#54: プロフィール通報状態管理
+  // Spec#54: プロフィール通報状態管理
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isReportLoading, setIsReportLoading] = useState(false)
 
@@ -376,7 +376,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
   }, [t])
 
   // カスタムフックを使用してプロフィール編集機能を取得
-  // Issue#36: AuthContextからupdateUserを取得
+  // Spec#36: AuthContextからupdateUserを取得
   const { updateUser } = useAuth()
 
   const {
@@ -388,7 +388,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     fileInputRef,
     handleProfileImageSelect,
     handleDeleteProfileImage,
-    // Issue#35: トリミング機能
+    // Spec#35: トリミング機能
     isCropperOpen,
     cropperImageSrc,
     handleCropComplete,
@@ -400,7 +400,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
     handleCancelAllChanges,
   } = useProfileEdit({
     initialUsername: userProfile.username,
-    // Issue#36: 表示名更新成功時にAuthContextを更新
+    // Spec#36: 表示名更新成功時にAuthContextを更新
     onUsernameUpdated: (newUsername) => {
       updateUser({ username: newUsername })
     },
@@ -535,7 +535,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                       {t('photo.change')}
                     </Button>
                   )}
-                  {/* Issue#54: プロフィール通報ボタン（他人のプロフィールのみ） */}
+                  {/* Spec#54: プロフィール通報ボタン（他人のプロフィールのみ） */}
                   {!isOwnProfile && (
                     <Button
                       size="sm"
@@ -552,7 +552,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             {usernameError && <p className="text-sm text-red-500">{usernameError}</p>}
           </div>
 
-          {/* Issue#54: プロフィール通報ダイアログ */}
+          {/* Spec#54: プロフィール通報ダイアログ */}
           <ReportDialog
             open={isReportOpen}
             onOpenChange={setIsReportOpen}
@@ -560,7 +560,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
             isLoading={isReportLoading}
           />
 
-          {/* Issue#102: SNSリンク（Instagram → Threads → X の順で表示。未対応 platform はフィルタリング） */}
+          {/* Spec#102: SNSリンク（Instagram → Threads → X の順で表示。未対応 platform はフィルタリング） */}
           {(() => {
             const supportedLinks = displaySnsLinks.filter(
               (link): link is SnsLink & { platform: number } =>
@@ -679,7 +679,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
                         role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handlePhotoClick(item.photo.photo_id) }} onClick={() => handlePhotoClick(item.photo.photo_id)}
                         className="relative pt-[100%] bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                       >
-                        {/* Issue#125: LQIP を本物のサムネの下に絶対配置。
+                        {/* Spec#125: LQIP を本物のサムネの下に絶対配置。
                             crop 変換と zoom*1.1 で blur の縁を画面外に押し出す。 */}
                         <LqipPlaceholder
                           src={item.photo.lqip_data_url}
@@ -752,7 +752,7 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
 
           {isOwnProfile && (
             <TabsContent value="favorites" className="mt-4 data-[state=inactive]:hidden" forceMount>
-              {/* Issue#30: お気に入り一覧 */}
+              {/* Spec#30: お気に入り一覧 */}
               {favoritesLoading && (
                 <div
                   data-testid={TEST_ID_FAVORITES_LOADING}
@@ -847,8 +847,8 @@ const ProfileDialog: React.FC<ProfileDialogProps> = ({
           )}
         </Tabs>
 
-        {/* Issue#35: トリミングモーダル */}
-        {/* Issue#130: lazy 化したコンポーネントを Suspense でラップ */}
+        {/* Spec#35: トリミングモーダル */}
+        {/* Spec#130: lazy 化したコンポーネントを Suspense でラップ */}
         {isCropperOpen && (
           <Suspense fallback={null}>
             <ProfileImageCropper

@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import java.util.HexFormat;
 
 /**
- * Issue#81 Phase 4g - OAuth アカウントリンク確認サービス（Q1）。
+ * Spec#81 Phase 4g - OAuth アカウントリンク確認サービス（Q1）。
  *
  * <p>既存パスワードアカウントと OAuth 連携を結ぶ前に、ユーザーに明示確認させるための
  * 短命トークン（TTL 5 分）を発行・消費する。
@@ -49,7 +49,7 @@ public class OAuthLinkConfirmationService {
     /**
      * リンク確認トークンを発行する。生トークンのみ呼び出し元に返し、DB には SHA-256 ハッシュを保存する。
      *
-     * <p>Issue#99: 呼び出し元 ({@link OAuth2UserServiceHelper#processOAuthUser}) は
+     * <p>Spec#99: 呼び出し元 ({@link OAuth2UserServiceHelper#processOAuthUser}) は
      * 直後に {@link com.photlas.backend.security.OAuth2LinkConfirmationException} を投げるため、
      * 外側のトランザクションは必ずロールバックされる。本メソッドの save() を保護するために
      * {@link Propagation#REQUIRES_NEW} で独立トランザクションとして実行し、

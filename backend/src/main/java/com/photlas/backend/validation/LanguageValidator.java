@@ -3,7 +3,7 @@ package com.photlas.backend.validation;
 import com.photlas.backend.util.LanguageUtils;
 
 /**
- * Issue#81 - 言語コードのホワイトリスト検証。
+ * Spec#81 - 言語コードのホワイトリスト検証。
  *
  * Round 7 決定: OAuth 認可リクエスト時に受け取る `lang` パラメータを完全一致で検証し、
  * 未知言語はデフォルト "ja" にフォールバックする。

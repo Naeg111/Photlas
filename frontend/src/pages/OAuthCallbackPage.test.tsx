@@ -229,7 +229,7 @@ describe('OAuthCallbackPage', () => {
         </MemoryRouter>
       )
 
-      // Issue#104: requires_username_setup の URL パラメータは廃止（/users/me ベースに移行）
+      // Spec#104: requires_username_setup の URL パラメータは廃止（/users/me ベースに移行）
       // OAuthCallbackPage は常に / にリダイレクト
       await waitFor(() => {
         expect(mockNavigate).toHaveBeenCalledWith(
@@ -239,7 +239,7 @@ describe('OAuthCallbackPage', () => {
       })
     })
 
-    it('Issue#144: access_token 成功時に OAuth ログイン完了フラグを sessionStorage にセットする', async () => {
+    it('Spec#144: access_token 成功時に OAuth ログイン完了フラグを sessionStorage にセットする', async () => {
       mockFetch.mockResolvedValueOnce(
         new Response(JSON.stringify(USER_PROFILE), {
           status: 200,
@@ -261,7 +261,7 @@ describe('OAuthCallbackPage', () => {
       })
     })
 
-    it('Issue#144: link_confirmation_token 経路ではフラグをセットしない（連携時はログイントーストを出さないため）', async () => {
+    it('Spec#144: link_confirmation_token 経路ではフラグをセットしない（連携時はログイントーストを出さないため）', async () => {
       window.location.hash = '#link_confirmation_token=tok&provider=GOOGLE'
       render(
         <MemoryRouter>

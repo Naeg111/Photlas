@@ -1,7 +1,7 @@
 /**
- * Issue#96: fetchJson<T> 共通ラッパーのテスト
+ * Spec#96: fetchJson<T> 共通ラッパーのテスト
  *
- * 仕様（Issue#96 3.1-2）:
+ * 仕様（Spec#96 3.1-2）:
  *   - non-OK で ApiError を throw（responseData と retryAfterSeconds を埋める）
  *   - 429 の場合は Retry-After ヘッダを解析、欠落時は 60 秒デフォルト
  *   - Content-Type application/json なら JSON.parse、失敗なら生テキスト、text/* なら生テキスト

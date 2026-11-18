@@ -87,7 +87,7 @@ public class ReportControllerTest {
     private static final int TEST_TIME_OF_DAY = CodeConstants.TIME_OF_DAY_MORNING;
     private static final int TEST_WEATHER = CodeConstants.WEATHER_SUNNY;
 
-    // Test Data Constants - Report Reasons (Issue#54)
+    // Test Data Constants - Report Reasons (Spec#54)
     private static final int REASON_ADULT_CONTENT = CodeConstants.REASON_ADULT_CONTENT;
     private static final int REASON_VIOLENCE = CodeConstants.REASON_VIOLENCE;
     private static final int REASON_PRIVACY_VIOLATION = CodeConstants.REASON_PRIVACY_VIOLATION;
@@ -212,7 +212,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 正常ケース: 通報作成成功")
+    @DisplayName("Spec#54 - 正常ケース: 通報作成成功")
     void testCreateReport_ValidRequest_ReturnsCreated() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
             createReportRequest(REASON_ADULT_CONTENT, DETAILS_ADULT_CONTENT);
@@ -230,7 +230,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 重複ケース: 同じユーザーが同じ写真を再度通報")
+    @DisplayName("Spec#54 - 重複ケース: 同じユーザーが同じ写真を再度通報")
     void testCreateReport_DuplicateReport_ReturnsConflict() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
             createReportRequest(REASON_PRIVACY_VIOLATION, DETAILS_PRIVACY_VIOLATION);
@@ -249,7 +249,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 未認証ケース: 認証なしでアクセス")
+    @DisplayName("Spec#54 - 未認証ケース: 認証なしでアクセス")
     void testCreateReport_Unauthorized_ReturnsUnauthorized() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
             createReportRequest(REASON_SPAM, DETAILS_GENERIC);
@@ -262,7 +262,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - バリデーションエラー: reasonが空")
+    @DisplayName("Spec#54 - バリデーションエラー: reasonが空")
     void testCreateReport_MissingReason_ReturnsBadRequest() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
             createReportRequest(null, DETAILS_GENERIC);
@@ -276,7 +276,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 正常ケース: detailsが空でも通報可能")
+    @DisplayName("Spec#54 - 正常ケース: detailsが空でも通報可能")
     void testCreateReport_EmptyDetails_ReturnsCreated() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
             createReportRequest(REASON_ADULT_CONTENT, null);
@@ -290,7 +290,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - バリデーションエラー: detailsが300文字超過")
+    @DisplayName("Spec#54 - バリデーションエラー: detailsが300文字超過")
     void testCreateReport_DetailsTooLong_ReturnsBadRequest() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
             createReportRequest(REASON_ADULT_CONTENT, LONG_DETAILS);
@@ -304,7 +304,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - バリデーションエラー: 不正なreason値")
+    @DisplayName("Spec#54 - バリデーションエラー: 不正なreason値")
     void testCreateReport_InvalidReason_ReturnsBadRequest() throws Exception {
         // JSON文字列を直接作成して不正なreason値を送信
         String invalidRequest = "{\"reason\":" + REASON_INVALID + ",\"details\":\"" + DETAILS_GENERIC + "\"}";
@@ -318,7 +318,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 自分の投稿を通報するとBadRequest")
+    @DisplayName("Spec#54 - 自分の投稿を通報するとBadRequest")
     void testCreateReport_SelfReport_ReturnsBadRequest() throws Exception {
         // photoOwnerのトークンを生成
         String ownerToken = jwtService.generateToken(PHOTO_OWNER_EMAIL);
@@ -336,7 +336,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 公開中でない写真の通報は 400 と PHOTO_NOT_PUBLIC を返す")
+    @DisplayName("Spec#93 - 公開中でない写真の通報は 400 と PHOTO_NOT_PUBLIC を返す")
     void testCreateReport_PhotoNotPublic_ReturnsBadRequestWithCode() throws Exception {
         // testPhoto は管理下のエンティティなので、状態を変えて flush する
         // （save だと merge になり、List.of で入れたカテゴリーの差し替えで失敗する）
@@ -355,7 +355,7 @@ public class ReportControllerTest {
                 .andExpect(jsonPath("$.code").value(ErrorCodes.PHOTO_NOT_PUBLIC));
     }
 
-    // ===== Issue#54: プロフィール通報テスト =====
+    // ===== Spec#54: プロフィール通報テスト =====
 
     private static final String PROFILE_REPORT_ENDPOINT_PREFIX = "/api/v1/users/";
     private static final String PROFILE_REPORT_ENDPOINT_SUFFIX = "/report";
@@ -365,7 +365,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - プロフィール通報: 正常ケース")
+    @DisplayName("Spec#54 - プロフィール通報: 正常ケース")
     void testCreateProfileReport_ValidRequest_ReturnsCreated() throws Exception {
         // photoOwner（他人）のプロフィールを通報
         User targetUser = userRepository.findByEmail(PHOTO_OWNER_EMAIL).orElseThrow();
@@ -382,7 +382,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - プロフィール通報: 自分のプロフィールを通報するとBadRequest")
+    @DisplayName("Spec#54 - プロフィール通報: 自分のプロフィールを通報するとBadRequest")
     void testCreateProfileReport_SelfReport_ReturnsBadRequest() throws Exception {
         com.photlas.backend.dto.ReportRequest request =
             createReportRequest(REASON_ADULT_CONTENT, DETAILS_ADULT_CONTENT);
@@ -396,7 +396,7 @@ public class ReportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - プロフィール通報: 重複通報はConflict")
+    @DisplayName("Spec#54 - プロフィール通報: 重複通報はConflict")
     void testCreateProfileReport_DuplicateReport_ReturnsConflict() throws Exception {
         User targetUser = userRepository.findByEmail(PHOTO_OWNER_EMAIL).orElseThrow();
 

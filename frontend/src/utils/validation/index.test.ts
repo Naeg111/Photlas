@@ -13,8 +13,8 @@ import {
 
 /**
  * validation.ts ユニットテスト
- * Issue#21: パスワードバリデーション統一
- * Issue#26: 認証ダイアログ用バリデーション
+ * Spec#21: パスワードバリデーション統一
+ * Spec#26: 認証ダイアログ用バリデーション
  */
 
 describe('validation', () => {
@@ -31,7 +31,7 @@ describe('validation', () => {
       expect(PASSWORD_STRONG_MIN_LENGTH).toBe(12)
     })
 
-    it('MAX_SNS_LINKS は 5 (Issue#102: 将来の5サービス対応用)', () => {
+    it('MAX_SNS_LINKS は 5 (Spec#102: 将来の5サービス対応用)', () => {
       expect(MAX_SNS_LINKS).toBe(5)
     })
 

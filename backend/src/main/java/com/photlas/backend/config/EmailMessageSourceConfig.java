@@ -8,7 +8,7 @@ import org.springframework.context.support.ReloadableResourceBundleMessageSource
 import java.util.Locale;
 
 /**
- * Issue#113: メールテンプレート用の MessageSource Bean 定義。
+ * Spec#113: メールテンプレート用の MessageSource Bean 定義。
  *
  * <p>Spring Boot のオートコンフィグで作られる標準 MessageSource (`messages.properties` 用) と
  * 分離するため、専用 Bean 名 `emailMessageSource` で定義する。</p>

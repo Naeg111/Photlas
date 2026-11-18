@@ -12,7 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 /**
- * Issue#119: AI 画像認識の予測結果を保存するエンティティ。
+ * Spec#119: AI 画像認識の予測結果を保存するエンティティ。
  *
  * <p>{@link Photo} とは1対多の関係（同一写真に対し複数モデルの予測を保持可能、
  * 現状は Rekognition のみ）。{@code ON DELETE CASCADE} により写真削除時に
@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
  *
  * <p>{@code predictedCategories} と {@code confidence} は JSON 文字列として TEXT に保存。
  * 案1（String + Jackson、アプリ層 serialize）。将来 JSONB 化検討中
- * （Issue#119 8. 未決事項、Issue#120 解決後）。</p>
+ * （Spec#119 8. 未決事項、Spec#120 解決後）。</p>
  */
 @Entity
 @Table(name = "photo_ai_predictions")

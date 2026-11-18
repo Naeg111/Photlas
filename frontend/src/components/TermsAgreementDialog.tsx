@@ -8,7 +8,7 @@ import { API_V1_URL } from '../config/api'
 import { useAuth } from '../contexts/AuthContext'
 
 /**
- * Issue#104: 利用規約・プライバシーポリシー同意ダイアログ
+ * Spec#104: 利用規約・プライバシーポリシー同意ダイアログ
  *
  * <p>OAuth 経由の新規ユーザーが認証完了後に表示するダイアログ。
  * 利用規約とプライバシーポリシーへの同意を必須とし、両方チェックされるまで
@@ -42,7 +42,7 @@ export default function TermsAgreementDialog({
   const { logout, getAuthToken } = useAuth()
   const [agreedTerms, setAgreedTerms] = useState(false)
   const [agreedPrivacy, setAgreedPrivacy] = useState(false)
-  // Issue#109: 13 歳以上であることの自己申告
+  // Spec#109: 13 歳以上であることの自己申告
   const [ageConfirmed, setAgeConfirmed] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -58,7 +58,7 @@ export default function TermsAgreementDialog({
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
-      // Issue#144: 「ログインしました」トーストはここでは出さない。
+      // Spec#144: 「ログインしました」トーストはここでは出さない。
       // OAuth 新規フローでは規約同意の後にユーザー名登録ダイアログが続くため、
       // オンボーディング最後のダイアログ閉鎖時に App.tsx 側でまとめて発火させる。
       onAgreed()
@@ -159,7 +159,7 @@ export default function TermsAgreementDialog({
             </span>
           </label>
 
-          {/* Issue#109: 13 歳以上であることの自己申告 */}
+          {/* Spec#109: 13 歳以上であることの自己申告 */}
           <label
             htmlFor="terms-agreement-age"
             className="flex items-center space-x-3 cursor-pointer p-2 -mx-2 select-none"

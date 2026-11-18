@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Issue#81 Phase 3 - セキュリティ監査ログ集約ロガー。
+ * Spec#81 Phase 3 - セキュリティ監査ログ集約ロガー。
  *
  * OAuth / 認証まわりのイベントを、専用の logger 名 `com.photlas.backend.security.audit` で
  * 構造化出力する。ログ設定で別ファイル（例: audit.log）に振り分けることを想定。
@@ -34,7 +34,7 @@ public class SecurityAuditLogger {
         OAUTH_TOKEN_REVOKE_FAILED,
         OAUTH_LINK_CONFIRMED,
         OAUTH_LINK_REJECTED,
-        OAUTH_ACCOUNT_CANCELLED;  // Issue#104: 同意ダイアログでキャンセルされた未同意アカウントの削除
+        OAUTH_ACCOUNT_CANCELLED;  // Spec#104: 同意ダイアログでキャンセルされた未同意アカウントの削除
     }
 
     /**

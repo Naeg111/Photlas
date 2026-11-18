@@ -23,7 +23,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 /**
- * Issue#113 フェーズ 2 - PasswordService の 5 言語化テスト。
+ * Spec#113 フェーズ 2 - PasswordService の 5 言語化テスト。
  *
  * <p>{@code sendPasswordResetEmail} (グループ A: 失敗時例外伝播) と
  * {@code sendPasswordChangedNotification} (グループ C: 失敗時 WARN ログ) の
@@ -51,7 +51,7 @@ class PasswordServiceMultiLanguageTest {
     // ========== パスワードリセット (グループ A) ==========
 
     @Test
-    @DisplayName("Issue#113 - パスワードリセット: ja ユーザーには日本語メール")
+    @DisplayName("Spec#113 - パスワードリセット: ja ユーザーには日本語メール")
     void resetEmailJa() {
         seedUser("ja", "ja-reset@example.com");
 
@@ -63,7 +63,7 @@ class PasswordServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - パスワードリセット: en ユーザーには英語メール")
+    @DisplayName("Spec#113 - パスワードリセット: en ユーザーには英語メール")
     void resetEmailEn() {
         seedUser("en", "en-reset@example.com");
 
@@ -75,7 +75,7 @@ class PasswordServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - パスワードリセット: ko ユーザーには韓国語メール（ハングル含む）")
+    @DisplayName("Spec#113 - パスワードリセット: ko ユーザーには韓国語メール（ハングル含む）")
     void resetEmailKo() {
         seedUser("ko", "ko-reset@example.com");
 
@@ -87,7 +87,7 @@ class PasswordServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - パスワードリセット: zh-CN ユーザーには簡体中文メール（CJK 含む）")
+    @DisplayName("Spec#113 - パスワードリセット: zh-CN ユーザーには簡体中文メール（CJK 含む）")
     void resetEmailZhCn() {
         seedUser("zh-CN", "zhcn-reset@example.com");
 
@@ -99,7 +99,7 @@ class PasswordServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - パスワードリセット: zh-TW ユーザーには繁体中文メール（CJK 含む）")
+    @DisplayName("Spec#113 - パスワードリセット: zh-TW ユーザーには繁体中文メール（CJK 含む）")
     void resetEmailZhTw() {
         seedUser("zh-TW", "zhtw-reset@example.com");
 
@@ -111,7 +111,7 @@ class PasswordServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - パスワードリセット (グループ A): メール送信失敗時に例外伝播")
+    @DisplayName("Spec#113 - パスワードリセット (グループ A): メール送信失敗時に例外伝播")
     void resetEmailGroupAFailurePropagatesException() {
         seedUser("ja", "fail-reset@example.com");
         doThrow(new RuntimeException("SMTP error"))
@@ -125,7 +125,7 @@ class PasswordServiceMultiLanguageTest {
     // ========== パスワード変更完了通知 (グループ C) ==========
 
     @Test
-    @DisplayName("Issue#113 - パスワード変更通知: ja ユーザーには日本語メール")
+    @DisplayName("Spec#113 - パスワード変更通知: ja ユーザーには日本語メール")
     void changedEmailJa() {
         User user = seedUser("ja", "ja-changed@example.com");
 
@@ -137,7 +137,7 @@ class PasswordServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - パスワード変更通知: en ユーザーには英語メール")
+    @DisplayName("Spec#113 - パスワード変更通知: en ユーザーには英語メール")
     void changedEmailEn() {
         seedUser("en", "en-changed@example.com");
 
@@ -149,7 +149,7 @@ class PasswordServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - パスワード変更通知: ko ユーザーには韓国語メール")
+    @DisplayName("Spec#113 - パスワード変更通知: ko ユーザーには韓国語メール")
     void changedEmailKo() {
         seedUser("ko", "ko-changed@example.com");
 
@@ -161,7 +161,7 @@ class PasswordServiceMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - パスワード変更通知 (グループ C): メール送信失敗でも処理は成功扱い")
+    @DisplayName("Spec#113 - パスワード変更通知 (グループ C): メール送信失敗でも処理は成功扱い")
     void changedEmailGroupCFailureSwallowed() {
         seedUser("ja", "fail-changed@example.com");
         doThrow(new RuntimeException("SMTP error"))

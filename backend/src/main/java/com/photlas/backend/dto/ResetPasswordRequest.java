@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Size;
 
 /**
  * パスワード再設定リクエストのDTO
- * Issue#6: パスワードリセット機能
- * Issue#21: パスワードバリデーション統一
+ * Spec#6: パスワードリセット機能
+ * Spec#21: パスワードバリデーション統一
  *
  * POST /api/v1/auth/reset-password のリクエストボディ
  */
@@ -19,7 +19,7 @@ public class ResetPasswordRequest {
 
     @NotBlank(message = "新しいパスワードは必須です")
     @Size(min = 8, max = 20, message = "パスワードは8〜20文字で入力してください")
-    // Issue#21: パスワードバリデーション統一 - 記号禁止、英数字のみ
+    // Spec#21: パスワードバリデーション統一 - 記号禁止、英数字のみ
     @Pattern(
         regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]+$",
         message = "パスワードは数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません"

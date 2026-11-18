@@ -11,7 +11,7 @@ describe('NotFoundPage', () => {
     document.querySelectorAll('meta[name="robots"]').forEach((el) => el.remove())
   })
 
-  it('Issue#143 - 非コンテンツページなので noindex メタが付与される', () => {
+  it('Spec#143 - 非コンテンツページなので noindex メタが付与される', () => {
     render(
       <MemoryRouter>
         <NotFoundPage />

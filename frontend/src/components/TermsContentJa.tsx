@@ -1,6 +1,6 @@
 /**
  * TermsContentJa コンポーネント
- * Issue#51: 利用規約の文面（日本語）
+ * Spec#51: 利用規約の文面（日本語）
  *
  * 利用規約の本文コンテンツを提供する
  */
@@ -49,7 +49,7 @@ export function TermsContentJa() {
         <h2 className="mb-3">第3条（ユーザー登録）</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
           <li>
-            {/* Issue#105: 13歳以上の利用制限を明示（プライバシーポリシー第12条と整合） */}
+            {/* Spec#105: 13歳以上の利用制限を明示（プライバシーポリシー第12条と整合） */}
             本サービスは<span className="font-semibold">13歳以上</span>の方を対象として提供します。13歳未満の方はユーザー登録および本サービスの利用ができません。
           </li>
           <li>
@@ -107,7 +107,7 @@ export function TermsContentJa() {
           <li>
             他のユーザーは、投稿データに含まれる撮影地点の位置情報が正確でないと判断した場合、正しいと思われる地点を指摘することができます。投稿者は、指摘を確認し、受け入れまたは拒否の判断を行うものとします。投稿者が指摘を受け入れた場合、撮影地点の位置情報が更新されます。
           </li>
-          {/* Issue#119: AI 分類情報の運営による修正 */}
+          {/* Spec#119: AI 分類情報の運営による修正 */}
           <li>
             運営者は、投稿に付与されたカテゴリ・天候等の分類情報を、検索精度向上のために修正する場合があります。
           </li>
@@ -147,7 +147,7 @@ export function TermsContentJa() {
           <li>本サービスの運営を妨害するおそれのある行為</li>
           <li>その他、運営者が不適切と判断する行為</li>
         </ol>
-        {/* Issue#105: 投稿者責任の強化（撮影地国の法令遵守） */}
+        {/* Spec#105: 投稿者責任の強化（撮影地国の法令遵守） */}
         <p className="text-sm text-gray-700 mt-3 font-semibold">投稿者の責任（国際利用に関する追加事項）</p>
         <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 mt-1">
           <li>
@@ -320,7 +320,7 @@ export function TermsContentJa() {
           <li>
             本サービスに関して紛争が生じた場合には、東京地方裁判所を第一審の専属的合意管轄裁判所とします。
           </li>
-          {/* Issue#105: 国際利用の注記 */}
+          {/* Spec#105: 国際利用の注記 */}
           <li>
             本サービスは日本に拠点を置く事業者により提供されますが、世界中からのアクセスを受け入れています。ユーザーは本サービスの利用にあたり、<span className="font-semibold">自国の法律</span>に基づき本サービスを利用することが可能かを、自身の責任で確認するものとします。
           </li>

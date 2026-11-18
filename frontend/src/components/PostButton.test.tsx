@@ -6,7 +6,7 @@ import PostButton from './PostButton'
  * PostButton コンポーネントのテスト
  * TDD Red-Green-Refactor サイクルでの開発
  * 
- * Issue#1 要件:
+ * Spec#1 要件:
  * - 右下に配置される丸いプラスボタン
  * - フローティングアクションボタンのスタイル
  * - クリック可能

@@ -5,11 +5,11 @@ import i18n from 'i18next'
 import PrivacyPolicyStandalonePage from './PrivacyPolicyStandalonePage'
 
 /**
- * Issue#99 - Google OAuth 検証要件: プライバシーポリシー URL
+ * Spec#99 - Google OAuth 検証要件: プライバシーポリシー URL
  * (https://photlas.jp/privacy-policy) が単独ページとしてアクセス可能で、
  * プライバシーポリシーの本文が表示されることを検証する。
  *
- * Issue#101 - 5 言語対応 + ハードコード日本語テキストの i18n 化
+ * Spec#101 - 5 言語対応 + ハードコード日本語テキストの i18n 化
  */
 describe('PrivacyPolicyStandalonePage', () => {
   function renderPage() {
@@ -32,7 +32,7 @@ describe('PrivacyPolicyStandalonePage', () => {
   })
 })
 
-describe('Issue#101 - PrivacyPolicyStandalonePage 多言語対応', () => {
+describe('Spec#101 - PrivacyPolicyStandalonePage 多言語対応', () => {
   function renderPage() {
     return render(
       <MemoryRouter>

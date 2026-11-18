@@ -101,7 +101,7 @@ public class PhotoResponse {
         private String thumbnailUrl;
 
         /**
-         * Issue#125: LQIP（低品質プレースホルダー）の data URL 形式。
+         * Spec#125: LQIP（低品質プレースホルダー）の data URL 形式。
          * モデレーション制限中（REMOVED/QUARANTINED/PENDING_REVIEW）は null。
          */
         @JsonProperty("lqip_data_url")

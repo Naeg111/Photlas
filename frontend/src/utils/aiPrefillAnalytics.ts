@@ -1,5 +1,5 @@
 /**
- * Issue#119: AI プリフィルの GA4 イベント送信ユーティリティ。
+ * Spec#119: AI プリフィルの GA4 イベント送信ユーティリティ。
  *
  * GA4 + Consent Mode（CookieConsentBanner.tsx 参照）が既に組み込まれている前提で、
  * AI プリフィルの表示・採用・修正・失敗を計測する。
@@ -12,7 +12,7 @@ export type AiPrefillEvent =
   | 'ai_prefill_accepted'
   | 'ai_prefill_modified'
   | 'ai_prefill_failed'
-  // Issue#132: AI 解析の観測イベント
+  // Spec#132: AI 解析の観測イベント
   | 'ai_parent_fallback_used'
   | 'ai_exif_rule_fired'
 
@@ -38,7 +38,7 @@ export interface AiPrefillComparisonResult {
   /** 修正の種類（カテゴリのみ / 天候のみ / 両方）。{@code isModified=false} なら null */
   modificationType: AiPrefillModificationType | null
   /**
-   * Issue#119 3.3: ユーザー選択カテゴリと AI 予測カテゴリの「重複ゼロ」フラグ。
+   * Spec#119 3.3: ユーザー選択カテゴリと AI 予測カテゴリの「重複ゼロ」フラグ。
    * バックエンドの user_diff_flag と同じロジック:
    * - AI 予測が空 → false（比較対象なし）
    * - AI とユーザーの集合に1つでも重複 → false
@@ -98,10 +98,10 @@ export function compareAiPrefill(input: AiPrefillComparisonInput): AiPrefillComp
   return { isModified: true, modificationType, userDiffFlag }
 }
 
-// ========== Issue#132: AI 解析の観測イベント ==========
+// ========== Spec#132: AI 解析の観測イベント ==========
 
 /**
- * Issue#132: 親ラベル経由でカテゴリマッピングが成立した発火イベント。
+ * Spec#132: 親ラベル経由でカテゴリマッピングが成立した発火イベント。
  * バックエンドの ParentFallback DTO と1対1対応。
  */
 export interface ParentFallback {
@@ -114,7 +114,7 @@ export interface ParentFallback {
 }
 
 /**
- * Issue#132: EXIF ベースのスコア補正ルール (R1〜R5) 発火イベント。
+ * Spec#132: EXIF ベースのスコア補正ルール (R1〜R5) 発火イベント。
  * バックエンドの ExifRuleFire DTO と1対1対応。
  */
 export interface ExifRuleFire {

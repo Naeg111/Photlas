@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * AsyncConfigTest 専用のテスト用 @Component。
- * Issue#95: @Async メソッド内で MDC の内容を取得して返す最小実装で、
+ * Spec#95: @Async メソッド内で MDC の内容を取得して返す最小実装で、
  * AsyncConfig の TaskDecorator が MDC をスレッド間で伝搬するか検証する。
  */
 @Component

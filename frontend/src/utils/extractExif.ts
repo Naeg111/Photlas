@@ -1,11 +1,11 @@
 /**
  * EXIF情報自動抽出ユーティリティ
- * Issue#41: EXIF情報の自動抽出（フロントエンド）
+ * Spec#41: EXIF情報の自動抽出（フロントエンド）
  *
  * exifrライブラリを使用して、画像ファイルからEXIF情報を抽出する。
  * JPEG/HEIC形式に対応。PNG等EXIF非対応の形式ではnullを返す。
  *
- * Issue#130: exifr (≈数十KB) は写真投稿時にしか使われないため、initial bundle から
+ * Spec#130: exifr (≈数十KB) は写真投稿時にしか使われないため、initial bundle から
  * 除外するために動的 import に変更。`formatLocalDateTime` は同期で使えるよう同モジュールに残す。
  */
 
@@ -28,9 +28,9 @@ export interface ExifData {
   fValue?: string
   iso?: number
   shutterSpeed?: string
-  /** Issue#142: 露光時間の生の秒数（解析API送信用。表示は shutterSpeed を使う）。 */
+  /** Spec#142: 露光時間の生の秒数（解析API送信用。表示は shutterSpeed を使う）。 */
   exposureTimeSeconds?: number
-  /** Issue#142: GPS 標高（メートル。解析API送信用。R5 山岳判定に使う）。 */
+  /** Spec#142: GPS 標高（メートル。解析API送信用。R5 山岳判定に使う）。 */
   gpsAltitude?: number
   imageWidth?: number
   imageHeight?: number
@@ -38,7 +38,7 @@ export interface ExifData {
 }
 
 /**
- * Issue#46: スマートフォンメーカーの判定リスト
+ * Spec#46: スマートフォンメーカーの判定リスト
  * camera_body文字列に含まれるかで判定する（大文字小文字を区別しない）
  */
 const SMARTPHONE_MAKERS = [
@@ -129,9 +129,9 @@ function mapRawToExif(raw: any): ExifData {
   if (raw.ISO != null) result.iso = raw.ISO
   const shutterSpeed = formatShutterSpeed(raw.ExposureTime)
   if (shutterSpeed) result.shutterSpeed = shutterSpeed
-  // Issue#142: 解析API（EXIFルール R1/R2）用に露光時間の生の秒数を保持
+  // Spec#142: 解析API（EXIFルール R1/R2）用に露光時間の生の秒数を保持
   if (raw.ExposureTime != null) result.exposureTimeSeconds = raw.ExposureTime
-  // Issue#142: 解析API（R5 山岳判定）用に GPS 標高を保持
+  // Spec#142: 解析API（R5 山岳判定）用に GPS 標高を保持
   if (raw.GPSAltitude != null) result.gpsAltitude = raw.GPSAltitude
 
   // 画像サイズ
@@ -143,7 +143,7 @@ function mapRawToExif(raw: any): ExifData {
 
 export async function extractExif(file: File): Promise<ExifData | null> {
   try {
-    // Issue#130: exifr は写真投稿時のみ必要なため動的 import で initial bundle から除外
+    // Spec#130: exifr は写真投稿時のみ必要なため動的 import で initial bundle から除外
     const { default: exifr } = await import('exifr')
     const raw = await exifr.parse(file, {
       pick: [

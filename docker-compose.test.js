@@ -1,6 +1,6 @@
 /**
  * Docker環境テスト
- * Issue#4: Docker環境の導入
+ * Spec#4: Docker環境の導入
  *
  * TDD Red段階: 実装前のテストケース定義
  *

@@ -5,7 +5,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 
 /**
- * Issue#99 - OAuth 認証時に既存メールアカウントとのリンク確認が必要な場合に投げる例外。
+ * Spec#99 - OAuth 認証時に既存メールアカウントとのリンク確認が必要な場合に投げる例外。
  *
  * <p>{@link OAuth2AuthenticationException} を継承するが、汎用エラー扱いではなく
  * {@link OAuth2LoginFailureHandler} がこの型を検出した場合は

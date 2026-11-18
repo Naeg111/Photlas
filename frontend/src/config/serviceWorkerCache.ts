@@ -1,5 +1,5 @@
 /**
- * Issue#129: Service Worker による写真画像キャッシュの設定
+ * Spec#129: Service Worker による写真画像キャッシュの設定
  *
  * vite.config.ts の VitePWA `runtimeCaching` から参照される。
  * 別モジュールに切り出すことで Vitest からテスト可能にしている
@@ -11,7 +11,7 @@
  *
  * 構造的にキャッシュ対象外（urlPattern が物理的にマッチしない）:
  * - profile-images/ 配下: 可変リソースのためキャッシュ不適
- * - 同一オリジン /api/v1/*: Issue#127 の `_t=` バイパス機構を壊さないため
+ * - 同一オリジン /api/v1/*: Spec#127 の `_t=` バイパス機構を壊さないため
  * - Mapbox 系: 利用規約で恒久キャッシュ禁止
  *
  * バグ防止メモ:
@@ -52,13 +52,13 @@ export const PHOTO_CACHE_MAX_AGE_SECONDS = SECONDS_PER_DAY * 30
  * - 200: 通常の成功レスポンス
  *
  * `<img src>` 経由で取得される写真は no-cors なので opaque になる。
- * 一方、PhotoLightbox の `fetch()` 経由では CORS が設定済み (Issue#88) のため 200 になる。
+ * 一方、PhotoLightbox の `fetch()` 経由では CORS が設定済み (Spec#88) のため 200 になる。
  * どちらも許容する。
  */
 export const PHOTO_CACHEABLE_STATUSES: readonly number[] = [0, 200]
 
 /**
- * Issue#99 (2026-05-18): Workbox `navigateFallback` から除外するパスのパターン。
+ * Spec#99 (2026-05-18): Workbox `navigateFallback` から除外するパスのパターン。
  *
  * 背景:
  * Workbox の `navigateFallback: '/index.html'` は同一オリジンの navigation request

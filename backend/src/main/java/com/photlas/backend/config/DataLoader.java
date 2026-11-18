@@ -14,8 +14,8 @@ import java.util.Map;
 
 /**
  * アプリケーション起動時のデータ初期化
- * Issue#9: 写真投稿機能 - カテゴリマスタデータの初期化
- * Issue#87: 桁区切り数値コード対応 - 固定ID（200番台）でカテゴリを初期化
+ * Spec#9: 写真投稿機能 - カテゴリマスタデータの初期化
+ * Spec#87: 桁区切り数値コード対応 - 固定ID（200番台）でカテゴリを初期化
  *
  * テスト環境（test profile）では実行されない
  */
@@ -29,8 +29,8 @@ public class DataLoader implements CommandLineRunner {
 
     /**
      * カテゴリID→カテゴリ名のマッピング
-     * Issue#63: 14ジャンル（ポートレート削除、建造物・夜景・野鳥追加、風景→自然風景、食べ物→グルメ）
-     * Issue#87: 固定ID（200番台）を使用
+     * Spec#63: 14ジャンル（ポートレート削除、建造物・夜景・野鳥追加、風景→自然風景、食べ物→グルメ）
+     * Spec#87: 固定ID（200番台）を使用
      */
     private static final Map<Integer, String> CATEGORY_MAP = new LinkedHashMap<>();
     static {
@@ -76,7 +76,7 @@ public class DataLoader implements CommandLineRunner {
                 categoryRepository.save(category);
                 logger.info("カテゴリを追加しました: id={}, name={}", categoryId, categoryName);
             } else if (!categoryName.equals(existing.getName())) {
-                // Issue#159 ③-8: 既存カテゴリー名の変更（例 213 星空→星）に追従する
+                // Spec#159 ③-8: 既存カテゴリー名の変更（例 213 星空→星）に追従する
                 existing.setName(categoryName);
                 categoryRepository.save(existing);
                 logger.info("カテゴリ名を更新しました: id={}, name={}", categoryId, categoryName);

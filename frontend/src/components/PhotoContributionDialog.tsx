@@ -55,8 +55,8 @@ import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 
 /**
  * PhotoContributionDialog コンポーネント
- * Issue#27: パネル・ダイアログ群の移行
- * Issue#41: EXIF情報の自動抽出
+ * Spec#27: パネル・ダイアログ群の移行
+ * Spec#41: EXIF情報の自動抽出
  *
  * 写真投稿ダイアログ - design-assetsベースでS3 Presigned URL連携を統合
  *
@@ -65,8 +65,8 @@ import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
  * DialogContentのoverflow-y-autoではなく内部divでスクロールを管理する
  */
 
-// Issue#87: 天気・機材種別の選択肢は codeConstants から取得
-// Issue#67: 機材種別は投稿数の多い順に並び替え
+// Spec#87: 天気・機材種別の選択肢は codeConstants から取得
+// Spec#67: 機材種別は投稿数の多い順に並び替え
 const DEVICE_TYPE_OPTIONS = [
   { value: DEVICE_TYPE_SMARTPHONE, label: DEVICE_TYPE_LABELS[DEVICE_TYPE_SMARTPHONE] },
   { value: DEVICE_TYPE_MIRRORLESS, label: DEVICE_TYPE_LABELS[DEVICE_TYPE_MIRRORLESS] },
@@ -119,13 +119,13 @@ interface PhotoContributionDialogProps {
     cropCenterX?: number
     cropCenterY?: number
     cropZoom?: number
-    /** Issue#146: 撮影場所が EXIF GPS 由来か（EXIF に GPS があり初期配置に使った場合 true） */
+    /** Spec#146: 撮影場所が EXIF GPS 由来か（EXIF に GPS があり初期配置に使った場合 true） */
     locationFromExif?: boolean
-    /** Issue#119: AI 解析で発行された analyzeToken（任意）。バックエンドが photo_ai_predictions に紐づける */
+    /** Spec#119: AI 解析で発行された analyzeToken（任意）。バックエンドが photo_ai_predictions に紐づける */
     analyzeToken?: string
-    /** Issue#135: 最終的にユーザーが選んだキーワード ID 全件（AI + 手動の両方） */
+    /** Spec#135: 最終的にユーザーが選んだキーワード ID 全件（AI + 手動の両方） */
     tagIds?: number[]
-    /** Issue#135: tagIds のうち元々 AI 提案だった subset。assigned_by 判定に使う */
+    /** Spec#135: tagIds のうち元々 AI 提案だった subset。assigned_by 判定に使う */
     aiOriginatedTagIds?: number[]
   }) => Promise<void>
 }
@@ -149,11 +149,11 @@ export function PhotoContributionDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string>('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  // Issue#158: ダイアログは開くたびに再マウントされるため、初期ピンに「前回選択位置」を seed する。
+  // Spec#158: ダイアログは開くたびに再マウントされるため、初期ピンに「前回選択位置」を seed する。
   // 記憶が無ければ null（＝InlineMapPicker 側の現在位置→東京駅フォールバックに委ねる）。
   // GPS 付き写真を選ぶと後段（handlePhotoSelect）で GPS 地点に上書きされる。
   const [pinPosition, setPinPosition] = useState<{ lat: number; lng: number } | null>(() => getLastPickedLocation())
-  // Issue#158: ユーザーが能動的に選んだ最新位置（検索・ドラッグ・現在地）。閉じる時にこれを記憶する。
+  // Spec#158: ユーザーが能動的に選んだ最新位置（検索・ドラッグ・現在地）。閉じる時にこれを記憶する。
   // 自動現在地寄せや seed 由来の位置は入らない（onUserPositionChange が能動選択のみ発火するため）。
   const lastUserPickedRef = useRef<{ lat: number; lng: number } | null>(null)
   const [selectedWeather, setSelectedWeather] = useState<number | ''>('')
@@ -167,31 +167,31 @@ export function PhotoContributionDialog({
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [cropZoom, setCropZoom] = useState(1)
   const [croppedArea, setCroppedArea] = useState<Area | null>(null)
-  // Issue#131（モバイル枠表示修正）: react-easy-crop の auto-computed cropSize は
+  // Spec#131（モバイル枠表示修正）: react-easy-crop の auto-computed cropSize は
   // 短辺の浮動小数（端数あり）となりやすく、retina + iOS Safari でアンチエイリアスに
   // より枠線が視認できない事象が発生する。onMediaLoaded から取得した短辺を整数値に
   // 切り捨てて cropSize プロパティへ明示指定することで、サブピクセル要因を排除する。
   const [croppedAreaSize, setCroppedAreaSize] = useState<{ width: number; height: number } | null>(null)
-  // Issue#119: AI プリフィル関連
+  // Spec#119: AI プリフィル関連
   const [analyzeToken, setAnalyzeToken] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [aiPrefillApplied, setAiPrefillApplied] = useState(false)
-  // Issue#119: GA4 accepted/modified 判定用に AI 元結果を保持
+  // Spec#119: GA4 accepted/modified 判定用に AI 元結果を保持
   const aiOriginalResponseRef = useRef<PhotoAnalyzeResponse | null>(null)
-  // Issue#135: キーワード関連
+  // Spec#135: キーワード関連
   const [allTags, setAllTags] = useState<KeywordTag[]>([])
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
   // AI 提案として元々付いていた tag_id（後で assigned_by 判定に使う）
   const aiSuggestedTagIdsRef = useRef<Set<number>>(new Set())
-  // Issue#142: 解析(runAnalyze)は previewUrl 変化で発火し、extractExif の完了と順序保証が無い。
+  // Spec#142: 解析(runAnalyze)は previewUrl 変化で発火し、extractExif の完了と順序保証が無い。
   // EXIF を state 経由で渡すと未設定のまま解析が走る恐れがあるため、ref 経由で直接渡す（競合回避）。
   const exifForAnalyzeRef = useRef<ExifData | null>(null)
-  // Issue#142: applyAiPrefill の sortOrder タイブレーク用に最新の allTags を ref で参照する。
+  // Spec#142: applyAiPrefill の sortOrder タイブレーク用に最新の allTags を ref で参照する。
   const allTagsRef = useRef<KeywordTag[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Issue#119: AI analyze の AbortController
+  // Spec#119: AI analyze の AbortController
   const analyzeAbortRef = useRef<AbortController | null>(null)
 
   // スクロール時の選択取り消し機構（モバイルタッチ対応）
@@ -225,7 +225,7 @@ export function PhotoContributionDialog({
     }
   }, [])
 
-  // Issue#158: 閉じる（＝アンマウント）時に、ユーザーが能動的に選んだ最後の位置を記憶する。
+  // Spec#158: 閉じる（＝アンマウント）時に、ユーザーが能動的に選んだ最後の位置を記憶する。
   // 投稿成功の close（resetForm→onOpenChange）・キャンセル close の両方で必ず走るため取りこぼさない。
   useEffect(() => {
     return () => {
@@ -254,7 +254,7 @@ export function PhotoContributionDialog({
       setCropZoom(1)
       setCroppedArea(null)
       setCroppedAreaSize(null)
-      // Issue#119: AI プリフィル関連の state と AbortController をリセット
+      // Spec#119: AI プリフィル関連の state と AbortController をリセット
       setAnalyzeToken(null)
       setIsAnalyzing(false)
       setAiPrefillApplied(false)
@@ -265,7 +265,7 @@ export function PhotoContributionDialog({
     }
   }, [open])
 
-  // Issue#135: ダイアログを開いたタイミングで全アクティブタグを取得（KeywordSection 用）
+  // Spec#135: ダイアログを開いたタイミングで全アクティブタグを取得（KeywordSection 用）
   useEffect(() => {
     if (!open) return
     const controller = new AbortController()
@@ -277,12 +277,12 @@ export function PhotoContributionDialog({
     return () => controller.abort()
   }, [open, i18n.language])
 
-  // Issue#142: applyAiPrefill が常に最新の allTags を参照できるよう ref に同期する。
+  // Spec#142: applyAiPrefill が常に最新の allTags を参照できるよう ref に同期する。
   useEffect(() => {
     allTagsRef.current = allTags
   }, [allTags])
 
-  // Issue#119（仕様変更）: AI 解析対象を「トリミング前の画像全体」に変更したため、
+  // Spec#119（仕様変更）: AI 解析対象を「トリミング前の画像全体」に変更したため、
   // トリミング操作（cropComplete）では解析を発火させず、ファイル選択直後の 1 回だけ実行する。
   useEffect(() => {
     if (!previewUrl) return
@@ -294,7 +294,7 @@ export function PhotoContributionDialog({
    * AI 解析を実行する。進行中の analyze は AbortController でキャンセル。
    * 失敗時は黙って続行（Phase 9 でトースト追加予定）。
    *
-   * Issue#119（仕様変更）: 解析対象はトリミング前の全体画像。area 引数は廃止。
+   * Spec#119（仕様変更）: 解析対象はトリミング前の全体画像。area 引数は廃止。
    */
   const runAnalyze = useCallback(async (imageSrc: string) => {
     // 進行中の analyze をキャンセル
@@ -309,7 +309,7 @@ export function PhotoContributionDialog({
       const blob = await resizeImageToBlobForAnalyze(imageSrc)
       if (controller.signal.aborted) return
 
-      // Issue#142: ref 経由で保持した EXIF をフォーム値として送る（dateTimeOriginal は takenAt）
+      // Spec#142: ref 経由で保持した EXIF をフォーム値として送る（dateTimeOriginal は takenAt）
       const exif = exifForAnalyzeRef.current
       const response = await analyzePhoto(blob, {
         signal: controller.signal,
@@ -329,7 +329,7 @@ export function PhotoContributionDialog({
     } catch (error) {
       // AbortError は意図的なキャンセルなので無視。
       // 他のエラー（ネットワーク・5xx 等）はトースト通知でユーザーに案内する
-      // （Issue#119 4.6: フォームは空欄のまま手動入力でフォロー）。
+      // （Spec#119 4.6: フォームは空欄のまま手動入力でフォロー）。
       if (!isAbortError(error)) {
         toast.error(t('aiPrefill.error'))
         trackAiPrefillEvent('ai_prefill_failed', {
@@ -359,7 +359,7 @@ export function PhotoContributionDialog({
       .filter((name): name is string => Boolean(name))
 
     if (prefillCategoryNames.length > 0) {
-      // Issue#159 ②: AI は最高信頼度の1件のみ返す。単一選択なので置き換える。
+      // Spec#159 ②: AI は最高信頼度の1件のみ返す。単一選択なので置き換える。
       setSelectedCategories([prefillCategoryNames[0]])
     }
 
@@ -376,7 +376,7 @@ export function PhotoContributionDialog({
       })
     }
 
-    // Issue#132: 観測イベント（親フォールバック / EXIF ルール発火）を GA4 へ送信
+    // Spec#132: 観測イベント（親フォールバック / EXIF ルール発火）を GA4 へ送信
     trackParentFallbackEvents(response.parentFallbacks)
     trackExifRuleFiredEvents(response.exifRulesFired)
 
@@ -384,7 +384,7 @@ export function PhotoContributionDialog({
     // (旧: AI 提案エリアに別表示していたが、エリアを廃止して選択中に統合)
     const suggested = response.suggestedTags ?? []
     if (suggested.length > 0) {
-      // Issue#142: AI 提案を confidence 降順 → sortOrder 昇順 → slug 昇順でソートし、上位 3 件のみ採用
+      // Spec#142: AI 提案を confidence 降順 → sortOrder 昇順 → slug 昇順でソートし、上位 3 件のみ採用
       const tagMetaById = new Map(allTagsRef.current.map((tg) => [tg.tagId, tg]))
       const sorted = [...suggested].sort((a, b) => {
         if (a.confidence !== b.confidence) return b.confidence - a.confidence
@@ -394,7 +394,7 @@ export function PhotoContributionDialog({
         return a.slug.localeCompare(b.slug)
       })
       const top3Ids = sorted.slice(0, 3).map((s) => s.tagId)
-      // assigned_by 判定 (Issue#132 telemetry) に AI 提案 ID を記録
+      // assigned_by 判定 (Spec#132 telemetry) に AI 提案 ID を記録
       aiSuggestedTagIdsRef.current = new Set(top3Ids)
       setSelectedTagIds((prev) => Array.from(new Set([...prev, ...top3Ids])).slice(0, 3))
     }
@@ -441,13 +441,13 @@ export function PhotoContributionDialog({
 
       setSelectedFile(file)
 
-      // Issue#142: 解析に EXIF を渡すため、preview を出す前に抽出して ref に保持する。
+      // Spec#142: 解析に EXIF を渡すため、preview を出す前に抽出して ref に保持する。
       // （runAnalyze は previewUrl 変化で発火するため、state 経由だと未設定のまま走る恐れがある）
       const exif = await extractExif(file)
       setExifData(exif)
       exifForAnalyzeRef.current = exif
 
-      // Issue#46: スマートフォン判定時に機材種別を自動選択
+      // Spec#46: スマートフォン判定時に機材種別を自動選択
       if (exif?.isSmartphone) {
         setSelectedDeviceType(DEVICE_TYPE_SMARTPHONE)
       }
@@ -465,7 +465,7 @@ export function PhotoContributionDialog({
     }
   }
 
-  // Issue#159 ②: カテゴリーは単一選択（ラジオ相当）。選んだ1つに置き換える。
+  // Spec#159 ②: カテゴリーは単一選択（ラジオ相当）。選んだ1つに置き換える。
   const handleCategoryToggle = (category: string) => {
     setSelectedCategories((prev) => {
       lastToggleRef.current = () => setSelectedCategories(prev)
@@ -554,7 +554,7 @@ export function PhotoContributionDialog({
     }, UPLOAD_STATUS.PROGRESS_INTERVAL)
 
     try {
-      // Issue#119: AI 採用/修正イベントを onSubmit 直前に送信
+      // Spec#119: AI 採用/修正イベントを onSubmit 直前に送信
       const aiOriginal = aiOriginalResponseRef.current
       if (aiOriginal && analyzeToken) {
         const userCategoryIds = selectedCategories
@@ -684,7 +684,7 @@ export function PhotoContributionDialog({
     }
   }
 
-  // Issue#146: 撮影場所が EXIF GPS 由来か（EXIF に GPS があり初期配置に使った場合）
+  // Spec#146: 撮影場所が EXIF GPS 由来か（EXIF に GPS があり初期配置に使った場合）
   const locationFromExif = exifData?.latitude != null && exifData?.longitude != null
   // GPS 写真はピンを GPS 地点から 1km 以内に制限する（検索・現在地ボタンでのすり抜けも弾く）
   const distanceFromGps = locationFromExif && pinPosition
@@ -727,7 +727,7 @@ export function PhotoContributionDialog({
           onPointerUp={handlePointerUp}
           style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}
         >
-          {/* Issue#119: AI プリフィル成功時の控えめなバナー（タイトル領域ではなくコンテンツの一部として表示）*/}
+          {/* Spec#119: AI プリフィル成功時の控えめなバナー（タイトル領域ではなくコンテンツの一部として表示）*/}
           {aiPrefillApplied && (
             <p
               data-testid="ai-prefill-banner"
@@ -758,11 +758,11 @@ export function PhotoContributionDialog({
                         crop={crop}
                         zoom={cropZoom}
                         aspect={1}
-                        // Issue#131 Cycle4: cover を撤回し既定の contain に戻す。
+                        // Spec#131 Cycle4: cover を撤回し既定の contain に戻す。
                         // コンテナ内に画像全体がスクロールなしで収まり、
                         // クロップ枠は画像の中に収まる形で表示される。
                         showGrid
-                        // Issue#131（モバイル枠表示修正）: onMediaLoaded で得た mediaSize の
+                        // Spec#131（モバイル枠表示修正）: onMediaLoaded で得た mediaSize の
                         // 短辺を整数値に切り捨てて cropSize へ明示指定する（後述 onMediaLoaded 参照）。
                         cropSize={croppedAreaSize ?? undefined}
                         onMediaLoaded={(mediaSize) => {
@@ -775,11 +775,11 @@ export function PhotoContributionDialog({
                         style={{
                           cropAreaStyle: {
                             border: '3px solid rgba(255, 255, 255, 0.5)',
-                            // Issue#131: 二重防御の片方。下記 mediaStyle で画像の GPU 昇格を
+                            // Spec#131: 二重防御の片方。下記 mediaStyle で画像の GPU 昇格を
                             // 抑止するのが本命だが、ブラウザの将来挙動変化に備えて z-index も明示。
                             zIndex: 1,
                           },
-                          // Issue#131（モバイル枠表示修正・本命）: react-easy-crop の
+                          // Spec#131（モバイル枠表示修正・本命）: react-easy-crop の
                           // 既定 CSS `.reactEasyCrop_Image { will-change: transform; }` を
                           // インラインスタイル `willChange: 'auto'` で打ち消す。
                           // iOS Safari は will-change: transform で画像を GPU 合成レイヤーへ
@@ -908,7 +908,7 @@ export function PhotoContributionDialog({
                 <p className="text-sm text-gray-500">
                   {t('photo.locationAutoHint')}
                 </p>
-                {/* Issue#146: GPS 写真は GPS 地点から 1km 以内で微調整できる旨を案内 */}
+                {/* Spec#146: GPS 写真は GPS 地点から 1km 以内で微調整できる旨を案内 */}
                 {locationFromExif && (
                   <p className="text-sm text-gray-500">
                     {t('photo.gpsLocationHint')}
@@ -922,7 +922,7 @@ export function PhotoContributionDialog({
                   onUserPositionChange={(pos) => { lastUserPickedRef.current = pos }}
                 />
               </div>
-              {/* Issue#146: GPS 地点から 1km を超えると投稿不可（エラー表示） */}
+              {/* Spec#146: GPS 地点から 1km を超えると投稿不可（エラー表示） */}
               {tooFarFromGps && (
                 <p className="text-sm text-red-600" data-testid="gps-too-far-error">
                   {t('photo.gpsTooFarError')}
@@ -968,7 +968,7 @@ export function PhotoContributionDialog({
             {/* カテゴリ選択 */}
             <div className="space-y-3 relative">
               <Label className="text-base">{t('photo.categoryRequired')}</Label>
-              {/* Issue#119: AI 解析中はカテゴリ選択を無効化（スピナーで覆う） */}
+              {/* Spec#119: AI 解析中はカテゴリ選択を無効化（スピナーで覆う） */}
               {isAnalyzing && (
                 <div
                   data-testid="ai-analyzing-categories"
@@ -1003,12 +1003,12 @@ export function PhotoContributionDialog({
               </div>
             </div>
 
-            {/* Issue#135: キーワード選択（カテゴリと機材種別の間に配置） */}
+            {/* Spec#135: キーワード選択（カテゴリと機材種別の間に配置） */}
             <div className="space-y-3">
               <Label className="text-base">
                 {t('keyword.sectionLabel', { defaultValue: '詳細カテゴリー（任意）' })}
               </Label>
-              {/* Issue#141 Q2: 投稿フォームでは autoSelectByCategoryMode を渡さない (default false) */}
+              {/* Spec#141 Q2: 投稿フォームでは autoSelectByCategoryMode を渡さない (default false) */}
               <KeywordSection
                 allTags={allTags}
                 selectedCategoryCodes={selectedCategories
@@ -1049,7 +1049,7 @@ export function PhotoContributionDialog({
             {/* 天気選択 */}
             <div className="space-y-3 relative">
               <Label className="text-base">{t('photo.weatherLabel')}</Label>
-              {/* Issue#119: AI 解析中は天気選択を無効化（スピナーで覆う） */}
+              {/* Spec#119: AI 解析中は天気選択を無効化（スピナーで覆う） */}
               {isAnalyzing && (
                 <div
                   data-testid="ai-analyzing-weather"

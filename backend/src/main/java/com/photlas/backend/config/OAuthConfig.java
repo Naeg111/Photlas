@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Issue#81 - OAuth 関連の Bean 定義。
+ * Spec#81 - OAuth 関連の Bean 定義。
  *
  * {@link OAuthTokenEncryptor} は AES-256-GCM の鍵を設定プロパティ
  * {@code photlas.oauth.encryption-key-base64} から受け取り、シングルトン Bean として

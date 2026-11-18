@@ -11,7 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#81 Hotfix - {@link OAuthConfig} の条件付きロードを検証する。
+ * Spec#81 Hotfix - {@link OAuthConfig} の条件付きロードを検証する。
  *
  * <p>背景: Phase 3f の設計では {@code OAuthConfig} は無条件ロードで {@link OAuthTokenEncryptor}
  * を生成していたが、{@code photlas.oauth.enabled=false} 時でも
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@DisplayName("Issue#81 Hotfix - OAuthConfig の条件付きロード")
+@DisplayName("Spec#81 Hotfix - OAuthConfig の条件付きロード")
 class OAuthConfigConditionalTest {
 
     @Autowired

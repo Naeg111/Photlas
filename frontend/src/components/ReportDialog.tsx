@@ -18,7 +18,7 @@ import {
 } from "../utils/codeConstants";
 
 /**
- * Issue#54: 通報ダイアログ
+ * Spec#54: 通報ダイアログ
  */
 
 interface ReportDialogProps {

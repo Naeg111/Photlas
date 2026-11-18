@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
- * Issue#30: お気に入りが見つからない場合の例外（404 Not Found）
+ * Spec#30: お気に入りが見つからない場合の例外（404 Not Found）
  */
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class FavoriteNotFoundException extends RuntimeException {

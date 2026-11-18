@@ -5,7 +5,7 @@ import ProfileImageCropper from './ProfileImageCropper'
 import i18n from '../i18n'
 
 /**
- * Issue#35: プロフィール画像トリミング機能
+ * Spec#35: プロフィール画像トリミング機能
  * TDD Red段階: ProfileImageCropperコンポーネントのテストケース定義
  *
  * 機能要件:

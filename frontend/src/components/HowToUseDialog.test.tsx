@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { HowToUseDialog } from './HowToUseDialog'
 
 /**
- * Issue#114: 操作方法ダイアログ
+ * Spec#114: 操作方法ダイアログ
  * TDD Red段階
  */
 describe('HowToUseDialog', () => {
@@ -74,7 +74,7 @@ describe('HowToUseDialog', () => {
       expect(screen.getByText('現在位置ボタン')).toBeInTheDocument()
     })
 
-    // Issue#115: 方角インジケーターのON/OFFトグル説明
+    // Spec#115: 方角インジケーターのON/OFFトグル説明
     it('「マップの操作」を開くと「向いている方角の表示」が表示される', () => {
       render(<HowToUseDialog open={true} onOpenChange={mockOnOpenChange} />)
       fireEvent.click(screen.getByText('マップの操作'))
@@ -99,8 +99,8 @@ describe('HowToUseDialog', () => {
     })
   })
 
-  // Issue#146: 撮影場所の指摘説明を距離ルールに書き換え
-  describe('Issue#146 - 撮影場所の指摘説明が距離ルールになっている', () => {
+  // Spec#146: 撮影場所の指摘説明を距離ルールに書き換え
+  describe('Spec#146 - 撮影場所の指摘説明が距離ルールになっている', () => {
     it('「その他の機能」を開くと指摘の距離ルール（30m以上・1km以内）が表示される', () => {
       render(<HowToUseDialog open={true} onOpenChange={mockOnOpenChange} />)
       fireEvent.click(screen.getByText('その他の機能'))

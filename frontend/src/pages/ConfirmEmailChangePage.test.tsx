@@ -92,7 +92,7 @@ describe('ConfirmEmailChangePage', () => {
     vi.useRealTimers()
   })
 
-  describe('Issue#110 - 背景色', () => {
+  describe('Spec#110 - 背景色', () => {
     it('外側コンテナの背景が bg-black である', () => {
       mockFetch.mockImplementation(() => new Promise(() => {}))
 
@@ -113,7 +113,7 @@ describe('ConfirmEmailChangePage', () => {
     })
   })
 
-  describe('Issue#110 - 認証成功（通常ブラウザ）', () => {
+  describe('Spec#110 - 認証成功（通常ブラウザ）', () => {
     beforeEach(() => {
       setUserAgent(UA_NORMAL)
       mockFetch.mockResolvedValueOnce(
@@ -199,7 +199,7 @@ describe('ConfirmEmailChangePage', () => {
     })
   })
 
-  describe('Issue#110 - アプリ内ブラウザ', () => {
+  describe('Spec#110 - アプリ内ブラウザ', () => {
     beforeEach(() => {
       setUserAgent(UA_IN_APP)
     })
@@ -250,8 +250,8 @@ describe('ConfirmEmailChangePage', () => {
     })
   })
 
-  // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
-  describe('Issue#93 - エラーの表示言語', () => {
+  // Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+  describe('Spec#93 - エラーの表示言語', () => {
     it('トークンが無効なときはエラーコードに応じたメッセージが表示される', async () => {
       mockFetch.mockResolvedValueOnce(invalidTokenError())
 

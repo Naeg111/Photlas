@@ -76,7 +76,7 @@ jobs:
       with:
         gradle-home-cache-cleanup: true
 
-    # Issue#120: テストは PostgreSQL(+PostGIS) で実行する。
+    # Spec#120: テストは PostgreSQL(+PostGIS) で実行する。
     # docker-compose の db サービスを起動して再利用（max_connections やテスト用 DB(photlas_test)
     # の作成など、ローカルと完全に同一の設定で立ち上がる）。--wait でヘルスチェック通過まで待機。
     - name: Start PostgreSQL (PostGIS)
@@ -152,7 +152,7 @@ jobs:
           echo "No bats tests to run."
         fi
 
-    - name: Run Node.js tests for CloudFront Function (Issue#117)
+    - name: Run Node.js tests for CloudFront Function (Spec#117)
       run: |
         shopt -s nullglob
         files=(scripts/cloudfront-function/__tests__/*.test.js)
@@ -162,7 +162,7 @@ jobs:
         fi
         node --test "${files[@]}"
 
-    - name: Run Node.js tests for translate-tags script (Issue#135)
+    - name: Run Node.js tests for translate-tags script (Spec#135)
       run: |
         shopt -s nullglob
         files=(scripts/translate-tags/__tests__/*.test.js)
@@ -172,7 +172,7 @@ jobs:
         fi
         node --test "${files[@]}"
 
-    - name: Run Node.js tests for SEO canary checks (Issue#148)
+    - name: Run Node.js tests for SEO canary checks (Spec#148)
       run: |
         shopt -s nullglob
         files=(scripts/canary/__tests__/*.test.js)

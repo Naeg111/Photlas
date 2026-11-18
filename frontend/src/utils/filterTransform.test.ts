@@ -13,8 +13,8 @@ import {
 
 /**
  * filterTransform.ts ユニットテスト
- * Issue#16: フィルター機能 - UI表示値からAPI値への変換
- * Issue#87: 数値コード対応
+ * Spec#16: フィルター機能 - UI表示値からAPI値への変換
+ * Spec#87: 数値コード対応
  */
 
 describe('filterTransform', () => {
@@ -85,7 +85,7 @@ describe('filterTransform', () => {
   })
 
   describe('transformCategories', () => {
-    it('Issue#63 - 全14ジャンルを正しく変換する', () => {
+    it('Spec#63 - 全14ジャンルを正しく変換する', () => {
       const genres = [
         '自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物', '動物',
         '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星空', 'その他',
@@ -93,7 +93,7 @@ describe('filterTransform', () => {
       expect(transformCategories(genres)).toEqual(genres)
     })
 
-    it('Issue#63 - 旧カテゴリ名（風景、食べ物、ポートレート）はフィルタリングされる', () => {
+    it('Spec#63 - 旧カテゴリ名（風景、食べ物、ポートレート）はフィルタリングされる', () => {
       expect(transformCategories(['風景', '食べ物', 'ポートレート'])).toEqual([])
     })
 

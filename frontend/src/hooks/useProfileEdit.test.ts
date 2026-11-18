@@ -87,7 +87,7 @@ describe('useProfileEdit', () => {
       expect(mockFetch).not.toHaveBeenCalled()
     })
 
-    it('Issue#98 - handleSaveUsernameで12文字を超える表示名の場合にエラーがセットされる', async () => {
+    it('Spec#98 - handleSaveUsernameで12文字を超える表示名の場合にエラーがセットされる', async () => {
       const { result } = renderHook(() => useProfileEdit(defaultProps))
 
       act(() => {
@@ -95,7 +95,7 @@ describe('useProfileEdit', () => {
       })
 
       act(() => {
-        // Issue#98 で長さ上限が 30 → 12 に変更された
+        // Spec#98 で長さ上限が 30 → 12 に変更された
         result.current.handleUsernameChange('a'.repeat(13))
       })
 
@@ -133,7 +133,7 @@ describe('useProfileEdit', () => {
       })
     })
 
-    // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+    // Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
     const conflictResponse = () => ({
       ok: false,
       status: 409,
@@ -148,7 +148,7 @@ describe('useProfileEdit', () => {
       })
 
       act(() => {
-        // Issue#98: 12文字以内に収める（duplicatename → duplicate に短縮）
+        // Spec#98: 12文字以内に収める（duplicatename → duplicate に短縮）
         result.current.handleUsernameChange('duplicate')
       })
 
@@ -166,7 +166,7 @@ describe('useProfileEdit', () => {
       expect(result.current.usernameError).toBe('エラーが発生しました')
     })
 
-    it('Issue#93 - 英語の設定では409コンフリクトのエラーメッセージが英語になる', async () => {
+    it('Spec#93 - 英語の設定では409コンフリクトのエラーメッセージが英語になる', async () => {
       mockFetch.mockResolvedValueOnce(conflictResponse())
       await i18n.changeLanguage('en')
       try {
@@ -237,7 +237,7 @@ describe('useProfileEdit', () => {
       expect(result.current.cropperImageSrc).toBe('data:image/jpeg;base64,test')
     })
 
-    it('Issue#82 - handleCropCompleteでプレビューが表示されアップロードは実行されない', async () => {
+    it('Spec#82 - handleCropCompleteでプレビューが表示されアップロードは実行されない', async () => {
       const onImageUpdated = vi.fn()
       const { result } = renderHook(() =>
         useProfileEdit({ ...defaultProps, onImageUpdated })
@@ -267,7 +267,7 @@ describe('useProfileEdit', () => {
       expect(result.current.cropperImageSrc).toBe('')
     })
 
-    it('Issue#82 - handleDeleteProfileImageでプレビューがリセットされAPIは呼ばれない', async () => {
+    it('Spec#82 - handleDeleteProfileImageでプレビューがリセットされAPIは呼ばれない', async () => {
       const onImageUpdated = vi.fn()
       const { result } = renderHook(() =>
         useProfileEdit({ ...defaultProps, onImageUpdated })
@@ -288,10 +288,10 @@ describe('useProfileEdit', () => {
     })
 
     // ============================================================
-    // Issue#82: 画像の遅延アップロードフロー
+    // Spec#82: 画像の遅延アップロードフロー
     // ============================================================
 
-    it('Issue#82 - handleCropCompleteでS3アップロードが実行されない（保存待ち）', async () => {
+    it('Spec#82 - handleCropCompleteでS3アップロードが実行されない（保存待ち）', async () => {
       const onImageUpdated = vi.fn()
       const { result } = renderHook(() =>
         useProfileEdit({ ...defaultProps, onImageUpdated })
@@ -313,7 +313,7 @@ describe('useProfileEdit', () => {
       expect(result.current.hasUnsavedChanges).toBe(true)
     })
 
-    it('Issue#82 - handleSaveAllChangesで画像がアップロードされる', async () => {
+    it('Spec#82 - handleSaveAllChangesで画像がアップロードされる', async () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
@@ -347,16 +347,16 @@ describe('useProfileEdit', () => {
         expect.objectContaining({ method: 'POST' })
       )
 
-      // Issue#100 / Issue#124 - S3 PUT に必要なヘッダが揃っていること
+      // Spec#100 / Spec#124 - S3 PUT に必要なヘッダが揃っていること
       // 呼び出し順: 1) presigned-url POST, 2) S3 PUT, 3) profile-image 登録 PUT
       const s3PutCall = mockFetch.mock.calls[1]
       expect(s3PutCall[0]).toBe('https://s3.example.com/upload')
       const s3PutInit = s3PutCall[1] as RequestInit
       expect(s3PutInit.method).toBe('PUT')
       const s3PutHeaders = s3PutInit.headers as Record<string, string>
-      // Issue#100: presigned URL の署名と整合させるため必須
+      // Spec#100: presigned URL の署名と整合させるため必須
       expect(s3PutHeaders['x-amz-tagging']).toBe('status=pending')
-      // Issue#124: 同上、署名対象に含まれているため必須
+      // Spec#124: 同上、署名対象に含まれているため必須
       expect(s3PutHeaders['Cache-Control']).toBe('public, max-age=31536000, immutable')
     })
 
@@ -420,7 +420,7 @@ describe('useProfileEdit', () => {
       expect(result.current.hasUnsavedChanges).toBe(true)
     })
 
-    it('Issue#102 - 画像アップロード失敗時も表示名の保存は続行される', async () => {
+    it('Spec#102 - 画像アップロード失敗時も表示名の保存は続行される', async () => {
       mockFetch
         // 表示名保存: 成功
         .mockResolvedValueOnce({ ok: true })
@@ -462,7 +462,7 @@ describe('useProfileEdit', () => {
       expect(onUsernameUpdated).toHaveBeenCalledWith('newname')
     })
 
-    it('Issue#82 - handleCancelAllChangesで画像変更がリバートされる', async () => {
+    it('Spec#82 - handleCancelAllChangesで画像変更がリバートされる', async () => {
       const onImageUpdated = vi.fn()
       const { result } = renderHook(() =>
         useProfileEdit({ ...defaultProps, onImageUpdated })

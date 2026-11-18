@@ -198,7 +198,7 @@ async function renderAndSubmitPhoto() {
       <App />
     </MemoryRouter>
   )
-  // スプラッシュ画面を抜ける（Issue#156: ピン待ち上限まで進めて確実に解除する）
+  // スプラッシュ画面を抜ける（Spec#156: ピン待ち上限まで進めて確実に解除する）
   act(() => {
     vi.advanceTimersByTime(INITIAL_SPOTS_SPLASH_TIMEOUT_MS)
   })

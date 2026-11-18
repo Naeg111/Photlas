@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
 
 /**
- * Issue#132 - {@link ExifBasedCategoryHints} の単体テスト。
+ * Spec#132 - {@link ExifBasedCategoryHints} の単体テスト。
  *
  * <p>EXIF 撮影情報に基づくスコア補正 R1〜R5 のロジックを検証する。
  * Spring を起動せず、純粋なロジックとして高速に実行する。</p>
@@ -56,7 +56,7 @@ class ExifBasedCategoryHintsTest {
     // ========== R1: 星空判定 ==========
 
     @Test
-    @DisplayName("Issue#132 R1 - 既存 213 候補にブースト +30 が加算される")
+    @DisplayName("Spec#132 R1 - 既存 213 候補にブースト +30 が加算される")
     void r1BoostsExistingStarrySkyCandidate() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_STARRY_SKY, 50f);
 
@@ -71,7 +71,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R1 - Rekognition 未検出でも新規候補として 213 を追加する（単独候補化 ✅）")
+    @DisplayName("Spec#132 R1 - Rekognition 未検出でも新規候補として 213 を追加する（単独候補化 ✅）")
     void r1CreatesNewStarrySkyCandidate() {
         ExifBasedCategoryHints.Applied applied = hints.apply(empty(), starryNightExif());
 
@@ -85,7 +85,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R1 - 信頼度の上限は 100")
+    @DisplayName("Spec#132 R1 - 信頼度の上限は 100")
     void r1CapsConfidenceAt100() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_STARRY_SKY, 95f);
 
@@ -96,7 +96,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R1 境界 - 露光 10秒/ISO 800/19:00:00 ちょうどは発火")
+    @DisplayName("Spec#132 R1 境界 - 露光 10秒/ISO 800/19:00:00 ちょうどは発火")
     void r1FiresAtLowerBoundary() {
         ExifData exif = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 19, 0, 0))
@@ -112,7 +112,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R1 境界 - 露光 9.99秒では発火しない")
+    @DisplayName("Spec#132 R1 境界 - 露光 9.99秒では発火しない")
     void r1DoesNotFireWhenExposureBelowThreshold() {
         ExifData exif = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 22, 0))
@@ -128,7 +128,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R1 境界 - ISO 799 では発火しない")
+    @DisplayName("Spec#132 R1 境界 - ISO 799 では発火しない")
     void r1DoesNotFireWhenIsoBelowThreshold() {
         ExifData exif = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 22, 0))
@@ -144,7 +144,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R1 境界 - 時刻 18:59:59 は範囲外で発火しない")
+    @DisplayName("Spec#132 R1 境界 - 時刻 18:59:59 は範囲外で発火しない")
     void r1DoesNotFireAt1859_59() {
         ExifData exif = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 18, 59, 59))
@@ -160,7 +160,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R1 境界 - 時刻 04:59:59 は範囲内で発火する")
+    @DisplayName("Spec#132 R1 境界 - 時刻 04:59:59 は範囲内で発火する")
     void r1FiresAt0459_59() {
         ExifData exif = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 4, 59, 59))
@@ -176,7 +176,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R1 境界 - 時刻 05:00:00 ちょうどは範囲外で発火しない")
+    @DisplayName("Spec#132 R1 境界 - 時刻 05:00:00 ちょうどは範囲外で発火しない")
     void r1DoesNotFireAt0500() {
         ExifData exif = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 5, 0, 0))
@@ -192,7 +192,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R1 - EXIF タグ欠損時は発火しない（ルールスキップ）")
+    @DisplayName("Spec#132 R1 - EXIF タグ欠損時は発火しない（ルールスキップ）")
     void r1SkippedWhenAnyTagMissing() {
         ExifData missingExposure = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 22, 0))
@@ -218,7 +218,7 @@ class ExifBasedCategoryHintsTest {
     // ========== R2: 夜景判定 ==========
 
     @Test
-    @DisplayName("Issue#132 R2(a) - 露光 5秒以上 + ISO 800以上 + 夜間 で 204 に +20")
+    @DisplayName("Spec#132 R2(a) - 露光 5秒以上 + ISO 800以上 + 夜間 で 204 に +20")
     void r2aFiresAndAddsNewNightViewCandidate() {
         ExifData exif = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 22, 0))
@@ -238,7 +238,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R2(b) - ISO 2400以上 + 夜間 だけで 204 に +20 が発火")
+    @DisplayName("Spec#132 R2(b) - ISO 2400以上 + 夜間 だけで 204 に +20 が発火")
     void r2bFiresFromHighIsoOnly() {
         ExifData exif = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 22, 0))
@@ -254,7 +254,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R2 - (a)(b) が両方成立しても +20 を二重加算しない")
+    @DisplayName("Spec#132 R2 - (a)(b) が両方成立しても +20 を二重加算しない")
     void r2DoesNotDoubleCountWhenBothConditionsMet() {
         ExifData exif = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 22, 0))
@@ -273,7 +273,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R2 - 昼間 + 低 ISO は発火しない")
+    @DisplayName("Spec#132 R2 - 昼間 + 低 ISO は発火しない")
     void r2DoesNotFireInDayLightWithLowIso() {
         ExifData exif = ExifData.builder()
                 .dateTimeOriginal(LocalDateTime.of(2026, 5, 16, 13, 0))
@@ -291,7 +291,7 @@ class ExifBasedCategoryHintsTest {
     // ========== R1 + R2 同時発火 ==========
 
     @Test
-    @DisplayName("Issue#132 - R1 + R2(a) 同時発火: 星空 +30 と 夜景 +20 が両方加算される")
+    @DisplayName("Spec#132 - R1 + R2(a) 同時発火: 星空 +30 と 夜景 +20 が両方加算される")
     void r1AndR2aBothFire() {
         // 露光 15秒 (R1: ≥10, R2(a): ≥5) + ISO 1600 (≥800) + 22:00 (夜)
         ExifData exif = starryNightExif();
@@ -309,10 +309,10 @@ class ExifBasedCategoryHintsTest {
                 .contains("R1", "R2");
     }
 
-    // ========== R3: 望遠ヒント（Issue#142: 207 を加点対象から除外） ==========
+    // ========== R3: 望遠ヒント（Spec#142: 207 を加点対象から除外） ==========
 
     @Test
-    @DisplayName("Issue#132/#142 R3 - 焦点距離 200mm 以上で 208/211/212 検出済み候補に +10（207 は対象外）")
+    @DisplayName("Spec#132/#142 R3 - 焦点距離 200mm 以上で 208/211/212 検出済み候補に +10（207 は対象外）")
     void r3BoostsExistingTelephotoCandidates() {
         // 211(鉄道) 検出済み。R3.5 は 208 候補時のみ発火するため、211 では R3 のみが効く
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_RAILWAYS, 60f);
@@ -329,7 +329,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#142 R3 - 207(動物) は R3 の加点対象から除外（望遠でも加点しない）")
+    @DisplayName("Spec#142 R3 - 207(動物) は R3 の加点対象から除外（望遠でも加点しない）")
     void r3DoesNotBoostAnimals() {
         // 207 のみ候補・250mm。208 が無いので R3.5 も発火せず、207 は据え置き
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_ANIMALS, 60f);
@@ -345,7 +345,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R3 - Rekognition 未検出カテゴリには候補を追加しない（単独候補化 ❌）")
+    @DisplayName("Spec#132 R3 - Rekognition 未検出カテゴリには候補を追加しない（単独候補化 ❌）")
     void r3DoesNotCreateNewCandidatesWhenNotDetected() {
         ExifData exif = ExifData.builder().focalLength35mm(300).build();
 
@@ -358,7 +358,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R3 境界 - 焦点距離 199mm では発火しない")
+    @DisplayName("Spec#132 R3 境界 - 焦点距離 199mm では発火しない")
     void r3DoesNotFireBelow200mm() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_RAILWAYS, 60f);
         ExifData exif = ExifData.builder().focalLength35mm(199).build();
@@ -369,10 +369,10 @@ class ExifBasedCategoryHintsTest {
         assertThat(conf).isCloseTo(60.0f, offset(0.01f));
     }
 
-    // ========== R3.5: 焦点距離による野鳥/動物の振り分け（Issue#142、R4 を置換） ==========
+    // ========== R3.5: 焦点距離による野鳥/動物の振り分け（Spec#142、R4 を置換） ==========
 
     @Test
-    @DisplayName("Issue#142 R3.5 - 鳥 × 300mm 以上: 208(野鳥) を加点し 207 は触らない")
+    @DisplayName("Spec#142 R3.5 - 鳥 × 300mm 以上: 208(野鳥) を加点し 207 は触らない")
     void r3_5BoostsWildBirdAt300OrMore() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_WILD_BIRDS, 50f);
         ExifData exif = ExifData.builder().focalLength35mm(400).build();
@@ -394,7 +394,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#142 R3.5 - 鳥 × 300mm 未満: 207 を新規追加し 208 を除去")
+    @DisplayName("Spec#142 R3.5 - 鳥 × 300mm 未満: 207 を新規追加し 208 を除去")
     void r3_5RemapsToAnimalBelow300() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_WILD_BIRDS, 80f);
         ExifData exif = ExifData.builder().focalLength35mm(50).build();
@@ -414,7 +414,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#142 R3.5 - 鳥 × 焦点距離欠落: <300mm と同じ（207 追加・208 除去）")
+    @DisplayName("Spec#142 R3.5 - 鳥 × 焦点距離欠落: <300mm と同じ（207 追加・208 除去）")
     void r3_5RemapsToAnimalWhenFocalMissing() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_WILD_BIRDS, 80f);
         ExifData exif = ExifData.empty(); // focalLength35mm = empty
@@ -427,7 +427,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#142 R3.5 境界 - 焦点距離 300mm ちょうどは野鳥側（≥300）")
+    @DisplayName("Spec#142 R3.5 境界 - 焦点距離 300mm ちょうどは野鳥側（≥300）")
     void r3_5BoundaryAt300IsWild() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_WILD_BIRDS, 50f);
         ExifData exif = ExifData.builder().focalLength35mm(300).build();
@@ -443,7 +443,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#142 R3.5 - 鳥＋動物の混在 × 300mm 以上: 208 加点・207 は残す")
+    @DisplayName("Spec#142 R3.5 - 鳥＋動物の混在 × 300mm 以上: 208 加点・207 は残す")
     void r3_5MixedBirdAnimalAt300OrMore() {
         Map<String, Float> confidence = new LinkedHashMap<>();
         confidence.put(String.valueOf(CodeConstants.CATEGORY_ANIMALS), 70f);
@@ -460,7 +460,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#142 R3.5 - バグ回帰: 動物のみ × 望遠は発火せず 208 を作らない")
+    @DisplayName("Spec#142 R3.5 - バグ回帰: 動物のみ × 望遠は発火せず 208 を作らない")
     void r3_5DoesNotFireForAnimalOnlyTelephoto() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_ANIMALS, 70f);
         ExifData exif = ExifData.builder().focalLength35mm(400).build();
@@ -476,7 +476,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#142 R3.5 - 鳥以外（山）では発火しない")
+    @DisplayName("Spec#142 R3.5 - 鳥以外（山）では発火しない")
     void r3_5DoesNotFireForNonBird() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_NATURE, 60f);
         ExifData exif = ExifData.builder().focalLength35mm(400).build();
@@ -492,7 +492,7 @@ class ExifBasedCategoryHintsTest {
     // ========== R5: 山岳ヒント ==========
 
     @Test
-    @DisplayName("Issue#132 R5 - GPS 標高 1000m 以上で 201 検出済み候補に +10 ブースト")
+    @DisplayName("Spec#132 R5 - GPS 標高 1000m 以上で 201 検出済み候補に +10 ブースト")
     void r5BoostsExistingNatureCandidate() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_NATURE, 60f);
         ExifData exif = ExifData.builder().gpsAltitude(1500.0).build();
@@ -508,7 +508,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R5 - 201 が未検出なら何も追加しない（単独候補化 ❌）")
+    @DisplayName("Spec#132 R5 - 201 が未検出なら何も追加しない（単独候補化 ❌）")
     void r5DoesNotCreateNewCandidatesWhenNotDetected() {
         ExifData exif = ExifData.builder().gpsAltitude(2500.0).build();
 
@@ -521,7 +521,7 @@ class ExifBasedCategoryHintsTest {
     }
 
     @Test
-    @DisplayName("Issue#132 R5 境界 - 標高 999m では発火しない")
+    @DisplayName("Spec#132 R5 境界 - 標高 999m では発火しない")
     void r5DoesNotFireBelow1000m() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_NATURE, 60f);
         ExifData exif = ExifData.builder().gpsAltitude(999.0).build();
@@ -535,7 +535,7 @@ class ExifBasedCategoryHintsTest {
     // ========== EXIF 空 ==========
 
     @Test
-    @DisplayName("Issue#132 - ExifData.empty() の場合は何のルールも発火しない")
+    @DisplayName("Spec#132 - ExifData.empty() の場合は何のルールも発火しない")
     void noRulesFireWhenExifIsEmpty() {
         LabelMappingResult base = singleCategory(CodeConstants.CATEGORY_NATURE, 60f);
 

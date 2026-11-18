@@ -3,7 +3,7 @@ package com.photlas.backend.exception;
 import java.util.Objects;
 
 /**
- * Issue#93: エラーコード付きの「今の状態ではできない操作」を表す例外。
+ * Spec#93: エラーコード付きの「今の状態ではできない操作」を表す例外。
  *
  * <p>既存の呼び出し元・テストが {@link IllegalStateException} として扱えるよう、
  * そのサブクラスにしている。

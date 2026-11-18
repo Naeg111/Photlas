@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * Issue#54: ReportServiceのユニットテスト
+ * Spec#54: ReportServiceのユニットテスト
  */
 @ExtendWith(MockitoExtension.class)
 public class ReportServiceTest {
@@ -82,7 +82,7 @@ public class ReportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 自分の投稿を通報するとSelfReportExceptionがスローされる")
+    @DisplayName("Spec#54 - 自分の投稿を通報するとSelfReportExceptionがスローされる")
     void createReport_SelfReport_ThrowsSelfReportException() {
         // Given
         Photo photo = createTestPhoto();
@@ -96,7 +96,7 @@ public class ReportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 重複通報するとConflictExceptionがスローされる")
+    @DisplayName("Spec#54 - 重複通報するとConflictExceptionがスローされる")
     void createReport_DuplicateReport_ThrowsConflictException() {
         // Given
         Photo photo = createTestPhoto();
@@ -116,7 +116,7 @@ public class ReportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 存在しない写真を通報するとPhotoNotFoundExceptionがスローされる")
+    @DisplayName("Spec#54 - 存在しない写真を通報するとPhotoNotFoundExceptionがスローされる")
     void createReport_PhotoNotFound_ThrowsPhotoNotFoundException() {
         // Given
         when(photoRepository.findById(TEST_PHOTO_ID)).thenReturn(Optional.empty());
@@ -129,7 +129,7 @@ public class ReportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 通報件数が閾値(2)に達すると写真がQUARANTINEDになる")
+    @DisplayName("Spec#54 - 通報件数が閾値(2)に達すると写真がQUARANTINEDになる")
     void createReport_ReportCountReachesThreshold_PhotoQuarantined() {
         // Given
         Photo photo = createTestPhoto();
@@ -156,7 +156,7 @@ public class ReportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 通報件数が閾値未満の場合写真ステータスは変更されない")
+    @DisplayName("Spec#54 - 通報件数が閾値未満の場合写真ステータスは変更されない")
     void createReport_ReportCountBelowThreshold_StatusNotChanged() {
         // Given
         Photo photo = createTestPhoto();
@@ -183,7 +183,7 @@ public class ReportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 正常な通報で正しいReportResponseが返される")
+    @DisplayName("Spec#54 - 正常な通報で正しいReportResponseが返される")
     void createReport_ValidReport_ReturnsCorrectResponse() {
         // Given
         Photo photo = createTestPhoto();
@@ -210,7 +210,7 @@ public class ReportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 / Issue#93 - QUARANTINED写真を通報するとPHOTO_NOT_PUBLICのInvalidStateExceptionがスローされる")
+    @DisplayName("Spec#54 / Spec#93 - QUARANTINED写真を通報するとPHOTO_NOT_PUBLICのInvalidStateExceptionがスローされる")
     void createReport_QuarantinedPhoto_ThrowsInvalidStateException() {
         // Given
         Photo photo = createTestPhoto();
@@ -226,7 +226,7 @@ public class ReportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 / Issue#93 - REMOVED写真を通報するとPHOTO_NOT_PUBLICのInvalidStateExceptionがスローされる")
+    @DisplayName("Spec#54 / Spec#93 - REMOVED写真を通報するとPHOTO_NOT_PUBLICのInvalidStateExceptionがスローされる")
     void createReport_RemovedPhoto_ThrowsInvalidStateException() {
         // Given
         Photo photo = createTestPhoto();

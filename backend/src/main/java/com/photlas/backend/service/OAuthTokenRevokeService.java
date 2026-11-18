@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Issue#81 Phase 4c - 退会時の OAuth access_token revoke サービス（Round 12 / Q9）。
+ * Spec#81 Phase 4c - 退会時の OAuth access_token revoke サービス（Round 12 / Q9）。
  *
  * <p>処理フロー（ユーザー 1 人あたり）:
  * <ol>

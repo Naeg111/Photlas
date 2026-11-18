@@ -6,7 +6,7 @@ function tag(tagId: number, slug: string, displayName: string, sortOrder: number
   return { tagId, slug, displayName, categoryCodes: [215], sortOrder }
 }
 
-describe('groupTagsByDisplayName (Issue#159 複数タグ→1表示名)', () => {
+describe('groupTagsByDisplayName (Spec#159 複数タグ→1表示名)', () => {
   it('同じ表示名の同義タグを 1 グループに畳み込む（牧場=Farm/Ranch/Pasture）', () => {
     const groups = groupTagsByDisplayName([
       tag(1, 'farm', '牧場', 60),

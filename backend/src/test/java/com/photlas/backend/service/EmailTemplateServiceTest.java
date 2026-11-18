@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Issue#113 - EmailTemplateService の単体テスト。
+ * Spec#113 - EmailTemplateService の単体テスト。
  *
  * <p>5 言語フォールバック / BCP-47 タグ処理 / null・空文字 → en / 未登録キー例外 /
  * シグネチャ自動付与 / 単一引号エスケープ を検証する。</p>
@@ -36,7 +36,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 件名: ja で日本語の件名が返る")
+    @DisplayName("Spec#113 - 件名: ja で日本語の件名が返る")
     void japaneseSubject() {
         String subject = service.subject("email.verification", "ja");
         assertThat(subject).contains("Photlas");
@@ -44,7 +44,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 件名: en で英語の件名が返る")
+    @DisplayName("Spec#113 - 件名: en で英語の件名が返る")
     void englishSubject() {
         String subject = service.subject("email.verification", "en");
         assertThat(subject).contains("Photlas");
@@ -52,7 +52,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 件名: ko で韓国語の件名が返る")
+    @DisplayName("Spec#113 - 件名: ko で韓国語の件名が返る")
     void koreanSubject() {
         String subject = service.subject("email.verification", "ko");
         assertThat(subject).contains("Photlas");
@@ -61,7 +61,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 件名: zh-CN で簡体中文の件名が返る")
+    @DisplayName("Spec#113 - 件名: zh-CN で簡体中文の件名が返る")
     void chineseSimplifiedSubject() {
         String subject = service.subject("email.verification", "zh-CN");
         assertThat(subject).contains("Photlas");
@@ -70,7 +70,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 件名: zh-TW で繁体中文の件名が返る")
+    @DisplayName("Spec#113 - 件名: zh-TW で繁体中文の件名が返る")
     void chineseTraditionalSubject() {
         String subject = service.subject("email.verification", "zh-TW");
         assertThat(subject).contains("Photlas");
@@ -78,7 +78,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 件名: 未対応言語は en にフォールバック")
+    @DisplayName("Spec#113 - 件名: 未対応言語は en にフォールバック")
     void unknownLanguageFallsBackToEnglish() {
         String fallback = service.subject("email.verification", "fr");
         String english = service.subject("email.verification", "en");
@@ -86,7 +86,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 件名: null 言語は en にフォールバック")
+    @DisplayName("Spec#113 - 件名: null 言語は en にフォールバック")
     void nullLanguageFallsBackToEnglish() {
         String fallback = service.subject("email.verification", (String) null);
         String english = service.subject("email.verification", "en");
@@ -94,7 +94,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 件名: 空文字言語は en にフォールバック")
+    @DisplayName("Spec#113 - 件名: 空文字言語は en にフォールバック")
     void blankLanguageFallsBackToEnglish() {
         String fallback = service.subject("email.verification", "");
         String english = service.subject("email.verification", "en");
@@ -102,7 +102,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 本文: 末尾に email.signature が自動で付与される")
+    @DisplayName("Spec#113 - 本文: 末尾に email.signature が自動で付与される")
     void bodyHasSignatureAppended() {
         String body = service.body("email.verification", "ja", "naegi", "https://example.com/verify");
         // シグネチャに含まれる "support@photlas.jp" が末尾近くにあること
@@ -110,7 +110,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 本文: プレースホルダ {0} {1} が引数で置換される")
+    @DisplayName("Spec#113 - 本文: プレースホルダ {0} {1} が引数で置換される")
     void bodyPlaceholdersAreReplaced() {
         String body = service.body("email.verification", "ja", "苗木", "https://example.com/verify");
         assertThat(body).contains("苗木");
@@ -118,7 +118,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 未登録キーは IllegalStateException")
+    @DisplayName("Spec#113 - 未登録キーは IllegalStateException")
     void unknownKeyThrows() {
         assertThatThrownBy(() -> service.subject("email.nonexistent", "ja"))
                 .isInstanceOf(IllegalStateException.class)
@@ -126,7 +126,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - User オーバーロード: User.language が使われる")
+    @DisplayName("Spec#113 - User オーバーロード: User.language が使われる")
     void userOverloadUsesUserLanguage() {
         com.photlas.backend.entity.User user = new com.photlas.backend.entity.User();
         user.setLanguage("ko");
@@ -136,7 +136,7 @@ class EmailTemplateServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - シグネチャの言語別取得")
+    @DisplayName("Spec#113 - シグネチャの言語別取得")
     void signatureByLanguage() {
         assertThat(service.signature("ja")).contains("support@photlas.jp");
         assertThat(service.signature("en")).contains("support@photlas.jp");

@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Issue#135: キーワードマスタエンティティ。
+ * Spec#135: キーワードマスタエンティティ。
  *
  * <p>Photlas の写真に付与可能なキーワード（ユーザー向け呼称）の母集団。
  * AWS Rekognition のラベルから Photlas 向けに選別された語彙。</p>

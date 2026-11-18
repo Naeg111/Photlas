@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#113 - メール用 properties ファイルの整合性テスト。
+ * Spec#113 - メール用 properties ファイルの整合性テスト。
  *
  * <p>5 言語のキー集合が完全一致することを検証する。1 つの言語にだけキーを追加し
  * 忘れたら本テストが失敗するので、キーの抜けを CI で検知できる。</p>
@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EmailTemplateConsistencyTest {
 
     @Test
-    @DisplayName("Issue#113 - 5 言語の properties ファイルでキー集合が完全一致する")
+    @DisplayName("Spec#113 - 5 言語の properties ファイルでキー集合が完全一致する")
     void allLanguagesHaveSameKeys() throws IOException {
         Set<String> jaKeys = loadKeys("messages_ja.properties");
         Set<String> enKeys = loadKeys("messages_en.properties");
@@ -40,7 +40,7 @@ class EmailTemplateConsistencyTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - LanguageUtils.SUPPORTED_LANGUAGES の全言語にテンプレートファイルがある")
+    @DisplayName("Spec#113 - LanguageUtils.SUPPORTED_LANGUAGES の全言語にテンプレートファイルがある")
     void supportedLanguagesAllHaveTemplateFile() {
         for (String lang : LanguageUtils.SUPPORTED_LANGUAGES) {
             String filename = "messages_" + lang.replace("-", "_") + ".properties";
@@ -51,7 +51,7 @@ class EmailTemplateConsistencyTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 全 5 言語に email.signature と email.verification.{subject,body} が存在する")
+    @DisplayName("Spec#113 - 全 5 言語に email.signature と email.verification.{subject,body} が存在する")
     void requiredKeysExistInAllLanguages() throws IOException {
         for (String lang : LanguageUtils.SUPPORTED_LANGUAGES) {
             String filename = "messages_" + lang.replace("-", "_") + ".properties";

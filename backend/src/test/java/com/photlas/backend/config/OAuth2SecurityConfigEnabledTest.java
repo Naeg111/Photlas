@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#81 Phase 3f - {@code photlas.oauth.enabled=true} 時の Spring Security OAuth2 設定検証。
+ * Spec#81 Phase 3f - {@code photlas.oauth.enabled=true} 時の Spring Security OAuth2 設定検証。
  *
  * <p>技術設計書 §3.13 / 手順書 Phase 3f の仕様:
  * <ul>
@@ -62,7 +62,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-@DisplayName("Issue#81 Phase 3f - OAuth 有効時の Spring Security 設定")
+@DisplayName("Spec#81 Phase 3f - OAuth 有効時の Spring Security 設定")
 class OAuth2SecurityConfigEnabledTest {
 
     @Autowired

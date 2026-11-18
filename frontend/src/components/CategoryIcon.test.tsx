@@ -7,7 +7,7 @@ import { CategoryIcon } from './CategoryIcon'
  * 各カテゴリに対応するSVGアイコンが正しく表示されることを検証する
  */
 describe('CategoryIcon', () => {
-  // Issue#63: 14ジャンルに変更
+  // Spec#63: 14ジャンルに変更
   const categories = [
     '自然風景',
     '街並み',

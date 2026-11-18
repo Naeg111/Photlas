@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AboutDialog } from './AboutDialog'
 
 /**
- * Issue#114: AboutDialog 改修
+ * Spec#114: AboutDialog 改修
  *
  * サービス紹介に特化させ、以下のセクションを移動・削除：
  * - 「使い方」→ HowToUseDialog へ移動

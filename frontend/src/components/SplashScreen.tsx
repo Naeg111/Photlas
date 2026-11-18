@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 
 /**
- * Issue#85: スプラッシュ画面
+ * Spec#85: スプラッシュ画面
  *
  * アイコンのみを画面中央に配置し、ドロップバウンスアニメーションを表示する。
  * アニメーションはCSSで定義（コンポジタースレッド実行でスムーズ描画）。

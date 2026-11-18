@@ -1,14 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
-# Issue#75: サムネイル生成Lambda関数のセットアップスクリプト
-# Issue#125: LQIP（低品質プレースホルダー）コールバック対応で環境変数追加
+# Spec#75: サムネイル生成Lambda関数のセットアップスクリプト
+# Spec#125: LQIP（低品質プレースホルダー）コールバック対応で環境変数追加
 #
 # 前提条件:
 #   - AWS CLIが設定済み
 #   - S3バケットが存在する
 #   - python3 と pip が使えること（Pillow/pillow-heif の Linux 用 wheel を取得するため）
-#   - Issue#125 のコールバック先として、photlas-moderation-scanner-* Lambda が
+#   - Spec#125 のコールバック先として、photlas-moderation-scanner-* Lambda が
 #     既にデプロイされている（MODERATION_API_KEY を共用するため）
 #
 # 使用方法:
@@ -33,7 +33,7 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 if [ "$ENV" = "prod" ]; then
     S3_BUCKET="photlas-uploads-prod-${ACCOUNT_ID}"
     FUNCTION_SUFFIX="prod"
-    # Issue#125: LQIP コールバック先（CloudFront 経由・同一オリジン）
+    # Spec#125: LQIP コールバック先（CloudFront 経由・同一オリジン）
     BACKEND_URL="https://photlas.jp"
 else
     S3_BUCKET="photlas-uploads-test-${ACCOUNT_ID}"
@@ -44,7 +44,7 @@ fi
 FUNCTION_NAME="photlas-thumbnail-generator-${FUNCTION_SUFFIX}"
 ROLE_NAME="photlas-thumbnail-lambda-role-${FUNCTION_SUFFIX}"
 
-# Issue#125: API キーは既存の moderation scanner Lambda から取り出して共用する。
+# Spec#125: API キーは既存の moderation scanner Lambda から取り出して共用する。
 # 取得できない場合はプレースホルダにし、ユーザーに手動更新を促す。
 MODERATION_FUNCTION_NAME="photlas-moderation-scanner-${FUNCTION_SUFFIX}"
 MODERATION_API_KEY=$(aws lambda get-function-configuration \
@@ -168,7 +168,7 @@ aws lambda create-function \
         --function-name "$FUNCTION_NAME" \
         --zip-file fileb:///tmp/thumbnail-generator.zip \
         --region "$REGION"
-    # Issue#125: 既存関数にも環境変数 + timeout 60s を反映する。
+    # Spec#125: 既存関数にも環境変数 + timeout 60s を反映する。
     # update-function-code 完了後に呼ぶ必要があるため、ここでウェイトを入れる。
     aws lambda wait function-updated \
         --function-name "$FUNCTION_NAME" \
@@ -192,7 +192,7 @@ aws lambda add-permission \
 
 echo "=== セットアップ完了 ==="
 echo ""
-echo "Issue#125: 環境変数の設定状況:"
+echo "Spec#125: 環境変数の設定状況:"
 echo "  BACKEND_URL = ${BACKEND_URL}"
 if [ "$MODERATION_API_KEY" = "CHANGE_ME" ]; then
     echo "  MODERATION_API_KEY = CHANGE_ME ⚠️  手動更新が必要"

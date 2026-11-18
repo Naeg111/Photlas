@@ -1,5 +1,5 @@
 /**
- * Issue#119 - aiPrefillAnalytics の単体テスト。
+ * Spec#119 - aiPrefillAnalytics の単体テスト。
  *
  * trackAiPrefillEvent: gtag への送信検証
  * compareAiPrefill: AI 提案 vs ユーザー選択の比較ロジック検証
@@ -25,7 +25,7 @@ describe('trackAiPrefillEvent', () => {
     vi.unstubAllGlobals()
   })
 
-  it('Issue#119 - ai_prefill_shown を送信できる', () => {
+  it('Spec#119 - ai_prefill_shown を送信できる', () => {
     trackAiPrefillEvent('ai_prefill_shown', { categories_count: 2, weather_filled: true })
     expect(mockGtag).toHaveBeenCalledWith('event', 'ai_prefill_shown', {
       categories_count: 2,
@@ -33,12 +33,12 @@ describe('trackAiPrefillEvent', () => {
     })
   })
 
-  it('Issue#119 - ai_prefill_accepted をパラメータなしで送信できる', () => {
+  it('Spec#119 - ai_prefill_accepted をパラメータなしで送信できる', () => {
     trackAiPrefillEvent('ai_prefill_accepted')
     expect(mockGtag).toHaveBeenCalledWith('event', 'ai_prefill_accepted', undefined)
   })
 
-  it('Issue#119 - ai_prefill_modified を modification_type と user_diff_flag で送信できる', () => {
+  it('Spec#119 - ai_prefill_modified を modification_type と user_diff_flag で送信できる', () => {
     trackAiPrefillEvent('ai_prefill_modified', {
       modification_type: 'both',
       user_diff_flag: true,
@@ -49,14 +49,14 @@ describe('trackAiPrefillEvent', () => {
     })
   })
 
-  it('Issue#119 - ai_prefill_failed を error_type で送信できる', () => {
+  it('Spec#119 - ai_prefill_failed を error_type で送信できる', () => {
     trackAiPrefillEvent('ai_prefill_failed', { error_type: 'network' })
     expect(mockGtag).toHaveBeenCalledWith('event', 'ai_prefill_failed', {
       error_type: 'network',
     })
   })
 
-  it('Issue#119 - gtag が未定義でもエラーにならない', () => {
+  it('Spec#119 - gtag が未定義でもエラーにならない', () => {
     vi.unstubAllGlobals()
     vi.stubGlobal('gtag', undefined)
     expect(() => trackAiPrefillEvent('ai_prefill_shown')).not.toThrow()
@@ -66,7 +66,7 @@ describe('trackAiPrefillEvent', () => {
 describe('compareAiPrefill', () => {
   // ========== 完全一致 → accepted ==========
 
-  it('Issue#119 - カテゴリも天候も完全一致なら isModified=false', () => {
+  it('Spec#119 - カテゴリも天候も完全一致なら isModified=false', () => {
     const result = compareAiPrefill({
       aiCategories: [201, 204],
       aiWeather: 401,
@@ -78,7 +78,7 @@ describe('compareAiPrefill', () => {
     expect(result.userDiffFlag).toBe(false)
   })
 
-  it('Issue#119 - 両方とも null/empty で一致なら isModified=false', () => {
+  it('Spec#119 - 両方とも null/empty で一致なら isModified=false', () => {
     const result = compareAiPrefill({
       aiCategories: [],
       aiWeather: null,
@@ -90,7 +90,7 @@ describe('compareAiPrefill', () => {
 
   // ========== カテゴリのみ修正 → modificationType='category' ==========
 
-  it('Issue#119 - カテゴリのみ違う → modificationType=category', () => {
+  it('Spec#119 - カテゴリのみ違う → modificationType=category', () => {
     const result = compareAiPrefill({
       aiCategories: [201],
       aiWeather: 401,
@@ -101,7 +101,7 @@ describe('compareAiPrefill', () => {
     expect(result.modificationType).toBe('category')
   })
 
-  it('Issue#119 - カテゴリ追加 → modificationType=category', () => {
+  it('Spec#119 - カテゴリ追加 → modificationType=category', () => {
     const result = compareAiPrefill({
       aiCategories: [201],
       aiWeather: 401,
@@ -114,7 +114,7 @@ describe('compareAiPrefill', () => {
 
   // ========== 天候のみ修正 → modificationType='weather' ==========
 
-  it('Issue#119 - 天候のみ違う → modificationType=weather', () => {
+  it('Spec#119 - 天候のみ違う → modificationType=weather', () => {
     const result = compareAiPrefill({
       aiCategories: [201],
       aiWeather: 401,
@@ -127,7 +127,7 @@ describe('compareAiPrefill', () => {
 
   // ========== 両方修正 → modificationType='both' ==========
 
-  it('Issue#119 - カテゴリも天候も違う → modificationType=both', () => {
+  it('Spec#119 - カテゴリも天候も違う → modificationType=both', () => {
     const result = compareAiPrefill({
       aiCategories: [201],
       aiWeather: 401,
@@ -140,7 +140,7 @@ describe('compareAiPrefill', () => {
 
   // ========== user_diff_flag ==========
 
-  it('Issue#119 - user_diff_flag: AI とユーザー選択カテゴリが完全に重複ゼロなら true', () => {
+  it('Spec#119 - user_diff_flag: AI とユーザー選択カテゴリが完全に重複ゼロなら true', () => {
     const result = compareAiPrefill({
       aiCategories: [201, 204],
       aiWeather: null,
@@ -150,7 +150,7 @@ describe('compareAiPrefill', () => {
     expect(result.userDiffFlag).toBe(true)
   })
 
-  it('Issue#119 - user_diff_flag: 1つでも重複があれば false', () => {
+  it('Spec#119 - user_diff_flag: 1つでも重複があれば false', () => {
     const result = compareAiPrefill({
       aiCategories: [201, 204],
       aiWeather: null,
@@ -160,7 +160,7 @@ describe('compareAiPrefill', () => {
     expect(result.userDiffFlag).toBe(false)
   })
 
-  it('Issue#119 - user_diff_flag: AI 予測カテゴリが空なら常に false（比較対象なし）', () => {
+  it('Spec#119 - user_diff_flag: AI 予測カテゴリが空なら常に false（比較対象なし）', () => {
     const result = compareAiPrefill({
       aiCategories: [],
       aiWeather: null,
@@ -171,7 +171,7 @@ describe('compareAiPrefill', () => {
   })
 })
 
-describe('Issue#132 - trackParentFallbackEvents', () => {
+describe('Spec#132 - trackParentFallbackEvents', () => {
   let mockGtag: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
@@ -183,7 +183,7 @@ describe('Issue#132 - trackParentFallbackEvents', () => {
     vi.unstubAllGlobals()
   })
 
-  it('Issue#132 - 各 ParentFallback につき ai_parent_fallback_used を 1 回ずつ送信', () => {
+  it('Spec#132 - 各 ParentFallback につき ai_parent_fallback_used を 1 回ずつ送信', () => {
     trackParentFallbackEvents([
       { childLabel: 'Husky', parentLabel: 'Dog', categoryCode: 207 },
       { childLabel: 'MysteryBird', parentLabel: 'Sparrow', categoryCode: 208 },
@@ -202,12 +202,12 @@ describe('Issue#132 - trackParentFallbackEvents', () => {
     })
   })
 
-  it('Issue#132 - 空配列なら gtag を呼ばない', () => {
+  it('Spec#132 - 空配列なら gtag を呼ばない', () => {
     trackParentFallbackEvents([])
     expect(mockGtag).not.toHaveBeenCalled()
   })
 
-  it('Issue#132 - gtag が未定義でもクラッシュしない', () => {
+  it('Spec#132 - gtag が未定義でもクラッシュしない', () => {
     vi.unstubAllGlobals()
     vi.stubGlobal('gtag', undefined)
     expect(() =>
@@ -216,7 +216,7 @@ describe('Issue#132 - trackParentFallbackEvents', () => {
   })
 })
 
-describe('Issue#132 - trackExifRuleFiredEvents', () => {
+describe('Spec#132 - trackExifRuleFiredEvents', () => {
   let mockGtag: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
@@ -228,7 +228,7 @@ describe('Issue#132 - trackExifRuleFiredEvents', () => {
     vi.unstubAllGlobals()
   })
 
-  it('Issue#132 - 各 ExifRuleFire につき ai_exif_rule_fired を 1 回ずつ送信', () => {
+  it('Spec#132 - 各 ExifRuleFire につき ai_exif_rule_fired を 1 回ずつ送信', () => {
     trackExifRuleFiredEvents([
       { rule: 'R1', categoryCode: 213, boostValue: 30, createdNewCandidate: true },
       { rule: 'R3', categoryCode: 207, boostValue: 10, createdNewCandidate: false },
@@ -249,12 +249,12 @@ describe('Issue#132 - trackExifRuleFiredEvents', () => {
     })
   })
 
-  it('Issue#132 - 空配列なら gtag を呼ばない', () => {
+  it('Spec#132 - 空配列なら gtag を呼ばない', () => {
     trackExifRuleFiredEvents([])
     expect(mockGtag).not.toHaveBeenCalled()
   })
 
-  it('Issue#132 - gtag が未定義でもクラッシュしない', () => {
+  it('Spec#132 - gtag が未定義でもクラッシュしない', () => {
     vi.unstubAllGlobals()
     vi.stubGlobal('gtag', undefined)
     expect(() =>

@@ -4,7 +4,7 @@ import { ProtectedImage } from './ProtectedImage'
 
 /**
  * ProtectedImage コンポーネントのテスト
- * Issue#15: 画像のダウンロード保護
+ * Spec#15: 画像のダウンロード保護
  */
 describe('ProtectedImage', () => {
   const defaultProps = {
@@ -110,7 +110,7 @@ describe('ProtectedImage', () => {
     })
   })
 
-  describe('Issue#126 - loading 属性', () => {
+  describe('Spec#126 - loading 属性', () => {
     it('loading を指定しなかった場合、デフォルトで lazy が設定される', () => {
       render(<ProtectedImage {...defaultProps} />)
 

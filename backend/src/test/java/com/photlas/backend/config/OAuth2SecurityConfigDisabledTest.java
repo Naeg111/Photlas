@@ -15,7 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#81 Phase 3f - {@code photlas.oauth.enabled=false}（未設定を含む）時の Spring Security 設定検証。
+ * Spec#81 Phase 3f - {@code photlas.oauth.enabled=false}（未設定を含む）時の Spring Security 設定検証。
  *
  * <p>{@link OAuth2SecurityConfig} は {@code @ConditionalOnProperty("photlas.oauth.enabled"="true")}
  * で条件付き生成されるため、無効時は:
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@DisplayName("Issue#81 Phase 3f - OAuth 無効時の Spring Security 設定")
+@DisplayName("Spec#81 Phase 3f - OAuth 無効時の Spring Security 設定")
 class OAuth2SecurityConfigDisabledTest {
 
     @Autowired

@@ -1,5 +1,5 @@
 /**
- * Issue#87: 桁区切り数値コード定数
+ * Spec#87: 桁区切り数値コード定数
  *
  * バックエンドのCodeConstants.javaと同一の値を定義。
  * APIレスポンスの数値コードを表示文字列に変換するマッピングも提供する。
@@ -39,7 +39,7 @@ export const CATEGORY_RAILWAYS = 211
 export const CATEGORY_AIRCRAFT = 212
 export const CATEGORY_STARRY_SKY = 213
 export const CATEGORY_OTHER = 214
-// Issue#159 ③-5: レジャー・施設（表示順は 214「その他」の前）
+// Spec#159 ③-5: レジャー・施設（表示順は 214「その他」の前）
 export const CATEGORY_LEISURE_FACILITY = 215
 
 // ========== 300番台: Photo.time_of_day ==========
@@ -65,11 +65,11 @@ export const DEVICE_TYPE_OTHER = 506
 // ========== 600番台: UserSnsLink.platform ==========
 export const PLATFORM_TWITTER = 601
 export const PLATFORM_INSTAGRAM = 602
-/** Issue#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
+/** Spec#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
 export const PLATFORM_YOUTUBE = 603
-/** Issue#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
+/** Spec#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
 export const PLATFORM_TIKTOK = 604
-/** Issue#102: Threads(605) を新規追加 */
+/** Spec#102: Threads(605) を新規追加 */
 export const PLATFORM_THREADS = 605
 
 // ========== 700番台: AccountSanction.sanction_type ==========
@@ -220,7 +220,7 @@ export const PLATFORM_LABELS: Record<number, string> = {
 
 /**
  * SNSプラットフォームの選択肢
- * Issue#102: Threads 追加。YouTube/TikTok は一時停止中だが将来再開時のため残置。
+ * Spec#102: Threads 追加。YouTube/TikTok は一時停止中だが将来再開時のため残置。
  */
 export const PLATFORM_OPTIONS = [
   { value: PLATFORM_TWITTER, label: 'X' },

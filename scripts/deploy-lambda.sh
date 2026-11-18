@@ -1,5 +1,5 @@
 #!/bin/bash
-# Photlas Lambda コードデプロイ（Issue#147 決定 G 改訂）
+# Photlas Lambda コードデプロイ（Spec#147 決定 G 改訂）
 #
 # Lambda の infra（関数設定・環境変数・権限・トリガー）は Terraform 管理。
 # 本スクリプトは「コードの zip & update-function-code」だけを担う。

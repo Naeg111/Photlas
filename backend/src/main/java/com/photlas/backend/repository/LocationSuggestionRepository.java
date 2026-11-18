@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Issue#65: 位置情報修正の指摘リポジトリ
+ * Spec#65: 位置情報修正の指摘リポジトリ
  */
 @Repository
 public interface LocationSuggestionRepository extends JpaRepository<LocationSuggestion, Long> {
@@ -28,7 +28,7 @@ public interface LocationSuggestionRepository extends JpaRepository<LocationSugg
     long countBySuggesterIdAndCreatedAtAfter(Long suggesterId, LocalDateTime after);
 
     /**
-     * Issue#108: 提案者 ID で位置情報修正提案を新しい順に取得する。
+     * Spec#108: 提案者 ID で位置情報修正提案を新しい順に取得する。
      */
     List<LocationSuggestion> findBySuggesterIdOrderByCreatedAtDesc(Long suggesterId);
 }

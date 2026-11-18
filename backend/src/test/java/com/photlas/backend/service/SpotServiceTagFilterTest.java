@@ -27,7 +27,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#141 Phase 1: {@link SpotService#getSpots} の tagIds 引数で
+ * Spec#141 Phase 1: {@link SpotService#getSpots} の tagIds 引数で
  * 「いずれかの tag が付いた写真を持つスポット」だけ返ることを検証する統合テスト。
  *
  * <p>tagIds 空/null のときは従来挙動を維持する (センチネル `-1L` 方式)。</p>
@@ -111,7 +111,7 @@ class SpotServiceTagFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getSpots: tagIds 指定でいずれかの tag が付いた写真を持つスポットだけ返る")
+    @DisplayName("Spec#141 - getSpots: tagIds 指定でいずれかの tag が付いた写真を持つスポットだけ返る")
     void getSpots_filtersByTagIds() {
         Spot spotCherry = saveSpot("35.0", "139.0");
         Spot spotSushi = saveSpot("35.1", "139.1");
@@ -129,7 +129,7 @@ class SpotServiceTagFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getSpots: tagIds 複数指定で OR 検索 (いずれかが付けば返る)")
+    @DisplayName("Spec#141 - getSpots: tagIds 複数指定で OR 検索 (いずれかが付けば返る)")
     void getSpots_orSearchAcrossMultipleTags() {
         Spot spotCherry = saveSpot("35.0", "139.0");
         Spot spotSushi = saveSpot("35.1", "139.1");
@@ -147,7 +147,7 @@ class SpotServiceTagFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getSpots: tagIds=null のとき従来挙動 (全スポット返却)")
+    @DisplayName("Spec#141 - getSpots: tagIds=null のとき従来挙動 (全スポット返却)")
     void getSpots_nullTagIds_returnsAllSpots() {
         Spot spotCherry = saveSpot("35.0", "139.0");
         Spot spotNone = saveSpot("35.2", "139.2");
@@ -163,7 +163,7 @@ class SpotServiceTagFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getSpots: tagIds=空リストでも従来挙動")
+    @DisplayName("Spec#141 - getSpots: tagIds=空リストでも従来挙動")
     void getSpots_emptyTagIds_returnsAllSpots() {
         Spot spotCherry = saveSpot("35.0", "139.0");
         Spot spotNone = saveSpot("35.2", "139.2");
@@ -179,7 +179,7 @@ class SpotServiceTagFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getSpots: 存在しない tagId は静かに空結果")
+    @DisplayName("Spec#141 - getSpots: 存在しない tagId は静かに空結果")
     void getSpots_unknownTagId_returnsEmpty() {
         Spot spot = saveSpot("35.0", "139.0");
         linkTag(savePhoto(spot), tagCherry);
@@ -192,7 +192,7 @@ class SpotServiceTagFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getSpots: 退会済みユーザーの写真は tagIds 検索でも除外される")
+    @DisplayName("Spec#141 - getSpots: 退会済みユーザーの写真は tagIds 検索でも除外される")
     void getSpots_excludesDeletedUserPhotos() {
         String shortId = String.valueOf(System.nanoTime()).substring(0, 9);
         User deleted = new User();
@@ -220,7 +220,7 @@ class SpotServiceTagFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getSpots: PUBLISHED 以外のステータスは tagIds 検索でも除外される")
+    @DisplayName("Spec#141 - getSpots: PUBLISHED 以外のステータスは tagIds 検索でも除外される")
     void getSpots_excludesNonPublishedPhotos() {
         Spot spot = saveSpot("35.0", "139.0");
         Photo pending = new Photo();

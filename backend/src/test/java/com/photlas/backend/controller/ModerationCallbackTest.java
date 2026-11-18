@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#54: Lambda→バックエンドAPIのモデレーションコールバックテスト
+ * Spec#54: Lambda→バックエンドAPIのモデレーションコールバックテスト
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -102,7 +102,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - スキャン結果: 問題なし → PUBLISHED")
+    @DisplayName("Spec#54 - スキャン結果: 問題なし → PUBLISHED")
     void testModerationCallback_Safe_PublishesPhoto() throws Exception {
         Map<String, Object> request = Map.of(
                 "s3_object_key", testPhoto.getS3ObjectKey(),
@@ -121,7 +121,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - スキャン結果: 問題あり → QUARANTINED")
+    @DisplayName("Spec#54 - スキャン結果: 問題あり → QUARANTINED")
     void testModerationCallback_Unsafe_QuarantinesPhoto() throws Exception {
         Map<String, Object> request = Map.of(
                 "s3_object_key", testPhoto.getS3ObjectKey(),
@@ -140,7 +140,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 不正なAPIキーでアクセス拒否")
+    @DisplayName("Spec#54 - 不正なAPIキーでアクセス拒否")
     void testModerationCallback_InvalidApiKey_Returns401() throws Exception {
         Map<String, Object> request = Map.of(
                 "s3_object_key", testPhoto.getS3ObjectKey(),
@@ -156,7 +156,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PENDING_REVIEW滞留チェック: 滞留なし")
+    @DisplayName("Spec#54 - PENDING_REVIEW滞留チェック: 滞留なし")
     void testStaleCheck_NoStale_ReturnsZero() throws Exception {
         // testPhotoは直前に作成されたため滞留していない
         mockMvc.perform(get("/api/v1/internal/moderation/stale-check")
@@ -167,7 +167,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PENDING_REVIEW滞留チェック: 滞留あり")
+    @DisplayName("Spec#54 - PENDING_REVIEW滞留チェック: 滞留あり")
     void testStaleCheck_HasStale_ReturnsCount() throws Exception {
         // created_atをネイティブクエリで10分前に更新（updatable=falseのため）
         entityManager.createNativeQuery(
@@ -185,7 +185,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PENDING_REVIEW滞留チェック: 不正なAPIキー")
+    @DisplayName("Spec#54 - PENDING_REVIEW滞留チェック: 不正なAPIキー")
     void testStaleCheck_InvalidApiKey_Returns401() throws Exception {
         mockMvc.perform(get("/api/v1/internal/moderation/stale-check")
                 .header(API_KEY_HEADER, "invalid-key")
@@ -194,7 +194,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 存在しないS3キーでコールバック → 404")
+    @DisplayName("Spec#54 - 存在しないS3キーでコールバック → 404")
     void testModerationCallback_NonExistentS3Key_Returns404() throws Exception {
         Map<String, Object> request = Map.of(
                 "s3_object_key", "uploads/999/nonexistent.jpg",
@@ -210,7 +210,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PENDING_REVIEWでない写真は滞留チェックでカウントされない")
+    @DisplayName("Spec#54 - PENDING_REVIEWでない写真は滞留チェックでカウントされない")
     void testStaleCheck_NonPendingReview_NotCounted() throws Exception {
         // testPhotoをPUBLISHEDに変更
         testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_PUBLISHED);
@@ -232,7 +232,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - APIキーヘッダーなしでコールバック → 400")
+    @DisplayName("Spec#54 - APIキーヘッダーなしでコールバック → 400")
     void testModerationCallback_NoApiKeyHeader_Returns400() throws Exception {
         Map<String, Object> request = Map.of(
                 "s3_object_key", testPhoto.getS3ObjectKey(),
@@ -249,7 +249,7 @@ public class ModerationCallbackTest {
     // ===== 数値コードステータスのテスト =====
 
     @Test
-    @DisplayName("Issue#54 - 数値コードのステータス(1002) → PUBLISHED")
+    @DisplayName("Spec#54 - 数値コードのステータス(1002) → PUBLISHED")
     void testModerationCallback_NumericStatusPublished() throws Exception {
         Map<String, Object> request = Map.of(
                 "s3_object_key", testPhoto.getS3ObjectKey(),
@@ -268,7 +268,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 数値コードのステータス(1003) → QUARANTINED")
+    @DisplayName("Spec#54 - 数値コードのステータス(1003) → QUARANTINED")
     void testModerationCallback_NumericStatusQuarantined() throws Exception {
         Map<String, Object> request = Map.of(
                 "s3_object_key", testPhoto.getS3ObjectKey(),
@@ -286,10 +286,10 @@ public class ModerationCallbackTest {
         assertThat(updated.getModerationStatus()).isEqualTo(CodeConstants.MODERATION_STATUS_QUARANTINED);
     }
 
-    // ===== Issue#54: S3隔離フロー整合性テスト =====
+    // ===== Spec#54: S3隔離フロー整合性テスト =====
 
     @Test
-    @DisplayName("Issue#54 - QUARANTINEDコールバック時にs3_object_keyがquarantined/プレフィックス付きに更新される")
+    @DisplayName("Spec#54 - QUARANTINEDコールバック時にs3_object_keyがquarantined/プレフィックス付きに更新される")
     void testModerationCallback_Quarantined_S3ObjectKeyUpdated() throws Exception {
         Map<String, Object> request = Map.of(
                 "s3_object_key", testPhoto.getS3ObjectKey(),
@@ -308,7 +308,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PUBLISHEDコールバック時にs3_object_keyは変更されない")
+    @DisplayName("Spec#54 - PUBLISHEDコールバック時にs3_object_keyは変更されない")
     void testModerationCallback_Published_S3ObjectKeyUnchanged() throws Exception {
         String originalKey = testPhoto.getS3ObjectKey();
         Map<String, Object> request = Map.of(
@@ -327,10 +327,10 @@ public class ModerationCallbackTest {
         assertThat(updated.getS3ObjectKey()).isEqualTo(originalKey);
     }
 
-    // ===== Issue#54: プロフィール画像モデレーションテスト =====
+    // ===== Spec#54: プロフィール画像モデレーションテスト =====
 
     @Test
-    @DisplayName("Issue#54 - プロフィール画像: QUARANTINED → 画像リセット")
+    @DisplayName("Spec#54 - プロフィール画像: QUARANTINED → 画像リセット")
     void testModerationCallback_ProfileImage_Quarantined_ResetsImage() throws Exception {
         // Given: プロフィール画像を設定
         User user = userRepository.findByEmail("test@example.com").orElseThrow();
@@ -357,7 +357,7 @@ public class ModerationCallbackTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - プロフィール画像: PUBLISHED → 画像そのまま")
+    @DisplayName("Spec#54 - プロフィール画像: PUBLISHED → 画像そのまま")
     void testModerationCallback_ProfileImage_Published_KeepsImage() throws Exception {
         // Given: プロフィール画像を設定
         User user = userRepository.findByEmail("test@example.com").orElseThrow();

@@ -1,7 +1,7 @@
 package com.photlas.backend.dto;
 
 /**
- * Issue#136 Phase 5: キーワードランディングページのグリッド要素。
+ * Spec#136 Phase 5: キーワードランディングページのグリッド要素。
  *
  * <p>テンプレート ({@code tag-page.html}) で `photos` リストとして使う。</p>
  *

@@ -5,7 +5,7 @@ import { CookieConsentBanner } from './CookieConsentBanner'
 import i18n from '../i18n'
 
 /**
- * Issue#71: GDPR対応 Cookie同意バナーテスト
+ * Spec#71: GDPR対応 Cookie同意バナーテスト
  */
 
 const CONSENT_KEY = 'cookie_consent'
@@ -31,7 +31,7 @@ function renderBanner() {
   return result
 }
 
-describe('CookieConsentBanner - Issue#71 GDPR対応', () => {
+describe('CookieConsentBanner - Spec#71 GDPR対応', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     Object.keys(mockStorage).forEach(k => delete mockStorage[k])

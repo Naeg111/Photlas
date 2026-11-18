@@ -30,7 +30,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 /**
- * Issue#113 フェーズ 5 - LocationSuggestionService の 5 言語化テスト。
+ * Spec#113 フェーズ 5 - LocationSuggestionService の 5 言語化テスト。
  *
  * <p>3 メール（指摘通知 / 受け入れ通知 / 拒否通知）の言語別出力 +
  * グループ A (指摘通知: 失敗時 throw) / グループ C (受入・拒否: 失敗時 WARN ログ) を検証する。</p>
@@ -59,7 +59,7 @@ class LocationSuggestionMultiLanguageTest {
     // ========== 指摘通知 (グループ A: photo owner 宛) ==========
 
     @Test
-    @DisplayName("Issue#113 - 指摘通知 ja: 写真投稿者（ja）に日本語通知")
+    @DisplayName("Spec#113 - 指摘通知 ja: 写真投稿者（ja）に日本語通知")
     void suggestionNotificationJa() {
         User owner = seedUser("ja", "owner-ja@example.com");
         User suggester = seedUser("ja", "suggester-ja@example.com");
@@ -74,7 +74,7 @@ class LocationSuggestionMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 指摘通知 en: 写真投稿者（en）に英語通知")
+    @DisplayName("Spec#113 - 指摘通知 en: 写真投稿者（en）に英語通知")
     void suggestionNotificationEn() {
         User owner = seedUser("en", "owner-en@example.com");
         User suggester = seedUser("en", "suggester-en@example.com");
@@ -88,7 +88,7 @@ class LocationSuggestionMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 指摘通知 ko: ハングル件名")
+    @DisplayName("Spec#113 - 指摘通知 ko: ハングル件名")
     void suggestionNotificationKo() {
         User owner = seedUser("ko", "owner-ko@example.com");
         User suggester = seedUser("ja", "suggester-for-ko@example.com");
@@ -102,7 +102,7 @@ class LocationSuggestionMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 指摘通知 zh-CN: 簡体中文件名")
+    @DisplayName("Spec#113 - 指摘通知 zh-CN: 簡体中文件名")
     void suggestionNotificationZhCn() {
         User owner = seedUser("zh-CN", "owner-zhcn@example.com");
         User suggester = seedUser("ja", "suggester-for-zhcn@example.com");
@@ -123,7 +123,7 @@ class LocationSuggestionMultiLanguageTest {
     // 既存の boolean 戻り値ベースの挙動を維持する（実質グループ B/C の混合）。
     // ここでは念のため、メール送信失敗で createSuggestion が壊れないことを確認する。
     @Test
-    @DisplayName("Issue#113 - 指摘通知: メール送信失敗でも createSuggestion 自体は成功し、emailSent=false で記録")
+    @DisplayName("Spec#113 - 指摘通知: メール送信失敗でも createSuggestion 自体は成功し、emailSent=false で記録")
     void suggestionNotificationFailureFlagsEmailSentFalse() {
         User owner = seedUser("ja", "owner-fail@example.com");
         User suggester = seedUser("ja", "suggester-fail@example.com");

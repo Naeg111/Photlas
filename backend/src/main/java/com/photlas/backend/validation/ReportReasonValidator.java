@@ -7,8 +7,8 @@ import jakarta.validation.ConstraintValidatorContext;
 import java.util.Set;
 
 /**
- * Issue#19: 通報理由の数値コードを検証するバリデーター
- * Issue#87: 文字列Enum → 数値コードに変更
+ * Spec#19: 通報理由の数値コードを検証するバリデーター
+ * Spec#87: 文字列Enum → 数値コードに変更
  */
 public class ReportReasonValidator implements ConstraintValidator<ValidReportReason, Integer> {
 

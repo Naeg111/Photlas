@@ -8,7 +8,7 @@ import java.util.Optional;
 
 /**
  * パスワードリセットトークンのリポジトリ
- * Issue#6: パスワードリセット機能
+ * Spec#6: パスワードリセット機能
  */
 @Repository
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {

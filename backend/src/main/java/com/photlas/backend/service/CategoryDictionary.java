@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Issue#132: AWS Rekognition のラベル名 → Photlas カテゴリ/天候コードの辞書。
+ * Spec#132: AWS Rekognition のラベル名 → Photlas カテゴリ/天候コードの辞書。
  *
  * <p>{@link RekognitionLabelMapper} の辞書部分のみを切り出した不変データクラス。
  * 元クラスが 600 行超になり可読性が落ちていたため Phase 6 Refactor で分離した。</p>
@@ -28,7 +28,7 @@ final class CategoryDictionary {
     /**
      * Rekognition ラベル（小文字） → Photlas カテゴリコード配列。
      *
-     * <p>Issue#132 で網羅性を拡充し、約 270 エントリ規模。</p>
+     * <p>Spec#132 で網羅性を拡充し、約 270 エントリ規模。</p>
      */
     static final Map<String, List<Integer>> LABEL_TO_CATEGORIES = Map.ofEntries(
             // 自然風景 (201)
@@ -66,7 +66,7 @@ final class CategoryDictionary {
             Map.entry("cave", List.of(CodeConstants.CATEGORY_NATURE)),
             Map.entry("cavern", List.of(CodeConstants.CATEGORY_NATURE)),
             Map.entry("rainbow", List.of(CodeConstants.CATEGORY_NATURE)),
-            // Issue#159 ③-4: 夕日/朝日/夜明け/黄昏 は自然風景の判定対象から除外（タグも削除）
+            // Spec#159 ③-4: 夕日/朝日/夜明け/黄昏 は自然風景の判定対象から除外（タグも削除）
             Map.entry("horizon", List.of(CodeConstants.CATEGORY_NATURE)),
             Map.entry("island", List.of(CodeConstants.CATEGORY_NATURE)),
             Map.entry("bay", List.of(CodeConstants.CATEGORY_NATURE)),
@@ -137,9 +137,9 @@ final class CategoryDictionary {
             Map.entry("gate", List.of(CodeConstants.CATEGORY_ARCHITECTURE)),
             Map.entry("torii", List.of(CodeConstants.CATEGORY_ARCHITECTURE)),
             Map.entry("fence", List.of(CodeConstants.CATEGORY_ARCHITECTURE)),
-            // Issue#141 後追い: 「駅」は鉄道カテゴリではなく建造物カテゴリで判定する
+            // Spec#141 後追い: 「駅」は鉄道カテゴリではなく建造物カテゴリで判定する
             Map.entry("train station", List.of(CodeConstants.CATEGORY_ARCHITECTURE)),
-            // 夜景 (204) - Issue#132: 単独で 204 を成立させるラベル
+            // 夜景 (204) - Spec#132: 単独で 204 を成立させるラベル
             Map.entry("lighting", List.of(CodeConstants.CATEGORY_NIGHT_VIEW)),
             Map.entry("illumination", List.of(CodeConstants.CATEGORY_NIGHT_VIEW)),
             Map.entry("nightlife", List.of(CodeConstants.CATEGORY_NIGHT_VIEW)),
@@ -156,13 +156,13 @@ final class CategoryDictionary {
             Map.entry("coffee", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("sushi", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("ramen", List.of(CodeConstants.CATEGORY_GOURMET)),
-            // Issue#141 後追い (#5): udon / soba を追加（Rekognition 標準ラベル想定）
+            // Spec#141 後追い (#5): udon / soba を追加（Rekognition 標準ラベル想定）
             Map.entry("udon", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("soba", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("dessert", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("beverage", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("fruit", List.of(CodeConstants.CATEGORY_GOURMET)),
-            // Issue#141 後追い (#5): vegetable は削除
+            // Spec#141 後追い (#5): vegetable は削除
             Map.entry("pasta", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("pizza", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("sandwich", List.of(CodeConstants.CATEGORY_GOURMET)),
@@ -174,7 +174,7 @@ final class CategoryDictionary {
             Map.entry("pancake", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("waffle", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("salad", List.of(CodeConstants.CATEGORY_GOURMET)),
-            // Issue#141 後追い (#5): soup / noodle は削除
+            // Spec#141 後追い (#5): soup / noodle は削除
             Map.entry("curry", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("rice", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("cheese", List.of(CodeConstants.CATEGORY_GOURMET)),
@@ -207,12 +207,12 @@ final class CategoryDictionary {
             Map.entry("grape", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("strawberry", List.of(CodeConstants.CATEGORY_GOURMET)),
             Map.entry("lemon", List.of(CodeConstants.CATEGORY_GOURMET)),
-            // 植物 (206) - Issue#141 後追い (#4):
+            // 植物 (206) - Spec#141 後追い (#4):
             //   - 削除: tree/leaf/petal/vegetation/moss/bush/grass/lawn/blossom/bamboo/fern (11 件)
             //   - vineyard は 206 → 214 (その他) へ移動
             Map.entry("flower", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("plant", List.of(CodeConstants.CATEGORY_PLANTS)),
-            // Issue#159 ③-5: 庭園はレジャー・施設(215)へ付け替え
+            // Spec#159 ③-5: 庭園はレジャー・施設(215)へ付け替え
             Map.entry("garden", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
             Map.entry("branch", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("shrub", List.of(CodeConstants.CATEGORY_PLANTS)),
@@ -233,20 +233,20 @@ final class CategoryDictionary {
             Map.entry("sprout", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("hedge", List.of(CodeConstants.CATEGORY_PLANTS)),
             Map.entry("foliage", List.of(CodeConstants.CATEGORY_PLANTS)),
-            // Issue#159 ③-5: ぶどう畑(果樹園)はレジャー・施設(215)へ付け替え
+            // Spec#159 ③-5: ぶどう畑(果樹園)はレジャー・施設(215)へ付け替え
             Map.entry("vineyard", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
             // 動物 (207)
             Map.entry("animal", List.of(CodeConstants.CATEGORY_ANIMALS)),
-            // Issue#141 後追い (#3): owl/peacock/flamingo/penguin は野鳥 (208) → 動物 (207) のみに移動
+            // Spec#141 後追い (#3): owl/peacock/flamingo/penguin は野鳥 (208) → 動物 (207) のみに移動
             Map.entry("owl", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("peacock", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("flamingo", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("penguin", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("dog", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("cat", List.of(CodeConstants.CATEGORY_ANIMALS)),
-            // mammal: 直接ラベルとしては 207 にマッピングする（Issue#119 互換）。
-            // Issue#132 では「親ラベル」としての mammal を BLACKLISTED_PARENTS で除外する。
-            // Issue#141 後追い (#3): mammal/wildlife/pet は「動物全般 (animal)」に含めるため削除
+            // mammal: 直接ラベルとしては 207 にマッピングする（Spec#119 互換）。
+            // Spec#132 では「親ラベル」としての mammal を BLACKLISTED_PARENTS で除外する。
+            // Spec#141 後追い (#3): mammal/wildlife/pet は「動物全般 (animal)」に含めるため削除
             Map.entry("fox", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("bear", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("deer", List.of(CodeConstants.CATEGORY_ANIMALS)),
@@ -281,14 +281,14 @@ final class CategoryDictionary {
             Map.entry("alligator", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("frog", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("insect", List.of(CodeConstants.CATEGORY_ANIMALS)),
-            // Issue#141 後追い (#3): butterfly は削除
+            // Spec#141 後追い (#3): butterfly は削除
             Map.entry("bee", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("dragonfly", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("puppy", List.of(CodeConstants.CATEGORY_ANIMALS)),
             Map.entry("kitten", List.of(CodeConstants.CATEGORY_ANIMALS)),
-            // Issue#159 ③-21: オウム・インコは野鳥(208)へ付け替え
+            // Spec#159 ③-21: オウム・インコは野鳥(208)へ付け替え
             Map.entry("parrot", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
-            // 野鳥 (208) - Issue#141 後追い (#3): 207 (動物) を外して 208 のみへ
+            // 野鳥 (208) - Spec#141 後追い (#3): 207 (動物) を外して 208 のみへ
             // owl/peacock/flamingo/penguin は上の動物セクションへ移動 (CATEGORY_ANIMALS のみ)
             // crow/goose/duck/seagull/pigeon は tag 削除に合わせて削除
             Map.entry("bird", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
@@ -307,7 +307,7 @@ final class CategoryDictionary {
             Map.entry("kingfisher", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
             Map.entry("swan", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
             Map.entry("dove", List.of(CodeConstants.CATEGORY_WILD_BIRDS)),
-            // 自動車 (209) - Issue#141 後追い (#3): vehicle/sedan/convertible/taxi は削除
+            // 自動車 (209) - Spec#141 後追い (#3): vehicle/sedan/convertible/taxi は削除
             Map.entry("car", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("automobile", List.of(CodeConstants.CATEGORY_CARS)),
             Map.entry("suv", List.of(CodeConstants.CATEGORY_CARS)),
@@ -334,7 +334,7 @@ final class CategoryDictionary {
             Map.entry("bullet train", List.of(CodeConstants.CATEGORY_RAILWAYS)),
             Map.entry("streetcar", List.of(CodeConstants.CATEGORY_RAILWAYS)),
             Map.entry("trolley", List.of(CodeConstants.CATEGORY_RAILWAYS)),
-            // 飛行機 (212) - Issue#141 後追い (#3): aircraft tag は削除済だが、
+            // 飛行機 (212) - Spec#141 後追い (#3): aircraft tag は削除済だが、
             // Rekognition の "Aircraft" ラベルは引き続き 212 に判定する (「飛行機全般に含める」の意図)
             Map.entry("aircraft", List.of(CodeConstants.CATEGORY_AIRCRAFT)),
             Map.entry("airplane", List.of(CodeConstants.CATEGORY_AIRCRAFT)),
@@ -351,9 +351,9 @@ final class CategoryDictionary {
             Map.entry("galaxy", List.of(CodeConstants.CATEGORY_STARRY_SKY)),
             Map.entry("constellation", List.of(CodeConstants.CATEGORY_STARRY_SKY)),
             Map.entry("nebula", List.of(CodeConstants.CATEGORY_STARRY_SKY)),
-            // Issue#141 後追い (#3): astronomy は削除
+            // Spec#141 後追い (#3): astronomy は削除
             Map.entry("aurora", List.of(CodeConstants.CATEGORY_STARRY_SKY)),
-            // ================= Issue#159 追加分 =================
+            // ================= Spec#159 追加分 =================
             // ③-5 レジャー・施設 (215)。既存の garden(→215)/vineyard(→215) は上で付け替え済み。
             Map.entry("park", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
             Map.entry("hot spring", List.of(CodeConstants.CATEGORY_LEISURE_FACILITY)),
@@ -428,7 +428,7 @@ final class CategoryDictionary {
     );
 
     /**
-     * Issue#132 3.2: 親ラベル検索の対象外とする「広すぎる」「人間を含む」ラベル群（小文字）。
+     * Spec#132 3.2: 親ラベル検索の対象外とする「広すぎる」「人間を含む」ラベル群（小文字）。
      *
      * <p>人間が含まれる概念や、ほぼ全ての屋外写真にヒットしてしまう汎用ラベルを除外することで、
      * 親フォールバックによる誤マッピング（例: 人物写真に動物カテゴリが付く）を防ぐ。</p>

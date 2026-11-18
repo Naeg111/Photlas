@@ -86,7 +86,7 @@ describe('UsernameSetupDialog', () => {
     })
   })
 
-  // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+  // Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
   const serverError = () =>
     new Response(
       JSON.stringify({ code: 'INTERNAL_ERROR', message: 'サーバーエラーが発生しました' }),
@@ -107,7 +107,7 @@ describe('UsernameSetupDialog', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  it('Issue#93 - 英語の設定では API エラーが英語で表示される', async () => {
+  it('Spec#93 - 英語の設定では API エラーが英語で表示される', async () => {
     mockFetch.mockResolvedValueOnce(serverError())
     await i18n.changeLanguage('en')
     try {

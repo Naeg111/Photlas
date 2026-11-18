@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react'
 
 /**
  * ダイアログ名の型定義
- * Issue#28: App.tsx再構築 - Refactor段階
+ * Spec#28: App.tsx再構築 - Refactor段階
  */
 export type DialogName =
   | 'filterPanel'
@@ -10,7 +10,7 @@ export type DialogName =
   | 'loginRequired'
   | 'login'
   | 'signUp'
-  // Issue#104: 'signUpMethod' / 'oauthSignUp' を削除（新規登録フロー簡素化）
+  // Spec#104: 'signUpMethod' / 'oauthSignUp' を削除（新規登録フロー簡素化）
   | 'terms'
   | 'privacy'
   | 'passwordReset'
@@ -21,7 +21,7 @@ export type DialogName =
   | 'lightbox'
   | 'wantToGoList'
   | 'about'
-  // Issue#114: メニュー再構成（操作方法・お問い合わせダイアログ）
+  // Spec#114: メニュー再構成（操作方法・お問い合わせダイアログ）
   | 'howToUse'
   | 'contact'
   | 'placeSearch'
@@ -61,7 +61,7 @@ const INITIAL_STATE: DialogState = {
   loginRequired: false,
   login: false,
   signUp: false,
-  // Issue#104: signUpMethod / oauthSignUp を削除
+  // Spec#104: signUpMethod / oauthSignUp を削除
   terms: false,
   privacy: false,
   passwordReset: false,
@@ -72,7 +72,7 @@ const INITIAL_STATE: DialogState = {
   lightbox: false,
   wantToGoList: false,
   about: false,
-  // Issue#114
+  // Spec#114
   howToUse: false,
   contact: false,
   placeSearch: false,

@@ -12,7 +12,7 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#99 Phase 1 - Google OAuth スコープ設定検証。
+ * Spec#99 Phase 1 - Google OAuth スコープ設定検証。
  *
  * <p>本番公開申請に向けて Google OAuth のスコープを最小権限の {@code email} のみに
  * 限定する（{@code profile} を削除）。実装上 {@code CustomOAuth2UserService} は
@@ -36,7 +36,7 @@ class GoogleOAuthScopeConfigurationTest {
             Paths.get("src/main/resources/application-prod.properties");
 
     @Test
-    @DisplayName("Issue#99 Phase 1: ステージング環境の Google scope は email のみであること")
+    @DisplayName("Spec#99 Phase 1: ステージング環境の Google scope は email のみであること")
     void stagingGoogleScopeIsEmailOnly() throws IOException {
         Properties properties = loadProperties(STAGING_PROPERTIES);
 
@@ -46,7 +46,7 @@ class GoogleOAuthScopeConfigurationTest {
     }
 
     @Test
-    @DisplayName("Issue#99 Phase 1: 本番環境の Google scope は email のみであること")
+    @DisplayName("Spec#99 Phase 1: 本番環境の Google scope は email のみであること")
     void prodGoogleScopeIsEmailOnly() throws IOException {
         Properties properties = loadProperties(PROD_PROPERTIES);
 

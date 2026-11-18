@@ -5,7 +5,7 @@ import { InlineMapPicker, DEFAULT_CENTER } from './InlineMapPicker'
 import i18n from '../i18n'
 
 /**
- * Issue#53: Google Maps API から Mapbox API への移行
+ * Spec#53: Google Maps API から Mapbox API への移行
  * InlineMapPicker の Mapbox 移行テスト（センタリングのみ方式）
  *
  * 移行後の動作:
@@ -73,7 +73,7 @@ vi.mock('@mapbox/search-js-core', () => ({
   SessionToken: vi.fn(),
 }))
 
-// Issue#106: IP国判定キャッシュのモック
+// Spec#106: IP国判定キャッシュのモック
 const { mockGetGeoCountryCacheIMP } = vi.hoisted(() => ({
   mockGetGeoCountryCacheIMP: vi.fn(),
 }))
@@ -84,7 +84,7 @@ vi.mock('../utils/geoCountryCache', () => ({
   GEO_COUNTRY_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
 }))
 
-// Issue#111: ユーザー位置情報キャッシュのモック
+// Spec#111: ユーザー位置情報キャッシュのモック
 const { mockGetLastGeolocationCacheIMP } = vi.hoisted(() => ({
   mockGetLastGeolocationCacheIMP: vi.fn(),
 }))
@@ -95,7 +95,7 @@ vi.mock('../utils/lastGeolocationCache', () => ({
   LAST_GEOLOCATION_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
 }))
 
-describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
+describe('InlineMapPicker - Spec#53: Mapbox移行', () => {
   const defaultProps = {
     position: null as { lat: number; lng: number } | null,
     onPositionChange: vi.fn(),
@@ -194,7 +194,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       )
     })
 
-    it('検索候補選択時は暗転ワープ（jumpTo）で移動する（Issue#158: 常にワープ）', async () => {
+    it('検索候補選択時は暗転ワープ（jumpTo）で移動する（Spec#158: 常にワープ）', async () => {
       mockSuggest.mockResolvedValue({
         suggestions: [
           {
@@ -351,10 +351,10 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   })
 
   // ============================================================
-  // Issue#76: ピン色のカスタマイズ
+  // Spec#76: ピン色のカスタマイズ
   // ============================================================
 
-  describe('Issue#76: ピン色のカスタマイズ', () => {
+  describe('Spec#76: ピン色のカスタマイズ', () => {
     it('pinColor未指定時はデフォルトの赤色ピンが表示される', () => {
       render(<InlineMapPicker {...defaultProps} />)
 
@@ -373,10 +373,10 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   })
 
   // ============================================================
-  // Issue#76: 追加マーカー
+  // Spec#76: 追加マーカー
   // ============================================================
 
-  describe('Issue#76: 追加マーカー', () => {
+  describe('Spec#76: 追加マーカー', () => {
     it('markers propで追加マーカーが表示される', () => {
       const markers = [
         { lat: 35.6585, lng: 139.7454, color: '#EF4444' },
@@ -559,7 +559,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
     })
   })
 
-  describe('Issue#158: 常にワープ / 能動選択の通知', () => {
+  describe('Spec#158: 常にワープ / 能動選択の通知', () => {
     it('目標が現在の表示とほぼ同じ場合は何もしない（jumpTo も flyTo も呼ばない）', async () => {
       mockSuggest.mockResolvedValue({ suggestions: [] })
       // 現在の中心（mockMap.getCenter＝139.6503,35.6762）とほぼ同じ座標を返す
@@ -643,7 +643,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
     })
   })
 
-  describe('Issue#106: 初期表示位置のフォールバック', () => {
+  describe('Spec#106: 初期表示位置のフォールバック', () => {
     let originalGeolocation: Geolocation | undefined
     let originalPermissions: Permissions | undefined
 
@@ -668,7 +668,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       }
     })
 
-    it('Issue#106 - position プロパティがない場合、IP国判定キャッシュの座標を使用する', () => {
+    it('Spec#106 - position プロパティがない場合、IP国判定キャッシュの座標を使用する', () => {
       // permissions.query が denied を返す（ブラウザ位置情報を使わない）
       Object.defineProperty(navigator, 'permissions', {
         value: {
@@ -685,7 +685,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       expect(mockGetGeoCountryCacheIMP).toHaveBeenCalled()
     })
 
-    it('Issue#106 - position プロパティ・キャッシュ・許可すべてなしの場合、東京駅にフォールバック', async () => {
+    it('Spec#106 - position プロパティ・キャッシュ・許可すべてなしの場合、東京駅にフォールバック', async () => {
       Object.defineProperty(navigator, 'permissions', {
         value: {
           query: vi.fn().mockResolvedValue({ state: 'denied' }),
@@ -702,7 +702,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       expect(DEFAULT_CENTER.lng).toBeCloseTo(139.7671, 3)
     })
 
-    it('Issue#106 - permissions.query が例外を投げてもクラッシュせず動作する（Safari 15以前対策）', async () => {
+    it('Spec#106 - permissions.query が例外を投げてもクラッシュせず動作する（Safari 15以前対策）', async () => {
       Object.defineProperty(navigator, 'permissions', {
         value: {
           query: vi.fn().mockRejectedValue(new Error('Not supported')),
@@ -720,7 +720,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
     })
   })
 
-  describe('Issue#111: 最後の位置情報キャッシュの優先利用', () => {
+  describe('Spec#111: 最後の位置情報キャッシュの優先利用', () => {
     let originalGeolocation: Geolocation | undefined
     let originalPermissions: Permissions | undefined
 
@@ -752,7 +752,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       }
     })
 
-    it('Issue#111 - InlineMapPicker は getLastGeolocationCache を呼び出す', () => {
+    it('Spec#111 - InlineMapPicker は getLastGeolocationCache を呼び出す', () => {
       mockGetLastGeolocationCacheIMP.mockReturnValue(null)
       mockGetGeoCountryCacheIMP.mockReturnValue(null)
 
@@ -761,7 +761,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       expect(mockGetLastGeolocationCacheIMP).toHaveBeenCalled()
     })
 
-    it('Issue#111 - 位置情報キャッシュがヒットすると、その座標が initialViewState に渡される', () => {
+    it('Spec#111 - 位置情報キャッシュがヒットすると、その座標が initialViewState に渡される', () => {
       // キャッシュに大阪の座標
       mockGetLastGeolocationCacheIMP.mockReturnValue({ lat: 34.6937, lng: 135.5023 })
       // 国判定キャッシュは JP（大阪より優先順位が低い）
@@ -775,7 +775,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       expect(mockGetLastGeolocationCacheIMP).toHaveBeenCalled()
     })
 
-    it('Issue#111 - 位置情報キャッシュ優先順位: position > lastGeolocationCache > IP国判定キャッシュ > 東京駅', () => {
+    it('Spec#111 - 位置情報キャッシュ優先順位: position > lastGeolocationCache > IP国判定キャッシュ > 東京駅', () => {
       // EXIF 座標（position）が指定されている場合、lastGeolocationCache は呼ばれない
       mockGetLastGeolocationCacheIMP.mockReturnValue({ lat: 34.6937, lng: 135.5023 })
       mockGetGeoCountryCacheIMP.mockReturnValue('JP')
@@ -791,7 +791,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       expect(mockGetGeoCountryCacheIMP).not.toHaveBeenCalled()
     })
 
-    it('Issue#111 - 位置情報キャッシュが null のとき、IP国判定キャッシュにフォールバックする', () => {
+    it('Spec#111 - 位置情報キャッシュが null のとき、IP国判定キャッシュにフォールバックする', () => {
       mockGetLastGeolocationCacheIMP.mockReturnValue(null)
       mockGetGeoCountryCacheIMP.mockReturnValue('JP')
 
@@ -804,18 +804,18 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
   })
 
   // ============================================================
-  // Issue#107: マップの地名ラベルを表示言語と連動させる
+  // Spec#107: マップの地名ラベルを表示言語と連動させる
   // 表示言語を切り替えると map.setLanguage(newLang) が呼ばれ、
   // マップ上の地名ラベルが新しい言語で表示されることを検証する
   // ============================================================
-  describe('Issue#107: 表示言語と連動するマップ言語', () => {
+  describe('Spec#107: 表示言語と連動するマップ言語', () => {
     afterEach(async () => {
       // i18n.changeLanguage は内部的に Promise を解決するため real timer に切り替えてから戻す
       vi.useRealTimers()
       await i18n.changeLanguage('ja')
     })
 
-    it('Issue#107 - 言語を ja → en に切り替えると map.setLanguage("en") が呼ばれる', async () => {
+    it('Spec#107 - 言語を ja → en に切り替えると map.setLanguage("en") が呼ばれる', async () => {
       vi.useRealTimers()
       await i18n.changeLanguage('ja')
 
@@ -832,7 +832,7 @@ describe('InlineMapPicker - Issue#53: Mapbox移行', () => {
       expect(mockMap.setLanguage).toHaveBeenCalledWith('en')
     })
 
-    it('Issue#107 - 言語を ja → zh-TW に切り替えると map.setLanguage("zh-Hant") が呼ばれる（Mapbox言語コードに変換）', async () => {
+    it('Spec#107 - 言語を ja → zh-TW に切り替えると map.setLanguage("zh-Hant") が呼ばれる（Mapbox言語コードに変換）', async () => {
       vi.useRealTimers()
       await i18n.changeLanguage('ja')
 

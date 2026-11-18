@@ -1,5 +1,5 @@
 /**
- * Issue#143: staging サイト全体 noindex の build 時注入ヘルパーのテスト。
+ * Spec#143: staging サイト全体 noindex の build 時注入ヘルパーのテスト。
  */
 import { describe, it, expect } from 'vitest'
 import { injectSiteNoindex, SITE_NOINDEX_META } from './siteNoindex'

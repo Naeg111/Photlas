@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Issue#54: サイトマップインデックス方式生成コントローラー
+ * Spec#54: サイトマップインデックス方式生成コントローラー
  * 検索エンジン向けにXML形式のサイトマップを返す
  */
 @RestController
@@ -33,7 +33,7 @@ public class SitemapController {
     @Value("${app.backend-url:https://api.photlas.jp}")
     private String backendUrl;
 
-    /** Issue#135: キーワードランディングページのサポート言語。 */
+    /** Spec#135: キーワードランディングページのサポート言語。 */
     private static final java.util.List<String> TAG_PAGE_SUPPORTED_LANGS =
             java.util.List.of("en", "ja", "zh", "ko", "es");
 
@@ -77,7 +77,7 @@ public class SitemapController {
             sb.append("  </sitemap>\n");
         }
 
-        // Issue#135: キーワードランディングページのサイトマップ
+        // Spec#135: キーワードランディングページのサイトマップ
         sb.append("  <sitemap>\n");
         sb.append("    <loc>").append(frontendUrl).append("/api/v1/sitemap-tags.xml</loc>\n");
         sb.append("  </sitemap>\n");
@@ -87,12 +87,12 @@ public class SitemapController {
     }
 
     /**
-     * Issue#135: キーワードランディングページのサイトマップ。
+     * Spec#135: キーワードランディングページのサイトマップ。
      *
      * <p>{@code is_active=TRUE} かつ公開写真が
      * {@link TagPageController#MIN_INDEXABLE_PHOTO_COUNT} 枚以上あるキーワード × 5 言語の URL を含める。</p>
      *
-     * <p>Issue#150: 写真 0 件のキーワードは除外する。空ページを大量に申告すると Google に
+     * <p>Spec#150: 写真 0 件のキーワードは除外する。空ページを大量に申告すると Google に
      * 「ソフト404 / 薄いコンテンツ」と判定され、サイト全体のクロール評価が下がるため
      * （タグページ側でも同じしきい値で {@code noindex} を出力する）。写真件数は
      * {@link PhotoTagRepository#countActivePublishedGroupedByTagId} で 1 クエリ取得し N+1 を避ける。</p>
@@ -141,7 +141,7 @@ public class SitemapController {
         sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
 
         appendUrl(sb, frontendUrl + "/", "daily", "1.0");
-        // Issue#106 修正: React Router のルート定義（/terms-of-service, /privacy-policy）と一致させる。
+        // Spec#106 修正: React Router のルート定義（/terms-of-service, /privacy-policy）と一致させる。
         // 旧 URL（/terms, /privacy）はキャッチオールルートに該当して NotFoundPage が表示されるため、
         // Search Console から「ページにリダイレクトがあります」として警告されていた。
         appendUrl(sb, frontendUrl + "/terms-of-service", "monthly", "0.3");

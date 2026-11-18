@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Issue#93: 言語設定変更API テスト
+ * Spec#93: 言語設定変更API テスト
  * PUT /api/v1/users/me/language
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
@@ -76,7 +76,7 @@ public class LanguageSettingsTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"ja", "en", "ko", "zh-CN", "zh-TW"})
-    @DisplayName("Issue#93 - 有効な言語コードで言語設定が更新される")
+    @DisplayName("Spec#93 - 有効な言語コードで言語設定が更新される")
     void testUpdateLanguage_ValidLanguage_ReturnsOk(String language) throws Exception {
         mockMvc.perform(put("/api/v1/users/me/language")
                 .header("Authorization", "Bearer " + jwtToken)
@@ -90,7 +90,7 @@ public class LanguageSettingsTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"fr", "de", "th", "es", "invalid", ""})
-    @DisplayName("Issue#93 - 無効な言語コードは400エラーで拒否される")
+    @DisplayName("Spec#93 - 無効な言語コードは400エラーで拒否される")
     void testUpdateLanguage_InvalidLanguage_ReturnsBadRequest(String language) throws Exception {
         mockMvc.perform(put("/api/v1/users/me/language")
                 .header("Authorization", "Bearer " + jwtToken)
@@ -104,7 +104,7 @@ public class LanguageSettingsTest {
     }
 
     @Test
-    @DisplayName("Issue#93 - 未認証ユーザーは言語設定を変更できない")
+    @DisplayName("Spec#93 - 未認証ユーザーは言語設定を変更できない")
     void testUpdateLanguage_Unauthenticated_ReturnsUnauthorized() throws Exception {
         mockMvc.perform(put("/api/v1/users/me/language")
                 .contentType(MediaType.APPLICATION_JSON)

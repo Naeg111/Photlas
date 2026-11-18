@@ -1,7 +1,7 @@
 import type { KeywordTag } from '../components/KeywordSection'
 
 /**
- * Issue#159: 複数タグ→1表示名グルーピング。
+ * Spec#159: 複数タグ→1表示名グルーピング。
  * 同一カテゴリー内で同じ表示名を持つ同義タグ（例 Farm/Ranch/Pasture=「牧場」、
  * Lighting/Illumination=「イルミネーション」）を 1 グループに畳み込む。
  */

@@ -48,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (email != null
                         && SecurityContextHolder.getContext().getAuthentication() == null
                         && jwtService.isTokenValid(token, email)) {
-                    // Issue#54: JWTからロール情報を抽出してAuthorityに設定
+                    // Spec#54: JWTからロール情報を抽出してAuthorityに設定
                     String role = jwtService.extractRole(token);
                     List<SimpleGrantedAuthority> authorities = List.of(
                             new SimpleGrantedAuthority("ROLE_" + role)

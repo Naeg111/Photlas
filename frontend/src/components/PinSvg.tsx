@@ -1,6 +1,6 @@
 /**
  * PinSvg コンポーネント
- * Issue#53: Mapbox移行に伴うリファクタリングで共通化
+ * Spec#53: Mapbox移行に伴うリファクタリングで共通化
  *
  * 地図上のピンSVGを描画する共通コンポーネント
  * MapView（クラスタ・個別・撮影地点）とPhotoDetailDialog（ミニマップ）で使用

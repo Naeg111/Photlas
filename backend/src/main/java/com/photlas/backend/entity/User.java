@@ -29,7 +29,7 @@ public class User {
     @Email
     private String email;
 
-    // Issue#81: OAuth のみユーザーは password_hash が null になる（V22 で NULLABLE 化）
+    // Spec#81: OAuth のみユーザーは password_hash が null になる（V22 で NULLABLE 化）
     @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
@@ -63,31 +63,31 @@ public class User {
     @Column(name = "language", nullable = false, length = 5)
     private String language = "ja";
 
-    // Issue#81: OAuth 初回ログイン時に仮表示名を設定し、確定画面でフラグを false にする
+    // Spec#81: OAuth 初回ログイン時に仮表示名を設定し、確定画面でフラグを false にする
     @Column(name = "username_temporary", nullable = false)
     private boolean usernameTemporary = false;
 
-    // Issue#81 / Q8: パスワード推奨バナーを却下した時刻（7 日間非表示用）
+    // Spec#81 / Q8: パスワード推奨バナーを却下した時刻（7 日間非表示用）
     @Column(name = "password_recommendation_dismissed_at")
     private LocalDateTime passwordRecommendationDismissedAt;
 
-    // Issue#104: 利用規約への同意日時（NULL の場合は未同意）
+    // Spec#104: 利用規約への同意日時（NULL の場合は未同意）
     @Column(name = "terms_agreed_at")
     private LocalDateTime termsAgreedAt;
 
-    // Issue#104: プライバシーポリシーへの同意日時（NULL の場合は未同意）
+    // Spec#104: プライバシーポリシーへの同意日時（NULL の場合は未同意）
     @Column(name = "privacy_policy_agreed_at")
     private LocalDateTime privacyPolicyAgreedAt;
 
-    // Issue#109: 年齢確認（13 歳以上）の自己申告日時（NULL の場合は未確認）
+    // Spec#109: 年齢確認（13 歳以上）の自己申告日時（NULL の場合は未確認）
     @Column(name = "age_confirmed_at")
     private LocalDateTime ageConfirmedAt;
 
-    // Issue#108: 最後にデータエクスポートが正常完了した日時（頻度制限用、未エクスポートなら null）
+    // Spec#108: 最後にデータエクスポートが正常完了した日時（頻度制限用、未エクスポートなら null）
     @Column(name = "last_exported_at")
     private LocalDateTime lastExportedAt;
 
-    // Issue#108: データエクスポート進行中フラグ（同時実行制御用、開始時セット・完了/失敗時クリア）
+    // Spec#108: データエクスポート進行中フラグ（同時実行制御用、開始時セット・完了/失敗時クリア）
     @Column(name = "export_in_progress_at")
     private LocalDateTime exportInProgressAt;
 

@@ -73,7 +73,7 @@ public class PhotoController {
     }
 
     /**
-     * Issue#122: 写真詳細をバッチ取得する。
+     * Spec#122: 写真詳細をバッチ取得する。
      *
      * 写真詳細ダイアログの prefetch を 1 リクエストに集約するための専用エンドポイント。
      * 認可されていない photoId は silent skip し、認可された写真だけ配列で返す。
@@ -94,7 +94,7 @@ public class PhotoController {
 
     /**
      * 写真アップロード用の署名付きURLを取得する
-     * Issue#9: 写真アップロード処理
+     * Spec#9: 写真アップロード処理
      *
      * @param request リクエストボディ（extension, contentType）
      * @param authentication 認証情報
@@ -114,7 +114,7 @@ public class PhotoController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
-        // Issue#131: crop 情報がリクエストにあれば S3 metadata 経由で Lambda に渡す
+        // Spec#131: crop 情報がリクエストにあれば S3 metadata 経由で Lambda に渡す
         S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(
                 "uploads",
                 user.getId(),
@@ -130,7 +130,7 @@ public class PhotoController {
     }
 
     /**
-     * Issue#54: 写真のモデレーションステータスを取得する（ポーリング用）
+     * Spec#54: 写真のモデレーションステータスを取得する（ポーリング用）
      *
      * @param photoId 写真ID
      * @param authentication 認証情報
@@ -156,7 +156,7 @@ public class PhotoController {
     }
 
     /**
-     * Issue#61: 写真メタデータを更新する
+     * Spec#61: 写真メタデータを更新する
      *
      * @param photoId 写真ID
      * @param request 更新リクエスト
@@ -175,7 +175,7 @@ public class PhotoController {
     }
 
     /**
-     * Issue#57: ユーザーが自分の写真を削除する
+     * Spec#57: ユーザーが自分の写真を削除する
      *
      * @param photoId 写真ID
      * @param authentication 認証情報

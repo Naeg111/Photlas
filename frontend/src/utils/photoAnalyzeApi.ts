@@ -1,5 +1,5 @@
 /**
- * Issue#119: 写真の AI 解析 API クライアント。
+ * Spec#119: 写真の AI 解析 API クライアント。
  *
  * `POST /api/v1/photos/analyze` を呼び出し、推定カテゴリ・天候・analyzeToken を取得する。
  * フロントは analyzeToken を保持し、投稿時に送り返すことで AI 結果を再取得できる。
@@ -30,16 +30,16 @@ export interface PhotoAnalyzeResponse {
   weather: number | null
   confidence: Record<string, number>
   analyzeToken: string | null
-  /** Issue#132: 親ラベル経由でマッピングが成立した発火イベント一覧 */
+  /** Spec#132: 親ラベル経由でマッピングが成立した発火イベント一覧 */
   parentFallbacks: ParentFallback[]
-  /** Issue#132: EXIF ベースの補正ルール R1〜R5 の発火イベント一覧 */
+  /** Spec#132: EXIF ベースの補正ルール R1〜R5 の発火イベント一覧 */
   exifRulesFired: ExifRuleFire[]
-  /** Issue#135: AI 提案キーワード（直接マッチのみ、最大 10 件） */
+  /** Spec#135: AI 提案キーワード（直接マッチのみ、最大 10 件） */
   suggestedTags: SuggestedTag[]
 }
 
 /**
- * Issue#142: 解析時にカテゴリ判定の EXIF ルール（R1〜R5 / R3.5）へ渡す EXIF 値。
+ * Spec#142: 解析時にカテゴリ判定の EXIF ルール（R1〜R5 / R3.5）へ渡す EXIF 値。
  * 解析用画像は canvas 再エンコードで EXIF が剥がれるため、必要な値だけを別送する。
  * GPS 緯度経度は送らない。
  */
@@ -55,7 +55,7 @@ export interface AnalyzeExifFields {
 export interface AnalyzePhotoOptions {
   /** タイムアウトやユーザーキャンセル用の AbortSignal */
   signal?: AbortSignal
-  /** Issue#142: 解析に渡す EXIF 値（任意。EXIF が無ければ省略） */
+  /** Spec#142: 解析に渡す EXIF 値（任意。EXIF が無ければ省略） */
   exif?: AnalyzeExifFields
 }
 
@@ -76,7 +76,7 @@ export async function analyzePhoto(
   // multipart の file パート名はバックエンド @RequestParam("file") と揃える
   formData.append('file', file, 'photo.jpg')
 
-  // Issue#142: EXIF 値をフォーム値として別送（バックエンド @RequestParam と名前を揃える）。
+  // Spec#142: EXIF 値をフォーム値として別送（バックエンド @RequestParam と名前を揃える）。
   // 値はバックエンドで再検証され、解析中のみ使用・非保存。
   const exif = options.exif
   if (exif) {

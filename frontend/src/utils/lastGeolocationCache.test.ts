@@ -1,5 +1,5 @@
 /**
- * Issue#111: ユーザーの最後の位置情報キャッシュのテスト
+ * Spec#111: ユーザーの最後の位置情報キャッシュのテスト
  *
  * 注意: テスト全体の setup（src/test/setup.ts）で localStorage を vi.fn() でモック化しているため、
  *       本テスト内では Map ベースの実用的なストア実装で localStorage を上書きする。
@@ -12,7 +12,7 @@ import {
   LAST_GEOLOCATION_CACHE_TTL_MS,
 } from './lastGeolocationCache'
 
-describe('lastGeolocationCache - Issue#111', () => {
+describe('lastGeolocationCache - Spec#111', () => {
   let store: Map<string, string>
 
   beforeEach(() => {
@@ -43,16 +43,16 @@ describe('lastGeolocationCache - Issue#111', () => {
     vi.useRealTimers()
   })
 
-  it('Issue#111 - キャッシュ保存後、同じ座標が読み出せる', () => {
+  it('Spec#111 - キャッシュ保存後、同じ座標が読み出せる', () => {
     setLastGeolocationCache(35.6585, 139.7454)
     expect(getLastGeolocationCache()).toEqual({ lat: 35.6585, lng: 139.7454 })
   })
 
-  it('Issue#111 - キャッシュが存在しない場合 null を返す', () => {
+  it('Spec#111 - キャッシュが存在しない場合 null を返す', () => {
     expect(getLastGeolocationCache()).toBeNull()
   })
 
-  it('Issue#111 - 24時間（TTL）以内のキャッシュは有効', () => {
+  it('Spec#111 - 24時間（TTL）以内のキャッシュは有効', () => {
     setLastGeolocationCache(35.6585, 139.7454)
 
     // 23時間59分後 → 有効
@@ -60,7 +60,7 @@ describe('lastGeolocationCache - Issue#111', () => {
     expect(getLastGeolocationCache()).toEqual({ lat: 35.6585, lng: 139.7454 })
   })
 
-  it('Issue#111 - 24時間経過後のキャッシュは期限切れとして null を返す', () => {
+  it('Spec#111 - 24時間経過後のキャッシュは期限切れとして null を返す', () => {
     setLastGeolocationCache(35.6585, 139.7454)
 
     // 24時間1秒後 → 期限切れ
@@ -68,20 +68,20 @@ describe('lastGeolocationCache - Issue#111', () => {
     expect(getLastGeolocationCache()).toBeNull()
   })
 
-  it('Issue#111 - キャッシュキーが規約通り（photlas_last_geolocation）', () => {
+  it('Spec#111 - キャッシュキーが規約通り（photlas_last_geolocation）', () => {
     expect(LAST_GEOLOCATION_CACHE_KEY).toBe('photlas_last_geolocation')
   })
 
-  it('Issue#111 - TTLが24時間（86400000ms）', () => {
+  it('Spec#111 - TTLが24時間（86400000ms）', () => {
     expect(LAST_GEOLOCATION_CACHE_TTL_MS).toBe(24 * 60 * 60 * 1000)
   })
 
-  it('Issue#111 - 不正なJSONがキャッシュにある場合は null を返す（クラッシュしない）', () => {
+  it('Spec#111 - 不正なJSONがキャッシュにある場合は null を返す（クラッシュしない）', () => {
     localStorage.setItem(LAST_GEOLOCATION_CACHE_KEY, 'invalid-json{{{')
     expect(getLastGeolocationCache()).toBeNull()
   })
 
-  it('Issue#111 - lat/lng の型が壊れている場合は null を返す', () => {
+  it('Spec#111 - lat/lng の型が壊れている場合は null を返す', () => {
     localStorage.setItem(
       LAST_GEOLOCATION_CACHE_KEY,
       JSON.stringify({ lat: 'oops', lng: 139.7454, timestamp: Date.now() }),
@@ -89,7 +89,7 @@ describe('lastGeolocationCache - Issue#111', () => {
     expect(getLastGeolocationCache()).toBeNull()
   })
 
-  it('Issue#111 - localStorage 書き込みに失敗してもクラッシュしない', () => {
+  it('Spec#111 - localStorage 書き込みに失敗してもクラッシュしない', () => {
     const original = (global as unknown as { localStorage: Storage }).localStorage
     Object.defineProperty(global, 'localStorage', {
       value: {
@@ -105,7 +105,7 @@ describe('lastGeolocationCache - Issue#111', () => {
     expect(() => setLastGeolocationCache(35.6585, 139.7454)).not.toThrow()
   })
 
-  it('Issue#111 - 後から保存した座標で上書きされる', () => {
+  it('Spec#111 - 後から保存した座標で上書きされる', () => {
     setLastGeolocationCache(35.6585, 139.7454)
     setLastGeolocationCache(34.6937, 135.5023) // 大阪
     expect(getLastGeolocationCache()).toEqual({ lat: 34.6937, lng: 135.5023 })

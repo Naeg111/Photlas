@@ -9,7 +9,7 @@ import {
 } from '../utils/codeConstants'
 
 /**
- * Issue#102: SNSリンク編集ダイアログのテスト
+ * Spec#102: SNSリンク編集ダイアログのテスト
  * - 固定3行UI（Instagram → Threads → X）
  * - 各行にロゴ表示
  * - サービス別 placeholder

@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { HeadingIndicator, computeRotationAngle } from './HeadingIndicator'
 
 /**
- * Issue#115: 方角インジケーター（扇形）コンポーネント
+ * Spec#115: 方角インジケーター（扇形）コンポーネント
  * Phase3 Red段階
  */
 describe('HeadingIndicator', () => {

@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { PrivacyContentKo } from './PrivacyContentKo'
 
 /**
- * Issue#101: 韓国語版プライバシーポリシーの基本構造テスト。
+ * Spec#101: 韓国語版プライバシーポリシーの基本構造テスト。
  */
 describe('PrivacyContentKo - 基本構造', () => {
   it('第1条相当 (제1조) の見出しが表示される', () => {
@@ -32,12 +32,12 @@ describe('PrivacyContentKo - 基本構造', () => {
     expect(container.textContent).toMatch(/2026.*2.*16/)
   })
 
-  it('Issue#105: 「13세」(13歳) の利用制限が明記されている', () => {
+  it('Spec#105: 「13세」(13歳) の利用制限が明記されている', () => {
     const { container } = render(<PrivacyContentKo />)
     expect(container.textContent).toContain('13세')
   })
 
-  it('Issue#105: 第6条に「販売しません」相当の宣言がある', () => {
+  it('Spec#105: 第6条に「販売しません」相当の宣言がある', () => {
     const { container } = render(<PrivacyContentKo />)
     // 「판매」(販売) を含む
     expect(container.textContent).toMatch(/판매/)

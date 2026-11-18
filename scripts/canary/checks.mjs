@@ -1,11 +1,11 @@
-// Issue#148: 死活監視 canary の検証ロジック（純粋関数）。
+// Spec#148: 死活監視 canary の検証ロジック（純粋関数）。
 //
 // 本番 photlas.jp の /tags（SSR ランディング）・/photo-viewer（個別 OGP）を外形監視し、
 // 「CloudFront 経路漏れで S3 の SPA 殻が無言で返る」「X-Robots-Tag: noindex 誤付与」等の
 // 退化を継続検知する。ここはネットワーク・AWS Synthetics ランタイムに依存しない純粋関数のみ
 // （実際の HTTP 取得・Synthetics 連携は seo-canary.js）。
 //
-// Source of truth: documents/04_Issues/Issue#148.md §3 / §4.1 / §4.2
+// Source of truth: documents/spec/SPEC-0148.md §3 / §4.1 / §4.2
 
 /** SSR の証拠とみなす hreflang の最小個数（§3。SSR は 5 言語 + x-default、S3 殻は 0）。 */
 export const HREFLANG_MIN_COUNT = 5;

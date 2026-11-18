@@ -101,7 +101,7 @@ public class PhotoServiceTest {
         org.mockito.Mockito.when(s3Service.existsInS3(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
         org.mockito.Mockito.when(s3Service.generateCdnUrl(org.mockito.ArgumentMatchers.anyString())).thenReturn("https://cdn.example.com/test.jpg");
         org.mockito.Mockito.when(s3Service.generateThumbnailCdnUrl(org.mockito.ArgumentMatchers.anyString())).thenReturn("https://cdn.example.com/thumb.webp");
-        // Issue#100: deriveThumbnailKey は実ロジックと同じ命名規則をモックでも返す
+        // Spec#100: deriveThumbnailKey は実ロジックと同じ命名規則をモックでも返す
         org.mockito.Mockito.when(s3Service.deriveThumbnailKey(org.mockito.ArgumentMatchers.anyString()))
                 .thenAnswer(inv -> {
                     String key = inv.getArgument(0);
@@ -378,10 +378,10 @@ public class PhotoServiceTest {
                 .hasMessageContaining("カテゴリ");
     }
 
-    // ===== Issue#48: カテゴリ任意化テスト =====
+    // ===== Spec#48: カテゴリ任意化テスト =====
 
     @Test
-    @DisplayName("Issue#48 - カテゴリなし（空リスト）での投稿が成功する")
+    @DisplayName("Spec#48 - カテゴリなし（空リスト）での投稿が成功する")
     void testCreatePhoto_EmptyCategories_SucceedsWithoutCategory() {
         CreatePhotoRequest request = new CreatePhotoRequest();
         request.setS3ObjectKey("photos/nocat001.jpg");
@@ -398,7 +398,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#48 - カテゴリnullでの投稿が成功する")
+    @DisplayName("Spec#48 - カテゴリnullでの投稿が成功する")
     void testCreatePhoto_NullCategories_SucceedsWithoutCategory() {
         CreatePhotoRequest request = new CreatePhotoRequest();
         request.setS3ObjectKey("photos/nullcat001.jpg");
@@ -533,10 +533,10 @@ public class PhotoServiceTest {
         assertThat(savedPhoto.getTimeOfDay()).isEqualTo(CodeConstants.TIME_OF_DAY_NIGHT);
     }
 
-    // ===== Issue#40: Photo Entity拡張テスト =====
+    // ===== Spec#40: Photo Entity拡張テスト =====
 
     @Test
-    @DisplayName("Issue#40 - EXIF情報付き写真の投稿が正常に保存される")
+    @DisplayName("Spec#40 - EXIF情報付き写真の投稿が正常に保存される")
     void testCreatePhoto_WithExifData_SavesAllExifFields() {
         CreatePhotoRequest request = new CreatePhotoRequest();
         request.setS3ObjectKey("photos/exif001.jpg");
@@ -578,7 +578,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#40 - EXIF情報なしの写真も正常に投稿できる")
+    @DisplayName("Spec#40 - EXIF情報なしの写真も正常に投稿できる")
     void testCreatePhoto_WithoutExifData_SavesSuccessfully() {
         CreatePhotoRequest request = new CreatePhotoRequest();
         request.setS3ObjectKey("photos/noexif001.jpg");
@@ -600,7 +600,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#40 - 写真詳細取得でEXIF情報が返される")
+    @DisplayName("Spec#40 - 写真詳細取得でEXIF情報が返される")
     void testGetPhotoDetail_WithExifData_ReturnsExifInResponse() {
         // EXIF付き写真を直接DBに保存
         Spot spot = new Spot();
@@ -642,7 +642,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#40 - 写真詳細取得でEXIF情報が部分的な場合も正常に返される")
+    @DisplayName("Spec#40 - 写真詳細取得でEXIF情報が部分的な場合も正常に返される")
     void testGetPhotoDetail_PartialExifData_ReturnsAvailableFields() {
         Spot spot = new Spot();
         spot.setLatitude(new BigDecimal("35.658581"));
@@ -674,7 +674,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#40 - 写真のピンポイント座標がレスポンスに含まれる")
+    @DisplayName("Spec#40 - 写真のピンポイント座標がレスポンスに含まれる")
     void testGetPhotoDetail_ReturnsPhotoLevelCoordinates() {
         Spot spot = new Spot();
         spot.setLatitude(new BigDecimal("35.658581"));
@@ -703,10 +703,10 @@ public class PhotoServiceTest {
         assertThat(response.getSpot().getLatitude()).isEqualByComparingTo(new BigDecimal("35.658581"));
     }
 
-    // ===== Issue#49: クロップ（トリミング）データテスト =====
+    // ===== Spec#49: クロップ（トリミング）データテスト =====
 
     @Test
-    @DisplayName("Issue#49 - クロップデータ付き写真の投稿が正常に保存される")
+    @DisplayName("Spec#49 - クロップデータ付き写真の投稿が正常に保存される")
     void testCreatePhoto_WithCropData_SavesCropFields() {
         CreatePhotoRequest request = new CreatePhotoRequest();
         request.setS3ObjectKey("photos/crop001.jpg");
@@ -729,7 +729,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#49 - クロップデータなしの投稿が成功する（後方互換）")
+    @DisplayName("Spec#49 - クロップデータなしの投稿が成功する（後方互換）")
     void testCreatePhoto_WithoutCropData_SavesNullCropFields() {
         CreatePhotoRequest request = new CreatePhotoRequest();
         request.setS3ObjectKey("photos/nocrop001.jpg");
@@ -747,7 +747,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#49 - 写真詳細取得でクロップデータが返される")
+    @DisplayName("Spec#49 - 写真詳細取得でクロップデータが返される")
     void testGetPhotoDetail_WithCropData_ReturnsCropInResponse() {
         Spot spot = new Spot();
         spot.setLatitude(new BigDecimal("35.658581"));
@@ -776,7 +776,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#49 - クロップデータなしの写真詳細でcropフィールドがnull")
+    @DisplayName("Spec#49 - クロップデータなしの写真詳細でcropフィールドがnull")
     void testGetPhotoDetail_WithoutCropData_CropIsNull() {
         Spot spot = new Spot();
         spot.setLatitude(new BigDecimal("35.658581"));
@@ -916,10 +916,10 @@ public class PhotoServiceTest {
         return photoRepository.save(photo);
     }
 
-    // ===== Issue#54: アカウント停止テスト =====
+    // ===== Spec#54: アカウント停止テスト =====
 
     @Test
-    @DisplayName("Issue#54 - 永久停止ユーザーは写真投稿が拒否される")
+    @DisplayName("Spec#54 - 永久停止ユーザーは写真投稿が拒否される")
     void testCreatePhoto_PermanentlySuspendedUser_ThrowsException() {
         testUser.setRole(CodeConstants.ROLE_SUSPENDED);
         userRepository.save(testUser);
@@ -936,7 +936,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 一時停止中ユーザーは写真投稿が拒否される")
+    @DisplayName("Spec#54 - 一時停止中ユーザーは写真投稿が拒否される")
     void testCreatePhoto_TemporarilySuspendedUser_ThrowsException() {
         AccountSanction sanction = new AccountSanction();
         sanction.setUserId(testUser.getId());
@@ -957,7 +957,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 一時停止期間が過ぎたユーザーは写真投稿が可能")
+    @DisplayName("Spec#54 - 一時停止期間が過ぎたユーザーは写真投稿が可能")
     void testCreatePhoto_ExpiredTemporarySuspension_Succeeds() {
         AccountSanction sanction = new AccountSanction();
         sanction.setUserId(testUser.getId());
@@ -977,10 +977,10 @@ public class PhotoServiceTest {
         assertThat(response.getPhoto().getPhotoId()).isNotNull();
     }
 
-    // ===== Issue#54: モデレーションステータスによる閲覧制御テスト =====
+    // ===== Spec#54: モデレーションステータスによる閲覧制御テスト =====
 
     @Test
-    @DisplayName("Issue#54 - REMOVED写真はオーナーでも閲覧不可（404）")
+    @DisplayName("Spec#54 - REMOVED写真はオーナーでも閲覧不可（404）")
     void testGetPhotoDetail_RemovedPhoto_ThrowsNotFoundForOwner() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo photo = createPhotoWithStatus(spot, "photos/removed001.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
@@ -990,7 +990,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PENDING_REVIEW写真はオーナーのみ閲覧可能")
+    @DisplayName("Spec#54 - PENDING_REVIEW写真はオーナーのみ閲覧可能")
     void testGetPhotoDetail_PendingReviewPhoto_VisibleToOwnerOnly() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo photo = createPhotoWithStatus(spot, "photos/pending001.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
@@ -1002,7 +1002,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PENDING_REVIEW写真は他ユーザーから閲覧不可（404）")
+    @DisplayName("Spec#54 - PENDING_REVIEW写真は他ユーザーから閲覧不可（404）")
     void testGetPhotoDetail_PendingReviewPhoto_NotVisibleToOtherUser() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo photo = createPhotoWithStatus(spot, "photos/pending002.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
@@ -1020,7 +1020,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PENDING_REVIEW写真は未認証ユーザーから閲覧不可（404）")
+    @DisplayName("Spec#54 - PENDING_REVIEW写真は未認証ユーザーから閲覧不可（404）")
     void testGetPhotoDetail_PendingReviewPhoto_NotVisibleToAnonymous() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo photo = createPhotoWithStatus(spot, "photos/pending003.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
@@ -1030,7 +1030,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - QUARANTINED写真はオーナーのみ閲覧可能")
+    @DisplayName("Spec#54 - QUARANTINED写真はオーナーのみ閲覧可能")
     void testGetPhotoDetail_QuarantinedPhoto_VisibleToOwnerOnly() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo photo = createPhotoWithStatus(spot, "photos/quarantined001.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -1052,7 +1052,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PUBLISHED写真は誰でも閲覧可能")
+    @DisplayName("Spec#54 - PUBLISHED写真は誰でも閲覧可能")
     void testGetPhotoDetail_PublishedPhoto_VisibleToEveryone() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo photo = createPhotoWithStatus(spot, "photos/published001.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
@@ -1073,10 +1073,10 @@ public class PhotoServiceTest {
         assertThat(photoService.getPhotoDetail(photo.getPhotoId(), null)).isNotNull();
     }
 
-    // ===== Issue#54: ユーザー投稿一覧 ModerationStatusフィルタリングテスト =====
+    // ===== Spec#54: ユーザー投稿一覧 ModerationStatusフィルタリングテスト =====
 
     @Test
-    @DisplayName("Issue#54 - ユーザー投稿一覧: オーナーはPENDING_REVIEW/PUBLISHED/QUARANTINEDが見える")
+    @DisplayName("Spec#54 - ユーザー投稿一覧: オーナーはPENDING_REVIEW/PUBLISHED/QUARANTINEDが見える")
     @SuppressWarnings("unchecked")
     void testGetUserPhotos_OwnerSeesAllNonRemovedStatuses() {
         Spot spot = createSpot("35.658581", "139.745433");
@@ -1094,7 +1094,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - ユーザー投稿一覧: 他ユーザーはPUBLISHEDのみ見える")
+    @DisplayName("Spec#54 - ユーザー投稿一覧: 他ユーザーはPUBLISHEDのみ見える")
     @SuppressWarnings("unchecked")
     void testGetUserPhotos_OtherUserSeesOnlyPublished() {
         Spot spot = createSpot("35.658581", "139.745433");
@@ -1118,7 +1118,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - ユーザー投稿一覧: 未認証ユーザーはPUBLISHEDのみ見える")
+    @DisplayName("Spec#54 - ユーザー投稿一覧: 未認証ユーザーはPUBLISHEDのみ見える")
     @SuppressWarnings("unchecked")
     void testGetUserPhotos_AnonymousSeesOnlyPublished() {
         Spot spot = createSpot("35.658581", "139.745433");
@@ -1133,10 +1133,10 @@ public class PhotoServiceTest {
         assertThat(content).hasSize(1);
     }
 
-    // ===== Issue#54: getPhotoForOwnerテスト =====
+    // ===== Spec#54: getPhotoForOwnerテスト =====
 
     @Test
-    @DisplayName("Issue#54 - 写真ステータス取得: オーナーは自分の写真のステータスを取得できる")
+    @DisplayName("Spec#54 - 写真ステータス取得: オーナーは自分の写真のステータスを取得できる")
     void testGetPhotoForOwner_OwnerCanAccessOwnPhoto() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo photo = createPhotoWithStatus(spot, "photos/status001.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
@@ -1147,7 +1147,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 写真ステータス取得: 他ユーザーは取得不可（404）")
+    @DisplayName("Spec#54 - 写真ステータス取得: 他ユーザーは取得不可（404）")
     void testGetPhotoForOwner_NonOwnerCannotAccess() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo photo = createPhotoWithStatus(spot, "photos/status002.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
@@ -1165,7 +1165,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 写真ステータス取得: 存在しない写真は404")
+    @DisplayName("Spec#54 - 写真ステータス取得: 存在しない写真は404")
     void testGetPhotoForOwner_NonExistentPhoto_ThrowsNotFound() {
         assertThatThrownBy(() -> photoService.getPhotoForOwner(99999L, testUser.getId()))
                 .isInstanceOf(PhotoNotFoundException.class);
@@ -1180,13 +1180,13 @@ public class PhotoServiceTest {
                 .isInstanceOf(PhotoNotFoundException.class);
     }
 
-    // ===== Issue#100: タグベース孤立ファイル対応 =====
+    // ===== Spec#100: タグベース孤立ファイル対応 =====
 
     @Test
-    @DisplayName("Issue#100 - createPhoto: DB保存前に元画像のタグを status=registered に更新する")
+    @DisplayName("Spec#100 - createPhoto: DB保存前に元画像のタグを status=registered に更新する")
     void testCreatePhoto_UpdatesOriginalTagToRegisteredBeforeDbSave() {
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setS3ObjectKey("uploads/" + testUser.getId() + "/issue100-test.jpg");
+        request.setS3ObjectKey("uploads/" + testUser.getId() + "/spec100-test.jpg");
         request.setTakenAt("2026-01-01T12:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
         request.setLongitude(new BigDecimal("139.745433"));
@@ -1203,7 +1203,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#100 - createPhoto: タグ更新が失敗した場合は DB 保存を行わずエラーを返す")
+    @DisplayName("Spec#100 - createPhoto: タグ更新が失敗した場合は DB 保存を行わずエラーを返す")
     void testCreatePhoto_TagUpdateFails_DoesNotSaveDbAndThrows() {
         // タグ更新で例外を投げるようにモック設定
         org.mockito.Mockito.doThrow(new RuntimeException("S3 tag update failed"))
@@ -1214,7 +1214,7 @@ public class PhotoServiceTest {
                 );
 
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setS3ObjectKey("uploads/" + testUser.getId() + "/issue100-fail.jpg");
+        request.setS3ObjectKey("uploads/" + testUser.getId() + "/spec100-fail.jpg");
         request.setTakenAt("2026-01-01T12:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
         request.setLongitude(new BigDecimal("139.745433"));
@@ -1231,7 +1231,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#100 - createPhoto: DB保存後にサムネイルのタグ更新を試みる（ベストエフォート、失敗してもエラーにしない）")
+    @DisplayName("Spec#100 - createPhoto: DB保存後にサムネイルのタグ更新を試みる（ベストエフォート、失敗してもエラーにしない）")
     void testCreatePhoto_AttemptsThumbnailTagUpdate_BestEffortOnFailure() {
         // 元画像のタグ更新は成功、サムネイルのタグ更新で例外
         org.mockito.Mockito.doNothing().when(s3Service).updateObjectTag(
@@ -1247,7 +1247,7 @@ public class PhotoServiceTest {
                 );
 
         CreatePhotoRequest request = new CreatePhotoRequest();
-        request.setS3ObjectKey("uploads/" + testUser.getId() + "/issue100-thumb-fail.jpg");
+        request.setS3ObjectKey("uploads/" + testUser.getId() + "/spec100-thumb-fail.jpg");
         request.setTakenAt("2026-01-01T12:00:00Z");
         request.setLatitude(new BigDecimal("35.658581"));
         request.setLongitude(new BigDecimal("139.745433"));
@@ -1265,7 +1265,7 @@ public class PhotoServiceTest {
         );
     }
 
-    // ========== Issue#119: analyzeToken 経由の AI 予測結果保存 ==========
+    // ========== Spec#119: analyzeToken 経由の AI 予測結果保存 ==========
 
     private CreatePhotoRequest baseRequest(String s3Key) {
         CreatePhotoRequest request = new CreatePhotoRequest();
@@ -1276,7 +1276,7 @@ public class PhotoServiceTest {
         return request;
     }
 
-    /** Issue#136 Phase 10: 既存テストのため LabelMappingResult を CachedAnalyzeResult で包んで保存。 */
+    /** Spec#136 Phase 10: 既存テストのため LabelMappingResult を CachedAnalyzeResult で包んで保存。 */
     private String saveAiCache(LabelMappingResult result) {
         return aiPredictionCacheService.save(new CachedAnalyzeResult(result, java.util.List.of()));
     }
@@ -1293,7 +1293,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - createPhoto: analyzeToken なしの場合は photo_ai_predictions に保存されない")
+    @DisplayName("Spec#119 - createPhoto: analyzeToken なしの場合は photo_ai_predictions に保存されない")
     void createPhoto_withoutAnalyzeToken_doesNotSavePrediction() {
         CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/no-token.jpg");
         request.setCategories(List.of("風景"));
@@ -1305,7 +1305,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - createPhoto: 有効な analyzeToken で AI 予測結果が photo_ai_predictions に保存される")
+    @DisplayName("Spec#119 - createPhoto: 有効な analyzeToken で AI 予測結果が photo_ai_predictions に保存される")
     void createPhoto_withValidAnalyzeToken_savesPrediction() {
         String token = saveAiCache(
                 aiResult(List.of(CodeConstants.CATEGORY_NATURE), CodeConstants.WEATHER_SUNNY)
@@ -1326,7 +1326,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - createPhoto: AI 予測カテゴリとユーザー選択が重複ゼロなら user_diff_flag=true")
+    @DisplayName("Spec#119 - createPhoto: AI 予測カテゴリとユーザー選択が重複ゼロなら user_diff_flag=true")
     void createPhoto_categoriesNoOverlap_setsUserDiffFlagTrue() {
         // AI=自然風景(201), ユーザー=都市(202) → 重複ゼロ
         String token = saveAiCache(
@@ -1343,7 +1343,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - createPhoto: AI 予測カテゴリが空ならユーザー選択にかかわらず user_diff_flag=false")
+    @DisplayName("Spec#119 - createPhoto: AI 予測カテゴリが空ならユーザー選択にかかわらず user_diff_flag=false")
     void createPhoto_aiPredictedEmpty_userDiffFlagFalse() {
         String token = saveAiCache(aiResult(List.of(), null));
         CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/empty-ai.jpg");
@@ -1357,7 +1357,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - createPhoto: 期限切れ analyzeToken は無視され、写真投稿は成功する")
+    @DisplayName("Spec#119 - createPhoto: 期限切れ analyzeToken は無視され、写真投稿は成功する")
     void createPhoto_expiredAnalyzeToken_isIgnored() {
         // 期限切れトークンを直接挿入（findValid() が空を返す状況を再現）
         // 簡単に: 存在しない UUID を渡す = findValid() が Optional.empty()
@@ -1373,7 +1373,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - createPhoto: AI 予測結果保存後、analyzeToken はキャッシュから削除される（使い切り）")
+    @DisplayName("Spec#119 - createPhoto: AI 予測結果保存後、analyzeToken はキャッシュから削除される（使い切り）")
     void createPhoto_consumesAnalyzeToken() {
         String token = saveAiCache(
                 aiResult(List.of(CodeConstants.CATEGORY_NATURE), null)
@@ -1391,7 +1391,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#119 - createPhoto: predicted_categories と confidence は JSON 文字列で保存される")
+    @DisplayName("Spec#119 - createPhoto: predicted_categories と confidence は JSON 文字列で保存される")
     void createPhoto_savesCategoriesAndConfidenceAsJson() throws Exception {
         Map<String, Float> conf = Map.of(
                 String.valueOf(CodeConstants.CATEGORY_NATURE), 92.5f,
@@ -1421,10 +1421,10 @@ public class PhotoServiceTest {
                 .containsEntry(String.valueOf(CodeConstants.WEATHER_SUNNY), 88.0f);
     }
 
-    // ===== Issue#122 Cycle3: 写真詳細バッチ取得テスト =====
+    // ===== Spec#122 Cycle3: 写真詳細バッチ取得テスト =====
 
     @Test
-    @DisplayName("Issue#122 - getPhotoDetailsBatch: 認可された全写真をまとめて返す")
+    @DisplayName("Spec#122 - getPhotoDetailsBatch: 認可された全写真をまとめて返す")
     void testGetPhotoDetailsBatch_AllAuthorized_ReturnsAll() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo p1 = createPhotoForUser(spot, "photos/batch-1.jpg",
@@ -1444,7 +1444,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#122 - getPhotoDetailsBatch: 認可されていない写真は silent skip して返す")
+    @DisplayName("Spec#122 - getPhotoDetailsBatch: 認可されていない写真は silent skip して返す")
     void testGetPhotoDetailsBatch_PartialUnauthorized_SilentlySkips() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo visible = createPhotoForUser(spot, "photos/batch-visible.jpg",
@@ -1461,7 +1461,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#122 - getPhotoDetailsBatch: 存在しない photoId は silent skip して返す")
+    @DisplayName("Spec#122 - getPhotoDetailsBatch: 存在しない photoId は silent skip して返す")
     void testGetPhotoDetailsBatch_NonExistentId_SilentlySkips() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo visible = createPhotoForUser(spot, "photos/batch-real.jpg",
@@ -1476,7 +1476,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#122 - getPhotoDetailsBatch: 空リストは空リストを返す")
+    @DisplayName("Spec#122 - getPhotoDetailsBatch: 空リストは空リストを返す")
     void testGetPhotoDetailsBatch_EmptyList_ReturnsEmpty() {
         List<PhotoDetailResponse> result = photoService.getPhotoDetailsBatch(
                 List.of(), testUser.getEmail());
@@ -1484,7 +1484,7 @@ public class PhotoServiceTest {
         assertThat(result).isEmpty();
     }
 
-    // ========== Issue#136 Phase 12: createPhoto orchestration + ai_confidence 反映 ==========
+    // ========== Spec#136 Phase 12: createPhoto orchestration + ai_confidence 反映 ==========
 
     /** Phase 12 ヘルパー: テスト用 Tag を作成。 */
     private Tag createTestTag(String slug, String ja, String en) {
@@ -1504,7 +1504,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase12: AI 由来 tagId は suggestedTags の confidence が ai_confidence に入る")
+    @DisplayName("Spec#136 - Phase12: AI 由来 tagId は suggestedTags の confidence が ai_confidence に入る")
     void createPhoto_aiOriginatedTag_setsAiConfidence() {
         Tag cherry = createTestTag("cherry-blossom-p12", "桜", "Cherry Blossom");
         String token = saveCacheWithSuggestions(
@@ -1526,7 +1526,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase12: USER 由来 tagId は ai_confidence が NULL")
+    @DisplayName("Spec#136 - Phase12: USER 由来 tagId は ai_confidence が NULL")
     void createPhoto_userOriginatedTag_aiConfidenceIsNull() {
         Tag mountain = createTestTag("mountain-p12", "山", "Mountain");
         // cache に同じ tag が suggestedTags として含まれていても、USER 由来なら NULL
@@ -1550,7 +1550,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase12: analyzeToken なしで AI 由来 tag は ai_confidence が NULL")
+    @DisplayName("Spec#136 - Phase12: analyzeToken なしで AI 由来 tag は ai_confidence が NULL")
     void createPhoto_noAnalyzeToken_aiConfidenceIsNull() {
         Tag tulip = createTestTag("tulip-p12", "チューリップ", "Tulip");
         CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/p12-notoken.jpg");
@@ -1568,7 +1568,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase12 §4.4.2 回帰: savePhotoAiPrediction と savePhotoTags の両方が同一 cache を消費できる")
+    @DisplayName("Spec#136 - Phase12 §4.4.2 回帰: savePhotoAiPrediction と savePhotoTags の両方が同一 cache を消費できる")
     void createPhoto_phase12_4_4_2_regression_bothConsumersWork() {
         Tag rose = createTestTag("rose-p12", "薔薇", "Rose");
         String token = saveCacheWithSuggestions(
@@ -1599,7 +1599,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase12: suggestedTags に無い AI tag は ai_confidence が NULL")
+    @DisplayName("Spec#136 - Phase12: suggestedTags に無い AI tag は ai_confidence が NULL")
     void createPhoto_aiTagNotInSuggestions_aiConfidenceIsNull() {
         Tag t1 = createTestTag("t1-p12", "T1", "T1");
         Tag t2 = createTestTag("t2-p12", "T2", "T2");
@@ -1629,10 +1629,10 @@ public class PhotoServiceTest {
         assertThat(confByTag.get(t2.getId())).isNull();
     }
 
-    // ===== Issue#146: 撮影場所が EXIF GPS 由来かどうかの記録 =====
+    // ===== Spec#146: 撮影場所が EXIF GPS 由来かどうかの記録 =====
 
     @Test
-    @DisplayName("Issue#146 - 投稿: locationFromExif=true が写真に保存される")
+    @DisplayName("Spec#146 - 投稿: locationFromExif=true が写真に保存される")
     void testCreatePhoto_LocationFromExifTrue_Saved() {
         CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/exif-gps.jpg");
         request.setCategories(List.of("風景"));
@@ -1645,7 +1645,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#146 - 投稿: locationFromExif 未指定なら false で保存される")
+    @DisplayName("Spec#146 - 投稿: locationFromExif 未指定なら false で保存される")
     void testCreatePhoto_LocationFromExifNull_DefaultsFalse() {
         CreatePhotoRequest request = baseRequest("uploads/" + testUser.getId() + "/no-gps.jpg");
         request.setCategories(List.of("風景"));
@@ -1658,7 +1658,7 @@ public class PhotoServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#146 - 写真詳細: locationFromExif がレスポンスに含まれる")
+    @DisplayName("Spec#146 - 写真詳細: locationFromExif がレスポンスに含まれる")
     void testGetPhotoDetail_ReturnsLocationFromExif() {
         Spot spot = createSpot("35.658581", "139.745433");
         Photo photo = new Photo();

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 /**
- * Issue#58 §6: 写真個別の OGP メタ値を生成するサービス。
+ * Spec#58 §6: 写真個別の OGP メタ値を生成するサービス。
  *
  * <p>{@code /photo-viewer/{id}}（{@link com.photlas.backend.controller.PhotoViewerController}）が
  * index.html に差し込む OGP を組み立てる。公開・退会/停止チェックは {@code OgpController} と同じ基準。

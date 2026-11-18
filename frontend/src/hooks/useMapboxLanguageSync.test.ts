@@ -4,7 +4,7 @@ import type { Map as MapboxMap } from 'mapbox-gl'
 import { useMapboxLanguageSync } from './useMapboxLanguageSync'
 
 /**
- * Issue#107: useMapboxLanguageSync フックの単体テスト
+ * Spec#107: useMapboxLanguageSync フックの単体テスト
  */
 describe('useMapboxLanguageSync', () => {
   it('map と mapboxLang が指定されると setLanguage が呼ばれる', () => {

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 /**
  * RegisterSuccessPage コンポーネント
- * Issue#2: ユーザー登録機能 (UI) - 登録完了ページ
+ * Spec#2: ユーザー登録機能 (UI) - 登録完了ページ
  *
  * ユーザー登録が正常に完了したことを伝え、メール確認の案内を表示する。
  */

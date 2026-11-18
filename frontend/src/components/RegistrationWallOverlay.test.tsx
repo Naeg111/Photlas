@@ -1,5 +1,5 @@
 /**
- * Issue#118: RegistrationWallOverlay コンポーネントのテスト
+ * Spec#118: RegistrationWallOverlay コンポーネントのテスト
  *
  * shadcn/ui の Dialog ではなく独自のオーバーレイ実装。理由:
  *   - Esc キー・背景クリックで閉じない（必須要件）
@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { RegistrationWallOverlay } from './RegistrationWallOverlay'
 
-describe('RegistrationWallOverlay - Issue#118', () => {
+describe('RegistrationWallOverlay - Spec#118', () => {
   let mockGtag: ReturnType<typeof vi.fn>
   const noop = () => {}
 
@@ -25,7 +25,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
   })
 
   describe('表示制御', () => {
-    it('Issue#118 - isOpen=false なら何も描画しない', () => {
+    it('Spec#118 - isOpen=false なら何も描画しない', () => {
       render(
         <RegistrationWallOverlay
           isOpen={false}
@@ -37,7 +37,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
 
-    it('Issue#118 - isOpen=true なら role="dialog" aria-modal="true" で描画する', () => {
+    it('Spec#118 - isOpen=true なら role="dialog" aria-modal="true" で描画する', () => {
       render(
         <RegistrationWallOverlay
           isOpen={true}
@@ -64,17 +64,17 @@ describe('RegistrationWallOverlay - Issue#118', () => {
       )
     })
 
-    it('Issue#118 - タイトルが表示される', () => {
+    it('Spec#118 - タイトルが表示される', () => {
       expect(
         screen.getByText('Photlas を続けてご利用いただくには、ログインが必要です'),
       ).toBeInTheDocument()
     })
 
-    it('Issue#118 - 感謝の文言が表示される', () => {
+    it('Spec#118 - 感謝の文言が表示される', () => {
       expect(screen.getByText('ご覧いただきありがとうございます。')).toBeInTheDocument()
     })
 
-    it('Issue#118 - 説明文が表示される', () => {
+    it('Spec#118 - 説明文が表示される', () => {
       expect(
         screen.getByText(
           'アカウントを作成すると、お気に入りの写真を保存したり、自分の写真を投稿してコミュニティに参加できます。',
@@ -82,21 +82,21 @@ describe('RegistrationWallOverlay - Issue#118', () => {
       ).toBeInTheDocument()
     })
 
-    it('Issue#118 - 「アカウント作成」ボタンが表示される', () => {
+    it('Spec#118 - 「アカウント作成」ボタンが表示される', () => {
       expect(screen.getByRole('button', { name: 'アカウント作成' })).toBeInTheDocument()
     })
 
-    it('Issue#118 - 「ログイン」ボタンが表示される', () => {
+    it('Spec#118 - 「ログイン」ボタンが表示される', () => {
       expect(screen.getByRole('button', { name: 'ログイン' })).toBeInTheDocument()
     })
 
-    it('Issue#118 - 「Photlasとは？」リンクが表示される', () => {
+    it('Spec#118 - 「Photlasとは？」リンクが表示される', () => {
       expect(screen.getByRole('button', { name: 'Photlasとは？' })).toBeInTheDocument()
     })
   })
 
   describe('ボタン操作', () => {
-    it('Issue#118 - 「アカウント作成」クリックで onClickSignUp が呼ばれる', async () => {
+    it('Spec#118 - 「アカウント作成」クリックで onClickSignUp が呼ばれる', async () => {
       const onClickSignUp = vi.fn()
       render(
         <RegistrationWallOverlay
@@ -110,7 +110,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
       expect(onClickSignUp).toHaveBeenCalledTimes(1)
     })
 
-    it('Issue#118 - 「ログイン」クリックで onClickLogin が呼ばれる', async () => {
+    it('Spec#118 - 「ログイン」クリックで onClickLogin が呼ばれる', async () => {
       const onClickLogin = vi.fn()
       render(
         <RegistrationWallOverlay
@@ -124,7 +124,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
       expect(onClickLogin).toHaveBeenCalledTimes(1)
     })
 
-    it('Issue#118 - 「Photlasとは？」クリックで onClickAbout が呼ばれる', async () => {
+    it('Spec#118 - 「Photlasとは？」クリックで onClickAbout が呼ばれる', async () => {
       const onClickAbout = vi.fn()
       render(
         <RegistrationWallOverlay
@@ -140,7 +140,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
   })
 
   describe('GA4 イベント送信', () => {
-    it('Issue#118 - isOpen=true で初回マウント時に registration_wall_shown が送信される', () => {
+    it('Spec#118 - isOpen=true で初回マウント時に registration_wall_shown が送信される', () => {
       render(
         <RegistrationWallOverlay
           isOpen={true}
@@ -152,7 +152,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
       expect(mockGtag).toHaveBeenCalledWith('event', 'registration_wall_shown')
     })
 
-    it('Issue#118 - isOpen=false なら registration_wall_shown は送信されない', () => {
+    it('Spec#118 - isOpen=false なら registration_wall_shown は送信されない', () => {
       render(
         <RegistrationWallOverlay
           isOpen={false}
@@ -164,7 +164,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
       expect(mockGtag).not.toHaveBeenCalled()
     })
 
-    it('Issue#118 - 「アカウント作成」クリックで registration_wall_signup_click が送信される', async () => {
+    it('Spec#118 - 「アカウント作成」クリックで registration_wall_signup_click が送信される', async () => {
       render(
         <RegistrationWallOverlay
           isOpen={true}
@@ -177,7 +177,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
       expect(mockGtag).toHaveBeenCalledWith('event', 'registration_wall_signup_click')
     })
 
-    it('Issue#118 - 「ログイン」クリックで registration_wall_login_click が送信される', async () => {
+    it('Spec#118 - 「ログイン」クリックで registration_wall_login_click が送信される', async () => {
       render(
         <RegistrationWallOverlay
           isOpen={true}
@@ -190,7 +190,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
       expect(mockGtag).toHaveBeenCalledWith('event', 'registration_wall_login_click')
     })
 
-    it('Issue#118 - 「Photlasとは？」クリックで registration_wall_about_click が送信される', async () => {
+    it('Spec#118 - 「Photlasとは？」クリックで registration_wall_about_click が送信される', async () => {
       render(
         <RegistrationWallOverlay
           isOpen={true}
@@ -205,7 +205,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
   })
 
   describe('z-index・閉じない挙動', () => {
-    it('Issue#118 - オーバーレイは z-[70] クラスを持つ（Cookie バナー60 / Dialog 50 より上）', () => {
+    it('Spec#118 - オーバーレイは z-[70] クラスを持つ（Cookie バナー60 / Dialog 50 より上）', () => {
       render(
         <RegistrationWallOverlay
           isOpen={true}
@@ -218,7 +218,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
       expect(dialog.className).toContain('z-[70]')
     })
 
-    it('Issue#118 - 閉じるボタンが存在しない（登録/ログインが必須）', () => {
+    it('Spec#118 - 閉じるボタンが存在しない（登録/ログインが必須）', () => {
       render(
         <RegistrationWallOverlay
           isOpen={true}
@@ -230,7 +230,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
       expect(screen.queryByRole('button', { name: /close|閉じる/i })).not.toBeInTheDocument()
     })
 
-    it('Issue#118 - Esc キーを押下しても何も起こらない（onOpenChange 等を呼ばない）', async () => {
+    it('Spec#118 - Esc キーを押下しても何も起こらない（onOpenChange 等を呼ばない）', async () => {
       const onClickSignUp = vi.fn()
       const onClickLogin = vi.fn()
       const onClickAbout = vi.fn()
@@ -250,7 +250,7 @@ describe('RegistrationWallOverlay - Issue#118', () => {
   })
 
   describe('アクセシビリティ', () => {
-    it('Issue#118 - 「アカウント作成」ボタンに自動フォーカスされる', () => {
+    it('Spec#118 - 「アカウント作成」ボタンに自動フォーカスされる', () => {
       render(
         <RegistrationWallOverlay
           isOpen={true}

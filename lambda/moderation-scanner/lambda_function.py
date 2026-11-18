@@ -1,6 +1,6 @@
 """
-Issue#54: コンテンツモデレーション - スキャン用Lambda関数
-Issue#84: ラベル除外対応とRekognition v7移行
+Spec#54: コンテンツモデレーション - スキャン用Lambda関数
+Spec#84: ラベル除外対応とRekognition v7移行
 
 S3イベントをトリガーに Amazon Rekognition Content Moderation でスキャンし、
 結果をバックエンドAPIにコールバックする。
@@ -30,7 +30,7 @@ MODERATION_API_KEY = os.environ.get("MODERATION_API_KEY", "")
 SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "")
 CONFIDENCE_THRESHOLD = float(os.environ.get("CONFIDENCE_THRESHOLD_HIGH", "50"))
 
-# Issue#84: 除外ラベル（環境変数からカンマ区切りで設定）
+# Spec#84: 除外ラベル（環境変数からカンマ区切りで設定）
 EXCLUDED_LABELS = set(
     label.strip()
     for label in os.environ.get("EXCLUDED_LABELS", "").split(",")
@@ -40,11 +40,11 @@ EXCLUDED_LABELS = set(
 # AWSクライアント
 rekognition_client = boto3.client("rekognition")
 
-# モデレーションステータス（Issue#87: 数値コード）
+# モデレーションステータス（Spec#87: 数値コード）
 STATUS_PUBLISHED = 1002
 STATUS_QUARANTINED = 1003
 
-# Issue#84: CSAM関連のRekognitionラベル（v7対応）
+# Spec#84: CSAM関連のRekognitionラベル（v7対応）
 CSAM_LABELS = {
     "Explicit Nudity",
     "Explicit Sexual Activity",
@@ -54,7 +54,7 @@ CSAM_LABELS = {
     "Exposed Female Nipple",
 }
 
-# Issue#84: デフォルト除外ラベル（写真共有サービスとして許容するコンテンツ）
+# Spec#84: デフォルト除外ラベル（写真共有サービスとして許容するコンテンツ）
 # Rekognitionは L1/L2/L3 全階層のラベルを返すため、全階層を明示的に除外する
 DEFAULT_EXCLUDED_LABELS = {
     # L1
@@ -158,7 +158,7 @@ def scan_image(bucket, object_key):
 def evaluate_result(labels):
     """スキャン結果を評価し、ステータス・信頼度・CSAMフラグを返す。
 
-    Issue#84: 除外ラベルをフィルタリング後に判定する。
+    Spec#84: 除外ラベルをフィルタリング後に判定する。
 
     Returns:
         tuple: (status, max_confidence, is_csam, filtered_label_names)

@@ -35,7 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Issue#135 Phase 13 + Issue#136 Phase 5: キーワードランディングページ (Thymeleaf SSR)。
+ * Spec#135 Phase 13 + Spec#136 Phase 5: キーワードランディングページ (Thymeleaf SSR)。
  *
  * <p>{@code GET /tags/{slug}?lang={lang}&page={page}}</p>
  *
@@ -56,11 +56,11 @@ import java.util.Map;
 @RequestMapping("/tags")
 public class TagPageController {
 
-    /** 1 ページあたりの写真件数 (Issue#135 3.6)。 */
+    /** 1 ページあたりの写真件数 (Spec#135 3.6)。 */
     private static final int PAGE_SIZE = 48;
 
     /**
-     * Issue#150: SEO 上インデックス対象とする最小公開写真数。
+     * Spec#150: SEO 上インデックス対象とする最小公開写真数。
      *
      * <p>これ未満（= 写真 0 件）のタグページは {@code <meta name="robots" content="noindex,follow">} を
      * 出力し、{@link SitemapController} のキーワードサイトマップからも除外する。写真 0 件の空ページは
@@ -87,7 +87,7 @@ public class TagPageController {
     private final S3Service s3Service;
     private final MessageSource messageSource;
 
-    /** Issue#136 §9: canonical/hreflang/og:url を絶対 URL 化するためのサイトベース URL（prod=https://photlas.jp / staging=https://test.photlas.jp）。 */
+    /** Spec#136 §9: canonical/hreflang/og:url を絶対 URL 化するためのサイトベース URL（prod=https://photlas.jp / staging=https://test.photlas.jp）。 */
     private final String frontendUrl;
 
     public TagPageController(
@@ -199,7 +199,7 @@ public class TagPageController {
         model.addAttribute("tag", display);
         model.addAttribute("lang", canonicalLang);
         model.addAttribute("photoCount", photoCount);
-        // Issue#150: 写真が少ないページは noindex（テンプレートが !indexable で robots メタを出力）
+        // Spec#150: 写真が少ないページは noindex（テンプレートが !indexable で robots メタを出力）
         model.addAttribute("indexable", photoCount >= MIN_INDEXABLE_PHOTO_COUNT);
         model.addAttribute("hreflangs", buildHreflangs(slug));
         model.addAttribute("canonicalUrl", canonicalUrlFor(slug, canonicalLang, canonicalPage));
@@ -213,7 +213,7 @@ public class TagPageController {
         model.addAttribute("title", title);
         model.addAttribute("description", description);
         model.addAttribute("relatedTags", relatedTags);
-        // Issue#136 §9: og:image は先頭（最新）写真のサムネ。写真 0 件はブランドロゴ og-image.png にフォールバック
+        // Spec#136 §9: og:image は先頭（最新）写真のサムネ。写真 0 件はブランドロゴ og-image.png にフォールバック
         // （既定 og-image.svg は SVG で SNS が描画しないため使わない）。
         String ogImage = photos.isEmpty()
                 ? frontendUrl + "/og-image.png"
@@ -259,7 +259,7 @@ public class TagPageController {
 
     /**
      * canonical URL を組み立てる。page=1 のときは {@code ?page=} を付けない (Q14)。
-     * Issue#136 §9: hreflang は Google が絶対 URL を要求するため、{@code app.frontend-url} を前置して絶対化する
+     * Spec#136 §9: hreflang は Google が絶対 URL を要求するため、{@code app.frontend-url} を前置して絶対化する
      * （canonical / og:url にも同じ値を使う）。
      */
     private String canonicalUrlFor(String slug, String lang, int page) {

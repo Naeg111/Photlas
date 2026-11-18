@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#141 Phase 2: {@code GET /api/v1/spots} の {@code tag_ids} クエリパラメータが
+ * Spec#141 Phase 2: {@code GET /api/v1/spots} の {@code tag_ids} クエリパラメータが
  * {@link SpotService#getSpots} に正しく届くことを検証する。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
@@ -36,7 +36,7 @@ class SpotControllerTagIdsTest {
     private static final String SPOTS_URL = "/api/v1/spots";
 
     @Test
-    @DisplayName("Issue#141 - GET /spots?tag_ids=1&tag_ids=2: SpotService.getSpots に tagIds=[1,2] が渡される")
+    @DisplayName("Spec#141 - GET /spots?tag_ids=1&tag_ids=2: SpotService.getSpots に tagIds=[1,2] が渡される")
     void getSpots_passesTagIdsToService() throws Exception {
         when(spotService.getSpots(any(), any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any())).thenReturn(List.of());
@@ -62,7 +62,7 @@ class SpotControllerTagIdsTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - GET /spots (tag_ids 未指定): SpotService.getSpots に tagIds=null が渡される")
+    @DisplayName("Spec#141 - GET /spots (tag_ids 未指定): SpotService.getSpots に tagIds=null が渡される")
     void getSpots_omitsTagIds_passesNull() throws Exception {
         when(spotService.getSpots(any(), any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any())).thenReturn(List.of());

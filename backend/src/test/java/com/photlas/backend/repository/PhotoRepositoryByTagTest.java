@@ -23,7 +23,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#136 Phase 2: {@code PhotoRepository.findActivePublishedByTagId} のテスト。
+ * Spec#136 Phase 2: {@code PhotoRepository.findActivePublishedByTagId} のテスト。
  *
  * <p>SSR キーワードランディングページで使う「タグ別 × ページネーション × PUBLISHED のみ
  * × 退会ユーザー除外」クエリの正しさを検証する。</p>
@@ -89,7 +89,7 @@ class PhotoRepositoryByTagTest {
     // ========== 基本動作 ==========
 
     @Test
-    @DisplayName("Issue#136 - 通常: 指定タグの PUBLISHED 写真を新着順で返す")
+    @DisplayName("Spec#136 - 通常: 指定タグの PUBLISHED 写真を新着順で返す")
     void returnsPublishedPhotosOrderedByCreatedAtDesc() {
         Photo older = createPhoto(activeUser, CodeConstants.MODERATION_STATUS_PUBLISHED,
                 LocalDateTime.of(2026, 1, 1, 0, 0));
@@ -109,7 +109,7 @@ class PhotoRepositoryByTagTest {
     // ========== フィルタ条件 ==========
 
     @Test
-    @DisplayName("Issue#136 - moderation_status = PENDING_REVIEW / QUARANTINED / REMOVED は除外")
+    @DisplayName("Spec#136 - moderation_status = PENDING_REVIEW / QUARANTINED / REMOVED は除外")
     void excludesNonPublishedPhotos() {
         Photo published = createPhoto(activeUser, CodeConstants.MODERATION_STATUS_PUBLISHED,
                 LocalDateTime.now().minusDays(1));
@@ -133,7 +133,7 @@ class PhotoRepositoryByTagTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - 退会済みユーザーの写真は除外")
+    @DisplayName("Spec#136 - 退会済みユーザーの写真は除外")
     void excludesPhotosFromDeletedUsers() {
         User deletedUser = new User();
         deletedUser.setUsername("photdel");
@@ -159,7 +159,7 @@ class PhotoRepositoryByTagTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - 別のタグに紐づく写真は含まれない")
+    @DisplayName("Spec#136 - 別のタグに紐づく写真は含まれない")
     void excludesPhotosLinkedToDifferentTag() {
         Tag tagSushi = new Tag();
         tagSushi.setRekognitionLabel("Sushi");
@@ -187,7 +187,7 @@ class PhotoRepositoryByTagTest {
     // ========== ページネーション ==========
 
     @Test
-    @DisplayName("Issue#136 - ページネーション: 49 件で 48 + 1 に分割される")
+    @DisplayName("Spec#136 - ページネーション: 49 件で 48 + 1 に分割される")
     void paginatesCorrectly() {
         for (int i = 0; i < 49; i++) {
             Photo p = createPhoto(activeUser, CodeConstants.MODERATION_STATUS_PUBLISHED,
@@ -207,7 +207,7 @@ class PhotoRepositoryByTagTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - 決定的ソート: 同じ created_at でも photo_id DESC で順序安定")
+    @DisplayName("Spec#136 - 決定的ソート: 同じ created_at でも photo_id DESC で順序安定")
     void deterministicSortWithSameCreatedAt() {
         LocalDateTime sameTime = LocalDateTime.of(2026, 5, 1, 12, 0);
         List<Photo> photos = List.of(
@@ -230,7 +230,7 @@ class PhotoRepositoryByTagTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - 該当写真 0 件: 空ページを返す")
+    @DisplayName("Spec#136 - 該当写真 0 件: 空ページを返す")
     void returnsEmptyPageForNoMatches() {
         Page<Photo> page = photoRepository.findActivePublishedByTagId(
                 tagCherry.getId(), CodeConstants.MODERATION_STATUS_PUBLISHED, defaultPageable(0, 10));

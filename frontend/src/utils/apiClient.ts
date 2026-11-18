@@ -1,7 +1,7 @@
 /**
  * API Client ユーティリティ
- * Issue#16: フィルター機能 - APIクライアント
- * Issue#30: 認証ヘッダー取得関数を追加
+ * Spec#16: フィルター機能 - APIクライアント
+ * Spec#30: 認証ヘッダー取得関数を追加
  */
 
 import { API_V1_URL } from '../config/api';
@@ -13,7 +13,7 @@ const API_BASE_URL = API_V1_URL;
  * API通信エラー
  * HTTPステータスコードを保持し、呼び出し元での分岐処理を可能にする
  *
- * Issue#96: retryAfterSeconds / responseData / isRateLimited を追加。
+ * Spec#96: retryAfterSeconds / responseData / isRateLimited を追加。
  * 既存の 2 引数呼び出し (message, status) はそのまま動作する（後方互換）。
  */
 export class ApiError extends Error {
@@ -43,7 +43,7 @@ export class ApiError extends Error {
   }
 
   /**
-   * Issue#93: バックエンドが返すエラー本文の `code`（例: `INVALID_TOKEN`）。
+   * Spec#93: バックエンドが返すエラー本文の `code`（例: `INVALID_TOKEN`）。
    * 画面には `translateErrorCode(err.code, t, 'fallback')` で表示言語の文言を出す。
    * 本文の `message` は日本語固定のため画面に出さない。
    *
@@ -55,7 +55,7 @@ export class ApiError extends Error {
   }
 
   /**
-   * Issue#98: バックエンドが返す `{ errors: [{ field, message, ... }] }` 形式の
+   * Spec#98: バックエンドが返す `{ errors: [{ field, message, ... }] }` 形式の
    * field-level エラー本文から、指定フィールドのメッセージを取り出す。
    *
    * バリデーションエラー (400 Bad Request, MethodArgumentNotValidException 起源) の
@@ -75,7 +75,7 @@ export class ApiError extends Error {
 
 /**
  * 認証ヘッダーを取得する
- * Issue#9: AuthContextと同じトークンキー(auth_token)を使用
+ * Spec#9: AuthContextと同じトークンキー(auth_token)を使用
  * @returns 認証ヘッダー（トークンがない場合は空オブジェクト）
  */
 export function getAuthHeaders(): HeadersInit {
@@ -181,7 +181,7 @@ export async function fetchSpots(params: SpotSearchParams): Promise<SpotResponse
 }
 
 // ============================================================
-// 写真投稿API（Issue#9: 写真アップロード処理）
+// 写真投稿API（Spec#9: 写真アップロード処理）
 // ============================================================
 
 /**
@@ -190,7 +190,7 @@ export async function fetchSpots(params: SpotSearchParams): Promise<SpotResponse
 export interface UploadUrlRequest {
   extension: string
   contentType: string
-  // Issue#131: ユーザー指定範囲のクロップ情報（投稿写真のみ・avatar は省略）
+  // Spec#131: ユーザー指定範囲のクロップ情報（投稿写真のみ・avatar は省略）
   cropCenterX?: number
   cropCenterY?: number
   cropZoom?: number
@@ -227,16 +227,16 @@ export interface CreatePhotoRequest {
   cropCenterX?: number
   cropCenterY?: number
   cropZoom?: number
-  /** Issue#146: 撮影場所が EXIF GPS 由来か（既定 false）。指摘の距離上限判定に使う */
+  /** Spec#146: 撮影場所が EXIF GPS 由来か（既定 false）。指摘の距離上限判定に使う */
   locationFromExif?: boolean
   /**
-   * Issue#135: ユーザーが選択した詳細カテゴリー（キーワード）の tagId 群。
+   * Spec#135: ユーザーが選択した詳細カテゴリー（キーワード）の tagId 群。
    * これを送らないと backend の savePhotoTags が早期 return し photo_tags に保存されない。
    */
   tagIds?: number[]
-  /** Issue#135: 上記 tagIds のうち、元々 AI 提案だったものの subset（assigned_by の判定に使う）。 */
+  /** Spec#135: 上記 tagIds のうち、元々 AI 提案だったものの subset（assigned_by の判定に使う）。 */
   aiOriginatedTagIds?: number[]
-  /** Issue#119: AI 解析で発行された analyzeToken。backend が photo_ai_predictions に紐づける。 */
+  /** Spec#119: AI 解析で発行された analyzeToken。backend が photo_ai_predictions に紐づける。 */
   analyzeToken?: string
 }
 
@@ -294,7 +294,7 @@ export async function getPhotoUploadUrl(request: UploadUrlRequest): Promise<Uplo
 }
 
 /**
- * Issue#100: S3 タグベース孤立ファイル対応
+ * Spec#100: S3 タグベース孤立ファイル対応
  *
  * presigned URL は status=pending タグを必須とする署名で発行されているため、
  * S3 への PUT リクエストには x-amz-tagging: status=pending ヘッダーが必須。
@@ -304,7 +304,7 @@ export const S3_TAG_HEADER_NAME = 'x-amz-tagging'
 export const S3_TAG_HEADER_VALUE_PENDING = 'status=pending'
 
 /**
- * Issue#124: 写真画像の Cache-Control を immutable 化
+ * Spec#124: 写真画像の Cache-Control を immutable 化
  *
  * presigned URL は CacheControl 付きで署名されるため、S3 への PUT 時には
  * 同一の Cache-Control ヘッダを送らないと SignedHeaders 不一致で 403 になる。
@@ -313,7 +313,7 @@ export const S3_TAG_HEADER_VALUE_PENDING = 'status=pending'
 export const S3_CACHE_CONTROL_VALUE = 'public, max-age=31536000, immutable'
 
 /**
- * Issue#131: S3 オブジェクトメタデータ送信用の HTTP ヘッダ名（"x-amz-meta-" プレフィックス込み）
+ * Spec#131: S3 オブジェクトメタデータ送信用の HTTP ヘッダ名（"x-amz-meta-" プレフィックス込み）
  *
  * バックエンド S3Service.java の S3_METADATA_KEY_CROP_CENTER_X 等
  * （プレフィックスを除いた値）と、Lambda lambda_function.py の
@@ -324,7 +324,7 @@ export const S3_META_HEADER_CROP_CENTER_Y = 'x-amz-meta-crop-center-y'
 export const S3_META_HEADER_CROP_ZOOM = 'x-amz-meta-crop-zoom'
 
 /**
- * Issue#131: S3 PUT 時に送る crop メタデータ。
+ * Spec#131: S3 PUT 時に送る crop メタデータ。
  * バックエンド（S3Service）と Lambda（lambda_function.py）と値を揃える。
  */
 export interface S3UploadCropMetadata {
@@ -337,7 +337,7 @@ export interface S3UploadCropMetadata {
  * S3にファイルをアップロード
  * @param uploadUrl Presigned URL
  * @param file アップロードするファイル
- * @param crop  Issue#131: ユーザー指定のクロップ範囲（投稿写真のみ・avatar は省略可）
+ * @param crop  Spec#131: ユーザー指定のクロップ範囲（投稿写真のみ・avatar は省略可）
  */
 export async function uploadFileToS3(
   uploadUrl: string,

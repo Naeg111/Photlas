@@ -1,4 +1,4 @@
-// Issue#117: passthrough.js（通常時の CloudFront Function コード）の単体テスト
+// Spec#117: passthrough.js（通常時の CloudFront Function コード）の単体テスト
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');

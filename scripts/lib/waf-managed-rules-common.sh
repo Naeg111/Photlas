@@ -1,13 +1,13 @@
 #!/bin/bash
 #
-# Shared helpers for Issue#97 WAF managed-rule scripts.
+# Shared helpers for Spec#97 WAF managed-rule scripts.
 # Sourced by:
 #   scripts/setup-waf-managed-rules-alarm.sh
 #   scripts/waf-block-switch.sh
 #
 # This library provides ONE source of truth for:
 #   - The mapping between a WebACL rule name and its CloudWatch alarm short
-#     name / 5-minute threshold (Issue#97 §3.5)
+#     name / 5-minute threshold (Spec#97 §3.5)
 #   - A common alarm-naming convention: photlas-waf-<ShortName>-<Suffix>
 #     where <Suffix> is "Counted" in Count mode and "Blocked" in Block mode
 #
@@ -15,7 +15,7 @@
 # in each caller script (not inside this library) so that each script remains
 # self-documenting about which AWS APIs it invokes.
 #
-# Issue#97.md §3.5 alarm spec (5-minute window):
+# SPEC-0097.md §3.5 alarm spec (5-minute window):
 #   AmazonIpReputationList   -> IpReputation    threshold 100
 #   KnownBadInputsRuleSet    -> KnownBadInputs  threshold  20
 #   SQLiRuleSet              -> SQLi            threshold   5
@@ -65,7 +65,7 @@ waf_managed_alarm_name() {
   echo "photlas-waf-${short}-${suffix}"
 }
 
-# Echo the list of Issue#97 managed rule display names, one per line.
+# Echo the list of Spec#97 managed rule display names, one per line.
 # Used by caller scripts to iterate over all 4 managed rules.
 waf_managed_rule_names() {
   cat <<'EOF'

@@ -1,10 +1,10 @@
 #!/usr/bin/env bats
 #
-# Issue#117: scripts/maintenance.html の必須要素を検証する。
+# Spec#117: scripts/maintenance.html の必須要素を検証する。
 # このファイルはメンテナンス画面の HTML ソースで、build-maintenance-function.sh
 # が CloudFront Function コードに埋め込む。
 #
-# Source of truth: documents/04_Issues/Issue#117.md §3.1, §4.3
+# Source of truth: documents/spec/SPEC-0117.md §3.1, §4.3
 
 load helpers
 

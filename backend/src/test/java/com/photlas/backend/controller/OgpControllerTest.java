@@ -121,7 +121,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - QUARANTINED写真のOGPリクエストは404を返す")
+    @DisplayName("Spec#54 - QUARANTINED写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_QuarantinedPhoto_Returns404() throws Exception {
         // Given: QUARANTINED写真
         testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -133,7 +133,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#74 - OGPタイトルにplace_nameが使用される")
+    @DisplayName("Spec#74 - OGPタイトルにplace_nameが使用される")
     void testGetPhotoOgp_UsesPlaceName() throws Exception {
         // Given: place_nameが設定された写真
         testPhoto.setPlaceName("渋谷スクランブルスクエア");
@@ -146,7 +146,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#74 - place_name未設定時はOGPタイトルに「Photlas」が使用される")
+    @DisplayName("Spec#74 - place_name未設定時はOGPタイトルに「Photlas」が使用される")
     void testGetPhotoOgp_NoPlaceName_UsesPhotlas() throws Exception {
         // Given: place_nameが未設定の写真
         testPhoto.setPlaceName(null);
@@ -160,7 +160,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 退会済みユーザーの写真のOGPリクエストは404を返す")
+    @DisplayName("Spec#54 - 退会済みユーザーの写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_DeletedUser_Returns404() throws Exception {
         testUser.setDeletedAt(LocalDateTime.now());
         userRepository.save(testUser);
@@ -170,7 +170,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 永久停止ユーザーの写真のOGPリクエストは404を返す")
+    @DisplayName("Spec#54 - 永久停止ユーザーの写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_SuspendedUser_Returns404() throws Exception {
         testUser.setRole(CodeConstants.ROLE_SUSPENDED);
         userRepository.save(testUser);
@@ -180,7 +180,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - REMOVED写真のOGPリクエストは404を返す")
+    @DisplayName("Spec#54 - REMOVED写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_RemovedPhoto_Returns404() throws Exception {
         // Given: REMOVED写真
         testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);

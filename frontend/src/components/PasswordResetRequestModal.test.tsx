@@ -4,7 +4,7 @@ import PasswordResetRequestModal from './PasswordResetRequestModal'
 import i18n from '../i18n'
 
 /**
- * Issue#6: パスワードリセット機能 - パスワードリセットリクエストモーダル UI テスト
+ * Spec#6: パスワードリセット機能 - パスワードリセットリクエストモーダル UI テスト
  * TDD Red段階: 実装前のテストケース定義
  *
  * UI要件:
@@ -147,7 +147,7 @@ describe('PasswordResetRequestModal', () => {
       })
     })
 
-    // Issue#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+    // Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
     const validationError = () =>
       new Response(
         JSON.stringify({ code: 'VALIDATION_ERROR', message: '入力内容が無効です。' }),
@@ -172,7 +172,7 @@ describe('PasswordResetRequestModal', () => {
       expect(screen.queryByText('入力内容が無効です。')).not.toBeInTheDocument()
     })
 
-    it('Issue#93 - shows the error in English when the language is English', async () => {
+    it('Spec#93 - shows the error in English when the language is English', async () => {
       const mockFetch = vi.mocked(fetch)
       mockFetch.mockResolvedValueOnce(validationError())
 
@@ -332,7 +332,7 @@ describe('PasswordResetRequestModal', () => {
     })
   })
 
-  // Issue#96 PR2b: 429 レート制限ハンドリング（パターンA: フォーム送信系）
+  // Spec#96 PR2b: 429 レート制限ハンドリング（パターンA: フォーム送信系）
   describe('Rate Limit (429) - レート制限', () => {
     it('パスワードリセット要求で429を受信したらレート制限メッセージをインライン表示する', async () => {
       const mockFetch = vi.mocked(fetch)

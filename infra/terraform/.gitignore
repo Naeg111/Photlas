@@ -1,4 +1,4 @@
-# Terraform（Issue#147 決定 E：汎用 .tf は公開・具体値/state は Git 管理外）
+# Terraform（Spec#147 決定 E：汎用 .tf は公開・具体値/state は Git 管理外）
 
 # プロバイダプラグイン・作業ディレクトリ
 **/.terraform/

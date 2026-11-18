@@ -161,7 +161,7 @@ test.describe('プロフィール管理・表示', () => {
       await expect(page.getByTestId('edit-sns-links-button')).toBeVisible()
     })
 
-    test('Issue#102 - 編集ボタンを押すと固定3行UI（Instagram/Threads/X）が表示される', async ({ page }) => {
+    test('Spec#102 - 編集ボタンを押すと固定3行UI（Instagram/Threads/X）が表示される', async ({ page }) => {
       await createAccountAndLogin(page, 'profile-sns-form')
 
       await openProfileDialog(page)
@@ -175,7 +175,7 @@ test.describe('プロフィール管理・表示', () => {
       await expect(page.getByTestId('sns-url-input-x')).toBeVisible()
     })
 
-    test('Issue#102 - X 入力欄に URL を入力して保存できる', async ({ page }) => {
+    test('Spec#102 - X 入力欄に URL を入力して保存できる', async ({ page }) => {
       await createAccountAndLogin(page, 'profile-sns-add')
 
       await openProfileDialog(page)

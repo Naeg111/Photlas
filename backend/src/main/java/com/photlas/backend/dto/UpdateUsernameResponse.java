@@ -2,7 +2,7 @@ package com.photlas.backend.dto;
 
 /**
  * 表示名更新レスポンスDTO
- * Issue#29: プロフィール機能強化
+ * Spec#29: プロフィール機能強化
  */
 public class UpdateUsernameResponse {
 

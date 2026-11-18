@@ -12,7 +12,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 
 /**
- * Issue#58 §6: SPA の現行 {@code index.html} を取得して提供する。
+ * Spec#58 §6: SPA の現行 {@code index.html} を取得して提供する。
  *
  * <p>{@link com.photlas.backend.controller.PhotoViewerController} が
  * {@code /photo-viewer/{id}} で「index.html ＋ 写真個別 OGP 差し込み」を返すために使う。</p>

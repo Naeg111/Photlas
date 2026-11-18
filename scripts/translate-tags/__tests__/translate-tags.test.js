@@ -1,4 +1,4 @@
-// Issue#135 Phase 4: scripts/translate-tags のテスト
+// Spec#135 Phase 4: scripts/translate-tags のテスト
 //
 // scripts/translate-tags/translate-tags.mjs は新規キーワードを 4 言語
 // (ja / zh / ko / es) に Claude API で翻訳するスクリプト。

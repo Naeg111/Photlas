@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * Issue#81 Phase 4h - OAuth のみユーザーの初回パスワード設定リクエスト。
+ * Spec#81 Phase 4h - OAuth のみユーザーの初回パスワード設定リクエスト。
  *
  * <p>{@code POST /api/v1/auth/oauth2/set-password} へ送信する。
  */

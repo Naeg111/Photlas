@@ -1,5 +1,5 @@
 /**
- * Issue#106: IP国判定キャッシュのテスト
+ * Spec#106: IP国判定キャッシュのテスト
  *
  * 注意: テスト全体の setup（src/test/setup.ts）で localStorage を vi.fn() でモック化しているため、
  *       本テスト内では Map ベースの実用的なストア実装で localStorage を上書きする。
@@ -43,16 +43,16 @@ describe('geoCountryCache', () => {
     vi.useRealTimers()
   })
 
-  it('Issue#106 - キャッシュ保存後、同じ国コードが読み出せる', () => {
+  it('Spec#106 - キャッシュ保存後、同じ国コードが読み出せる', () => {
     setGeoCountryCache('JP')
     expect(getGeoCountryCache()).toBe('JP')
   })
 
-  it('Issue#106 - キャッシュが存在しない場合 null を返す', () => {
+  it('Spec#106 - キャッシュが存在しない場合 null を返す', () => {
     expect(getGeoCountryCache()).toBeNull()
   })
 
-  it('Issue#106 - 24時間（TTL）以内のキャッシュは有効', () => {
+  it('Spec#106 - 24時間（TTL）以内のキャッシュは有効', () => {
     setGeoCountryCache('JP')
 
     // 23時間59分後 → 有効
@@ -60,7 +60,7 @@ describe('geoCountryCache', () => {
     expect(getGeoCountryCache()).toBe('JP')
   })
 
-  it('Issue#106 - 24時間経過後のキャッシュは期限切れとして null を返す', () => {
+  it('Spec#106 - 24時間経過後のキャッシュは期限切れとして null を返す', () => {
     setGeoCountryCache('JP')
 
     // 24時間1秒後 → 期限切れ
@@ -68,20 +68,20 @@ describe('geoCountryCache', () => {
     expect(getGeoCountryCache()).toBeNull()
   })
 
-  it('Issue#106 - キャッシュキーが規約通り（photlas_geo_country）', () => {
+  it('Spec#106 - キャッシュキーが規約通り（photlas_geo_country）', () => {
     expect(GEO_COUNTRY_CACHE_KEY).toBe('photlas_geo_country')
   })
 
-  it('Issue#106 - TTLが24時間（86400000ms）', () => {
+  it('Spec#106 - TTLが24時間（86400000ms）', () => {
     expect(GEO_COUNTRY_CACHE_TTL_MS).toBe(24 * 60 * 60 * 1000)
   })
 
-  it('Issue#106 - 不正なJSONがキャッシュにある場合は null を返す（クラッシュしない）', () => {
+  it('Spec#106 - 不正なJSONがキャッシュにある場合は null を返す（クラッシュしない）', () => {
     localStorage.setItem(GEO_COUNTRY_CACHE_KEY, 'invalid-json{{{')
     expect(getGeoCountryCache()).toBeNull()
   })
 
-  it('Issue#106 - localStorage 書き込みに失敗してもクラッシュしない', () => {
+  it('Spec#106 - localStorage 書き込みに失敗してもクラッシュしない', () => {
     // localStorage.setItem を一時的に投げるように差し替え
     const original = (global as unknown as { localStorage: Storage }).localStorage
     Object.defineProperty(global, 'localStorage', {

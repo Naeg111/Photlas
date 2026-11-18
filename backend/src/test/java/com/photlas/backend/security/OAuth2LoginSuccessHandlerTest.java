@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#81 Phase 3e - {@link OAuth2LoginSuccessHandler} のテスト（Red 段階）。
+ * Spec#81 Phase 3e - {@link OAuth2LoginSuccessHandler} のテスト（Red 段階）。
  *
  * <p>{@link PhotlasOAuth2User} から {@link User} を取り出し、
  * {@link JwtService#generateTokenWithRole} で JWT を発行する。

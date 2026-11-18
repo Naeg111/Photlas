@@ -89,7 +89,7 @@ public class AuthService {
         );
         user.setLanguage(resolveRegistrationLanguage(request.getLanguage(), acceptLanguage));
 
-        // Issue#104 + Issue#109: メール+パスワード登録時は利用規約・プライバシーポリシー・年齢確認を同意済みとして記録
+        // Spec#104 + Spec#109: メール+パスワード登録時は利用規約・プライバシーポリシー・年齢確認を同意済みとして記録
         // (RegisterRequest の @AssertTrue により、各 boolean が true であることはバリデーション済み)
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         user.setTermsAgreedAt(now);
@@ -127,7 +127,7 @@ public class AuthService {
 
     /**
      * ログイン処理
-     * Issue#92: ソフトデリート済みユーザーが正しいパスワードでログインした場合、アカウントを復旧する。
+     * Spec#92: ソフトデリート済みユーザーが正しいパスワードでログインした場合、アカウントを復旧する。
      *
      * @param request ログインリクエスト
      * @return ログインレスポンス
@@ -146,7 +146,7 @@ public class AuthService {
             throw new UnauthorizedException(ERROR_INVALID_CREDENTIALS);
         }
 
-        // Issue#92: ソフトデリート済みの場合、アカウントを復旧する
+        // Spec#92: ソフトデリート済みの場合、アカウントを復旧する
         if (user.getDeletedAt() != null) {
             recoverSoftDeletedUser(user);
         }
@@ -159,7 +159,7 @@ public class AuthService {
             throw new AccountSuspendedException("アカウントが停止されています");
         }
 
-        // Issue#93: ログイン時のAccept-Languageによる言語自動更新を廃止
+        // Spec#93: ログイン時のAccept-Languageによる言語自動更新を廃止
         // 言語設定はユーザーが手動で変更する
 
         String token = jwtService.generateTokenWithRole(user.getEmail(), CodeConstants.roleToJwtString(user.getRole()));
@@ -233,10 +233,10 @@ public class AuthService {
     }
 
     /**
-     * Issue#92: ソフトデリート済みアカウントを復旧する
+     * Spec#92: ソフトデリート済みアカウントを復旧する
      * deletedAt, username, originalUsername, deletionHoldUntilをリストアする。
      *
-     * Issue#81 Phase 3b: 可視性を private → package-private に変更し、
+     * Spec#81 Phase 3b: 可視性を private → package-private に変更し、
      * 同パッケージの OAuth2UserServiceHelper から呼び出せるようにする。
      */
     void recoverSoftDeletedUser(User user) {
@@ -250,7 +250,7 @@ public class AuthService {
     /**
      * メール認証トークンを生成して認証メールを送信
      *
-     * <p>Issue#113: テンプレートと言語判定を {@link EmailTemplateService} に一元化。
+     * <p>Spec#113: テンプレートと言語判定を {@link EmailTemplateService} に一元化。
      * グループ A (HTTP 失敗扱い) のため、メール送信失敗時は例外を呼び出し元へ伝播し、
      * Controller 層で {@code 500 Internal Server Error} にマップされる。</p>
      */

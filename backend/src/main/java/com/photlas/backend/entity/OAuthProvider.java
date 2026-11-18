@@ -1,7 +1,7 @@
 package com.photlas.backend.entity;
 
 /**
- * Issue#81 - OAuth プロバイダー列挙型。
+ * Spec#81 - OAuth プロバイダー列挙型。
  *
  * 数値コード: 1401=GOOGLE, 1402=LINE（CodeConstants 他フィールドとの衝突回避のため 1400 番台）。
  * Spring Security OAuth2 Client の registrationId ("google" / "line") と対応する。

@@ -1,7 +1,7 @@
 package com.photlas.backend.dto;
 
 /**
- * Issue#81 Phase 4f - パスワード推奨バナー API のレスポンス DTO。
+ * Spec#81 Phase 4f - パスワード推奨バナー API のレスポンス DTO。
  *
  * <p>{@code shouldRecommend=true} のとき、フロントエンドは「パスワード設定を推奨します」
  * バナーを表示する。{@code provider} はバナー文言の {@code {{provider}}} プレースホルダ

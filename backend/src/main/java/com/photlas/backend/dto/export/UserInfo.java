@@ -3,7 +3,7 @@ package com.photlas.backend.dto.export;
 import java.time.Instant;
 
 /**
- * Issue#108: ユーザー本人のプロフィール情報。user.json に対応する。
+ * Spec#108: ユーザー本人のプロフィール情報。user.json に対応する。
  *
  * <p>id、profileImageS3Key 等の内部実装情報は含めない。プロフィール画像本体は
  * 別途 ZIP に同梱される（profile_image.*）。</p>

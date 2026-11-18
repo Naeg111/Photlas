@@ -1,5 +1,5 @@
 """
-Issue#75: サムネイル生成Lambda関数のユニットテスト
+Spec#75: サムネイル生成Lambda関数のユニットテスト
 
 テスト実行: cd lambda/thumbnail-generator && python3 -m pytest test_lambda_function.py -v
 """
@@ -116,25 +116,25 @@ class TestCenterCropAndResize:
     """中央クロップ+リサイズのテスト。"""
 
     def test_landscape_image(self):
-        """Issue#123 - 横長画像が800x800の正方形にクロップ+リサイズされる。"""
+        """Spec#123 - 横長画像が800x800の正方形にクロップ+リサイズされる。"""
         img = Image.new("RGB", (1600, 1200))
         result = center_crop_and_resize(img)
         assert result.size == (800, 800)
 
     def test_portrait_image(self):
-        """Issue#123 - 縦長画像が800x800の正方形にクロップ+リサイズされる。"""
+        """Spec#123 - 縦長画像が800x800の正方形にクロップ+リサイズされる。"""
         img = Image.new("RGB", (1200, 1600))
         result = center_crop_and_resize(img)
         assert result.size == (800, 800)
 
     def test_square_image(self):
-        """Issue#123 - 正方形画像が800x800にリサイズされる。"""
+        """Spec#123 - 正方形画像が800x800にリサイズされる。"""
         img = Image.new("RGB", (1000, 1000))
         result = center_crop_and_resize(img)
         assert result.size == (800, 800)
 
     def test_rgba_converted_to_rgb(self):
-        """Issue#123 - RGBA画像がRGBに変換され、800x800になる。"""
+        """Spec#123 - RGBA画像がRGBに変換され、800x800になる。"""
         img = Image.new("RGBA", (1600, 1200))
         result = center_crop_and_resize(img)
         assert result.mode == "RGB"
@@ -164,7 +164,7 @@ class TestLambdaHandler:
 
     @patch("lambda_function.s3_client")
     def test_thumbnail_is_800x800_square(self, mock_s3):
-        """Issue#123 - 横長画像から800x800の正方形サムネイルが生成される。"""
+        """Spec#123 - 横長画像から800x800の正方形サムネイルが生成される。"""
         jpeg_bytes = create_test_image(1600, 1200, color="blue")
         captured = setup_mock_s3_with_capture(mock_s3, jpeg_bytes)
 
@@ -177,7 +177,7 @@ class TestLambdaHandler:
 
     @patch("lambda_function.s3_client")
     def test_thumbnail_is_800x800_from_portrait(self, mock_s3):
-        """Issue#123 - 縦長画像から800x800の正方形サムネイルが生成される。"""
+        """Spec#123 - 縦長画像から800x800の正方形サムネイルが生成される。"""
         jpeg_bytes = create_test_image(1200, 1600, color="green")
         captured = setup_mock_s3_with_capture(mock_s3, jpeg_bytes)
 
@@ -190,7 +190,7 @@ class TestLambdaHandler:
 
     @patch("lambda_function.s3_client")
     def test_thumbnail_format_is_webp(self, mock_s3):
-        """Issue#75 - 生成されたサムネイルがWebPフォーマットである。"""
+        """Spec#75 - 生成されたサムネイルがWebPフォーマットである。"""
         jpeg_bytes = create_test_image(800, 600)
         captured = setup_mock_s3_with_capture(mock_s3, jpeg_bytes)
 
@@ -212,8 +212,8 @@ class TestLambdaHandler:
         mock_s3.get_object.assert_not_called()
 
 
-class TestIssue100TagConstants:
-    """Issue#100 - タグ定数の定義。"""
+class TestSpec100TagConstants:
+    """Spec#100 - タグ定数の定義。"""
 
     def test_status_tag_key(self):
         """STATUS_TAG_KEY が "status" として定義されている。"""
@@ -228,8 +228,8 @@ class TestIssue100TagConstants:
         assert STATUS_TAG_VALUE_REGISTERED == "registered"
 
 
-class TestIssue100TagCopy:
-    """Issue#100 - 元画像のタグをサムネイルに付与するテスト。"""
+class TestSpec100TagCopy:
+    """Spec#100 - 元画像のタグをサムネイルに付与するテスト。"""
 
     @patch("lambda_function.s3_client")
     def test_thumbnail_inherits_pending_tag_from_source(self, mock_s3):
@@ -268,8 +268,8 @@ class TestIssue100TagCopy:
         assert call_args[1].get("Tagging") == "status=registered"
 
 
-class TestIssue100DoubleCheck:
-    """Issue#100 - サムネイル書き込み後の二重チェックのテスト。"""
+class TestSpec100DoubleCheck:
+    """Spec#100 - サムネイル書き込み後の二重チェックのテスト。"""
 
     @patch("lambda_function.s3_client")
     def test_double_check_updates_thumbnail_tag_when_source_changed(self, mock_s3):
@@ -386,8 +386,8 @@ class TestSnsWrappedEvent:
         mock_s3.put_object.assert_called_once()
 
 
-class TestIssue124CacheControl:
-    """Issue#124 - サムネイル put_object に Cache-Control を付与するテスト。"""
+class TestSpec124CacheControl:
+    """Spec#124 - サムネイル put_object に Cache-Control を付与するテスト。"""
 
     def test_cache_control_constant_defined(self):
         """S3_CACHE_CONTROL_VALUE が "public, max-age=31536000, immutable" として定義されている。"""
@@ -411,8 +411,8 @@ class TestIssue124CacheControl:
         assert call_args[1].get("CacheControl") == "public, max-age=31536000, immutable"
 
 
-class TestIssue123UnsharpMask:
-    """Issue#123 - リサイズ後にアンシャープマスクが適用されるテスト。"""
+class TestSpec123UnsharpMask:
+    """Spec#123 - リサイズ後にアンシャープマスクが適用されるテスト。"""
 
     @patch("lambda_function.s3_client")
     @patch("lambda_function.ImageFilter")
@@ -448,8 +448,8 @@ class TestIssue123UnsharpMask:
         )
 
 
-class TestIssue123FileSizeLimit:
-    """Issue#123 - 生成サムネイルのファイルサイズ上限テスト。
+class TestSpec123FileSizeLimit:
+    """Spec#123 - 生成サムネイルのファイルサイズ上限テスト。
 
     800x800 化で 1 枚あたり 30KB → 100〜130KB 程度になる見込み。
     余裕を見て 200KB を上限とする（CDN コスト・ストレージへの影響を抑える保証線）。
@@ -472,8 +472,8 @@ class TestIssue123FileSizeLimit:
         )
 
 
-class TestIssue131CalculateCropBox:
-    """Issue#131 - calculate_user_specified_crop_box 純粋関数のテスト。
+class TestSpec131CalculateCropBox:
+    """Spec#131 - calculate_user_specified_crop_box 純粋関数のテスト。
 
     cx, cy: 0.0〜1.0 の正規化座標（画像の中心位置）
     zoom:   1.0〜3.0（ユーザーが指定したズーム倍率）
@@ -530,8 +530,8 @@ class TestIssue131CalculateCropBox:
         assert (bottom - top) == 400.0
 
 
-class TestIssue131ParseCropMetadata:
-    """Issue#131 - parse_crop_metadata のテスト。
+class TestSpec131ParseCropMetadata:
+    """Spec#131 - parse_crop_metadata のテスト。
 
     S3 Metadata（小文字キーの dict）から (cx, cy, zoom) を取り出す純粋関数。
     crop 情報が無い・不正な場合は None を返す（呼び出し側でフォールバック判定する）。
@@ -588,8 +588,8 @@ class TestIssue131ParseCropMetadata:
         assert parse_crop_metadata(metadata) is None
 
 
-class TestIssue131UserSpecifiedCropFromMetadata:
-    """Issue#131 - lambda_handler が S3 Metadata からクロップ範囲を読んで適用するテスト。"""
+class TestSpec131UserSpecifiedCropFromMetadata:
+    """Spec#131 - lambda_handler が S3 Metadata からクロップ範囲を読んで適用するテスト。"""
 
     @patch("lambda_function.s3_client")
     def test_metadata_is_used_for_user_specified_crop(self, mock_s3):
