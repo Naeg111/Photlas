@@ -39,9 +39,9 @@ public class AccountCleanupService {
 
     /**
      * 退会済みアカウントの物理削除を実行する
-     * 毎日午前4時（JST）= UTC 19:00 に実行
+     * 毎日午前4時（日本時間）に実行。Spec#169: JVM のタイムゾーン（本番は UTC）に左右されないよう zone を指定する
      */
-    @Scheduled(cron = "0 0 19 * * *")
+    @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Tokyo")
     @Transactional
     public void cleanupDeletedAccounts() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(RETENTION_DAYS);

@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,9 +17,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,8 +50,14 @@ class ModerationNotificationMultiLanguageTest {
     private EmailTemplateService emailTemplateService;
     private ModerationNotificationService notificationService;
 
+    private TimeZone originalDefault;
+
     @BeforeEach
     void setUp() {
+        // Spec#169: 本番と同じく JVM を UTC にする（保存されている時刻は UTC の時刻）
+        originalDefault = TimeZone.getDefault();
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+
         // 実 MessageSource を組み立てる（properties ファイル経由）
         ReloadableResourceBundleMessageSource source = new ReloadableResourceBundleMessageSource();
         source.setBasename("classpath:i18n/email/messages");
@@ -60,6 +67,11 @@ class ModerationNotificationMultiLanguageTest {
         emailTemplateService = new EmailTemplateService(source);
         notificationService = new ModerationNotificationService(mailSender, emailTemplateService);
         ReflectionTestUtils.setField(notificationService, "mailFrom", "noreply@photlas.jp");
+    }
+
+    @AfterEach
+    void restoreDefaultTimeZone() {
+        TimeZone.setDefault(originalDefault);
     }
 
     @Test
@@ -126,9 +138,30 @@ class ModerationNotificationMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 一時停止通知 ja: 停止期間が本文に含まれる")
+    @DisplayName("Spec#169 - 隔離通知 en: 投稿日時は UTC で、ラベル付きで書かれる")
+    void quarantineEnShowsUtcWithLabel() {
+        notificationService.sendQuarantineNotification("en@example.com", "naegi",
+                LocalDateTime.of(2026, 3, 15, 5, 30), "en");
+
+        SimpleMailMessage captured = captureSent();
+        assertThat(captured.getText()).contains("Mar 15, 2026 05:30 UTC");
+    }
+
+    @Test
+    @DisplayName("Spec#169 - 隔離通知 ko: 投稿日時は韓国時間（KST）で書かれる")
+    void quarantineKoShowsKst() {
+        notificationService.sendQuarantineNotification("ko@example.com", "naegi",
+                LocalDateTime.of(2026, 3, 15, 5, 30), "ko");
+
+        SimpleMailMessage captured = captureSent();
+        assertThat(captured.getText()).contains("2026-03-15 14:30 KST");
+    }
+
+    @Test
+    @DisplayName("Spec#113 - 一時停止通知 ja: 停止期間が本文に含まれる")
     void suspensionJaIncludesPeriod() {
-        LocalDate suspendedUntil = LocalDate.of(2026, 6, 30);
+        // 2026-06-30 03:00 UTC = 2026-06-30 12:00 JST
+        LocalDateTime suspendedUntil = LocalDateTime.of(2026, 6, 30, 3, 0);
         notificationService.sendTemporarySuspensionNotification("ja@example.com", "naegi",
                 "違反", suspendedUntil, "ja");
 

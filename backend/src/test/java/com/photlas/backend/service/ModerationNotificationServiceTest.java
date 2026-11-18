@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,9 +13,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -34,9 +35,14 @@ public class ModerationNotificationServiceTest {
 
     private EmailTemplateService emailTemplateService;
     private ModerationNotificationService notificationService;
+    private TimeZone originalDefault;
 
     @BeforeEach
     void setUp() {
+        // Spec#169: 本番と同じく JVM を UTC にする（保存されている時刻は UTC の時刻）
+        originalDefault = TimeZone.getDefault();
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+
         // 実 MessageSource を組み立てて properties ファイルから件名・本文を読み込む
         ReloadableResourceBundleMessageSource source = new ReloadableResourceBundleMessageSource();
         source.setBasename("classpath:i18n/email/messages");
@@ -48,10 +54,16 @@ public class ModerationNotificationServiceTest {
         ReflectionTestUtils.setField(notificationService, "mailFrom", "noreply@photlas.jp");
     }
 
+    @AfterEach
+    void restoreDefaultTimeZone() {
+        TimeZone.setDefault(originalDefault);
+    }
+
     @Test
-    @DisplayName("Issue#54 - 隔離通知メールが正しい件名・本文で送信される")
+    @DisplayName("Spec#54 / Spec#169 - 隔離通知メールが正しい件名・本文で送信され、投稿日時は日本時間（JST）で書かれる")
     void testSendQuarantineNotification() {
-        LocalDateTime createdAt = LocalDateTime.of(2026, 3, 15, 14, 30);
+        // 保存されている時刻は UTC（05:30 UTC = 14:30 JST）
+        LocalDateTime createdAt = LocalDateTime.of(2026, 3, 15, 5, 30);
         notificationService.sendQuarantineNotification(
                 "user@example.com", "テストユーザー", createdAt);
 
@@ -62,7 +74,7 @@ public class ModerationNotificationServiceTest {
         assertThat(message.getTo()).containsExactly("user@example.com");
         assertThat(message.getSubject()).contains("審査");
         assertThat(message.getText()).contains("テストユーザー");
-        assertThat(message.getText()).contains("2026年03月15日 14:30");
+        assertThat(message.getText()).contains("2026年03月15日 14:30 JST");
     }
 
     @Test
@@ -82,9 +94,10 @@ public class ModerationNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 一時停止通知メールが停止期間を含む")
+    @DisplayName("Spec#54 / Spec#169 - 一時停止通知メールが停止期間を含み、終了日は日本時間の日付で書かれる")
     void testSendTemporarySuspensionNotification() {
-        LocalDate suspendedUntil = LocalDate.of(2026, 5, 10);
+        // 保存されている時刻は UTC（2026-05-09 20:00 UTC = 2026-05-10 05:00 JST）
+        LocalDateTime suspendedUntil = LocalDateTime.of(2026, 5, 9, 20, 0);
 
         notificationService.sendTemporarySuspensionNotification(
                 "user@example.com", "テストユーザー", "暴力的コンテンツ", suspendedUntil);

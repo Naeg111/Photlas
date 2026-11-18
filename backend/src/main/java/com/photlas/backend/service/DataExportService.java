@@ -340,7 +340,8 @@ public class DataExportService {
         return s.length() <= max ? s : s.substring(0, max);
     }
 
-    private static ObjectMapper buildObjectMapper() {
+    /** photos.json などの出力に使う ObjectMapper。書式のテストからも使うため package-private。 */
+    static ObjectMapper buildObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);

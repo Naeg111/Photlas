@@ -4,6 +4,7 @@ import com.photlas.backend.dto.OAuth2UserInfo;
 import com.photlas.backend.entity.OAuthProvider;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.service.OAuth2UserServiceHelper;
+import com.photlas.backend.util.ServerTime;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,7 +23,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -94,7 +94,7 @@ public class CustomOidcUserService implements OAuth2UserService<OidcUserRequest,
 
         OAuth2AccessToken accessToken = userRequest.getAccessToken();
         String tokenValue = accessToken != null ? accessToken.getTokenValue() : null;
-        LocalDateTime tokenExpiresAt = toLocalDateTimeUtc(
+        LocalDateTime tokenExpiresAt = toServerLocalDateTime(
                 accessToken != null ? accessToken.getExpiresAt() : null);
 
         String language = readLanguageFromSession();
@@ -142,7 +142,11 @@ public class CustomOidcUserService implements OAuth2UserService<OidcUserRequest,
         return lang != null ? Objects.toString(lang, null) : null;
     }
 
-    private static LocalDateTime toLocalDateTimeUtc(Instant instant) {
-        return instant == null ? null : LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+    /**
+     * Spec#169: トークンの期限を、JVM の既定のタイムゾーン（本番は UTC）の LocalDateTime にする。
+     * OAuthTokenRevokeService が LocalDateTime.now() と比べるため、同じタイムゾーンにそろえる。
+     */
+    private static LocalDateTime toServerLocalDateTime(Instant instant) {
+        return ServerTime.fromInstant(instant);
     }
 }

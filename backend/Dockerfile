@@ -32,6 +32,11 @@ FROM amazoncorretto:21-alpine
 
 WORKDIR /app
 
+# Spec#169: JVM のタイムゾーンを UTC に固定する。
+# 作成時刻などは LocalDateTime.now()（JVM の既定のタイムゾーン）で TIMESTAMP 列に記録しており、
+# これまでも UTC で動いていた（設定がなく、既定が UTC だった）。その前提を明示する。
+ENV TZ=UTC
+
 # Install curl for health checks
 RUN apk add --no-cache curl
 
@@ -54,4 +59,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:8080/api/v1/health || exit 1
 
 # Run application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Duser.timezone=UTC", "-jar", "app.jar"]

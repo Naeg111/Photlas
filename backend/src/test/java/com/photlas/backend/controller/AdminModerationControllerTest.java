@@ -147,7 +147,9 @@ public class AdminModerationControllerTest {
                 .andExpect(jsonPath("$.content[0].thumbnail_url").isString())
                 .andExpect(jsonPath("$.content[0].user_id").value(photoOwner.getId()))
                 .andExpect(jsonPath("$.content[0].username").value(OWNER_USERNAME))
-                .andExpect(jsonPath("$.content[0].created_at").isString());
+                .andExpect(jsonPath("$.content[0].created_at").isString())
+                // Spec#169: ブラウザが正しい現地時刻で表示できるよう、UTC（末尾 Z）で返す
+                .andExpect(jsonPath("$.content[0].created_at", endsWith("Z")));
     }
 
     @Test

@@ -52,4 +52,6 @@ tasks.named('test') {
 	// @ActiveProfiles("test") を付けていないテスト(コンテキストロード等)が、既定プロファイルの
 	// 旧 H2 設定や開発用 DB(photlas_dev)に流れないようにするための明示指定。
 	systemProperty 'spring.profiles.active', 'test'
+	// Spec#169: 本番・CI と同じく、テストの JVM も UTC で動かす（手元の Mac の日本時間に左右されないように）。
+	systemProperty 'user.timezone', 'UTC'
 }

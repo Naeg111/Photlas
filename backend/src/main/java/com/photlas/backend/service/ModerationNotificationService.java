@@ -1,5 +1,7 @@
 package com.photlas.backend.service;
 
+import com.photlas.backend.util.ServerTime;
+import com.photlas.backend.util.TimeZoneResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,8 +10,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
@@ -86,13 +88,16 @@ public class ModerationNotificationService {
 
     /**
      * 一時停止通知（2回目の違反）
+     *
+     * @param suspendedUntil 停止の終了日時（サーバーが記録した時刻）。Spec#169: 本文には、
+     *                       ユーザーの言語に応じた現地の日付（yyyy-MM-dd）で書く
      */
     @Async
     public void sendTemporarySuspensionNotification(
-            String email, String username, String reason, LocalDate suspendedUntil, String language) {
+            String email, String username, String reason, LocalDateTime suspendedUntil, String language) {
         String subject = emailTemplateService.subject("email.moderationSuspension", language);
         String body = emailTemplateService.body("email.moderationSuspension", language,
-                username, reason, suspendedUntil.toString());
+                username, reason, toUserLocal(suspendedUntil, language).toLocalDate().toString());
         sendEmail(email, subject, body, "moderationSuspension");
     }
 
@@ -101,7 +106,7 @@ public class ModerationNotificationService {
      */
     @Async
     public void sendTemporarySuspensionNotification(
-            String email, String username, String reason, LocalDate suspendedUntil) {
+            String email, String username, String reason, LocalDateTime suspendedUntil) {
         sendTemporarySuspensionNotification(email, username, reason, suspendedUntil, DEFAULT_LANGUAGE);
     }
 
@@ -126,7 +131,10 @@ public class ModerationNotificationService {
     /**
      * createdAt を言語に応じて整形する。
      * 言語ごとの代表的な日付表記習慣に合わせる:
-     *   en: "Mar 15, 2026 14:30" / ja: "2026年03月15日 14:30" / その他: "2026-03-15 14:30"
+     *   en: "Mar 15, 2026 05:30 UTC" / ja: "2026年03月15日 14:30 JST" / その他: "2026-03-15 14:30 KST"
+     *
+     * <p>Spec#169: createdAt はサーバーが記録した時刻（本番は UTC）なので、ユーザーの言語に応じた
+     * 現地時刻に直し、タイムゾーンのラベル（Spec#108 §4.15 と同じ）を付ける。</p>
      */
     private String formatCreatedAt(LocalDateTime createdAt, String language) {
         if (createdAt == null) return "";
@@ -136,7 +144,14 @@ public class ModerationNotificationService {
             // ko / zh-CN / zh-TW は ISO に近い表記で統一
             default -> DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         };
-        return createdAt.format(formatter);
+        return toUserLocal(createdAt, language).format(formatter) + " " + TimeZoneResolver.resolveLabel(language);
+    }
+
+    /**
+     * サーバーが記録した時刻を、ユーザーの言語に応じたタイムゾーンの時刻に直す（Spec#169）。
+     */
+    private static ZonedDateTime toUserLocal(LocalDateTime serverLocal, String language) {
+        return ServerTime.toInstant(serverLocal).atZone(TimeZoneResolver.resolveZone(language));
     }
 
     /**
