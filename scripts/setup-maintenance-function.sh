@@ -1,5 +1,5 @@
 #!/bin/bash
-# Issue#117: メンテナンスモード初回セットアップ
+# Spec#117: メンテナンスモード初回セットアップ
 #
 # 行うこと:
 #   1. CloudFront Function を作成 (初期は passthrough.js)

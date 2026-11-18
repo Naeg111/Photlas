@@ -13,8 +13,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#100: S3Service のタグベース孤立ファイル対応のテスト
- * Issue#124: 写真画像の Cache-Control を immutable 化のテスト
+ * Spec#100: S3Service のタグベース孤立ファイル対応のテスト
+ * Spec#124: 写真画像の Cache-Control を immutable 化のテスト
  *
  * - タグ定数の定義
  * - updateObjectTag メソッドの存在
@@ -22,45 +22,45 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - presigned URL の SignedHeaders に cache-control が含まれる
  *
  * 注: presigned URL の実際のタグ署名テストは AWS 認証情報が必要なため、
- * 手動検証（Issue#100 セクション 7.2）で行う。
- * Issue#124 では SignedHeaders のクエリ文字列のみダミー認証情報で検証する
+ * 手動検証（Spec#100 セクション 7.2）で行う。
+ * Spec#124 では SignedHeaders のクエリ文字列のみダミー認証情報で検証する
  * （presign は完全にローカルな署名処理なので実 AWS 接続は不要）。
  */
 class S3ServiceTest {
 
     @Test
-    @DisplayName("Issue#100 - タグ定数 STATUS_TAG_KEY が \"status\" として定義されている")
+    @DisplayName("Spec#100 - タグ定数 STATUS_TAG_KEY が \"status\" として定義されている")
     void statusTagKeyConstantDefined() {
         assertThat(S3Service.STATUS_TAG_KEY).isEqualTo("status");
     }
 
     @Test
-    @DisplayName("Issue#100 - タグ定数 STATUS_TAG_VALUE_PENDING が \"pending\" として定義されている")
+    @DisplayName("Spec#100 - タグ定数 STATUS_TAG_VALUE_PENDING が \"pending\" として定義されている")
     void statusTagValuePendingDefined() {
         assertThat(S3Service.STATUS_TAG_VALUE_PENDING).isEqualTo("pending");
     }
 
     @Test
-    @DisplayName("Issue#100 - タグ定数 STATUS_TAG_VALUE_REGISTERED が \"registered\" として定義されている")
+    @DisplayName("Spec#100 - タグ定数 STATUS_TAG_VALUE_REGISTERED が \"registered\" として定義されている")
     void statusTagValueRegisteredDefined() {
         assertThat(S3Service.STATUS_TAG_VALUE_REGISTERED).isEqualTo("registered");
     }
 
     @Test
-    @DisplayName("Issue#100 - updateObjectTag(String, String, String) メソッドが定義されている")
+    @DisplayName("Spec#100 - updateObjectTag(String, String, String) メソッドが定義されている")
     void updateObjectTagMethodExists() throws NoSuchMethodException {
         // S3 への実呼び出しは行わず、メソッドシグネチャのみを検証
         S3Service.class.getMethod("updateObjectTag", String.class, String.class, String.class);
     }
 
     @Test
-    @DisplayName("Issue#124 - 定数 S3_CACHE_CONTROL_VALUE が \"public, max-age=31536000, immutable\" として定義されている")
+    @DisplayName("Spec#124 - 定数 S3_CACHE_CONTROL_VALUE が \"public, max-age=31536000, immutable\" として定義されている")
     void s3CacheControlValueConstantDefined() {
         assertThat(S3Service.S3_CACHE_CONTROL_VALUE).isEqualTo("public, max-age=31536000, immutable");
     }
 
     @Test
-    @DisplayName("Issue#124 - generatePresignedUploadUrl が生成する URL の SignedHeaders に cache-control が含まれる")
+    @DisplayName("Spec#124 - generatePresignedUploadUrl が生成する URL の SignedHeaders に cache-control が含まれる")
     void presignedUrlIncludesCacheControlInSignedHeaders() throws Exception {
         // ダミー認証情報を system property で設定（presign は完全にローカル処理なので
         // 実 AWS 接続は不要。クレデンシャルが「あること」だけが必要）
@@ -100,11 +100,11 @@ class S3ServiceTest {
     }
 
     // ============================================================
-    // Issue#131: presigned URL に crop メタデータを含めるテスト
+    // Spec#131: presigned URL に crop メタデータを含めるテスト
     // ============================================================
 
     @Test
-    @DisplayName("Issue#131 - buildPutObjectRequestForUpload に crop 情報を渡すと metadata に crop-center-x/y, crop-zoom が含まれ、%.4f でフォーマットされる")
+    @DisplayName("Spec#131 - buildPutObjectRequestForUpload に crop 情報を渡すと metadata に crop-center-x/y, crop-zoom が含まれ、%.4f でフォーマットされる")
     void buildPutObjectRequestIncludesCropMetadata() {
         S3Service s3Service = new S3Service();
         setField(s3Service, "bucketName", "test-bucket");
@@ -119,7 +119,7 @@ class S3ServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#131 - crop 情報が null なら metadata に crop-* キーが含まれない（avatars 経路の互換）")
+    @DisplayName("Spec#131 - crop 情報が null なら metadata に crop-* キーが含まれない（avatars 経路の互換）")
     void buildPutObjectRequestWithoutCropDoesNotIncludeMetadata() {
         S3Service s3Service = new S3Service();
         setField(s3Service, "bucketName", "test-bucket");
@@ -134,7 +134,7 @@ class S3ServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#131 - cropCenterX が値域外 (1.5) なら 1.0 にクランプして metadata に入る")
+    @DisplayName("Spec#131 - cropCenterX が値域外 (1.5) なら 1.0 にクランプして metadata に入る")
     void buildPutObjectRequestClampsCropCenterX() {
         S3Service s3Service = new S3Service();
         setField(s3Service, "bucketName", "test-bucket");
@@ -147,7 +147,7 @@ class S3ServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#131 - cropZoom が値域外 (5.0) なら 3.0 にクランプして metadata に入る")
+    @DisplayName("Spec#131 - cropZoom が値域外 (5.0) なら 3.0 にクランプして metadata に入る")
     void buildPutObjectRequestClampsCropZoom() {
         S3Service s3Service = new S3Service();
         setField(s3Service, "bucketName", "test-bucket");
@@ -160,7 +160,7 @@ class S3ServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#131 - generatePresignedUploadUrl の crop 情報付きオーバーロードで SignedHeaders に x-amz-meta-crop-* が含まれる")
+    @DisplayName("Spec#131 - generatePresignedUploadUrl の crop 情報付きオーバーロードで SignedHeaders に x-amz-meta-crop-* が含まれる")
     void presignedUrlWithCropIncludesMetadataInSignedHeaders() throws Exception {
         String prevAk = System.getProperty("aws.accessKeyId");
         String prevSk = System.getProperty("aws.secretAccessKey");
@@ -195,7 +195,7 @@ class S3ServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#131 - 既存 generatePresignedUploadUrl (crop 情報なし) の SignedHeaders に x-amz-meta-* が含まれない（avatars 経路の回帰）")
+    @DisplayName("Spec#131 - 既存 generatePresignedUploadUrl (crop 情報なし) の SignedHeaders に x-amz-meta-* が含まれない（avatars 経路の回帰）")
     void presignedUrlWithoutCropDoesNotIncludeCropMetadataInSignedHeaders() throws Exception {
         String prevAk = System.getProperty("aws.accessKeyId");
         String prevSk = System.getProperty("aws.secretAccessKey");

@@ -14,7 +14,7 @@ import {
 } from './helpers/map-pins'
 
 /**
- * ピン表示・クラスタリング機能 E2Eテスト（Issue#39）
+ * ピン表示・クラスタリング機能 E2Eテスト（Spec#39）
  *
  * テスト対象:
  * 1. 複数投稿による同一スポットへの集約（200m以内）
@@ -166,7 +166,7 @@ async function zoomOut(page: Page, times: number = 1): Promise<void> {
 }
 
 
-test.describe('ピン表示・クラスタリング機能（Issue#39）', () => {
+test.describe('ピン表示・クラスタリング機能（Spec#39）', () => {
   // タイムアウトを長めに設定（投稿を含むテスト用）
   test.setTimeout(120000)
 
@@ -183,7 +183,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
   // ============================================================
 
   test.describe('ピン表示の基本', () => {
-    test('Issue#103 - 低ズームレベル（5）でピンまたはクラスタが表示される', async ({ page }) => {
+    test('Spec#103 - 低ズームレベル（5）でピンまたはクラスタが表示される', async ({ page }) => {
       await zoomOut(page, 5)
       await page.waitForTimeout(3000)
 
@@ -191,7 +191,7 @@ test.describe('ピン表示・クラスタリング機能（Issue#39）', () => 
       expect(pinCount + clusterCount).toBeGreaterThan(0)
     })
 
-    test('Issue#103 - ズームレベル0（世界全体）でもクラスタピンが表示される', async ({ page }) => {
+    test('Spec#103 - ズームレベル0（世界全体）でもクラスタピンが表示される', async ({ page }) => {
       await zoomOut(page, 12)
       await page.waitForTimeout(3000)
 

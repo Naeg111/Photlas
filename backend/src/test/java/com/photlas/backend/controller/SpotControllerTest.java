@@ -120,7 +120,7 @@ public class SpotControllerTest {
     private static final String PIN_COLOR_ORANGE = "Orange";
     private static final String PIN_COLOR_RED = "Red";
 
-    // Test Data Constants - Photo Counts (Issue#103: 新閾値)
+    // Test Data Constants - Photo Counts (Spec#103: 新閾値)
     private static final int PHOTO_COUNT_ONE = 1;
     private static final int PHOTO_COUNT_FIVE = 5;
     private static final int PHOTO_COUNT_TEN = 10;
@@ -316,7 +316,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#103 - ピンの色が条件合致数に基づいて決定される（10件以上=Yellow）")
+    @DisplayName("Spec#103 - ピンの色が条件合致数に基づいて決定される（10件以上=Yellow）")
     void testGetSpots_PinColor_TenPhotos_ReturnsYellow() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         for (int i = 0; i < PHOTO_COUNT_TEN; i++) {
@@ -333,7 +333,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#103 - ピンの色が条件合致数に基づいて決定される（50件以上=Orange）")
+    @DisplayName("Spec#103 - ピンの色が条件合致数に基づいて決定される（50件以上=Orange）")
     void testGetSpots_PinColor_FiftyPhotos_ReturnsOrange() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         for (int i = 0; i < PHOTO_COUNT_FIFTY; i++) {
@@ -350,7 +350,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#103 - ピンの色が条件合致数に基づいて決定される（100件以上=Red）")
+    @DisplayName("Spec#103 - ピンの色が条件合致数に基づいて決定される（100件以上=Red）")
     void testGetSpots_PinColor_HundredPhotos_ReturnsRed() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         for (int i = 0; i < PHOTO_COUNT_HUNDRED; i++) {
@@ -408,7 +408,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#103 - photoCountは全期間のトータル件数、pinColorも全写真数で決定（10件→Yellow）")
+    @DisplayName("Spec#103 - photoCountは全期間のトータル件数、pinColorも全写真数で決定（10件→Yellow）")
     void testGetSpots_MixedPeriodPhotos_PhotoCountAndPinColorBasedOnTotal() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
 
@@ -570,10 +570,10 @@ public class SpotControllerTest {
     }
 
     // ============================================================
-    // Issue#46: 詳細フィルター機能テスト
+    // Spec#46: 詳細フィルター機能テスト
     // ============================================================
 
-    // Test Data Constants - Issue#46 Advanced Filters
+    // Test Data Constants - Spec#46 Advanced Filters
     private static final String PARAM_MIN_RESOLUTION = "min_resolution";
     private static final String PARAM_DEVICE_TYPES = "device_types";
     private static final String PARAM_MAX_AGE_DAYS = "max_age_days";
@@ -596,7 +596,7 @@ public class SpotControllerTest {
     private static final String FOCAL_SUPER_TELEPHOTO = "SUPER_TELEPHOTO";
 
     @Test
-    @DisplayName("Issue#46 - 解像度フィルター: 高画質のみ（長辺1080px以上）の写真のスポットのみ返される")
+    @DisplayName("Spec#46 - 解像度フィルター: 高画質のみ（長辺1080px以上）の写真のスポットのみ返される")
     void testGetSpots_WithMinResolution_ReturnsHighResOnly() throws Exception {
         // 高解像度の写真（横2000x縦1500）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -624,7 +624,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 解像度フィルター: 解像度情報がnullの写真は除外される")
+    @DisplayName("Spec#46 - 解像度フィルター: 解像度情報がnullの写真は除外される")
     void testGetSpots_WithMinResolution_ExcludesNullResolution() throws Exception {
         // 解像度情報なしの写真
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -649,7 +649,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 機材種別フィルター: SLRを指定するとSLRのみ返される")
+    @DisplayName("Spec#46 - 機材種別フィルター: SLRを指定するとSLRのみ返される")
     void testGetSpots_WithDeviceTypeSLR_ReturnsSLROnly() throws Exception {
         // 一眼レフの写真
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -671,7 +671,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 機材種別フィルター: MIRRORLESSを指定するとミラーレスのみ返される")
+    @DisplayName("Spec#46 - 機材種別フィルター: MIRRORLESSを指定するとミラーレスのみ返される")
     void testGetSpots_WithDeviceTypeMirrorless_ReturnsMirrorlessOnly() throws Exception {
         // ミラーレスの写真
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -693,7 +693,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 機材種別フィルター: SMARTPHONEを指定するとスマートフォンのみ返される")
+    @DisplayName("Spec#46 - 機材種別フィルター: SMARTPHONEを指定するとスマートフォンのみ返される")
     void testGetSpots_WithDeviceTypeSmartphone_ReturnsSmartphoneOnly() throws Exception {
         // ミラーレスの写真
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -715,7 +715,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 機材種別フィルター: device_typeがnullの写真は除外される")
+    @DisplayName("Spec#46 - 機材種別フィルター: device_typeがnullの写真は除外される")
     void testGetSpots_WithDeviceTypeFilter_ExcludesNullDeviceType() throws Exception {
         // device_type設定済みの写真
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -737,7 +737,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#63 - 鮮度フィルター: 365日以内の写真のスポットのみ返される")
+    @DisplayName("Spec#63 - 鮮度フィルター: 365日以内の写真のスポットのみ返される")
     void testGetSpots_WithMaxAgeDays365_ReturnsRecentOnly() throws Exception {
         // 半年前の写真（365日以内）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -759,7 +759,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#63 - 鮮度フィルター: 7日以内の写真のスポットのみ返される")
+    @DisplayName("Spec#63 - 鮮度フィルター: 7日以内の写真のスポットのみ返される")
     void testGetSpots_WithMaxAgeDays7_ReturnsRecentOnly() throws Exception {
         // 3日前の写真（7日以内）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -781,7 +781,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - アスペクト比フィルター: HORIZONTALを指定すると横位置のみ返される")
+    @DisplayName("Spec#46 - アスペクト比フィルター: HORIZONTALを指定すると横位置のみ返される")
     void testGetSpots_WithAspectRatioHorizontal_ReturnsHorizontalOnly() throws Exception {
         // 横位置（3000x2000）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -809,7 +809,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - アスペクト比フィルター: SQUAREは±5%の誤差を許容する")
+    @DisplayName("Spec#46 - アスペクト比フィルター: SQUAREは±5%の誤差を許容する")
     void testGetSpots_WithAspectRatioSquare_AllowsMargin() throws Exception {
         // ほぼ正方形（1000x1040 = 4%差）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -837,7 +837,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 焦点距離フィルター: WIDEは24mm未満のみ返される")
+    @DisplayName("Spec#46 - 焦点距離フィルター: WIDEは24mm未満のみ返される")
     void testGetSpots_WithFocalLengthWide_ReturnsWideOnly() throws Exception {
         // 広角（16mm）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -863,7 +863,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 焦点距離フィルター: TELEPHOTOは70mm超300mm以下のみ返される")
+    @DisplayName("Spec#46 - 焦点距離フィルター: TELEPHOTOは70mm超300mm以下のみ返される")
     void testGetSpots_WithFocalLengthTelephoto_ReturnsTelephotoOnly() throws Exception {
         // 望遠（200mm）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -889,7 +889,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 焦点距離フィルター: TELEPHOTOは301mm以上を含まない")
+    @DisplayName("Spec#46 - 焦点距離フィルター: TELEPHOTOは301mm以上を含まない")
     void testGetSpots_WithFocalLengthTelephoto_ExcludesSuperTelephoto() throws Exception {
         // 望遠（300mm - TELEPHOTOの上限）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -915,7 +915,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 焦点距離フィルター: SUPER_TELEPHOTOは300mm超のみ返される")
+    @DisplayName("Spec#46 - 焦点距離フィルター: SUPER_TELEPHOTOは300mm超のみ返される")
     void testGetSpots_WithFocalLengthSuperTelephoto_ReturnsSuperTelephotoOnly() throws Exception {
         // 超望遠（500mm）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -941,7 +941,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - ISO感度フィルター: max_iso=400で低感度のみ返される")
+    @DisplayName("Spec#46 - ISO感度フィルター: max_iso=400で低感度のみ返される")
     void testGetSpots_WithMaxIso_ReturnsLowIsoOnly() throws Exception {
         // 低ISO（ISO 200）
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -967,7 +967,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#46 - 基本フィルターと詳細フィルターの組み合わせ: 天気+焦点距離")
+    @DisplayName("Spec#46 - 基本フィルターと詳細フィルターの組み合わせ: 天気+焦点距離")
     void testGetSpots_CombinedBasicAndAdvanced_ReturnsIntersection() throws Exception {
         // 晴れ+広角
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -1000,12 +1000,12 @@ public class SpotControllerTest {
                 .andExpect(jsonPath(JSON_PATH_SPOT_ID, is(spot1.getSpotId().intValue())));
     }
 
-    // --- Issue#112: POST /spots/photos テスト（ページネーション対応） ---
+    // --- Spec#112: POST /spots/photos テスト（ページネーション対応） ---
 
     private static final String SPOTS_PHOTOS_ENDPOINT = "/api/v1/spots/photos";
 
     @Test
-    @DisplayName("Issue#112 - 単一スポットの写真IDを撮影日降順で取得できる")
+    @DisplayName("Spec#112 - 単一スポットの写真IDを撮影日降順で取得できる")
     void testGetSpotPhotos_SingleSpot_ReturnsIdsInDescOrder() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo photo1 = createPhoto(spot, TEST_SHOT_AT.minusHours(2), WEATHER_SUNNY);
@@ -1026,7 +1026,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - 写真が0件のスポットは空リストとtotal=0を返す")
+    @DisplayName("Spec#112 - 写真が0件のスポットは空リストとtotal=0を返す")
     void testGetSpotPhotos_EmptySpot_ReturnsEmpty() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
 
@@ -1040,7 +1040,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - max_age_days で古い写真を除外する")
+    @DisplayName("Spec#112 - max_age_days で古い写真を除外する")
     void testGetSpotPhotos_MaxAgeDays_FiltersOldPhotos() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo recentPhoto = createPhoto(spot, LocalDateTime.now().minusDays(3), WEATHER_SUNNY);
@@ -1057,7 +1057,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - shot_at が null の写真は max_age_days フィルタを通過する")
+    @DisplayName("Spec#112 - shot_at が null の写真は max_age_days フィルタを通過する")
     void testGetSpotPhotos_NullShotAt_PassesMaxAgeDaysFilter() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         // shot_at NULL の写真
@@ -1083,7 +1083,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - shot_at NULL の写真は並び順で末尾に来る（NULLS LAST）")
+    @DisplayName("Spec#112 - shot_at NULL の写真は並び順で末尾に来る（NULLS LAST）")
     void testGetSpotPhotos_NullShotAt_OrderedLast() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo withDate1 = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
@@ -1109,7 +1109,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - 同じ shot_at では photo_id 降順で並ぶ（tiebreaker）")
+    @DisplayName("Spec#112 - 同じ shot_at では photo_id 降順で並ぶ（tiebreaker）")
     void testGetSpotPhotos_SameShotAt_OrderedByPhotoIdDesc() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo photo1 = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
@@ -1128,7 +1128,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - 複数スポットを横断してマージしたページが返る（撮影日降順）")
+    @DisplayName("Spec#112 - 複数スポットを横断してマージしたページが返る（撮影日降順）")
     void testGetSpotPhotos_MultipleSpots_MergedAndSorted() throws Exception {
         Spot spot1 = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Spot spot2 = createSpot(TEST_LATITUDE_2, TEST_LONGITUDE_2);
@@ -1151,7 +1151,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - limit と offset でページングできる")
+    @DisplayName("Spec#112 - limit と offset でページングできる")
     void testGetSpotPhotos_LimitAndOffset_Paginates() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         // 撮影日順に photo1 (oldest) ... photo5 (newest)
@@ -1195,7 +1195,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - limit / offset 省略時はデフォルト値（30, 0）が使われる")
+    @DisplayName("Spec#112 - limit / offset 省略時はデフォルト値（30, 0）が使われる")
     void testGetSpotPhotos_DefaultLimitAndOffset() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
@@ -1210,7 +1210,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - 退会済みユーザーの写真は除外される")
+    @DisplayName("Spec#112 - 退会済みユーザーの写真は除外される")
     void testGetSpotPhotos_DeletedUser_PhotosExcluded() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo activePhoto = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
@@ -1242,7 +1242,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - PUBLISHED 以外のモデレーションステータスの写真は除外される")
+    @DisplayName("Spec#112 - PUBLISHED 以外のモデレーションステータスの写真は除外される")
     void testGetSpotPhotos_OnlyPublished() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
 
@@ -1267,7 +1267,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - 存在しない spot_id を含めてもエラーにならない（その分は単に件数0）")
+    @DisplayName("Spec#112 - 存在しない spot_id を含めてもエラーにならない（その分は単に件数0）")
     void testGetSpotPhotos_NonExistentSpotId_NoError() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo photo = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
@@ -1283,7 +1283,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - spot_ids が空の場合は400")
+    @DisplayName("Spec#112 - spot_ids が空の場合は400")
     void testGetSpotPhotos_EmptySpotIds_BadRequest() throws Exception {
         String body = "{\"spotIds\":[]}";
         mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
@@ -1293,7 +1293,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - spot_ids が省略された場合は400")
+    @DisplayName("Spec#112 - spot_ids が省略された場合は400")
     void testGetSpotPhotos_MissingSpotIds_BadRequest() throws Exception {
         String body = "{}";
         mockMvc.perform(post(SPOTS_PHOTOS_ENDPOINT)
@@ -1303,7 +1303,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - limit が101以上の場合は400")
+    @DisplayName("Spec#112 - limit が101以上の場合は400")
     void testGetSpotPhotos_LimitTooLarge_BadRequest() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         String body = String.format("{\"spotIds\":[%d],\"limit\":101}", spot.getSpotId());
@@ -1314,7 +1314,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - limit が0の場合は400")
+    @DisplayName("Spec#112 - limit が0の場合は400")
     void testGetSpotPhotos_LimitZero_BadRequest() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         String body = String.format("{\"spotIds\":[%d],\"limit\":0}", spot.getSpotId());
@@ -1325,7 +1325,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - limit が負値の場合は400")
+    @DisplayName("Spec#112 - limit が負値の場合は400")
     void testGetSpotPhotos_LimitNegative_BadRequest() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         String body = String.format("{\"spotIds\":[%d],\"limit\":-1}", spot.getSpotId());
@@ -1336,7 +1336,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - offset が負値の場合は400")
+    @DisplayName("Spec#112 - offset が負値の場合は400")
     void testGetSpotPhotos_OffsetNegative_BadRequest() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         String body = String.format("{\"spotIds\":[%d],\"offset\":-1}", spot.getSpotId());
@@ -1347,7 +1347,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#112 - max_age_days が負値の場合は400")
+    @DisplayName("Spec#112 - max_age_days が負値の場合は400")
     void testGetSpotPhotos_MaxAgeDaysNegative_BadRequest() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         String body = String.format("{\"spotIds\":[%d],\"maxAgeDays\":-1}", spot.getSpotId());
@@ -1357,10 +1357,10 @@ public class SpotControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // --- Issue#54: モデレーションステータスによるフィルタリングテスト ---
+    // --- Spec#54: モデレーションステータスによるフィルタリングテスト ---
 
     @Test
-    @DisplayName("Issue#54 - QUARANTINED写真はスポット検索結果に含まれない")
+    @DisplayName("Spec#54 - QUARANTINED写真はスポット検索結果に含まれない")
     void testGetSpots_QuarantinedPhotosExcluded() throws Exception {
         // Given: スポットにQUARANTINED写真のみ
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -1379,7 +1379,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - REMOVED写真はスポット検索結果に含まれない")
+    @DisplayName("Spec#54 - REMOVED写真はスポット検索結果に含まれない")
     void testGetSpots_RemovedPhotosExcluded() throws Exception {
         // Given: スポットにREMOVED写真のみ
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -1398,7 +1398,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - PENDING_REVIEW写真はスポット検索結果に含まれない")
+    @DisplayName("Spec#54 - PENDING_REVIEW写真はスポット検索結果に含まれない")
     void testGetSpots_PendingReviewPhotosExcluded() throws Exception {
         // Given: スポットにPENDING_REVIEW写真のみ
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
@@ -1470,11 +1470,11 @@ public class SpotControllerTest {
     }
 
     // ============================================================
-    // Issue#127: /spots/photos が認証ユーザー本人の PENDING を含めて返す
+    // Spec#127: /spots/photos が認証ユーザー本人の PENDING を含めて返す
     // ============================================================
 
     @Test
-    @DisplayName("Issue#127 - 認証なしの /spots/photos は PUBLISHED のみを返す（既存挙動）")
+    @DisplayName("Spec#127 - 認証なしの /spots/photos は PUBLISHED のみを返す（既存挙動）")
     void testGetSpotPhotos_Anonymous_OnlyPublished() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo published = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
@@ -1499,7 +1499,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#127 - 認証ありの /spots/photos は自分の PENDING も含めて返す")
+    @DisplayName("Spec#127 - 認証ありの /spots/photos は自分の PENDING も含めて返す")
     void testGetSpotPhotos_Authenticated_IncludesOwnPending() throws Exception {
         Spot spot = createSpot(TEST_LATITUDE, TEST_LONGITUDE);
         Photo published = createPhoto(spot, TEST_SHOT_AT, WEATHER_SUNNY);
@@ -1526,7 +1526,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#127 - 認証ありでも他人の PENDING は表示しない")
+    @DisplayName("Spec#127 - 認証ありでも他人の PENDING は表示しない")
     void testGetSpotPhotos_Authenticated_ExcludesOthersPending() throws Exception {
         // 他ユーザーを作成
         User otherUser = new User();
@@ -1561,11 +1561,11 @@ public class SpotControllerTest {
     }
 
     // ============================================================
-    // Issue#72: ソフトデリート - 退会済みユーザーの写真除外テスト
+    // Spec#72: ソフトデリート - 退会済みユーザーの写真除外テスト
     // ============================================================
 
     @Test
-    @DisplayName("Issue#72 - 退会済みユーザーの写真はスポット検索結果に含まれない")
+    @DisplayName("Spec#72 - 退会済みユーザーの写真はスポット検索結果に含まれない")
     void testGetSpots_DeletedUserPhotos_ExcludedFromResults() throws Exception {
         // 退会済みユーザーを作成
         User deletedUser = new User();
@@ -1603,7 +1603,7 @@ public class SpotControllerTest {
     }
 
     // ============================================================
-    // Issue#127: 投稿者本人へ自分の審査中投稿を即時反映するため、
+    // Spec#127: 投稿者本人へ自分の審査中投稿を即時反映するため、
     // 認証ユーザーの PENDING 投稿だけをスポット集計して返す
     // 新規エンドポイント `/api/v1/spots/mine-pending`。
     // CloudFront キャッシュ可能な /api/v1/spots とは別経路にすることで、
@@ -1613,7 +1613,7 @@ public class SpotControllerTest {
     private static final String SPOTS_MINE_PENDING_ENDPOINT = "/api/v1/spots/mine-pending";
 
     @Test
-    @DisplayName("Issue#127 - /spots/mine-pending は認証なしでは 401")
+    @DisplayName("Spec#127 - /spots/mine-pending は認証なしでは 401")
     void testMinePending_WithoutAuth_Returns401() throws Exception {
         mockMvc.perform(get(SPOTS_MINE_PENDING_ENDPOINT)
                         .param(PARAM_NORTH, BOUND_NORTH)
@@ -1624,7 +1624,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#127 - 自分の PENDING 投稿があるスポットだけが返る")
+    @DisplayName("Spec#127 - 自分の PENDING 投稿があるスポットだけが返る")
     void testMinePending_ReturnsOwnPendingSpots() throws Exception {
         Spot spot = new Spot();
         spot.setLatitude(TEST_LATITUDE);
@@ -1653,7 +1653,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#127 - 他人の PENDING 投稿は表示されない（プライバシー保護）")
+    @DisplayName("Spec#127 - 他人の PENDING 投稿は表示されない（プライバシー保護）")
     void testMinePending_ExcludesOthersPending() throws Exception {
         // 別ユーザーを作成
         User otherUser = new User();
@@ -1691,7 +1691,7 @@ public class SpotControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#127 - 自分の PUBLISHED 写真しかない場合は返らない（PENDING 専用）")
+    @DisplayName("Spec#127 - 自分の PUBLISHED 写真しかない場合は返らない（PENDING 専用）")
     void testMinePending_ExcludesOwnPublished() throws Exception {
         Spot spot = new Spot();
         spot.setLatitude(TEST_LATITUDE);

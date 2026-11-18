@@ -8,6 +8,7 @@ import { API_V1_URL } from '../config/api'
 import { toast } from 'sonner'
 import { ApiError } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
+import { translateErrorCode } from '../utils/apiErrorMessage'
 import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
 
@@ -19,7 +20,7 @@ interface PasswordResetRequestModalProps {
 
 /**
  * パスワードリセットリクエストモーダルコンポーネント
- * Issue#6: パスワードリセット機能
+ * Spec#6: パスワードリセット機能
  */
 export default function PasswordResetRequestModal({ open, onClose, onShowLogin }: Readonly<PasswordResetRequestModalProps>) {
   const { t } = useTranslation()
@@ -68,7 +69,7 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
           setRateLimitError(err)
           setError(getRateLimitInlineMessage(err, t))
         } else {
-          setError(err.responseMessage || t('auth.errorOccurred'))
+          setError(translateErrorCode(err.code, t, 'auth.errorOccurred'))
         }
       } else {
         setError(t('errors.unexpected'))
@@ -116,7 +117,7 @@ export default function PasswordResetRequestModal({ open, onClose, onShowLogin }
               />
             </div>
 
-            <p className="mb-4 text-black">入力したら送信ボタンを押してください。</p>
+            <p className="mb-4 text-black">{t('auth.passwordResetSubmitHint')}</p>
 
             <Button
               type="submit"

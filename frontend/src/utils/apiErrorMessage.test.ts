@@ -1,0 +1,88 @@
+/**
+ * Spec#93: バックエンドのエラーコードを表示言語の文言にするヘルパーのテスト
+ */
+import { describe, it, expect, vi } from 'vitest'
+import i18n from '../i18n'
+import { getErrorCode, readErrorCode, translateErrorCode } from './apiErrorMessage'
+
+describe('getErrorCode', () => {
+  it('本文の code を返す', () => {
+    expect(getErrorCode({ code: 'INVALID_TOKEN', message: '無効' })).toBe('INVALID_TOKEN')
+  })
+
+  it('code が無い・文字列でない・本文がオブジェクトでない場合は undefined', () => {
+    expect(getErrorCode({ message: '無効' })).toBeUndefined()
+    expect(getErrorCode({ code: 123 })).toBeUndefined()
+    expect(getErrorCode({ code: '' })).toBeUndefined()
+    expect(getErrorCode('text')).toBeUndefined()
+    expect(getErrorCode(null)).toBeUndefined()
+    expect(getErrorCode(undefined)).toBeUndefined()
+  })
+})
+
+describe('readErrorCode', () => {
+  it('応答の本文（JSON）の code を返す', async () => {
+    const response = new Response(JSON.stringify({ code: 'PHOTO_NOT_PUBLIC', message: '無効' }), { status: 400 })
+    expect(await readErrorCode(response)).toBe('PHOTO_NOT_PUBLIC')
+  })
+
+  it('本文が JSON でない・空・code が無い場合は undefined（例外を投げない）', async () => {
+    expect(await readErrorCode(new Response('Bad Request', { status: 400 }))).toBeUndefined()
+    expect(await readErrorCode(new Response(null, { status: 400 }))).toBeUndefined()
+    expect(await readErrorCode(new Response(JSON.stringify({ message: '無効' }), { status: 400 }))).toBeUndefined()
+  })
+})
+
+describe('translateErrorCode', () => {
+  const t = i18n.t.bind(i18n)
+
+  it('errors.<code> の翻訳があればその文言を返す', () => {
+    expect(translateErrorCode('ALREADY_REPORTED', t, 'auth.errorOccurred')).toBe('すでに通報済みです')
+  })
+
+  it('コードの形（英大文字とアンダースコア）でないものは翻訳キーに使わず fallbackKey の文言を返す', () => {
+    // errors.ALREADY_REPORTED を指すような値でも、区切り文字を含めば使わない
+    expect(translateErrorCode('errors.ALREADY_REPORTED', t, 'auth.errorOccurred')).toBe('エラーが発生しました')
+    expect(translateErrorCode('auth:errorOccurred', t, 'photo.suggestionFailed')).toBe('指摘の送信に失敗しました')
+    expect(translateErrorCode('already_reported', t, 'auth.errorOccurred')).toBe('エラーが発生しました')
+  })
+
+  it('翻訳が無いコード・コード無しは fallbackKey の文言を返す', () => {
+    expect(translateErrorCode('VALIDATION_ERROR', t, 'auth.errorOccurred')).toBe('エラーが発生しました')
+    expect(translateErrorCode('INTERNAL_ERROR', t, 'photo.suggestionFailed')).toBe('指摘の送信に失敗しました')
+    expect(translateErrorCode(undefined, t, 'auth.errorOccurred')).toBe('エラーが発生しました')
+  })
+
+  it('翻訳が無いコードで fallbackKey に落ちても、missing key の警告をコンソールに出さない', () => {
+    const spies = [
+      vi.spyOn(console, 'log').mockImplementation(() => {}),
+      vi.spyOn(console, 'warn').mockImplementation(() => {}),
+      vi.spyOn(console, 'error').mockImplementation(() => {}),
+    ]
+    try {
+      translateErrorCode('VALIDATION_ERROR', t, 'auth.errorOccurred')
+      translateErrorCode('NO_SUCH_CODE', t, 'auth.errorOccurred')
+      for (const spy of spies) {
+        expect(spy).not.toHaveBeenCalled()
+      }
+    } finally {
+      spies.forEach((spy) => spy.mockRestore())
+    }
+  })
+
+  it('英語の設定では英語の文言を返す', async () => {
+    await i18n.changeLanguage('en')
+    try {
+      expect(translateErrorCode('INVALID_TOKEN', t, 'auth.errorOccurred')).toBe(
+        'This link is invalid or has expired. Please try again.'
+      )
+      expect(translateErrorCode('BAD_REQUEST', t, 'auth.errorOccurred')).toBe('An error occurred')
+      // 翻訳の無い未知のコードも、英語の汎用文言に落ちる（日本語やキー名は出ない）
+      expect(translateErrorCode('NO_SUCH_CODE', t, 'photo.suggestionFailed')).toBe(
+        'Failed to send suggestion'
+      )
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
+  })
+})

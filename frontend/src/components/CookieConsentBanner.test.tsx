@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { CookieConsentBanner } from './CookieConsentBanner'
+import i18n from '../i18n'
 
 /**
- * Issue#71: GDPR対応 Cookie同意バナーテスト
+ * Spec#71: GDPR対応 Cookie同意バナーテスト
  */
 
 const CONSENT_KEY = 'cookie_consent'
@@ -30,7 +31,7 @@ function renderBanner() {
   return result
 }
 
-describe('CookieConsentBanner - Issue#71 GDPR対応', () => {
+describe('CookieConsentBanner - Spec#71 GDPR対応', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     Object.keys(mockStorage).forEach(k => delete mockStorage[k])
@@ -56,10 +57,12 @@ describe('CookieConsentBanner - Issue#71 GDPR対応', () => {
       expect(screen.getByText(/Cookieによるアクセス情報/)).toBeInTheDocument()
     })
 
-    it('英語の説明文が表示される', () => {
+    // Spec#93 追加対応: 多言語化の前に入れた英文の併記（Spec#71）は、表示言語に関係なく出ていたので削除した
+    it('日本語の設定では、英文を併記しない', () => {
       renderBanner()
 
-      expect(screen.getByText(/service improvement/i)).toBeInTheDocument()
+      expect(screen.queryByText(/This site uses Google Analytics/)).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Privacy Policy' })).not.toBeInTheDocument()
     })
 
     it('プライバシーポリシーへのリンクが存在する', () => {
@@ -80,6 +83,42 @@ describe('CookieConsentBanner - Issue#71 GDPR対応', () => {
       fireEvent.click(screen.getByText('プライバシーポリシー'))
 
       expect(mockOnPrivacyPolicyClick).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('Spec#93 追加対応: 表示言語', () => {
+    it.each(['ja', 'en', 'ko', 'zh-CN', 'zh-TW'])(
+      '%s の設定では、その言語の説明文とリンクが 1 回だけ表示される',
+      async (lng) => {
+        await i18n.changeLanguage(lng)
+        try {
+          renderBanner()
+
+          const text = screen.getByTestId('cookie-consent-banner').textContent ?? ''
+          expect(text.split(i18n.t('cookie.message')).length - 1).toBe(1)
+          expect(screen.getAllByRole('button', { name: i18n.t('cookie.privacyLink') })).toHaveLength(1)
+          expect(screen.getByRole('button', { name: i18n.t('cookie.accept') })).toBeInTheDocument()
+          expect(screen.getByRole('button', { name: i18n.t('cookie.decline') })).toBeInTheDocument()
+          expect(text).not.toContain('This site uses Google Analytics and cookies')
+        } finally {
+          await i18n.changeLanguage('ja')
+        }
+      }
+    )
+
+    it('英語の設定では、説明文とボタンが英語で表示される', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        renderBanner()
+
+        expect(screen.getAllByText(/This site uses Google Analytics/)).toHaveLength(1)
+        expect(screen.getAllByRole('button', { name: 'Privacy Policy' })).toHaveLength(1)
+        expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Decline' })).toBeInTheDocument()
+        expect(screen.queryByText(/Cookieによるアクセス情報/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
   })
 

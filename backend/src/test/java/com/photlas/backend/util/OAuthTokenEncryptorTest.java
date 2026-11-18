@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Issue#81 Phase 2 - OAuthTokenEncryptor（AES-256-GCM）のテスト
+ * Spec#81 Phase 2 - OAuthTokenEncryptor（AES-256-GCM）のテスト
  *
  * Round 12 / Q9 決定: OAuth access_token を AES-256-GCM で暗号化して DB に保存し、
  * 退会時の revoke で復号して送信する。
@@ -40,7 +40,7 @@ class OAuthTokenEncryptorTest {
     class RoundTrip {
 
         @Test
-        @DisplayName("Issue#81 - 平文を暗号化後、同じ鍵で復号すれば元の文字列に戻る")
+        @DisplayName("Spec#81 - 平文を暗号化後、同じ鍵で復号すれば元の文字列に戻る")
         void encryptDecryptRoundTrip() {
             OAuthTokenEncryptor encryptor = new OAuthTokenEncryptor(TEST_KEY_BASE64);
             String plaintext = "ya29.a0AfH6SMBx-dummy-google-access-token";
@@ -52,7 +52,7 @@ class OAuthTokenEncryptorTest {
         }
 
         @Test
-        @DisplayName("Issue#81 - 長い access_token（2048 文字程度）でもラウンドトリップ可能")
+        @DisplayName("Spec#81 - 長い access_token（2048 文字程度）でもラウンドトリップ可能")
         void encryptDecryptLongToken() {
             OAuthTokenEncryptor encryptor = new OAuthTokenEncryptor(TEST_KEY_BASE64);
             String plaintext = "a".repeat(2048);
@@ -64,7 +64,7 @@ class OAuthTokenEncryptorTest {
         }
 
         @Test
-        @DisplayName("Issue#81 - マルチバイト文字列（日本語）でもラウンドトリップ可能")
+        @DisplayName("Spec#81 - マルチバイト文字列（日本語）でもラウンドトリップ可能")
         void encryptDecryptMultibyte() {
             OAuthTokenEncryptor encryptor = new OAuthTokenEncryptor(TEST_KEY_BASE64);
             String plaintext = "テスト用トークン🔐日本語";
@@ -81,7 +81,7 @@ class OAuthTokenEncryptorTest {
     class IvIndependence {
 
         @Test
-        @DisplayName("Issue#81 - 同じ平文・同じ鍵でも、呼び出すたびに IV が異なり ciphertext も異なる")
+        @DisplayName("Spec#81 - 同じ平文・同じ鍵でも、呼び出すたびに IV が異なり ciphertext も異なる")
         void sameTextDifferentCiphertext() {
             OAuthTokenEncryptor encryptor = new OAuthTokenEncryptor(TEST_KEY_BASE64);
             String plaintext = "same-plaintext";
@@ -94,7 +94,7 @@ class OAuthTokenEncryptorTest {
         }
 
         @Test
-        @DisplayName("Issue#81 - IV は 12 バイト（GCM 標準長）")
+        @DisplayName("Spec#81 - IV は 12 バイト（GCM 標準長）")
         void ivIs12Bytes() {
             OAuthTokenEncryptor encryptor = new OAuthTokenEncryptor(TEST_KEY_BASE64);
             OAuthTokenEncryptor.Encrypted encrypted = encryptor.encrypt("test");
@@ -108,7 +108,7 @@ class OAuthTokenEncryptorTest {
     class KeyMismatch {
 
         @Test
-        @DisplayName("Issue#81 - 異なる鍵で復号すると例外を投げる（AEAD の改ざん検知）")
+        @DisplayName("Spec#81 - 異なる鍵で復号すると例外を投げる（AEAD の改ざん検知）")
         void differentKeyFailsDecryption() {
             OAuthTokenEncryptor encryptor = new OAuthTokenEncryptor(TEST_KEY_BASE64);
             OAuthTokenEncryptor.Encrypted encrypted = encryptor.encrypt("secret-token");
@@ -120,7 +120,7 @@ class OAuthTokenEncryptorTest {
         }
 
         @Test
-        @DisplayName("Issue#81 - ciphertext を改ざんすると復号に失敗する")
+        @DisplayName("Spec#81 - ciphertext を改ざんすると復号に失敗する")
         void tamperedCiphertextFailsDecryption() {
             OAuthTokenEncryptor encryptor = new OAuthTokenEncryptor(TEST_KEY_BASE64);
             OAuthTokenEncryptor.Encrypted encrypted = encryptor.encrypt("secret-token");
@@ -137,21 +137,21 @@ class OAuthTokenEncryptorTest {
     class NullHandling {
 
         @Test
-        @DisplayName("Issue#81 - null 平文の暗号化は null を返す")
+        @DisplayName("Spec#81 - null 平文の暗号化は null を返す")
         void nullPlaintextReturnsNull() {
             OAuthTokenEncryptor encryptor = new OAuthTokenEncryptor(TEST_KEY_BASE64);
             assertThat(encryptor.encrypt(null)).isNull();
         }
 
         @Test
-        @DisplayName("Issue#81 - null ciphertext の復号は null を返す")
+        @DisplayName("Spec#81 - null ciphertext の復号は null を返す")
         void nullCiphertextReturnsNull() {
             OAuthTokenEncryptor encryptor = new OAuthTokenEncryptor(TEST_KEY_BASE64);
             assertThat(encryptor.decrypt(null, new byte[12])).isNull();
         }
 
         @Test
-        @DisplayName("Issue#81 - null IV の復号は null を返す")
+        @DisplayName("Spec#81 - null IV の復号は null を返す")
         void nullIvReturnsNull() {
             OAuthTokenEncryptor encryptor = new OAuthTokenEncryptor(TEST_KEY_BASE64);
             assertThat(encryptor.decrypt(new byte[16], null)).isNull();
@@ -163,14 +163,14 @@ class OAuthTokenEncryptorTest {
     class KeyValidation {
 
         @Test
-        @DisplayName("Issue#81 - 鍵が Base64 として不正なら IllegalArgumentException を投げる")
+        @DisplayName("Spec#81 - 鍵が Base64 として不正なら IllegalArgumentException を投げる")
         void invalidBase64KeyThrows() {
             assertThatThrownBy(() -> new OAuthTokenEncryptor("not-valid-base64!!!"))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
-        @DisplayName("Issue#81 - 鍵が 32 バイト未満なら IllegalArgumentException を投げる")
+        @DisplayName("Spec#81 - 鍵が 32 バイト未満なら IllegalArgumentException を投げる")
         void shortKeyThrows() {
             String shortKey = base64OfRandomBytes(16);
             assertThatThrownBy(() -> new OAuthTokenEncryptor(shortKey))
@@ -179,7 +179,7 @@ class OAuthTokenEncryptorTest {
         }
 
         @Test
-        @DisplayName("Issue#81 - 鍵が null または空文字なら IllegalArgumentException を投げる")
+        @DisplayName("Spec#81 - 鍵が null または空文字なら IllegalArgumentException を投げる")
         void nullOrEmptyKeyThrows() {
             assertThatThrownBy(() -> new OAuthTokenEncryptor(null))
                     .isInstanceOf(IllegalArgumentException.class);

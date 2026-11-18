@@ -26,8 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * RateLimitFilter のテスト
- * Issue#22: API Rate Limiting の実装
- * Issue#95: レート制限カテゴリ整理（sensitive 新設・フォールバック方式・URL デコード対策）
+ * Spec#22: API Rate Limiting の実装
+ * Spec#95: レート制限カテゴリ整理（sensitive 新設・フォールバック方式・URL デコード対策）
  *
  * TDD Red段階: 実装前のテストケース定義
  */
@@ -108,7 +108,7 @@ public class RateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("一般エンドポイント: 80リクエスト/分を超えるとHTTP 429を返す（Issue#95: 60→80に引き上げ）")
+    @DisplayName("一般エンドポイント: 80リクエスト/分を超えるとHTTP 429を返す（Spec#95: 60→80に引き上げ）")
     void testRateLimitFilter_GeneralEndpoint_ExceedsLimit_Returns429() throws Exception {
         String healthUrl = "/api/v1/health";
 
@@ -189,10 +189,10 @@ public class RateLimitFilterTest {
                 .andExpect(status().isOk());
     }
 
-    // ===== Issue#95: sensitive カテゴリ（3 req/分、メール送信系の厳格制限） =====
+    // ===== Spec#95: sensitive カテゴリ（3 req/分、メール送信系の厳格制限） =====
 
     @Test
-    @DisplayName("Issue#95 - sensitive: /resend-verification が3 req/分を超えるとHTTP 429を返す")
+    @DisplayName("Spec#95 - sensitive: /resend-verification が3 req/分を超えるとHTTP 429を返す")
     void testRateLimitFilter_ResendVerification_ExceedsSensitiveLimit_Returns429() throws Exception {
         String url = "/api/v1/auth/resend-verification";
 
@@ -213,7 +213,7 @@ public class RateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - sensitive: /password-reset-request が3 req/分を超えるとHTTP 429を返す")
+    @DisplayName("Spec#95 - sensitive: /password-reset-request が3 req/分を超えるとHTTP 429を返す")
     void testRateLimitFilter_PasswordResetRequest_ExceedsSensitiveLimit_Returns429() throws Exception {
         String url = "/api/v1/auth/password-reset-request";
 
@@ -233,10 +233,10 @@ public class RateLimitFilterTest {
                 .andExpect(header().exists("Retry-After"));
     }
 
-    // ===== Issue#95: authカテゴリへのフォールバック（/api/v1/auth/ 配下でsensitive以外は全部10/分） =====
+    // ===== Spec#95: authカテゴリへのフォールバック（/api/v1/auth/ 配下でsensitive以外は全部10/分） =====
 
     @Test
-    @DisplayName("Issue#95 - auth fallback: /verify-email は auth カテゴリ(10/分)にフォールバック")
+    @DisplayName("Spec#95 - auth fallback: /verify-email は auth カテゴリ(10/分)にフォールバック")
     void testRateLimitFilter_VerifyEmail_FallsBackToAuth() throws Exception {
         String url = "/api/v1/auth/verify-email?token=dummy";
 
@@ -251,7 +251,7 @@ public class RateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - auth fallback: /reset-password は auth カテゴリ(10/分)にフォールバック")
+    @DisplayName("Spec#95 - auth fallback: /reset-password は auth カテゴリ(10/分)にフォールバック")
     void testRateLimitFilter_ResetPassword_FallsBackToAuth() throws Exception {
         String url = "/api/v1/auth/reset-password";
 
@@ -271,7 +271,7 @@ public class RateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - auth fallback: /confirm-email-change は auth カテゴリ(10/分)にフォールバック")
+    @DisplayName("Spec#95 - auth fallback: /confirm-email-change は auth カテゴリ(10/分)にフォールバック")
     void testRateLimitFilter_ConfirmEmailChange_FallsBackToAuth() throws Exception {
         String url = "/api/v1/auth/confirm-email-change?token=dummy";
 
@@ -285,7 +285,7 @@ public class RateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#95 - auth fallback: 未登録の /api/v1/auth/* パスもauthカテゴリにフォールバック（セキュア側）")
+    @DisplayName("Spec#95 - auth fallback: 未登録の /api/v1/auth/* パスもauthカテゴリにフォールバック（セキュア側）")
     void testRateLimitFilter_UnknownAuthPath_FallsBackToAuth() throws Exception {
         // 実在しない想定のパス。404/403/405 系が返るが、
         // レート制限フィルタは auth カテゴリ(10/分)で判定することを期待。
@@ -306,10 +306,10 @@ public class RateLimitFilterTest {
                 .andExpect(status().isTooManyRequests());
     }
 
-    // ===== Issue#95: URL エンコード回避攻撃の回帰テスト =====
+    // ===== Spec#95: URL エンコード回避攻撃の回帰テスト =====
 
     @Test
-    @DisplayName("Issue#95 - URLデコード: /password%2Dreset%2Drequest は sensitive(3/分)として扱われる")
+    @DisplayName("Spec#95 - URLデコード: /password%2Dreset%2Drequest は sensitive(3/分)として扱われる")
     void testRateLimitFilter_UrlEncodedSensitivePath_TreatedAsSensitive() throws Exception {
         // "-" を %2D にエンコードしたパスで SENSITIVE_PATHS の完全一致をすり抜けようとする攻撃。
         // Spring が内部でデコードするため、getServletPath() 使用で sensitive として判定される。
@@ -335,10 +335,10 @@ public class RateLimitFilterTest {
                 .andExpect(status().isTooManyRequests());
     }
 
-    // ===== Issue#95: photo カテゴリの偽一致防止 =====
+    // ===== Spec#95: photo カテゴリの偽一致防止 =====
 
     @Test
-    @DisplayName("Issue#95 - photo 偽一致防止: /api/v1/photos-sitemap 等は general カテゴリで扱われる")
+    @DisplayName("Spec#95 - photo 偽一致防止: /api/v1/photos-sitemap 等は general カテゴリで扱われる")
     void testRateLimitFilter_PhotosSitemap_TreatedAsGeneral() throws Exception {
         // "/api/v1/photos" の startsWith だけで判定していた旧実装では
         // /api/v1/photos-sitemap も photo カテゴリ(30/分)に誤分類されてしまう。
@@ -360,10 +360,10 @@ public class RateLimitFilterTest {
                 "photos-sitemap は photo(30/分) ではなく general(80/分) として扱われるべき");
     }
 
-    // ===== Issue#95: 429 レスポンスの JSON ボディ検証 =====
+    // ===== Spec#95: 429 レスポンスの JSON ボディ検証 =====
 
     @Test
-    @DisplayName("Issue#95 - 429レスポンス: Content-Typeがapplication/jsonでWAFと同一のJSON構造を返す")
+    @DisplayName("Spec#95 - 429レスポンス: Content-Typeがapplication/jsonでWAFと同一のJSON構造を返す")
     void testRateLimitFilter_429Response_BodyMatchesWafJsonStructure() throws Exception {
         String registerUrl = "/api/v1/auth/register";
 
@@ -398,10 +398,10 @@ public class RateLimitFilterTest {
                 "body should contain retryAfter: 60 - got: " + body);
     }
 
-    // ===== Issue#95: 認証済みユーザーの user:{email} 単位識別（PR3 フィルタ順序変更） =====
+    // ===== Spec#95: 認証済みユーザーの user:{email} 単位識別（PR3 フィルタ順序変更） =====
 
     @Test
-    @DisplayName("Issue#95 - PR3: 認証済みユーザーはuser:{email}単位で識別され、別ユーザーは独立したレート制限を持つ")
+    @DisplayName("Spec#95 - PR3: 認証済みユーザーはuser:{email}単位で識別され、別ユーザーは独立したレート制限を持つ")
     void testRateLimitFilter_AuthenticatedUser_PerUserIdentification() throws Exception {
         // 2 ユーザーを作成
         User userA = new User();

@@ -8,6 +8,7 @@ import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.S3Service;
+import com.photlas.backend.util.ServerTime;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -60,12 +61,12 @@ public class OgpController {
 
         Photo photo = photoOpt.get();
 
-        // Issue#54: 非公開写真のOGPは404を返す
+        // Spec#54: 非公開写真のOGPは404を返す
         if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
             return ResponseEntity.notFound().build();
         }
 
-        // Issue#54: 退会済み・永久停止ユーザーの写真のOGPは404を返す
+        // Spec#54: 退会済み・永久停止ユーザーの写真のOGPは404を返す
         User owner = userRepository.findById(photo.getUserId()).orElse(null);
         if (owner == null
                 || owner.getDeletedAt() != null
@@ -106,7 +107,8 @@ public class OgpController {
         sb.append("  }");
 
         if (photo.getCreatedAt() != null) {
-            sb.append(",\n  \"datePublished\": \"").append(photo.getCreatedAt().toString()).append("\"");
+            // Spec#169: UTC（末尾 Z）で出す。オフセットがないと、どこの時刻か決まらないため
+            sb.append(",\n  \"datePublished\": \"").append(ServerTime.toUtcIsoString(photo.getCreatedAt())).append("\"");
         }
 
         // 位置情報

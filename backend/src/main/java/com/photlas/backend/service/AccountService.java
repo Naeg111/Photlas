@@ -7,6 +7,7 @@ import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserOAuthConnection;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.EmailChangeTokenRepository;
 import com.photlas.backend.repository.EmailVerificationTokenRepository;
@@ -14,6 +15,7 @@ import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.exception.ForbiddenException;
+import com.photlas.backend.exception.InvalidRequestException;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.util.SecurityAuditLogger;
@@ -59,7 +61,7 @@ public class AccountService {
      * {@link ObjectProvider} で optional 注入し、OAuth 有効時のみ revoke を呼ぶ。
      */
     private final ObjectProvider<OAuthTokenRevokeService> oauthTokenRevokeServiceProvider;
-    /** Issue#104: cancel-registration の監査ログ記録用 */
+    /** Spec#104: cancel-registration の監査ログ記録用 */
     private final SecurityAuditLogger securityAuditLogger;
 
     @Value("${app.frontend-url:https://photlas.jp}")
@@ -95,7 +97,7 @@ public class AccountService {
     }
 
     /**
-     * Issue#86: メールアドレス変更リクエスト
+     * Spec#86: メールアドレス変更リクエスト
      * 即座に変更せず、新メールアドレスに確認リンクを送信する。
      */
     @Transactional
@@ -103,7 +105,7 @@ public class AccountService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
-        // Issue#81 Phase 4h: OAuth のみユーザー (password_hash == null) はメールアドレス変更不可
+        // Spec#81 Phase 4h: OAuth のみユーザー (password_hash == null) はメールアドレス変更不可
         // （email はプロバイダとの紐付けに使われるため、Photlas 側だけで変更すると不整合を起こす）
         if (user.getPasswordHash() == null) {
             throw new UnauthorizedException("OAuth 連携アカウントはメールアドレスを変更できません");
@@ -115,12 +117,12 @@ public class AccountService {
 
         String normalizedNewEmail = newEmail.toLowerCase();
         if (email.equals(normalizedNewEmail)) {
-            throw new IllegalArgumentException("現在のメールアドレスと同じです");
+            throw new InvalidRequestException(ErrorCodes.SAME_EMAIL, "現在のメールアドレスと同じです");
         }
 
         Optional<User> existingUser = userRepository.findByEmail(normalizedNewEmail);
         if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
-            throw new ConflictException("このメールアドレスはすでに使用されています");
+            throw new ConflictException(ErrorCodes.EMAIL_ALREADY_IN_USE, "このメールアドレスはすでに使用されています");
         }
 
         // 既存トークンを削除して新規作成
@@ -136,7 +138,7 @@ public class AccountService {
                 user.getId(), normalizedNewEmail, token, expiryDate);
         emailChangeTokenRepository.save(changeToken);
 
-        // Issue#113 §4.5 A-1: 旧アドレス（アラート）を先に送信し、新アドレス（リンク）を後に送信する。
+        // Spec#113 §4.5 A-1: 旧アドレス（アラート）を先に送信し、新アドレス（リンク）を後に送信する。
         // 両方ともグループ A（失敗時 500）。@Transactional により、どちらか失敗すれば
         // emailChangeToken も含めてロールバックされる。
         String oldSubject = emailTemplateService.subject("email.emailChangeNotifyOld", user);
@@ -150,7 +152,7 @@ public class AccountService {
     }
 
     /**
-     * Issue#86: メールアドレス変更確認
+     * Spec#86: メールアドレス変更確認
      * トークンを検証し、メールアドレスを更新してJWTを再発行する。
      *
      * @return 新メールアドレスベースのJWTと新メールアドレス
@@ -159,25 +161,25 @@ public class AccountService {
     public EmailChangeResult confirmEmailChange(String token) {
         Optional<EmailChangeToken> tokenOptional = emailChangeTokenRepository.findByToken(token);
         if (tokenOptional.isEmpty()) {
-            throw new IllegalArgumentException("トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "トークンが無効または期限切れです");
         }
 
         EmailChangeToken changeToken = tokenOptional.get();
 
         if (changeToken.getExpiryDate().before(new Date())) {
             emailChangeTokenRepository.delete(changeToken);
-            throw new IllegalArgumentException("トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "トークンが無効または期限切れです");
         }
 
         // 新メールアドレスの重複チェック（リクエスト〜確認の間に別ユーザーが登録した場合に備える）
         Optional<User> existingUser = userRepository.findByEmail(changeToken.getNewEmail());
         if (existingUser.isPresent() && !existingUser.get().getId().equals(changeToken.getUserId())) {
             emailChangeTokenRepository.delete(changeToken);
-            throw new ConflictException("このメールアドレスはすでに使用されています");
+            throw new ConflictException(ErrorCodes.EMAIL_ALREADY_IN_USE, "このメールアドレスはすでに使用されています");
         }
 
         User user = userRepository.findById(changeToken.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException(ERROR_USER_NOT_FOUND));
+                .orElseThrow(() -> new InvalidRequestException(ErrorCodes.USER_NOT_FOUND, ERROR_USER_NOT_FOUND));
 
         user.setEmail(changeToken.getNewEmail());
         userRepository.save(user);
@@ -197,7 +199,7 @@ public class AccountService {
     /**
      * アカウント削除 - ソフトデリート
      *
-     * <p>Issue#81 Phase 4b で 3 引数化。通常 / ハイブリッドユーザー (password_hash != null) は
+     * <p>Spec#81 Phase 4b で 3 引数化。通常 / ハイブリッドユーザー (password_hash != null) は
      * {@code password} の照合、OAuth のみユーザー (password_hash == null) は
      * {@code confirmationChecked == true} の確認のみで削除する。
      *
@@ -243,7 +245,7 @@ public class AccountService {
         user.setDeletedAt(java.time.LocalDateTime.now());
         userRepository.save(user);
 
-        // Issue#81 Phase 4d: 退会後に OAuth access_token の revoke を非同期で試みる（best-effort）
+        // Spec#81 Phase 4d: 退会後に OAuth access_token の revoke を非同期で試みる（best-effort）
         // Hotfix: OAuth 無効時は Bean が不在のため ObjectProvider.ifAvailable で skip
         OAuthTokenRevokeService revokeService = oauthTokenRevokeServiceProvider.getIfAvailable();
         if (revokeService != null) {
@@ -254,7 +256,7 @@ public class AccountService {
     }
 
     /**
-     * Issue#104: 同意ダイアログでキャンセルされた未同意 OAuth アカウントを物理削除する。
+     * Spec#104: 同意ダイアログでキャンセルされた未同意 OAuth アカウントを物理削除する。
      *
      * <p>処理順序：
      * <ol>
@@ -299,7 +301,7 @@ public class AccountService {
     }
 
     /**
-     * Issue#81 Phase 4d / Issue#113 フェーズ 3: アカウント削除確認メールを送信。
+     * Spec#81 Phase 4d / Spec#113 フェーズ 3: アカウント削除確認メールを送信。
      *
      * <p>ユーザー区分（NORMAL / OAUTH_ONLY / HYBRID）に応じて 3 サブキーを使い分け、
      * 5 言語の properties から件名・本文を取得する。グループ C のため、メール送信

@@ -8,12 +8,12 @@ import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
 /**
- * Issue#112 + Issue#141: スポット写真ID一覧取得リクエスト DTO（ページネーション対応）
+ * Spec#112 + Spec#141: スポット写真ID一覧取得リクエスト DTO（ページネーション対応）
  *
  * POST /api/v1/spots/photos のリクエスト Body。
  * 複数スポットを横断して撮影日時降順でマージしたページを返す。
  *
- * <p>Issue#141: tag_ids + 既存全フィルタを追加 (Q-new-6/7)。フィルタはフロントの
+ * <p>Spec#141: tag_ids + 既存全フィルタを追加 (Q-new-6/7)。フィルタはフロントの
  * FilterPanel と同じ条件を引き継ぐ。null/未指定は「フィルタ無し」として扱われる。</p>
  */
 public class SpotPhotosRequest {
@@ -35,7 +35,7 @@ public class SpotPhotosRequest {
     @JsonProperty("maxAgeDays")
     private Integer maxAgeDays;
 
-    // Issue#141: 既存フィルタ全部 (null/空なら「フィルタ無し」扱い)
+    // Spec#141: 既存フィルタ全部 (null/空なら「フィルタ無し」扱い)
     @JsonProperty("subjectCategories")
     private List<Integer> subjectCategories;
 

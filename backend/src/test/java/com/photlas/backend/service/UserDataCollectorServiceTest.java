@@ -20,7 +20,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#108 - UserDataCollectorService のテスト
+ * Spec#108 - UserDataCollectorService のテスト
  *
  * 要件:
  *   - ユーザーに紐づく全カテゴリのデータを 1 度のメソッド呼び出しで取得できる
@@ -69,7 +69,7 @@ class UserDataCollectorServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 何もデータがないユーザーでも全配列が空で返る（null ではなく空配列）")
+    @DisplayName("Spec#108 - 何もデータがないユーザーでも全配列が空で返る（null ではなく空配列）")
     void collectForEmptyUserReturnsEmptyArrays() {
         UserExportData data = userDataCollectorService.collectFor(user.getId());
 
@@ -86,7 +86,7 @@ class UserDataCollectorServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 写真は shotAt 降順で返される")
+    @DisplayName("Spec#108 - 写真は shotAt 降順で返される")
     void photosOrderedByShotAtDesc() {
         Spot spot = newSpot();
         Photo older = newPhoto(spot, "key-old.jpg", LocalDateTime.now().minusDays(10));
@@ -100,7 +100,20 @@ class UserDataCollectorServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - LocationSuggestion は本人が出したもののみ含まれる")
+    @DisplayName("Spec#161 - shotAt は UTC に直さず、shot_at の時刻（カメラの時計の時刻）をそのまま返す")
+    void shotAtIsReturnedWithoutConversion() {
+        Spot spot = newSpot();
+        LocalDateTime cameraClock = LocalDateTime.of(2026, 11, 11, 14, 30, 0);
+        photoRepository.save(newPhoto(spot, "key-shot.jpg", cameraClock));
+
+        UserExportData data = userDataCollectorService.collectFor(user.getId());
+
+        assertThat(data.photos()).hasSize(1);
+        assertThat(data.photos().get(0).shotAt()).isEqualTo(cameraClock);
+    }
+
+    @Test
+    @DisplayName("Spec#108 - LocationSuggestion は本人が出したもののみ含まれる")
     void locationSuggestionsOnlyOwnSuggestions() {
         Spot spot = newSpot();
         Photo photo = newPhoto(spot, "key-x.jpg", LocalDateTime.now());
@@ -128,7 +141,7 @@ class UserDataCollectorServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - Spot は本人が作成主のもののみ含まれる")
+    @DisplayName("Spec#108 - Spot は本人が作成主のもののみ含まれる")
     void spotsOnlyOwnedByUser() {
         Spot ownSpot = newSpot();
 
@@ -145,7 +158,7 @@ class UserDataCollectorServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - OAuth 連携の provider は registrationId 文字列として返される")
+    @DisplayName("Spec#108 - OAuth 連携の provider は registrationId 文字列として返される")
     void oauthProviderUsesRegistrationId() {
         UserOAuthConnection conn = new UserOAuthConnection();
         conn.setUserId(user.getId());
@@ -164,7 +177,7 @@ class UserDataCollectorServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 通報は本人が報告したものだけが含まれる（reasonText も含む）")
+    @DisplayName("Spec#108 - 通報は本人が報告したものだけが含まれる（reasonText も含む）")
     void reportsOnlyOwnReportsIncludingReasonText() {
         Report own = new Report();
         own.setReporterUserId(user.getId());
@@ -189,7 +202,7 @@ class UserDataCollectorServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 写真とカテゴリの取得が JOIN FETCH で行われ、N+1 を起こさない")
+    @DisplayName("Spec#108 - 写真とカテゴリの取得が JOIN FETCH で行われ、N+1 を起こさない")
     void photosAndCategoriesUseJoinFetch() {
         // 50 枚の写真を作成し、collectFor 呼び出しで Photo 取得 SQL が 1 件で済むことを確認
         Spot spot = newSpot();

@@ -1,5 +1,5 @@
 /**
- * Issue#143: staging（test.photlas.jp）サイト全体を検索インデックスから除外するための
+ * Spec#143: staging（test.photlas.jp）サイト全体を検索インデックスから除外するための
  * build 時注入ヘルパー。
  *
  * 本番のほぼ複製である staging が重複コンテンツとしてインデックスされるのを防ぐため、

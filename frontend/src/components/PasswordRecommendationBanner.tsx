@@ -12,7 +12,7 @@ interface PasswordRecommendationBannerProps {
 }
 
 /**
- * Issue#81 Phase 5e - OAuth のみユーザー向けパスワード設定推奨ダイアログ。
+ * Spec#81 Phase 5e - OAuth のみユーザー向けパスワード設定推奨ダイアログ。
  *
  * ログイン中のみ GET /api/v1/users/me/password-recommendation で表示要否を取得。
  * - shouldRecommend=true のときのみダイアログを開く

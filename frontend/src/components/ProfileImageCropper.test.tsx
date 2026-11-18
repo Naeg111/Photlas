@@ -2,9 +2,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import ProfileImageCropper from './ProfileImageCropper'
+import i18n from '../i18n'
 
 /**
- * Issue#35: プロフィール画像トリミング機能
+ * Spec#35: プロフィール画像トリミング機能
  * TDD Red段階: ProfileImageCropperコンポーネントのテストケース定義
  *
  * 機能要件:
@@ -314,6 +315,28 @@ describe('ProfileImageCropper', () => {
         expect(confirmButton).toBeDisabled()
         expect(screen.getByRole('button', { name: /キャンセル/i })).toBeDisabled()
       })
+    })
+  })
+
+  describe('Spec#93 追加対応: 表示言語', () => {
+    it('英語の設定では、ズーム・キャンセル・確定が英語で表示される', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        render(
+          <ProfileImageCropper
+            imageSrc={testImageSrc}
+            onCropComplete={mockOnCropComplete}
+            onCancel={mockOnCancel}
+          />
+        )
+
+        expect(screen.getByText('Zoom')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Confirm' })).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: '確定' })).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
   })
 })

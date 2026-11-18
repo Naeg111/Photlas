@@ -19,7 +19,7 @@ input, textarea, [contenteditable="true"] {
 }
 
 /**
- * Issue#27: design-assets準拠のCSS変数定義
+ * Spec#27: design-assets準拠のCSS変数定義
  * Tailwind v4では@themeでカスタム色を登録する必要がある
  */
 
@@ -112,7 +112,7 @@ input, textarea, [contenteditable="true"] {
     background-color: #000000;
     color: var(--foreground);
     font-feature-settings: "rlig" 1, "calt" 1;
-    /* セーフエリアは個別コンポーネントで処理（Issue#70） */
+    /* セーフエリアは個別コンポーネントで処理（Spec#70） */
     padding: 0;
   }
 
@@ -126,7 +126,7 @@ input, textarea, [contenteditable="true"] {
     overflow: hidden;
   }
 
-  /* Issue#70: iOS PWA (black-translucent) ではposition:fixedがビューポート境界で
+  /* Spec#70: iOS PWA (black-translucent) ではposition:fixedがビューポート境界で
      クリップされるため、standaloneモード時はposition:relativeに切り替える。
      html/bodyのoverflow:visibleでクリッピング解除、overscroll-behavior:noneで
      バウンススクロールを防止する。 */
@@ -296,7 +296,7 @@ input, textarea, [contenteditable="true"] {
 }
 
 /**
- * Issue#85: スプラッシュ画面ドロップバウンスアニメーション
+ * Spec#85: スプラッシュ画面ドロップバウンスアニメーション
  *
  * 物理ベースのタイミング配分（時間 ∝ √距離）:
  * - 落下100px: 31.3% → cycle全体の15%

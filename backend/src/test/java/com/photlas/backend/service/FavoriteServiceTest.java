@@ -6,7 +6,9 @@ import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.exception.FavoriteNotFoundException;
+import com.photlas.backend.exception.InvalidStateException;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.FavoriteRepository;
@@ -38,7 +40,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * Issue#30: FavoriteServiceのユニットテスト
+ * Spec#30: FavoriteServiceのユニットテスト
  */
 @ExtendWith(MockitoExtension.class)
 public class FavoriteServiceTest {
@@ -90,7 +92,7 @@ public class FavoriteServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#30 - addFavorite: DataIntegrityViolationExceptionがConflictExceptionに変換される")
+    @DisplayName("Spec#30 - addFavorite: DataIntegrityViolationExceptionがConflictExceptionに変換される")
     void addFavorite_DataIntegrityViolation_ThrowsConflictException() {
         // Given
         User user = createTestUser();
@@ -108,7 +110,7 @@ public class FavoriteServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#30 - addFavorite: ユーザーが見つからない場合UserNotFoundExceptionがスローされる")
+    @DisplayName("Spec#30 - addFavorite: ユーザーが見つからない場合UserNotFoundExceptionがスローされる")
     void addFavorite_UserNotFound_ThrowsUserNotFoundException() {
         // Given
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.empty());
@@ -120,7 +122,7 @@ public class FavoriteServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#30 - addFavorite: 写真が見つからない場合PhotoNotFoundExceptionがスローされる")
+    @DisplayName("Spec#30 - addFavorite: 写真が見つからない場合PhotoNotFoundExceptionがスローされる")
     void addFavorite_PhotoNotFound_ThrowsPhotoNotFoundException() {
         // Given
         User user = createTestUser();
@@ -134,7 +136,7 @@ public class FavoriteServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#30 - removeFavorite: お気に入り未登録の場合FavoriteNotFoundExceptionがスローされる")
+    @DisplayName("Spec#30 - removeFavorite: お気に入り未登録の場合FavoriteNotFoundExceptionがスローされる")
     void removeFavorite_NotFavorited_ThrowsFavoriteNotFoundException() {
         // Given
         User user = createTestUser();
@@ -149,7 +151,7 @@ public class FavoriteServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#30 - getFavoriteCount: リポジトリのcountByPhotoIdに委譲される")
+    @DisplayName("Spec#30 - getFavoriteCount: リポジトリのcountByPhotoIdに委譲される")
     void getFavoriteCount_DelegatesToRepository() {
         // Given
         when(favoriteRepository.countByPhotoId(TEST_PHOTO_ID)).thenReturn(5L);
@@ -163,7 +165,7 @@ public class FavoriteServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#30 - isFavorited: userIdがnullの場合falseを返す")
+    @DisplayName("Spec#30 - isFavorited: userIdがnullの場合falseを返す")
     void isFavorited_NullUserId_ReturnsFalse() {
         // When
         boolean result = favoriteService.isFavorited(TEST_PHOTO_ID, null);
@@ -174,7 +176,7 @@ public class FavoriteServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#30 - isFavorited: お気に入り登録済みの場合trueを返す")
+    @DisplayName("Spec#30 - isFavorited: お気に入り登録済みの場合trueを返す")
     void isFavorited_FavoriteExists_ReturnsTrue() {
         // Given
         Favorite favorite = new Favorite();
@@ -192,7 +194,7 @@ public class FavoriteServiceTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    @DisplayName("Issue#30 - getFavorites: 正しいページネーション構造を返す")
+    @DisplayName("Spec#30 - getFavorites: 正しいページネーション構造を返す")
     void getFavorites_ReturnsCorrectPaginationStructure() {
         // Given
         User user = createTestUser();
@@ -239,7 +241,7 @@ public class FavoriteServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - addFavorite: QUARANTINED写真はお気に入り登録できない")
+    @DisplayName("Spec#54 - addFavorite: QUARANTINED写真はお気に入り登録できない")
     void addFavorite_QuarantinedPhoto_ThrowsException() {
         // Given
         User user = createTestUser();
@@ -251,12 +253,13 @@ public class FavoriteServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> favoriteService.addFavorite(TEST_PHOTO_ID, TEST_EMAIL))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("公開中の写真のみ");
+                .isInstanceOf(InvalidStateException.class)
+                .hasMessageContaining("公開中の写真のみ")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_NOT_PUBLIC);
     }
 
     @Test
-    @DisplayName("Issue#54 - addFavorite: PENDING_REVIEW写真はお気に入り登録できない")
+    @DisplayName("Spec#54 - addFavorite: PENDING_REVIEW写真はお気に入り登録できない")
     void addFavorite_PendingReviewPhoto_ThrowsException() {
         // Given
         User user = createTestUser();
@@ -268,13 +271,14 @@ public class FavoriteServiceTest {
 
         // When & Then
         assertThatThrownBy(() -> favoriteService.addFavorite(TEST_PHOTO_ID, TEST_EMAIL))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("公開中の写真のみ");
+                .isInstanceOf(InvalidStateException.class)
+                .hasMessageContaining("公開中の写真のみ")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_NOT_PUBLIC);
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    @DisplayName("Issue#72 - getFavorites: 退会済みユーザーの写真がお気に入り一覧から除外される")
+    @DisplayName("Spec#72 - getFavorites: 退会済みユーザーの写真がお気に入り一覧から除外される")
     void getFavorites_ExcludesDeletedUserPhotos() {
         // Given: 退会済みユーザーの写真はDB側で除外されるため、リポジトリが空ページを返す
         User user = createTestUser();
@@ -363,11 +367,11 @@ public class FavoriteServiceTest {
                 .isEqualTo(expectedTotalPages);
     }
 
-    // ===== Issue#54: ブロックコンテンツチェック =====
+    // ===== Spec#54: ブロックコンテンツチェック =====
 
     @SuppressWarnings("unchecked")
     @Test
-    @DisplayName("Issue#54 - getFavorites: QUARANTINED写真はblocked-content画像で表示される")
+    @DisplayName("Spec#54 - getFavorites: QUARANTINED写真はblocked-content画像で表示される")
     void getFavorites_QuarantinedPhoto_ReturnsBlockedContentUrl() {
         // Given
         User user = createTestUser();

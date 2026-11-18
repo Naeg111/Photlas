@@ -14,7 +14,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#149: {@link SpotRepository#findSpotsWithin200m} の結合テスト（実 PostgreSQL+PostGIS）。
+ * Spec#149: {@link SpotRepository#findSpotsWithin200m} の結合テスト（実 PostgreSQL+PostGIS）。
  *
  * <p>半径 200m 判定と「近い順」の振る舞いを検証する。Haversine → ST_DWithin への
  * 書き換え前後で同じ結果になることを担保する安全網。</p>
@@ -45,7 +45,7 @@ class SpotRepositoryWithin200mTest {
     }
 
     @Test
-    @DisplayName("Issue#149 - 半径200m以内のスポットだけが返る（200m超は返らない）")
+    @DisplayName("Spec#149 - 半径200m以内のスポットだけが返る（200m超は返らない）")
     void returnsSpotsWithin200mOnly() {
         Spot near50 = saveSpotAt(50);
         Spot near150 = saveSpotAt(150);
@@ -59,7 +59,7 @@ class SpotRepositoryWithin200mTest {
     }
 
     @Test
-    @DisplayName("Issue#149 - 結果は近い順（最近傍が先頭）で返る")
+    @DisplayName("Spec#149 - 結果は近い順（最近傍が先頭）で返る")
     void returnsSpotsOrderedByDistance() {
         Spot s150 = saveSpotAt(150);
         Spot s50 = saveSpotAt(50);
@@ -72,7 +72,7 @@ class SpotRepositoryWithin200mTest {
     }
 
     @Test
-    @DisplayName("Issue#149 - 圏内に何も無ければ空リスト")
+    @DisplayName("Spec#149 - 圏内に何も無ければ空リスト")
     void returnsEmptyWhenNoneWithin200m() {
         saveSpotAt(500);
 

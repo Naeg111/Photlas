@@ -11,7 +11,7 @@ public class UploadUrlRequest {
     @Pattern(regexp = "^image/(jpeg|png|webp|heic)$", message = "対応していないコンテンツタイプです")
     private String contentType;
 
-    // Issue#131: ユーザー指定のクロップ範囲（投稿写真のみ・avatar 等は null）
+    // Spec#131: ユーザー指定のクロップ範囲（投稿写真のみ・avatar 等は null）
     // 値はバックエンドでクランプして S3 metadata に渡される
     private Double cropCenterX;
     private Double cropCenterY;

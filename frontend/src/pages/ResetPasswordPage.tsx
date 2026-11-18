@@ -7,6 +7,7 @@ import { validatePassword } from '../utils/validation'
 import { API_V1_URL } from '../config/api'
 import { ApiError } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
+import { translateErrorCode } from '../utils/apiErrorMessage'
 import { getRateLimitInlineMessage } from '../utils/notifyIfRateLimited'
 import { useRateLimitCooldown } from '../hooks/useRateLimitCooldown'
 
@@ -19,7 +20,7 @@ const CARD_CLASS = 'max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8'
 /**
  * パスワードリセット完了ページ
  *
- * Issue#56: メール内のリセットリンクからアクセスされるページ。
+ * Spec#56: メール内のリセットリンクからアクセスされるページ。
  * 新しいパスワードを入力してリセットを完了する。
  */
 export default function ResetPasswordPage() {
@@ -29,7 +30,7 @@ export default function ResetPasswordPage() {
   const { t } = useTranslation()
   const token = searchParams.get('token')
 
-  useDocumentTitle('パスワードの再設定 - Photlas')
+  useDocumentTitle(`${t('pages.resetPassword')} - Photlas`)
 
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -46,8 +47,8 @@ export default function ResetPasswordPage() {
     setError('')
 
     const validation = validatePassword(newPassword)
-    if (!validation.isValid) {
-      setError(validation.errorMessage!)
+    if (validation.errorKey) {
+      setError(t(validation.errorKey, validation.errorParams))
       return
     }
 
@@ -70,7 +71,7 @@ export default function ResetPasswordPage() {
           setRateLimitError(err)
           setError(getRateLimitInlineMessage(err, t))
         } else {
-          setError(err.responseMessage || t('auth.errorOccurred'))
+          setError(translateErrorCode(err.code, t, 'auth.errorOccurred'))
         }
       } else {
         setError(t('auth.errorOccurred'))

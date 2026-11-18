@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#81 Phase 3f - OAuth2 フロー全体の MockMvc 雛形テスト（手順書 Round 12 / [2-H] パターン 3）。
+ * Spec#81 Phase 3f - OAuth2 フロー全体の MockMvc 雛形テスト（手順書 Round 12 / [2-H] パターン 3）。
  *
  * <p>手順書 [2-H] で定められた 3 パターンの OAuth2 テストモック戦略のうち、本クラスは:
  * <ul>
@@ -63,7 +63,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-@DisplayName("Issue#81 Phase 3f - OAuth2 フロー全体の雛形テスト（[2-H] パターン 3）")
+@DisplayName("Spec#81 Phase 3f - OAuth2 フロー全体の雛形テスト（[2-H] パターン 3）")
 class OAuth2FlowMockTemplateTest {
 
     @Autowired

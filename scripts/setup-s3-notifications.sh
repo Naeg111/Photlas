@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Issue#75 + SNS ファンアウト対応:
+# Spec#75 + SNS ファンアウト対応:
 # S3 → SNS Topic → 複数 Lambda（moderation + thumbnail）の構成で
 # 同一プレフィックスへの複数 Lambda トリガーを実現する。
 #

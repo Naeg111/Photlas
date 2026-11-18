@@ -14,14 +14,14 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#81 Phase 1 Red: OAuth 関連 Flyway マイグレーションファイル存在チェック
+ * Spec#81 Phase 1 Red: OAuth 関連 Flyway マイグレーションファイル存在チェック
  *
  * Round 12 四次精査 / Q15 で「H2 で Flyway を実行して V22〜V25 適用を検証する」と
  * 決定したが、既存 V9 が PostgreSQL 専用の `DO $$...$$` ブロックを含むため H2 では
  * （PostgreSQL 互換モードを有効にしても）構文エラーで落ちる。そのため実際の
  * マイグレーション適用検証は Phase 6 のステージング手動検証（`flyway:info` で
  * V22〜V25 が `Success` になること）に委ね、CI では **軽量なファイル存在チェック**
- * のみを行う。詳細経緯は `Issue#81_実装メモ.md` の Phase 1 欄を参照。
+ * のみを行う。詳細経緯は `SPEC-0081_実装メモ.md` の Phase 1 欄を参照。
  *
  * Red 段階では V22〜V25 の SQL ファイルが未作成のため、`classpath:db/migration`
  * 配下をスキャンしても該当ファイルが見つからず assertion が失敗する。
@@ -41,7 +41,7 @@ class OAuthMigrationFilesTest {
             Paths.get("src/main/resources/db/migration");
 
     @Test
-    @DisplayName("Issue#81 Phase 1: V22 マイグレーションファイルが存在する（users 列追加・password_hash NULLABLE 化想定）")
+    @DisplayName("Spec#81 Phase 1: V22 マイグレーションファイルが存在する（users 列追加・password_hash NULLABLE 化想定）")
     void v22MigrationFileExists() {
         assertThat(findMigrationByVersion("22"))
                 .as("V22__*.sql が db/migration/ に存在すること")
@@ -49,7 +49,7 @@ class OAuthMigrationFilesTest {
     }
 
     @Test
-    @DisplayName("Issue#81 Phase 1: V23 マイグレーションファイルが存在する（user_oauth_connections テーブル新規想定）")
+    @DisplayName("Spec#81 Phase 1: V23 マイグレーションファイルが存在する（user_oauth_connections テーブル新規想定）")
     void v23MigrationFileExists() {
         assertThat(findMigrationByVersion("23"))
                 .as("V23__*.sql が db/migration/ に存在すること")
@@ -57,7 +57,7 @@ class OAuthMigrationFilesTest {
     }
 
     @Test
-    @DisplayName("Issue#81 Phase 1: V24 マイグレーションファイルが存在する（OAuth 関連 INDEX 追加想定）")
+    @DisplayName("Spec#81 Phase 1: V24 マイグレーションファイルが存在する（OAuth 関連 INDEX 追加想定）")
     void v24MigrationFileExists() {
         assertThat(findMigrationByVersion("24"))
                 .as("V24__*.sql が db/migration/ に存在すること")
@@ -65,7 +65,7 @@ class OAuthMigrationFilesTest {
     }
 
     @Test
-    @DisplayName("Issue#81 Phase 1: V25 マイグレーションファイルが存在する（oauth_link_confirmations テーブル新規想定）")
+    @DisplayName("Spec#81 Phase 1: V25 マイグレーションファイルが存在する（oauth_link_confirmations テーブル新規想定）")
     void v25MigrationFileExists() {
         assertThat(findMigrationByVersion("25"))
                 .as("V25__*.sql が db/migration/ に存在すること")
@@ -73,7 +73,7 @@ class OAuthMigrationFilesTest {
     }
 
     @Test
-    @DisplayName("Issue#81 Phase 1: V22〜V25 のファイル名が Flyway 命名規則 V{n}__{desc}.sql に従う")
+    @DisplayName("Spec#81 Phase 1: V22〜V25 のファイル名が Flyway 命名規則 V{n}__{desc}.sql に従う")
     void oauthMigrationFilesFollowNamingConvention() {
         List<String> oauthMigrations = listMigrationFileNames().stream()
                 .filter(name -> {
@@ -93,7 +93,7 @@ class OAuthMigrationFilesTest {
     }
 
     @Test
-    @DisplayName("Issue#81 Phase 1: V15 は欠番（アーカイブで削除済み）のためファイルが存在しない")
+    @DisplayName("Spec#81 Phase 1: V15 は欠番（アーカイブで削除済み）のためファイルが存在しない")
     void v15MigrationFileIsAbsent() {
         assertThat(findMigrationByVersion("15"))
                 .as("V15 はアーカイブで削除済みのため存在しないこと")

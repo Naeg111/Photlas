@@ -32,7 +32,7 @@ Object.defineProperty(global, 'sessionStorage', {
   writable: true,
 })
 
-// Issue#9: heic2anyのためにWorkerをモック
+// Spec#9: heic2anyのためにWorkerをモック
 // @ts-ignore
 global.Worker = class Worker {
   constructor() {}
@@ -40,7 +40,7 @@ global.Worker = class Worker {
   terminate() {}
 }
 
-// Issue#14: matchMediaのモック（embla-carousel用）
+// Spec#14: matchMediaのモック（embla-carousel用）
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(query => ({
@@ -55,7 +55,7 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
-// Issue#14: IntersectionObserverのモック（embla-carousel用）
+// Spec#14: IntersectionObserverのモック（embla-carousel用）
 global.IntersectionObserver = class IntersectionObserver {
   constructor() {}
   disconnect() {}
@@ -66,7 +66,7 @@ global.IntersectionObserver = class IntersectionObserver {
   }
 } as any
 
-// Issue#14: ResizeObserverのモック（embla-carousel用）
+// Spec#14: ResizeObserverのモック（embla-carousel用）
 global.ResizeObserver = class ResizeObserver {
   constructor() {}
   disconnect() {}
@@ -74,12 +74,12 @@ global.ResizeObserver = class ResizeObserver {
   unobserve() {}
 } as any
 
-// Issue#9: heic2anyモジュールのデフォルトモック
+// Spec#9: heic2anyモジュールのデフォルトモック
 vi.mock('heic2any', () => ({
   default: vi.fn()
 }))
 
-// Issue#93 + Issue#130: テスト環境では i18n を非同期で初期化（動的 import 化に対応）
+// Spec#93 + Spec#130: テスト環境では i18n を非同期で初期化（動的 import 化に対応）
 // 本番では言語ごとに動的ロードだが、テスト環境では多言語表示テスト（韓国語/中国語等）を
 // シンプルに保つため、全言語を事前ロードする
 const { default: i18n, initI18n, loadLanguageResource, SUPPORTED_LANGUAGES } = await import('../i18n')

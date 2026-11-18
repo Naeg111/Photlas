@@ -7,6 +7,7 @@ import com.photlas.backend.entity.Category;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.FavoriteRepository;
 import com.photlas.backend.repository.PhotoRepository;
@@ -255,7 +256,7 @@ public class PhotoControllerTest {
      * S3サービスのモックをセットアップするヘルパーメソッド
      */
     private void setupS3ServiceMock() {
-        // Issue#131: PhotoController が呼ぶ 7 引数オーバーロード（crop 情報込み）に対応。
+        // Spec#131: PhotoController が呼ぶ 7 引数オーバーロード（crop 情報込み）に対応。
         // crop 引数は nullable で受け、avatars 経路のような null 呼び出しもマッチする。
         when(s3Service.generatePresignedUploadUrl(
                 anyString(), anyLong(), anyString(), anyString(),
@@ -443,8 +444,8 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath("$.errors[?(@.field == '" + FIELD_LONGITUDE + "')].message").exists());
     }
 
-    // Issue#48: categories は任意項目に変更されたため、null/空リストの
-    // バリデーションエラーテストは Issue#48 の正常系テストに置き換え済み
+    // Spec#48: categories は任意項目に変更されたため、null/空リストの
+    // バリデーションエラーテストは Spec#48 の正常系テストに置き換え済み
 
     @Test
     @DisplayName("業務エラー - 存在しないカテゴリ名が送信された場合")
@@ -463,7 +464,9 @@ public class PhotoControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath(JSON_PATH_MESSAGE, containsString("カテゴリ")));
+                .andExpect(jsonPath(JSON_PATH_MESSAGE, containsString("カテゴリ")))
+                // Spec#93: GlobalExceptionHandler が CATEGORY_NOT_FOUND を付ける
+                .andExpect(jsonPath("$.code").value(ErrorCodes.CATEGORY_NOT_FOUND));
     }
 
     @Test
@@ -525,7 +528,7 @@ public class PhotoControllerTest {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
         Photo photo = createPhoto(S3_OBJECT_KEY_TEST, spot.getSpotId());
 
-        // お気に入り登録（Issue#30: 201 Created を返す）
+        // お気に入り登録（Spec#30: 201 Created を返す）
         mockMvc.perform(post(ENDPOINT_PHOTO_DETAIL + photo.getPhotoId() + ENDPOINT_FAVORITE)
                 .with(csrf())
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
@@ -553,9 +556,9 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath(DETAIL_JSON_PATH_IS_FAVORITED).value(false));
     }
 
-    // Issue#9: 写真アップロード処理 - 署名付きURL発行API
+    // Spec#9: 写真アップロード処理 - 署名付きURL発行API
     @Test
-    @DisplayName("Issue#9 - 正常ケース: 署名付きURL発行成功")
+    @DisplayName("Spec#9 - 正常ケース: 署名付きURL発行成功")
     void testGetUploadUrl_ValidRequest_ReturnsUploadUrl() throws Exception {
         com.photlas.backend.dto.UploadUrlRequest request =
             new com.photlas.backend.dto.UploadUrlRequest(S3_EXTENSION_JPG, S3_CONTENT_TYPE_JPEG);
@@ -573,7 +576,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#9 - 認証エラー: 未認証ユーザーのアクセス")
+    @DisplayName("Spec#9 - 認証エラー: 未認証ユーザーのアクセス")
     void testGetUploadUrl_Unauthorized_ReturnsUnauthorized() throws Exception {
         com.photlas.backend.dto.UploadUrlRequest request =
             new com.photlas.backend.dto.UploadUrlRequest(S3_EXTENSION_JPG, S3_CONTENT_TYPE_JPEG);
@@ -586,7 +589,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#9 - バリデーションエラー: extension必須")
+    @DisplayName("Spec#9 - バリデーションエラー: extension必須")
     void testGetUploadUrl_MissingExtension_ReturnsBadRequest() throws Exception {
         com.photlas.backend.dto.UploadUrlRequest request =
             new com.photlas.backend.dto.UploadUrlRequest(null, S3_CONTENT_TYPE_JPEG);
@@ -600,7 +603,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#9 - バリデーションエラー: contentType必須")
+    @DisplayName("Spec#9 - バリデーションエラー: contentType必須")
     void testGetUploadUrl_MissingContentType_ReturnsBadRequest() throws Exception {
         com.photlas.backend.dto.UploadUrlRequest request =
             new com.photlas.backend.dto.UploadUrlRequest(S3_EXTENSION_JPG, null);
@@ -613,11 +616,11 @@ public class PhotoControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ===== Issue#159 ②(Q6): カテゴリは必須・ちょうど1件 =====
-    // （Issue#48 で任意化していたが、単一選択化に伴い「ちょうど1件」に厳格化）
+    // ===== Spec#159 ②(Q6): カテゴリは必須・ちょうど1件 =====
+    // （Spec#48 で任意化していたが、単一選択化に伴い「ちょうど1件」に厳格化）
 
     @Test
-    @DisplayName("Issue#159 ②(Q6) - カテゴリ空リストの投稿は400を返す")
+    @DisplayName("Spec#159 ②(Q6) - カテゴリ空リストの投稿は400を返す")
     void testCreatePhoto_EmptyCategories_ReturnsBadRequest() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 "uploads/1/b0000000-0000-0000-0000-000000000001.jpg",
@@ -636,7 +639,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#159 ②(Q6) - カテゴリnullの投稿は400を返す")
+    @DisplayName("Spec#159 ②(Q6) - カテゴリnullの投稿は400を返す")
     void testCreatePhoto_NullCategories_ReturnsBadRequest() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 "uploads/1/b0000000-0000-0000-0000-000000000002.jpg",
@@ -655,7 +658,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#159 ②(Q6) - カテゴリ2件以上の投稿は400を返す")
+    @DisplayName("Spec#159 ②(Q6) - カテゴリ2件以上の投稿は400を返す")
     void testCreatePhoto_MultipleCategories_ReturnsBadRequest() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 "uploads/1/b0000000-0000-0000-0000-000000000003.jpg",
@@ -673,10 +676,10 @@ public class PhotoControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ===== Issue#40: Photo Entity拡張テスト =====
+    // ===== Spec#40: Photo Entity拡張テスト =====
 
     @Test
-    @DisplayName("Issue#40 - EXIF情報付き写真投稿でレスポンスにEXIFオブジェクトが含まれる")
+    @DisplayName("Spec#40 - EXIF情報付き写真投稿でレスポンスにEXIFオブジェクトが含まれる")
     void testCreatePhoto_WithExif_ReturnsExifInResponse() throws Exception {
         String requestJson = """
                 {
@@ -714,7 +717,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#40 - EXIF情報なしの投稿でexifフィールドがnull")
+    @DisplayName("Spec#40 - EXIF情報なしの投稿でexifフィールドがnull")
     void testCreatePhoto_WithoutExif_ExifIsNull() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 "uploads/1/b0000000-0000-0000-0000-000000000003.jpg",
@@ -734,7 +737,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#40 - 写真詳細取得でEXIFオブジェクトとピンポイント座標が返される")
+    @DisplayName("Spec#40 - 写真詳細取得でEXIFオブジェクトとピンポイント座標が返される")
     void testGetPhotoDetail_ReturnsExifAndCoordinates() throws Exception {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
 
@@ -765,10 +768,10 @@ public class PhotoControllerTest {
                 .andExpect(jsonPath(DETAIL_JSON_PATH_IMAGE_HEIGHT, is(5504)));
     }
 
-    // ===== Issue#49: クロップ（トリミング）データ コントローラーテスト =====
+    // ===== Spec#49: クロップ（トリミング）データ コントローラーテスト =====
 
     @Test
-    @DisplayName("Issue#49 - クロップデータ付き写真投稿でレスポンスにクロップ情報が含まれる")
+    @DisplayName("Spec#49 - クロップデータ付き写真投稿でレスポンスにクロップ情報が含まれる")
     void testCreatePhoto_WithCropData_ReturnsCropInResponse() throws Exception {
         String requestJson = """
                 {
@@ -795,7 +798,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#49 - クロップデータなし投稿でcropフィールドがレスポンスに含まれない")
+    @DisplayName("Spec#49 - クロップデータなし投稿でcropフィールドがレスポンスに含まれない")
     void testCreatePhoto_WithoutCropData_CropNotInResponse() throws Exception {
         CreatePhotoRequest request = createPhotoRequest(
                 "uploads/1/b0000000-0000-0000-0000-000000000004.jpg",
@@ -817,7 +820,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#49 - 写真詳細取得でクロップデータが返される")
+    @DisplayName("Spec#49 - 写真詳細取得でクロップデータが返される")
     void testGetPhotoDetail_ReturnsCropData() throws Exception {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
 
@@ -843,7 +846,7 @@ public class PhotoControllerTest {
     // ===== 署名付きURL追加バリデーションテスト =====
 
     @Test
-    @DisplayName("Issue#9 - バリデーションエラー: 対応していないファイル拡張子（gif）")
+    @DisplayName("Spec#9 - バリデーションエラー: 対応していないファイル拡張子（gif）")
     void testGetUploadUrl_UnsupportedExtension_ReturnsBadRequest() throws Exception {
         com.photlas.backend.dto.UploadUrlRequest request =
             new com.photlas.backend.dto.UploadUrlRequest("gif", S3_CONTENT_TYPE_JPEG);
@@ -857,7 +860,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#9 - バリデーションエラー: 対応していないcontentType（image/gif）")
+    @DisplayName("Spec#9 - バリデーションエラー: 対応していないcontentType（image/gif）")
     void testGetUploadUrl_UnsupportedContentType_ReturnsBadRequest() throws Exception {
         com.photlas.backend.dto.UploadUrlRequest request =
             new com.photlas.backend.dto.UploadUrlRequest(S3_EXTENSION_JPG, "image/gif");
@@ -870,10 +873,10 @@ public class PhotoControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ===== Issue#54: 写真ステータス取得エンドポイントテスト =====
+    // ===== Spec#54: 写真ステータス取得エンドポイントテスト =====
 
     @Test
-    @DisplayName("Issue#54 - 正常ケース: オーナーが写真のモデレーションステータスを取得")
+    @DisplayName("Spec#54 - 正常ケース: オーナーが写真のモデレーションステータスを取得")
     void testGetPhotoStatus_Owner_ReturnsStatus() throws Exception {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
         Photo photo = createPhoto("photos/status-api001.jpg", spot.getSpotId());
@@ -886,7 +889,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - エラー: 未認証でステータス取得すると401を返す")
+    @DisplayName("Spec#54 - エラー: 未認証でステータス取得すると401を返す")
     void testGetPhotoStatus_Unauthenticated_ReturnsUnauthorized() throws Exception {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
         Photo photo = createPhoto("photos/status-unauth001.jpg", spot.getSpotId());
@@ -896,7 +899,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - エラー: 存在しない写真IDのステータス取得")
+    @DisplayName("Spec#54 - エラー: 存在しない写真IDのステータス取得")
     void testGetPhotoStatus_NonExistentPhoto_ReturnsNotFound() throws Exception {
         mockMvc.perform(get(ENDPOINT_PHOTO_DETAIL + "99999/status")
                 .header(HEADER_AUTHORIZATION, BEARER_PREFIX + token))
@@ -1048,11 +1051,11 @@ public class PhotoControllerTest {
     }
 
     // ============================================================
-    // Issue#72: 退会済みユーザーの写真非公開テスト
+    // Spec#72: 退会済みユーザーの写真非公開テスト
     // ============================================================
 
     @Test
-    @DisplayName("Issue#72 - 退会済みユーザーの写真詳細は404を返す")
+    @DisplayName("Spec#72 - 退会済みユーザーの写真詳細は404を返す")
     void testGetPhotoDetail_DeletedUser_Returns404() throws Exception {
         // 退会済みユーザーを作成
         User deletedUser = new User();
@@ -1078,10 +1081,10 @@ public class PhotoControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ===== Issue#122 Cycle3: 写真詳細バッチ取得エンドポイント =====
+    // ===== Spec#122 Cycle3: 写真詳細バッチ取得エンドポイント =====
 
     @Test
-    @DisplayName("Issue#122 - POST /api/v1/photos/batch: 200 で写真詳細配列を返す")
+    @DisplayName("Spec#122 - POST /api/v1/photos/batch: 200 で写真詳細配列を返す")
     void testGetPhotosBatch_ValidRequest_Returns200() throws Exception {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
         Photo p1 = createPhoto("photos/batch-ctrl-1.jpg", spot.getSpotId());
@@ -1100,7 +1103,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#122 - POST /api/v1/photos/batch: 21 件以上で 400 を返す")
+    @DisplayName("Spec#122 - POST /api/v1/photos/batch: 21 件以上で 400 を返す")
     void testGetPhotosBatch_ExceedsMaxBatchSize_Returns400() throws Exception {
         StringBuilder ids = new StringBuilder();
         for (int i = 1; i <= 21; i++) {
@@ -1118,7 +1121,7 @@ public class PhotoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#122 - POST /api/v1/photos/batch: 認可されていない写真は silent skip して残りを 200 で返す")
+    @DisplayName("Spec#122 - POST /api/v1/photos/batch: 認可されていない写真は silent skip して残りを 200 で返す")
     void testGetPhotosBatch_PartialUnauthorized_SilentlySkipsAndReturns200() throws Exception {
         Spot spot = createSpot(LATITUDE_TOKYO_TOWER, LONGITUDE_TOKYO_TOWER);
         Photo visible = createPhoto("photos/batch-vis.jpg", spot.getSpotId());

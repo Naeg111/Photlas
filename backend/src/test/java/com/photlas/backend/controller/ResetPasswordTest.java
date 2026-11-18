@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Issue#6: パスワードリセット機能 - パスワード再設定API テスト
+ * Spec#6: パスワードリセット機能 - パスワード再設定API テスト
  * TDD Red段階: 実装前のテストケース定義
  *
  * API要件:
@@ -324,7 +324,7 @@ public class ResetPasswordTest {
                 .andExpect(jsonPath(JSON_PATH_ERRORS_FIELD, is(FIELD_NEW_PASSWORD)));
     }
 
-    // Issue#21: パスワードバリデーション統一 - 記号禁止チェック
+    // Spec#21: パスワードバリデーション統一 - 記号禁止チェック
     @Test
     @DisplayName("バリデーションエラー - パスワード記号禁止")
     void testResetPassword_PasswordWithSpecialCharacters_ReturnsBadRequest() throws Exception {
@@ -338,7 +338,7 @@ public class ResetPasswordTest {
                 .andExpect(jsonPath(JSON_PATH_ERRORS_FIELD, is(FIELD_NEW_PASSWORD)));
     }
 
-    // Issue#21: パスワードバリデーション統一 - 最大文字数チェック
+    // Spec#21: パスワードバリデーション統一 - 最大文字数チェック
     @Test
     @DisplayName("バリデーションエラー - パスワード最大文字数超過（newPassword と confirmPassword 両方が違反）")
     void testResetPassword_PasswordTooLong_ReturnsBadRequest() throws Exception {

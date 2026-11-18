@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# ALB アクセスログ S3 連携セットアップスクリプト (Issue#95)
+# ALB アクセスログ S3 連携セットアップスクリプト (Spec#95)
 #
 # 実行内容:
 #   1. S3 バケット photlas-alb-logs-<ACCOUNT_ID> を作成（SSE-S3・公開ブロック・90 日ライフサイクル）

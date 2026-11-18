@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#58 §6 (B2): {@code GET /photo-viewer/{id}} のテスト。
+ * Spec#58 §6 (B2): {@code GET /photo-viewer/{id}} のテスト。
  *
  * <p>UA 判定なしで全員に index.html を返し、有効な写真には個別 OGP を差し込む。
  * 無効/非公開は汎用 OGP のまま 200 で返す（SPA が「見つかりません」を表示）。
@@ -85,7 +85,7 @@ class PhotoViewerControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#58 §6 - 有効写真: index.html に写真個別 OGP が差し込まれる（汎用 Photlas は置換される）")
+    @DisplayName("Spec#58 §6 - 有効写真: index.html に写真個別 OGP が差し込まれる（汎用 Photlas は置換される）")
     void validPhoto_injectsPerPhotoOgp() throws Exception {
         Photo photo = createPublishedPhoto("Tokyo Tower");
         String expectedImage = s3Service.generateThumbnailCdnUrl(photo.getS3ObjectKey());
@@ -110,7 +110,7 @@ class PhotoViewerControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#58 §6 - 存在しない id: 汎用 OGP のまま 200 で SPA(index.html) を返す")
+    @DisplayName("Spec#58 §6 - 存在しない id: 汎用 OGP のまま 200 で SPA(index.html) を返す")
     void nonexistentPhoto_returnsGenericOgp200() throws Exception {
         mockMvc.perform(get("/photo-viewer/99999999"))
                 .andExpect(status().isOk())
@@ -120,7 +120,7 @@ class PhotoViewerControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#58 §6 - 非公開写真: 汎用 OGP のまま 200")
+    @DisplayName("Spec#58 §6 - 非公開写真: 汎用 OGP のまま 200")
     void nonPublishedPhoto_returnsGenericOgp200() throws Exception {
         Photo photo = createPublishedPhoto("Hidden");
         photo.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -133,7 +133,7 @@ class PhotoViewerControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#58 §6 - 非数値 id: 400 にせず 200 で SPA を返す")
+    @DisplayName("Spec#58 §6 - 非数値 id: 400 にせず 200 で SPA を返す")
     void nonNumericId_returns200() throws Exception {
         mockMvc.perform(get("/photo-viewer/not-a-number"))
                 .andExpect(status().isOk())

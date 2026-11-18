@@ -1,12 +1,12 @@
 /**
  * 認証コンテキスト
- * Issue#5: ログイン・ログアウト機能
- * Issue#36: ユーザー情報更新機能追加
- * Issue#118: ログイン成功時に登録壁の閲覧履歴をクリア
+ * Spec#5: ログイン・ログアウト機能
+ * Spec#36: ユーザー情報更新機能追加
+ * Spec#118: ログイン成功時に登録壁の閲覧履歴をクリア
  */
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
-import i18n, { loadLanguageResource } from '../i18n'
-import { type SupportedLanguage, SUPPORTED_LANGUAGES } from '../i18n'
+import i18n, { applyAccountLanguage, loadLanguageResource } from '../i18n'
+import { type SupportedLanguage } from '../i18n'
 import { clearViewedPhotoIds } from '../utils/registrationWall'
 
 /**
@@ -107,15 +107,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     storage.setItem('auth_token', token)
     storage.setItem('auth_user', JSON.stringify(userData))
 
-    // Issue#93: ログイン時にDBの言語設定をi18nとlocalStorageに反映
-    if (userData.language && SUPPORTED_LANGUAGES.includes(userData.language as SupportedLanguage)) {
-      // Issue#130: 言語リソースは動的 import なので、changeLanguage 前にロードを発火
-      const lng = userData.language as SupportedLanguage
-      void loadLanguageResource(lng).then(() => i18n.changeLanguage(lng))
-      localStorage.setItem('photlas-language', userData.language)
-    }
+    // Spec#93: ログイン時にDBの言語設定をi18nとlocalStorageに反映
+    void applyAccountLanguage(userData.language)
 
-    // Issue#118: ログイン成功時に登録壁の閲覧履歴をクリア（ログイン後は壁が出ないため不要）
+    // Spec#118: ログイン成功時に登録壁の閲覧履歴をクリア（ログイン後は壁が出ないため不要）
     clearViewedPhotoIds()
 
     setUser(userData)
@@ -138,7 +133,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [])
 
   /**
-   * Issue#36: ユーザー情報を部分更新
+   * Spec#36: ユーザー情報を部分更新
    * ログイン中のユーザー情報を更新し、ストレージにも保存する
    */
   const updateUser = useCallback((updatedUser: Partial<User>) => {
@@ -152,11 +147,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [])
 
   /**
-   * Issue#93: 言語設定を変更する
+   * Spec#93: 言語設定を変更する
    * i18n、localStorage、ログイン中はAPIも更新する
    */
   const changeLanguage = useCallback(async (language: SupportedLanguage) => {
-    // Issue#130: 言語リソースは動的 import なので、changeLanguage 前にロードを完了させる
+    // Spec#130: 言語リソースは動的 import なので、changeLanguage 前にロードを完了させる
     await loadLanguageResource(language)
     await i18n.changeLanguage(language)
     localStorage.setItem('photlas-language', language)

@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.service.AccountService;
 import com.photlas.backend.service.AuthService;
 import com.photlas.backend.service.JwtService;
@@ -97,7 +98,7 @@ public class AuthController {
         String email = request.get(FIELD_EMAIL);
         if (email == null || email.isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponse("メールアドレスは必須です"));
+                    .body(new ErrorResponse(ErrorCodes.EMAIL_REQUIRED, "メールアドレスは必須です"));
         }
         authService.resendVerificationEmail(email);
 
@@ -131,7 +132,7 @@ public class AuthController {
     }
 
     /**
-     * Issue#86: メールアドレス変更確認
+     * Spec#86: メールアドレス変更確認
      * トークンを検証し、メールアドレスを更新してJWTを再発行する。
      */
     @GetMapping("/confirm-email-change")
@@ -145,7 +146,7 @@ public class AuthController {
     }
 
     /**
-     * Issue#81 Phase 4g: OAuth アカウントリンク確認エンドポイント（Q1）。
+     * Spec#81 Phase 4g: OAuth アカウントリンク確認エンドポイント（Q1）。
      *
      * <p>既存パスワードアカウントに OAuth 連携を結ぶ際、ユーザーが LinkAccountConfirmDialog で
      * 「連携する」を選択すると本エンドポイントが呼ばれる。短命トークンを消費して
@@ -164,7 +165,7 @@ public class AuthController {
     }
 
     /**
-     * Issue#81 Phase 4h: OAuth のみユーザー向け初回パスワード設定エンドポイント。
+     * Spec#81 Phase 4h: OAuth のみユーザー向け初回パスワード設定エンドポイント。
      *
      * <p>認証済み OAuth のみユーザー (password_hash == null) が任意でパスワードを設定する。
      * 内部的には {@link PasswordService#setInitialPassword} を呼び、成功時は

@@ -78,7 +78,7 @@ export function TermsContentEn() {
         <h2 className="mb-3">Article 3 (User Registration)</h2>
         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
           <li>
-            {/* Issue#105: 13 years minimum age (matches Privacy Policy Article 12) */}
+            {/* Spec#105: 13 years minimum age (matches Privacy Policy Article 12) */}
             The Service is intended for users aged <span className="font-semibold">13 years</span> of age or older. Persons under 13 years of age may not register for or use the Service.
           </li>
           <li>
@@ -180,7 +180,7 @@ export function TermsContentEn() {
             suggestion, the shooting location information will be updated
             accordingly.
           </li>
-          {/* Issue#119: Operator may modify AI-classification metadata */}
+          {/* Spec#119: Operator may modify AI-classification metadata */}
           <li>
             The Operator may modify metadata such as categories and weather
             conditions assigned to posts in order to improve search accuracy.
@@ -265,7 +265,7 @@ export function TermsContentEn() {
             Other activities that the Operator determines to be inappropriate
           </li>
         </ol>
-        {/* Issue#105: Poster responsibility for filming-location laws */}
+        {/* Spec#105: Poster responsibility for filming-location laws */}
         <p className="text-sm text-gray-700 mt-3 font-semibold">Poster Responsibility (additional provisions for international use)</p>
         <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 mt-1">
           <li>
@@ -530,7 +530,7 @@ export function TermsContentEn() {
             subject to the exclusive jurisdiction of the Tokyo District Court
             as the court of first instance.
           </li>
-          {/* Issue#105: International usage notice */}
+          {/* Spec#105: International usage notice */}
           <li>
             The Service is provided by an operator based in Japan, but is accessible worldwide. By using the Service, the user is responsible for verifying, on their own, whether use of the Service is permitted under the laws of <span className="font-semibold">the user&apos;s home country (or country of jurisdiction)</span>.
           </li>

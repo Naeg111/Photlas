@@ -119,16 +119,16 @@ jobs:
     - name: Build frontend
       working-directory: ./frontend
       env:
-        # Issue#127: 同一オリジン化（CloudFront /api/* Behavior 経由で API を叩く）
+        # Spec#127: 同一オリジン化（CloudFront /api/* Behavior 経由で API を叩く）
         # photlas.jp / test.photlas.jp の CloudFront `/api/*` キャッシュを活用するため
         # 相対 URL（VITE_API_URL=""）を使用する
         VITE_API_URL: ''
         VITE_MAPBOX_ACCESS_TOKEN: ${{ secrets.VITE_MAPBOX_ACCESS_TOKEN }}
         VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-        # Issue#81: OAuth ボタンの表示制御（GitHub Actions Variables で制御）
+        # Spec#81: OAuth ボタンの表示制御（GitHub Actions Variables で制御）
         VITE_OAUTH_ENABLED: ${{ vars.VITE_OAUTH_ENABLED_STAGING || 'false' }}
-        # Issue#143: staging はサイト全体を noindex（本番の複製がインデックスされる重複コンテンツを防ぐ）。
+        # Spec#143: staging はサイト全体を noindex（本番の複製がインデックスされる重複コンテンツを防ぐ）。
         # 本番(deploy-production)の Build frontend には設定しないこと。
         VITE_NOINDEX_SITE: 'true'
       run: pnpm build
@@ -165,7 +165,7 @@ jobs:
         DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         DEPLOY_MODERATION_API_KEY: ${{ secrets.STAGING_MODERATION_API_KEY }}
         DEPLOY_AWS_CLOUDFRONT_DOMAIN: ${{ secrets.STAGING_CLOUDFRONT_DOMAIN }}
-        # Issue#81: OAuth 2.0 クライアント資格情報（ステージング用）
+        # Spec#81: OAuth 2.0 クライアント資格情報（ステージング用）
         DEPLOY_GOOGLE_CLIENT_ID: ${{ secrets.STAGING_GOOGLE_CLIENT_ID }}
         DEPLOY_GOOGLE_CLIENT_SECRET: ${{ secrets.STAGING_GOOGLE_CLIENT_SECRET }}
         DEPLOY_LINE_CLIENT_ID: ${{ secrets.STAGING_LINE_CLIENT_ID }}
@@ -196,7 +196,7 @@ jobs:
         export SMTP_PASSWORD='__SMTP_PASSWORD__'
         export MODERATION_API_KEY='__MODERATION_API_KEY__'
         export AWS_CLOUDFRONT_DOMAIN='__AWS_CLOUDFRONT_DOMAIN__'
-        # Issue#81: OAuth 2.0 クライアント資格情報 + access_token 暗号化鍵
+        # Spec#81: OAuth 2.0 クライアント資格情報 + access_token 暗号化鍵
         export GOOGLE_CLIENT_ID='__GOOGLE_CLIENT_ID__'
         export GOOGLE_CLIENT_SECRET='__GOOGLE_CLIENT_SECRET__'
         export LINE_CLIENT_ID='__LINE_CLIENT_ID__'
@@ -284,7 +284,7 @@ jobs:
         sed -i "s|__SMTP_PASSWORD__|${DEPLOY_SMTP_PASSWORD}|g" /tmp/deploy_script.sh
         sed -i "s|__MODERATION_API_KEY__|${DEPLOY_MODERATION_API_KEY}|g" /tmp/deploy_script.sh
         sed -i "s|__AWS_CLOUDFRONT_DOMAIN__|${DEPLOY_AWS_CLOUDFRONT_DOMAIN}|g" /tmp/deploy_script.sh
-        # Issue#81: OAuth 2.0 関連 sed 置換
+        # Spec#81: OAuth 2.0 関連 sed 置換
         sed -i "s|__GOOGLE_CLIENT_ID__|${DEPLOY_GOOGLE_CLIENT_ID}|g" /tmp/deploy_script.sh
         sed -i "s|__GOOGLE_CLIENT_SECRET__|${DEPLOY_GOOGLE_CLIENT_SECRET}|g" /tmp/deploy_script.sh
         sed -i "s|__LINE_CLIENT_ID__|${DEPLOY_LINE_CLIENT_ID}|g" /tmp/deploy_script.sh
@@ -348,7 +348,7 @@ jobs:
         curl -f https://test.photlas.jp/api/v1/health || exit 1
         echo "Staging deployment successful!"
 
-    # Issue#136 §9: /tags SSR が backend に到達して配信されているかの再発防止スモークテスト。
+    # Spec#136 §9: /tags SSR が backend に到達して配信されているかの再発防止スモークテスト。
     # sitemap-tags から実在 slug を 1 件取り、SSR の証拠 hreflang が出るか検証（S3 殻なら 0）。
     - name: SSR smoke test (/tags)
       run: |
@@ -360,7 +360,7 @@ jobs:
         [ "$COUNT" -ge 5 ] || { echo "FAIL: /tags が SSR を返していません（S3 殻の疑い）"; exit 1; }
         echo "/tags SSR smoke OK"
 
-    # Issue#58 §6: /photo-viewer の個別 OGP 差し込み（backend 到達）の再発防止スモーク。
+    # Spec#58 §6: /photo-viewer の個別 OGP 差し込み（backend 到達）の再発防止スモーク。
     # 公開写真 1 件で og:url が /photo-viewer/{id} に差し替わっているか検証（S3 殻なら site root のまま）。
     - name: OGP smoke test (/photo-viewer)
       run: |
@@ -403,11 +403,11 @@ jobs:
     - name: Build frontend
       working-directory: ./frontend
       env:
-        # Issue#127: 同一オリジン化（CloudFront /api/* Behavior 経由で API を叩く）。
+        # Spec#127: 同一オリジン化（CloudFront /api/* Behavior 経由で API を叩く）。
         # photlas.jp の CloudFront `/api/*` キャッシュを活用するため相対 URL を使用する。
         VITE_API_URL: ''
         VITE_MAPBOX_ACCESS_TOKEN: ${{ secrets.VITE_MAPBOX_ACCESS_TOKEN }}
-        # Issue#99: 本番は VITE_OAUTH_ENABLED_PROD で個別管理（ステージング用 VITE_OAUTH_ENABLED とは独立）。
+        # Spec#99: 本番は VITE_OAUTH_ENABLED_PROD で個別管理（ステージング用 VITE_OAUTH_ENABLED とは独立）。
         # 審査未通過時は false のままにして OAuth ボタンを非活性化する。
         VITE_OAUTH_ENABLED: ${{ vars.VITE_OAUTH_ENABLED_PROD || 'false' }}
         VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
@@ -446,7 +446,7 @@ jobs:
         DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         DEPLOY_MODERATION_API_KEY: ${{ secrets.PRODUCTION_MODERATION_API_KEY }}
         DEPLOY_AWS_CLOUDFRONT_DOMAIN: ${{ secrets.PRODUCTION_CLOUDFRONT_DOMAIN }}
-        # Issue#81: OAuth 2.0 クライアント資格情報（本番用）
+        # Spec#81: OAuth 2.0 クライアント資格情報（本番用）
         DEPLOY_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
         DEPLOY_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         DEPLOY_LINE_CLIENT_ID: ${{ secrets.LINE_CLIENT_ID }}
@@ -477,7 +477,7 @@ jobs:
         export SMTP_PASSWORD='__SMTP_PASSWORD__'
         export MODERATION_API_KEY='__MODERATION_API_KEY__'
         export AWS_CLOUDFRONT_DOMAIN='__AWS_CLOUDFRONT_DOMAIN__'
-        # Issue#81: OAuth 2.0 クライアント資格情報 + access_token 暗号化鍵
+        # Spec#81: OAuth 2.0 クライアント資格情報 + access_token 暗号化鍵
         export GOOGLE_CLIENT_ID='__GOOGLE_CLIENT_ID__'
         export GOOGLE_CLIENT_SECRET='__GOOGLE_CLIENT_SECRET__'
         export LINE_CLIENT_ID='__LINE_CLIENT_ID__'
@@ -553,7 +553,7 @@ jobs:
         sed -i "s|__SMTP_PASSWORD__|${DEPLOY_SMTP_PASSWORD}|g" /tmp/deploy_script.sh
         sed -i "s|__MODERATION_API_KEY__|${DEPLOY_MODERATION_API_KEY}|g" /tmp/deploy_script.sh
         sed -i "s|__AWS_CLOUDFRONT_DOMAIN__|${DEPLOY_AWS_CLOUDFRONT_DOMAIN}|g" /tmp/deploy_script.sh
-        # Issue#81: OAuth 2.0 関連 sed 置換
+        # Spec#81: OAuth 2.0 関連 sed 置換
         sed -i "s|__GOOGLE_CLIENT_ID__|${DEPLOY_GOOGLE_CLIENT_ID}|g" /tmp/deploy_script.sh
         sed -i "s|__GOOGLE_CLIENT_SECRET__|${DEPLOY_GOOGLE_CLIENT_SECRET}|g" /tmp/deploy_script.sh
         sed -i "s|__LINE_CLIENT_ID__|${DEPLOY_LINE_CLIENT_ID}|g" /tmp/deploy_script.sh
@@ -617,7 +617,7 @@ jobs:
         curl -f https://photlas.jp/api/v1/health || exit 1
         echo "Production deployment successful!"
 
-    # Issue#136 §9: 本番 /tags SSR スモーク（本番 CloudFront/ALB の /tags 振り分け適用後に有効）。
+    # Spec#136 §9: 本番 /tags SSR スモーク（本番 CloudFront/ALB の /tags 振り分け適用後に有効）。
     - name: SSR smoke test (/tags)
       run: |
         SLUG=$(curl -s https://photlas.jp/api/v1/sitemap-tags.xml | grep -o '/tags/[^?<]*' | head -1 | sed 's#/tags/##')
@@ -628,7 +628,7 @@ jobs:
         [ "$COUNT" -ge 5 ] || { echo "FAIL: /tags が SSR を返していません（S3 殻の疑い）"; exit 1; }
         echo "/tags SSR smoke OK"
 
-    # Issue#58 §6: 本番 /photo-viewer 個別 OGP スモーク（本番 CloudFront/ALB の /photo-viewer 振り分け適用後に有効）。
+    # Spec#58 §6: 本番 /photo-viewer 個別 OGP スモーク（本番 CloudFront/ALB の /photo-viewer 振り分け適用後に有効）。
     - name: OGP smoke test (/photo-viewer)
       run: |
         PID=$(curl -s https://photlas.jp/api/v1/sitemap-photos-0.xml | grep -o '/photo-viewer/[0-9]*' | head -1 | grep -o '[0-9]*' || true)

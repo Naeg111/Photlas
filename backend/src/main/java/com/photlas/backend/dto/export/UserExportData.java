@@ -3,7 +3,7 @@ package com.photlas.backend.dto.export;
 import java.util.List;
 
 /**
- * Issue#108: ユーザーのエクスポート対象データ全体を保持する DTO。
+ * Spec#108: ユーザーのエクスポート対象データ全体を保持する DTO。
  *
  * <p>ユーザー向けエクスポート（DataExportService）と管理者向けエクスポート
  * （AdminDeletedUserController#exportData）の両方で利用される。</p>

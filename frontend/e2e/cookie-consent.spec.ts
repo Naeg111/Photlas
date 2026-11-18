@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test'
 
 /**
- * Cookie同意バナーテスト（Issue#71: GDPR対応）
- * 同意/拒否ボタン、日英バイリンガル表示、再表示防止を確認
+ * Cookie同意バナーテスト（Spec#71: GDPR対応）
+ * 同意/拒否ボタン、表示言語での説明文、再表示防止を確認
  */
 test.describe('Cookie Consent Banner Tests', () => {
   test('初回アクセス時にCookie同意バナーが表示される', async ({ page }) => {
@@ -12,9 +12,9 @@ test.describe('Cookie Consent Banner Tests', () => {
     const banner = page.getByTestId('cookie-consent-banner')
     await expect(banner).toBeVisible({ timeout: 10000 })
 
-    // 日英両方の説明文が表示される
+    // 表示言語（日本語）の説明文だけが表示される（Spec#93: 英文の併記は削除）
     await expect(banner.getByText(/サービス改善のためにGoogle/)).toBeVisible()
-    await expect(banner.getByText(/service improvement/i)).toBeVisible()
+    await expect(banner.getByText(/This site uses Google Analytics/)).toHaveCount(0)
   })
 
   test('「同意する / Accept」と「拒否する / Decline」ボタンが表示される', async ({ page }) => {

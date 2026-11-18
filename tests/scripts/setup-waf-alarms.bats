@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 #
 # Specification-driven tests for scripts/setup-waf-alarms.sh
-# Source of truth: documents/04_Issues/Issue#94.md §4 (case α adoption)
+# Source of truth: documents/spec/SPEC-0094.md §4 (case α adoption)
 #
 # Case α: one alarm per rule (3 alarms total). Metric is CountedRequests
 # during Count mode; switched to BlockedRequests at Block cut-over. This

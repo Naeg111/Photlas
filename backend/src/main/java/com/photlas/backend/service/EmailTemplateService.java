@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.Locale;
 
 /**
- * Issue#113: トランザクションメールの 5 言語対応共通基盤。
+ * Spec#113: トランザクションメールの 5 言語対応共通基盤。
  *
  * <p>Spring {@link MessageSource} (Bean 名 `emailMessageSource`) をラップし、
  * テンプレートキーと言語コードから件名・本文を生成する。</p>

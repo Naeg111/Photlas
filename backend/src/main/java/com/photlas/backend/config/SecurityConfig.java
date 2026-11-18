@@ -27,8 +27,8 @@ import java.util.List;
 
 /**
  * Spring Security設定
- * Issue#22: API Rate Limiting - レート制限フィルター追加
- * Issue#23: Production Security Hardening - CSRF保護、環境変数化
+ * Spec#22: API Rate Limiting - レート制限フィルター追加
+ * Spec#23: Production Security Hardening - CSRF保護、環境変数化
  */
 @Configuration
 @EnableWebSecurity
@@ -45,15 +45,15 @@ public class SecurityConfig {
     private static final String ERROR_ENDPOINT = "/error";
     private static final String SPOTS_ENDPOINT = "/api/v1/spots";
     private static final String SPOTS_ENDPOINT_PATTERN = "/api/v1/spots/**";
-    // Issue#127: 本人の PENDING_REVIEW 投稿だけを返すため認証必須。共有キャッシュ対象外。
+    // Spec#127: 本人の PENDING_REVIEW 投稿だけを返すため認証必須。共有キャッシュ対象外。
     private static final String SPOTS_MINE_PENDING_ENDPOINT = "/api/v1/spots/mine-pending";
     private static final String CATEGORIES_ENDPOINT = "/api/v1/categories";
-    /** Issue#135: キーワード一覧（公開・SEO のため認証不要）。 */
+    /** Spec#135: キーワード一覧（公開・SEO のため認証不要）。 */
     private static final String TAGS_ENDPOINT = "/api/v1/tags";
     private static final String PHOTOS_ENDPOINT_PATTERN = "/api/v1/photos/**";
     private static final String USER_PROFILE_PATTERN = "/api/v1/users/\\d+";
     private static final String USER_PHOTOS_PATTERN = "/api/v1/users/\\d+/photos.*";
-    private static final String GEO_ENDPOINT_PATTERN = "/api/v1/geo/**"; // Issue#106: IP国判定（認証不要）
+    private static final String GEO_ENDPOINT_PATTERN = "/api/v1/geo/**"; // Spec#106: IP国判定（認証不要）
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
@@ -106,7 +106,7 @@ public class SecurityConfig {
         http
             // CORS設定を有効化
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            // Issue#23: CSRF保護の設定
+            // Spec#23: CSRF保護の設定
             // JWT認証（stateless）を使用しているためCSRF保護は無効化
             // 理由: JWTはlocalStorageに保存され、リクエストごとに明示的にAuthorizationヘッダーで
             // 送信されるため、ブラウザが自動的にCookieを送信するCSRF攻撃の対象にならない
@@ -121,23 +121,23 @@ public class SecurityConfig {
                 .requestMatchers(HEALTH_ENDPOINT).permitAll()            // ヘルスチェック
                 .requestMatchers(ERROR_ENDPOINT).permitAll()             // エラーページ
                 .requestMatchers("/robots.txt").permitAll()               // robots.txt（API ホスト用、検索エンジン向け）
-                // Issue#127: 本人の PENDING のみを返す mine-pending は permitAll より先にマッチさせて認証必須にする
+                // Spec#127: 本人の PENDING のみを返す mine-pending は permitAll より先にマッチさせて認証必須にする
                 .requestMatchers(SPOTS_MINE_PENDING_ENDPOINT).authenticated()
                 .requestMatchers(SPOTS_ENDPOINT, SPOTS_ENDPOINT_PATTERN).permitAll()  // スポット関連（一覧・詳細）
                 .requestMatchers(CATEGORIES_ENDPOINT).permitAll()        // カテゴリ一覧
-                .requestMatchers(TAGS_ENDPOINT).permitAll()              // Issue#135: キーワード一覧
-                .requestMatchers(HttpMethod.GET, "/api/v1/photos/*/tags").permitAll() // Issue#135: 写真ごとのキーワード（公開）
-                .requestMatchers(HttpMethod.GET, "/tags/**").permitAll()  // Issue#135: /tags/{slug} SSR ランディング
-                .requestMatchers(HttpMethod.HEAD, "/tags/**").permitAll() // Issue#136 §9: HEAD も許可（リンクチェッカー/検証ツール対応）
-                .requestMatchers(HttpMethod.GET, "/photo-viewer/**").permitAll() // Issue#58 §6: /photo-viewer/{id} OGP差し込みページ
-                .requestMatchers(HttpMethod.HEAD, "/photo-viewer/**").permitAll() // Issue#136 §9: HEAD も許可
+                .requestMatchers(TAGS_ENDPOINT).permitAll()              // Spec#135: キーワード一覧
+                .requestMatchers(HttpMethod.GET, "/api/v1/photos/*/tags").permitAll() // Spec#135: 写真ごとのキーワード（公開）
+                .requestMatchers(HttpMethod.GET, "/tags/**").permitAll()  // Spec#135: /tags/{slug} SSR ランディング
+                .requestMatchers(HttpMethod.HEAD, "/tags/**").permitAll() // Spec#136 §9: HEAD も許可（リンクチェッカー/検証ツール対応）
+                .requestMatchers(HttpMethod.GET, "/photo-viewer/**").permitAll() // Spec#58 §6: /photo-viewer/{id} OGP差し込みページ
+                .requestMatchers(HttpMethod.HEAD, "/photo-viewer/**").permitAll() // Spec#136 §9: HEAD も許可
                 .requestMatchers("/api/v1/ogp/**").permitAll()              // OGPメタタグ
                 .requestMatchers("/api/v1/sitemap.xml").permitAll()         // サイトマップインデックス
                 .requestMatchers("/api/v1/sitemap-static.xml").permitAll()   // 静的サイトマップ
                 .requestMatchers("/api/v1/sitemap-photos-*.xml").permitAll() // 写真サイトマップ
-                .requestMatchers("/api/v1/sitemap-tags.xml").permitAll()      // Issue#135: キーワードサイトマップ
-                .requestMatchers("/api/v1/internal/**").permitAll()         // Issue#54: 内部API（APIキー認証）
-                .requestMatchers(GEO_ENDPOINT_PATTERN).permitAll()          // Issue#106: IP国判定エンドポイント
+                .requestMatchers("/api/v1/sitemap-tags.xml").permitAll()      // Spec#135: キーワードサイトマップ
+                .requestMatchers("/api/v1/internal/**").permitAll()         // Spec#54: 内部API（APIキー認証）
+                .requestMatchers(GEO_ENDPOINT_PATTERN).permitAll()          // Spec#106: IP国判定エンドポイント
                 .requestMatchers(HttpMethod.GET, PHOTOS_ENDPOINT_PATTERN).permitAll()  // 写真閲覧
                 .requestMatchers(new RegexRequestMatcher(USER_PROFILE_PATTERN, HttpMethod.GET.name())).permitAll()  // ユーザープロフィール閲覧
                 .requestMatchers(new RegexRequestMatcher(USER_PHOTOS_PATTERN, HttpMethod.GET.name())).permitAll()   // ユーザー写真一覧閲覧
@@ -164,7 +164,7 @@ public class SecurityConfig {
                     .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                 )
             )
-            // Issue#127: 対象 8 系統の公開 GET エンドポイントを CDN キャッシュ可能化する。
+            // Spec#127: 対象 8 系統の公開 GET エンドポイントを CDN キャッシュ可能化する。
             // HeaderWriterFilter の直後に挿入することで、HeaderWriterFilter が wrap した
             // response がまだ未 commit のうちに、本 Filter の after-chain ロジックで
             // Cache-Control を上書きできる。これにより HeaderWriterFilter の finally で
@@ -175,7 +175,7 @@ public class SecurityConfig {
             // 既に commit されており setHeader が no-op になるため、Spring Security の
             // チェーン内に挿入する必要がある。
             .addFilterAfter(new ConditionalCacheControlHeaderWriter(), HeaderWriterFilter.class)
-            // フィルタ順序（Issue#95）:
+            // フィルタ順序（Spec#95）:
             //   TraceIdFilter → JwtAuthenticationFilter → RateLimitFilter → UsernamePasswordAuthenticationFilter
             // 理由:
             //   - TraceIdFilter は最前段で MDC に traceId を格納し、以降のログを相関可能にする

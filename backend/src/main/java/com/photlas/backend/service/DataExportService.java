@@ -33,7 +33,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * Issue#108: ユーザー向けデータエクスポートのコアサービス。
+ * Spec#108: ユーザー向けデータエクスポートのコアサービス。
  *
  * <p>Controller から下記の流れで呼ばれる想定:
  * <ol>
@@ -340,7 +340,8 @@ public class DataExportService {
         return s.length() <= max ? s : s.substring(0, max);
     }
 
-    private static ObjectMapper buildObjectMapper() {
+    /** photos.json などの出力に使う ObjectMapper。書式のテストからも使うため package-private。 */
+    static ObjectMapper buildObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);

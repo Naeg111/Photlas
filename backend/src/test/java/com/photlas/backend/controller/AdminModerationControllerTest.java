@@ -2,6 +2,7 @@ package com.photlas.backend.controller;
 
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.*;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.repository.CategoryRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.ReportRepository;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Issue#54: 管理者モデレーションコントローラーのテスト
+ * Spec#54: 管理者モデレーションコントローラーのテスト
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -123,7 +124,7 @@ public class AdminModerationControllerTest {
     // ===== GET /api/v1/admin/moderation/queue =====
 
     @Test
-    @DisplayName("Issue#54 - 隔離キュー: 隔離写真がない場合、空のコンテンツが返る")
+    @DisplayName("Spec#54 - 隔離キュー: 隔離写真がない場合、空のコンテンツが返る")
     void testGetQueue_EmptyQueue_ReturnsEmptyContent() throws Exception {
         mockMvc.perform(get(QUEUE_ENDPOINT)
                 .header(HEADER_AUTHORIZATION, getBearerToken(adminToken)))
@@ -133,7 +134,7 @@ public class AdminModerationControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 隔離キュー: 隔離写真が正しいJSON構造で返る")
+    @DisplayName("Spec#54 - 隔離キュー: 隔離写真が正しいJSON構造で返る")
     void testGetQueue_WithQuarantinedPhotos_ReturnsCorrectStructure() throws Exception {
         createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -146,11 +147,13 @@ public class AdminModerationControllerTest {
                 .andExpect(jsonPath("$.content[0].thumbnail_url").isString())
                 .andExpect(jsonPath("$.content[0].user_id").value(photoOwner.getId()))
                 .andExpect(jsonPath("$.content[0].username").value(OWNER_USERNAME))
-                .andExpect(jsonPath("$.content[0].created_at").isString());
+                .andExpect(jsonPath("$.content[0].created_at").isString())
+                // Spec#169: ブラウザが正しい現地時刻で表示できるよう、UTC（末尾 Z）で返す
+                .andExpect(jsonPath("$.content[0].created_at", endsWith("Z")));
     }
 
     @Test
-    @DisplayName("Issue#54 - 隔離キュー: ページネーションパラメータが反映される")
+    @DisplayName("Spec#54 - 隔離キュー: ページネーションパラメータが反映される")
     void testGetQueue_WithPagination_RespectsParameters() throws Exception {
         createPhotoWithStatus("uploads/q1.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
         createPhotoWithStatus("uploads/q2.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -165,7 +168,7 @@ public class AdminModerationControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 隔離キュー: total_elementsとtotal_pagesが返る")
+    @DisplayName("Spec#54 - 隔離キュー: total_elementsとtotal_pagesが返る")
     void testGetQueue_ReturnsTotalElementsAndPages() throws Exception {
         createPhotoWithStatus("uploads/t1.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -177,24 +180,26 @@ public class AdminModerationControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 隔離キュー: 認証なしで401が返る")
+    @DisplayName("Spec#54 - 隔離キュー: 認証なしで401が返る")
     void testGetQueue_NoAuth_ReturnsUnauthorized() throws Exception {
         mockMvc.perform(get(QUEUE_ENDPOINT))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("Issue#54 - 隔離キュー: USERロールで403が返る")
+    @DisplayName("Spec#54 - 隔離キュー: USERロールで403が返る（Spec#93: code は ACCESS_DENIED）")
     void testGetQueue_UserRole_ReturnsForbidden() throws Exception {
+        // 権限の判定は @PreAuthorize（MVC 層）なので、GlobalExceptionHandler が code を付ける
         mockMvc.perform(get(QUEUE_ENDPOINT)
                 .header(HEADER_AUTHORIZATION, getBearerToken(userToken)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(ErrorCodes.ACCESS_DENIED));
     }
 
     // ===== POST /api/v1/admin/moderation/photos/{id}/approve =====
 
     @Test
-    @DisplayName("Issue#54 - 承認: 隔離写真を承認すると200が返る")
+    @DisplayName("Spec#54 - 承認: 隔離写真を承認すると200が返る")
     void testApprovePhoto_QuarantinedPhoto_ReturnsOk() throws Exception {
         Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -206,7 +211,7 @@ public class AdminModerationControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 承認: USERロールで403が返る")
+    @DisplayName("Spec#54 - 承認: USERロールで403が返る")
     void testApprovePhoto_UserRole_ReturnsForbidden() throws Exception {
         Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -217,7 +222,7 @@ public class AdminModerationControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 承認: 存在しない写真に対して404が返る")
+    @DisplayName("Spec#54 - 承認: 存在しない写真に対して404が返る")
     void testApprovePhoto_NonExistentPhoto_ReturnsNotFound() throws Exception {
         mockMvc.perform(post(getApproveEndpoint(99999L))
                 .with(csrf())
@@ -228,7 +233,7 @@ public class AdminModerationControllerTest {
     // ===== POST /api/v1/admin/moderation/photos/{id}/reject =====
 
     @Test
-    @DisplayName("Issue#54 - 拒否: 理由付きで写真を拒否すると200が返る")
+    @DisplayName("Spec#54 - 拒否: 理由付きで写真を拒否すると200が返る")
     void testRejectPhoto_WithReason_ReturnsOk() throws Exception {
         Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -242,7 +247,7 @@ public class AdminModerationControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 拒否: 理由なしの場合デフォルト理由が使用される")
+    @DisplayName("Spec#54 - 拒否: 理由なしの場合デフォルト理由が使用される")
     void testRejectPhoto_NoReason_UsesDefaultReason() throws Exception {
         Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -256,7 +261,7 @@ public class AdminModerationControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 拒否: USERロールで403が返る")
+    @DisplayName("Spec#54 - 拒否: USERロールで403が返る")
     void testRejectPhoto_UserRole_ReturnsForbidden() throws Exception {
         Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -269,7 +274,7 @@ public class AdminModerationControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 拒否: 存在しない写真に対して404が返る")
+    @DisplayName("Spec#54 - 拒否: 存在しない写真に対して404が返る")
     void testRejectPhoto_NonExistentPhoto_ReturnsNotFound() throws Exception {
         mockMvc.perform(post(getRejectEndpoint(99999L))
                 .with(csrf())
@@ -280,7 +285,7 @@ public class AdminModerationControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 拒否: 認証なしで401が返る")
+    @DisplayName("Spec#54 - 拒否: 認証なしで401が返る")
     void testRejectPhoto_NoAuth_ReturnsUnauthorized() throws Exception {
         mockMvc.perform(post(getRejectEndpoint(1L))
                 .with(csrf())
@@ -289,10 +294,10 @@ public class AdminModerationControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ===== Issue#54: 隔離キューに通報理由が含まれることのテスト =====
+    // ===== Spec#54: 隔離キューに通報理由が含まれることのテスト =====
 
     @Test
-    @DisplayName("Issue#54 - 隔離キュー: 通報件数と通報理由が含まれる")
+    @DisplayName("Spec#54 - 隔離キュー: 通報件数と通報理由が含まれる")
     void testGetQueue_IncludesReportCountAndReasons() throws Exception {
         Photo photo = createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -312,7 +317,7 @@ public class AdminModerationControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 隔離キュー: 通報がない場合は0件で空配列が返る")
+    @DisplayName("Spec#54 - 隔離キュー: 通報がない場合は0件で空配列が返る")
     void testGetQueue_NoReports_ReturnsZeroCountAndEmptyReasons() throws Exception {
         createPhotoWithStatus(TEST_S3_KEY, CodeConstants.MODERATION_STATUS_QUARANTINED);
 

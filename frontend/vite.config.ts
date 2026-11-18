@@ -16,7 +16,7 @@ import { injectSiteNoindex } from './src/utils/siteNoindex'
 export default defineConfig({
   plugins: [
     react(),
-    // Issue#143: staging ビルド (VITE_NOINDEX_SITE=true) のときだけ index.html へ
+    // Spec#143: staging ビルド (VITE_NOINDEX_SITE=true) のときだけ index.html へ
     // サイト全体 noindex メタを静的注入する（本番ビルドには注入しない）。
     {
       name: 'inject-staging-noindex',
@@ -24,7 +24,7 @@ export default defineConfig({
         return injectSiteNoindex(html, process.env.VITE_NOINDEX_SITE === 'true')
       },
     },
-    // Issue#129: Service Worker による写真画像キャッシュ
+    // Spec#129: Service Worker による写真画像キャッシュ
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
@@ -35,7 +35,7 @@ export default defineConfig({
         clientsClaim: true,
         cleanupOutdatedCaches: true,
         navigateFallback: '/index.html',
-        // Issue#99: /api/* への navigation を SW が乗っ取ると OAuth 認可エンドポイントが
+        // Spec#99: /api/* への navigation を SW が乗っ取ると OAuth 認可エンドポイントが
         // 404 化するため除外。詳細は serviceWorkerCache.ts の NAVIGATE_FALLBACK_DENYLIST 参照。
         navigateFallbackDenylist: [...NAVIGATE_FALLBACK_DENYLIST],
         runtimeCaching: [
@@ -55,7 +55,7 @@ export default defineConfig({
         ],
       },
     }),
-    // Issue#130: ローカル計測用。dist/stats.html にバンドル内訳を可視化したレポートを生成。
+    // Spec#130: ローカル計測用。dist/stats.html にバンドル内訳を可視化したレポートを生成。
     // CI や本番デプロイには含めず、ローカルでの効果計測時のみ参照する。
     // rollup-plugin-visualizer の rollup 型が Vite 同梱の rollup と異なるため PluginOption にキャスト
     visualizer({
@@ -67,7 +67,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // Issue#130: 更新頻度が低い主要ライブラリを独立 chunk に分離してブラウザキャッシュを効かせる。
+        // Spec#130: 更新頻度が低い主要ライブラリを独立 chunk に分離してブラウザキャッシュを効かせる。
         // アプリコードの更新があっても下記 chunk は変わらず再ダウンロード不要になる。
         manualChunks: {
           mapbox: ['mapbox-gl', 'react-map-gl'],

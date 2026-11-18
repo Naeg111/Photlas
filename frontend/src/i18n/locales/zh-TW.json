@@ -18,7 +18,9 @@
     "reload": "重新載入",
     "retry": "重試",
     "retryWithCooldown": "重試（{{seconds}} 秒後）",
-    "submitWithCooldown": "送出（{{seconds}} 秒後）"
+    "submitWithCooldown": "送出（{{seconds}} 秒後）",
+    "back": "返回",
+    "confirm": "確定"
   },
   "auth": {
     "loginTitle": "登入",
@@ -34,6 +36,7 @@
     "forgotPassword": "忘記密碼？",
     "enterBothFields": "請輸入電子郵件和密碼",
     "loginSuccess": "已登入",
+    "logoutSuccess": "已登出",
     "loginFailed": "登入失敗",
     "noAccount": "還沒有帳號？",
     "oauthSignupNotice": "使用 Google、LINE 帳號註冊請",
@@ -75,6 +78,7 @@
     "passwordResetTitle": "重設密碼",
     "passwordResetDescription": "密碼重設申請",
     "passwordResetInstruction": "請輸入您的註冊電子郵件地址。",
+    "passwordResetSubmitHint": "輸入後請按下「送出」按鈕。",
     "invalidEmailFormat": "電子郵件格式無效",
     "passwordResetSent": "已寄送密碼重設信件，請確認收件匣。",
     "errorOccurred": "發生錯誤",
@@ -89,11 +93,33 @@
       "continueWithLine": "使用 LINE 繼續",
       "consentNotice": "選擇即表示您同意服務條款和隱私政策",
       "dividerOr": "或",
+      "errors": {
+        "OAUTH_EMAIL_REQUIRED": "無法取得電子郵件地址。請在服務提供者處允許分享電子郵件。",
+        "OAUTH_EMAIL_NOT_VERIFIED": "此服務提供者尚未驗證您的電子郵件地址。請先完成驗證。",
+        "USER_SUSPENDED": "您的帳號已被停用。",
+        "OAUTH_PROVIDER_ERROR": "與服務提供者通訊失敗。請稍後再試。",
+        "authorization_request_not_found": "驗證工作階段已過期。請重新登入。",
+        "OAUTH_UNKNOWN_ERROR": "OAuth 登入時發生未預期的錯誤。"
+      },
+      "usernameSetup": {
+        "title": "設定顯示名稱",
+        "description1": "已為您指派暫時的顯示名稱。",
+        "description2": "您可以繼續使用，或變更為任意名稱。",
+        "usernameLabel": "顯示名稱",
+        "save": "確定",
+        "keepTemporary": "稍後設定"
+      },
       "linkConfirm": {
         "title": "與現有帳號連結",
         "description": "已存在使用此電子郵件註冊的帳號。是否要連結{{provider}}並登入？",
         "link": "連結",
         "cancel": "取消"
+      },
+      "passwordRecommend": {
+        "title": "要設定密碼嗎？",
+        "description": "建議您設定密碼，以便在 {{provider}} 帳號無法使用時也能登入。",
+        "cta": "設定密碼",
+        "dismiss": "關閉"
       }
     },
     "privacyPolicy": "隱私政策",
@@ -104,7 +130,9 @@
       "cancel": "取消",
       "cancelledToast": "帳號註冊已取消",
       "agreeToPrivacyPolicySuffix": "我同意"
-    }
+    },
+    "linkedAndLoggedIn": "已連結帳號並登入。",
+    "linkedUserFetchFailed": "連結後取得使用者資訊失敗"
   },
   "menu": {
     "title": "選單",
@@ -170,8 +198,8 @@
     "contributeDescription": "附上拍攝資訊發布照片",
     "photoRequired": "照片（必填）",
     "selectPhoto": "選擇照片",
-    "photoFormat": "JPEG、PNG、HEIC（最大 50MB）",
-    "fileSizeError": "檔案大小必須在 50MB 以內。",
+    "photoFormat": "JPEG、PNG、HEIC（最大 {{maxSize}}）",
+    "fileSizeError": "檔案大小必須在 {{maxSize}} 以內。",
     "fileFormatError": "僅支援 JPEG、PNG 及 HEIC 格式。",
     "photoRequiredError": "請選擇照片。",
     "zoom": "縮放",
@@ -217,11 +245,23 @@
     "loadMoreFailed": "下一批照片載入失敗",
     "quarantined": "此貼文可能違反內容政策，目前已隱藏。",
     "pendingReview": "此貼文正在審核中，通過後將公開。",
+    "moderationPublished": "照片已公開",
+    "moderationStillPending": "照片正在審核中，審核完成後將公開。",
+    "moderationQuarantined": "照片可能違反了內容政策",
     "notFound": "找不到照片",
     "shootingInfo": "拍攝資訊",
     "suggestionSent": "已送出位置建議",
     "suggestionFailed": "送出位置建議失敗",
-    "change": "變更"
+    "change": "變更",
+    "deleteFailed": "刪除照片失敗",
+    "shareFailed": "分享失敗",
+    "saveSuccess": "已儲存",
+    "updateFailed": "更新失敗",
+    "imageLoadFailed": "圖片載入失敗，請重新開啟",
+    "notSet": "未設定",
+    "imageAlt": "圖片",
+    "fullSizeAlt": "全尺寸照片",
+    "zoomLevel": "縮放：{{percent}}%"
   },
   "profile": {
     "posts": "發布",
@@ -229,7 +269,11 @@
     "noPosts": "尚無發布",
     "noFavorites": "尚無收藏",
     "editSnsLinks": "編輯 SNS 連結",
-    "duplicateUsername": "此顯示名稱已被使用"
+    "duplicateUsername": "此顯示名稱已被使用",
+    "imageRegisterFailed": "個人頭像設定失敗",
+    "accountName": "帳號名稱",
+    "dialogDescription": "使用者個人頁面資訊",
+    "reportProfile": "檢舉此個人頁面"
   },
   "settings": {
     "title": "帳號設定",
@@ -360,12 +404,29 @@
     "feature6Title": "可加入主畫面",
     "feature6Text": "透過瀏覽器加入主畫面或桌面後,即可全螢幕舒適地使用。在平板的大螢幕上,可享受地圖與照片。"
   },
+  "aboutPage": {
+    "tagline": "透過照片發現想去的地方",
+    "intro": "透過照片發現想去的地方的服務。可以在地圖上自由探索使用者發布的照片及其拍攝地點，開啟新的旅程。",
+    "cta": "開始使用 Photlas",
+    "featuresTitle": "主要特色",
+    "exploreMapTitle": "在地圖上探索地點：",
+    "exploreMapText": "已發布的照片會以圖釘顯示在地圖上，隨意瀏覽地圖時就能邂逅意想不到的照片，找到想去的地方。",
+    "filterPostsTitle": "依照片條件篩選：",
+    "filterPostsText": "可依分類、季節、時段、天氣等條件篩選，找到符合自己喜好的照片。",
+    "shareShootingInfoTitle": "分享拍攝資訊：",
+    "shareShootingInfoText": "可以與其他使用者分享相機、鏡頭、拍攝設定等照片拍攝資訊。"
+  },
   "report": {
     "title": "檢舉此貼文",
     "description": "檢舉不當或有問題的內容",
     "reason": "原因",
     "detailRequired": "詳細說明（必填）",
-    "detailOptional": "詳細說明（選填）"
+    "detailOptional": "詳細說明（選填）",
+    "detailPlaceholder": "請輸入檢舉理由的詳細說明（300字以內）",
+    "submit": "檢舉",
+    "success": "已受理檢舉",
+    "failed": "檢舉失敗",
+    "alreadyReported": "您已檢舉過"
   },
   "location": {
     "suggestionTitle": "回報位置",
@@ -375,6 +436,20 @@
     "suggestionTooFar": "太遠了。請在距原拍攝地點 1km 以內指定",
     "suggestLocation": "回報位置",
     "searchPlaceholder": "搜尋地點"
+  },
+  "map": {
+    "filter": "篩選",
+    "placeSearch": "搜尋地點",
+    "zoomIn": "放大",
+    "zoomOut": "縮小",
+    "northHeading": "重設為正北",
+    "currentLocation": "目前位置",
+    "post": "發布",
+    "moveToCurrentLocation": "移至目前位置",
+    "mapboxHome": "Mapbox 首頁",
+    "attribution": "版權資訊",
+    "unavailable": "無法顯示地圖",
+    "tokenMissing": "未設定 Mapbox 存取權杖"
   },
   "cookie": {
     "message": "本網站使用 Google Analytics，並透過 Cookie 收集存取資訊以改善服務。詳情請參閱",
@@ -388,7 +463,35 @@
     "INVALID_CREDENTIALS": "電子郵件或密碼錯誤",
     "ACCOUNT_SUSPENDED": "您的帳號已被停用",
     "EMAIL_NOT_VERIFIED": "電子郵件尚未驗證。請點擊驗證信中的連結。",
-    "CONFLICT": "發生衝突",
+    "USER_NOT_FOUND": "找不到該使用者。",
+    "PHOTO_NOT_FOUND": "找不到該照片。",
+    "SPOT_NOT_FOUND": "找不到該地點。",
+    "FAVORITE_NOT_FOUND": "尚未收藏該照片。",
+    "CATEGORY_NOT_FOUND": "找不到該分類。",
+    "SELF_REPORT": "無法檢舉自己的內容。",
+    "ACCESS_DENIED": "您沒有執行此操作的權限。",
+    "FORBIDDEN": "不允許執行此操作。",
+    "EMAIL_ALREADY_IN_USE": "此電子郵件地址已被使用。",
+    "EMAIL_PENDING_DELETION": "此電子郵件地址的帳號正在註銷中，目前無法使用。",
+    "ALREADY_REPORTED": "您已檢舉過。",
+    "ALREADY_FAVORITED": "已收藏該照片。",
+    "PASSWORD_ALREADY_SET": "已設定密碼。",
+    "INVALID_TOKEN": "連結無效或已過期，請重試。",
+    "TOKEN_ALREADY_USED": "此連結已被使用。",
+    "ACCOUNT_DELETED": "此帳號已註銷。",
+    "EMAIL_ALREADY_VERIFIED": "此電子郵件地址已驗證。",
+    "SAME_EMAIL": "與目前的電子郵件地址相同。",
+    "UNSUPPORTED_FILE_TYPE": "不支援此檔案格式。",
+    "SUGGESTION_DAILY_LIMIT": "已達到每日位置建議的數量上限。",
+    "SUGGESTION_PHOTO_NOT_PUBLIC": "只能對已公開的照片提出位置建議。",
+    "SUGGESTION_OWN_PHOTO": "無法對自己的照片提出位置建議。",
+    "SUGGESTION_ALREADY_SENT": "您已對這張照片提出過位置建議。",
+    "SUGGESTION_TOO_CLOSE": "請指定距原拍攝地點 30 公尺以上的位置。",
+    "SUGGESTION_TOO_FAR": "這張照片帶有 GPS 位置資訊，請指定距原拍攝地點 1 公里以內的位置。",
+    "SUGGESTION_ALREADY_RESOLVED": "此位置建議已處理。",
+    "PHOTO_UNDER_REVIEW": "這張照片正在審核中，無法操作。",
+    "PHOTO_DELETED": "這張照片已被刪除，無法操作。",
+    "PHOTO_NOT_PUBLIC": "這張照片未公開，無法操作。",
     "unexpected": "發生意外錯誤，請重新載入頁面。",
     "errorOccurred": "發生錯誤",
     "RATE_LIMIT_EXCEEDED": "請求過多，請在 {{seconds}} 秒後再試。",
@@ -405,7 +508,16 @@
     "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "顯示名稱中包含看不見的特殊字元。",
     "USERNAME_INVALID_CHARACTER_OTHER": "顯示名稱包含不允許的字元，僅允許字母、數字、日文（平假名、全形片假名、基礎漢字）、底線和連字號。",
     "USERNAME_INVALID_FIRST_CHARACTER": "顯示名稱必須以字母或日文開頭（數字、底線、連字號不能作為首字元）。",
-    "USERNAME_RESERVED": "此顯示名稱為系統保留字，無法使用。"
+    "USERNAME_RESERVED": "此顯示名稱為系統保留字，無法使用。",
+    "PASSWORD_REQUIRED": "請輸入密碼。",
+    "PASSWORD_LENGTH_INVALID": "密碼長度需在 {{min}} 到 {{max}} 個字元之間。",
+    "PASSWORD_MISSING_DIGIT": "密碼需至少包含一個數字。",
+    "PASSWORD_MISSING_LOWERCASE": "密碼需至少包含一個小寫英文字母。",
+    "PASSWORD_MISSING_UPPERCASE": "密碼需至少包含一個大寫英文字母。",
+    "PASSWORD_CONTAINS_SYMBOL": "密碼不可包含符號。",
+    "EMAIL_REQUIRED": "請輸入電子郵件地址。",
+    "EMAIL_INVALID_FORMAT": "請輸入有效的電子郵件地址。",
+    "dataFetchFailed": "資料載入失敗"
   },
   "pages": {
     "emailVerifying": "正在驗證電子郵件...",
@@ -413,6 +525,8 @@
     "emailVerifiedMessage": "請返回 Photlas 登入。",
     "emailVerifiedMessageInApp": "請在瀏覽器中開啟 Photlas 登入。",
     "openPhotlas": "開啟 Photlas",
+    "oauthCallbackProcessing": "正在處理 OAuth 登入...",
+    "oauthCallbackError": "OAuth 登入錯誤",
     "invalidToken": "找不到驗證令牌",
     "verificationError": "驗證錯誤",
     "resetPassword": "重設密碼",
@@ -540,5 +654,77 @@
   "orientation": {
     "rotateTitle": "請將螢幕切換為直向",
     "rotateDescription": "手機端僅支援直向顯示。將裝置轉回直向後即可繼續使用。"
+  },
+  "admin": {
+    "accessDenied": "您沒有存取權限",
+    "backToTop": "返回首頁",
+    "moderation": {
+      "title": "內容審核",
+      "pendingCount": "待審核：{{total}} 筆",
+      "fetchFailed": "審核佇列載入失敗",
+      "reload": "重新載入",
+      "empty": "沒有待審核的照片",
+      "imageAlt": "圖片",
+      "blurApply": "套用模糊",
+      "blurRemove": "取消模糊",
+      "poster": "發布者：{{username}}（ID：{{userId}}）",
+      "reportCount": "檢舉 {{total}} 次",
+      "approve": "核准",
+      "reject": "拒絕",
+      "approveSuccess": "已核准照片",
+      "approveFailed": "核准失敗",
+      "rejectSuccess": "已拒絕照片",
+      "rejectFailed": "拒絕失敗"
+    },
+    "deletedUsers": {
+      "title": "已刪除用戶",
+      "searchPlaceholder": "以電子郵件地址或顯示名稱搜尋",
+      "empty": "沒有已刪除的用戶",
+      "remainingDays": "剩餘 {{days}} 天",
+      "holdActive": "保留期延長中"
+    },
+    "deletedUser": {
+      "title": "已刪除用戶詳情",
+      "profileSection": "個人資料",
+      "email": "電子郵件地址",
+      "originalUsername": "原顯示名稱",
+      "deletedAt": "退出日期",
+      "untilPhysicalDeletion": "距永久刪除",
+      "days": "{{days}} 天",
+      "holdUntil": "保留延長期限",
+      "photoCount": "照片數：{{total}} 張",
+      "historySection": "違規與處分紀錄",
+      "noHistory": "尚無紀錄",
+      "actionsSection": "操作",
+      "removeHold": "取消保留期延長",
+      "extendHold": "延長保留期",
+      "export": "匯出資料",
+      "immediateDelete": "立即刪除",
+      "deleteConfirmTitle": "確認立即刪除",
+      "deleteConfirmDescription": "此操作無法復原。為確認，請輸入該用戶的電子郵件地址。",
+      "emailConfirmPlaceholder": "輸入電子郵件地址以確認",
+      "deleting": "刪除中...",
+      "deletePermanently": "永久刪除",
+      "holdDialogDescription": "請指定延長的截止日期。",
+      "extend": "延長",
+      "fetchFailed": "取得資料失敗",
+      "emailMismatch": "電子郵件地址不一致",
+      "deleteSuccess": "已刪除使用者",
+      "deleteFailed": "刪除失敗",
+      "holdSuccess": "已延長保留期限",
+      "holdFailed": "延長保留期限失敗",
+      "removeHoldSuccess": "已解除保留期限延長",
+      "removeHoldFailed": "解除失敗",
+      "exportSuccess": "匯出完成",
+      "exportFailed": "匯出失敗"
+    },
+    "sanctionTypes": {
+      "warning": "警告",
+      "temporarySuspension": "暫時停權",
+      "permanentSuspension": "永久停權"
+    },
+    "actionTaken": {
+      "removed": "刪除"
+    }
   }
 }

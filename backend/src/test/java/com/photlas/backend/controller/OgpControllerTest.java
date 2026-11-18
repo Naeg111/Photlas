@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.matchesRegex;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -98,7 +99,9 @@ public class OgpControllerTest {
                 .andExpect(content().string(containsString("twitter:card")))
                 .andExpect(content().string(containsString("photographerさんが撮影した写真")))
                 .andExpect(content().string(containsString("application/ld+json")))
-                .andExpect(content().string(containsString("Photograph")));
+                .andExpect(content().string(containsString("Photograph")))
+                // Spec#169: datePublished は UTC（末尾 Z）で出す
+                .andExpect(content().string(matchesRegex("(?s).*\"datePublished\": \"[^\"]+Z\".*")));
     }
 
     @Test
@@ -118,7 +121,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - QUARANTINED写真のOGPリクエストは404を返す")
+    @DisplayName("Spec#54 - QUARANTINED写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_QuarantinedPhoto_Returns404() throws Exception {
         // Given: QUARANTINED写真
         testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_QUARANTINED);
@@ -130,7 +133,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#74 - OGPタイトルにplace_nameが使用される")
+    @DisplayName("Spec#74 - OGPタイトルにplace_nameが使用される")
     void testGetPhotoOgp_UsesPlaceName() throws Exception {
         // Given: place_nameが設定された写真
         testPhoto.setPlaceName("渋谷スクランブルスクエア");
@@ -143,7 +146,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#74 - place_name未設定時はOGPタイトルに「Photlas」が使用される")
+    @DisplayName("Spec#74 - place_name未設定時はOGPタイトルに「Photlas」が使用される")
     void testGetPhotoOgp_NoPlaceName_UsesPhotlas() throws Exception {
         // Given: place_nameが未設定の写真
         testPhoto.setPlaceName(null);
@@ -157,7 +160,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 退会済みユーザーの写真のOGPリクエストは404を返す")
+    @DisplayName("Spec#54 - 退会済みユーザーの写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_DeletedUser_Returns404() throws Exception {
         testUser.setDeletedAt(LocalDateTime.now());
         userRepository.save(testUser);
@@ -167,7 +170,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 永久停止ユーザーの写真のOGPリクエストは404を返す")
+    @DisplayName("Spec#54 - 永久停止ユーザーの写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_SuspendedUser_Returns404() throws Exception {
         testUser.setRole(CodeConstants.ROLE_SUSPENDED);
         userRepository.save(testUser);
@@ -177,7 +180,7 @@ public class OgpControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - REMOVED写真のOGPリクエストは404を返す")
+    @DisplayName("Spec#54 - REMOVED写真のOGPリクエストは404を返す")
     void testGetPhotoOgp_RemovedPhoto_Returns404() throws Exception {
         // Given: REMOVED写真
         testPhoto.setModerationStatus(CodeConstants.MODERATION_STATUS_REMOVED);

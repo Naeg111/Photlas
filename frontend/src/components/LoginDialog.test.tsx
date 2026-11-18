@@ -5,7 +5,7 @@ import { LoginDialog } from './LoginDialog'
 
 /**
  * LoginDialog コンポーネントのテスト
- * Issue#26: 認証機能のモーダルベース移行
+ * Spec#26: 認証機能のモーダルベース移行
  */
 
 // AuthContextのモック
@@ -202,6 +202,33 @@ describe('LoginDialog', () => {
       })
     })
 
+    it('Spec#93 - ログインレスポンスの language（DB の言語設定）を AuthContext の login に渡す', async () => {
+      const user = userEvent.setup()
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            user: { id: 1, email: 'test@example.com', username: 'testuser', role: 'user', language: 'ko' },
+            token: 'test-token',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+
+      render(<LoginDialog {...defaultProps} />)
+
+      await user.type(screen.getByLabelText('メールアドレス'), 'test@example.com')
+      await user.type(screen.getByLabelText('パスワード'), 'Password123')
+      await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+      await waitFor(() => {
+        expect(mockLogin).toHaveBeenCalledWith(
+          expect.objectContaining({ userId: 1, language: 'ko' }),
+          'test-token',
+          true
+        )
+      })
+    })
+
     it('passes rememberMe=false when checkbox is unchecked', async () => {
       const user = userEvent.setup()
       mockFetch.mockResolvedValueOnce(
@@ -377,7 +404,7 @@ describe('LoginDialog', () => {
     })
   })
 
-  // Issue#54: アカウント停止テスト
+  // Spec#54: アカウント停止テスト
   describe('アカウント停止', () => {
     it('永久停止アカウントのログイン時にエラーメッセージが表示される', async () => {
       mockFetch.mockResolvedValueOnce(
@@ -411,7 +438,7 @@ describe('LoginDialog', () => {
     })
   })
 
-  // Issue#96 PR2a: 429 レート制限ハンドリング（パターンA: フォーム送信系）
+  // Spec#96 PR2a: 429 レート制限ハンドリング（パターンA: フォーム送信系）
   describe('Rate Limit (429) - レート制限', () => {
     it('ログインで429を受信したらレート制限メッセージをインラインで表示する', async () => {
       const user = userEvent.setup()
@@ -562,7 +589,7 @@ describe('LoginDialog', () => {
     })
   })
 
-  describe('Issue#118 - 登録壁経由のログイン成功イベント', () => {
+  describe('Spec#118 - 登録壁経由のログイン成功イベント', () => {
     let mockGtag: ReturnType<typeof vi.fn>
 
     beforeEach(() => {
@@ -580,7 +607,7 @@ describe('LoginDialog', () => {
       vi.unstubAllGlobals()
     })
 
-    it('Issue#118 - triggeredFromWall=true でログイン成功時に registration_wall_login_success が送信される', async () => {
+    it('Spec#118 - triggeredFromWall=true でログイン成功時に registration_wall_login_success が送信される', async () => {
       const user = userEvent.setup()
       render(<LoginDialog {...defaultProps} triggeredFromWall />)
 
@@ -593,7 +620,7 @@ describe('LoginDialog', () => {
       })
     })
 
-    it('Issue#118 - triggeredFromWall=false（既定）ならログイン成功でも壁の success イベントは送信されない', async () => {
+    it('Spec#118 - triggeredFromWall=false（既定）ならログイン成功でも壁の success イベントは送信されない', async () => {
       const user = userEvent.setup()
       render(<LoginDialog {...defaultProps} />)
 

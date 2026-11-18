@@ -1,5 +1,5 @@
 /**
- * Issue#96: ApiError 拡張のテスト
+ * Spec#96: ApiError 拡張のテスト
  * - retryAfterSeconds / responseData をコンストラクタで受け取れる
  * - isRateLimited ゲッター（status === 429）
  * - 既存コンストラクタ呼び出し (message, status) は後方互換で動作
@@ -14,7 +14,7 @@ import {
   S3_CACHE_CONTROL_VALUE,
 } from './apiClient'
 
-describe('ApiError (Issue#96 拡張)', () => {
+describe('ApiError (Spec#96 拡張)', () => {
   describe('コンストラクタ', () => {
     it('既存の 2 引数呼び出しで動作する（後方互換）', () => {
       const err = new ApiError('not found', 404)
@@ -71,7 +71,7 @@ describe('ApiError (Issue#96 拡張)', () => {
     })
   })
 
-  describe('getFieldErrorMessage (Issue#98)', () => {
+  describe('getFieldErrorMessage (Spec#98)', () => {
     it('responseData に errors 配列があり指定フィールドが存在する場合、そのメッセージを返す', () => {
       const body = {
         message: '入力内容が無効です。',
@@ -114,9 +114,25 @@ describe('ApiError (Issue#96 拡張)', () => {
       expect(err.getFieldErrorMessage('username')).toBeUndefined()
     })
   })
+
+  describe('code (Spec#93)', () => {
+    it('responseData の code を返す', () => {
+      const err = new ApiError('Bad Request', 400, undefined, {
+        code: 'INVALID_TOKEN',
+        message: 'トークンが無効または期限切れです',
+      })
+      expect(err.code).toBe('INVALID_TOKEN')
+    })
+
+    it('code が無い・responseData がオブジェクトでない場合は undefined', () => {
+      expect(new ApiError('Bad Request', 400, undefined, { message: 'foo' }).code).toBeUndefined()
+      expect(new ApiError('Bad Request', 400, undefined, 'plain text').code).toBeUndefined()
+      expect(new ApiError('Bad Request', 400).code).toBeUndefined()
+    })
+  })
 })
 
-describe('Issue#100 - S3 タグベース孤立ファイル対応', () => {
+describe('Spec#100 - S3 タグベース孤立ファイル対応', () => {
   describe('定数', () => {
     it('S3_TAG_HEADER_NAME が "x-amz-tagging" として定義されている', () => {
       expect(S3_TAG_HEADER_NAME).toBe('x-amz-tagging')
@@ -157,7 +173,7 @@ describe('Issue#100 - S3 タグベース孤立ファイル対応', () => {
   })
 })
 
-describe('Issue#124 - Cache-Control immutable 化', () => {
+describe('Spec#124 - Cache-Control immutable 化', () => {
   describe('定数', () => {
     it('S3_CACHE_CONTROL_VALUE が "public, max-age=31536000, immutable" として定義されている', () => {
       expect(S3_CACHE_CONTROL_VALUE).toBe('public, max-age=31536000, immutable')
@@ -193,7 +209,7 @@ describe('Issue#124 - Cache-Control immutable 化', () => {
   })
 })
 
-describe('Issue#131 - uploadFileToS3 で crop メタデータを送信', () => {
+describe('Spec#131 - uploadFileToS3 で crop メタデータを送信', () => {
   let originalFetch: typeof globalThis.fetch
   let fetchMock: ReturnType<typeof vi.fn>
 

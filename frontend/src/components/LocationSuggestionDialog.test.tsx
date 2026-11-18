@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { LocationSuggestionDialog } from './LocationSuggestionDialog'
 
 /**
- * Issue#65: LocationSuggestionDialog のテスト
+ * Spec#65: LocationSuggestionDialog のテスト
  *
  * 要件:
  * - マップ上に現在の撮影地点が表示される
@@ -74,23 +74,23 @@ describe('LocationSuggestionDialog', () => {
   })
 
   // ============================================================
-  // Issue#76: 固定ピン方式への変更
+  // Spec#76: 固定ピン方式への変更
   // ============================================================
 
-  it('Issue#76 - InlineMapPickerが使用されている', () => {
+  it('Spec#76 - InlineMapPickerが使用されている', () => {
     render(<LocationSuggestionDialog {...defaultProps} />)
 
     expect(screen.getByTestId('inline-map-picker')).toBeInTheDocument()
   })
 
-  it('Issue#76 - 固定中央ピンが青色で表示される', () => {
+  it('Spec#76 - 固定中央ピンが青色で表示される', () => {
     render(<LocationSuggestionDialog {...defaultProps} />)
 
     const picker = screen.getByTestId('inline-map-picker')
     expect(picker).toHaveAttribute('data-pin-color', '#3B82F6')
   })
 
-  it('Issue#76 - 現在の登録位置が赤色マーカーで表示される', () => {
+  it('Spec#76 - 現在の登録位置が赤色マーカーで表示される', () => {
     render(<LocationSuggestionDialog {...defaultProps} />)
 
     const marker = screen.getByTestId('additional-marker-0')
@@ -98,7 +98,7 @@ describe('LocationSuggestionDialog', () => {
     expect(marker).toHaveAttribute('data-color', '#EF4444')
   })
 
-  it('Issue#76 - 場所検索の入力フィールドが表示される', () => {
+  it('Spec#76 - 場所検索の入力フィールドが表示される', () => {
     render(<LocationSuggestionDialog {...defaultProps} />)
 
     expect(screen.getByPlaceholderText('場所を検索')).toBeInTheDocument()

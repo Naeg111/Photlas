@@ -1,5 +1,5 @@
 /**
- * Issue#118: 登録壁（Registration Wall）の閲覧履歴管理ユーティリティのテスト
+ * Spec#118: 登録壁（Registration Wall）の閲覧履歴管理ユーティリティのテスト
  *
  * 注意: テスト全体の setup（src/test/setup.ts）で localStorage を vi.fn() でモック化しているため、
  *       本テスト内では Map ベースの実用的なストア実装で localStorage を上書きする。
@@ -18,7 +18,7 @@ import {
 /**
  * テスト用の JWT を生成するヘルパー。
  * header.payload.signature の形式で、payload は base64url エンコードされた JSON。
- * Issue#118 のフリッカー対策では payload.exp のみを参照するため、署名は適当な文字列でよい。
+ * Spec#118 のフリッカー対策では payload.exp のみを参照するため、署名は適当な文字列でよい。
  */
 function makeJwt(expUnixSeconds: number): string {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
@@ -26,7 +26,7 @@ function makeJwt(expUnixSeconds: number): string {
   return `${header}.${payload}.signature`
 }
 
-describe('registrationWall - Issue#118', () => {
+describe('registrationWall - Spec#118', () => {
   let store: Map<string, string>
 
   beforeEach(() => {
@@ -52,38 +52,38 @@ describe('registrationWall - Issue#118', () => {
   })
 
   describe('REGISTRATION_WALL_VIEW_LIMIT', () => {
-    it('Issue#118 - 閾値は10件である', () => {
+    it('Spec#118 - 閾値は10件である', () => {
       expect(REGISTRATION_WALL_VIEW_LIMIT).toBe(10)
     })
   })
 
   describe('VIEWED_PHOTO_IDS_STORAGE_KEY', () => {
-    it('Issue#118 - localStorage キーは photlas_viewed_photo_ids である', () => {
+    it('Spec#118 - localStorage キーは photlas_viewed_photo_ids である', () => {
       expect(VIEWED_PHOTO_IDS_STORAGE_KEY).toBe('photlas_viewed_photo_ids')
     })
   })
 
   describe('getViewedPhotoIds', () => {
-    it('Issue#118 - 何も保存されていなければ空配列を返す', () => {
+    it('Spec#118 - 何も保存されていなければ空配列を返す', () => {
       expect(getViewedPhotoIds()).toEqual([])
     })
 
-    it('Issue#118 - 保存された配列を返す', () => {
+    it('Spec#118 - 保存された配列を返す', () => {
       store.set(VIEWED_PHOTO_IDS_STORAGE_KEY, JSON.stringify([101, 102, 103]))
       expect(getViewedPhotoIds()).toEqual([101, 102, 103])
     })
 
-    it('Issue#118 - 不正な JSON が保存されていれば空配列を返す（堅牢性）', () => {
+    it('Spec#118 - 不正な JSON が保存されていれば空配列を返す（堅牢性）', () => {
       store.set(VIEWED_PHOTO_IDS_STORAGE_KEY, '{not valid json')
       expect(getViewedPhotoIds()).toEqual([])
     })
 
-    it('Issue#118 - 配列でない値が保存されていれば空配列を返す（堅牢性）', () => {
+    it('Spec#118 - 配列でない値が保存されていれば空配列を返す（堅牢性）', () => {
       store.set(VIEWED_PHOTO_IDS_STORAGE_KEY, JSON.stringify({ foo: 'bar' }))
       expect(getViewedPhotoIds()).toEqual([])
     })
 
-    it('Issue#118 - 配列内の数値以外の要素は除外される（堅牢性）', () => {
+    it('Spec#118 - 配列内の数値以外の要素は除外される（堅牢性）', () => {
       store.set(
         VIEWED_PHOTO_IDS_STORAGE_KEY,
         JSON.stringify([101, 'string', 102, null, 103]),
@@ -91,7 +91,7 @@ describe('registrationWall - Issue#118', () => {
       expect(getViewedPhotoIds()).toEqual([101, 102, 103])
     })
 
-    it('Issue#118 - localStorage 読み込みが例外を投げても空配列を返す（堅牢性）', () => {
+    it('Spec#118 - localStorage 読み込みが例外を投げても空配列を返す（堅牢性）', () => {
       Object.defineProperty(global, 'localStorage', {
         value: {
           getItem: () => {
@@ -108,33 +108,33 @@ describe('registrationWall - Issue#118', () => {
   })
 
   describe('addViewedPhotoId', () => {
-    it('Issue#118 - 新規IDを追加できる', () => {
+    it('Spec#118 - 新規IDを追加できる', () => {
       addViewedPhotoId(101)
       expect(getViewedPhotoIds()).toEqual([101])
     })
 
-    it('Issue#118 - 既存IDは重複追加されない（冪等）', () => {
+    it('Spec#118 - 既存IDは重複追加されない（冪等）', () => {
       addViewedPhotoId(101)
       addViewedPhotoId(101)
       addViewedPhotoId(101)
       expect(getViewedPhotoIds()).toEqual([101])
     })
 
-    it('Issue#118 - 異なるIDは順次追加される', () => {
+    it('Spec#118 - 異なるIDは順次追加される', () => {
       addViewedPhotoId(101)
       addViewedPhotoId(102)
       addViewedPhotoId(103)
       expect(getViewedPhotoIds()).toEqual([101, 102, 103])
     })
 
-    it('Issue#118 - 10件まで蓄積されるが11件目は追加されない（頭打ち）', () => {
+    it('Spec#118 - 10件まで蓄積されるが11件目は追加されない（頭打ち）', () => {
       for (let i = 1; i <= 15; i++) {
         addViewedPhotoId(i)
       }
       expect(getViewedPhotoIds()).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     })
 
-    it('Issue#118 - localStorage 書き込み失敗時もクラッシュしない（堅牢性）', () => {
+    it('Spec#118 - localStorage 書き込み失敗時もクラッシュしない（堅牢性）', () => {
       Object.defineProperty(global, 'localStorage', {
         value: {
           getItem: () => null,
@@ -151,14 +151,14 @@ describe('registrationWall - Issue#118', () => {
   })
 
   describe('clearViewedPhotoIds', () => {
-    it('Issue#118 - 保存済みリストをクリアできる', () => {
+    it('Spec#118 - 保存済みリストをクリアできる', () => {
       addViewedPhotoId(101)
       addViewedPhotoId(102)
       clearViewedPhotoIds()
       expect(getViewedPhotoIds()).toEqual([])
     })
 
-    it('Issue#118 - localStorage 書き込み失敗時もクラッシュしない（堅牢性）', () => {
+    it('Spec#118 - localStorage 書き込み失敗時もクラッシュしない（堅牢性）', () => {
       Object.defineProperty(global, 'localStorage', {
         value: {
           getItem: () => null,
@@ -175,17 +175,17 @@ describe('registrationWall - Issue#118', () => {
   })
 
   describe('hasValidAuthToken', () => {
-    it('Issue#118 - localStorage/sessionStorage にトークンが無ければ false', () => {
+    it('Spec#118 - localStorage/sessionStorage にトークンが無ければ false', () => {
       expect(hasValidAuthToken()).toBe(false)
     })
 
-    it('Issue#118 - localStorage に有効期限内のトークンがあれば true', () => {
+    it('Spec#118 - localStorage に有効期限内のトークンがあれば true', () => {
       const futureExp = Math.floor(Date.now() / 1000) + 60 * 60 // 1時間後
       store.set('auth_token', makeJwt(futureExp))
       expect(hasValidAuthToken()).toBe(true)
     })
 
-    it('Issue#118 - sessionStorage に有効期限内のトークンがあっても true', () => {
+    it('Spec#118 - sessionStorage に有効期限内のトークンがあっても true', () => {
       const sessionStore = new Map<string, string>()
       const futureExp = Math.floor(Date.now() / 1000) + 60 * 60
       sessionStore.set('auth_token', makeJwt(futureExp))
@@ -205,30 +205,30 @@ describe('registrationWall - Issue#118', () => {
       expect(hasValidAuthToken()).toBe(true)
     })
 
-    it('Issue#118 - 期限切れのトークンなら false', () => {
+    it('Spec#118 - 期限切れのトークンなら false', () => {
       const pastExp = Math.floor(Date.now() / 1000) - 60 // 1分前
       store.set('auth_token', makeJwt(pastExp))
       expect(hasValidAuthToken()).toBe(false)
     })
 
-    it('Issue#118 - 形式が壊れたトークンなら false（堅牢性）', () => {
+    it('Spec#118 - 形式が壊れたトークンなら false（堅牢性）', () => {
       store.set('auth_token', 'not-a-jwt')
       expect(hasValidAuthToken()).toBe(false)
     })
 
-    it('Issue#118 - payload が JSON でないトークンなら false（堅牢性）', () => {
+    it('Spec#118 - payload が JSON でないトークンなら false（堅牢性）', () => {
       store.set('auth_token', `${btoa('header')}.${btoa('not-json')}.sig`)
       expect(hasValidAuthToken()).toBe(false)
     })
 
-    it('Issue#118 - exp フィールドが無いトークンは false（保守的に未認証扱い）', () => {
+    it('Spec#118 - exp フィールドが無いトークンは false（保守的に未認証扱い）', () => {
       const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
       const payload = btoa(JSON.stringify({ sub: 'user' }))
       store.set('auth_token', `${header}.${payload}.sig`)
       expect(hasValidAuthToken()).toBe(false)
     })
 
-    it('Issue#118 - localStorage 読み込みが例外を投げても false（堅牢性）', () => {
+    it('Spec#118 - localStorage 読み込みが例外を投げても false（堅牢性）', () => {
       Object.defineProperty(global, 'localStorage', {
         value: {
           getItem: () => {
@@ -257,32 +257,32 @@ describe('registrationWall - Issue#118', () => {
       })
     })
 
-    it('Issue#118 - ログイン中は常に false を返す', () => {
+    it('Spec#118 - ログイン中は常に false を返す', () => {
       for (let i = 1; i <= 20; i++) {
         addViewedPhotoId(i)
       }
       expect(shouldShowRegistrationWall(true)).toBe(false)
     })
 
-    it('Issue#118 - 未ログインかつ閲覧0件なら false を返す', () => {
+    it('Spec#118 - 未ログインかつ閲覧0件なら false を返す', () => {
       expect(shouldShowRegistrationWall(false)).toBe(false)
     })
 
-    it('Issue#118 - 未ログインかつ閲覧9件なら false を返す', () => {
+    it('Spec#118 - 未ログインかつ閲覧9件なら false を返す', () => {
       for (let i = 1; i <= 9; i++) {
         addViewedPhotoId(i)
       }
       expect(shouldShowRegistrationWall(false)).toBe(false)
     })
 
-    it('Issue#118 - 未ログインかつ閲覧10件なら true を返す', () => {
+    it('Spec#118 - 未ログインかつ閲覧10件なら true を返す', () => {
       for (let i = 1; i <= 10; i++) {
         addViewedPhotoId(i)
       }
       expect(shouldShowRegistrationWall(false)).toBe(true)
     })
 
-    it('Issue#118 - フリッカー対策: 引数 isLoggedIn=false でも localStorage に有効なトークンがあれば false', () => {
+    it('Spec#118 - フリッカー対策: 引数 isLoggedIn=false でも localStorage に有効なトークンがあれば false', () => {
       // シナリオ: ログイン済みユーザーがリロードした直後の初回レンダリング。
       //   AuthContext の useEffect がまだ走っておらず isAuthenticated=false だが、
       //   localStorage には有効な JWT が残っている。閲覧履歴が10件以上あっても
@@ -295,7 +295,7 @@ describe('registrationWall - Issue#118', () => {
       expect(shouldShowRegistrationWall(false)).toBe(false)
     })
 
-    it('Issue#118 - 期限切れトークンが残っていても閲覧10件なら true（実質ログアウト扱い）', () => {
+    it('Spec#118 - 期限切れトークンが残っていても閲覧10件なら true（実質ログアウト扱い）', () => {
       for (let i = 1; i <= 10; i++) {
         addViewedPhotoId(i)
       }

@@ -1,7 +1,7 @@
 package com.photlas.backend.entity;
 
 /**
- * Issue#87: 桁区切り数値コード定数
+ * Spec#87: 桁区切り数値コード定数
  *
  * DBに保存するenum的な値を、桁区切り数値コードで一元管理する。
  * 番号帯によりフィールドを即座に判別可能。
@@ -44,7 +44,7 @@ public final class CodeConstants {
     public static final int CATEGORY_AIRCRAFT = 212;
     public static final int CATEGORY_STARRY_SKY = 213;
     public static final int CATEGORY_OTHER = 214;
-    // Issue#159 ③-5: レジャー・施設（表示順は 214「その他」の前）
+    // Spec#159 ③-5: レジャー・施設（表示順は 214「その他」の前）
     public static final int CATEGORY_LEISURE_FACILITY = 215;
 
     // ========== 300番台: Photo.time_of_day ==========
@@ -70,11 +70,11 @@ public final class CodeConstants {
     // ========== 600番台: UserSnsLink.platform ==========
     public static final int PLATFORM_TWITTER = 601;
     public static final int PLATFORM_INSTAGRAM = 602;
-    /** Issue#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
+    /** Spec#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
     public static final int PLATFORM_YOUTUBE = 603;
-    /** Issue#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
+    /** Spec#102: ロゴ使用許可未取得のため一時停止中。定数は将来再開時のため残置。 */
     public static final int PLATFORM_TIKTOK = 604;
-    /** Issue#102: Threads は 2025-04 に threads.net → threads.com へ正式移行済み。 */
+    /** Spec#102: Threads は 2025-04 に threads.net → threads.com へ正式移行済み。 */
     public static final int PLATFORM_THREADS = 605;
 
     // ========== 700番台: AccountSanction.sanction_type ==========

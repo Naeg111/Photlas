@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Issue#108 §4.1 - DataExportController のテスト。
+ * Spec#108 §4.1 - DataExportController のテスト。
  *
  * 範囲:
  *   - POST /api/v1/users/me/export
@@ -74,7 +74,7 @@ class DataExportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 正しいパスワードで 200 OK + 適切なヘッダー（application/zip / Content-Disposition / Cache-Control / X-Accel-Buffering）")
+    @DisplayName("Spec#108 - 正しいパスワードで 200 OK + 適切なヘッダー（application/zip / Content-Disposition / Cache-Control / X-Accel-Buffering）")
     void exportWithCorrectPasswordReturnsZip() throws Exception {
         mockMvc.perform(post(ENDPOINT)
                         .with(csrf())
@@ -90,7 +90,7 @@ class DataExportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - パスワード誤りは 401 Unauthorized")
+    @DisplayName("Spec#108 - パスワード誤りは 401 Unauthorized")
     void exportWithWrongPasswordReturns401() throws Exception {
         mockMvc.perform(post(ENDPOINT)
                         .with(csrf())
@@ -101,7 +101,7 @@ class DataExportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - password 101 文字は 400 Bad Request（DoS 防止）")
+    @DisplayName("Spec#108 - password 101 文字は 400 Bad Request（DoS 防止）")
     void exportWithOversizedPasswordReturns400() throws Exception {
         String oversized = "a".repeat(101);
         mockMvc.perform(post(ENDPOINT)
@@ -113,7 +113,7 @@ class DataExportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - OAuth のみユーザー（passwordHash null）は password 省略でも 200 OK")
+    @DisplayName("Spec#108 - OAuth のみユーザー（passwordHash null）は password 省略でも 200 OK")
     void oauthOnlyUserCanExportWithoutPassword() throws Exception {
         // OAuth のみユーザーをセットアップ
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
@@ -132,7 +132,7 @@ class DataExportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 直近成功エクスポートあり: 429 Too Many Requests + Retry-After ヘッダー")
+    @DisplayName("Spec#108 - 直近成功エクスポートあり: 429 Too Many Requests + Retry-After ヘッダー")
     void recentlyExportedUserReceives429WithRetryAfter() throws Exception {
         User u = userRepository.findById(userId).orElseThrow();
         u.setLastExportedAt(java.time.LocalDateTime.now().minusHours(1));
@@ -148,7 +148,7 @@ class DataExportControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 同時実行ロック中（exportInProgressAt セット）: 409 Conflict")
+    @DisplayName("Spec#108 - 同時実行ロック中（exportInProgressAt セット）: 409 Conflict")
     void inProgressExportReturns409() throws Exception {
         User u = userRepository.findById(userId).orElseThrow();
         u.setExportInProgressAt(java.time.LocalDateTime.now());

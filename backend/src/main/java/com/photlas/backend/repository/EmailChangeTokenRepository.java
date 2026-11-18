@@ -9,7 +9,7 @@ import java.util.Optional;
 
 /**
  * メールアドレス変更確認トークンのリポジトリ
- * Issue#86: メールアドレス変更時の確認メール送信機能
+ * Spec#86: メールアドレス変更時の確認メール送信機能
  */
 @Repository
 public interface EmailChangeTokenRepository extends JpaRepository<EmailChangeToken, Long> {

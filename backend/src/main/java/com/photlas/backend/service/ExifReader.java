@@ -20,7 +20,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
 /**
- * Issue#132: 画像バイト列から EXIF 撮影情報を読み取り、{@link ExifData} を返す。
+ * Spec#132: 画像バイト列から EXIF 撮影情報を読み取り、{@link ExifData} を返す。
  *
  * <p>役割は「バイト列 → POJO 変換」のみに限定。スコア補正の判定ロジックは
  * {@link ExifBasedCategoryHints} が担う（テスタビリティのため分離）。</p>
@@ -39,10 +39,10 @@ public class ExifReader {
     private static final DateTimeFormatter EXIF_DATE_FORMAT =
             DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
 
-    /** Issue#132: 不正値判定用の閾値。露光時間の上限（秒）。 */
+    /** Spec#132: 不正値判定用の閾値。露光時間の上限（秒）。 */
     private static final double EXPOSURE_TIME_MAX_SECONDS = 3600.0;
 
-    /** Issue#132: 不正値判定用の閾値。GPS 標高の絶対値上限（メートル）。 */
+    /** Spec#132: 不正値判定用の閾値。GPS 標高の絶対値上限（メートル）。 */
     private static final double GPS_ALTITUDE_ABS_MAX = 10000.0;
 
     /**
@@ -59,14 +59,14 @@ public class ExifReader {
             Metadata metadata = ImageMetadataReader.readMetadata(new ByteArrayInputStream(imageBytes));
             return parseMetadata(metadata);
         } catch (Exception e) {
-            // Issue#132 4.7: WARN レベルで残し、解析自体は継続
+            // Spec#132 4.7: WARN レベルで残し、解析自体は継続
             logger.warn("EXIF 読み取りに失敗（解析は継続）: {}", e.getMessage());
             return ExifData.empty();
         }
     }
 
     /**
-     * Issue#142: クライアントが解析リクエストで別送した EXIF 値を、{@link #read} と同じ妥当性
+     * Spec#142: クライアントが解析リクエストで別送した EXIF 値を、{@link #read} と同じ妥当性
      * チェックを適用して {@link ExifData} に変換する（解析画像は EXIF が剥がされているため別送が必要）。
      *
      * <p>値はクライアント由来＝信頼しない前提で、範囲外・パース不能は {@link Optional#empty()} に落とす。

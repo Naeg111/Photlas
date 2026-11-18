@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class ProfileService {
 
     /**
-     * Issue#102: 登録可能なSNSプラットフォーム一覧。
+     * Spec#102: 登録可能なSNSプラットフォーム一覧。
      * YouTube/TikTok はロゴ使用許可未取得のため一時停止中
      * （定数は CodeConstants に残置し、許可取得後に再追加して再開予定）。
      */
@@ -112,7 +112,7 @@ public class ProfileService {
             throw new IllegalArgumentException("不正なオブジェクトキーです");
         }
 
-        // Issue#100: ユーザー保存の前にタグを registered に更新する。
+        // Spec#100: ユーザー保存の前にタグを registered に更新する。
         // タグ更新が失敗した場合はユーザー保存を行わずエラーを返す。
         s3Service.updateObjectTag(
                 objectKey,
@@ -171,7 +171,7 @@ public class ProfileService {
     /**
      * 表示名を更新
      *
-     * <p>Issue#81 Phase 4h: 仮表示名 (OAuth 新規登録時の {@code user_xxxxxxx}) からの
+     * <p>Spec#81 Phase 4h: 仮表示名 (OAuth 新規登録時の {@code user_xxxxxxx}) からの
      * 確定にも使えるよう、更新後に {@code usernameTemporary = false} を明示セットする。
      */
     @Transactional
@@ -187,7 +187,7 @@ public class ProfileService {
     }
 
     /**
-     * Issue#93: 言語設定を更新する
+     * Spec#93: 言語設定を更新する
      *
      * @param email ユーザーのメールアドレス
      * @param language 言語コード
@@ -220,7 +220,7 @@ public class ProfileService {
                 snsLinkDtos
         );
 
-        // Issue#104 + Issue#109: GET /users/me のみで返す追加フィールド
+        // Spec#104 + Spec#109: GET /users/me のみで返す追加フィールド
         // 規約・プライバシー・年齢確認のいずれかが未完了なら同意ダイアログを表示する
         if (includeEmail) {
             boolean requiresAgreement = user.getTermsAgreedAt() == null
@@ -234,13 +234,13 @@ public class ProfileService {
     }
 
     /**
-     * Issue#104 + Issue#109: 利用規約・プライバシーポリシー・年齢確認への同意を一括で記録する。
+     * Spec#104 + Spec#109: 利用規約・プライバシーポリシー・年齢確認への同意を一括で記録する。
      *
      * <p>常に現在時刻で上書きする（冪等性を優先するシンプルな実装）。
      * 既に同意済みの場合でも再記録される（実害なし）。
      *
-     * <p>Issue#109 で年齢確認のタイムスタンプも追加されたため、
-     * Issue#104 時点の名称 {@code agreeToTerms} から本メソッド名にリネームした。
+     * <p>Spec#109 で年齢確認のタイムスタンプも追加されたため、
+     * Spec#104 時点の名称 {@code agreeToTerms} から本メソッド名にリネームした。
      * 規約・プライバシー・年齢確認の 3 つを同時に記録するため、
      * 名前が示す範囲を「ユーザーの同意全般を記録する」に拡張している。
      *
@@ -291,11 +291,11 @@ public class ProfileService {
                 case CodeConstants.PLATFORM_TWITTER -> host.equals("x.com") || host.equals("twitter.com")
                         || host.endsWith(".x.com") || host.endsWith(".twitter.com");
                 case CodeConstants.PLATFORM_INSTAGRAM -> host.equals("instagram.com") || host.endsWith(".instagram.com");
-                // Issue#102: YouTube/TikTok は ALLOWED_PLATFORMS から除外したため到達不能だが、
+                // Spec#102: YouTube/TikTok は ALLOWED_PLATFORMS から除外したため到達不能だが、
                 // 将来再開時にコード変更なしで使えるようケースは残置。
                 case CodeConstants.PLATFORM_YOUTUBE -> host.equals("youtube.com") || host.endsWith(".youtube.com");
                 case CodeConstants.PLATFORM_TIKTOK -> host.equals("tiktok.com") || host.endsWith(".tiktok.com");
-                // Issue#102: Threads は threads.com (現行) と threads.net (旧、リダイレクト) の両方を許可。
+                // Spec#102: Threads は threads.com (現行) と threads.net (旧、リダイレクト) の両方を許可。
                 case CodeConstants.PLATFORM_THREADS -> host.equals("threads.com") || host.endsWith(".threads.com")
                         || host.equals("threads.net") || host.endsWith(".threads.net");
                 default -> false;

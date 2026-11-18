@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# アプリ層レート制限 超過アラーム セットアップスクリプト (Issue#95)
+# アプリ層レート制限 超過アラーム セットアップスクリプト (Spec#95)
 #
 # 実行内容:
 #   1. CloudWatch Logs メトリクスフィルタを作成
@@ -11,7 +11,7 @@
 #   2. CloudWatch アラームを作成
 #        - 名前:        photlas-app-ratelimit-exceeded
 #        - 閾値:        5 分間 (period=300) の Sum >= 10
-#        - SNS 通知:    Issue#94 で作成済みの photlas-waf-alerts を再利用
+#        - SNS 通知:    Spec#94 で作成済みの photlas-waf-alerts を再利用
 #        - 欠損データ:  notBreaching
 #
 # 使い方:
@@ -51,7 +51,7 @@ ALARM_NAME="photlas-app-ratelimit-exceeded"
 ALARM_THRESHOLD=10
 ALARM_PERIOD=300
 
-# Issue#94 で作成済みの SNS topic 名（新規作成はしない）
+# Spec#94 で作成済みの SNS topic 名（新規作成はしない）
 SNS_TOPIC_NAME="photlas-waf-alerts"
 
 # 適用するリソースタグ:
@@ -99,7 +99,7 @@ if [ -z "$LOG_GROUP_EXISTS" ] || [ "$LOG_GROUP_EXISTS" = "None" ]; then
 fi
 log "Log group found: $LOG_GROUP_NAME"
 
-# SNS topic ARN 解決（Issue#94 で作成済みのものを再利用。新規作成はしない）
+# SNS topic ARN 解決（Spec#94 で作成済みのものを再利用。新規作成はしない）
 SNS_TOPIC_ARN="$(aws sns list-topics \
   --region "$AWS_REGION" \
   --query "Topics[?ends_with(TopicArn, ':${SNS_TOPIC_NAME}')].TopicArn | [0]" \
@@ -139,7 +139,7 @@ log "Creating/updating alarm: $ALARM_NAME"
 aws cloudwatch put-metric-alarm \
   --region "$AWS_REGION" \
   --alarm-name "$ALARM_NAME" \
-  --alarm-description "Issue#95: application-layer rate limit exceeded (>= ${ALARM_THRESHOLD} events / 5 min)" \
+  --alarm-description "Spec#95: application-layer rate limit exceeded (>= ${ALARM_THRESHOLD} events / 5 min)" \
   --metric-name "$METRIC_NAME" \
   --namespace "$METRIC_NAMESPACE" \
   --statistic Sum \

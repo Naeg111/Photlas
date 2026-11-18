@@ -1,5 +1,5 @@
 /**
- * Issue#135: キーワード REST API クライアント。
+ * Spec#135: キーワード REST API クライアント。
  *
  * GET /api/v1/tags でアクティブな全キーワード + カテゴリ紐付けを取得する。
  */
@@ -12,7 +12,7 @@ export interface TagListResponse {
   tags: KeywordTag[]
 }
 
-/** Issue#135: 写真詳細ページ等で使う「表示用」キーワード DTO。 */
+/** Spec#135: 写真詳細ページ等で使う「表示用」キーワード DTO。 */
 export interface PhotoTagDisplay {
   tagId: number
   slug: string

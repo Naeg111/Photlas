@@ -1,5 +1,5 @@
 /**
- * Issue#119: トリミング領域を実画像 Blob に変換するユーティリティ。
+ * Spec#119: トリミング領域を実画像 Blob に変換するユーティリティ。
  *
  * react-easy-crop は座標（{@link Area}）のみ返すため、Canvas API で実画像化する。
  *
@@ -37,7 +37,7 @@ export async function cropImageToBlob(
  * AI 解析（analyze API）用。長辺 2000px・quality=0.85 で全体画像を書き出す。
  * Rekognition 側で更に 1280px へ縮小されるため、ここでの縮小は精度に影響しない。
  *
- * Issue#119（仕様変更）: 解析対象は「トリミング前の画像全体」とするため、
+ * Spec#119（仕様変更）: 解析対象は「トリミング前の画像全体」とするため、
  * area は撮らずに画像全体を出力する。
  */
 export async function resizeImageToBlobForAnalyze(imageSrc: string): Promise<Blob> {

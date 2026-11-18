@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.hamcrest.Matchers.is;
 
 /**
- * Issue#104: 新規登録フロー簡素化 & 利用規約同意ダイアログ実装のテスト
+ * Spec#104: 新規登録フロー簡素化 & 利用規約同意ダイアログ実装のテスト
  *
  * <p>本テストでは以下を検証する：
  * <ul>
@@ -53,7 +53,7 @@ import static org.hamcrest.Matchers.is;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-public class Issue104TermsAgreementTest {
+public class Spec104TermsAgreementTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
@@ -86,13 +86,13 @@ public class Issue104TermsAgreementTest {
     // ===== Group 1: メール+パスワード登録時の同意日時セット =====
 
     @Test
-    @DisplayName("Issue#104 - メール+パスワード登録時に terms_agreed_at と privacy_policy_agreed_at がセットされる")
+    @DisplayName("Spec#104 - メール+パスワード登録時に terms_agreed_at と privacy_policy_agreed_at がセットされる")
     void register_setsTermsAgreedAtAndPrivacyPolicyAgreedAt() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setUsername(TEST_USERNAME);
         request.setEmail(TEST_EMAIL);
         request.setPassword(TEST_PASSWORD);
-        // Issue#109: 同意・年齢確認フィールドを true でセット
+        // Spec#109: 同意・年齢確認フィールドを true でセット
         request.setAgreedToTerms(true);
         request.setAgreedToPrivacy(true);
         request.setAgeConfirmed(true);
@@ -115,7 +115,7 @@ public class Issue104TermsAgreementTest {
     // ===== Group 2: OAuth 新規ユーザーは両カラム NULL =====
 
     @Test
-    @DisplayName("Issue#104 - OAuth 新規ユーザー作成時は terms_agreed_at と privacy_policy_agreed_at が NULL")
+    @DisplayName("Spec#104 - OAuth 新規ユーザー作成時は terms_agreed_at と privacy_policy_agreed_at が NULL")
     void oauthNewUser_termsAgreedAtAndPrivacyPolicyAgreedAtAreNull() {
         // OAuth ログインで作成されるユーザーを直接エンティティで作成（OAuth フローを通すと複雑になるため）
         User oauthUser = new User(OAUTH_USERNAME, OAUTH_EMAIL, null, CodeConstants.ROLE_USER);
@@ -137,7 +137,7 @@ public class Issue104TermsAgreementTest {
     // ===== Group 3: GET /users/me が新フィールドを返す =====
 
     @Test
-    @DisplayName("Issue#104 - GET /users/me が requiresTermsAgreement: true を返す（terms_agreed_at が NULL の場合）")
+    @DisplayName("Spec#104 - GET /users/me が requiresTermsAgreement: true を返す（terms_agreed_at が NULL の場合）")
     void getUsersMe_returnsRequiresTermsAgreementTrue_whenTermsNotAgreed() throws Exception {
         User user = createOAuthUser();
         String jwtToken = jwtService.generateTokenWithRole(user.getEmail(), "USER");
@@ -149,7 +149,7 @@ public class Issue104TermsAgreementTest {
     }
 
     @Test
-    @DisplayName("Issue#104 - GET /users/me が requiresTermsAgreement: false を返す（両カラム NOT NULL の場合）")
+    @DisplayName("Spec#104 - GET /users/me が requiresTermsAgreement: false を返す（両カラム NOT NULL の場合）")
     void getUsersMe_returnsRequiresTermsAgreementFalse_whenBothAgreed() throws Exception {
         User user = createUserWithAgreement();
         String jwtToken = jwtService.generateTokenWithRole(user.getEmail(), "USER");
@@ -161,7 +161,7 @@ public class Issue104TermsAgreementTest {
     }
 
     @Test
-    @DisplayName("Issue#104 - GET /users/me が usernameTemporary: true を返す（仮表示名の場合）")
+    @DisplayName("Spec#104 - GET /users/me が usernameTemporary: true を返す（仮表示名の場合）")
     void getUsersMe_returnsUsernameTemporaryTrue_whenTemporaryUsername() throws Exception {
         User user = createOAuthUser(); // usernameTemporary=true
         String jwtToken = jwtService.generateTokenWithRole(user.getEmail(), "USER");
@@ -173,7 +173,7 @@ public class Issue104TermsAgreementTest {
     }
 
     @Test
-    @DisplayName("Issue#104 - GET /users/me が usernameTemporary: false を返す（確定表示名の場合）")
+    @DisplayName("Spec#104 - GET /users/me が usernameTemporary: false を返す（確定表示名の場合）")
     void getUsersMe_returnsUsernameTemporaryFalse_whenConfirmedUsername() throws Exception {
         User user = createUserWithAgreement(); // usernameTemporary=false
         String jwtToken = jwtService.generateTokenWithRole(user.getEmail(), "USER");
@@ -187,7 +187,7 @@ public class Issue104TermsAgreementTest {
     // ===== Group 4: POST /api/v1/users/me/agree-terms =====
 
     @Test
-    @DisplayName("Issue#104 - POST /api/v1/users/me/agree-terms が 204 を返し両カラムをセットする")
+    @DisplayName("Spec#104 - POST /api/v1/users/me/agree-terms が 204 を返し両カラムをセットする")
     void agreeTerms_setsBothColumnsAndReturns204() throws Exception {
         User user = createOAuthUser();
         String jwtToken = jwtService.generateTokenWithRole(user.getEmail(), "USER");
@@ -207,7 +207,7 @@ public class Issue104TermsAgreementTest {
     }
 
     @Test
-    @DisplayName("Issue#109 - POST /api/v1/users/me/agree-terms が age_confirmed_at もセットする")
+    @DisplayName("Spec#109 - POST /api/v1/users/me/agree-terms が age_confirmed_at もセットする")
     void agreeTerms_setsAgeConfirmedAt() throws Exception {
         User user = createOAuthUser();
         String jwtToken = jwtService.generateTokenWithRole(user.getEmail(), "USER");
@@ -224,7 +224,7 @@ public class Issue104TermsAgreementTest {
     }
 
     @Test
-    @DisplayName("Issue#109 - age_confirmed_at が NULL の場合、GET /users/me が requiresTermsAgreement: true を返す")
+    @DisplayName("Spec#109 - age_confirmed_at が NULL の場合、GET /users/me が requiresTermsAgreement: true を返す")
     void getUsersMe_returnsRequiresTermsAgreementTrue_whenAgeNotConfirmed() throws Exception {
         // 規約・プライバシーは同意済みだが、age_confirmed_at だけ NULL のユーザー
         User user = createUserWithTermsAndPrivacyOnly();
@@ -239,7 +239,7 @@ public class Issue104TermsAgreementTest {
     // ===== Group 5: DELETE /api/v1/users/me/cancel-registration =====
 
     @Test
-    @DisplayName("Issue#104 - DELETE cancel-registration が未同意ユーザー（terms_agreed_at IS NULL）で 204 を返し物理削除する")
+    @DisplayName("Spec#104 - DELETE cancel-registration が未同意ユーザー（terms_agreed_at IS NULL）で 204 を返し物理削除する")
     void cancelRegistration_deletesUserPhysically_whenTermsNotAgreed() throws Exception {
         User user = createOAuthUser();
         UserOAuthConnection conn = createOAuthConnection(user);
@@ -266,7 +266,7 @@ public class Issue104TermsAgreementTest {
     }
 
     @Test
-    @DisplayName("Issue#104 - DELETE cancel-registration が同意済みユーザー（terms_agreed_at NOT NULL）で 403 を返し削除しない")
+    @DisplayName("Spec#104 - DELETE cancel-registration が同意済みユーザー（terms_agreed_at NOT NULL）で 403 を返し削除しない")
     void cancelRegistration_returns403_whenTermsAlreadyAgreed() throws Exception {
         User user = createUserWithAgreement();
         Long userId = user.getId();
@@ -302,13 +302,13 @@ public class Issue104TermsAgreementTest {
         user.setUsernameTemporary(false);
         user.setTermsAgreedAt(LocalDateTime.now());
         user.setPrivacyPolicyAgreedAt(LocalDateTime.now());
-        // Issue#109: requiresTermsAgreement の判定で age_confirmed_at もチェックされるため必須
+        // Spec#109: requiresTermsAgreement の判定で age_confirmed_at もチェックされるため必須
         user.setAgeConfirmedAt(LocalDateTime.now());
         return userRepository.save(user);
     }
 
     /**
-     * Issue#109: 規約・プライバシーのみ同意済みで age_confirmed_at が NULL のユーザーを作成。
+     * Spec#109: 規約・プライバシーのみ同意済みで age_confirmed_at が NULL のユーザーを作成。
      * （年齢確認だけ未完了のユーザーを再現するため）
      */
     private User createUserWithTermsAndPrivacyOnly() {

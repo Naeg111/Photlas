@@ -1,5 +1,5 @@
 #!/bin/bash
-# Issue#117: メンテナンスモード状態確認 (副作用なし)
+# Spec#117: メンテナンスモード状態確認 (副作用なし)
 #
 # CloudFront Function のコメント (maintenance / passthrough) と
 # ALB ルール優先度 (active / inactive) から現在の状態を判定する。

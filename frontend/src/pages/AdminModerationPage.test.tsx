@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { toast } from 'sonner'
 import AdminModerationPage from './AdminModerationPage'
+import i18n from '../i18n'
 import { ROLE_ADMIN, REASON_ADULT_CONTENT, REASON_VIOLENCE } from '../utils/codeConstants'
 import { _resetRateLimitNotifyDebounce } from '../utils/notifyIfRateLimited'
 
 /**
- * Issue#54: 管理者モデレーションページのテスト
+ * Spec#54: 管理者モデレーションページのテスト
  */
 
 // AuthContextのモック
@@ -30,7 +31,7 @@ vi.mock('../components/ui/sonner', () => ({
   Toaster: () => null,
 }))
 
-// Issue#89: PhotoLightboxのモック
+// Spec#89: PhotoLightboxのモック
 vi.mock('../components/PhotoLightbox', () => ({
   PhotoLightbox: ({ open, imageUrl }: { open: boolean; imageUrl: string }) =>
     open ? <div data-testid="photo-lightbox"><img src={imageUrl} alt="フルサイズ写真" /></div> : null,
@@ -128,7 +129,7 @@ describe('AdminModerationPage', () => {
     expect(screen.getByText('2件の審査待ち')).toBeInTheDocument()
   })
 
-  it('Issue#89 - トグルボタンクリックでぼかしが解除される', async () => {
+  it('Spec#89 - トグルボタンクリックでぼかしが解除される', async () => {
     mockUseAuth.mockReturnValue({
       user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
@@ -158,7 +159,7 @@ describe('AdminModerationPage', () => {
     expect(image.className).not.toContain('blur-lg')
   })
 
-  it('Issue#89 - トグルボタン再クリックでぼかしが再適用される', async () => {
+  it('Spec#89 - トグルボタン再クリックでぼかしが再適用される', async () => {
     mockUseAuth.mockReturnValue({
       user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
@@ -189,7 +190,7 @@ describe('AdminModerationPage', () => {
     expect(screen.getByTestId('moderation-image-1').className).toContain('blur-lg')
   })
 
-  it('Issue#89 - ぼかし解除済みの画像クリックでライトボックスが表示される', async () => {
+  it('Spec#89 - ぼかし解除済みの画像クリックでライトボックスが表示される', async () => {
     mockUseAuth.mockReturnValue({
       user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
@@ -219,7 +220,7 @@ describe('AdminModerationPage', () => {
     expect(screen.getByAltText('フルサイズ写真')).toBeInTheDocument()
   })
 
-  it('Issue#89 - ぼかし中の画像クリックではライトボックスが開かない', async () => {
+  it('Spec#89 - ぼかし中の画像クリックではライトボックスが開かない', async () => {
     mockUseAuth.mockReturnValue({
       user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
@@ -248,7 +249,7 @@ describe('AdminModerationPage', () => {
     expect(screen.queryByAltText('フルサイズ写真')).not.toBeInTheDocument()
   })
 
-  it('Issue#89 - 「クリックで表示」オーバーレイが表示されない', async () => {
+  it('Spec#89 - 「クリックで表示」オーバーレイが表示されない', async () => {
     mockUseAuth.mockReturnValue({
       user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
@@ -294,7 +295,7 @@ describe('AdminModerationPage', () => {
     })
   })
 
-  it('Issue#54 - 通報件数と通報理由が表示される', async () => {
+  it('Spec#54 - 通報件数と通報理由が表示される', async () => {
     mockUseAuth.mockReturnValue({
       user: { userId: 1, role: ROLE_ADMIN },
       isAuthenticated: true,
@@ -361,6 +362,105 @@ describe('AdminModerationPage', () => {
     expect(screen.getByTestId('moderation-item-2')).toBeInTheDocument()
   })
 
+  it('承認のお知らせは言語設定に合わせて出る（英語なら Photo approved）', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          content: MOCK_QUEUE_ITEMS,
+          total_elements: 2,
+          total_pages: 1,
+        }),
+      })
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+
+    await i18n.changeLanguage('en')
+    try {
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByTestId('approve-btn-1')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup()
+      await user.click(screen.getByTestId('approve-btn-1'))
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('Photo approved')
+      })
+      expect(toast.success).not.toHaveBeenCalledWith('写真を承認しました')
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
+  })
+
+  it('Spec#93 追加対応: 言語設定が英語なら画面を英語で表示する', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        content: MOCK_QUEUE_ITEMS,
+        total_elements: 2,
+        total_pages: 1,
+      }),
+    })
+
+    await i18n.changeLanguage('en')
+    try {
+      renderPage()
+
+      expect(await screen.findByText('Posted by: testuser1 (ID: 10)')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Moderation' })).toBeInTheDocument()
+      expect(screen.getByText('Pending review: 2')).toBeInTheDocument()
+      expect(screen.getByText('Reports: 2')).toBeInTheDocument()
+      expect(screen.getByText('Adult Content')).toBeInTheDocument()
+      expect(screen.getByText('Violent Content')).toBeInTheDocument()
+      expect(screen.getAllByText('Approve')).toHaveLength(2)
+      expect(screen.getAllByText('Reject')).toHaveLength(2)
+      expect(screen.queryByText('モデレーション管理')).not.toBeInTheDocument()
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
+  })
+
+  it('Spec#93 追加対応: 言語を切り替えてもキューを取り直さず、エラーは切り替え後の言語で表示する', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { userId: 1, role: ROLE_ADMIN },
+      isAuthenticated: true,
+    })
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+
+    renderPage()
+
+    expect(await screen.findByText('キューの取得に失敗しました')).toBeInTheDocument()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+
+    try {
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+      expect(screen.getByText('Failed to load the review queue')).toBeInTheDocument()
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage('ja')
+      })
+    }
+  })
+
   it('拒否ボタンをクリックすると写真が拒否される', async () => {
     mockUseAuth.mockReturnValue({
       user: { userId: 1, role: ROLE_ADMIN },
@@ -399,7 +499,7 @@ describe('AdminModerationPage', () => {
     expect(screen.getByTestId('moderation-item-1')).toBeInTheDocument()
   })
 
-  // Issue#96 PR2c: 429 レート制限ハンドリング（notifyIfRateLimited 経由のトースト）
+  // Spec#96 PR2c: 429 レート制限ハンドリング（notifyIfRateLimited 経由のトースト）
   describe('Rate Limit (429) - レート制限', () => {
     it('承認 API で 429 を受信したらレート制限トーストが表示される', async () => {
       mockUseAuth.mockReturnValue({

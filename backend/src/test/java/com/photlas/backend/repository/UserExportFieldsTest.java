@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#108 - User エンティティに追加されるエクスポート関連フィールドのテスト
+ * Spec#108 - User エンティティに追加されるエクスポート関連フィールドのテスト
  *
  * 要件:
  *   - users.last_exported_at カラムが永続化される
@@ -45,7 +45,7 @@ class UserExportFieldsTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 新規ユーザーの lastExportedAt / exportInProgressAt は null")
+    @DisplayName("Spec#108 - 新規ユーザーの lastExportedAt / exportInProgressAt は null")
     void newUserHasNullExportFields() {
         User reloaded = userRepository.findById(user.getId()).orElseThrow();
         assertThat(reloaded.getLastExportedAt()).isNull();
@@ -53,7 +53,7 @@ class UserExportFieldsTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - lastExportedAt を保存・取得できる")
+    @DisplayName("Spec#108 - lastExportedAt を保存・取得できる")
     void canSaveAndLoadLastExportedAt() {
         LocalDateTime exportedAt = LocalDateTime.now().minusDays(2);
         user.setLastExportedAt(exportedAt);
@@ -64,7 +64,7 @@ class UserExportFieldsTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - exportInProgressAt を保存・取得できる")
+    @DisplayName("Spec#108 - exportInProgressAt を保存・取得できる")
     void canSaveAndLoadExportInProgressAt() {
         LocalDateTime now = LocalDateTime.now();
         user.setExportInProgressAt(now);
@@ -75,7 +75,7 @@ class UserExportFieldsTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - exportInProgressAt を null に戻せる（クリア）")
+    @DisplayName("Spec#108 - exportInProgressAt を null に戻せる（クリア）")
     void canClearExportInProgressAt() {
         user.setExportInProgressAt(LocalDateTime.now());
         userRepository.saveAndFlush(user);

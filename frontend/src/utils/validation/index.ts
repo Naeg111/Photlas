@@ -1,7 +1,7 @@
 /**
  * バリデーションユーティリティ
- * Issue#21: パスワードバリデーション統一
- * Issue#26: 認証ダイアログ用バリデーション
+ * Spec#21: パスワードバリデーション統一
+ * Spec#26: 認証ダイアログ用バリデーション
  */
 
 /** パスワード最小文字数 */
@@ -13,11 +13,11 @@ export const PASSWORD_MAX_LENGTH = 20
 /** 強いパスワードの最小文字数 */
 export const PASSWORD_STRONG_MIN_LENGTH = 12
 
-/** SNSリンク最大数 (Issue#102: 将来の5サービス対応用) */
+/** SNSリンク最大数 (Spec#102: 将来の5サービス対応用) */
 export const MAX_SNS_LINKS = 5
 
 /**
- * Issue#21: パスワードバリデーション統一
+ * Spec#21: パスワードバリデーション統一
  * 8〜20文字、数字・小文字・大文字をそれぞれ1文字以上、記号は使用不可
  */
 export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z0-9]{8,20}$/
@@ -46,58 +46,81 @@ export function getPasswordStrength(password: string): PasswordStrength {
 }
 
 /**
- * パスワードバリデーション結果
+ * パスワード・メールアドレスのエラーの種類（i18n の errors.* のキー）
+ * Spec#93 追加対応: 文言は表示する側で t(errorKey, errorParams) に通して、表示言語に合わせる。
  */
-export interface PasswordValidationResult {
-  isValid: boolean
-  errorMessage: string | null
-}
+export type ValidationErrorKey =
+  | 'errors.PASSWORD_REQUIRED'
+  | 'errors.PASSWORD_LENGTH_INVALID'
+  | 'errors.PASSWORD_MISSING_DIGIT'
+  | 'errors.PASSWORD_MISSING_LOWERCASE'
+  | 'errors.PASSWORD_MISSING_UPPERCASE'
+  | 'errors.PASSWORD_CONTAINS_SYMBOL'
+  | 'errors.EMAIL_REQUIRED'
+  | 'errors.EMAIL_INVALID_FORMAT'
 
 /**
- * パスワードをバリデーション（Issue#21統一要件）
+ * バリデーション結果
  */
-export function validatePassword(password: string): PasswordValidationResult {
+export interface ValidationResult {
+  isValid: boolean
+  /** エラー文言の i18n キー。問題がなければ null */
+  errorKey: ValidationErrorKey | null
+  /** errorKey の文言に差し込む値（{{min}} など） */
+  errorParams?: Record<string, number>
+}
+
+function invalid(errorKey: ValidationErrorKey, errorParams?: Record<string, number>): ValidationResult {
+  return { isValid: false, errorKey, errorParams }
+}
+
+const VALID: ValidationResult = { isValid: true, errorKey: null }
+
+/**
+ * パスワードをバリデーション（Spec#21統一要件）
+ */
+export function validatePassword(password: string): ValidationResult {
   if (!password) {
-    return { isValid: false, errorMessage: 'パスワードを入力してください' }
+    return invalid('errors.PASSWORD_REQUIRED')
   }
 
   if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
-    return {
-      isValid: false,
-      errorMessage: `パスワードは${PASSWORD_MIN_LENGTH}文字以上${PASSWORD_MAX_LENGTH}文字以内で入力してください`,
-    }
+    return invalid('errors.PASSWORD_LENGTH_INVALID', {
+      min: PASSWORD_MIN_LENGTH,
+      max: PASSWORD_MAX_LENGTH,
+    })
   }
 
   if (!/\d/.test(password)) {
-    return { isValid: false, errorMessage: 'パスワードには数字を1文字以上含めてください' }
+    return invalid('errors.PASSWORD_MISSING_DIGIT')
   }
 
   if (!/[a-z]/.test(password)) {
-    return { isValid: false, errorMessage: 'パスワードにはローマ字小文字を1文字以上含めてください' }
+    return invalid('errors.PASSWORD_MISSING_LOWERCASE')
   }
 
   if (!/[A-Z]/.test(password)) {
-    return { isValid: false, errorMessage: 'パスワードにはローマ字大文字を1文字以上含めてください' }
+    return invalid('errors.PASSWORD_MISSING_UPPERCASE')
   }
 
   if (/[^a-zA-Z0-9]/.test(password)) {
-    return { isValid: false, errorMessage: 'パスワードに記号を含めることはできません' }
+    return invalid('errors.PASSWORD_CONTAINS_SYMBOL')
   }
 
-  return { isValid: true, errorMessage: null }
+  return VALID
 }
 
 /**
  * メールアドレスをバリデーション
  */
-export function validateEmail(email: string): PasswordValidationResult {
+export function validateEmail(email: string): ValidationResult {
   if (!email.trim()) {
-    return { isValid: false, errorMessage: 'メールアドレスを入力してください' }
+    return invalid('errors.EMAIL_REQUIRED')
   }
 
   if (!EMAIL_REGEX.test(email)) {
-    return { isValid: false, errorMessage: '正しいメールアドレスの形式で入力してください' }
+    return invalid('errors.EMAIL_INVALID_FORMAT')
   }
 
-  return { isValid: true, errorMessage: null }
+  return VALID
 }

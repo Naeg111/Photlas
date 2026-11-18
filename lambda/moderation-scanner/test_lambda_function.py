@@ -1,5 +1,5 @@
 """
-Issue#54: スキャン用Lambda関数のユニットテスト
+Spec#54: スキャン用Lambda関数のユニットテスト
 
 テスト実行: cd lambda/moderation-scanner && python -m pytest test_lambda_function.py -v
 

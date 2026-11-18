@@ -1,10 +1,11 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ReportDialog } from './ReportDialog'
+import i18n from '../i18n'
 import { REASON_ADULT_CONTENT, REASON_COPYRIGHT_INFRINGEMENT } from '../utils/codeConstants'
 
 /**
- * Issue#54: 通報ダイアログ
+ * Spec#54: 通報ダイアログ
  *
  * UI要件:
  * - ダイアログタイトル: 「この投稿を通報」
@@ -23,6 +24,28 @@ describe('ReportDialog', () => {
   })
 
   describe('UI Elements', () => {
+    it('Spec#93 追加対応: 言語設定が英語なら、送信ボタンと詳細の入力欄も英語で表示する', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        render(
+          <ReportDialog
+            open={true}
+            onOpenChange={mockOnOpenChange}
+            onSubmit={mockOnSubmit}
+            isLoading={false}
+          />
+        )
+
+        expect(screen.getByRole('button', { name: 'Report' })).toBeInTheDocument()
+        expect(
+          screen.getByPlaceholderText('Describe the reason for your report (up to 300 characters)')
+        ).toBeInTheDocument()
+        expect(screen.queryByText('通報する')).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
     it('renders when open prop is true', () => {
       render(
         <ReportDialog

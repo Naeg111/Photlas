@@ -10,20 +10,20 @@ import com.photlas.backend.repository.ReportRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.AdminModerationService;
 import com.photlas.backend.service.S3Service;
+import com.photlas.backend.util.ServerTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Issue#54: 管理者モデレーションコントローラー
+ * Spec#54: 管理者モデレーションコントローラー
  * 管理者権限を持つユーザーのみアクセス可能
  */
 @RestController
@@ -82,10 +82,10 @@ public class AdminModerationController {
         String username = userRepository.findById(photo.getUserId())
                 .map(User::getUsername)
                 .orElse("不明");
-        String createdAt = photo.getCreatedAt() != null
-                ? photo.getCreatedAt().format(DateTimeFormatter.ISO_DATE_TIME) : null;
+        // Spec#169: UTC（末尾 Z）で返す。オフセットなしだとブラウザが現地時刻とみなして 9 時間ずれるため
+        String createdAt = ServerTime.toUtcIsoString(photo.getCreatedAt());
 
-        // Issue#54: 通報情報を取得
+        // Spec#54: 通報情報を取得
         List<Report> reports = reportRepository.findByTargetTypeAndTargetId(
                 CodeConstants.TARGET_TYPE_PHOTO, photo.getPhotoId());
         int reportCount = reports.size();

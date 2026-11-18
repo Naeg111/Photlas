@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * UsernameConstraintValidator のテスト。
- * Issue#98 4.4.1: Bean Validation 統合の確認。
+ * Spec#98 4.4.1: Bean Validation 統合の確認。
  *
  * <p>{@code @ValidUsername} アノテーションが付与されたフィールドに対し、
  * 違反時に i18n キー（{@code errors.USERNAME_*}）がメッセージとして
@@ -71,31 +71,31 @@ class UsernameConstraintValidatorTest {
     }
 
     @Test
-    @DisplayName("Issue#98 - null は errors.USERNAME_REQUIRED")
+    @DisplayName("Spec#98 - null は errors.USERNAME_REQUIRED")
     void null_returns_required_i18n_key() {
         assertViolation(null, "errors.USERNAME_REQUIRED");
     }
 
     @Test
-    @DisplayName("Issue#98 - 1文字は errors.USERNAME_LENGTH_INVALID")
+    @DisplayName("Spec#98 - 1文字は errors.USERNAME_LENGTH_INVALID")
     void short_returns_length_invalid_i18n_key() {
         assertViolation("a", "errors.USERNAME_LENGTH_INVALID");
     }
 
     @Test
-    @DisplayName("Issue#98 - 記号 @ は errors.USERNAME_INVALID_CHARACTER_SYMBOL")
+    @DisplayName("Spec#98 - 記号 @ は errors.USERNAME_INVALID_CHARACTER_SYMBOL")
     void symbol_returns_symbol_i18n_key() {
         assertViolation("abc@def", "errors.USERNAME_INVALID_CHARACTER_SYMBOL");
     }
 
     @Test
-    @DisplayName("Issue#98 - admin は errors.USERNAME_RESERVED")
+    @DisplayName("Spec#98 - admin は errors.USERNAME_RESERVED")
     void reserved_returns_reserved_i18n_key() {
         assertViolation("admin", "errors.USERNAME_RESERVED");
     }
 
     @Test
-    @DisplayName("Issue#98 - tanaka は違反なし（通過）")
+    @DisplayName("Spec#98 - tanaka は違反なし（通過）")
     void valid_username_no_violation() {
         assertNoViolation("tanaka");
     }

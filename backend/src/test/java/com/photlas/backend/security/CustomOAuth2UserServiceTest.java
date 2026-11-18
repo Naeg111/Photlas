@@ -38,7 +38,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#81 Phase 3c - {@link CustomOAuth2UserService} のテスト（Red段階）。
+ * Spec#81 Phase 3c - {@link CustomOAuth2UserService} のテスト（Red段階）。
  *
  * 検証項目:
  * <ul>

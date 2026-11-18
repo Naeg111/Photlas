@@ -15,7 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Issue#58 §6 (B2): {@code GET /photo-viewer/{id}}。
+ * Spec#58 §6 (B2): {@code GET /photo-viewer/{id}}。
  *
  * <p>UA 判定はせず、**全員に同じ HTML** を返す: 現行 SPA の {@code index.html} に
  * 写真個別の OGP を差し込んだもの。人間はそのまま SPA が起動して写真が開き（リダイレクト無し）、

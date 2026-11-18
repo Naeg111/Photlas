@@ -1,5 +1,6 @@
 package com.photlas.backend.service;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,9 +17,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 /**
- * Issue#113 フェーズ 4 - ModerationNotificationService の 5 言語化テスト。
+ * Spec#113 フェーズ 4 - ModerationNotificationService の 5 言語化テスト。
  *
  * <p>4 種類の通知（隔離 / 警告 / 一時停止 / 永久停止）が言語に応じて適切な
  * 言語で送信されることを検証する。グループ B (@Async + try-catch + ERROR ログ) も対象。</p>
@@ -49,8 +50,14 @@ class ModerationNotificationMultiLanguageTest {
     private EmailTemplateService emailTemplateService;
     private ModerationNotificationService notificationService;
 
+    private TimeZone originalDefault;
+
     @BeforeEach
     void setUp() {
+        // Spec#169: 本番と同じく JVM を UTC にする（保存されている時刻は UTC の時刻）
+        originalDefault = TimeZone.getDefault();
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+
         // 実 MessageSource を組み立てる（properties ファイル経由）
         ReloadableResourceBundleMessageSource source = new ReloadableResourceBundleMessageSource();
         source.setBasename("classpath:i18n/email/messages");
@@ -62,8 +69,13 @@ class ModerationNotificationMultiLanguageTest {
         ReflectionTestUtils.setField(notificationService, "mailFrom", "noreply@photlas.jp");
     }
 
+    @AfterEach
+    void restoreDefaultTimeZone() {
+        TimeZone.setDefault(originalDefault);
+    }
+
     @Test
-    @DisplayName("Issue#113 - 隔離通知 ja: 日本語の件名・本文")
+    @DisplayName("Spec#113 - 隔離通知 ja: 日本語の件名・本文")
     void quarantineJa() {
         notificationService.sendQuarantineNotification("ja@example.com", "naegi",
                 LocalDateTime.of(2026, 3, 15, 14, 30), "ja");
@@ -74,7 +86,7 @@ class ModerationNotificationMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 隔離通知 en: 英語の件名")
+    @DisplayName("Spec#113 - 隔離通知 en: 英語の件名")
     void quarantineEn() {
         notificationService.sendQuarantineNotification("en@example.com", "naegi",
                 LocalDateTime.now(), "en");
@@ -84,7 +96,7 @@ class ModerationNotificationMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 隔離通知 ko: ハングル件名")
+    @DisplayName("Spec#113 - 隔離通知 ko: ハングル件名")
     void quarantineKo() {
         notificationService.sendQuarantineNotification("ko@example.com", "naegi",
                 LocalDateTime.now(), "ko");
@@ -94,7 +106,7 @@ class ModerationNotificationMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 隔離通知 zh-CN: 簡体中文件名")
+    @DisplayName("Spec#113 - 隔離通知 zh-CN: 簡体中文件名")
     void quarantineZhCn() {
         notificationService.sendQuarantineNotification("zhcn@example.com", "naegi",
                 LocalDateTime.now(), "zh-CN");
@@ -104,7 +116,7 @@ class ModerationNotificationMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 警告通知 ja: 違反理由が本文に含まれる")
+    @DisplayName("Spec#113 - 警告通知 ja: 違反理由が本文に含まれる")
     void warningJaIncludesReason() {
         notificationService.sendWarningNotification("ja@example.com", "naegi",
                 "不適切な投稿", "ja");
@@ -115,7 +127,7 @@ class ModerationNotificationMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 警告通知 en: 違反理由が本文に含まれる")
+    @DisplayName("Spec#113 - 警告通知 en: 違反理由が本文に含まれる")
     void warningEnIncludesReason() {
         notificationService.sendWarningNotification("en@example.com", "naegi",
                 "Inappropriate content", "en");
@@ -126,9 +138,30 @@ class ModerationNotificationMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 一時停止通知 ja: 停止期間が本文に含まれる")
+    @DisplayName("Spec#169 - 隔離通知 en: 投稿日時は UTC で、ラベル付きで書かれる")
+    void quarantineEnShowsUtcWithLabel() {
+        notificationService.sendQuarantineNotification("en@example.com", "naegi",
+                LocalDateTime.of(2026, 3, 15, 5, 30), "en");
+
+        SimpleMailMessage captured = captureSent();
+        assertThat(captured.getText()).contains("Mar 15, 2026 05:30 UTC");
+    }
+
+    @Test
+    @DisplayName("Spec#169 - 隔離通知 ko: 投稿日時は韓国時間（KST）で書かれる")
+    void quarantineKoShowsKst() {
+        notificationService.sendQuarantineNotification("ko@example.com", "naegi",
+                LocalDateTime.of(2026, 3, 15, 5, 30), "ko");
+
+        SimpleMailMessage captured = captureSent();
+        assertThat(captured.getText()).contains("2026-03-15 14:30 KST");
+    }
+
+    @Test
+    @DisplayName("Spec#113 - 一時停止通知 ja: 停止期間が本文に含まれる")
     void suspensionJaIncludesPeriod() {
-        LocalDate suspendedUntil = LocalDate.of(2026, 6, 30);
+        // 2026-06-30 03:00 UTC = 2026-06-30 12:00 JST
+        LocalDateTime suspendedUntil = LocalDateTime.of(2026, 6, 30, 3, 0);
         notificationService.sendTemporarySuspensionNotification("ja@example.com", "naegi",
                 "違反", suspendedUntil, "ja");
 
@@ -138,7 +171,7 @@ class ModerationNotificationMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 永久停止通知 ja: 適切な日本語文言")
+    @DisplayName("Spec#113 - 永久停止通知 ja: 適切な日本語文言")
     void permanentBanJa() {
         notificationService.sendPermanentSuspensionNotification("ja@example.com", "naegi",
                 "重大違反", "ja");
@@ -149,7 +182,7 @@ class ModerationNotificationMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - 永久停止通知 en: 適切な英語文言")
+    @DisplayName("Spec#113 - 永久停止通知 en: 適切な英語文言")
     void permanentBanEn() {
         notificationService.sendPermanentSuspensionNotification("en@example.com", "naegi",
                 "Severe violation", "en");
@@ -159,7 +192,7 @@ class ModerationNotificationMultiLanguageTest {
     }
 
     @Test
-    @DisplayName("Issue#113 - グループ B: メール送信失敗でも例外が外に伝播しない")
+    @DisplayName("Spec#113 - グループ B: メール送信失敗でも例外が外に伝播しない")
     void groupBFailureSwallowed() {
         doThrow(new RuntimeException("SMTP failure")).when(mailSender).send(any(SimpleMailMessage.class));
 

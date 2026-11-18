@@ -26,7 +26,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoderFactory;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Issue#81 Phase 3f - OAuth2 ログインに特化した Spring Security 設定。
+ * Spec#81 Phase 3f - OAuth2 ログインに特化した Spring Security 設定。
  *
  * <p>{@code photlas.oauth.enabled=true} のときだけ有効化される。デフォルトは無効で、
  * 既存の {@link SecurityConfig} のフィルタチェインがそのまま全パスを処理する。
@@ -108,7 +108,7 @@ public class OAuth2SecurityConfig {
     }
 
     /**
-     * Issue#99 - OIDC ID トークン署名検証用のデコーダファクトリ。
+     * Spec#99 - OIDC ID トークン署名検証用のデコーダファクトリ。
      *
      * <p>Spring Security のデフォルトは ID トークンを RS256（RSA + SHA-256）で署名されている前提で
      * 検証する。プロバイダごとに署名方式が異なるため、resolver で切り替える:
@@ -170,7 +170,7 @@ public class OAuth2SecurityConfig {
     ) throws Exception {
         http
                 .securityMatcher(SECURITY_MATCHER)
-                // Issue#99: CORS 設定（既存 SecurityConfig で定義された corsConfigurationSource Bean を使う）。
+                // Spec#99: CORS 設定（既存 SecurityConfig で定義された corsConfigurationSource Bean を使う）。
                 // これがないと /api/v1/auth/oauth2/confirm-link への POST がブラウザの CORS preflight 段階で
                 // 失敗して送信されない。
                 .cors(Customizer.withDefaults())

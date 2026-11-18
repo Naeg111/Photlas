@@ -44,12 +44,12 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Favorite.Fav
     Page<Favorite> findByUserIdExcludingDeletedUsers(@Param("userId") Long userId, Pageable pageable);
 
     /**
-     * Issue#30: 写真IDでお気に入り数をカウント
+     * Spec#30: 写真IDでお気に入り数をカウント
      */
     long countByPhotoId(Long photoId);
 
     /**
-     * Issue#108: ユーザーが付けたお気に入り全件を新しい順で取得する（エクスポート用）
+     * Spec#108: ユーザーが付けたお気に入り全件を新しい順で取得する（エクスポート用）
      */
     java.util.List<Favorite> findByUserIdOrderByCreatedAtDesc(Long userId);
 }

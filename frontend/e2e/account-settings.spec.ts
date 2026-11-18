@@ -130,7 +130,7 @@ test.describe('アカウント設定', () => {
     // 確認ボタンをクリック
     await page.getByRole('button', { name: '削除する' }).click()
 
-    // Issue#72: 退会完了メッセージが表示される
+    // Spec#72: 退会完了メッセージが表示される
     await expect(page.getByText('アカウントの削除を受け付けました')).toBeVisible({ timeout: 40000 })
     await expect(page.getByText('90日後にすべてのデータが完全に削除されます')).toBeVisible()
 
@@ -149,7 +149,7 @@ test.describe('アカウント設定', () => {
     await openLoginDialog(page)
     await performLogin(page, email, TEST_PASSWORD)
 
-    // Issue#72: ソフトデリートのためログイン拒否メッセージが表示される
+    // Spec#72: ソフトデリートのためログイン拒否メッセージが表示される
     await expect(page.getByText('このアカウントは退会済みです')).toBeVisible({ timeout: 10000 })
   })
 })

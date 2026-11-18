@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import type { Map as MapboxMap } from 'mapbox-gl'
 
 /**
- * Issue#107: Mapbox の地名ラベルを表示言語に追従させるカスタムフック。
+ * Spec#107: Mapbox の地名ラベルを表示言語に追従させるカスタムフック。
  *
  * react-map-gl の `language` prop は初回レンダリング時にしか反映されないため、
  * 言語切替時に map インスタンスへ `setLanguage()` を明示的に呼ぶ必要がある。

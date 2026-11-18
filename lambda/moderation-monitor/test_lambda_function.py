@@ -1,5 +1,5 @@
 """
-Issue#54: 監視用Lambda関数のユニットテスト
+Spec#54: 監視用Lambda関数のユニットテスト
 
 テスト実行: cd lambda/moderation-monitor && python -m pytest test_lambda_function.py -v
 """

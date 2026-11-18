@@ -7,12 +7,16 @@ import com.photlas.backend.entity.LocationSuggestion;
 import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Spot;
 import com.photlas.backend.entity.User;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
+import com.photlas.backend.exception.InvalidStateException;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.LocationSuggestionRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
 import com.photlas.backend.repository.UserRepository;
+import com.photlas.backend.util.ServerTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,13 +27,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Issue#65: 位置情報修正の指摘サービス
+ * Spec#65: 位置情報修正の指摘サービス
+ *
+ * <p>Spec#93: 利用者に知らせるエラーは、コード付きの {@link InvalidRequestException} /
+ * {@link InvalidStateException} で投げること。コードの無い {@link IllegalArgumentException} は
+ * 固定の文言の 400、{@link IllegalStateException} は想定外のエラーとして 500 になる。
  */
 @Service
 public class LocationSuggestionService {
@@ -38,8 +49,10 @@ public class LocationSuggestionService {
     private static final String ERROR_USER_NOT_FOUND = "ユーザーが見つかりません";
     private static final String ERROR_PHOTO_NOT_FOUND = "写真が見つかりません";
 
-    // Issue#146: 撮影場所指摘の距離制限（SpotRepository の haversine と同じ地球半径を使用）
+    // Spec#146: 撮影場所指摘の距離制限（SpotRepository の haversine と同じ地球半径を使用）
     private static final double EARTH_RADIUS_METERS = 6371000.0;
+    /** Spec#169: 「1日あたりの指摘件数」の「1日」の区切りに使うタイムゾーン。 */
+    private static final ZoneId JAPAN_ZONE = ZoneId.of("Asia/Tokyo");
     /** 指摘の下限距離（これ未満は近すぎる誤差レベルの指摘として拒否）。全写真共通。 */
     private static final double SUGGESTION_MIN_DISTANCE_METERS = 30.0;
     /** GPS 由来写真の指摘の上限距離（これ超は離れすぎとして拒否）。 */
@@ -88,29 +101,29 @@ public class LocationSuggestionService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
 
-        // 1日あたりの指摘件数制限
+        // 1日あたりの指摘件数制限（Spec#169: 「1日」は日本時間の 0 時で区切る）
         long dailyCount = locationSuggestionRepository.countBySuggesterIdAndCreatedAtAfter(
-                suggester.getId(), LocalDateTime.now().toLocalDate().atStartOfDay());
+                suggester.getId(), dailyLimitWindowStart(Instant.now()));
         if (dailyCount >= 10) {
-            throw new IllegalStateException("1日あたりの指摘件数の上限に達しました");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_DAILY_LIMIT, "1日あたりの指摘件数の上限に達しました");
         }
 
         // 公開中の写真のみ指摘可能
         if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
-            throw new IllegalStateException("公開中の写真のみ撮影場所の指摘ができます");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_PHOTO_NOT_PUBLIC, "公開中の写真のみ撮影場所の指摘ができます");
         }
 
         // 自分の写真には指摘できない
         if (photo.getUserId().equals(suggester.getId())) {
-            throw new IllegalStateException("自分の投稿に対して撮影場所の指摘はできません");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_OWN_PHOTO, "自分の投稿に対して撮影場所の指摘はできません");
         }
 
         // 同じ写真に対して既に指摘済みの場合はエラー
         if (locationSuggestionRepository.existsByPhotoIdAndSuggesterId(photoId, suggester.getId())) {
-            throw new IllegalStateException("この写真に対して既に撮影場所の指摘を行っています");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_ALREADY_SENT, "この写真に対して既に撮影場所の指摘を行っています");
         }
 
-        // Issue#146: 指摘の距離バリデーション（フロントをすり抜けても弾く安全網）。
+        // Spec#146: 指摘の距離バリデーション（フロントをすり抜けても弾く安全網）。
         // 基準点は写真のスポット座標（指摘ダイアログが赤マーカーで表示している座標と一致させる）。
         validateSuggestionDistance(photo, latitude, longitude);
 
@@ -171,7 +184,7 @@ public class LocationSuggestionService {
     }
 
     /**
-     * Issue#113 グループ C: 指摘承認通知メールを送信。失敗時は WARN ログのみ。
+     * Spec#113 グループ C: 指摘承認通知メールを送信。失敗時は WARN ログのみ。
      */
     private void sendAcceptanceNotification(String suggesterEmail, Long photoId, String language) {
         try {
@@ -240,7 +253,7 @@ public class LocationSuggestionService {
             User photoOwner = userRepository.findById(photo.getUserId()).orElse(null);
             if (photoOwner != null) {
                 response.setUsername(photoOwner.getUsername());
-                // Issue#145: 確認画面に投稿者アイコンを表示するため、プロフィール画像URLを返す
+                // Spec#145: 確認画面に投稿者アイコンを表示するため、プロフィール画像URLを返す
                 if (photoOwner.getProfileImageS3Key() != null) {
                     response.setProfileImageUrl(s3Service.generateCdnUrl(photoOwner.getProfileImageS3Key()));
                 }
@@ -274,7 +287,7 @@ public class LocationSuggestionService {
                 .orElseThrow(() -> new UserNotFoundException(ERROR_USER_NOT_FOUND));
 
         LocationSuggestion suggestion = locationSuggestionRepository.findByReviewToken(reviewToken)
-                .orElseThrow(() -> new IllegalArgumentException("無効なトークンです"));
+                .orElseThrow(() -> new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "無効なトークンです"));
 
         Photo photo = photoRepository.findById(suggestion.getPhotoId())
                 .orElseThrow(() -> new PhotoNotFoundException(ERROR_PHOTO_NOT_FOUND));
@@ -283,24 +296,24 @@ public class LocationSuggestionService {
             throw new AccessDeniedException("この指摘をレビューする権限がありません");
         }
 
-        // Issue#54: QUARANTINED/REMOVED写真への操作をブロック
+        // Spec#54: QUARANTINED/REMOVED写真への操作をブロック
         if (Integer.valueOf(CodeConstants.MODERATION_STATUS_QUARANTINED).equals(photo.getModerationStatus())) {
-            throw new IllegalStateException("この写真は現在審査中のため操作できません");
+            throw new InvalidStateException(ErrorCodes.PHOTO_UNDER_REVIEW, "この写真は現在審査中のため操作できません");
         }
         if (Integer.valueOf(CodeConstants.MODERATION_STATUS_REMOVED).equals(photo.getModerationStatus())) {
-            throw new IllegalStateException("この写真は削除されたため操作できません");
+            throw new InvalidStateException(ErrorCodes.PHOTO_DELETED, "この写真は削除されたため操作できません");
         }
 
-        // Issue#65: 解決済みの指摘への再操作を防止
+        // Spec#65: 解決済みの指摘への再操作を防止
         if (!Integer.valueOf(CodeConstants.SUGGESTION_STATUS_PENDING).equals(suggestion.getStatus())) {
-            throw new IllegalStateException("この指摘は既に解決済みです");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_ALREADY_RESOLVED, "この指摘は既に解決済みです");
         }
 
         return suggestion;
     }
 
     /**
-     * Issue#146: 指摘地点の距離をバリデーションする。
+     * Spec#146: 指摘地点の距離をバリデーションする。
      *
      * <p>基準点は写真のスポット座標（指摘ダイアログの赤マーカー＝写真の現在位置）。
      * 元の場所から 30m 未満（近すぎ）は全写真で拒否し、GPS 由来写真は 1km 超（離れすぎ）も
@@ -321,10 +334,10 @@ public class LocationSuggestionService {
                 latitude.doubleValue(), longitude.doubleValue());
 
         if (meters < SUGGESTION_MIN_DISTANCE_METERS) {
-            throw new IllegalStateException("元の撮影場所から 30m 以上離れた場所を指定してください");
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_TOO_CLOSE, "元の撮影場所から 30m 以上離れた場所を指定してください");
         }
         if (Boolean.TRUE.equals(photo.getLocationFromExif()) && meters > SUGGESTION_MAX_DISTANCE_METERS) {
-            throw new IllegalStateException(
+            throw new InvalidStateException(ErrorCodes.SUGGESTION_TOO_FAR,
                     "この写真は GPS の位置情報が設定されているため、元の撮影場所から 1km 以内で指定してください");
         }
     }
@@ -371,7 +384,7 @@ public class LocationSuggestionService {
     }
 
     /**
-     * Issue#113: 撮影場所指摘通知を写真投稿者に送信。
+     * Spec#113: 撮影場所指摘通知を写真投稿者に送信。
      *
      * <p>本メソッドは boolean を返す既存の契約を維持する（呼び出し側が emailSent
      * フラグで再送制御するため、グループ A 化せずに既存設計を維持）。失敗時は
@@ -395,7 +408,7 @@ public class LocationSuggestionService {
     }
 
     /**
-     * Issue#113 グループ C: 指摘拒否通知メールを送信。失敗時は WARN ログのみ。
+     * Spec#113 グループ C: 指摘拒否通知メールを送信。失敗時は WARN ログのみ。
      */
     private void sendRejectionNotification(String suggesterEmail, String language) {
         try {
@@ -415,6 +428,20 @@ public class LocationSuggestionService {
         message.setSubject(subject);
         message.setText(body);
         mailSender.send(message);
+    }
+
+    /**
+     * 「1日あたりの指摘件数」を数え始める時刻（今日の日本時間 0 時）を返す。
+     *
+     * <p>Spec#169: created_at と比べられるよう、JVM の既定のタイムゾーン（本番は UTC）の
+     * LocalDateTime にして返す。以前は JVM の日付（本番では日本時間 9 時に切り替わる）で区切っていた。</p>
+     *
+     * @param now 今の瞬間
+     * @return 今日の日本時間 0 時を、JVM の既定のタイムゾーンの時刻にしたもの
+     */
+    static LocalDateTime dailyLimitWindowStart(Instant now) {
+        LocalDate todayInJapan = LocalDate.ofInstant(now, JAPAN_ZONE);
+        return ServerTime.fromInstant(todayInJapan.atStartOfDay(JAPAN_ZONE).toInstant());
     }
 
     private String generateSecureToken() {

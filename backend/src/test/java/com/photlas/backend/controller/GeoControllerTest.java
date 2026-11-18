@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#106: GeoController（IPアドレスからの国判定エンドポイント）のテスト
+ * Spec#106: GeoController（IPアドレスからの国判定エンドポイント）のテスト
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -35,7 +35,7 @@ public class GeoControllerTest {
     private GeoIpService geoIpService;
 
     @Test
-    @DisplayName("Issue#106 - 国コードが取得できた場合 200 OK と countryCode が返される")
+    @DisplayName("Spec#106 - 国コードが取得できた場合 200 OK と countryCode が返される")
     public void testGetMyCountry_returnsCountryCode() throws Exception {
         when(geoIpService.getCountryCode(org.mockito.ArgumentMatchers.anyString())).thenReturn("JP");
 
@@ -46,7 +46,7 @@ public class GeoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#106 - 判定不能時に 200 OK と countryCode: null が返される（500エラーにしない）")
+    @DisplayName("Spec#106 - 判定不能時に 200 OK と countryCode: null が返される（500エラーにしない）")
     public void testGetMyCountry_returnsNullWhenUndetermined() throws Exception {
         when(geoIpService.getCountryCode(org.mockito.ArgumentMatchers.anyString())).thenReturn(null);
 
@@ -58,7 +58,7 @@ public class GeoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#106 - 認証なしでアクセスできる")
+    @DisplayName("Spec#106 - 認証なしでアクセスできる")
     public void testGetMyCountry_publicAccess() throws Exception {
         when(geoIpService.getCountryCode(org.mockito.ArgumentMatchers.anyString())).thenReturn("JP");
 
@@ -68,7 +68,7 @@ public class GeoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#106 - X-Forwarded-For ヘッダーがある場合、最初のIPが使用される")
+    @DisplayName("Spec#106 - X-Forwarded-For ヘッダーがある場合、最初のIPが使用される")
     public void testGetMyCountry_usesFirstIpFromXForwardedFor() throws Exception {
         when(geoIpService.getCountryCode("203.0.113.45")).thenReturn("US");
 
@@ -81,7 +81,7 @@ public class GeoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#106 - X-Forwarded-For ヘッダーがない場合、getRemoteAddr() の値が使用される")
+    @DisplayName("Spec#106 - X-Forwarded-For ヘッダーがない場合、getRemoteAddr() の値が使用される")
     public void testGetMyCountry_usesRemoteAddrWhenNoXForwardedFor() throws Exception {
         // MockMvc の標準で getRemoteAddr() は "127.0.0.1" を返す
         when(geoIpService.getCountryCode("127.0.0.1")).thenReturn(null);
@@ -93,7 +93,7 @@ public class GeoControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#106 - X-Forwarded-For が単一IPの場合も正しく処理される")
+    @DisplayName("Spec#106 - X-Forwarded-For が単一IPの場合も正しく処理される")
     public void testGetMyCountry_xForwardedForSingleIp() throws Exception {
         when(geoIpService.getCountryCode("8.8.8.8")).thenReturn("US");
 

@@ -22,7 +22,7 @@ import java.util.Optional;
 public interface PhotoRepository extends JpaRepository<Photo, Long> {
 
     /**
-     * Issue#112: 複数スポットを横断した写真ID一覧をページング取得（撮影日時降順）
+     * Spec#112: 複数スポットを横断した写真ID一覧をページング取得（撮影日時降順）
      *
      * 並び順: shot_at DESC NULLS LAST, photo_id DESC
      *  - 撮影日が新しい順
@@ -86,7 +86,7 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         @Param("offset") int offset);
 
     /**
-     * Issue#112 + Issue#141: 上記と同条件の総件数取得
+     * Spec#112 + Spec#141: 上記と同条件の総件数取得
      */
     @Query(value =
         "SELECT COUNT(*) FROM photos p " +
@@ -135,7 +135,7 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         @Param("tagIds") List<Long> tagIds);
 
     /**
-     * Issue#127: 認証ユーザー本人の PENDING_REVIEW を含めて取得するバージョン。
+     * Spec#127: 認証ユーザー本人の PENDING_REVIEW を含めて取得するバージョン。
      *
      * PUBLISHED に加え、moderation_status = 1001 かつ user_id = :viewerUserId の写真も結果に含める。
      * 他人の PENDING は除外され、プライバシーは保たれる。
@@ -195,7 +195,7 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         @Param("limit") int limit,
         @Param("offset") int offset);
 
-    /** Issue#127 + Issue#141: {@link #findPhotoIdsBySpotsPagedWithViewer} と同条件の総件数取得 */
+    /** Spec#127 + Spec#141: {@link #findPhotoIdsBySpotsPagedWithViewer} と同条件の総件数取得 */
     @Query(value =
         "SELECT COUNT(*) FROM photos p " +
         "INNER JOIN users u ON p.user_id = u.id " +
@@ -246,12 +246,12 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
         @Param("tagIds") List<Long> tagIds);
 
     /**
-     * Issue#54: モデレーションステータスで写真を検索
+     * Spec#54: モデレーションステータスで写真を検索
      */
     List<Photo> findByModerationStatus(Integer moderationStatus);
 
     /**
-     * Issue#54: サイトマップ用 - 公開中の写真を退会済みユーザーを除外して取得（ページネーション対応）
+     * Spec#54: サイトマップ用 - 公開中の写真を退会済みユーザーを除外して取得（ページネーション対応）
      */
     @Query("SELECT p FROM Photo p JOIN User u ON p.userId = u.id " +
             "WHERE p.moderationStatus = :status AND u.deletedAt IS NULL " +
@@ -260,14 +260,14 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
             @Param("status") Integer status, Pageable pageable);
 
     /**
-     * Issue#54: サイトマップ用 - 公開中の写真を退会済みユーザーを除外してカウント
+     * Spec#54: サイトマップ用 - 公開中の写真を退会済みユーザーを除外してカウント
      */
     @Query("SELECT COUNT(p) FROM Photo p JOIN User u ON p.userId = u.id " +
             "WHERE p.moderationStatus = :status AND u.deletedAt IS NULL")
     long countPublishedPhotosExcludingDeletedUsers(@Param("status") Integer status);
 
     /**
-     * Issue#136 Phase 2: タグ別キーワードランディングページ用。
+     * Spec#136 Phase 2: タグ別キーワードランディングページ用。
      * 指定タグに紐づく PUBLISHED な写真を、退会済みユーザー除外で取得する。
      *
      * <p>並び順は Pageable で指定（通常 {@code created_at DESC, photo_id DESC} の決定的ソート）。</p>
@@ -302,7 +302,7 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     Page<Photo> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     /**
-     * Issue#54: ユーザーIDとモデレーションステータスで写真を検索（ページネーション対応）
+     * Spec#54: ユーザーIDとモデレーションステータスで写真を検索（ページネーション対応）
      *
      * @param userId ユーザーID
      * @param statuses 許可するモデレーションステータスのコレクション
@@ -313,33 +313,33 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
             Long userId, Collection<Integer> statuses, Pageable pageable);
 
     /**
-     * Issue#54: モデレーションステータスで写真を検索（管理者用、ページネーション対応）
+     * Spec#54: モデレーションステータスで写真を検索（管理者用、ページネーション対応）
      */
     Page<Photo> findByModerationStatusOrderByUpdatedAtDesc(
             Integer status, Pageable pageable);
 
     /**
-     * Issue#54: S3オブジェクトキーで写真を検索（Lambdaコールバック用）
+     * Spec#54: S3オブジェクトキーで写真を検索（Lambdaコールバック用）
      */
     Optional<Photo> findByS3ObjectKey(String s3ObjectKey);
 
     /**
-     * Issue#54: 指定ステータスで指定日時より前に作成された写真の件数を取得（滞留チェック用）
+     * Spec#54: 指定ステータスで指定日時より前に作成された写真の件数を取得（滞留チェック用）
      */
     long countByModerationStatusAndCreatedAtBefore(Integer status, LocalDateTime createdAt);
 
     /**
-     * Issue#54: 指定ステータスで指定日時より前に更新された写真を取得（物理削除用）
+     * Spec#54: 指定ステータスで指定日時より前に更新された写真を取得（物理削除用）
      */
     List<Photo> findByModerationStatusAndUpdatedAtBefore(Integer status, LocalDateTime updatedAt);
 
     /**
-     * Issue#72: 指定ユーザーの全写真を取得
+     * Spec#72: 指定ユーザーの全写真を取得
      */
     List<Photo> findByUserId(Long userId);
 
     /**
-     * Issue#108: 指定ユーザーの全写真をカテゴリ JOIN FETCH で取得し、shotAt 降順で返す。
+     * Spec#108: 指定ユーザーの全写真をカテゴリ JOIN FETCH で取得し、shotAt 降順で返す。
      *
      * <p>ユーザーデータエクスポートの N+1 回避用。Photo のカテゴリは ManyToMany のため、
      * 通常クエリだと写真ごとに別 SQL が走って遅くなる（N+1 問題）。LEFT JOIN FETCH で
@@ -354,7 +354,7 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     List<Photo> findByUserIdWithCategoriesOrderByShotAtDesc(@Param("userId") Long userId);
 
     /**
-     * Issue#72: 指定スポットに写真を投稿しているアクティブユーザーのうち最も古い投稿者を取得
+     * Spec#72: 指定スポットに写真を投稿しているアクティブユーザーのうち最も古い投稿者を取得
      */
     @org.springframework.data.jpa.repository.Query(
         value = "SELECT u.* FROM users u " +

@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Issue#6: パスワードリセット機能 - パスワードリセットリクエストAPI テスト
+ * Spec#6: パスワードリセット機能 - パスワードリセットリクエストAPI テスト
  * TDD Red段階: 実装前のテストケース定義
  *
  * API要件:
@@ -257,7 +257,7 @@ public class PasswordResetRequestTest {
     }
 
     @Test
-    @DisplayName("Issue#92 - 退会済みユーザーにもリセットトークンが生成される（アカウント復旧用）")
+    @DisplayName("Spec#92 - 退会済みユーザーにもリセットトークンが生成される（アカウント復旧用）")
     void testPasswordResetRequest_DeletedUser_GeneratesToken() throws Exception {
         User user = new User();
         user.setUsername("deleteduser");

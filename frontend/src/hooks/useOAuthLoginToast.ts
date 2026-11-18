@@ -26,7 +26,7 @@ interface UseOAuthLoginToastResult {
 }
 
 /**
- * Issue#144: OAuth ログイン操作完了時の「ログインしました」トースト発火を司るフック。
+ * Spec#144: OAuth ログイン操作完了時の「ログインしました」トースト発火を司るフック。
  *
  * <p>受動的な起動（再訪）と「OAuth ログイン操作直後」を区別するため、OAuthCallbackPage が
  * セットした sessionStorage フラグ（{@link OAUTH_LOGIN_TOAST_FLAG_KEY}）を真実の情報源とする。

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 /**
- * Issue#143: 非コンテンツページ（404 / 認証・確認系 / 管理画面）に
+ * Spec#143: 非コンテンツページ（404 / 認証・確認系 / 管理画面）に
  * `<meta name="robots" content="noindex, follow">` を設定する。
  *
  * - noindex: 検索インデックスに載せない

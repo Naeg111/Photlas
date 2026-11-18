@@ -19,7 +19,8 @@
     "retry": "再試行",
     "retryWithCooldown": "再試行（あと {{seconds}} 秒）",
     "submitWithCooldown": "送信（あと {{seconds}} 秒）",
-    "back": "戻る"
+    "back": "戻る",
+    "confirm": "確定"
   },
   "auth": {
     "loginTitle": "ログイン",
@@ -35,6 +36,7 @@
     "forgotPassword": "パスワードをお忘れですか？",
     "enterBothFields": "メールアドレスとパスワードを入力してください",
     "loginSuccess": "ログインしました",
+    "logoutSuccess": "ログアウトしました",
     "loginFailed": "ログインに失敗しました",
     "noAccount": "アカウントをお持ちでない方は",
     "oauthSignupNotice": "Google、LINEアカウントで登録される方は",
@@ -76,6 +78,7 @@
     "passwordResetTitle": "パスワードリセット",
     "passwordResetDescription": "パスワードリセットリクエスト",
     "passwordResetInstruction": "登録メールアドレスを入力してください。",
+    "passwordResetSubmitHint": "入力したら送信ボタンを押してください。",
     "invalidEmailFormat": "メールアドレスの形式が正しくありません",
     "passwordResetSent": "パスワード再設定用のメールを送信しました。受信トレイをご確認ください。",
     "errorOccurred": "エラーが発生しました",
@@ -127,7 +130,9 @@
       "cancel": "キャンセル",
       "cancelledToast": "アカウント登録をキャンセルしました",
       "agreeToPrivacyPolicySuffix": "に同意する"
-    }
+    },
+    "linkedAndLoggedIn": "アカウントを連携し、ログインしました。",
+    "linkedUserFetchFailed": "連携後のユーザー情報取得に失敗しました"
   },
   "menu": {
     "title": "メニュー",
@@ -193,8 +198,8 @@
     "contributeDescription": "写真とコンテクスト情報を投稿する",
     "photoRequired": "写真（必須）",
     "selectPhoto": "写真を選択",
-    "photoFormat": "JPEG、PNG、HEIC（最大50MB）",
-    "fileSizeError": "ファイルサイズは50MB以下にしてください。",
+    "photoFormat": "JPEG、PNG、HEIC（最大{{maxSize}}）",
+    "fileSizeError": "ファイルサイズは{{maxSize}}以下にしてください。",
     "fileFormatError": "JPEG、PNG、HEIC形式のファイルのみ対応しています。",
     "photoRequiredError": "写真を選択してください。",
     "zoom": "ズーム",
@@ -240,11 +245,23 @@
     "loadMoreFailed": "次の写真の読み込みに失敗しました",
     "quarantined": "この投稿はコンテンツポリシーに違反している可能性があるため、現在非公開です。",
     "pendingReview": "この投稿は審査中です。審査完了後に公開されます。",
+    "moderationPublished": "写真が公開されました",
+    "moderationStillPending": "写真は審査中です。審査完了後に公開されます。",
+    "moderationQuarantined": "写真がコンテンツポリシーに違反している可能性があります",
     "notFound": "写真が見つかりません",
     "shootingInfo": "撮影情報",
     "suggestionSent": "指摘を送信しました",
     "suggestionFailed": "指摘の送信に失敗しました",
-    "change": "変更"
+    "change": "変更",
+    "deleteFailed": "写真の削除に失敗しました",
+    "shareFailed": "共有に失敗しました",
+    "saveSuccess": "保存しました",
+    "updateFailed": "更新に失敗しました",
+    "imageLoadFailed": "画像の読み込みに失敗しました。再度開き直してください",
+    "notSet": "未設定",
+    "imageAlt": "画像",
+    "fullSizeAlt": "フルサイズ写真",
+    "zoomLevel": "拡大: {{percent}}%"
   },
   "profile": {
     "posts": "投稿",
@@ -252,7 +269,11 @@
     "noPosts": "まだ投稿がありません",
     "noFavorites": "お気に入りはまだありません",
     "editSnsLinks": "SNSリンクを編集",
-    "duplicateUsername": "この表示名はすでに使用されています"
+    "duplicateUsername": "この表示名はすでに使用されています",
+    "imageRegisterFailed": "プロフィール画像の登録に失敗しました",
+    "accountName": "アカウント名",
+    "dialogDescription": "ユーザープロフィール情報",
+    "reportProfile": "このプロフィールを通報"
   },
   "settings": {
     "title": "アカウント設定",
@@ -383,12 +404,29 @@
     "feature6Title": "ホーム画面に追加できる",
     "feature6Text": "ブラウザからホーム画面やデスクトップに追加すると、全画面で快適に利用できます。タブレットなら大画面でマップと写真を楽しめます。"
   },
+  "aboutPage": {
+    "tagline": "写真から行ってみたい場所が見つかるサービス",
+    "intro": "写真から行ってみたい場所が見つかるサービスです。ユーザーが投稿した写真とその撮影場所を地図上から自由に探索でき、新たな旅のきっかけを生み出します。",
+    "cta": "Photlas を使ってみる",
+    "featuresTitle": "主な特徴",
+    "exploreMapTitle": "地図上でスポットを探索:",
+    "exploreMapText": "投稿された写真を地図上のピンで一覧表示することで、何気なく地図を眺めるうちに思いがけない投稿と出会い、行ってみたい場所が見つかります。",
+    "filterPostsTitle": "写真の条件で投稿を絞り込み:",
+    "filterPostsText": "カテゴリ・季節・時間帯・天候などの条件で絞り込んで、自分好みの投稿を探せます。",
+    "shareShootingInfoTitle": "撮影情報の共有:",
+    "shareShootingInfoText": "カメラ・レンズ・撮影設定など、写真の撮影情報を他のユーザーと共有できます。"
+  },
   "report": {
     "title": "この投稿を通報",
     "description": "不適切なコンテンツや問題のある投稿を通報",
     "reason": "通報理由",
     "detailRequired": "詳細説明（必須）",
-    "detailOptional": "詳細説明（任意）"
+    "detailOptional": "詳細説明（任意）",
+    "detailPlaceholder": "通報理由の詳細を入力してください（300文字以内）",
+    "submit": "通報する",
+    "success": "通報を受け付けました",
+    "failed": "通報に失敗しました",
+    "alreadyReported": "すでに通報済みです"
   },
   "location": {
     "suggestionTitle": "撮影場所の指摘",
@@ -398,6 +436,20 @@
     "suggestionTooFar": "離れすぎです。元の撮影場所から1km以内で指定してください",
     "suggestLocation": "撮影場所の指摘",
     "searchPlaceholder": "場所を検索"
+  },
+  "map": {
+    "filter": "フィルター",
+    "placeSearch": "場所検索",
+    "zoomIn": "ズームイン",
+    "zoomOut": "ズームアウト",
+    "northHeading": "ノースヘディング",
+    "currentLocation": "現在位置",
+    "post": "投稿",
+    "moveToCurrentLocation": "現在地へ移動",
+    "mapboxHome": "Mapbox ホームページ",
+    "attribution": "帰属情報",
+    "unavailable": "地図を表示できません",
+    "tokenMissing": "Mapbox アクセストークンが設定されていません"
   },
   "cookie": {
     "message": "このサイトでは、サービス改善のためにGoogle Analyticsを使用し、Cookieによるアクセス情報を収集しています。詳しくは",
@@ -411,7 +463,35 @@
     "INVALID_CREDENTIALS": "メールアドレスまたはパスワードが正しくありません",
     "ACCOUNT_SUSPENDED": "アカウントが停止されています",
     "EMAIL_NOT_VERIFIED": "メールアドレスが認証されていません。認証メール内のリンクをクリックしてください。",
-    "CONFLICT": "競合エラーが発生しました",
+    "USER_NOT_FOUND": "ユーザーが見つかりません",
+    "PHOTO_NOT_FOUND": "写真が見つかりません",
+    "SPOT_NOT_FOUND": "スポットが見つかりません",
+    "FAVORITE_NOT_FOUND": "お気に入りに登録されていません",
+    "CATEGORY_NOT_FOUND": "カテゴリが見つかりません",
+    "SELF_REPORT": "自分の投稿は通報できません",
+    "ACCESS_DENIED": "この操作を行う権限がありません",
+    "FORBIDDEN": "この操作は許可されていません",
+    "EMAIL_ALREADY_IN_USE": "このメールアドレスはすでに使用されています",
+    "EMAIL_PENDING_DELETION": "このメールアドレスは退会処理中のため、現在ご利用いただけません",
+    "ALREADY_REPORTED": "すでに通報済みです",
+    "ALREADY_FAVORITED": "すでにお気に入りに登録されています",
+    "PASSWORD_ALREADY_SET": "パスワードはすでに設定されています",
+    "INVALID_TOKEN": "リンクが無効か、有効期限が切れています。もう一度やり直してください。",
+    "TOKEN_ALREADY_USED": "このリンクはすでに使用されています",
+    "ACCOUNT_DELETED": "このアカウントは退会済みです",
+    "EMAIL_ALREADY_VERIFIED": "このメールアドレスはすでに認証済みです",
+    "SAME_EMAIL": "現在のメールアドレスと同じです",
+    "UNSUPPORTED_FILE_TYPE": "対応していないファイル形式です",
+    "SUGGESTION_DAILY_LIMIT": "1日あたりの指摘件数の上限に達しました",
+    "SUGGESTION_PHOTO_NOT_PUBLIC": "公開中の写真のみ撮影場所の指摘ができます",
+    "SUGGESTION_OWN_PHOTO": "自分の投稿に対して撮影場所の指摘はできません",
+    "SUGGESTION_ALREADY_SENT": "この写真に対してはすでに撮影場所の指摘を行っています",
+    "SUGGESTION_TOO_CLOSE": "元の撮影場所から 30m 以上離れた場所を指定してください",
+    "SUGGESTION_TOO_FAR": "この写真は GPS の位置情報が設定されているため、元の撮影場所から 1km 以内で指定してください",
+    "SUGGESTION_ALREADY_RESOLVED": "この指摘はすでに解決済みです",
+    "PHOTO_UNDER_REVIEW": "この写真は現在審査中のため操作できません",
+    "PHOTO_DELETED": "この写真は削除されたため操作できません",
+    "PHOTO_NOT_PUBLIC": "この写真は公開中ではないため操作できません",
     "unexpected": "予期しないエラーが発生しました。ページを再読み込みしてください。",
     "errorOccurred": "エラーが発生しました",
     "RATE_LIMIT_EXCEEDED": "リクエストが多すぎます。{{seconds}} 秒後に再度お試しください。",
@@ -428,7 +508,16 @@
     "USERNAME_INVALID_CHARACTER_ZERO_WIDTH": "表示名に表示されない特殊文字が含まれています。",
     "USERNAME_INVALID_CHARACTER_OTHER": "表示名に使用できない文字が含まれています。英数字・日本語（ひらがな・全角カタカナ・基本漢字）・アンダースコア・ハイフンのみ使用できます。",
     "USERNAME_INVALID_FIRST_CHARACTER": "表示名の先頭は英字または日本語にしてください（数字・アンダースコア・ハイフンは先頭に使えません）。",
-    "USERNAME_RESERVED": "この表示名は予約語のため使用できません。"
+    "USERNAME_RESERVED": "この表示名は予約語のため使用できません。",
+    "PASSWORD_REQUIRED": "パスワードを入力してください",
+    "PASSWORD_LENGTH_INVALID": "パスワードは{{min}}文字以上{{max}}文字以内で入力してください",
+    "PASSWORD_MISSING_DIGIT": "パスワードには数字を1文字以上含めてください",
+    "PASSWORD_MISSING_LOWERCASE": "パスワードにはローマ字小文字を1文字以上含めてください",
+    "PASSWORD_MISSING_UPPERCASE": "パスワードにはローマ字大文字を1文字以上含めてください",
+    "PASSWORD_CONTAINS_SYMBOL": "パスワードに記号を含めることはできません",
+    "EMAIL_REQUIRED": "メールアドレスを入力してください",
+    "EMAIL_INVALID_FORMAT": "正しいメールアドレスの形式で入力してください",
+    "dataFetchFailed": "データの取得に失敗しました"
   },
   "pages": {
     "emailVerifying": "メールアドレスを認証しています...",
@@ -565,5 +654,77 @@
   "orientation": {
     "rotateTitle": "画面を縦向きにしてください",
     "rotateDescription": "スマートフォンでは縦向きの表示のみに対応しています。端末を縦に戻すと、そのままご利用いただけます。"
+  },
+  "admin": {
+    "accessDenied": "アクセス権限がありません",
+    "backToTop": "トップに戻る",
+    "moderation": {
+      "title": "モデレーション管理",
+      "pendingCount": "{{total}}件の審査待ち",
+      "fetchFailed": "キューの取得に失敗しました",
+      "reload": "再読み込み",
+      "empty": "審査待ちの写真はありません",
+      "imageAlt": "画像",
+      "blurApply": "ぼかしを適用",
+      "blurRemove": "ぼかしを解除",
+      "poster": "投稿者: {{username}} (ID: {{userId}})",
+      "reportCount": "通報 {{total}}件",
+      "approve": "承認",
+      "reject": "拒否",
+      "approveSuccess": "写真を承認しました",
+      "approveFailed": "承認に失敗しました",
+      "rejectSuccess": "写真を拒否しました",
+      "rejectFailed": "拒否に失敗しました"
+    },
+    "deletedUsers": {
+      "title": "退会済みユーザー管理",
+      "searchPlaceholder": "メールアドレスまたは表示名で検索",
+      "empty": "退会済みユーザーはいません",
+      "remainingDays": "残り {{days}} 日",
+      "holdActive": "保持延長中"
+    },
+    "deletedUser": {
+      "title": "退会済みユーザー詳細",
+      "profileSection": "プロフィール情報",
+      "email": "メールアドレス",
+      "originalUsername": "元の表示名",
+      "deletedAt": "退会日",
+      "untilPhysicalDeletion": "物理削除まで",
+      "days": "{{days}} 日",
+      "holdUntil": "保持延長期限",
+      "photoCount": "写真数: {{total}} 枚",
+      "historySection": "違反・制裁履歴",
+      "noHistory": "履歴はありません",
+      "actionsSection": "操作",
+      "removeHold": "保持延長を解除",
+      "extendHold": "保持期間延長",
+      "export": "データエクスポート",
+      "immediateDelete": "即時削除",
+      "deleteConfirmTitle": "即時削除の確認",
+      "deleteConfirmDescription": "この操作は取り消せません。確認のため、対象ユーザーのメールアドレスを入力して確認してください。",
+      "emailConfirmPlaceholder": "メールアドレスを入力して確認",
+      "deleting": "削除中...",
+      "deletePermanently": "完全に削除する",
+      "holdDialogDescription": "延長期限日を指定してください。",
+      "extend": "延長する",
+      "fetchFailed": "データの取得に失敗しました",
+      "emailMismatch": "メールアドレスが一致しません",
+      "deleteSuccess": "ユーザーを削除しました",
+      "deleteFailed": "削除に失敗しました",
+      "holdSuccess": "保持期間を延長しました",
+      "holdFailed": "保持期間の延長に失敗しました",
+      "removeHoldSuccess": "保持期間延長を解除しました",
+      "removeHoldFailed": "解除に失敗しました",
+      "exportSuccess": "エクスポートが完了しました",
+      "exportFailed": "エクスポートに失敗しました"
+    },
+    "sanctionTypes": {
+      "warning": "警告",
+      "temporarySuspension": "一時停止",
+      "permanentSuspension": "永久停止"
+    },
+    "actionTaken": {
+      "removed": "削除"
+    }
   }
 }

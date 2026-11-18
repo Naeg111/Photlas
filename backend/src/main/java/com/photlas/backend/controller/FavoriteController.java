@@ -22,7 +22,7 @@ public class FavoriteController {
     }
 
     /**
-     * お気に入りに登録する（Issue#30）
+     * お気に入りに登録する（Spec#30）
      *
      * @param photoId 写真ID
      * @param authentication 認証情報
@@ -39,7 +39,7 @@ public class FavoriteController {
     }
 
     /**
-     * お気に入りを解除する（Issue#30）
+     * お気に入りを解除する（Spec#30）
      *
      * @param photoId 写真ID
      * @param authentication 認証情報

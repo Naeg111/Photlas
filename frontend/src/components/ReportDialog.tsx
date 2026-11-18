@@ -14,15 +14,11 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import {
   REPORT_REASON_OPTIONS,
   REASON_OTHER,
-  REASON_ADULT_CONTENT,
-  REASON_VIOLENCE,
-  REASON_COPYRIGHT_INFRINGEMENT,
-  REASON_PRIVACY_VIOLATION,
-  REASON_SPAM,
+  REPORT_REASON_I18N_KEYS,
 } from "../utils/codeConstants";
 
 /**
- * Issue#54: 通報ダイアログ
+ * Spec#54: 通報ダイアログ
  */
 
 interface ReportDialogProps {
@@ -33,15 +29,6 @@ interface ReportDialogProps {
 }
 
 const MAX_DETAILS_LENGTH = 300;
-
-const REASON_I18N_KEYS: Record<number, string> = {
-  [REASON_ADULT_CONTENT]: 'reportReasons.adult',
-  [REASON_VIOLENCE]: 'reportReasons.violence',
-  [REASON_COPYRIGHT_INFRINGEMENT]: 'reportReasons.copyright',
-  [REASON_PRIVACY_VIOLATION]: 'reportReasons.privacy',
-  [REASON_SPAM]: 'reportReasons.spam',
-  [REASON_OTHER]: 'reportReasons.other',
-};
 
 export function ReportDialog({
   open,
@@ -105,7 +92,7 @@ export function ReportDialog({
                     htmlFor={String(reason.value)}
                     className="font-normal cursor-pointer"
                   >
-                    {t(REASON_I18N_KEYS[reason.value] ?? reason.label)}
+                    {t(REPORT_REASON_I18N_KEYS[reason.value] ?? reason.label)}
                   </Label>
                 </div>
               ))}
@@ -119,7 +106,7 @@ export function ReportDialog({
             </Label>
             <Textarea
               id="details"
-              placeholder="通報理由の詳細を入力してください（300文字以内）"
+              placeholder={t('report.detailPlaceholder')}
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               className="min-h-[100px]"
@@ -146,7 +133,7 @@ export function ReportDialog({
               onClick={handleSubmit}
               disabled={isSubmitDisabled || isOverLimit}
             >
-              通報する
+              {t('report.submit')}
             </Button>
           </div>
         </div>

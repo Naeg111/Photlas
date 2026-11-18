@@ -4,7 +4,7 @@ import { TermsContentJa } from './TermsContentJa'
 
 /**
  * 既存条文の存在を確認する基本テスト。
- * Issue#105 で test ファイルを新規作成したタイミングで欠落補完。
+ * Spec#105 で test ファイルを新規作成したタイミングで欠落補完。
  */
 describe('TermsContentJa - 基本構造', () => {
   it('第1条 (適用) のセクション見出しが表示される', () => {
@@ -38,10 +38,10 @@ describe('TermsContentJa - 基本構造', () => {
 })
 
 /**
- * Issue#105: 国際対応版への格上げ。
+ * Spec#105: 国際対応版への格上げ。
  * 撮影地国の法令遵守、国際利用の注記、最低利用年齢の明示を追加する。
  */
-describe('TermsContentJa - Issue#105 国際対応版への格上げ', () => {
+describe('TermsContentJa - Spec#105 国際対応版への格上げ', () => {
   // F. 第5条 - 投稿者責任の強化（撮影地国の法令遵守）
   it('第5条に撮影地国の法令遵守に関する投稿者責任が明記されている', () => {
     const { container } = render(<TermsContentJa />)

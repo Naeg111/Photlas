@@ -9,7 +9,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Issue#136 Phase 1: ?lang=xx クエリパラメータを Spring の {@link Locale} に変換する
+ * Spec#136 Phase 1: ?lang=xx クエリパラメータを Spring の {@link Locale} に変換する
  * カスタム request-scoped resolver。
  *
  * <p>Spring の慣習: Bean 名 "localeResolver" にすることで DispatcherServlet が
@@ -27,7 +27,7 @@ import java.util.Set;
 @Component("localeResolver")
 public class TagPageQueryLocaleResolver implements LocaleResolver {
 
-    /** SSR ランディングがサポートする canonical 言語コード。Issue#135 と完全一致。 */
+    /** SSR ランディングがサポートする canonical 言語コード。Spec#135 と完全一致。 */
     static final Set<String> SUPPORTED = Set.of("en", "ja", "zh", "ko", "es");
 
     /** デフォルト言語。海外ユーザー優先のため英語。 */

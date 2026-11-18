@@ -1,7 +1,7 @@
 package com.photlas.backend.dto;
 
 /**
- * Issue#20: アカウント設定機能 - メールアドレス変更レスポンス
+ * Spec#20: アカウント設定機能 - メールアドレス変更レスポンス
  */
 public class UpdateEmailResponse {
     private String email;

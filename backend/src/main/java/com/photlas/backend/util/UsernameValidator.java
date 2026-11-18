@@ -6,9 +6,9 @@ import java.util.regex.Pattern;
 
 /**
  * 表示名バリデーター。
- * Issue#98: 表示名バリデーション強化。
+ * Spec#98: 表示名バリデーション強化。
  *
- * <p>優先順位（Issue#98 4.4 参照）:
+ * <p>優先順位（Spec#98 4.4 参照）:
  * <ol>
  *   <li>USERNAME_REQUIRED (空 / null / 空白のみ)</li>
  *   <li>USERNAME_LENGTH_INVALID (2〜12 文字の範囲外)</li>

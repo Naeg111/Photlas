@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Issue#132: EXIF 撮影情報 (R1〜R5 のルール) に基づき、カテゴリ候補の信頼度を補正する。
+ * Spec#132: EXIF 撮影情報 (R1〜R5 のルール) に基づき、カテゴリ候補の信頼度を補正する。
  *
  * <p>入力: Rekognition マッピング結果 + EXIF データ
  * 出力: 補正後のマッピング結果 + 発火したルールのイベントリスト</p>
@@ -27,8 +27,8 @@ import java.util.Set;
  * <ul>
  *   <li>R1 星空判定: 露光 ≥10s + ISO ≥800 + 夜間 → 213 +30、単独候補化 ✅</li>
  *   <li>R2 夜景判定: (a) 露光 ≥5s + ISO ≥800 + 夜間 / (b) ISO ≥2400 + 夜間 → 204 +20、単独候補化 ✅</li>
- *   <li>R3 望遠ヒント: 35mm 換算焦点距離 ≥200mm → 208/211/212 +10、単独候補化 ❌（Issue#142 で 207 を除外）</li>
- *   <li>R3.5 焦点距離振り分け: 208 候補時、≥300mm は 208 を加点 / &lt;300mm・欠落は 207 を加点し 208 を除去（Issue#142、R4 を置換）</li>
+ *   <li>R3 望遠ヒント: 35mm 換算焦点距離 ≥200mm → 208/211/212 +10、単独候補化 ❌（Spec#142 で 207 を除外）</li>
+ *   <li>R3.5 焦点距離振り分け: 208 候補時、≥300mm は 208 を加点 / &lt;300mm・欠落は 207 を加点し 208 を除去（Spec#142、R4 を置換）</li>
  *   <li>R5 山岳ヒント: GPS 標高 ≥1000m → 201 +10、単独候補化 ❌</li>
  * </ul>
  *
@@ -42,13 +42,13 @@ public class ExifBasedCategoryHints {
 
     private static final Logger logger = LoggerFactory.getLogger(ExifBasedCategoryHints.class);
 
-    /** Issue#132 3.4: 新規候補を追加する際のベース信頼度。 */
+    /** Spec#132 3.4: 新規候補を追加する際のベース信頼度。 */
     private static final float NEW_CANDIDATE_BASE_CONFIDENCE = 70f;
 
-    /** Issue#132 3.4: 信頼度の上限。 */
+    /** Spec#132 3.4: 信頼度の上限。 */
     private static final float MAX_CONFIDENCE = 100f;
 
-    /** Issue#132 R3 が +10 を加算する対象カテゴリ（Issue#142 で 207 動物を除外。望遠＝遠距離＝野生寄りの方針に合わせる）。 */
+    /** Spec#132 R3 が +10 を加算する対象カテゴリ（Spec#142 で 207 動物を除外。望遠＝遠距離＝野生寄りの方針に合わせる）。 */
     private static final Set<Integer> R3_TARGET_CATEGORIES = Set.of(
             CodeConstants.CATEGORY_WILD_BIRDS,
             CodeConstants.CATEGORY_RAILWAYS,
@@ -69,7 +69,7 @@ public class ExifBasedCategoryHints {
     private static final int R2A_MIN_ISO = 800;
     private static final int R2B_MIN_ISO = 2400;
     private static final int R3_MIN_FOCAL_35MM = 200;
-    /** R3.5 の閾値。Issue#142: {@link TagService#extractSuggestions} の小カテゴリーリマップと同一閾値を共有する（同パッケージから参照）。 */
+    /** R3.5 の閾値。Spec#142: {@link TagService#extractSuggestions} の小カテゴリーリマップと同一閾値を共有する（同パッケージから参照）。 */
     static final int R3_5_MIN_FOCAL_35MM = 300;
     private static final double R5_MIN_ALTITUDE = 1000.0;
 
@@ -159,7 +159,7 @@ public class ExifBasedCategoryHints {
         }
     }
 
-    // ========== R3.5 焦点距離による野鳥/動物の振り分け（Issue#142、R4 を置換） ==========
+    // ========== R3.5 焦点距離による野鳥/動物の振り分け（Spec#142、R4 を置換） ==========
     // 発火条件は「208(野鳥) が候補」のときだけ（= 鳥が検出された印）。207 単独では発火させない
     // （望遠で撮った犬等を野鳥へ誤分類しないため）。
     //   - 焦点距離 ≥300mm        : 野鳥(208) を加点する（除去はしない。混在写真の動物を消さないため）
@@ -239,7 +239,7 @@ public class ExifBasedCategoryHints {
     }
 
     /**
-     * Issue#132: EXIF 補正適用結果。補正後のマッピングと発火ルールのイベントを保持する。
+     * Spec#132: EXIF 補正適用結果。補正後のマッピングと発火ルールのイベントを保持する。
      *
      * @param result      補正後のマッピング結果
      * @param rulesFired  発火したルールのイベント一覧（GA4 へ送信される）

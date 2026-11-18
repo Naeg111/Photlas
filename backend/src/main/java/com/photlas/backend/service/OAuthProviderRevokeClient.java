@@ -3,7 +3,7 @@ package com.photlas.backend.service;
 import com.photlas.backend.entity.OAuthProvider;
 
 /**
- * Issue#81 Phase 4c - OAuth プロバイダ（Google / LINE）の revoke API 呼び出しを抽象化する境界インターフェース。
+ * Spec#81 Phase 4c - OAuth プロバイダ（Google / LINE）の revoke API 呼び出しを抽象化する境界インターフェース。
  *
  * <p>プロダクション実装は RestClient / HttpClient を使ってプロバイダに POST するが、
  * {@link OAuthTokenRevokeService} のユニットテストでは本インターフェースをモックし、

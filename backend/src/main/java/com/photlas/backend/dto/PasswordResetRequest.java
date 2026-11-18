@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 
 /**
  * パスワードリセットリクエストのDTO
- * Issue#6: パスワードリセット機能
+ * Spec#6: パスワードリセット機能
  *
  * POST /api/v1/auth/password-reset-request のリクエストボディ
  */

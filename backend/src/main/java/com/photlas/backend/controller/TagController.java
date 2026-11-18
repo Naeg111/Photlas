@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Issue#135: キーワード REST API。
+ * Spec#135: キーワード REST API。
  *
  * <p>{@code GET /api/v1/tags} で全アクティブタグ + カテゴリ紐付けを返す。
  * フロントは KeywordSection （投稿フォーム・検索フィルタ）で受け取り、
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/tags")
 public class TagController {
 
-    /** Issue#135 3.6 ランディングと共通: 言語未指定時のデフォルト言語。 */
+    /** Spec#135 3.6 ランディングと共通: 言語未指定時のデフォルト言語。 */
     private static final String DEFAULT_LANG = "en";
 
     private final TagService tagService;

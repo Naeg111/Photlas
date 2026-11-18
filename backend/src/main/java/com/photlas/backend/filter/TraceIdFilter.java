@@ -15,7 +15,7 @@ import java.util.UUID;
 
 /**
  * トレース ID フィルタ
- * Issue#95: X-Amzn-Trace-Id を MDC に格納し、レスポンスヘッダに X-Trace-Id として返す。
+ * Spec#95: X-Amzn-Trace-Id を MDC に格納し、レスポンスヘッダに X-Trace-Id として返す。
  *
  * 動作:
  *   - ALB ヘッダ X-Amzn-Trace-Id から Root= 部分のみを抽出して MDC に格納

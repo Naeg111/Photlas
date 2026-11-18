@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Issue#54: REMOVED投稿の物理削除サービス
+ * Spec#54: REMOVED投稿の物理削除サービス
  * REMOVEDステータスに変更されてから180日経過した写真を物理削除する
- * Issue#62: S3オブジェクト（元画像・サムネイル）も同時に削除する
+ * Spec#62: S3オブジェクト（元画像・サムネイル）も同時に削除する
  */
 @Service
 public class RemovedPhotoCleanupService {
@@ -38,9 +38,9 @@ public class RemovedPhotoCleanupService {
 
     /**
      * REMOVED投稿の物理削除を実行する
-     * 毎日午前3時に実行される
+     * 毎日午前3時（日本時間）に実行される。Spec#169: zone を指定しないと JVM（本番は UTC）の 3 時 = 日本時間 12 時になる
      */
-    @Scheduled(cron = "0 0 3 * * *")
+    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Tokyo")
     @Transactional
     public void cleanupRemovedPhotos() {
         LocalDateTime threshold = LocalDateTime.now().minusDays(RETENTION_DAYS);
@@ -52,7 +52,7 @@ public class RemovedPhotoCleanupService {
             return;
         }
 
-        // Issue#62: 写真ごとにS3削除を実行し、成功した写真のみDB削除対象に追加
+        // Spec#62: 写真ごとにS3削除を実行し、成功した写真のみDB削除対象に追加
         List<Photo> s3DeletedPhotos = new ArrayList<>();
         for (Photo photo : expiredPhotos) {
             try {

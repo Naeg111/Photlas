@@ -3,6 +3,7 @@ package com.photlas.backend.service;
 import com.photlas.backend.dto.LocationSuggestionReviewResponse;
 import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.*;
+import com.photlas.backend.exception.ErrorCodes;
 import com.photlas.backend.repository.LocationSuggestionRepository;
 import com.photlas.backend.repository.PhotoRepository;
 import com.photlas.backend.repository.SpotRepository;
@@ -29,7 +30,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * Issue#65: LocationSuggestionServiceのユニットテスト
+ * Spec#65: LocationSuggestionServiceのユニットテスト
  */
 @ExtendWith(MockitoExtension.class)
 public class LocationSuggestionServiceTest {
@@ -69,7 +70,7 @@ public class LocationSuggestionServiceTest {
 
     @org.junit.jupiter.api.BeforeEach
     void setUpEmailTemplate() {
-        // Issue#113: 共通基盤に移行したため実 ReloadableResourceBundleMessageSource を組み立てる
+        // Spec#113: 共通基盤に移行したため実 ReloadableResourceBundleMessageSource を組み立てる
         // (Mockito の varargs マッチングが信頼できないため properties 直接読み込み)
         org.springframework.context.support.ReloadableResourceBundleMessageSource source =
                 new org.springframework.context.support.ReloadableResourceBundleMessageSource();
@@ -90,7 +91,7 @@ public class LocationSuggestionServiceTest {
     // ========================================
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 正常にPENDINGで保存されメールが送信される")
+    @DisplayName("Spec#65 - 指摘作成: 正常にPENDINGで保存されメールが送信される")
     void testCreateSuggestion_Success_SavesAndSendsEmail() {
         // Arrange
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
@@ -118,7 +119,7 @@ public class LocationSuggestionServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 同じ写真に対して既に指摘済みの場合はエラー")
+    @DisplayName("Spec#65 - 指摘作成: 同じ写真に対して既に指摘済みの場合はエラー")
     void testCreateSuggestion_AlreadySuggested_ThrowsException() {
         // Arrange
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
@@ -130,11 +131,12 @@ public class LocationSuggestionServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(IllegalStateException.class)
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_ALREADY_SENT);
     }
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 自分の写真に対する指摘はエラー")
+    @DisplayName("Spec#65 - 指摘作成: 自分の写真に対する指摘はエラー")
     void testCreateSuggestion_OwnPhoto_ThrowsException() {
         // Arrange
         User owner = createMockUser(OWNER_ID, OWNER_EMAIL, "投稿者");
@@ -145,11 +147,12 @@ public class LocationSuggestionServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, OWNER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(IllegalStateException.class)
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_OWN_PHOTO);
     }
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 未解決のメール通知済み指摘がある場合、メールは送信されない")
+    @DisplayName("Spec#65 - 指摘作成: 未解決のメール通知済み指摘がある場合、メールは送信されない")
     void testCreateSuggestion_PendingExists_EmailNotSent() {
         // Arrange
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
@@ -172,7 +175,7 @@ public class LocationSuggestionServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 1日の指摘件数が上限（10件）を超えるとエラー")
+    @DisplayName("Spec#65 - 指摘作成: 1日の指摘件数が上限（10件）を超えるとエラー")
     void testCreateSuggestion_DailyLimitExceeded_ThrowsException() {
         // Arrange
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
@@ -187,11 +190,12 @@ public class LocationSuggestionServiceTest {
         // Act & Assert
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("上限");
+                .hasMessageContaining("上限")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_DAILY_LIMIT);
     }
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 公開中でない写真に対する指摘はエラー（REMOVED）")
+    @DisplayName("Spec#65 - 指摘作成: 公開中でない写真に対する指摘はエラー（REMOVED）")
     void testCreateSuggestion_RemovedPhoto_ThrowsException() {
         // Arrange
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
@@ -204,11 +208,12 @@ public class LocationSuggestionServiceTest {
         // Act & Assert
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("公開中");
+                .hasMessageContaining("公開中")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_PHOTO_NOT_PUBLIC);
     }
 
     @Test
-    @DisplayName("Issue#65 - 指摘作成: 公開中でない写真に対する指摘はエラー（QUARANTINED）")
+    @DisplayName("Spec#65 - 指摘作成: 公開中でない写真に対する指摘はエラー（QUARANTINED）")
     void testCreateSuggestion_QuarantinedPhoto_ThrowsException() {
         // Arrange
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
@@ -221,7 +226,8 @@ public class LocationSuggestionServiceTest {
         // Act & Assert
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, SUGGESTED_LAT, SUGGESTED_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("公開中");
+                .hasMessageContaining("公開中")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_PHOTO_NOT_PUBLIC);
     }
 
     // ========================================
@@ -229,7 +235,7 @@ public class LocationSuggestionServiceTest {
     // ========================================
 
     @Test
-    @DisplayName("Issue#65 - 受け入れ: ステータスがACCEPTEDに変更され、Spotが更新される")
+    @DisplayName("Spec#65 - 受け入れ: ステータスがACCEPTEDに変更され、Spotが更新される")
     void testAcceptSuggestion_Success_UpdatesSpotAndStatus() {
         // Arrange
         LocationSuggestion suggestion = createMockSuggestion();
@@ -258,7 +264,7 @@ public class LocationSuggestionServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#65 - 受け入れ: 解決後に次の未通知指摘があればメールを送信する")
+    @DisplayName("Spec#65 - 受け入れ: 解決後に次の未通知指摘があればメールを送信する")
     void testAcceptSuggestion_NextPending_SendsEmail() {
         // Arrange
         LocationSuggestion suggestion = createMockSuggestion();
@@ -292,7 +298,7 @@ public class LocationSuggestionServiceTest {
     // ========================================
 
     @Test
-    @DisplayName("Issue#65 - 拒否: ステータスがREJECTEDに変更され、指摘者にメールが送信される")
+    @DisplayName("Spec#65 - 拒否: ステータスがREJECTEDに変更され、指摘者にメールが送信される")
     void testRejectSuggestion_Success_SendsRejectionEmail() {
         // Arrange
         LocationSuggestion suggestion = createMockSuggestion();
@@ -325,7 +331,7 @@ public class LocationSuggestionServiceTest {
     // ========================================
 
     @Test
-    @DisplayName("Issue#65 - 受け入れ: ACCEPTED済みの指摘を再度受け入れるとエラー")
+    @DisplayName("Spec#65 - 受け入れ: ACCEPTED済みの指摘を再度受け入れるとエラー")
     void testAcceptSuggestion_AlreadyAccepted_ThrowsException() {
         // Arrange: ステータスがACCEPTEDの指摘
         LocationSuggestion suggestion = createMockSuggestion();
@@ -341,11 +347,12 @@ public class LocationSuggestionServiceTest {
         // Act & Assert
         assertThatThrownBy(() -> service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("解決済み");
+                .hasMessageContaining("解決済み")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_ALREADY_RESOLVED);
     }
 
     @Test
-    @DisplayName("Issue#65 - 拒否: REJECTED済みの指摘を再度拒否するとエラー")
+    @DisplayName("Spec#65 - 拒否: REJECTED済みの指摘を再度拒否するとエラー")
     void testRejectSuggestion_AlreadyRejected_ThrowsException() {
         // Arrange: ステータスがREJECTEDの指摘
         LocationSuggestion suggestion = createMockSuggestion();
@@ -361,7 +368,8 @@ public class LocationSuggestionServiceTest {
         // Act & Assert
         assertThatThrownBy(() -> service.rejectSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("解決済み");
+                .hasMessageContaining("解決済み")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_ALREADY_RESOLVED);
     }
 
     // ========================================
@@ -369,7 +377,7 @@ public class LocationSuggestionServiceTest {
     // ========================================
 
     @Test
-    @DisplayName("Issue#54 - 指摘作成: メール送信失敗時はemailSentがfalseになる")
+    @DisplayName("Spec#54 - 指摘作成: メール送信失敗時はemailSentがfalseになる")
     void testCreateSuggestion_MailSendFails_EmailSentIsFalse() {
         // Arrange
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
@@ -395,7 +403,7 @@ public class LocationSuggestionServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - sendNextPendingEmail: メール送信失敗時はemailSentがfalseのまま")
+    @DisplayName("Spec#54 - sendNextPendingEmail: メール送信失敗時はemailSentがfalseのまま")
     void testAcceptSuggestion_NextPendingMailFails_EmailSentIsFalse() {
         // Arrange
         LocationSuggestion suggestion = createMockSuggestion();
@@ -430,7 +438,7 @@ public class LocationSuggestionServiceTest {
     // ========================================
 
     @Test
-    @DisplayName("Issue#54 - 受け入れ: QUARANTINED写真への操作はブロックされる")
+    @DisplayName("Spec#54 - 受け入れ: QUARANTINED写真への操作はブロックされる")
     void testAcceptSuggestion_QuarantinedPhoto_ThrowsException() {
         LocationSuggestion suggestion = createMockSuggestion();
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -443,11 +451,12 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("審査中");
+                .hasMessageContaining("審査中")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_UNDER_REVIEW);
     }
 
     @Test
-    @DisplayName("Issue#54 - 受け入れ: REMOVED写真への操作はブロックされる")
+    @DisplayName("Spec#54 - 受け入れ: REMOVED写真への操作はブロックされる")
     void testAcceptSuggestion_RemovedPhoto_ThrowsException() {
         LocationSuggestion suggestion = createMockSuggestion();
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -460,11 +469,12 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.acceptSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("削除された");
+                .hasMessageContaining("削除された")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_DELETED);
     }
 
     @Test
-    @DisplayName("Issue#54 - 拒否: QUARANTINED写真への操作はブロックされる")
+    @DisplayName("Spec#54 - 拒否: QUARANTINED写真への操作はブロックされる")
     void testRejectSuggestion_QuarantinedPhoto_ThrowsException() {
         LocationSuggestion suggestion = createMockSuggestion();
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -477,11 +487,12 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.rejectSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("審査中");
+                .hasMessageContaining("審査中")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_UNDER_REVIEW);
     }
 
     @Test
-    @DisplayName("Issue#54 - 拒否: REMOVED写真への操作はブロックされる")
+    @DisplayName("Spec#54 - 拒否: REMOVED写真への操作はブロックされる")
     void testRejectSuggestion_RemovedPhoto_ThrowsException() {
         LocationSuggestion suggestion = createMockSuggestion();
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -494,7 +505,8 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.rejectSuggestion(REVIEW_TOKEN, OWNER_EMAIL))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("削除された");
+                .hasMessageContaining("削除された")
+                .extracting("code").isEqualTo(ErrorCodes.PHOTO_DELETED);
     }
 
     // ========================================
@@ -502,7 +514,7 @@ public class LocationSuggestionServiceTest {
     // ========================================
 
     @Test
-    @DisplayName("Issue#54 - getReviewResponse: 画像URL・表示名・場所名・撮影日時が含まれる")
+    @DisplayName("Spec#54 - getReviewResponse: 画像URL・表示名・場所名・撮影日時が含まれる")
     void testGetReviewResponse_IncludesPhotoDetails() {
         LocationSuggestion suggestion = createMockSuggestion();
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -530,7 +542,7 @@ public class LocationSuggestionServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#145 - getReviewResponse: 投稿者のプロフィール画像URLが含まれる")
+    @DisplayName("Spec#145 - getReviewResponse: 投稿者のプロフィール画像URLが含まれる")
     void testGetReviewResponse_IncludesProfileImageUrl() {
         LocationSuggestion suggestion = createMockSuggestion();
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -554,7 +566,7 @@ public class LocationSuggestionServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#145 - getReviewResponse: プロフィール画像未設定なら profileImageUrl は null")
+    @DisplayName("Spec#145 - getReviewResponse: プロフィール画像未設定なら profileImageUrl は null")
     void testGetReviewResponse_NullProfileImageUrl() {
         LocationSuggestion suggestion = createMockSuggestion();
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -575,11 +587,11 @@ public class LocationSuggestionServiceTest {
     }
 
     // ========================================
-    // Issue#90: 指摘承認通知メール
+    // Spec#90: 指摘承認通知メール
     // ========================================
 
     @Test
-    @DisplayName("Issue#90 - 受け入れ: 指摘者に承認通知メールが送信される（投稿リンク付き）")
+    @DisplayName("Spec#90 - 受け入れ: 指摘者に承認通知メールが送信される（投稿リンク付き）")
     void testAcceptSuggestion_SendsAcceptanceNotificationToSuggester() {
         // Arrange
         LocationSuggestion suggestion = createMockSuggestion();
@@ -609,7 +621,7 @@ public class LocationSuggestionServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#91 - 受け入れ: 英語ユーザーの指摘者には英語の承認通知メールが送信される")
+    @DisplayName("Spec#91 - 受け入れ: 英語ユーザーの指摘者には英語の承認通知メールが送信される")
     void testAcceptSuggestion_EnglishSuggester_SendsEnglishEmail() {
         // Arrange
         LocationSuggestion suggestion = createMockSuggestion();
@@ -640,7 +652,7 @@ public class LocationSuggestionServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#90 - 受け入れ: 承認通知メール送信失敗時も承認処理は成功する")
+    @DisplayName("Spec#90 - 受け入れ: 承認通知メール送信失敗時も承認処理は成功する")
     void testAcceptSuggestion_AcceptanceEmailFailure_DoesNotAffectAcceptance() {
         // Arrange
         LocationSuggestion suggestion = createMockSuggestion();
@@ -664,11 +676,11 @@ public class LocationSuggestionServiceTest {
     }
 
     // ========================================
-    // Issue#146: 指摘の距離バリデーション（安全網）
+    // Spec#146: 指摘の距離バリデーション（安全網）
     // ========================================
 
     @Test
-    @DisplayName("Issue#146 - 指摘作成: 元の場所から30m未満（近すぎ）はエラー")
+    @DisplayName("Spec#146 - 指摘作成: 元の場所から30m未満（近すぎ）はエラー")
     void testCreateSuggestion_TooClose_ThrowsException() {
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -683,11 +695,12 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, nearLat, ORIGINAL_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("30m");
+                .hasMessageContaining("30m")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_TOO_CLOSE);
     }
 
     @Test
-    @DisplayName("Issue#146 - 指摘作成: 境界値 29m はエラー（30m未満）")
+    @DisplayName("Spec#146 - 指摘作成: 境界値 29m はエラー（30m未満）")
     void testCreateSuggestion_29m_ThrowsException() {
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -701,11 +714,12 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, lat29, ORIGINAL_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("30m");
+                .hasMessageContaining("30m")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_TOO_CLOSE);
     }
 
     @Test
-    @DisplayName("Issue#146 - 指摘作成: 境界値 31m は成功（30m以上）")
+    @DisplayName("Spec#146 - 指摘作成: 境界値 31m は成功（30m以上）")
     void testCreateSuggestion_31m_Success() {
         BigDecimal lat31 = latOffsetMeters(ORIGINAL_LAT, 31.0);
         mockSuccessfulSuggestion(false);
@@ -717,7 +731,7 @@ public class LocationSuggestionServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#146 - 指摘作成: GPS写真は1km超（離れすぎ）はエラー")
+    @DisplayName("Spec#146 - 指摘作成: GPS写真は1km超（離れすぎ）はエラー")
     void testCreateSuggestion_ExifPhoto_TooFar_ThrowsException() {
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -733,11 +747,12 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, farLat, ORIGINAL_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("1km");
+                .hasMessageContaining("1km")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_TOO_FAR);
     }
 
     @Test
-    @DisplayName("Issue#146 - 指摘作成: GPS写真の境界値 1001m はエラー（1km超）")
+    @DisplayName("Spec#146 - 指摘作成: GPS写真の境界値 1001m はエラー（1km超）")
     void testCreateSuggestion_ExifPhoto_1001m_ThrowsException() {
         User suggester = createMockUser(SUGGESTER_ID, SUGGESTER_EMAIL, "指摘ユーザー");
         Photo photo = createMockPhoto(PHOTO_ID, OWNER_ID, SPOT_ID);
@@ -752,11 +767,12 @@ public class LocationSuggestionServiceTest {
 
         assertThatThrownBy(() -> service.createSuggestion(PHOTO_ID, SUGGESTER_EMAIL, lat1001, ORIGINAL_LNG))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("1km");
+                .hasMessageContaining("1km")
+                .extracting("code").isEqualTo(ErrorCodes.SUGGESTION_TOO_FAR);
     }
 
     @Test
-    @DisplayName("Issue#146 - 指摘作成: GPS写真の境界値 999m は成功（1km以内）")
+    @DisplayName("Spec#146 - 指摘作成: GPS写真の境界値 999m は成功（1km以内）")
     void testCreateSuggestion_ExifPhoto_999m_Success() {
         BigDecimal lat999 = latOffsetMeters(ORIGINAL_LAT, 999.0);
         mockSuccessfulSuggestion(true);
@@ -768,7 +784,7 @@ public class LocationSuggestionServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#146 - 指摘作成: GPSなし写真は1km超でも成功（上限なし）")
+    @DisplayName("Spec#146 - 指摘作成: GPSなし写真は1km超でも成功（上限なし）")
     void testCreateSuggestion_NonExifPhoto_FarAway_Success() {
         // 元の場所から約5000m（GPSなし写真なので上限なし）
         BigDecimal farLat = latOffsetMeters(ORIGINAL_LAT, 5000.0);

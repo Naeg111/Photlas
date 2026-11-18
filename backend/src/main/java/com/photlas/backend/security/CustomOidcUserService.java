@@ -4,6 +4,7 @@ import com.photlas.backend.dto.OAuth2UserInfo;
 import com.photlas.backend.entity.OAuthProvider;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.service.OAuth2UserServiceHelper;
+import com.photlas.backend.util.ServerTime;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,14 +23,13 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 /**
- * Issue#99 - OIDC フロー（scope に {@code openid} を含むプロバイダ）用の
+ * Spec#99 - OIDC フロー（scope に {@code openid} を含むプロバイダ）用の
  * {@link OAuth2UserService} 実装。
  *
  * <p>LINE は {@code openid} を含む scope を必須とし、メールアドレスは ID トークン
@@ -44,7 +44,7 @@ import java.util.Set;
  * （LINE の {@code /v2/profile} は {@code email} を返さず、追加で得られるのは
  * {@code displayName} 等のみ。{@code displayName} は仮表示名生成があるため不要）
  *
- * <p>Google は scope に {@code openid} を含めない設計（最小権限の原則 + Issue#99 で削除済み）
+ * <p>Google は scope に {@code openid} を含めない設計（最小権限の原則 + Spec#99 で削除済み）
  * のため OIDC フローには入らず、{@link CustomOAuth2UserService} で処理される。
  */
 public class CustomOidcUserService implements OAuth2UserService<OidcUserRequest, OidcUser> {
@@ -94,7 +94,7 @@ public class CustomOidcUserService implements OAuth2UserService<OidcUserRequest,
 
         OAuth2AccessToken accessToken = userRequest.getAccessToken();
         String tokenValue = accessToken != null ? accessToken.getTokenValue() : null;
-        LocalDateTime tokenExpiresAt = toLocalDateTimeUtc(
+        LocalDateTime tokenExpiresAt = toServerLocalDateTime(
                 accessToken != null ? accessToken.getExpiresAt() : null);
 
         String language = readLanguageFromSession();
@@ -142,7 +142,11 @@ public class CustomOidcUserService implements OAuth2UserService<OidcUserRequest,
         return lang != null ? Objects.toString(lang, null) : null;
     }
 
-    private static LocalDateTime toLocalDateTimeUtc(Instant instant) {
-        return instant == null ? null : LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+    /**
+     * Spec#169: トークンの期限を、JVM の既定のタイムゾーン（本番は UTC）の LocalDateTime にする。
+     * OAuthTokenRevokeService が LocalDateTime.now() と比べるため、同じタイムゾーンにそろえる。
+     */
+    private static LocalDateTime toServerLocalDateTime(Instant instant) {
+        return ServerTime.fromInstant(instant);
     }
 }

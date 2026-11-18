@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Issue#81 Phase 4f - パスワード推奨バナー制御サービス（Round 12 / Q8 / [2-G]）。
+ * Spec#81 Phase 4f - パスワード推奨バナー制御サービス（Round 12 / Q8 / [2-G]）。
  *
  * <p>判定条件（全て満たすと {@code shouldRecommend=true}）:
  * <ul>

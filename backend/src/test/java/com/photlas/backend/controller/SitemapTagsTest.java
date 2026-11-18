@@ -26,9 +26,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#135 Phase 14: サイトマップにキーワードランディングページを追加するテスト。
+ * Spec#135 Phase 14: サイトマップにキーワードランディングページを追加するテスト。
  *
- * <p>Issue#150: 写真 0 件のタグページは「ソフト404 / 薄いコンテンツ」と判定されるため、
+ * <p>Spec#150: 写真 0 件のタグページは「ソフト404 / 薄いコンテンツ」と判定されるため、
  * 公開写真が {@link TagPageController#MIN_INDEXABLE_PHOTO_COUNT} 枚以上あるタグだけを
  * サイトマップへ出力する（0 件タグは除外）。</p>
  */
@@ -64,7 +64,7 @@ class SitemapTagsTest {
         cherry = tagRepository.saveAndFlush(cherry);
         link(createPublishedPhoto(), cherry);
 
-        // 写真 0 件のアクティブキーワード（= Issue#150 でサイトマップから除外）
+        // 写真 0 件のアクティブキーワード（= Spec#150 でサイトマップから除外）
         Tag empty = newActiveTag("Empty Keyword", "empty-keyword", "空", "Empty Keyword");
         tagRepository.saveAndFlush(empty);
 
@@ -100,7 +100,7 @@ class SitemapTagsTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /api/v1/sitemap.xml: インデックスに sitemap-tags.xml が含まれる")
+    @DisplayName("Spec#135 - GET /api/v1/sitemap.xml: インデックスに sitemap-tags.xml が含まれる")
     void sitemapIndex_includesTagsSitemap() throws Exception {
         mockMvc.perform(get("/api/v1/sitemap.xml"))
                 .andExpect(status().isOk())
@@ -108,7 +108,7 @@ class SitemapTagsTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /api/v1/sitemap-tags.xml: 写真ありキーワードの 5 言語 URL を含む")
+    @DisplayName("Spec#135 - GET /api/v1/sitemap-tags.xml: 写真ありキーワードの 5 言語 URL を含む")
     void sitemapTags_containsAllLanguagesForTagsWithPhotos() throws Exception {
         mockMvc.perform(get("/api/v1/sitemap-tags.xml"))
                 .andExpect(status().isOk())
@@ -120,7 +120,7 @@ class SitemapTagsTest {
     }
 
     @Test
-    @DisplayName("Issue#150 - GET /api/v1/sitemap-tags.xml: 写真 0 件のキーワードは含まない")
+    @DisplayName("Spec#150 - GET /api/v1/sitemap-tags.xml: 写真 0 件のキーワードは含まない")
     void sitemapTags_excludesTagsWithoutPhotos() throws Exception {
         mockMvc.perform(get("/api/v1/sitemap-tags.xml"))
                 .andExpect(status().isOk())
@@ -128,7 +128,7 @@ class SitemapTagsTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /api/v1/sitemap-tags.xml: is_active=FALSE のキーワードは含まない")
+    @DisplayName("Spec#135 - GET /api/v1/sitemap-tags.xml: is_active=FALSE のキーワードは含まない")
     void sitemapTags_excludesInactiveTags() throws Exception {
         mockMvc.perform(get("/api/v1/sitemap-tags.xml"))
                 .andExpect(status().isOk())

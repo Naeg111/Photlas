@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import ResetPasswordPage from './ResetPasswordPage'
+import i18n from '../i18n'
 
 // API URL
 const RESET_PASSWORD_ENDPOINT = '/api/v1/auth/reset-password'
@@ -34,6 +35,13 @@ vi.mock('react-router-dom', async () => {
 /**
  * tokenパラメータ付きでResetPasswordPageをレンダリングする
  */
+// Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+const invalidTokenError = () =>
+  new Response(
+    JSON.stringify({ code: 'INVALID_TOKEN', message: 'トークンが無効または期限切れです' }),
+    { status: 400, headers: { 'Content-Type': 'application/json' } }
+  )
+
 const renderWithToken = (token?: string) => {
   const initialEntries = token
     ? [`/reset-password?token=${token}`]
@@ -81,7 +89,7 @@ describe('ResetPasswordPage', () => {
       expect(document.title).toBe('パスワードの再設定 - Photlas')
     })
 
-    it('Issue#110 - ページ全体の外側コンテナの背景が bg-black である', () => {
+    it('Spec#110 - ページ全体の外側コンテナの背景が bg-black である', () => {
       const { container } = renderWithToken(VALID_TOKEN)
 
       const outer = container.querySelector('.min-h-screen')
@@ -89,7 +97,7 @@ describe('ResetPasswordPage', () => {
       expect(outer).not.toHaveClass('bg-gray-50')
     })
 
-    it('Issue#110 - tokenなしのエラー画面でも背景が bg-black である', () => {
+    it('Spec#110 - tokenなしのエラー画面でも背景が bg-black である', () => {
       const { container } = renderWithToken()
 
       const outer = container.querySelector('.min-h-screen')
@@ -267,12 +275,7 @@ describe('ResetPasswordPage', () => {
 
   describe('エラーハンドリング', () => {
     it('トークンが無効な場合、エラーメッセージが表示される', async () => {
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: 'トークンが無効または期限切れです' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      )
+      mockFetch.mockResolvedValueOnce(invalidTokenError())
 
       renderWithToken(VALID_TOKEN)
 
@@ -285,8 +288,11 @@ describe('ResetPasswordPage', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('トークンが無効または期限切れです')).toBeInTheDocument()
+        expect(
+          screen.getByText('リンクが無効か、有効期限が切れています。もう一度やり直してください。')
+        ).toBeInTheDocument()
       })
+      expect(screen.queryByText('トークンが無効または期限切れです')).not.toBeInTheDocument()
     })
 
     it('通信エラー時にエラーメッセージが表示される', async () => {
@@ -308,7 +314,7 @@ describe('ResetPasswordPage', () => {
     })
   })
 
-  // Issue#96 PR2b: 429 レート制限ハンドリング（パターンA: フォーム送信系）
+  // Spec#96 PR2b: 429 レート制限ハンドリング（パターンA: フォーム送信系）
   describe('Rate Limit (429) - レート制限', () => {
     it('パスワードリセットで429を受信したらレート制限メッセージをインライン表示する', async () => {
       mockFetch.mockResolvedValueOnce(
@@ -382,6 +388,44 @@ describe('ResetPasswordPage', () => {
           screen.getByText('リクエストが多すぎます。60 秒後に再度お試しください。')
         ).toBeInTheDocument()
       })
+    })
+  })
+
+  describe('Spec#93 追加対応: 表示言語', () => {
+    it('英語の設定では、タブ名とパスワードの入力エラーが英語で表示される', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        renderWithToken(VALID_TOKEN)
+        expect(document.title).toBe('Reset Password - Photlas')
+
+        fireEvent.change(screen.getByLabelText('New Password'), { target: { value: WEAK_PASSWORD } })
+        fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: WEAK_PASSWORD } })
+        fireEvent.click(screen.getByRole('button', { name: 'Reset Password' }))
+
+        expect(await screen.findByText('Password must be between 8 and 20 characters.')).toBeInTheDocument()
+        expect(screen.queryByText(/パスワードは8文字以上/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
+    it('Spec#93 - 英語の設定では、トークンが無効なときのエラーが英語で表示される', async () => {
+      mockFetch.mockResolvedValueOnce(invalidTokenError())
+      await i18n.changeLanguage('en')
+      try {
+        renderWithToken(VALID_TOKEN)
+
+        fireEvent.change(screen.getByLabelText('New Password'), { target: { value: VALID_PASSWORD } })
+        fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: VALID_PASSWORD } })
+        fireEvent.click(screen.getByRole('button', { name: 'Reset Password' }))
+
+        expect(
+          await screen.findByText('This link is invalid or has expired. Please try again.')
+        ).toBeInTheDocument()
+        expect(screen.queryByText('トークンが無効または期限切れです')).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
   })
 })

@@ -1,12 +1,14 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { PhotoLightbox } from './PhotoLightbox'
+import { toast } from 'sonner'
+import i18n from '../i18n'
 
 /**
  * PhotoLightbox コンポーネントのテスト
- * Issue#27: パネル・ダイアログ群の移行
- * Issue#88: ローディング表示テスト追加
+ * Spec#27: パネル・ダイアログ群の移行
+ * Spec#88: ローディング表示テスト追加
  *
  * 写真を全画面で拡大表示するライトボックス
  */
@@ -19,7 +21,7 @@ vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
 
-// Issue#65: sonnerのモック
+// Spec#65: sonnerのモック
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }))
@@ -63,6 +65,38 @@ describe('PhotoLightbox', () => {
     vi.unstubAllGlobals()
   })
 
+  describe('Spec#93 追加対応: 言語の切り替え', () => {
+    afterEach(async () => {
+      await act(async () => {
+        await i18n.changeLanguage('ja')
+      })
+    })
+
+    it('開いている間に言語が切り替わっても、画像を取り直さない', async () => {
+      render(<PhotoLightbox {...defaultProps} />)
+      await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1))
+
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+
+      expect(fetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('読み込みに失敗したら、今の言語でお知らせを出す', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')))
+      await act(async () => {
+        await i18n.changeLanguage('en')
+      })
+
+      render(<PhotoLightbox {...defaultProps} />)
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith('Failed to load image. Please close and open it again.')
+      )
+    })
+  })
+
   describe('UI Elements - UI要素', () => {
     it('renders lightbox when open prop is true', async () => {
       render(<PhotoLightbox {...defaultProps} />)
@@ -91,7 +125,7 @@ describe('PhotoLightbox', () => {
 
       await waitFor(() => {
         const image = screen.getByAltText('フルサイズ写真')
-        // Issue#88: BlobURLで表示されるため、src属性はblob:で始まる
+        // Spec#88: BlobURLで表示されるため、src属性はblob:で始まる
         expect(image).toHaveAttribute('src', expect.stringContaining('blob:'))
       })
     })
@@ -133,8 +167,8 @@ describe('PhotoLightbox', () => {
     })
   })
 
-  // ===== Issue#88: ローディング表示テスト =====
-  describe('Issue#88: オリジナル画像ローディング表示', () => {
+  // ===== Spec#88: ローディング表示テスト =====
+  describe('Spec#88: オリジナル画像ローディング表示', () => {
     it('画像読み込み中にローディング画面が表示される（200ms超過時）', async () => {
       // fetch をモックして遅延させる（ReadableStreamで進捗取得を想定）
       const mockFetch = vi.fn().mockImplementation(
@@ -198,6 +232,23 @@ describe('PhotoLightbox', () => {
 
       // ZOOM_DELTA=0.1でズームインし、110%になることを確認
       expect(screen.getByText('拡大: 110%')).toBeInTheDocument()
+    })
+  })
+
+  describe('Spec#93 追加対応: 表示言語', () => {
+    it('英語の設定では、拡大率と写真の代替テキストが英語になる', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        render(<PhotoLightbox {...defaultProps} />)
+
+        await waitFor(() => {
+          expect(screen.getByAltText('Full-size photo')).toBeInTheDocument()
+        })
+        expect(screen.getByText('Zoom: 100%')).toBeInTheDocument()
+        expect(screen.queryByText(/拡大:/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
   })
 })

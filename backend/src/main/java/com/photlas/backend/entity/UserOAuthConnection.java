@@ -10,7 +10,7 @@ import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 /**
- * Issue#81 Phase 2 - ユーザー OAuth 連携エンティティ（Red 段階のスケルトン）
+ * Spec#81 Phase 2 - ユーザー OAuth 連携エンティティ（Red 段階のスケルトン）
  *
  * 1 ユーザー 1 プロバイダ制限（Round 11 / Q5）：UNIQUE(user_id, provider_code)。
  * access_token は AES-256-GCM で暗号化して保存（Round 12 / Q9）。

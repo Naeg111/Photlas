@@ -9,8 +9,8 @@ import { PrivacyContentZhTW } from './PrivacyContentZhTW'
 
 /**
  * PrivacyPolicyPage コンポーネント
- * Issue#52: プライバシーポリシーの文面改訂
- * Issue#101: 5 言語対応 + ハードコード日本語の i18n 化
+ * Spec#52: プライバシーポリシーの文面改訂
+ * Spec#101: 5 言語対応 + ハードコード日本語の i18n 化
  *
  * プライバシーポリシーを表示するダイアログ。
  * 言語設定に応じて 5 言語 (ja / en / ko / zh-CN / zh-TW) を切り替える。
@@ -44,7 +44,7 @@ export function PrivacyPolicyPage({
         {/* Fixed header */}
         <div className="px-6 pt-6 pb-2 shrink-0">
           <DialogHeader>
-            {/* Issue#101: i18n 化（auth.privacyPolicy: ja=プライバシーポリシー / en=Privacy Policy / ko=개인정보처리방침 / zh-CN=隐私政策 / zh-TW=隱私政策） */}
+            {/* Spec#101: i18n 化（auth.privacyPolicy: ja=プライバシーポリシー / en=Privacy Policy / ko=개인정보처리방침 / zh-CN=隐私政策 / zh-TW=隱私政策） */}
             <DialogTitle>{t('auth.privacyPolicy')}</DialogTitle>
             <DialogDescription className="sr-only">
               {t('auth.privacyPolicy')}

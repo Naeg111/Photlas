@@ -15,7 +15,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Issue#81 Phase 3e - OAuth ログイン成功時のハンドラ。
+ * Spec#81 Phase 3e - OAuth ログイン成功時のハンドラ。
  *
  * <p>認証成功後、{@link PhotlasOAuth2User} から {@code User} を取り出し、
  * {@link JwtService} で JWT を発行。ブラウザ履歴・サーバログに残さないため

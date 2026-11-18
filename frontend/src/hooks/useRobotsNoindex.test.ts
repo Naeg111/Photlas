@@ -1,5 +1,5 @@
 /**
- * useRobotsNoindex フックのテスト (Issue#143)
+ * useRobotsNoindex フックのテスト (Spec#143)
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { renderHook, cleanup } from '@testing-library/react'

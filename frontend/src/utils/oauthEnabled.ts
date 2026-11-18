@@ -1,5 +1,5 @@
 /**
- * Issue#81 Phase 8g - OAuth 機能の有効判定ユーティリティ。
+ * Spec#81 Phase 8g - OAuth 機能の有効判定ユーティリティ。
  *
  * <p>ビルド時の {@code VITE_OAUTH_ENABLED} 環境変数を評価する。
  * {@code OAuthButtons} や {@code App.tsx} の新規登録分岐など、

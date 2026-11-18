@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRobotsNoindex } from '../hooks/useRobotsNoindex'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Search, UserX } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -17,12 +18,13 @@ interface DeletedUser {
 }
 
 /**
- * Issue#73: 退会済みユーザー管理ページ
+ * Spec#73: 退会済みユーザー管理ページ
  */
 export default function AdminDeletedUsersPage() {
   useRobotsNoindex()
   const navigate = useNavigate()
   const { getAuthToken } = useAuth()
+  const { t } = useTranslation()
   const [users, setUsers] = useState<DeletedUser[]>([])
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -63,13 +65,13 @@ export default function AdminDeletedUsersPage() {
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-lg font-semibold">退会済みユーザー管理</h1>
+        <h1 className="text-lg font-semibold">{t('admin.deletedUsers.title')}</h1>
       </div>
 
       <div className="p-4">
         <div className="flex gap-2 mb-4">
           <Input
-            placeholder="メールアドレスまたは表示名で検索"
+            placeholder={t('admin.deletedUsers.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -80,10 +82,10 @@ export default function AdminDeletedUsersPage() {
         </div>
 
         {isLoading && (
-          <div className="text-center py-8 text-gray-500">読み込み中...</div>
+          <div className="text-center py-8 text-gray-500">{t('common.loading')}</div>
         )}
         {!isLoading && users.length === 0 && (
-          <div className="text-center py-8 text-gray-500">退会済みユーザーはいません</div>
+          <div className="text-center py-8 text-gray-500">{t('admin.deletedUsers.empty')}</div>
         )}
         {!isLoading && users.length > 0 && (
           <div className="space-y-2">
@@ -102,10 +104,10 @@ export default function AdminDeletedUsersPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-500">残り {user.remaining_days} 日</p>
+                    <p className="text-sm text-gray-500">{t('admin.deletedUsers.remainingDays', { days: user.remaining_days })}</p>
                     {user.hold_active && (
                       <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
-                        保持延長中
+                        {t('admin.deletedUsers.holdActive')}
                       </span>
                     )}
                   </div>

@@ -1,7 +1,7 @@
 /**
  * フィルター条件の変換ユーティリティ
- * Issue#16: フィルター機能 - UI表示値からAPI値への変換
- * Issue#87: 数値コード対応
+ * Spec#16: フィルター機能 - UI表示値からAPI値への変換
+ * Spec#87: 数値コード対応
  *
  * FilterPanelで選択された日本語の値をバックエンドAPIが期待する数値コードに変換する
  */
@@ -86,10 +86,10 @@ export function transformDeviceTypes(deviceTypes: string[]): number[] {
  * 1. Categories API エンドポイントを作成して全カテゴリーを取得
  * 2. カテゴリー名からIDへの変換を行う
  *
- * Issue#16メモ: "街並み" は DBでは "都市・街並み" として格納されている可能性あり
+ * Spec#16メモ: "街並み" は DBでは "都市・街並み" として格納されている可能性あり
  */
 export function transformCategories(categories: string[]): string[] {
-  // Issue#63: 14ジャンルに拡充（ポートレート削除、建造物・夜景・野鳥追加、風景→自然風景、食べ物→グルメ）
+  // Spec#63: 14ジャンルに拡充（ポートレート削除、建造物・夜景・野鳥追加、風景→自然風景、食べ物→グルメ）
   const mapping: Record<string, string> = {
     '自然風景': '自然風景',
     '街並み': '街並み',

@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
- * Issue#132: 写真の EXIF 撮影情報のうち、カテゴリ判定に用いるタグを保持する DTO。
+ * Spec#132: 写真の EXIF 撮影情報のうち、カテゴリ判定に用いるタグを保持する DTO。
  *
  * <p>各フィールドは Optional とし、EXIF が剥がされた写真や該当タグがない場合は
  * {@link Optional#empty()} とする。</p>

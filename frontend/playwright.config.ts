@@ -28,6 +28,10 @@ export default defineConfig({
     // ベースURL（開発サーバー）
     baseURL: 'http://localhost:5173',
 
+    // Spec#93 以降、表示言語はブラウザの言語で決まる。テストは日本語の文言で書いているので、日本語に固定する
+    // （指定しないと Chromium は en-US になり、画面が英語で出る）
+    locale: 'ja-JP',
+
     // スクリーンショット設定（失敗時のみ）
     screenshot: 'only-on-failure',
 

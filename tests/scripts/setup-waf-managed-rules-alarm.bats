@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
 #
 # Specification-driven tests for scripts/setup-waf-managed-rules-alarm.sh
-# Source of truth: documents/04_Issues/Issue#97.md §3.5
+# Source of truth: documents/spec/SPEC-0097.md §3.5
 #
 # Verifies the Count-mode alarm setup script creates 4 CloudWatch alarms
 # (one per managed rule) that watch CountedRequests and publish to the
-# existing Issue#94 SNS topic photlas-waf-alerts.
+# existing Spec#94 SNS topic photlas-waf-alerts.
 #
 # Alarms and thresholds (§3.5):
 #   photlas-waf-IpReputation-Counted    : 100 per 5 min
@@ -40,14 +40,14 @@ SCRIPT="$SCRIPTS_DIR/setup-waf-managed-rules-alarm.sh"
   assert_contains "$SCRIPT" 'ap-northeast-1'
 }
 
-# --- SNS topic reuse (Issue#94) ---------------------------------------------
+# --- SNS topic reuse (Spec#94) ---------------------------------------------
 
 @test "setup-waf-managed-rules-alarm.sh: reuses SNS topic photlas-waf-alerts" {
   assert_contains "$SCRIPT" 'photlas-waf-alerts'
 }
 
 @test "setup-waf-managed-rules-alarm.sh: looks up existing SNS topic (does not recreate)" {
-  # Issue#97 §3.5: 「既存 SNS `photlas-waf-alerts`（Issue#94 既存）を流用」
+  # Spec#97 §3.5: 「既存 SNS `photlas-waf-alerts`（Spec#94 既存）を流用」
   # The script should list or look up the existing topic, not call create-topic.
   assert_matches "$SCRIPT" 'sns list-topics|sns get-topic-attributes'
 }
@@ -94,7 +94,7 @@ SCRIPT="$SCRIPTS_DIR/setup-waf-managed-rules-alarm.sh"
   assert_contains "$SCRIPT" 'photlas-waf-IpReputation-Counted'
 }
 
-# --- Thresholds (Issue#97 §3.5) ---------------------------------------------
+# --- Thresholds (Spec#97 §3.5) ---------------------------------------------
 
 @test "setup-waf-managed-rules-alarm.sh: CommonRuleSet threshold is 50 per 5 min" {
   assert_matches "$SCRIPT" 'CommonRuleSet[[:space:]]*"[[:space:]]*\\\\?[[:space:]]*(50|"50")|(^|[^0-9])50([^0-9]|$)[^/]*CommonRuleSet|CommonRuleSet[^0-9]+50($|[^0-9])'
@@ -126,7 +126,7 @@ SCRIPT="$SCRIPTS_DIR/setup-waf-managed-rules-alarm.sh"
   assert_matches "$SCRIPT" 'Name=Region|"Name":[[:space:]]*"Region"'
 }
 
-# --- Resource tags (Issue#97 §3.5 タグ) -------------------------------------
+# --- Resource tags (Spec#97 §3.5 タグ) -------------------------------------
 
 @test "setup-waf-managed-rules-alarm.sh: tags alarms with Project=Photlas" {
   assert_contains "$SCRIPT" 'Project'
@@ -138,7 +138,7 @@ SCRIPT="$SCRIPTS_DIR/setup-waf-managed-rules-alarm.sh"
 }
 
 @test "setup-waf-managed-rules-alarm.sh: tags alarms with ManagedBy=Issue-97 (hyphen)" {
-  # AWS タグ値には '#' が使えないためハイフン表記（Issue#94 と同じ方針）
+  # AWS タグ値には '#' が使えないためハイフン表記（Spec#94 と同じ方針）
   assert_contains "$SCRIPT" 'ManagedBy=Issue-97'
 }
 

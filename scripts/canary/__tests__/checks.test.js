@@ -1,4 +1,4 @@
-// Issue#148: 死活監視 canary の検証ロジック（純粋関数）のテスト。
+// Spec#148: 死活監視 canary の検証ロジック（純粋関数）のテスト。
 //
 // scripts/canary/checks.mjs は、本番 photlas.jp の /tags・/photo-viewer を
 // 外形監視するために「レスポンス本文・ヘッダから §3 の条件を満たすか」を
@@ -6,7 +6,7 @@
 // ここで単体テストして退化を防ぐ（実際の HTTP 取得・Synthetics 連携は
 // seo-canary.js 側＝ランタイム依存のため本テスト対象外）。
 //
-// Source of truth: documents/04_Issues/Issue#148.md §3 / §4.1 / §4.2
+// Source of truth: documents/spec/SPEC-0148.md §3 / §4.1 / §4.2
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');

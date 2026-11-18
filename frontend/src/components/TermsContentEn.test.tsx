@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { TermsContentEn } from './TermsContentEn'
 
 /**
- * Basic structure tests - newly added in Issue#105 to compensate for the
+ * Basic structure tests - newly added in Spec#105 to compensate for the
  * missing test coverage of the English Terms content.
  */
 describe('TermsContentEn - Basic structure', () => {
@@ -34,11 +34,11 @@ describe('TermsContentEn - Basic structure', () => {
 })
 
 /**
- * Issue#105: International upgrade.
+ * Spec#105: International upgrade.
  * Add: filming-location law compliance, international usage notice,
  * and minimum age requirement.
  */
-describe('TermsContentEn - Issue#105 International upgrade', () => {
+describe('TermsContentEn - Spec#105 International upgrade', () => {
   // F. Article 5 - Filming-location law compliance
   it('Article 5 covers poster responsibility for laws of the filming location', () => {
     const { container } = render(<TermsContentEn />)

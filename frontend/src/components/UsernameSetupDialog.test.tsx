@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import UsernameSetupDialog from './UsernameSetupDialog'
 import { AuthProvider } from '../contexts/AuthContext'
+import i18n from '../i18n'
 
 const mockFetch = vi.fn()
 
@@ -85,22 +86,42 @@ describe('UsernameSetupDialog', () => {
     })
   })
 
-  it('API エラー時はエラーメッセージが表示され onClose は呼ばれない', async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ message: 'USERNAME_TAKEN' }), {
-        status: 409,
-        headers: { 'Content-Type': 'application/json' },
-      })
+  // Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+  const serverError = () =>
+    new Response(
+      JSON.stringify({ code: 'INTERNAL_ERROR', message: 'サーバーエラーが発生しました' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
+
+  it('API エラー時はエラーメッセージが表示され onClose は呼ばれない', async () => {
+    mockFetch.mockResolvedValueOnce(serverError())
     const onClose = vi.fn()
     renderDialog({ initialUsername: 'alice', onClose })
 
     await userEvent.click(screen.getByRole('button', { name: '確定する' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(/USERNAME_TAKEN/)
+      expect(screen.getByRole('alert')).toHaveTextContent('エラーが発生しました')
     })
+    expect(screen.queryByText('サーバーエラーが発生しました')).not.toBeInTheDocument()
     expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('Spec#93 - 英語の設定では API エラーが英語で表示される', async () => {
+    mockFetch.mockResolvedValueOnce(serverError())
+    await i18n.changeLanguage('en')
+    try {
+      renderDialog({ initialUsername: 'alice' })
+
+      await userEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toHaveTextContent('An error occurred')
+      })
+      expect(screen.queryByText(/サーバーエラー/)).not.toBeInTheDocument()
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
   })
 
   it('「後で設定する」クリックで onClose のみ呼ばれる', async () => {

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Issue#54: 違反履歴エンティティ
+ * Spec#54: 違反履歴エンティティ
  */
 @Entity
 @Table(name = "violations", indexes = {

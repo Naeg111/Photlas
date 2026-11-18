@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Issue#81 Phase 2 - UserOAuthConnection リポジトリ。
+ * Spec#81 Phase 2 - UserOAuthConnection リポジトリ。
  *
  * 要件:
  *   - user_id で連携一覧を取得

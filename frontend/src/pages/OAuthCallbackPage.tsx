@@ -4,9 +4,10 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AUTH_CHANGED_EVENT } from '../contexts/AuthContext'
 import { OAUTH_LOGIN_TOAST_FLAG_KEY } from '../config/app'
+import { applyAccountLanguage } from '../i18n'
 
 /**
- * Issue#81 Phase 5a - OAuth コールバックページ。
+ * Spec#81 Phase 5a - OAuth コールバックページ。
  *
  * バックエンドの OAuth2LoginSuccessHandler / OAuth2LoginFailureHandler から
  * `/oauth/callback#...` にリダイレクトされてくる。
@@ -56,7 +57,7 @@ export default function OAuthCallbackPage() {
     // 成功: access_token
     const accessToken = params.get('access_token')
     if (accessToken) {
-      // Issue#104: requires_username_setup の URL パラメータは廃止（/users/me のサーバー応答を真実の情報源とする）
+      // Spec#104: requires_username_setup の URL パラメータは廃止（/users/me のサーバー応答を真実の情報源とする）
       completeLogin(accessToken, navigate).catch(() => {
         setStatus('error')
         setErrorMessage(t('auth.errorOccurred'))
@@ -155,7 +156,11 @@ async function completeLogin(
     language: userData.language,
   }))
 
-  // Issue#144: OAuth ログイン操作が「今」完了したことを示すフラグをセットする。
+  // Spec#93: ログイン後は DB の言語設定で表示言語と localStorage を上書きする。
+  // PWA では直後に画面を読み直すため、localStorage への保存を先に済ませておく（applyAccountLanguage 内で同期的に保存）。
+  void applyAccountLanguage(userData.language)
+
+  // Spec#144: OAuth ログイン操作が「今」完了したことを示すフラグをセットする。
   // App.tsx（MainContent）の /users/me チェックがこれを読み、受動的な起動と区別して
   // 「ログインしました」トーストを出す。AUTH_CHANGED_EVENT が App 側の checkUserStatus を
   // 起動するため、必ず dispatch の前にセットする。連携経路（link_confirmation_token）は
@@ -180,7 +185,7 @@ async function completeLogin(
   }
 
   // 通常ブラウザ: そのままホームへ遷移
-  // Issue#104: URL パラメータ方式は廃止し、ホームに統一リダイレクト
+  // Spec#104: URL パラメータ方式は廃止し、ホームに統一リダイレクト
   // 仮表示名／同意未済の判定は App.tsx のマウント時 /users/me チェックで行う（§4.18 / §4.14）
   navigate('/', { replace: true })
 }

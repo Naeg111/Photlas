@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { API_V1_URL } from '../config/api'
 import { isInAppBrowser } from '../utils/isInAppBrowser'
+import { getErrorCode, translateErrorCode } from '../utils/apiErrorMessage'
 
 /**
- * Issue#110: メールアドレス変更完了マーカーの localStorage キー。
+ * Spec#110: メールアドレス変更完了マーカーの localStorage キー。
  * 認証成功時にこのキーへタイムスタンプを書き込むことで、
  * 同一ブラウザの別タブにある App.tsx が `storage` イベントで検知し、
  * 古いセッションを破棄してログインダイアログを開く。
@@ -15,12 +16,12 @@ import { isInAppBrowser } from '../utils/isInAppBrowser'
 export const EMAIL_JUST_CHANGED_KEY = 'email_just_changed'
 
 /**
- * Issue#86: メールアドレス変更確認ページ
+ * Spec#86: メールアドレス変更確認ページ
  *
  * 確認リンクからアクセスされるページ。
  * URL の token パラメータを使って確認 API を呼び出す。
  *
- * Issue#110 の対応により以下の動作になる:
+ * Spec#110 の対応により以下の動作になる:
  * - 認証成功時に logout() を呼んで古いセッションを破棄する（再ログインを強制）
  * - localStorage へマーカーを書き込み、別タブにも再ログインを促す
  * - 自動遷移は行わない。ユーザーが「Photlasを開く」リンクで自分から遷移する
@@ -52,7 +53,7 @@ export default function ConfirmEmailChangePage() {
         )
 
         if (response.ok) {
-          // Issue#110: 自動ログイン更新は行わず、再ログインを強制する
+          // Spec#110: 自動ログイン更新は行わず、再ログインを強制する
           //   - 古いセッション（旧メアドの JWT）を破棄
           //   - 別タブにマーカーで通知（同一ブラウザの別タブのみ反映）
           logout()
@@ -64,7 +65,7 @@ export default function ConfirmEmailChangePage() {
         } else {
           const data = await response.json().catch(() => null)
           setStatus('error')
-          setErrorMessage(data?.message || t('auth.errorOccurred'))
+          setErrorMessage(translateErrorCode(getErrorCode(data), t, 'auth.errorOccurred'))
         }
       } catch {
         setStatus('error')

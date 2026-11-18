@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#81 Phase 4a - {@link DeleteAccountRequestValidator} のテスト（Red 段階）。
+ * Spec#81 Phase 4a - {@link DeleteAccountRequestValidator} のテスト（Red 段階）。
  *
  * <p>Round 12 四次精査 / Q15 / [4-A-T1〜T3] の TDD ケースを包含:
  * <ul>

@@ -1,7 +1,7 @@
 package com.photlas.backend.dto;
 
 /**
- * Issue#135: Rekognition ラベルから抽出された AI 提案キーワード。
+ * Spec#135: Rekognition ラベルから抽出された AI 提案キーワード。
  *
  * <p>{@code PhotoAnalyzeResponse.suggestedTags} の要素として
  * フロントエンドに返却され、投稿フォームのキーワードプリフィルに使われる。</p>

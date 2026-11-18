@@ -6,7 +6,7 @@ import FilterButton from './FilterButton'
  * FilterButton コンポーネントのテスト
  * TDD Red-Green-Refactor サイクルでの開発
  * 
- * Issue#1 要件:
+ * Spec#1 要件:
  * - フィルターボタンの表示
  * - クリック可能
  * - 適切なスタイリング

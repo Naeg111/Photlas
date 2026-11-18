@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import AdminDeletedUsersPage from './AdminDeletedUsersPage'
 import { ROLE_ADMIN } from '../utils/codeConstants'
+import i18n from '../i18n'
 
 // Mock fetch
 const mockFetch = vi.fn()
@@ -70,5 +71,41 @@ describe('AdminDeletedUsersPage', () => {
 
     expect(await screen.findByText('deleted@example.com')).toBeInTheDocument()
     expect(screen.getByText('deleteduser')).toBeInTheDocument()
+  })
+
+  it('Spec#93 追加対応: 言語設定が英語なら英語で表示する', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        content: [
+          {
+            user_id: 1,
+            email: 'deleted@example.com',
+            original_username: 'deleteduser',
+            deleted_at: '2026-03-01T00:00:00',
+            remaining_days: 65,
+            hold_active: true,
+          },
+        ],
+        total_elements: 1,
+        total_pages: 1,
+      }),
+    })
+
+    await i18n.changeLanguage('en')
+    try {
+      render(
+        <MemoryRouter>
+          <AdminDeletedUsersPage />
+        </MemoryRouter>
+      )
+
+      expect(screen.getByText('Deleted Users')).toBeInTheDocument()
+      expect(await screen.findByText('Days left: 65')).toBeInTheDocument()
+      expect(screen.getByText('Retention extended')).toBeInTheDocument()
+      expect(screen.queryByText('退会済みユーザー管理')).not.toBeInTheDocument()
+    } finally {
+      await i18n.changeLanguage('ja')
+    }
   })
 })

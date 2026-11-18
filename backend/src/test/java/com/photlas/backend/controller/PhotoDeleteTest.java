@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#57: ユーザーによる写真削除機能のテスト
+ * Spec#57: ユーザーによる写真削除機能のテスト
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -139,7 +139,7 @@ public class PhotoDeleteTest {
     }
 
     @Test
-    @DisplayName("Issue#57 - オーナーがPUBLISHED写真を削除すると204が返る")
+    @DisplayName("Spec#57 - オーナーがPUBLISHED写真を削除すると204が返る")
     void deletePhoto_published_returns204() throws Exception {
         Photo photo = createPhoto("test/photo1.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
@@ -154,7 +154,7 @@ public class PhotoDeleteTest {
     }
 
     @Test
-    @DisplayName("Issue#57 - オーナーがPENDING_REVIEW写真を削除すると204が返る")
+    @DisplayName("Spec#57 - オーナーがPENDING_REVIEW写真を削除すると204が返る")
     void deletePhoto_pendingReview_returns204() throws Exception {
         Photo photo = createPhoto("test/photo2.jpg", CodeConstants.MODERATION_STATUS_PENDING_REVIEW);
 
@@ -168,7 +168,7 @@ public class PhotoDeleteTest {
     }
 
     @Test
-    @DisplayName("Issue#57 - オーナーがQUARANTINED写真を削除すると204が返る")
+    @DisplayName("Spec#57 - オーナーがQUARANTINED写真を削除すると204が返る")
     void deletePhoto_quarantined_returns204() throws Exception {
         Photo photo = createPhoto("test/photo3.jpg", CodeConstants.MODERATION_STATUS_QUARANTINED);
 
@@ -182,7 +182,7 @@ public class PhotoDeleteTest {
     }
 
     @Test
-    @DisplayName("Issue#57 - 非オーナーが削除しようとすると403が返る")
+    @DisplayName("Spec#57 - 非オーナーが削除しようとすると403が返る")
     void deletePhoto_nonOwner_returns403() throws Exception {
         Photo photo = createPhoto("test/photo4.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 
@@ -197,7 +197,7 @@ public class PhotoDeleteTest {
     }
 
     @Test
-    @DisplayName("Issue#57 - 存在しない写真を削除しようとすると404が返る")
+    @DisplayName("Spec#57 - 存在しない写真を削除しようとすると404が返る")
     void deletePhoto_notFound_returns404() throws Exception {
         mockMvc.perform(delete(ENDPOINT_PHOTOS + "/99999")
                 .with(csrf())
@@ -206,7 +206,7 @@ public class PhotoDeleteTest {
     }
 
     @Test
-    @DisplayName("Issue#57 - 既にREMOVEDの写真を削除しようとすると404が返る")
+    @DisplayName("Spec#57 - 既にREMOVEDの写真を削除しようとすると404が返る")
     void deletePhoto_alreadyRemoved_returns404() throws Exception {
         Photo photo = createPhoto("test/photo5.jpg", CodeConstants.MODERATION_STATUS_REMOVED);
 
@@ -217,7 +217,7 @@ public class PhotoDeleteTest {
     }
 
     @Test
-    @DisplayName("Issue#57 - 未認証ユーザーが削除しようとすると401が返る")
+    @DisplayName("Spec#57 - 未認証ユーザーが削除しようとすると401が返る")
     void deletePhoto_unauthenticated_returns401() throws Exception {
         Photo photo = createPhoto("test/photo6.jpg", CodeConstants.MODERATION_STATUS_PUBLISHED);
 

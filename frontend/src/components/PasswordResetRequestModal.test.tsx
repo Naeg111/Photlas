@@ -1,9 +1,10 @@
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import PasswordResetRequestModal from './PasswordResetRequestModal'
+import i18n from '../i18n'
 
 /**
- * Issue#6: パスワードリセット機能 - パスワードリセットリクエストモーダル UI テスト
+ * Spec#6: パスワードリセット機能 - パスワードリセットリクエストモーダル UI テスト
  * TDD Red段階: 実装前のテストケース定義
  *
  * UI要件:
@@ -146,14 +147,16 @@ describe('PasswordResetRequestModal', () => {
       })
     })
 
+    // Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+    const validationError = () =>
+      new Response(
+        JSON.stringify({ code: 'VALIDATION_ERROR', message: '入力内容が無効です。' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+
     it('shows error message on request failure', async () => {
       const mockFetch = vi.mocked(fetch)
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: 'メールアドレスが見つかりません' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      )
+      mockFetch.mockResolvedValueOnce(validationError())
 
       render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
 
@@ -164,8 +167,29 @@ describe('PasswordResetRequestModal', () => {
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(screen.getByText('メールアドレスが見つかりません')).toBeInTheDocument()
+        expect(screen.getByText('エラーが発生しました')).toBeInTheDocument()
       })
+      expect(screen.queryByText('入力内容が無効です。')).not.toBeInTheDocument()
+    })
+
+    it('Spec#93 - shows the error in English when the language is English', async () => {
+      const mockFetch = vi.mocked(fetch)
+      mockFetch.mockResolvedValueOnce(validationError())
+
+      await i18n.changeLanguage('en')
+      try {
+        render(<PasswordResetRequestModal open={true} onClose={mockOnClose} />)
+
+        fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'notfound@example.com' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+        await waitFor(() => {
+          expect(screen.getByText('An error occurred')).toBeInTheDocument()
+        })
+        expect(screen.queryByText('入力内容が無効です。')).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
 
     it('disables submit button during request', async () => {
@@ -308,7 +332,7 @@ describe('PasswordResetRequestModal', () => {
     })
   })
 
-  // Issue#96 PR2b: 429 レート制限ハンドリング（パターンA: フォーム送信系）
+  // Spec#96 PR2b: 429 レート制限ハンドリング（パターンA: フォーム送信系）
   describe('Rate Limit (429) - レート制限', () => {
     it('パスワードリセット要求で429を受信したらレート制限メッセージをインライン表示する', async () => {
       const mockFetch = vi.mocked(fetch)

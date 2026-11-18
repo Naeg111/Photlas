@@ -9,11 +9,14 @@ import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.AccountSuspendedException;
 import com.photlas.backend.exception.ConflictException;
 import com.photlas.backend.exception.EmailNotVerifiedException;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.EmailVerificationTokenRepository;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.util.LanguageUtils;
 import com.photlas.backend.util.TokenGenerator;
+import com.photlas.backend.validation.LanguageValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -71,9 +74,9 @@ public class AuthService {
         if (userRepository.existsByEmail(normalizedEmail)) {
             Optional<User> existingUser = userRepository.findByEmail(normalizedEmail);
             if (existingUser.isPresent() && existingUser.get().getDeletedAt() != null) {
-                throw new ConflictException("このメールアドレスは退会処理中のため、現在ご利用いただけません");
+                throw new ConflictException(ErrorCodes.EMAIL_PENDING_DELETION, "このメールアドレスは退会処理中のため、現在ご利用いただけません");
             }
-            throw new ConflictException("このメールアドレスは既に登録されています");
+            throw new ConflictException(ErrorCodes.EMAIL_ALREADY_IN_USE, "このメールアドレスは既に登録されています");
         }
 
         String hashedPassword = passwordEncoder.encode(request.getPassword());
@@ -84,9 +87,9 @@ public class AuthService {
             hashedPassword,
             CodeConstants.ROLE_USER
         );
-        user.setLanguage(LanguageUtils.resolve(acceptLanguage));
+        user.setLanguage(resolveRegistrationLanguage(request.getLanguage(), acceptLanguage));
 
-        // Issue#104 + Issue#109: メール+パスワード登録時は利用規約・プライバシーポリシー・年齢確認を同意済みとして記録
+        // Spec#104 + Spec#109: メール+パスワード登録時は利用規約・プライバシーポリシー・年齢確認を同意済みとして記録
         // (RegisterRequest の @AssertTrue により、各 boolean が true であることはバリデーション済み)
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         user.setTermsAgreedAt(now);
@@ -112,8 +115,19 @@ public class AuthService {
     }
 
     /**
+     * Spec#93: 登録時の言語設定の初期値を決める。
+     * 登録画面の表示言語（手動で選んだ言語、なければブラウザの言語）が対応 5 言語ならそれを、
+     * 未指定・未対応なら Accept-Language から判定する。
+     */
+    private static String resolveRegistrationLanguage(String requestedLanguage, String acceptLanguage) {
+        return LanguageValidator.isValid(requestedLanguage)
+                ? requestedLanguage
+                : LanguageUtils.resolve(acceptLanguage);
+    }
+
+    /**
      * ログイン処理
-     * Issue#92: ソフトデリート済みユーザーが正しいパスワードでログインした場合、アカウントを復旧する。
+     * Spec#92: ソフトデリート済みユーザーが正しいパスワードでログインした場合、アカウントを復旧する。
      *
      * @param request ログインリクエスト
      * @return ログインレスポンス
@@ -132,7 +146,7 @@ public class AuthService {
             throw new UnauthorizedException(ERROR_INVALID_CREDENTIALS);
         }
 
-        // Issue#92: ソフトデリート済みの場合、アカウントを復旧する
+        // Spec#92: ソフトデリート済みの場合、アカウントを復旧する
         if (user.getDeletedAt() != null) {
             recoverSoftDeletedUser(user);
         }
@@ -145,7 +159,7 @@ public class AuthService {
             throw new AccountSuspendedException("アカウントが停止されています");
         }
 
-        // Issue#93: ログイン時のAccept-Languageによる言語自動更新を廃止
+        // Spec#93: ログイン時のAccept-Languageによる言語自動更新を廃止
         // 言語設定はユーザーが手動で変更する
 
         String token = jwtService.generateTokenWithRole(user.getEmail(), CodeConstants.roleToJwtString(user.getRole()));
@@ -174,19 +188,19 @@ public class AuthService {
                 emailVerificationTokenRepository.findByToken(token);
 
         if (tokenOptional.isEmpty()) {
-            throw new IllegalArgumentException("認証トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "認証トークンが無効または期限切れです");
         }
 
         EmailVerificationToken verificationToken = tokenOptional.get();
 
         if (verificationToken.getExpiryDate().before(new Date())) {
             emailVerificationTokenRepository.delete(verificationToken);
-            throw new IllegalArgumentException("認証トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "認証トークンが無効または期限切れです");
         }
 
         Optional<User> userOptional = userRepository.findById(verificationToken.getUserId());
         if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException(ERROR_USER_NOT_FOUND);
+            throw new InvalidRequestException(ErrorCodes.USER_NOT_FOUND, ERROR_USER_NOT_FOUND);
         }
 
         User user = userOptional.get();
@@ -212,17 +226,17 @@ public class AuthService {
         User user = userOptional.get();
 
         if (user.isEmailVerified()) {
-            throw new IllegalArgumentException("このメールアドレスは既に認証済みです");
+            throw new InvalidRequestException(ErrorCodes.EMAIL_ALREADY_VERIFIED, "このメールアドレスは既に認証済みです");
         }
 
         sendVerificationEmail(user);
     }
 
     /**
-     * Issue#92: ソフトデリート済みアカウントを復旧する
+     * Spec#92: ソフトデリート済みアカウントを復旧する
      * deletedAt, username, originalUsername, deletionHoldUntilをリストアする。
      *
-     * Issue#81 Phase 3b: 可視性を private → package-private に変更し、
+     * Spec#81 Phase 3b: 可視性を private → package-private に変更し、
      * 同パッケージの OAuth2UserServiceHelper から呼び出せるようにする。
      */
     void recoverSoftDeletedUser(User user) {
@@ -236,7 +250,7 @@ public class AuthService {
     /**
      * メール認証トークンを生成して認証メールを送信
      *
-     * <p>Issue#113: テンプレートと言語判定を {@link EmailTemplateService} に一元化。
+     * <p>Spec#113: テンプレートと言語判定を {@link EmailTemplateService} に一元化。
      * グループ A (HTTP 失敗扱い) のため、メール送信失敗時は例外を呼び出し元へ伝播し、
      * Controller 層で {@code 500 Internal Server Error} にマップされる。</p>
      */

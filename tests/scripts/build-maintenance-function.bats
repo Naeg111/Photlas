@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
 #
-# Issue#117: scripts/build-maintenance-function.sh の動作を検証する。
+# Spec#117: scripts/build-maintenance-function.sh の動作を検証する。
 # このスクリプトは scripts/maintenance.html を読み込み、エスケープして
 # scripts/cloudfront-function/maintenance.js.template に埋め込み、
 # scripts/cloudfront-function/maintenance.js を生成する。
 #
-# Source of truth: documents/04_Issues/Issue#117.md §4.4, §4.5
+# Source of truth: documents/spec/SPEC-0117.md §4.4, §4.5
 
 load helpers
 

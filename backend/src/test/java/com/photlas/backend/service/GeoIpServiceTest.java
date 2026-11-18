@@ -20,7 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Issue#106: IPアドレスからの国判定サービスのテスト
+ * Spec#106: IPアドレスからの国判定サービスのテスト
  */
 @ExtendWith(MockitoExtension.class)
 public class GeoIpServiceTest {
@@ -29,7 +29,7 @@ public class GeoIpServiceTest {
     private DatabaseReader databaseReader;
 
     @Test
-    @DisplayName("Issue#106 - 有効なIPアドレスから国コード（ISO 3166-1 alpha-2）が返される")
+    @DisplayName("Spec#106 - 有効なIPアドレスから国コード（ISO 3166-1 alpha-2）が返される")
     void getCountryCode_validIp_returnsCountryCode() throws IOException, GeoIp2Exception {
         // Given: モックされた DatabaseReader が日本の CountryResponse を返す
         // CountryResponse / Country のコンストラクタは GeoIP2 4.x で複雑なため、Mockito の deep stubbing でモック
@@ -49,7 +49,7 @@ public class GeoIpServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#106 - DatabaseReader が AddressNotFoundException を投げた場合に null を返す")
+    @DisplayName("Spec#106 - DatabaseReader が AddressNotFoundException を投げた場合に null を返す")
     void getCountryCode_addressNotFound_returnsNull() throws IOException, GeoIp2Exception {
         // Given: AddressNotFoundException を投げるモック（ローカルホスト等の判定不能IP相当）
         when(databaseReader.country(any(InetAddress.class)))
@@ -65,7 +65,7 @@ public class GeoIpServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#106 - 不正なIPアドレス形式で例外が発生せず null が返される")
+    @DisplayName("Spec#106 - 不正なIPアドレス形式で例外が発生せず null が返される")
     void getCountryCode_invalidIp_returnsNull() {
         GeoIpService service = new GeoIpService(databaseReader);
 
@@ -77,7 +77,7 @@ public class GeoIpServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#106 - null IPアドレスで null が返される")
+    @DisplayName("Spec#106 - null IPアドレスで null が返される")
     void getCountryCode_nullIp_returnsNull() {
         GeoIpService service = new GeoIpService(databaseReader);
 
@@ -89,7 +89,7 @@ public class GeoIpServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#106 - DatabaseReader が null（DB未配置）の場合、すべての呼び出しで null が返される")
+    @DisplayName("Spec#106 - DatabaseReader が null（DB未配置）の場合、すべての呼び出しで null が返される")
     void getCountryCode_noDatabase_returnsNull() {
         // Given: DatabaseReader が null（DBファイル未配置）
         GeoIpService service = new GeoIpService((DatabaseReader) null);

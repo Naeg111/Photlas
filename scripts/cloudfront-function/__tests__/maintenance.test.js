@@ -1,4 +1,4 @@
-// Issue#117: maintenance.js（メンテナンス時の CloudFront Function コード）の単体テスト
+// Spec#117: maintenance.js（メンテナンス時の CloudFront Function コード）の単体テスト
 //
 // maintenance.js は build-maintenance-function.sh が
 // scripts/maintenance.html を埋め込んで生成する成果物。

@@ -5,9 +5,10 @@ import jakarta.validation.constraints.*;
 
 /**
  * ユーザー登録リクエストDTO
- * Issue#21: パスワードバリデーション統一
- * Issue#98: username バリデーション強化 - @ValidUsername で統一（@NotNull/@Size を削除）
- * Issue#109: 利用規約・プライバシーポリシー・年齢確認の同意フィールドを追加
+ * Spec#21: パスワードバリデーション統一
+ * Spec#98: username バリデーション強化 - @ValidUsername で統一（@NotNull/@Size を削除）
+ * Spec#109: 利用規約・プライバシーポリシー・年齢確認の同意フィールドを追加
+ * Spec#93: 登録時の表示言語（language、任意）を追加
  */
 public class RegisterRequest {
     @ValidUsername
@@ -19,24 +20,28 @@ public class RegisterRequest {
 
     @NotNull(message = "パスワードは必須です")
     @Size(min = 8, max = 20, message = "パスワードは8文字以上20文字以内で入力してください")
-    // Issue#21: パスワードバリデーション統一 - 記号禁止、英数字のみ
+    // Spec#21: パスワードバリデーション統一 - 記号禁止、英数字のみ
     @Pattern(
         regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]+$",
         message = "パスワードには数字・小文字・大文字をそれぞれ1文字以上含め、記号は使用できません"
     )
     private String password;
 
-    // Issue#109: 利用規約への同意（true 必須）
+    // Spec#109: 利用規約への同意（true 必須）
     @AssertTrue(message = "利用規約への同意が必要です")
     private boolean agreedToTerms;
 
-    // Issue#109: プライバシーポリシーへの同意（true 必須）
+    // Spec#109: プライバシーポリシーへの同意（true 必須）
     @AssertTrue(message = "プライバシーポリシーへの同意が必要です")
     private boolean agreedToPrivacy;
 
-    // Issue#109: 年齢確認（13 歳以上、true 必須）
+    // Spec#109: 年齢確認（13 歳以上、true 必須）
     @AssertTrue(message = "13 歳以上であることの確認が必要です")
     private boolean ageConfirmed;
+
+    // Spec#93: 登録画面で使っていた表示言語（任意）。DB の言語設定の初期値にする。
+    // 対応 5 言語以外・未指定のときは Accept-Language から判定する（AuthService）。
+    private String language;
 
     public RegisterRequest() {}
 
@@ -93,5 +98,13 @@ public class RegisterRequest {
 
     public void setAgeConfirmed(boolean ageConfirmed) {
         this.ageConfirmed = ageConfirmed;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 }

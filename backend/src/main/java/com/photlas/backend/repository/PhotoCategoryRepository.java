@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 public interface PhotoCategoryRepository extends JpaRepository<PhotoCategory, PhotoCategory.PhotoCategoryId> {
 
     /**
-     * Issue#57: 指定した写真IDに関連するカテゴリを全て削除する
+     * Spec#57: 指定した写真IDに関連するカテゴリを全て削除する
      *
      * @param photoId 写真ID
      */

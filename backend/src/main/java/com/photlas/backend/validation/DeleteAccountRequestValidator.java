@@ -12,7 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Optional;
 
 /**
- * Issue#81 Phase 4a - {@link ValidDeleteAccountRequest} のバリデーター実装。
+ * Spec#81 Phase 4a - {@link ValidDeleteAccountRequest} のバリデーター実装。
  *
  * <p>SecurityContext から current user を解決し、{@code passwordHash} の有無で分岐:
  * <ul>

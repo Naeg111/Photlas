@@ -5,8 +5,8 @@ import { PrivacyPolicyPage } from './PrivacyPolicyPage'
 
 /**
  * PrivacyPolicyPage コンポーネントのテスト
- * Issue#52: プライバシーポリシーの文面改訂
- * Issue#101: 多言語対応（ja / en / ko / zh-CN / zh-TW）+ ハードコード日本語の i18n 化
+ * Spec#52: プライバシーポリシーの文面改訂
+ * Spec#101: 多言語対応（ja / en / ko / zh-CN / zh-TW）+ ハードコード日本語の i18n 化
  */
 
 describe('PrivacyPolicyPage', () => {
@@ -79,9 +79,9 @@ describe('PrivacyPolicyPage', () => {
   })
 
   /**
-   * Issue#101: 5 言語対応 + ハードコード日本語の i18n 化のテスト。
+   * Spec#101: 5 言語対応 + ハードコード日本語の i18n 化のテスト。
    */
-  describe('Issue#101 - 多言語対応', () => {
+  describe('Spec#101 - 多言語対応', () => {
     afterEach(async () => {
       // 他テストへの影響を防ぐため ja に戻す
       await i18n.changeLanguage('ja')

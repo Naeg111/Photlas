@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Issue#73: 退会済みユーザー管理コントローラーのテスト
+ * Spec#73: 退会済みユーザー管理コントローラーのテスト
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -50,6 +50,12 @@ public class AdminDeletedUserControllerTest {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private ViolationRepository violationRepository;
+
+    @Autowired
+    private AccountSanctionRepository accountSanctionRepository;
 
     @MockBean
     private S3Service s3Service;
@@ -74,7 +80,7 @@ public class AdminDeletedUserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#73 - 退会済みユーザー一覧を取得できる")
+    @DisplayName("Spec#73 - 退会済みユーザー一覧を取得できる")
     void testGetDeletedUsers_ReturnsDeletedUsers() throws Exception {
         User deleted = createDeletedUser("deleted@example.com", "deleteduser", 10);
 
@@ -87,7 +93,7 @@ public class AdminDeletedUserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#73 - メールアドレスで検索できる")
+    @DisplayName("Spec#73 - メールアドレスで検索できる")
     void testGetDeletedUsers_SearchByEmail() throws Exception {
         createDeletedUser("target@example.com", "target", 10);
         createDeletedUser("other@example.com", "other", 5);
@@ -101,7 +107,7 @@ public class AdminDeletedUserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#73 - 退会済みユーザー詳細を取得できる")
+    @DisplayName("Spec#73 - 退会済みユーザー詳細を取得できる")
     void testGetDeletedUserDetail_ReturnsDetail() throws Exception {
         User deleted = createDeletedUser("detail@example.com", "detailuser", 10);
 
@@ -109,11 +115,41 @@ public class AdminDeletedUserControllerTest {
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email", is("detail@example.com")))
-                .andExpect(jsonPath("$.original_username", is("detailuser")));
+                .andExpect(jsonPath("$.original_username", is("detailuser")))
+                // Spec#169: ブラウザが正しい現地時刻で表示できるよう、UTC（末尾 Z）で返す
+                .andExpect(jsonPath("$.deleted_at", endsWith("Z")));
     }
 
     @Test
-    @DisplayName("Issue#73 - 即時削除: メールアドレス確認で物理削除される")
+    @DisplayName("Spec#93 追加対応 - 違反・制裁履歴の種類・処置・制裁は数値コードで返す（フロントはコードから表示名を引く）")
+    void testGetDeletedUserDetail_ReturnsHistoryCodesAsNumbers() throws Exception {
+        User deleted = createDeletedUser("history@example.com", "historyuser", 10);
+
+        Violation violation = new Violation();
+        violation.setUserId(deleted.getId());
+        violation.setTargetType(CodeConstants.TARGET_TYPE_PHOTO);
+        violation.setTargetId(1L);
+        violation.setViolationType(CodeConstants.REASON_ADULT_CONTENT);
+        violation.setActionTaken(CodeConstants.ACTION_TAKEN_REMOVED);
+        violationRepository.save(violation);
+
+        AccountSanction sanction = new AccountSanction();
+        sanction.setUserId(deleted.getId());
+        sanction.setSanctionType(CodeConstants.SANCTION_WARNING);
+        sanction.setReason("利用規約違反");
+        accountSanctionRepository.save(sanction);
+
+        // is(int) は JSON の数値にだけ一致する（文字列 "801" では失敗する）
+        mockMvc.perform(get(ENDPOINT + "/" + deleted.getId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.violations[0].violation_type", is(CodeConstants.REASON_ADULT_CONTENT)))
+                .andExpect(jsonPath("$.violations[0].action_taken", is(CodeConstants.ACTION_TAKEN_REMOVED)))
+                .andExpect(jsonPath("$.sanctions[0].sanction_type", is(CodeConstants.SANCTION_WARNING)));
+    }
+
+    @Test
+    @DisplayName("Spec#73 - 即時削除: メールアドレス確認で物理削除される")
     void testImmediateDelete_WithEmailConfirmation() throws Exception {
         User deleted = createDeletedUser("purge@example.com", "purgeuser", 10);
         Long userId = deleted.getId();
@@ -127,7 +163,7 @@ public class AdminDeletedUserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#73 - 即時削除: メールアドレス不一致で拒否される")
+    @DisplayName("Spec#73 - 即時削除: メールアドレス不一致で拒否される")
     void testImmediateDelete_WrongEmail_Returns400() throws Exception {
         User deleted = createDeletedUser("purge@example.com", "purgeuser", 10);
 
@@ -140,7 +176,7 @@ public class AdminDeletedUserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#73 - 保持期間延長: deletion_hold_untilが設定される")
+    @DisplayName("Spec#73 - 保持期間延長: deletion_hold_untilが設定される")
     void testSetHold_SetsHoldDate() throws Exception {
         User deleted = createDeletedUser("hold@example.com", "holduser", 10);
 
@@ -153,7 +189,7 @@ public class AdminDeletedUserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#73 - データエクスポート: JSONが返される")
+    @DisplayName("Spec#73 - データエクスポート: JSONが返される")
     void testExport_ReturnsJson() throws Exception {
         User deleted = createDeletedUser("export@example.com", "exportuser", 10);
 
@@ -164,7 +200,7 @@ public class AdminDeletedUserControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 管理者エクスポートは camelCase + UTC ISO 8601(Z) で出力される")
+    @DisplayName("Spec#108 - 管理者エクスポートは camelCase + UTC ISO 8601(Z) で出力される")
     void testExport_UsesCamelCaseAndUtcIso8601() throws Exception {
         User deleted = createDeletedUser("camel@example.com", "camelname", 5);
 

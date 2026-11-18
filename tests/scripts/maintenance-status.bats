@@ -1,10 +1,10 @@
 #!/usr/bin/env bats
 #
-# Issue#117: scripts/maintenance-status.sh の動作を検証する。
+# Spec#117: scripts/maintenance-status.sh の動作を検証する。
 # 現在のメンテナンスモード状態 (ON / OFF / partial) を表示する。
 # 確認用なので副作用はなく、AWS CLI から状態を取得して出力するだけ。
 #
-# Source of truth: documents/04_Issues/Issue#117.md §4.5
+# Source of truth: documents/spec/SPEC-0117.md §4.5
 
 load helpers
 

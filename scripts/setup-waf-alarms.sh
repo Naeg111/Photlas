@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# AWS WAF アラーム セットアップスクリプト (Issue#94)
+# AWS WAF アラーム セットアップスクリプト (Spec#94)
 # SNS トピック作成、メール購読、CloudWatch アラーム 3 本を作成する
 #
 # 実行内容:
@@ -179,7 +179,7 @@ create_alarm \
   5 \
   "CountedRequests" \
   "$TAG_ENVIRONMENT" \
-  "Issue#94: WAF AuthRateLimit rule counted requests (Count mode)"
+  "Spec#94: WAF AuthRateLimit rule counted requests (Count mode)"
 
 create_alarm \
   "photlas-waf-GeneralRateLimit-CountedRequests" \
@@ -187,7 +187,7 @@ create_alarm \
   20 \
   "CountedRequests" \
   "$TAG_ENVIRONMENT" \
-  "Issue#94: WAF GeneralRateLimit rule counted requests (Count mode)"
+  "Spec#94: WAF GeneralRateLimit rule counted requests (Count mode)"
 
 create_alarm \
   "photlas-waf-StagingLooseLimit-CountedRequests" \
@@ -195,7 +195,7 @@ create_alarm \
   50 \
   "CountedRequests" \
   "staging" \
-  "Issue#94: WAF StagingLooseLimit rule counted requests (staging DoS detection)"
+  "Spec#94: WAF StagingLooseLimit rule counted requests (staging DoS detection)"
 
 # 旧 Block モード用アラームが残っていたら削除（Block → Count ロールバック時の整合性確保）
 # delete-alarms は存在しないアラーム名を渡してもエラーにならない

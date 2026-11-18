@@ -5,6 +5,7 @@ import { Button } from './ui/button'
 import { API_V1_URL } from '../config/api'
 import { ApiError } from '../utils/apiClient'
 import { fetchJson } from '../utils/fetchJson'
+import { translateErrorCode } from '../utils/apiErrorMessage'
 
 interface LinkAccountConfirmDialogProps {
   open: boolean
@@ -18,7 +19,7 @@ interface LinkAccountConfirmDialogProps {
 }
 
 /**
- * Issue#81 Phase 5d - 既存アカウントとの OAuth 連携確認ダイアログ。
+ * Spec#81 Phase 5d - 既存アカウントとの OAuth 連携確認ダイアログ。
  *
  * OAuth ログイン時に email が既存のパスワードアカウントに一致した場合、
  * バックエンドが短命トークンを発行して `/oauth/callback#link_confirmation_token=...`
@@ -52,7 +53,7 @@ export default function LinkAccountConfirmDialog({
       onClose()
     } catch (err) {
       if (err instanceof ApiError) {
-        setErrorMessage(err.responseMessage || t('auth.errorOccurred'))
+        setErrorMessage(translateErrorCode(err.code, t, 'auth.errorOccurred'))
       } else {
         setErrorMessage(t('auth.errorOccurred'))
       }

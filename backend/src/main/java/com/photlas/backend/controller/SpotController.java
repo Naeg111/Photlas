@@ -87,7 +87,7 @@ public class SpotController {
     }
 
     /**
-     * Issue#127: 認証ユーザー本人の PENDING_REVIEW（審査中）投稿だけをスポット一覧で返す。
+     * Spec#127: 認証ユーザー本人の PENDING_REVIEW（審査中）投稿だけをスポット一覧で返す。
      *
      * /api/v1/spots は CloudFront 共有キャッシュで PUBLISHED のみを返すため、
      * 投稿直後の本人がモデレーション完了前に自分の投稿を地図上で確認できない。
@@ -129,12 +129,12 @@ public class SpotController {
         return ResponseEntity.ok(spots);
     }
 
-    // Issue#112: ページネーションのデフォルト・上限
+    // Spec#112: ページネーションのデフォルト・上限
     private static final int DEFAULT_PHOTO_PAGE_SIZE = 30;
     private static final int DEFAULT_PHOTO_PAGE_OFFSET = 0;
 
     /**
-     * Issue#112: スポット写真ID一覧をページングで取得（複数スポット横断対応）
+     * Spec#112: スポット写真ID一覧をページングで取得（複数スポット横断対応）
      *
      * 撮影日時降順（NULLS LAST）でマージしたページを返す。
      * `spotIds` を Body で受け取るため、巨大クラスタの spot_id 配列でも
@@ -147,7 +147,7 @@ public class SpotController {
     public ResponseEntity<SpotPhotosResponse> getSpotPhotos(
             @Valid @RequestBody SpotPhotosRequest request,
             Authentication authentication) {
-        // Issue#127: 認証済みユーザーは自分の PENDING_REVIEW 投稿も結果に含める。
+        // Spec#127: 認証済みユーザーは自分の PENDING_REVIEW 投稿も結果に含める。
         // 未認証は従来通り PUBLISHED のみ。/spots/photos は permitAll のため authentication は null になり得る。
         Long viewerUserId = null;
         if (authentication != null && authentication.isAuthenticated()

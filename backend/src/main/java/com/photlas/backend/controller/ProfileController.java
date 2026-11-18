@@ -15,6 +15,8 @@ import com.photlas.backend.entity.OAuthProvider;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.entity.UserOAuthConnection;
 import com.photlas.backend.entity.UserSnsLink;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.UserOAuthConnectionRepository;
 import com.photlas.backend.repository.UserRepository;
@@ -109,7 +111,7 @@ public class ProfileController {
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         if (!ALLOWED_IMAGE_EXTENSIONS.contains(request.getExtension().toLowerCase())) {
-            throw new IllegalArgumentException("対応していないファイル形式です");
+            throw new InvalidRequestException(ErrorCodes.UNSUPPORTED_FILE_TYPE, "対応していないファイル形式です");
         }
 
         S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(
@@ -174,13 +176,13 @@ public class ProfileController {
     }
 
     /**
-     * Issue#104 + Issue#109: 利用規約・プライバシーポリシー・年齢確認への同意を一括記録する
+     * Spec#104 + Spec#109: 利用規約・プライバシーポリシー・年齢確認への同意を一括記録する
      * POST /api/v1/users/me/agree-terms
      *
      * <p>OAuth 経由の新規ユーザーが同意ダイアログで「利用を開始する」を押した際に呼ばれる。
      * 常に現在時刻で上書きする（既に同意済みでも実害なし、§4.11）。
      *
-     * <p>Issue#109: 年齢確認の記録もまとめて行うよう拡張した
+     * <p>Spec#109: 年齢確認の記録もまとめて行うよう拡張した
      * （サービス層メソッド名は agreeToTerms → recordUserAgreement にリネーム）。
      * REST エンドポイントのパスは互換性のため変更しない。
      */
@@ -192,7 +194,7 @@ public class ProfileController {
     }
 
     /**
-     * Issue#81 Phase 4h: OAuth 連携一覧取得
+     * Spec#81 Phase 4h: OAuth 連携一覧取得
      * GET /api/v1/users/me/oauth-connections
      *
      * <p>ログイン中ユーザーの OAuth 連携情報を返す（認証必須）。

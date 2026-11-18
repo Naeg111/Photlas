@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#135 Phase 8: {@code GET /api/v1/tags} のテスト。
+ * Spec#135 Phase 8: {@code GET /api/v1/tags} のテスト。
  *
  * <p>フロントが KeywordSection（投稿フォーム・検索フィルタ）で利用する
  * キーワード一覧 + カテゴリ紐付け を返す REST エンドポイント。</p>
@@ -67,7 +67,7 @@ class TagControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /api/v1/tags?lang=ja: 200 と is_active=TRUE のタグ配列を返す")
+    @DisplayName("Spec#135 - GET /api/v1/tags?lang=ja: 200 と is_active=TRUE のタグ配列を返す")
     void getTags_returnsActiveTagsWithJapaneseDisplayName() throws Exception {
         Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom", 10, true);
         linkCategory(cherry.getId(), CodeConstants.CATEGORY_PLANTS);
@@ -81,7 +81,7 @@ class TagControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /api/v1/tags: lang=en で英語表示名を返す")
+    @DisplayName("Spec#135 - GET /api/v1/tags: lang=en で英語表示名を返す")
     void getTags_supportsEnglishLanguage() throws Exception {
         Tag cherry = saveTag("Cherry Blossom", "cherry-blossom", "桜", "Cherry Blossom", 10, true);
         linkCategory(cherry.getId(), CodeConstants.CATEGORY_PLANTS);
@@ -93,7 +93,7 @@ class TagControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /api/v1/tags: is_active=FALSE のタグは返さない")
+    @DisplayName("Spec#135 - GET /api/v1/tags: is_active=FALSE のタグは返さない")
     void getTags_excludesInactiveTags() throws Exception {
         Tag inactive = saveTag("Hidden", "hidden", "非表示", "Hidden", 100, false);
         linkCategory(inactive.getId(), CodeConstants.CATEGORY_PLANTS);
@@ -107,7 +107,7 @@ class TagControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /api/v1/tags: 1 タグが複数カテゴリに属している場合、categoryCodes に複数含む")
+    @DisplayName("Spec#135 - GET /api/v1/tags: 1 タグが複数カテゴリに属している場合、categoryCodes に複数含む")
     void getTags_includesAllCategoriesForMultiCategoryTag() throws Exception {
         Tag bird = saveTag("Bird", "bird", "鳥", "Bird", 10, true);
         linkCategory(bird.getId(), CodeConstants.CATEGORY_ANIMALS);
@@ -122,7 +122,7 @@ class TagControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /api/v1/tags: lang 未指定時のデフォルトは en")
+    @DisplayName("Spec#135 - GET /api/v1/tags: lang 未指定時のデフォルトは en")
     void getTags_defaultsLangToEnglish() throws Exception {
         Tag t = saveTag("Mountain", "mountain", "山", "Mountain", 10, true);
         linkCategory(t.getId(), CodeConstants.CATEGORY_NATURE);

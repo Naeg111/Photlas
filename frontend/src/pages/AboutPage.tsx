@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/button'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
 
 /**
- * Issue#99 - Photlas のランディング/概要ページ。
+ * Spec#99 - Photlas のランディング/概要ページ。
  *
  * Google OAuth 公開審査において、OAuth 同意画面に登録する「アプリのホームページ」
  * URL が以下を満たす必要があるため、本ページを `/about` に配置して登録 URL を
@@ -17,9 +18,16 @@ import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
  * </ul>
  *
  * メインの地図画面 (https://photlas.jp/) には影響を与えない設計。
+ *
+ * Spec#93 追加対応: Google の同意画面や利用規約・プライバシーポリシーの単独ページからも
+ * 一般の利用者が来るため、表示言語に合わせて 5 言語で出す。
  */
+/** 「主な特徴」の項目（翻訳キー aboutPage.<項目>Title / aboutPage.<項目>Text） */
+const FEATURES = ['exploreMap', 'filterPosts', 'shareShootingInfo'] as const
+
 export default function AboutPage() {
-  useDocumentTitle('Photlas - 写真から行ってみたい場所が見つかるサービス')
+  const { t } = useTranslation()
+  useDocumentTitle(`Photlas - ${t('aboutPage.tagline')}`)
   useCanonicalUrl('/about')
 
   return (
@@ -39,33 +47,25 @@ export default function AboutPage() {
         <section className="max-w-3xl mx-auto px-6 py-16">
           <h1 className="text-4xl font-bold mb-4">Photlas</h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            写真から行ってみたい場所が見つかるサービスです。
-            ユーザーが投稿した写真とその撮影場所を地図上から自由に探索でき、
-            新たな旅のきっかけを生み出します。
+            {t('aboutPage.intro')}
           </p>
           <div className="flex justify-center">
             <Button asChild size="lg" className="bg-black hover:bg-gray-800 text-white">
-              <Link to="/">Photlas を使ってみる</Link>
+              <Link to="/">{t('aboutPage.cta')}</Link>
             </Button>
           </div>
         </section>
 
         {/* 特徴 */}
         <section className="max-w-3xl mx-auto px-6 pb-16">
-          <h2 className="text-2xl font-semibold mb-6">主な特徴</h2>
+          <h2 className="text-2xl font-semibold mb-6">{t('aboutPage.featuresTitle')}</h2>
           <ul className="space-y-4 text-gray-700">
-            <li>
-              <strong className="text-gray-900">地図上でスポットを探索:</strong>{' '}
-              投稿された写真を地図上のピンで一覧表示することで、何気なく地図を眺めるうちに思いがけない投稿と出会い、行ってみたい場所が見つかります。
-            </li>
-            <li>
-              <strong className="text-gray-900">写真の条件で投稿を絞り込み:</strong>{' '}
-              カテゴリ・季節・時間帯・天候などの条件で絞り込んで、自分好みの投稿を探せます。
-            </li>
-            <li>
-              <strong className="text-gray-900">撮影情報の共有:</strong>{' '}
-              カメラ・レンズ・撮影設定など、写真の撮影情報を他のユーザーと共有できます。
-            </li>
+            {FEATURES.map((feature) => (
+              <li key={feature}>
+                <strong className="text-gray-900">{t(`aboutPage.${feature}Title`)}</strong>{' '}
+                {t(`aboutPage.${feature}Text`)}
+              </li>
+            ))}
           </ul>
         </section>
       </main>
@@ -76,10 +76,10 @@ export default function AboutPage() {
           <div>&copy; Photlas</div>
           <nav className="flex gap-4">
             <a href="/privacy-policy" className="underline hover:text-gray-900">
-              プライバシーポリシー
+              {t('auth.privacyPolicy')}
             </a>
             <a href="/terms-of-service" className="underline hover:text-gray-900">
-              利用規約
+              {t('auth.termsOfService')}
             </a>
           </nav>
         </div>

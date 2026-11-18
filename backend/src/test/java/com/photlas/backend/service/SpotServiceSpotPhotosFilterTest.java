@@ -27,7 +27,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#141 Phase 4 (Q-new-6/7): {@link SpotService#getSpotPhotos} の
+ * Spec#141 Phase 4 (Q-new-6/7): {@link SpotService#getSpotPhotos} の
  * tagIds + 既存全フィルタが /spots/photos にも適用されることを検証する。
  */
 @SpringBootTest
@@ -102,7 +102,7 @@ class SpotServiceSpotPhotosFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getSpotPhotos: tagIds 指定で該当 tag の写真だけ返る (no viewer)")
+    @DisplayName("Spec#141 - getSpotPhotos: tagIds 指定で該当 tag の写真だけ返る (no viewer)")
     void spotPhotos_filtersByTagIds_noViewer() {
         Photo cherryPhoto = savePhoto();
         Photo sushiPhoto = savePhoto();
@@ -122,7 +122,7 @@ class SpotServiceSpotPhotosFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getSpotPhotos: tagIds=null は従来挙動 (全件返却 no viewer)")
+    @DisplayName("Spec#141 - getSpotPhotos: tagIds=null は従来挙動 (全件返却 no viewer)")
     void spotPhotos_nullTagIds_returnsAll_noViewer() {
         Photo a = savePhoto();
         Photo b = savePhoto();
@@ -138,7 +138,7 @@ class SpotServiceSpotPhotosFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getSpotPhotos: tagIds 指定で該当 tag の写真だけ返る (with viewer = 本人 PENDING 含む)")
+    @DisplayName("Spec#141 - getSpotPhotos: tagIds 指定で該当 tag の写真だけ返る (with viewer = 本人 PENDING 含む)")
     void spotPhotos_filtersByTagIds_withViewer() {
         Photo published = savePhoto();
         Photo pending = new Photo();
@@ -163,7 +163,7 @@ class SpotServiceSpotPhotosFilterTest {
     }
 
     @Test
-    @DisplayName("Issue#141 - getSpotPhotos: subject_categories フィルタも適用される")
+    @DisplayName("Spec#141 - getSpotPhotos: subject_categories フィルタも適用される")
     void spotPhotos_filtersBySubjectCategories() {
         // 簡易テスト: subject_categories=999 (存在しない) を渡したら 0 件
         Photo p = savePhoto();

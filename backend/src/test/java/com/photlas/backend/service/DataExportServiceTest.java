@@ -29,7 +29,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * Issue#108 §4.3 §4.5 §4.12 §4.14 - DataExportService のテスト。
+ * Spec#108 §4.3 §4.5 §4.12 §4.14 - DataExportService のテスト。
  *
  * 範囲:
  *   - ZIP 構成（README / user.json / photos.json / _complete.flag）
@@ -78,7 +78,7 @@ class DataExportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - ZIP に README.md / user.json / photos.json / _complete.flag が含まれる")
+    @DisplayName("Spec#108 - ZIP に README.md / user.json / photos.json / _complete.flag が含まれる")
     void zipContainsExpectedEntries() throws Exception {
         DataExportLog log = dataExportService.tryAcquireExportSlot(user.getId(), "192.0.2.1", "UA-test");
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -99,7 +99,7 @@ class DataExportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 成功時: lastExportedAt 更新 / exportInProgressAt クリア / log COMPLETED / メール送信")
+    @DisplayName("Spec#108 - 成功時: lastExportedAt 更新 / exportInProgressAt クリア / log COMPLETED / メール送信")
     void onSuccessUpdatesUserAndLogAndSendsEmail() throws Exception {
         DataExportLog log = dataExportService.tryAcquireExportSlot(user.getId(), "192.0.2.1", "UA-test");
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -117,7 +117,7 @@ class DataExportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - IOException 発生時: log FAILED / lastExportedAt 更新なし / exportInProgressAt クリア / メール送信なし")
+    @DisplayName("Spec#108 - IOException 発生時: log FAILED / lastExportedAt 更新なし / exportInProgressAt クリア / メール送信なし")
     void onIoExceptionMarksFailureWithoutLastExportedAtUpdate() throws Exception {
         DataExportLog log = dataExportService.tryAcquireExportSlot(user.getId(), "192.0.2.1", "UA-test");
         OutputStream broken = new OutputStream() {
@@ -146,7 +146,7 @@ class DataExportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - REMOVED 写真は photos.json で file=null、photos/ にエントリ無し")
+    @DisplayName("Spec#108 - REMOVED 写真は photos.json で file=null、photos/ にエントリ無し")
     void removedPhotosAreFilteredFromBinaryZipEntries() throws Exception {
         Spot spot = new Spot();
         spot.setLatitude(new BigDecimal("35.658581"));
@@ -206,7 +206,7 @@ class DataExportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - ZIP のすべてのエントリが DEFLATED (compression method 8)")
+    @DisplayName("Spec#108 - ZIP のすべてのエントリが DEFLATED (compression method 8)")
     void allZipEntriesUseDeflated() throws Exception {
         DataExportLog log = dataExportService.tryAcquireExportSlot(user.getId(), "192.0.2.1", "UA-test");
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -223,7 +223,7 @@ class DataExportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 同時実行ロック取得: 2 回目は ExportInProgressException")
+    @DisplayName("Spec#108 - 同時実行ロック取得: 2 回目は ExportInProgressException")
     void doubleAcquireExportSlotConflicts() {
         dataExportService.tryAcquireExportSlot(user.getId(), "192.0.2.1", "UA-test");
 
@@ -233,7 +233,7 @@ class DataExportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 直近 7 日以内に lastExportedAt がある場合は ExportRateLimitException")
+    @DisplayName("Spec#108 - 直近 7 日以内に lastExportedAt がある場合は ExportRateLimitException")
     void rateLimitedWhenRecentlyExported() {
         user.setLastExportedAt(LocalDateTime.now().minusHours(1));
         userRepository.saveAndFlush(user);
@@ -244,7 +244,7 @@ class DataExportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 1 回目失敗 + 2 回目成功で写真が ZIP に含まれる（リトライ動作）")
+    @DisplayName("Spec#108 - 1 回目失敗 + 2 回目成功で写真が ZIP に含まれる（リトライ動作）")
     void s3DownloadRetriesOnce() throws Exception {
         Spot spot = new Spot();
         spot.setLatitude(new BigDecimal("35.658581"));
@@ -280,7 +280,7 @@ class DataExportServiceTest {
     }
 
     @Test
-    @DisplayName("Issue#108 - 2 回連続失敗ならスキップして errors.json に記録、ZIP は完成する")
+    @DisplayName("Spec#108 - 2 回連続失敗ならスキップして errors.json に記録、ZIP は完成する")
     void s3DownloadFailureRecordedInErrorsJson() throws Exception {
         Spot spot = new Spot();
         spot.setLatitude(new BigDecimal("35.658581"));

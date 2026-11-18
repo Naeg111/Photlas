@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * Issue#65: 位置情報修正の指摘コントローラー
+ * Spec#65: 位置情報修正の指摘コントローラー
+ *
+ * <p>Spec#93: エラーは GlobalExceptionHandler がエラーコード付きで返す
+ * （コード付きの InvalidRequestException / InvalidStateException は 400、コードの無い IllegalStateException は 500）。
  */
 @RestController
 @RequestMapping("/api/v1")
@@ -34,16 +37,11 @@ public class LocationSuggestionController {
             @PathVariable Long photoId,
             @Valid @RequestBody LocationSuggestionRequest request,
             Authentication authentication) {
-        try {
-            String email = authentication.getName();
-            LocationSuggestion suggestion = locationSuggestionService.createSuggestion(
-                    photoId, email, request.getLatitude(), request.getLongitude());
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(Map.of("id", suggestion.getId()));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
-        }
+        String email = authentication.getName();
+        LocationSuggestion suggestion = locationSuggestionService.createSuggestion(
+                photoId, email, request.getLatitude(), request.getLongitude());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("id", suggestion.getId()));
     }
 
     /**
@@ -65,15 +63,10 @@ public class LocationSuggestionController {
     public ResponseEntity<?> getReviewInfo(
             @RequestParam String token,
             Authentication authentication) {
-        try {
-            String email = authentication.getName();
-            LocationSuggestionReviewResponse response =
-                    locationSuggestionService.getReviewResponse(token, email);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
-        }
+        String email = authentication.getName();
+        LocationSuggestionReviewResponse response =
+                locationSuggestionService.getReviewResponse(token, email);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -83,14 +76,9 @@ public class LocationSuggestionController {
     public ResponseEntity<?> acceptSuggestion(
             @RequestParam String token,
             Authentication authentication) {
-        try {
-            String email = authentication.getName();
-            locationSuggestionService.acceptSuggestion(token, email);
-            return ResponseEntity.ok(Map.of(KEY_MESSAGE, "撮影場所の指摘を受け入れました"));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
-        }
+        String email = authentication.getName();
+        locationSuggestionService.acceptSuggestion(token, email);
+        return ResponseEntity.ok(Map.of(KEY_MESSAGE, "撮影場所の指摘を受け入れました"));
     }
 
     /**
@@ -100,13 +88,8 @@ public class LocationSuggestionController {
     public ResponseEntity<?> rejectSuggestion(
             @RequestParam String token,
             Authentication authentication) {
-        try {
-            String email = authentication.getName();
-            locationSuggestionService.rejectSuggestion(token, email);
-            return ResponseEntity.ok(Map.of(KEY_MESSAGE, "撮影場所の指摘を拒否しました"));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of(KEY_MESSAGE, e.getMessage()));
-        }
+        String email = authentication.getName();
+        locationSuggestionService.rejectSuggestion(token, email);
+        return ResponseEntity.ok(Map.of(KEY_MESSAGE, "撮影場所の指摘を拒否しました"));
     }
 }

@@ -39,7 +39,7 @@ export async function initCookieConsent(page: Page): Promise<void> {
 /**
  * スプラッシュ画面の終了を待機
  *
- * Issue#156: スプラッシュはピン取得完了まで待つようになり、表示時間が
+ * Spec#156: スプラッシュはピン取得完了まで待つようになり、表示時間が
  * 最短 2 秒〜最長 10 秒（＋地図ロード遅延）の可変になった。固定待機だと
  * 取得が遅い環境で「スプラッシュ表示中にアサーションが走る」ため、
  * スプラッシュ要素の消滅をポーリングで待つ方式に変更する。
@@ -63,13 +63,17 @@ export async function openLoginDialog(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'ログイン' })).toBeVisible()
 }
 
+/** 新規登録ダイアログの見出し */
+export const SIGN_UP_HEADING = 'アカウントを新規登録'
+
 /**
  * 新規登録ダイアログを開く
+ * Spec#104 でメニューの「新規アカウント作成」はなくなり、ログインダイアログの「新規登録」から開く。
  */
 export async function openSignUpDialog(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'メニュー' }).click()
-  await page.getByRole('button', { name: '新規アカウント作成' }).click()
-  await expect(page.getByRole('heading', { name: 'アカウント作成' })).toBeVisible()
+  await openLoginDialog(page)
+  await page.getByRole('button', { name: '新規登録' }).click()
+  await expect(page.getByRole('heading', { name: SIGN_UP_HEADING })).toBeVisible()
 }
 
 /**
@@ -93,6 +97,33 @@ export async function performLogin(
 }
 
 /**
+ * 新規登録フォームの同意のチェックボックス（Spec#109: 利用規約・プライバシーポリシー・13 歳以上）
+ */
+export const SIGN_UP_CONSENT_CHECKBOXES = {
+  terms: '#terms',
+  privacy: '#privacy',
+  age: '#age-confirmation',
+} as const
+
+/**
+ * 新規登録フォームに入力し、同意のチェックボックスをすべて入れる（登録ボタンは押さない）
+ */
+export async function fillSignUpForm(
+  page: Page,
+  email: string,
+  password: string,
+  displayName: string = 'テストユーザー'
+): Promise<void> {
+  await page.getByPlaceholder('山田太郎、半角・全角12文字以内').fill(displayName)
+  await page.getByPlaceholder('example@photlas.com').fill(email)
+  await page.getByPlaceholder('例: Abcde123').fill(password)
+  await page.getByPlaceholder('パスワードを再入力').fill(password)
+  for (const selector of Object.values(SIGN_UP_CONSENT_CHECKBOXES)) {
+    await page.locator(selector).check()
+  }
+}
+
+/**
  * 新規登録を実行
  */
 export async function performSignUp(
@@ -101,11 +132,7 @@ export async function performSignUp(
   password: string,
   displayName: string = 'テストユーザー'
 ): Promise<void> {
-  await page.getByPlaceholder('山田太郎').fill(displayName)
-  await page.getByPlaceholder('example@photlas.com').fill(email)
-  await page.getByPlaceholder('8-20文字、数字・小文字・大文字を含む').fill(password)
-  await page.getByPlaceholder('パスワードを再入力').fill(password)
-  await page.getByRole('checkbox').check()
+  await fillSignUpForm(page, email, password, displayName)
   await page.getByRole('button', { name: '登録する' }).click()
 }
 
@@ -165,6 +192,31 @@ export async function clearStorage(page: Page): Promise<void> {
 }
 
 /**
+ * API で新規アカウントを作成する（規約・プライバシーポリシー・年齢確認に同意済み）
+ *
+ * 新規登録の画面そのものは signup.spec.ts で確かめる。ログイン済みの状態が欲しいだけのテストは、
+ * 画面の変更（同意のチェックボックスや確認の手順など）に左右されないよう API で作る。
+ */
+export async function registerAccountByApi(page: Page, email: string): Promise<void> {
+  const apiBaseUrl = getApiBaseUrl(page)
+  // 表示名は 2〜12 文字。並列で動いても重ならないよう、時刻と乱数から 11 文字で作る
+  const username = `e${Date.now().toString(36).slice(-6)}${Math.random().toString(36).slice(2, 6)}`
+  const response = await page.request.post(`${apiBaseUrl}/auth/register`, {
+    data: {
+      username,
+      email,
+      password: TEST_PASSWORD,
+      agreedToTerms: true,
+      agreedToPrivacy: true,
+      ageConfirmed: true,
+    },
+  })
+  if (!response.ok()) {
+    throw new Error(`アカウント作成に失敗: ${response.status()} ${await response.text()}`)
+  }
+}
+
+/**
  * 新規アカウントを作成してログイン状態にする
  */
 export async function createAccountAndLogin(
@@ -173,17 +225,10 @@ export async function createAccountAndLogin(
 ): Promise<string> {
   const email = generateUniqueEmail(emailPrefix)
 
-  await openSignUpDialog(page)
-  await performSignUp(page, email, TEST_PASSWORD)
-
-  // トースト表示を待機（ステージング環境ではAPI応答が60秒以上かかる場合がある）
-  await expect(page.getByText('確認メールを送信しました。メール内のリンクをクリックして認証を完了してください。')).toBeVisible({ timeout: 60000 })
+  await registerAccountByApi(page, email)
 
   // メール認証をバイパス
   await verifyEmailByApi(page, email)
-
-  // ログインダイアログに切り替わるのを待機
-  await page.waitForTimeout(1000)
 
   // ログインを実行
   await openLoginDialog(page)

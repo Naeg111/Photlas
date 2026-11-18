@@ -1,5 +1,5 @@
 /**
- * Issue#111: ユーザーの最後の位置情報を localStorage にキャッシュする。
+ * Spec#111: ユーザーの最後の位置情報を localStorage にキャッシュする。
  *
  * MapView の autoCenter / centerOnUserLocation で getCurrentPosition / watchPosition が
  * 成功するたびにキャッシュを更新し、InlineMapPicker（写真投稿マップ）が同期的に読み出して

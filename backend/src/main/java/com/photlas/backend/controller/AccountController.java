@@ -35,7 +35,7 @@ public class AccountController {
     }
 
     /**
-     * Issue#86: メールアドレス変更リクエスト
+     * Spec#86: メールアドレス変更リクエスト
      * 即座に変更せず、新メールアドレスに確認リンクを送信する。
      * PUT /api/v1/users/me/email
      */
@@ -66,7 +66,7 @@ public class AccountController {
     }
 
     /**
-     * Issue#93: 言語設定変更
+     * Spec#93: 言語設定変更
      * PUT /api/v1/users/me/language
      */
     @PutMapping("/language")
@@ -85,7 +85,7 @@ public class AccountController {
      * アカウント削除
      * DELETE /api/v1/users/me
      *
-     * <p>Issue#81 Phase 4b: confirmationChecked を含む 3 引数シグネチャに移行。
+     * <p>Spec#81 Phase 4b: confirmationChecked を含む 3 引数シグネチャに移行。
      * OAuth のみユーザー（password_hash == null）は password を送らず
      * {@code confirmationChecked == true} で削除する。クラスレベル
      * {@code @ValidDeleteAccountRequest} が事前にユーザー区分と整合性を検証。
@@ -104,7 +104,7 @@ public class AccountController {
     }
 
     /**
-     * Issue#104: OAuth 経由の未同意ユーザーが利用規約同意ダイアログでキャンセルした場合、
+     * Spec#104: OAuth 経由の未同意ユーザーが利用規約同意ダイアログでキャンセルした場合、
      * アカウントを物理削除する。
      * DELETE /api/v1/users/me/cancel-registration
      *

@@ -1,7 +1,7 @@
 package com.photlas.backend.service;
 
 /**
- * Issue#81 Phase 4d - 退会完了メールのテンプレート区分（Round 12 / Q13 / [4-B]）。
+ * Spec#81 Phase 4d - 退会完了メールのテンプレート区分（Round 12 / Q13 / [4-B]）。
  *
  * <p>退会ユーザーのアカウント構成に応じて復旧経路の案内文面を変える:
  * <ul>

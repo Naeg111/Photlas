@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
- * Issue#122: 写真詳細バッチ取得リクエスト DTO
+ * Spec#122: 写真詳細バッチ取得リクエスト DTO
  *
  * 複数の photoId を受け取って、まとめて写真詳細を返すエンドポイント用のリクエスト。
  * 写真詳細ダイアログの prefetch を 1 リクエストに集約するために使用する。

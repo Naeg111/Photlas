@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 
 /**
  * 表示名バリデーション用のカスタム Bean Validation アノテーション。
- * Issue#98: 表示名バリデーション強化。
+ * Spec#98: 表示名バリデーション強化。
  *
  * <p>使用例:
  * <pre>

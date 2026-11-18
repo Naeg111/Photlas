@@ -12,7 +12,7 @@ import java.util.concurrent.Executor;
 
 /**
  * @Async 実行用 ThreadPoolTaskExecutor の設定
- * Issue#95: 呼び出しスレッドの MDC（traceId など）を非同期スレッドに伝搬させる
+ * Spec#95: 呼び出しスレッドの MDC（traceId など）を非同期スレッドに伝搬させる
  *
  * TaskDecorator により、タスク実行前に呼び出し元スレッドの MDC をキャプチャし、
  * 実行スレッドへセット→実行後は元の状態に復元する。プール内スレッドが使い回されても

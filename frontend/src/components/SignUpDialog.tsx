@@ -8,7 +8,7 @@ import { Checkbox } from './ui/checkbox'
 import { Separator } from './ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 
-// Issue#130: react-easy-crop 依存を初回バンドルから除外（プロフィール画像トリミング時のみロード）
+// Spec#130: react-easy-crop 依存を初回バンドルから除外（プロフィール画像トリミング時のみロード）
 const ProfileImageCropper = lazy(() => import('./ProfileImageCropper'))
 import { Upload, Eye, EyeOff } from 'lucide-react'
 import { SnsLinkEditDialog } from './SnsLinkEditDialog'
@@ -27,10 +27,11 @@ import {
 } from '../utils/validation'
 import { validateUsername } from '../utils/validation/username'
 import { localizeFieldError } from '../utils/validation/localizeFieldError'
+import { translateErrorCode } from '../utils/apiErrorMessage'
 
 /**
  * SignUpDialog コンポーネント
- * Issue#26: 認証機能のモーダルベース移行
+ * Spec#26: 認証機能のモーダルベース移行
  *
  * マップ画面を離れることなく新規登録を行えるダイアログ
  */
@@ -47,16 +48,16 @@ interface SignUpDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onShowTerms: () => void
-  /** Issue#104: プライバシーポリシー画面を表示する */
+  /** Spec#104: プライバシーポリシー画面を表示する */
   onShowPrivacyPolicy: () => void
   onShowLogin: () => void
   /**
-   * Issue#81 Phase 8e: キャンセルクリック時のコールバック（SignUpMethodDialog に戻る等）。
+   * Spec#81 Phase 8e: キャンセルクリック時のコールバック（SignUpMethodDialog に戻る等）。
    * 省略時は従来通り onOpenChange(false) で単純に閉じる。
    */
   onBack?: () => void
   /**
-   * Issue#118: 登録壁から開かれた場合 true。
+   * Spec#118: 登録壁から開かれた場合 true。
    * 登録成功時に registration_wall_signup_success イベントを送信する目印。
    */
   triggeredFromWall?: boolean
@@ -71,7 +72,7 @@ export function SignUpDialog({
   onBack,
   triggeredFromWall = false,
 }: Readonly<SignUpDialogProps>) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [profileImage, setProfileImage] = useState<string>('')
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
   const [displayName, setDisplayName] = useState('')
@@ -81,9 +82,9 @@ export function SignUpDialog({
   const [snsLinks, setSnsLinks] = useState<Array<{ platform: number; url: string }>>([])
   const [isSnsEditDialogOpen, setIsSnsEditDialogOpen] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
-  // Issue#104: プライバシーポリシー同意チェックボックス追加
+  // Spec#104: プライバシーポリシー同意チェックボックス追加
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false)
-  // Issue#109: 13 歳以上であることの自己申告チェックボックス追加
+  // Spec#109: 13 歳以上であることの自己申告チェックボックス追加
   const [ageConfirmed, setAgeConfirmed] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -100,7 +101,7 @@ export function SignUpDialog({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    // 表示名 (Issue#98: 軽量バリデーション)
+    // 表示名 (Spec#98: 軽量バリデーション)
     const usernameErrorKey = validateUsername(displayName)
     if (usernameErrorKey) {
       newErrors.displayName = t(`errors.${usernameErrorKey}`)
@@ -108,14 +109,14 @@ export function SignUpDialog({
 
     // メールアドレス
     const emailValidation = validateEmail(email)
-    if (!emailValidation.isValid && emailValidation.errorMessage) {
-      newErrors.email = emailValidation.errorMessage
+    if (emailValidation.errorKey) {
+      newErrors.email = t(emailValidation.errorKey, emailValidation.errorParams)
     }
 
     // パスワード
     const passwordValidation = validatePassword(password)
-    if (!passwordValidation.isValid && passwordValidation.errorMessage) {
-      newErrors.password = passwordValidation.errorMessage
+    if (passwordValidation.errorKey) {
+      newErrors.password = t(passwordValidation.errorKey, passwordValidation.errorParams)
     }
 
     // パスワード（確認用）
@@ -161,9 +162,9 @@ export function SignUpDialog({
         method: 'PUT',
         body: file,
         headers: {
-          // Issue#100: presigned URL の署名と整合させるため必須
+          // Spec#100: presigned URL の署名と整合させるため必須
           [S3_TAG_HEADER_NAME]: S3_TAG_HEADER_VALUE_PENDING,
-          // Issue#124: presigned URL の SignedHeaders に cache-control が含まれるため必須
+          // Spec#124: presigned URL の SignedHeaders に cache-control が含まれるため必須
           'Cache-Control': S3_CACHE_CONTROL_VALUE,
         },
       })
@@ -194,10 +195,12 @@ export function SignUpDialog({
           username: displayName,
           email,
           password,
-          // Issue#109: 利用規約・プライバシー・年齢確認の同意フラグをバックエンドへ送信
+          // Spec#109: 利用規約・プライバシー・年齢確認の同意フラグをバックエンドへ送信
           agreedToTerms,
           agreedToPrivacy,
           ageConfirmed,
+          // Spec#93: 今の表示言語（手動で選んだ言語、なければブラウザの言語）を DB の言語設定の初期値にする
+          language: i18n.language,
         },
       })
       const token = data.token
@@ -211,7 +214,7 @@ export function SignUpDialog({
         await uploadSnsLinks(token, filledSnsLinks)
       }
 
-      // Issue#118: 登録壁経由の登録成功は別イベントとして計測
+      // Spec#118: 登録壁経由の登録成功は別イベントとして計測
       if (triggeredFromWall) {
         trackRegistrationWallEvent('registration_wall_signup_success')
       }
@@ -225,9 +228,11 @@ export function SignUpDialog({
           setRegisterRateLimitError(err)
           setErrors({ general: getRateLimitInlineMessage(err, t) })
         } else if (err.status === 409) {
-          setErrors({ email: t('auth.emailAlreadyUsed') })
+          // Spec#93: code から文言を出す（EMAIL_PENDING_DELETION なら「退会処理中」、
+          // EMAIL_ALREADY_IN_USE なら「使用済み」）。code が無ければ「既に登録されています」
+          setErrors({ email: translateErrorCode(err.code, t, 'auth.emailAlreadyUsed') })
         } else if (err.status === 400) {
-          // Issue#98: バリデーションエラーの field-level メッセージを取得
+          // Spec#98: バリデーションエラーの field-level メッセージを取得
           const usernameErr = err.getFieldErrorMessage('username')
           if (usernameErr) {
             setErrors({ displayName: localizeFieldError(usernameErr, t) })
@@ -276,7 +281,7 @@ export function SignUpDialog({
   }
 
   const handleCancelClick = () => {
-    // Issue#81 Phase 8e: onBack 指定時は親のダイアログ切替に委ね、onOpenChange(false) は呼ばない
+    // Spec#81 Phase 8e: onBack 指定時は親のダイアログ切替に委ね、onOpenChange(false) は呼ばない
     if (onBack) {
       onBack()
       return
@@ -480,7 +485,7 @@ export function SignUpDialog({
 
           <Separator />
 
-          {/* 利用規約・プライバシーポリシー（Issue#104 でプライバシーポリシー追加） */}
+          {/* 利用規約・プライバシーポリシー（Spec#104 でプライバシーポリシー追加） */}
           {/* w-fit mx-auto で内側ラッパー幅を最長行（プライバシー）にそろえ、両チェックボックスの左端を一致させる */}
           <div className="space-y-5 my-[50px]">
             {errors.terms && (
@@ -540,7 +545,7 @@ export function SignUpDialog({
                   {t('auth.termsAgreement.agreeToPrivacyPolicySuffix')}
                 </span>
               </label>
-              {/* Issue#109: 13 歳以上であることの自己申告チェックボックス */}
+              {/* Spec#109: 13 歳以上であることの自己申告チェックボックス */}
               <label
                 htmlFor="age-confirmation"
                 className="flex items-center space-x-3 cursor-pointer p-2 -mx-2 select-none"
@@ -557,7 +562,7 @@ export function SignUpDialog({
             </div>
           </div>
 
-          {/* ボタン（Issue#81 Phase 8r-2: 「キャンセル」→「戻る」、handleCancelClick → handleBackClick 相当） */}
+          {/* ボタン（Spec#81 Phase 8r-2: 「キャンセル」→「戻る」、handleCancelClick → handleBackClick 相当） */}
           <div className="flex gap-3 pt-6">
             <Button
               variant="outline"
@@ -578,11 +583,11 @@ export function SignUpDialog({
             </Button>
           </div>
 
-          {/* Issue#81 Phase 8e: OAuth 新規登録ボタンは OAuthSignUpDialog に分離したため削除 */}
+          {/* Spec#81 Phase 8e: OAuth 新規登録ボタンは OAuthSignUpDialog に分離したため削除 */}
         </div>
 
         {/* プロフィール画像トリミングモーダル */}
-        {/* Issue#130: lazy 化したコンポーネントを Suspense でラップ */}
+        {/* Spec#130: lazy 化したコンポーネントを Suspense でラップ */}
         {isCropperOpen && (
           <Suspense fallback={null}>
             <ProfileImageCropper

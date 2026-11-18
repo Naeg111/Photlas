@@ -1,5 +1,5 @@
 /**
- * Issue#135 Phase 9: キーワード選択 UI コンポーネント。
+ * Spec#135 Phase 9: キーワード選択 UI コンポーネント。
  *
  * 投稿フォーム (PhotoContributionDialog) と検索フィルタ (SearchPage) で共用する。
  *
@@ -11,7 +11,7 @@
  *      - 同一キーワードが複数カテゴリに属する場合は重複表示、チェック状態は連動
  *   4. maxSelections 上限制御
  *
- * 詳細仕様は Issue#135 3.4.2 / 3.5 / Q31〜Q34 参照。
+ * 詳細仕様は Spec#135 3.4.2 / 3.5 / Q31〜Q34 参照。
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -26,7 +26,7 @@ export interface KeywordTag {
   displayName: string
   categoryCodes: number[]
   sortOrder: number
-  /** Issue#141 後追い: 投稿数 (PUBLISHED + 退会済除外)。0 ならフィルタ画面で非活性表示。 */
+  /** Spec#141 後追い: 投稿数 (PUBLISHED + 退会済除外)。0 ならフィルタ画面で非活性表示。 */
   photoCount?: number
 }
 
@@ -51,7 +51,7 @@ export interface KeywordSectionProps {
   /** 文脈連動エリアでカテゴリごとに表示する最大件数（デフォルト 10） */
   contextualTopN?: number
   /**
-   * Issue#141 Phase 6: カテゴリ選択時に配下キーワードを自動選択するモード。
+   * Spec#141 Phase 6: カテゴリ選択時に配下キーワードを自動選択するモード。
    * フィルタ画面で true、投稿フォームで false（デフォルト）。
    * true のときは:
    *   - selectedCategoryCodes の追加で配下 tag を selectedTagIds に自動追加 (Q1: maxSelections 無視)
@@ -86,7 +86,7 @@ export function KeywordSection({
 
   const selectedSet = useMemo(() => new Set(selectedTagIds), [selectedTagIds])
 
-  // Issue#159: 上限は「グループ（表示名）単位」で数える。同義タグ（牧場=Farm/Ranch/Pasture）は 1 件扱い。
+  // Spec#159: 上限は「グループ（表示名）単位」で数える。同義タグ（牧場=Farm/Ranch/Pasture）は 1 件扱い。
   const displayNameByTagId = useMemo(() => {
     const m = new Map<number, string>()
     for (const tag of allTags) m.set(tag.tagId, tag.displayName)
@@ -98,7 +98,7 @@ export function KeywordSection({
     return names.size
   }, [selectedTagIds, displayNameByTagId])
 
-  // Issue#141 Phase 6: カテゴリ変化 diff で配下 tag を自動追加/除外
+  // Spec#141 Phase 6: カテゴリ変化 diff で配下 tag を自動追加/除外
   // useRef で前回 codes と最新 selectedTagIds を保持し、依存配列に
   // selectedTagIds / onSelectionChange を入れない (無限ループ防止)
   const previousCodesRef = useRef<number[]>([])
@@ -120,7 +120,7 @@ export function KeywordSection({
     if (added.length === 0 && removed.length === 0) return
 
     // added カテゴリ配下の tag を追加（maxSelections 無視, Q1）
-    // Issue#141 後追い: photoCount=0 の tag は auto-select でも追加しない (非活性チップ扱い)
+    // Spec#141 後追い: photoCount=0 の tag は auto-select でも追加しない (非活性チップ扱い)
     const tagsToAdd = allTags
       .filter((t) => t.categoryCodes.some((c) => added.includes(c)))
       .filter((t) => t.photoCount !== 0)
@@ -173,14 +173,14 @@ export function KeywordSection({
             || tag.slug.toLowerCase().includes(q)
         )
       }
-      // Issue#141 後追い: 配下タグが 0 件のカテゴリ (例: 「その他」214) はアコーディオン枠ごと非表示
+      // Spec#141 後追い: 配下タグが 0 件のカテゴリ (例: 「その他」214) はアコーディオン枠ごと非表示
       if (list.length === 0) continue
       map.set(code, list)
     }
     return map
   }, [allTags, searchQuery])
 
-  // Issue#141 後追い: 0 件タグの集合 (フィルタ画面のみ非活性扱い)。
+  // Spec#141 後追い: 0 件タグの集合 (フィルタ画面のみ非活性扱い)。
   // photoCount 未定義 (投稿フォーム用) は非活性化しない。
   const disabledTagIdSet = useMemo(() => {
     if (!autoSelectByCategoryMode) return new Set<number>()
@@ -191,7 +191,7 @@ export function KeywordSection({
     return s
   }, [allTags, autoSelectByCategoryMode])
 
-  // Issue#159: 表示名グループ単位の選択判定。いずれかのメンバーが選択済みならグループは選択中。
+  // Spec#159: 表示名グループ単位の選択判定。いずれかのメンバーが選択済みならグループは選択中。
   function isGroupSelected(group: TagGroup): boolean {
     return group.tagIds.some((id) => selectedSet.has(id))
   }
@@ -200,7 +200,7 @@ export function KeywordSection({
     return group.tagIds.every((id) => disabledTagIdSet.has(id))
   }
 
-  // Issue#159: 表示名グループのトグル。
+  // Spec#159: 表示名グループのトグル。
   //   - 解除: グループの全メンバー tagId を外す
   //   - フィルタ (autoSelectByCategoryMode): グループ全 tagId を追加（OR 絞り込み）
   //   - 投稿/編集: グループ単位の上限チェック → 正準タグ 1 件のみ追加
@@ -224,7 +224,7 @@ export function KeywordSection({
   function chipClass(selected: boolean, disabled = false): string {
     const base = 'inline-flex items-center px-3 py-1 rounded-full border text-sm select-none mr-2 mb-2'
     if (disabled) {
-      // Issue#141 後追い: 投稿 0 件タグは非活性表示（クリック不可、グレーアウト、選択中でも黒くしない）
+      // Spec#141 後追い: 投稿 0 件タグは非活性表示（クリック不可、グレーアウト、選択中でも黒くしない）
       return `${base} bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed`
     }
     return selected
@@ -369,7 +369,7 @@ function SearchResultList({
   isGroupSelected: (group: TagGroup) => boolean
   isGroupDisabled: (group: TagGroup) => boolean
 }>) {
-  // Issue#159: 同一表示名の同義タグは 1 チップに畳む。複数カテゴリの重複表示は従来どおり維持。
+  // Spec#159: 同一表示名の同義タグは 1 チップに畳む。複数カテゴリの重複表示は従来どおり維持。
   const items: { code: number; group: TagGroup }[] = []
   for (const [code, tags] of accordionByCategory.entries()) {
     for (const group of groupTagsByDisplayName(tags)) items.push({ code, group })

@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import PhotoDetailDialog from './PhotoDetailDialog'
-import { MODERATION_STATUS_QUARANTINED, MODERATION_STATUS_PENDING_REVIEW, MODERATION_STATUS_PUBLISHED } from '../utils/codeConstants'
+import { MODERATION_STATUS_QUARANTINED, MODERATION_STATUS_PENDING_REVIEW, MODERATION_STATUS_PUBLISHED, WEATHER_SUNNY } from '../utils/codeConstants'
+import i18n from '../i18n'
 import { _resetRateLimitNotifyDebounce } from '../utils/notifyIfRateLimited'
 
 // Mapbox GL JS (react-map-gl) のモック
@@ -27,21 +28,22 @@ vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
 }))
 
-// Issue#65: sonnerのモック
+// Spec#65: sonnerのモック
 const { mockToast } = vi.hoisted(() => ({
   mockToast: {
     success: vi.fn(),
     error: vi.fn(),
+    info: vi.fn(),
   },
 }))
 vi.mock('sonner', () => ({
   toast: mockToast,
 }))
 
-// Issue#65: LocationSuggestionDialogのモック
+// Spec#65: LocationSuggestionDialogのモック
 const TEST_SUGGESTED_LAT = 35.68
 const TEST_SUGGESTED_LNG = 139.76
-// Issue#146: locationFromExif の受け渡しを検証するためプロパティを記録する
+// Spec#146: locationFromExif の受け渡しを検証するためプロパティを記録する
 const { MockLocationSuggestionDialog, locationSuggestionProps } = vi.hoisted(() => {
   const locationSuggestionProps: { current: { locationFromExif?: boolean } } = { current: {} }
   const MockLocationSuggestionDialog = ({ open, onSubmit, locationFromExif }: {
@@ -69,7 +71,7 @@ vi.mock('./LocationSuggestionDialog', () => ({
 }))
 
 /**
- * Issue#14: 写真詳細表示 (UI + API)
+ * Spec#14: 写真詳細表示 (UI + API)
  * TDD Red段階のテストコード
  */
 
@@ -106,18 +108,18 @@ const TEST_INSTAGRAM_URL = 'https://instagram.com/testuser'
 const ERROR_MESSAGE_NETWORK = 'Network error'
 const ERROR_TEXT_LOAD_FAILED = '読み込みに失敗しました'
 
-// Helper Functions - Create mock API response in PhotoDetailResponse format (Issue#88)
+// Helper Functions - Create mock API response in PhotoDetailResponse format (Spec#88)
 function createMockApiResponse(overrides?: {
   photoId?: number
   imageUrls?: {
     thumbnail?: string | null
     standard?: string
     original?: string
-    /** Issue#125: LQIP（低品質プレースホルダー）の data URL */
+    /** Spec#125: LQIP（低品質プレースホルダー）の data URL */
     lqip?: string | null
   }
   shotAt?: string
-  weather?: string
+  weather?: string | number
   isFavorited?: boolean
   favoriteCount?: number
   userId?: number
@@ -148,7 +150,7 @@ function createMockApiResponse(overrides?: {
       thumbnail: overrides?.imageUrls?.thumbnail ?? TEST_THUMBNAIL_URL,
       standard: overrides?.imageUrls?.standard ?? TEST_STANDARD_URL,
       original: overrides?.imageUrls?.original ?? TEST_ORIGINAL_URL,
-      // Issue#125: LQIP は overrides にあれば渡す（既定では含めない）
+      // Spec#125: LQIP は overrides にあれば渡す（既定では含めない）
       ...(overrides?.imageUrls?.lqip !== undefined && { lqip: overrides.imageUrls.lqip }),
     },
     placeName: overrides?.placeName ?? null,
@@ -198,7 +200,7 @@ function createMockPhotoDetail(overrides?: any) {
 function setupMockFetch(photoIds: number[], photoDetails: any[], totalOverride?: number) {
   const mockFetch = vi.fn()
 
-  // Issue#112: First call: POST /spots/photos が { ids, total } を返す
+  // Spec#112: First call: POST /spots/photos が { ids, total } を返す
   mockFetch.mockResolvedValueOnce({
     ok: true,
     json: async () => ({ ids: photoIds, total: totalOverride ?? photoIds.length }),
@@ -212,7 +214,7 @@ function setupMockFetch(photoIds: number[], photoDetails: any[], totalOverride?:
     })
   })
 
-  // Issue#65: ステータスAPI等の追加呼び出しに対するデフォルトレスポンス
+  // Spec#65: ステータスAPI等の追加呼び出しに対するデフォルトレスポンス
   mockFetch.mockResolvedValue({
     ok: true,
     json: async () => ({}),
@@ -222,7 +224,7 @@ function setupMockFetch(photoIds: number[], photoDetails: any[], totalOverride?:
 }
 
 /**
- * Issue#122 Cycle3: バッチエンドポイントを含む URL/method aware な mock fetch を生成する。
+ * Spec#122 Cycle3: バッチエンドポイントを含む URL/method aware な mock fetch を生成する。
  *
  * - POST /api/v1/spots/photos: { ids, total } を返す
  * - POST /api/v1/photos/batch: body.photoIds に対応する詳細を `detailMap` から引いて配列で返す
@@ -282,7 +284,7 @@ function renderPhotoDetailDialog({
   )
 }
 
-describe('PhotoDetailDialog Component - Issue#14', () => {
+describe('PhotoDetailDialog Component - Spec#14', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     _resetRateLimitNotifyDebounce()
@@ -312,7 +314,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       renderPhotoDetailDialog()
 
       await waitFor(() => {
-        // Issue#112: POST /api/v1/spots/photos が呼ばれ、body に spotIds が含まれる
+        // Spec#112: POST /api/v1/spots/photos が呼ばれ、body に spotIds が含まれる
         expect(mockFetch).toHaveBeenCalledWith(
           expect.stringContaining('/api/v1/spots/photos'),
           expect.objectContaining({
@@ -475,8 +477,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(images.length).toBeLessThanOrEqual(2)
     })
 
-    // Issue#122: prefetch 範囲拡大（radius=2）と thumbnail 画像 preload
-    describe('Issue#122 - prefetch 範囲拡大と thumbnail 画像 preload', () => {
+    // Spec#122: prefetch 範囲拡大（radius=2）と thumbnail 画像 preload
+    describe('Spec#122 - prefetch 範囲拡大と thumbnail 画像 preload', () => {
       it('5枚の写真がある場合、currentIndex=0で自分(101)+前後2枚(102,103)が取得され、4枚目以降(104,105)は取得されない', async () => {
         // Cycle3 でバッチエンドポイント導入後も機能するよう、実装非依存のチェックに変更
         // （個別 GET でもバッチ POST でも、いずれかの経路で取得されていれば良い）
@@ -536,13 +538,13 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
         const detailMap = new Map<number, ReturnType<typeof createMockPhotoDetail>>()
         detailMap.set(TEST_PHOTO_ID_1, createMockPhotoDetail({
           photoId: TEST_PHOTO_ID_1,
-          imageUrls: { thumbnail: 'https://example.com/issue122-thumb-1.jpg', standard: TEST_STANDARD_URL },
+          imageUrls: { thumbnail: 'https://example.com/spec122-thumb-1.jpg', standard: TEST_STANDARD_URL },
           user: { userId: TEST_USER_ID, username: TEST_USERNAME },
           spot: { spotId: TEST_SPOT_ID },
         }))
         detailMap.set(TEST_PHOTO_ID_2, createMockPhotoDetail({
           photoId: TEST_PHOTO_ID_2,
-          imageUrls: { thumbnail: 'https://example.com/issue122-thumb-2.jpg', standard: 'https://example.com/issue122-std-2.jpg' },
+          imageUrls: { thumbnail: 'https://example.com/spec122-thumb-2.jpg', standard: 'https://example.com/spec122-std-2.jpg' },
           user: { userId: TEST_USER_ID, username: TEST_USERNAME },
           spot: { spotId: TEST_SPOT_ID },
         }))
@@ -568,8 +570,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
 
           await waitFor(() => {
             const calledUrls = setSrcSpy.mock.calls.map((c) => c[0])
-            expect(calledUrls).toContain('https://example.com/issue122-thumb-1.jpg')
-            expect(calledUrls).toContain('https://example.com/issue122-thumb-2.jpg')
+            expect(calledUrls).toContain('https://example.com/spec122-thumb-1.jpg')
+            expect(calledUrls).toContain('https://example.com/spec122-thumb-2.jpg')
           })
         } finally {
           vi.unstubAllGlobals()
@@ -577,8 +579,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    // Issue#122 Cycle2: cross-fade アニメーション
-    describe('Issue#122 Cycle2 - cross-fade アニメーション', () => {
+    // Spec#122 Cycle2: cross-fade アニメーション
+    describe('Spec#122 Cycle2 - cross-fade アニメーション', () => {
       it('表示中の写真 <img> に Tailwind v4 の cross-fade 用クラスが付与されている', async () => {
         const photoIds = [TEST_PHOTO_ID_1]
         const photoDetail = createMockApiResponse({ username: TEST_USERNAME })
@@ -598,8 +600,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    // Issue#122 Cycle3: 写真詳細バッチエンドポイント
-    describe('Issue#122 Cycle3 - 写真詳細バッチエンドポイント', () => {
+    // Spec#122 Cycle3: 写真詳細バッチエンドポイント
+    describe('Spec#122 Cycle3 - 写真詳細バッチエンドポイント', () => {
       it('prefetch 範囲の写真詳細は POST /api/v1/photos/batch を 1 回呼ぶ', async () => {
         const ids = [101, 102, 103]
         const detailMap = new Map<number, ReturnType<typeof createMockApiResponse>>()
@@ -676,8 +678,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
-  // Issue#128: スワイプ方向に応じた非対称 prefetch
-  describe('Issue#128 - スワイプ方向に応じた非対称 prefetch', () => {
+  // Spec#128: スワイプ方向に応じた非対称 prefetch
+  describe('Spec#128 - スワイプ方向に応じた非対称 prefetch', () => {
     it('連続して次へ 2 回押下後、進行方向側 (forward=3) の prefetch に currentIndex+3 が含まれる', async () => {
       // 7 枚で開始。currentIndex=0 → 次へ 2 回 → currentIndex=2
       // 履歴 = [+1, +1], sum=2 → forward 偏重: forward 3 / backward 1
@@ -805,10 +807,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   // ============================================================
-  // Issue#30: お気に入り機能テスト
+  // Spec#30: お気に入り機能テスト
   // ============================================================
 
-  describe('Issue#30: お気に入りボタン', () => {
+  describe('Spec#30: お気に入りボタン', () => {
     it('お気に入りボタン（ハートアイコン）が表示される', async () => {
       const photoDetail = createMockPhotoDetail()
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
@@ -951,7 +953,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Issue#135: photoTags
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Spec#135: photoTags
         .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
         .mockImplementationOnce(() => new Promise(() => {})) // 永続的にpending
 
@@ -985,7 +987,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Issue#135: photoTags
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Spec#135: photoTags
         .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
         .mockResolvedValueOnce({ ok: true }) // POST /favorite
 
@@ -1013,6 +1015,75 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       await waitFor(() => {
         expect(favoriteButton).toHaveAttribute('aria-label', 'お気に入りから削除')
       })
+    })
+
+    // Spec#93: お気に入り登録で 400 が返る（既定は公開中でない写真の PHOTO_NOT_PUBLIC）
+    const createPhotoNotPublicFavoriteResponse = () => new Response(
+      JSON.stringify({ code: 'PHOTO_NOT_PUBLIC', message: '公開中の写真のみお気に入り登録できます' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    )
+
+    async function clickFavoriteWithBadRequest(favoriteResponse = createPhotoNotPublicFavoriteResponse()) {
+      const photoDetail = createMockPhotoDetail({ isFavorited: false, favoriteCount: 3 })
+      const mockFetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Spec#135: photoTags
+        .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
+        .mockResolvedValueOnce(favoriteResponse) // POST /favorite
+
+      const { rerender } = render(
+        <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+      )
+
+      Object.defineProperty(globalThis, 'fetch', {
+        value: mockFetch,
+        writable: true,
+        configurable: true,
+      })
+
+      const user = userEvent.setup()
+      rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorite-count')).toHaveTextContent('3')
+      })
+
+      await user.click(screen.getByTestId('favorite-button'))
+    }
+
+    it('Spec#93: 公開中でない写真（400 PHOTO_NOT_PUBLIC）なら、理由を知らせて元の状態に戻す', async () => {
+      await clickFavoriteWithBadRequest()
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('この写真は公開中ではないため操作できません')
+      })
+      expect(screen.getByTestId('favorite-button')).toHaveAttribute('aria-label', 'お気に入りに追加')
+      expect(screen.getByTestId('favorite-count')).toHaveTextContent('3')
+    })
+
+    it('Spec#93: 400 の本文が JSON でなければ、汎用の文言を出して元の状態に戻す', async () => {
+      await clickFavoriteWithBadRequest(new Response('Bad Request', { status: 400 }))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('エラーが発生しました')
+      })
+      expect(screen.getByTestId('favorite-button')).toHaveAttribute('aria-label', 'お気に入りに追加')
+      expect(screen.getByTestId('favorite-count')).toHaveTextContent('3')
+    })
+
+    it('Spec#93: 英語の設定では、公開中でない写真の理由を英語で知らせる', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        await clickFavoriteWithBadRequest()
+
+        await waitFor(() => {
+          expect(mockToast.error).toHaveBeenCalledWith('This photo is not public, so this action is unavailable.')
+        })
+        expect(mockToast.error).not.toHaveBeenCalledWith('この写真は公開中ではないため操作できません')
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
 
     it('未ログイン状態ではお気に入りボタンが無効化される', async () => {
@@ -1069,10 +1140,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   // ============================================================
-  // Issue#44: 写真詳細ダイアログの情報拡張テスト
+  // Spec#44: 写真詳細ダイアログの情報拡張テスト
   // ============================================================
 
-  describe('Issue#44: EXIF情報ブロックの表示', () => {
+  describe('Spec#44: EXIF情報ブロックの表示', () => {
     it('EXIF情報が全て揃っている場合、撮影情報ブロックが全項目表示される', async () => {
       const photoDetail = createMockApiResponse({
         cameraInfo: {
@@ -1170,7 +1241,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
-  describe('Issue#44: 撮影コンテクスト情報の拡充', () => {
+  describe('Spec#44: 撮影コンテクスト情報の拡充', () => {
     it('撮影日時がフォーマットされて表示される', async () => {
       const photoDetail = createMockApiResponse({
         shotAt: '2026-01-15T18:30:00',
@@ -1195,13 +1266,45 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
+    it('Spec#93 追加対応: 英語の設定では、撮影日時と天気が英語で表示される', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        const photoDetail = createMockApiResponse({
+          shotAt: '2026-01-15T18:30:00',
+          weather: WEATHER_SUNNY,
+        })
+        const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+        const { rerender } = render(
+          <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />
+        )
+
+        Object.defineProperty(globalThis, 'fetch', {
+          value: mockFetch,
+          writable: true,
+          configurable: true,
+        })
+
+        rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} />)
+
+        await waitFor(() => {
+          expect(screen.getByText(/January 15, 2026/)).toBeInTheDocument()
+          expect(screen.getByText(/Sunny/)).toBeInTheDocument()
+        })
+        expect(screen.queryByText(/2026年1月15日/)).not.toBeInTheDocument()
+        expect(screen.queryByText(/晴れ/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
   })
 
   // ============================================================
-  // Issue#45: 撮影地点ミニマップテスト
+  // Spec#45: 撮影地点ミニマップテスト
   // ============================================================
 
-  describe('Issue#45: 撮影地点ミニマップ', () => {
+  describe('Spec#45: 撮影地点ミニマップ', () => {
     it('撮影座標がある場合、ミニマップが表示される', async () => {
       const photoDetail = createMockApiResponse({
         latitude: 35.6586,
@@ -1344,8 +1447,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
-  // ===== Issue#49: クロップ表示テスト =====
-  describe('Issue#49: クロップ表示', () => {
+  // ===== Spec#49: クロップ表示テスト =====
+  describe('Spec#49: クロップ表示', () => {
     it('写真表示エリアが正方形コンテナで表示される', async () => {
       const photoDetail = createMockApiResponse()
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
@@ -1367,11 +1470,11 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    // Issue#131: サムネイル自体がユーザー指定範囲で生成されるようになったため、
+    // Spec#131: サムネイル自体がユーザー指定範囲で生成されるようになったため、
     // フロント側で objectPosition / transform で再現する必要がなくなった。
     // 既存のクロップ CSS 再現テスト2件は、「クロップスタイルが付与されない」
     // ことを確認するレグレッションテストに置き換える。
-    it('Issue#131 - cropデータが photo に存在しても、画像に objectPosition / transform は付与されない', async () => {
+    it('Spec#131 - cropデータが photo に存在しても、画像に objectPosition / transform は付与されない', async () => {
       const photoDetail = createMockApiResponse({
         cropCenterX: 0.3,
         cropCenterY: 0.7,
@@ -1401,7 +1504,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('Issue#131 - cropデータが photo に無い場合も、画像に objectPosition / transform は付与されない', async () => {
+    it('Spec#131 - cropデータが photo に無い場合も、画像に objectPosition / transform は付与されない', async () => {
       const photoDetail = createMockApiResponse()
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
 
@@ -1457,8 +1560,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
-  // Issue#54: モデレーションステータスバナーのテスト
-  describe('Issue#54: モデレーションステータスバナー', () => {
+  // Spec#54: モデレーションステータスバナーのテスト
+  describe('Spec#54: モデレーションステータスバナー', () => {
     it('QUARANTINED状態の写真に非公開バナーが表示される', async () => {
       mockUseAuth.mockReturnValue({ isAuthenticated: true, userId: TEST_USER_ID })
 
@@ -1543,10 +1646,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   // ============================================================
-  // Issue#57: ユーザーによる写真削除機能テスト
+  // Spec#57: ユーザーによる写真削除機能テスト
   // ============================================================
 
-  describe('Issue#57: 写真削除機能', () => {
+  describe('Spec#57: 写真削除機能', () => {
     it('isDeletable=trueかつ自分の写真の場合、削除ボタンが表示される', async () => {
       const photoDetail = createMockApiResponse({ userId: TEST_USER_ID })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
@@ -1740,10 +1843,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   // ============================================================
-  // Issue#58: 共有ボタンテスト
+  // Spec#58: 共有ボタンテスト
   // ============================================================
 
-  describe('Issue#58: 共有ボタン', () => {
+  describe('Spec#58: 共有ボタン', () => {
     it('共有ボタンが表示される', async () => {
       const photoDetail = createMockApiResponse()
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
@@ -1840,10 +1943,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   // ============================================================
-  // Issue#61: 写真メタデータ編集機能テスト
+  // Spec#61: 写真メタデータ編集機能テスト
   // ============================================================
 
-  describe('Issue#61: 写真メタデータ編集', () => {
+  describe('Spec#61: 写真メタデータ編集', () => {
     it('自分の写真の場合、編集ボタンが表示される', async () => {
       const photoDetail = createMockApiResponse({ userId: TEST_USER_ID })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
@@ -1917,6 +2020,46 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
+    it('Spec#93 追加対応: 英語の設定では、編集画面のカテゴリー名が英語で表示される', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        const photoDetail = createMockApiResponse({ userId: TEST_USER_ID, categories: ['自然風景'] })
+        const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
+
+        const { rerender } = render(
+          <PhotoDetailDialog open={false} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />
+        )
+
+        Object.defineProperty(globalThis, 'fetch', {
+          value: mockFetch,
+          writable: true,
+          configurable: true,
+        })
+
+        rerender(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={() => {}} isDeletable />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('edit-photo-button')).toBeInTheDocument()
+        })
+
+        const user = userEvent.setup()
+        await user.click(screen.getByTestId('edit-photo-button'))
+
+        const categoryList = await waitFor(() => {
+          const el = document.getElementById('edit-categories')
+          expect(el).not.toBeNull()
+          return el as HTMLElement
+        })
+        expect(within(categoryList).getByText('Nature')).toBeInTheDocument()
+        expect(within(categoryList).getByText('Leisure & Facilities')).toBeInTheDocument()
+        expect(within(categoryList).getByRole('checkbox', { name: 'Nature' })).toBeChecked()
+        expect(within(categoryList).queryByText('自然風景')).not.toBeInTheDocument()
+        expect(within(categoryList).queryByRole('checkbox', { name: '自然風景' })).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
     it('キャンセルボタンを押すと表示モードに戻る', async () => {
       const photoDetail = createMockApiResponse({ userId: TEST_USER_ID })
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
@@ -1952,7 +2095,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('Issue#135 追補: 編集保存時に PUT ボディへ tagIds が含まれる（現在のタグをプリフィル）', async () => {
+    it('Spec#135 追補: 編集保存時に PUT ボディへ tagIds が含まれる（現在のタグをプリフィル）', async () => {
       const photoDetail = createMockApiResponse({ userId: TEST_USER_ID, categories: ['自然風景'] })
       const sakuraTag = { tagId: 42, slug: 'sakura', displayName: 'サクラ', categoryCodes: [206], sortOrder: 1, photoCount: 3 }
 
@@ -2021,9 +2164,9 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   // ============================================================
-  // Issue#65: 撮影場所の指摘API連携テスト
+  // Spec#65: 撮影場所の指摘API連携テスト
   // ============================================================
-  describe('Issue#65: 撮影場所の指摘API連携', () => {
+  describe('Spec#65: 撮影場所の指摘API連携', () => {
     function createLocationSuggestionMockFetch(
       postConfig: { ok: boolean; status?: number; body?: Record<string, unknown> } | 'reject'
     ) {
@@ -2070,7 +2213,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       return user
     }
 
-    it('Issue#146 - locationFromExif=true が指摘ダイアログに渡される', async () => {
+    it('Spec#146 - locationFromExif=true が指摘ダイアログに渡される', async () => {
       const photoDetail = { ...createMockApiResponse({ userId: 999, username: 'otheruser' }), locationFromExif: true }
       const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes('/spots/') && url.includes('/photos')) {
@@ -2126,18 +2269,53 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('400エラー時にサーバーのメッセージがエラートーストに表示される', async () => {
-      const mockFetch = createLocationSuggestionMockFetch({
-        ok: false,
-        status: 400,
-        body: { message: '自分の投稿に対して撮影場所の指摘はできません' },
-      })
+    // Spec#93: バックエンドの message（日本語）は出さず、code から表示言語の文言を出す
+    const ownPhotoError = {
+      ok: false,
+      status: 400,
+      body: { code: 'SUGGESTION_OWN_PHOTO', message: '自分の投稿に対して撮影場所の指摘はできません（サーバー）' },
+    }
+
+    it('400エラー時にエラーコードに応じたメッセージがエラートーストに表示される', async () => {
+      const mockFetch = createLocationSuggestionMockFetch(ownPhotoError)
       const user = await renderAndOpenSuggestionDialog(mockFetch)
 
       await user.click(screen.getByTestId('mock-suggestion-submit'))
 
       await waitFor(() => {
         expect(mockToast.error).toHaveBeenCalledWith('自分の投稿に対して撮影場所の指摘はできません')
+      })
+    })
+
+    it('Spec#93 - 英語の設定では400エラーのトーストが英語で表示される', async () => {
+      const mockFetch = createLocationSuggestionMockFetch(ownPhotoError)
+      await i18n.changeLanguage('en')
+      try {
+        const user = await renderAndOpenSuggestionDialog(mockFetch)
+
+        await user.click(screen.getByTestId('mock-suggestion-submit'))
+
+        await waitFor(() => {
+          expect(mockToast.error).toHaveBeenCalledWith('You cannot suggest a location for your own photo.')
+        })
+        expect(mockToast.error).not.toHaveBeenCalledWith(ownPhotoError.body.message)
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
+    it('400エラーでコードが無い場合は汎用のメッセージになる', async () => {
+      const mockFetch = createLocationSuggestionMockFetch({
+        ok: false,
+        status: 400,
+        body: { message: '日本語のメッセージ' },
+      })
+      const user = await renderAndOpenSuggestionDialog(mockFetch)
+
+      await user.click(screen.getByTestId('mock-suggestion-submit'))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('指摘の送信に失敗しました')
       })
     })
 
@@ -2246,10 +2424,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   // ============================================================
-  // Issue#78: 投稿者本人による指摘・通報ボタンの非活性化
+  // Spec#78: 投稿者本人による指摘・通報ボタンの非活性化
   // ============================================================
 
-  describe('Issue#78: 指摘・通報ボタンの非活性化', () => {
+  describe('Spec#78: 指摘・通報ボタンの非活性化', () => {
     it('投稿者本人の場合、通報ボタンが非活性で表示される', async () => {
       mockUseAuth.mockReturnValue({ user: { userId: TEST_USER_ID, username: TEST_USERNAME }, isAuthenticated: true })
 
@@ -2317,6 +2495,118 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
 
       expect(screen.getByTestId('report-button')).not.toBeDisabled()
+    })
+  })
+
+  describe('通報の送信結果のお知らせ', () => {
+    function createReportMockFetch(reportResponse: {
+      ok: boolean
+      status: number
+      headers?: Record<string, string>
+      body?: unknown
+    }) {
+      const photoDetail = createMockApiResponse({ userId: 999, username: 'otheruser' })
+      return vi.fn().mockImplementation((url: string, options?: RequestInit) => {
+        if (url.includes('/report') && options?.method === 'POST') {
+          return Promise.resolve({
+            ok: reportResponse.ok,
+            status: reportResponse.status,
+            headers: new Headers(reportResponse.headers ?? {}),
+            json: async () => ('body' in reportResponse ? reportResponse.body : {}),
+          })
+        }
+        if (url.includes('/spots/') && url.includes('/photos')) {
+          return Promise.resolve({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
+        }
+        if (url.includes(`/photos/${TEST_PHOTO_ID_1}`)) {
+          return Promise.resolve({ ok: true, json: async () => photoDetail })
+        }
+        return Promise.resolve({ ok: true, json: async () => ({}) })
+      })
+    }
+
+    async function submitReport(mockFetch: ReturnType<typeof vi.fn>) {
+      mockUseAuth.mockReturnValue({ user: { userId: TEST_USER_ID, username: TEST_USERNAME }, isAuthenticated: true })
+      global.fetch = mockFetch
+      const user = userEvent.setup()
+
+      render(<PhotoDetailDialog open={true} spotIds={[TEST_SPOT_ID]} onClose={vi.fn()} />)
+
+      // 他人の写真が読み込まれてから通報する
+      await waitFor(() => {
+        expect(screen.getByText('otheruser')).toBeInTheDocument()
+      })
+      await user.click(screen.getByTestId('report-button'))
+      // ラベルは表示言語に合わせる（ja では「成人向けコンテンツ」「通報する」）
+      await user.click(await screen.findByLabelText(i18n.t('reportReasons.adult')))
+      await user.click(screen.getByRole('button', { name: i18n.t('report.submit') }))
+    }
+
+    it('通報が受け付けられたら成功のお知らせを出す', async () => {
+      await submitReport(createReportMockFetch({ ok: true, status: 201 }))
+
+      await waitFor(() => {
+        expect(mockToast.success).toHaveBeenCalledWith('通報を受け付けました')
+      })
+    })
+
+    it('すでに通報済み（409）なら、そのことを知らせてダイアログを閉じる', async () => {
+      await submitReport(createReportMockFetch({ ok: false, status: 409 }))
+
+      await waitFor(() => {
+        expect(mockToast.info).toHaveBeenCalledWith('すでに通報済みです')
+      })
+      expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
+    })
+
+    it('レート制限（429）なら、プロフィールの通報と同じく専用のお知らせを出す', async () => {
+      await submitReport(createReportMockFetch({ ok: false, status: 429, headers: { 'Retry-After': '30' } }))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('混雑しています（30 秒後に再取得）')
+      })
+      expect(mockToast.error).not.toHaveBeenCalledWith('通報に失敗しました')
+    })
+
+    it('400 なら失敗のお知らせを出してダイアログを閉じる', async () => {
+      await submitReport(createReportMockFetch({ ok: false, status: 400 }))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('通報に失敗しました')
+      })
+      expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
+    })
+
+    it('Spec#93: 公開中でない写真（400 PHOTO_NOT_PUBLIC）なら、その理由を知らせてダイアログを閉じる', async () => {
+      await submitReport(createReportMockFetch({
+        ok: false,
+        status: 400,
+        body: { code: 'PHOTO_NOT_PUBLIC', message: '公開中の写真のみ通報できます' },
+      }))
+
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('この写真は公開中ではないため操作できません')
+      })
+      expect(mockToast.error).not.toHaveBeenCalledWith('通報に失敗しました')
+      expect(screen.queryByRole('button', { name: '通報する' })).not.toBeInTheDocument()
+    })
+
+    it('Spec#93: 英語の設定では、公開中でない写真（400 PHOTO_NOT_PUBLIC）の理由を英語で知らせる', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        await submitReport(createReportMockFetch({
+          ok: false,
+          status: 400,
+          body: { code: 'PHOTO_NOT_PUBLIC', message: '公開中の写真のみ通報できます' },
+        }))
+
+        await waitFor(() => {
+          expect(mockToast.error).toHaveBeenCalledWith('This photo is not public, so this action is unavailable.')
+        })
+        expect(mockToast.error).not.toHaveBeenCalledWith('この写真は公開中ではないため操作できません')
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
     })
   })
 
@@ -2398,18 +2688,18 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
-  // Issue#96 PR3: 429 レート制限ハンドリング（パターンB: トースト通知 + デバウンス）
+  // Spec#96 PR3: 429 レート制限ハンドリング（パターンB: トースト通知 + デバウンス）
   describe('Rate Limit (429) - レート制限', () => {
     it('写真詳細の 429 プリフェッチでトースト通知が表示される', async () => {
       const photoIds = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
       const photoDetail1 = createMockPhotoDetail({ photoId: TEST_PHOTO_ID_1 })
 
       const mockFetch = vi.fn()
-        // 1. photo IDs 取得（Issue#112: { ids, total } 形式）
+        // 1. photo IDs 取得（Spec#112: { ids, total } 形式）
         .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: photoIds, total: photoIds.length }) })
         // 2. photo 0 詳細取得（成功）
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail1 })
-        // 2.5 Issue#135: photoTags (photo 0)
+        // 2.5 Spec#135: photoTags (photo 0)
         .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) })
         // 3. プリフェッチ対象の photo 1 詳細取得（429）
         .mockResolvedValueOnce(
@@ -2419,7 +2709,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
             headers: { 'Retry-After': '60' },
           })
         )
-        // Issue#65: 以降のステータスAPI等にはデフォルトで空オブジェクトを返す
+        // Spec#65: 以降のステータスAPI等にはデフォルトで空オブジェクトを返す
         .mockResolvedValue({ ok: true, json: async () => ({}) })
 
       Object.defineProperty(globalThis, 'fetch', {
@@ -2446,7 +2736,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       const mockFetch = vi.fn()
         .mockResolvedValueOnce({ ok: true, json: async () => ({ ids: [TEST_PHOTO_ID_1], total: 1 }) })
         .mockResolvedValueOnce({ ok: true, json: async () => photoDetail })
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Issue#135: photoTags
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ tags: [] }) }) // Spec#135: photoTags
         .mockResolvedValueOnce({ ok: true, json: async () => ({}) }) // ステータスAPI
         .mockResolvedValueOnce(
           new Response('Too many requests', {
@@ -2527,10 +2817,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   // ============================================================
-  // Issue#112: スポット投稿の段階的読み込み（ページネーション）
+  // Spec#112: スポット投稿の段階的読み込み（ページネーション）
   // ============================================================
 
-  describe('Issue#112: ページネーション', () => {
+  describe('Spec#112: ページネーション', () => {
     /** 指定件数の写真ID配列を生成（1, 2, 3, ...） */
     const makeIds = (count: number, startFrom = 1) =>
       Array.from({ length: count }, (_, i) => i + startFrom)
@@ -2562,7 +2852,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       return mockFetch
     }
 
-    it('Issue#112 - 初期表示で limit=30 で fetch される', async () => {
+    it('Spec#112 - 初期表示で limit=30 で fetch される', async () => {
       const page1Ids = makeIds(30)
       const mockFetch = setupPaginatedFetch(page1Ids, [], 100)
 
@@ -2586,7 +2876,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('Issue#112 - レスポンス body が camelCase（spotIds, maxAgeDays）で送られる', async () => {
+    it('Spec#112 - レスポンス body が camelCase（spotIds, maxAgeDays）で送られる', async () => {
       const page1Ids = makeIds(5)
       const mockFetch = setupPaginatedFetch(page1Ids, [], 5)
 
@@ -2610,7 +2900,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('Issue#112 - 件数表示は API 返却の total を使う（photoIds.length ではなく）', async () => {
+    it('Spec#112 - 件数表示は API 返却の total を使う（photoIds.length ではなく）', async () => {
       // 30件読み込み済み、total=100
       const page1Ids = makeIds(30)
       const mockFetch = setupPaginatedFetch(page1Ids, [], 100)
@@ -2629,7 +2919,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('Issue#112 - 末尾から5枚以内に近づくと次ページを裏で fetch する', async () => {
+    it('Spec#112 - 末尾から5枚以内に近づくと次ページを裏で fetch する', async () => {
       // page1 に 5件しか返さず、total=10 とすることで、初期 currentIndex=0 で
       // remaining = 5 - 0 - 1 = 4 ≤ 5（PHOTO_PAGE_PRELOAD_THRESHOLD）となり、
       // 即座に page2 取得トリガーが発火する
@@ -2656,7 +2946,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       }, { timeout: 3000 })
     })
 
-    it('Issue#112 - 全件取得後（photoIds.length === total）は追加 fetch しない', async () => {
+    it('Spec#112 - 全件取得後（photoIds.length === total）は追加 fetch しない', async () => {
       const allIds = makeIds(15)
       const mockFetch = setupPaginatedFetch(allIds, [], 15) // total === ids.length
 
@@ -2681,7 +2971,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(photosFetchCalls.length).toBe(1) // 初回のみ
     })
 
-    it('Issue#112 - レスポンス型が { ids, total } である（クライアント期待形式）', async () => {
+    it('Spec#112 - レスポンス型が { ids, total } である（クライアント期待形式）', async () => {
       // 2件以上ないと枚数インジケーターが表示されないため、2件で検証
       const photoIds = [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
       const photoDetail = createMockPhotoDetail()
@@ -2702,8 +2992,8 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
-  describe('Issue#118 - onPhotoViewed コールバック（登録壁カウント連携）', () => {
-    it('Issue#118 - 写真詳細を最初に表示したとき、その photoId で onPhotoViewed が呼ばれる', async () => {
+  describe('Spec#118 - onPhotoViewed コールバック（登録壁カウント連携）', () => {
+    it('Spec#118 - 写真詳細を最初に表示したとき、その photoId で onPhotoViewed が呼ばれる', async () => {
       const photoIds = [TEST_PHOTO_ID_1]
       const photoDetail = createMockPhotoDetail()
       const mockFetch = setupMockFetch(photoIds, [photoDetail])
@@ -2722,7 +3012,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       })
     })
 
-    it('Issue#118 - onPhotoViewed が指定されていなくてもクラッシュしない', async () => {
+    it('Spec#118 - onPhotoViewed が指定されていなくてもクラッシュしない', async () => {
       const photoIds = [TEST_PHOTO_ID_1]
       const photoDetail = createMockPhotoDetail()
       const mockFetch = setupMockFetch(photoIds, [photoDetail])
@@ -2742,10 +3032,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
   })
 
   // ============================================================
-  // Issue#131: アクションボタン群が画面横幅を超えても折り返して表示される
+  // Spec#131: アクションボタン群が画面横幅を超えても折り返して表示される
   // （横スクロールが発生する不具合の修正）
   // ============================================================
-  describe('Issue#131: アクションボタン群の折り返しレイアウト', () => {
+  describe('Spec#131: アクションボタン群の折り返しレイアウト', () => {
     it('お気に入りボタンを含むボタン行のコンテナが flex-wrap で折り返し可能になっている', async () => {
       const photoDetail = createMockPhotoDetail()
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
@@ -2770,10 +3060,10 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
     })
   })
 
-  describe('Issue#125 - LQIP（低品質プレースホルダー）表示', () => {
+  describe('Spec#125 - LQIP（低品質プレースホルダー）表示', () => {
     const SAMPLE_LQIP_DATA_URL = 'data:image/webp;base64,UklGRhwAAABXRUJQVlA4TBAAAAAvAAAAAA8B'
 
-    it('Issue#125 - imageUrls.lqip が API レスポンスに含まれるとき LQIP 画像が描画される', async () => {
+    it('Spec#125 - imageUrls.lqip が API レスポンスに含まれるとき LQIP 画像が描画される', async () => {
       const photoDetail = createMockApiResponse({
         imageUrls: { lqip: SAMPLE_LQIP_DATA_URL },
       })
@@ -2796,7 +3086,7 @@ describe('PhotoDetailDialog Component - Issue#14', () => {
       expect(lqipImg).not.toBeNull()
     })
 
-    it('Issue#125 - imageUrls.lqip が無いとき LQIP 画像は描画されない', async () => {
+    it('Spec#125 - imageUrls.lqip が無いとき LQIP 画像は描画されない', async () => {
       const photoDetail = createMockApiResponse()
       const mockFetch = setupMockFetch([TEST_PHOTO_ID_1], [photoDetail])
       Object.defineProperty(globalThis, 'fetch', {

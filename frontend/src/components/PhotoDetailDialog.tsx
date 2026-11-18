@@ -11,6 +11,8 @@ import { ProtectedImage } from './figma/ProtectedImage'
 import { LqipPlaceholder } from './LqipPlaceholder'
 import { getAuthHeaders } from '../utils/apiClient'
 import { buildRateLimitApiError, notifyIfRateLimited } from '../utils/notifyIfRateLimited'
+import { notifyReportFailure } from '../utils/notifyReportFailure'
+import { readErrorCode, translateErrorCode } from '../utils/apiErrorMessage'
 import { fetchPhotoTags, fetchTags, type PhotoTagDisplay } from '../utils/tagsApi'
 import { KeywordSection, type KeywordTag } from './KeywordSection'
 import { formatTagDisplayName } from '../utils/formatTagDisplayName'
@@ -35,33 +37,29 @@ import { Checkbox } from './ui/checkbox'
 import { CategoryIcon } from './CategoryIcon'
 import { PHOTO_CATEGORIES } from '../utils/constants'
 import {
-  WEATHER_LABELS as CODE_WEATHER_LABELS,
+  WEATHER_I18N_KEYS,
   WEATHER_OPTIONS,
   MODERATION_STATUS_QUARANTINED,
   MODERATION_STATUS_PENDING_REVIEW,
-  CATEGORY_LABELS,
+  CATEGORY_NAME_TO_ID,
+  categoryNameI18nKey,
 } from '../utils/codeConstants'
 import { MAPBOX_LANGUAGE_MAP, type SupportedLanguage } from '../i18n'
 import { useSwipeDirectionHistory } from '../hooks/useSwipeDirectionHistory'
 
-/** カテゴリ名 → ID の逆引きマップ（CATEGORY_LABELS の逆・KeywordSection の selectedCategoryCodes 用） */
-const CATEGORY_NAME_TO_ID: Record<string, number> = Object.fromEntries(
-  Object.entries(CATEGORY_LABELS).map(([id, name]) => [name, Number(id)])
-)
-
 // API Endpoints
-// Issue#112: スポット写真ID一覧は POST /spots/photos に統一（複数スポット横断 + ページネーション）
+// Spec#112: スポット写真ID一覧は POST /spots/photos に統一（複数スポット横断 + ページネーション）
 const API_SPOTS_PHOTOS_LIST = `${API_V1_URL}/spots/photos`
 const API_PHOTOS = `${API_V1_URL}/photos`
 
-// Issue#112: ページネーション設定
+// Spec#112: ページネーション設定
 const PHOTO_PAGE_SIZE = 30
 const PHOTO_PAGE_PRELOAD_THRESHOLD = 5
 
-// Issue#122 / Issue#128: 写真詳細ダイアログの prefetch ロジックは useSwipeDirectionHistory に集約
+// Spec#122 / Spec#128: 写真詳細ダイアログの prefetch ロジックは useSwipeDirectionHistory に集約
 // 中立時の枚数（左右各 2 枚）と進行方向偏重時の枚数（forward=3 / backward=1）は同 hook の定数を参照
 
-// Issue#122 Cycle2: 写真切り替え時の cross-fade 用 Tailwind v4 クラス
+// Spec#122 Cycle2: 写真切り替え時の cross-fade 用 Tailwind v4 クラス
 // `key={photoId}` と組み合わせて使うことで、新しい <img> がマウントされた瞬間に
 // `@starting-style` 相当の `starting:opacity-0` から `opacity-100` へ滑らかに遷移する
 const PHOTO_CROSS_FADE_CLASSES = 'transition-opacity duration-300 opacity-100 starting:opacity-0'
@@ -73,11 +71,11 @@ const TEST_ID_LOADING = 'loading-spinner'
 const TEST_ID_FAVORITE_BUTTON = 'favorite-button'
 const TEST_ID_FAVORITE_COUNT = 'favorite-count'
 
-// Issue#87: 天気ラベルは codeConstants から取得
+// Spec#87: 天気ラベルは codeConstants から取得
 const ERROR_FETCH_IDS = 'Failed to fetch photo IDs'
 const ERROR_FETCH_DETAIL = 'Failed to fetch photo detail'
 
-// Issue#112: スポット写真IDレスポンスの型
+// Spec#112: スポット写真IDレスポンスの型
 interface SpotPhotosResponse {
   ids: number[]
   total: number
@@ -92,35 +90,35 @@ interface PhotoDetailDialogProps {
   isLightboxOpen?: boolean
   onMinimapClick?: (location: { lat: number; lng: number }) => void
   isSlideDown?: boolean
-  /** Issue#57: プロフィール投稿一覧から開いた場合にtrueを渡し、削除ボタンを表示する */
+  /** Spec#57: プロフィール投稿一覧から開いた場合にtrueを渡し、削除ボタンを表示する */
   isDeletable?: boolean
-  /** Issue#57: 写真削除後のコールバック */
+  /** Spec#57: 写真削除後のコールバック */
   onPhotoDeleted?: () => void
-  /** Issue#58: 単体写真表示モード（ディープリンク用）。指定時はスポットの写真一覧取得をスキップ */
+  /** Spec#58: 単体写真表示モード（ディープリンク用）。指定時はスポットの写真一覧取得をスキップ */
   singlePhotoId?: number
   /** フィルター条件（スポット写真ID取得時に適用） */
   filterMaxAgeDays?: number
   /**
-   * Issue#141 Phase 5 (Q-new-6/7): フィルター条件全部 (subject_categories ～ tag_ids) を /spots/photos に転送。
+   * Spec#141 Phase 5 (Q-new-6/7): フィルター条件全部 (subject_categories ～ tag_ids) を /spots/photos に転送。
    * 既存の filterMaxAgeDays とは独立して動く (互換性維持)。
    */
   filterParams?: import('./MapView').MapViewFilterParams
   /**
-   * Issue#118: 写真詳細を開いた / 別の写真に切り替えた瞬間に呼ばれる。
+   * Spec#118: 写真詳細を開いた / 別の写真に切り替えた瞬間に呼ばれる。
    * 未ログインユーザーの登録壁トリガーとして閲覧履歴に photoId を記録するために使用する。
    * ログイン済みユーザーが渡しても安全（呼び出し側が冪等性と未ログイン判定を担当）。
    */
   onPhotoViewed?: (photoId: number) => void
 }
 
-// Issue#88: APIレスポンスの型定義（PhotoDetailResponse形式）
+// Spec#88: APIレスポンスの型定義（PhotoDetailResponse形式）
 interface PhotoApiResponse {
   photoId: number
   imageUrls: {
     thumbnail: string | null
     standard: string
     original: string
-    /** Issue#125: LQIP（低品質プレースホルダー）の data URL。モデレーション制限中は null。 */
+    /** Spec#125: LQIP（低品質プレースホルダー）の data URL。モデレーション制限中は null。 */
     lqip?: string | null
   }
   placeName?: string | null
@@ -144,7 +142,7 @@ interface PhotoApiResponse {
   cropCenterY?: number | null
   cropZoom?: number | null
   moderationStatus?: number | null
-  /** Issue#146: 撮影場所が EXIF GPS 由来か。指摘ダイアログの上限 1km 判定に使う */
+  /** Spec#146: 撮影場所が EXIF GPS 由来か。指摘ダイアログの上限 1km 判定に使う */
   locationFromExif?: boolean | null
   categories?: string[]
   user: {
@@ -176,7 +174,7 @@ interface PhotoDetail {
   placeName?: string | null
   thumbnailUrl: string
   originalUrl: string
-  /** Issue#125: LQIP（低品質プレースホルダー）の data URL。本物のサムネが読み込まれるまで blur 表示する。 */
+  /** Spec#125: LQIP（低品質プレースホルダー）の data URL。本物のサムネが読み込まれるまで blur 表示する。 */
   lqip?: string | null
   shotAt: string
   weather?: number | null
@@ -189,7 +187,7 @@ interface PhotoDetail {
   cropCenterY?: number | null
   cropZoom?: number | null
   moderationStatus?: number | null
-  /** Issue#146: 撮影場所が EXIF GPS 由来か。指摘ダイアログの上限 1km 判定に使う */
+  /** Spec#146: 撮影場所が EXIF GPS 由来か。指摘ダイアログの上限 1km 判定に使う */
   locationFromExif?: boolean | null
   categories?: string[]
   user: {
@@ -205,21 +203,23 @@ interface PhotoDetail {
 }
 
 /**
- * 撮影日時をフォーマットする（例: 2026年1月15日 18:30）
+ * 撮影日時を表示言語の書式にする（例: ja「2026年1月15日 18:30」、en「January 15, 2026 at 18:30」）
+ * Spec#93 追加対応: 以前は日本語の書式を直書きしていた。
  */
-function formatShotAt(shotAt: string): string {
-  const date = new Date(shotAt)
-  const year = date.getFullYear()
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${year}年${month}月${day}日 ${hours}:${minutes}`
+function formatShotAt(shotAt: string, language: string): string {
+  return new Intl.DateTimeFormat(language, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(shotAt))
 }
 
 // Mapbox アクセストークン
 
-// Issue#88: APIレスポンスを内部形式に変換（PhotoDetailResponse形式対応）
+// Spec#88: APIレスポンスを内部形式に変換（PhotoDetailResponse形式対応）
 function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
   const cam = response.cameraInfo
   const exif: ExifInfo | null = cam ? {
@@ -233,7 +233,7 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
     imageHeight: cam.imageHeight,
   } : null
 
-  // Issue#88: サムネイルフォールバック: thumbnail → standard → original
+  // Spec#88: サムネイルフォールバック: thumbnail → standard → original
   const thumbnailUrl = response.imageUrls.thumbnail ?? response.imageUrls.standard ?? response.imageUrls.original
   const originalUrl = response.imageUrls.original ?? response.imageUrls.standard
 
@@ -271,7 +271,7 @@ function transformApiResponse(response: PhotoApiResponse): PhotoDetail {
 
 // Helper Functions
 /**
- * Issue#112: スポット写真ID一覧を1ページ取得する。
+ * Spec#112: スポット写真ID一覧を1ページ取得する。
  * 複数スポットを横断して撮影日時降順でマージしたページが返る。
  */
 async function fetchPhotoIdsPage(
@@ -289,7 +289,7 @@ async function fetchPhotoIdsPage(
   if (maxAgeDays != null) {
     body.maxAgeDays = maxAgeDays
   }
-  // Issue#141 Phase 5 (Q-new-6/7): 全フィルタを Body に詰めて転送
+  // Spec#141 Phase 5 (Q-new-6/7): 全フィルタを Body に詰めて転送
   if (filterParams) {
     if (filterParams.subject_categories?.length) body.subjectCategories = filterParams.subject_categories
     if (filterParams.months?.length) body.months = filterParams.months
@@ -338,7 +338,7 @@ async function fetchPhotoDetailById(photoId: number): Promise<PhotoDetail> {
 }
 
 /**
- * Issue#122 Cycle3: 複数の photoId をまとめて取得するバッチエンドポイントを呼ぶ。
+ * Spec#122 Cycle3: 複数の photoId をまとめて取得するバッチエンドポイントを呼ぶ。
  * 認可されていない写真はサーバ側で silent skip され、認可された写真だけが返る
  * （順序は保証されないので呼び出し側で photoId を見て対応付ける）。
  */
@@ -364,7 +364,7 @@ async function fetchPhotoDetailsBatchApi(photoIds: number[]): Promise<PhotoDetai
 }
 
 /**
- * Issue#122: thumbnail 画像をブラウザキャッシュへ先読みする。
+ * Spec#122: thumbnail 画像をブラウザキャッシュへ先読みする。
  * `new Image()` で Image オブジェクトを生成し src を代入することで、
  * 実際に <img> 要素が DOM にマウントされる前にネットワークフェッチを開始させ、
  * スライド切り替え時の表示遅延を解消する。url が空の場合は何もしない。
@@ -377,7 +377,7 @@ function preloadThumbnail(thumbnailUrl: string | null | undefined): void {
 
 /**
  * 撮影地点ミニマップコンポーネント
- * Issue#45: 写真詳細ダイアログ内に撮影地点を表示する静的地図
+ * Spec#45: 写真詳細ダイアログ内に撮影地点を表示する静的地図
  */
 const DetailMiniMap = React.memo(function DetailMiniMap({
   latitude,
@@ -388,7 +388,7 @@ const DetailMiniMap = React.memo(function DetailMiniMap({
   longitude: number
   onClick?: () => void
 }>) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const mapboxLang = MAPBOX_LANGUAGE_MAP[i18n.language as SupportedLanguage] || 'en'
   const [isAttributionOpen, setIsAttributionOpen] = useState(false)
 
@@ -443,7 +443,7 @@ const DetailMiniMap = React.memo(function DetailMiniMap({
           </MapGL>
           {/* Mapboxロゴ（左下） */}
           <div style={{ position: 'absolute', bottom: 4, left: 4, pointerEvents: 'auto', zIndex: 1 }}>
-            <a href="https://www.mapbox.com/" target="_blank" rel="noopener noreferrer" aria-label="Mapbox ホームページ">
+            <a href="https://www.mapbox.com/" target="_blank" rel="noopener noreferrer" aria-label={t('map.mapboxHome')}>
               <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" fillRule="evenodd" viewBox="0 0 88 23" width="88" height="23">
                 <defs>
                   <path id="dm-logo-icon" d="M11.5 2.25c5.105 0 9.25 4.145 9.25 9.25s-4.145 9.25-9.25 9.25-9.25-4.145-9.25-9.25 4.145-9.25 9.25-9.25zM6.997 15.983c-.051-.338-.828-5.802 2.233-8.873a4.395 4.395 0 013.13-1.28c1.27 0 2.49.51 3.39 1.42.91.9 1.42 2.12 1.42 3.39 0 1.18-.449 2.301-1.28 3.13C12.72 16.93 7 16 7 16l-.003-.017zM15.3 10.5l-2 .8-.8 2-.8-2-2-.8 2-.8.8-2 .8 2 2 .8z" />
@@ -467,7 +467,7 @@ const DetailMiniMap = React.memo(function DetailMiniMap({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setIsAttributionOpen(prev => !prev) }}
-              aria-label="帰属情報"
+              aria-label={t('map.attribution')}
               style={{ width: 24, height: 24, borderRadius: '50%', border: 'none', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
             >
               <svg viewBox="0 0 20 20" width="20" height="20" fill="black" fillRule="evenodd">
@@ -494,11 +494,11 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   const [error, setError] = useState<string | null>(null)
   const [emblaRef, emblaApi] = useEmblaCarousel()
 
-  // Issue#112: ページネーション用 state
+  // Spec#112: ページネーション用 state
   const [totalPhotoCount, setTotalPhotoCount] = useState(0)
   const isFetchingNextPageRef = useRef(false)
 
-  // Issue#50: isSlideDownのref版（Radix flushSync対策）
+  // Spec#50: isSlideDownのref版（Radix flushSync対策）
   // Radix DismissableLayerのdispatchDiscreteCustomEventはflushSyncでstate更新を強制コミットするため、
   // モバイルタッチ時にisSlideDown propがfalseになった状態でイベントハンドラが評価される。
   // このrefはuseEffectでのみ更新されるため、flushSyncの影響を受けず、
@@ -515,33 +515,33 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }
   }, [isSlideDown])
 
-  // Issue#30: お気に入り状態管理
+  // Spec#30: お気に入り状態管理
   const [isFavorited, setIsFavorited] = useState(false)
   const [favoriteCount, setFavoriteCount] = useState(0)
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false)
 
-  // Issue#135: 写真ごとのキーワード（ミニマップと件数表示の間に表示）
+  // Spec#135: 写真ごとのキーワード（ミニマップと件数表示の間に表示）
   // useEffect 本体は displayedPhoto の宣言後に置く（前方参照エラー回避のため）
   const [photoTags, setPhotoTags] = useState<PhotoTagDisplay[]>([])
 
-  // Issue#54: 通報状態管理
+  // Spec#54: 通報状態管理
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isReportLoading, setIsReportLoading] = useState(false)
 
-  // Issue#65: 撮影場所の指摘状態管理
+  // Spec#65: 撮影場所の指摘状態管理
   const [isLocationSuggestionOpen, setIsLocationSuggestionOpen] = useState(false)
   const [hasAlreadySuggested, setHasAlreadySuggested] = useState(false)
 
-  // Issue#57: 写真削除状態管理
+  // Spec#57: 写真削除状態管理
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleteLoading, setIsDeleteLoading] = useState(false)
 
-  // Issue#61: 写真メタデータ編集状態管理
+  // Spec#61: 写真メタデータ編集状態管理
   const [isEditing, setIsEditing] = useState(false)
   const [editWeather, setEditWeather] = useState<number | ''>('')
   const [editPlaceName, setEditPlaceName] = useState('')
   const [editCategories, setEditCategories] = useState<string[]>([])
-  // Issue#135 追補: 編集時の詳細カテゴリー（キーワード）選択と、選択肢となる全アクティブタグ
+  // Spec#135 追補: 編集時の詳細カテゴリー（キーワード）選択と、選択肢となる全アクティブタグ
   const [editTagIds, setEditTagIds] = useState<number[]>([])
   const [allTags, setAllTags] = useState<KeywordTag[]>([])
   const [isSaving, setIsSaving] = useState(false)
@@ -558,7 +558,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     lastEditToggleRef.current = null
   }, [])
 
-  // Issue#61: Mapbox Search Box（場所名検索）
+  // Spec#61: Mapbox Search Box（場所名検索）
   const [placeNameSuggestions, setPlaceNameSuggestions] = useState<{ name: string; full_address?: string; mapbox_id: string }[]>([])
   const [isPlaceNameDropdownOpen, setIsPlaceNameDropdownOpen] = useState(false)
   const placeNameSearchBox = useMemo(() => {
@@ -583,7 +583,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   // 最後に表示した写真情報を保持（点滅防止）
   const [displayedPhoto, setDisplayedPhoto] = useState<PhotoDetail | null>(null)
 
-  // Issue#135: 表示写真が変わるたびにキーワードを再フェッチ
+  // Spec#135: 表示写真が変わるたびにキーワードを再フェッチ
   useEffect(() => {
     if (!displayedPhoto?.photoId) {
       setPhotoTags([])
@@ -599,7 +599,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedPhoto?.photoId, i18n.language])
 
-  // Issue#135 追補: 編集モードに入ったら KeywordSection 用の全アクティブタグを取得
+  // Spec#135 追補: 編集モードに入ったら KeywordSection 用の全アクティブタグを取得
   useEffect(() => {
     if (!isEditing) return
     const controller = new AbortController()
@@ -611,7 +611,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     return () => controller.abort()
   }, [isEditing, i18n.language])
 
-  // スポットの写真ID一覧を取得（Issue#112: ページネーション対応）
+  // スポットの写真ID一覧を取得（Spec#112: ページネーション対応）
   useEffect(() => {
     if (!open) {
       setPhotoIds([])
@@ -632,7 +632,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       setError(null)
 
       try {
-        // Issue#58: 単体写真モード（Issue#112 ではページネーション対象外）
+        // Spec#58: 単体写真モード（Spec#112 ではページネーション対象外）
         if (singlePhotoId) {
           const detail = await fetchPhotoDetailById(singlePhotoId)
           setPhotoIds([singlePhotoId])
@@ -645,7 +645,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           return
         }
 
-        // Issue#112: 1ページ目（30件）を取得
+        // Spec#112: 1ページ目（30件）を取得
         const page = await fetchPhotoIdsPage(spotIds, PHOTO_PAGE_SIZE, 0, filterMaxAgeDays, filterParams)
         setPhotoIds(page.ids)
         setTotalPhotoCount(page.total)
@@ -679,7 +679,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     try {
       const detail = await fetchPhotoDetailById(photoId)
       setPhotoDetails(prev => new Map(prev).set(photoId, detail))
-      // Issue#122: 取得直後に thumbnail をブラウザキャッシュへ先読みする。
+      // Spec#122: 取得直後に thumbnail をブラウザキャッシュへ先読みする。
       // useEffect 側で post-hoc に preload しようとすると、fetch が非同期のため
       // 最初の通過では photoDetailsRef がまだ空で空振りする。fetch 成功時に
       // 必ずキャッシュ投入することで、後続のスライド切り替え時の即時表示を保証する。
@@ -692,7 +692,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }
   }, [t])
 
-  // Issue#122 Cycle3: prefetch をバッチエンドポイントで集約する
+  // Spec#122 Cycle3: prefetch をバッチエンドポイントで集約する
   // 既にキャッシュ済み・取得中の photoId は除外してリクエストを最小化する
   const fetchPhotoDetailsBatch = useCallback(async (photoIds: number[]) => {
     if (photoIds.length === 0) return
@@ -718,7 +718,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
   }, [t])
 
   // カルーセル操作
-  // Issue#128: ボタンクリック経路でも currentIndex を即時更新する。
+  // Spec#128: ボタンクリック経路でも currentIndex を即時更新する。
   // Embla の select イベントは jsdom で発火しないケースがあるため、
   // emblaApi.scrollPrev/scrollNext と setCurrentIndex を併用する。
   // ドラッグスワイプ時は onSelect 経由で setCurrentIndex が同じ値で再呼び出しされるが、
@@ -758,7 +758,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }
   }, [emblaApi])
 
-  // Issue#128: スワイプ方向に応じた非対称 prefetch
+  // Spec#128: スワイプ方向に応じた非対称 prefetch
   // currentIndex 変化を監視して履歴を管理し、現在の進行方向に応じた forward / backward の枚数を返す
   const { forwardCount, backwardCount } = useSwipeDirectionHistory(currentIndex)
 
@@ -767,19 +767,19 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
   // 現在のスライドの写真詳細を取得 + 前後 PHOTO_PREFETCH_RADIUS 枚をプリフェッチ
   // photoDetailsをrefで参照し、依存配列ループを防止（#7）
-  // Issue#122: thumbnail 画像のブラウザキャッシュ先読みは fetchPhotoDetail 内に移動
-  // Issue#122 Cycle3: prefetch はバッチエンドポイントで 1 リクエストに集約
+  // Spec#122: thumbnail 画像のブラウザキャッシュ先読みは fetchPhotoDetail 内に移動
+  // Spec#122 Cycle3: prefetch はバッチエンドポイントで 1 リクエストに集約
   useEffect(() => {
     if (currentPhotoId && !photoDetailsRef.current.has(currentPhotoId)) {
       fetchPhotoDetail(currentPhotoId)
     }
-    // Issue#118: 現在の写真IDを登録壁カウントへ通知（重複は呼び出し側で吸収される）
-    // Issue#122: prefetch 対象には呼ばない（実際に閲覧した写真のみ通知）
+    // Spec#118: 現在の写真IDを登録壁カウントへ通知（重複は呼び出し側で吸収される）
+    // Spec#122: prefetch 対象には呼ばない（実際に閲覧した写真のみ通知）
     if (currentPhotoId) {
       onPhotoViewed?.(currentPhotoId)
     }
-    // Issue#122 Cycle3: 前後 PHOTO_PREFETCH_RADIUS 枚をバッチエンドポイントでまとめて取得
-    // Issue#128: 履歴の方向偏重に応じて forward / backward の枚数を非対称化（useSwipeDirectionHistory 経由）
+    // Spec#122 Cycle3: 前後 PHOTO_PREFETCH_RADIUS 枚をバッチエンドポイントでまとめて取得
+    // Spec#128: 履歴の方向偏重に応じて forward / backward の枚数を非対称化（useSwipeDirectionHistory 経由）
     const idsToPrefetch: number[] = []
     for (let offset = 1; offset <= forwardCount; offset++) {
       const id = photoIds[currentIndex + offset]
@@ -794,7 +794,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }
   }, [currentPhotoId, currentIndex, photoIds, fetchPhotoDetail, fetchPhotoDetailsBatch, onPhotoViewed, forwardCount, backwardCount])
 
-  // Issue#112: 末尾 PHOTO_PAGE_PRELOAD_THRESHOLD 枚以内に近づいたら次ページを裏で取得
+  // Spec#112: 末尾 PHOTO_PAGE_PRELOAD_THRESHOLD 枚以内に近づいたら次ページを裏で取得
   useEffect(() => {
     if (singlePhotoId) return // 単体写真モードは対象外
     if (photoIds.length === 0) return
@@ -834,7 +834,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }
   }, [currentPhoto])
 
-  // Issue#65: 指摘済みステータスを取得（キャッシュ付き: #8）
+  // Spec#65: 指摘済みステータスを取得（キャッシュ付き: #8）
   useEffect(() => {
     if (!currentPhotoId || !isAuthenticated) {
       setHasAlreadySuggested(false)
@@ -864,7 +864,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     checkSuggestionStatus()
   }, [currentPhotoId, isAuthenticated])
 
-  // Issue#30: お気に入りトグル処理（エラー時リバート）
+  // Spec#30: お気に入りトグル処理（エラー時リバート）
   const handleToggleFavorite = useCallback(async () => {
     if (!currentPhotoId || isFavoriteLoading) return
 
@@ -894,6 +894,10 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         setFavoriteCount(prevCount)
         if (response.status === 429) {
           notifyIfRateLimited(buildRateLimitApiError(response), t)
+        } else if (response.status === 400) {
+          // Spec#93: 公開中でない写真（PHOTO_NOT_PUBLIC）など、やり直しても通らない理由を表示言語で知らせる
+          // （readErrorCode は本文を読み切るので、この後で response の本文を読まないこと）
+          toast.error(translateErrorCode(await readErrorCode(response), t, 'errors.errorOccurred'))
         }
       }
     } catch {
@@ -905,7 +909,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }
   }, [currentPhotoId, isFavorited, favoriteCount, isFavoriteLoading, t])
 
-  // Issue#54: 通報送信処理
+  // Spec#54: 通報送信処理
   const handleReport = useCallback(async (data: { reason: number; details?: string }) => {
     if (!currentPhotoId) return
 
@@ -924,23 +928,27 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
       })
 
       if (response.ok) {
-        toast.success('通報を受け付けました')
+        toast.success(t('report.success'))
         setIsReportOpen(false)
-      } else if (response.status === 409) {
-        setIsReportOpen(false)
-      } else if (response.status === 400) {
-        setIsReportOpen(false)
+      } else if (response.status === 429) {
+        // レート制限は、プロフィールの通報と同じく専用のお知らせを出す（やり直せるよう開いたままにする）
+        notifyIfRateLimited(buildRateLimitApiError(response), t)
       } else {
-        toast.error('通報に失敗しました')
+        // Spec#93: 400 はエラーコード（公開中でない写真など）の文言を出すため、本文の code を渡す
+        const code = response.status === 400 ? await readErrorCode(response) : undefined
+        if (notifyReportFailure(response.status, t, code)) {
+          // 409（通報済み）・400 は閉じる。扱いはプロフィールの通報とそろえる（notifyReportFailure）
+          setIsReportOpen(false)
+        }
       }
     } catch {
-      toast.error('通報に失敗しました')
+      notifyReportFailure(null, t)
     } finally {
       setIsReportLoading(false)
     }
-  }, [currentPhotoId])
+  }, [currentPhotoId, t])
 
-  // Issue#65: 撮影場所の指摘送信処理
+  // Spec#65: 撮影場所の指摘送信処理
   const handleLocationSuggestion = useCallback(async (latitude: number, longitude: number) => {
     if (!currentPhotoId) return
 
@@ -958,8 +966,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         toast.success(t('photo.suggestionSent'))
         setIsLocationSuggestionOpen(false)
       } else if (response.status === 400) {
-        const data = await response.json()
-        toast.error(data.message || t('photo.suggestionFailed'))
+        toast.error(translateErrorCode(await readErrorCode(response), t, 'photo.suggestionFailed'))
         setIsLocationSuggestionOpen(false)
       } else {
         toast.error(t('photo.suggestionFailed'))
@@ -967,9 +974,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     } catch {
       toast.error(t('photo.suggestionFailed'))
     }
-  }, [currentPhotoId])
+  }, [currentPhotoId, t])
 
-  // Issue#57: 写真削除処理
+  // Spec#57: 写真削除処理
   const handleDeletePhoto = useCallback(async () => {
     if (!currentPhotoId) return
 
@@ -986,16 +993,16 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
         onPhotoDeleted?.()
         onClose()
       } else {
-        toast.error('写真の削除に失敗しました')
+        toast.error(t('photo.deleteFailed'))
       }
     } catch {
-      toast.error('写真の削除に失敗しました')
+      toast.error(t('photo.deleteFailed'))
     } finally {
       setIsDeleteLoading(false)
     }
-  }, [currentPhotoId, onClose, onPhotoDeleted])
+  }, [currentPhotoId, onClose, onPhotoDeleted, t])
 
-  // Issue#58: 共有処理
+  // Spec#58: 共有処理
   const handleShare = useCallback(async () => {
     if (!currentPhotoId) return
 
@@ -1010,30 +1017,30 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     } catch (error) {
       // ユーザーが共有シートをキャンセルした場合（AbortError）は無視
       if (error instanceof Error && error.name === 'AbortError') return
-      toast.error('共有に失敗しました')
+      toast.error(t('photo.shareFailed'))
     }
-  }, [currentPhotoId, currentPhoto?.placeName])
+  }, [currentPhotoId, currentPhoto?.placeName, t])
 
-  // Issue#61: 編集モード開始
+  // Spec#61: 編集モード開始
   const handleStartEdit = useCallback(() => {
     if (!currentPhoto) return
     setEditWeather(currentPhoto.weather ?? '')
     setEditPlaceName(currentPhoto.placeName || '')
     setEditCategories(currentPhoto.categories || [])
-    // Issue#135 追補: 現在付いている詳細カテゴリー（キーワード）を初期選択にする
+    // Spec#135 追補: 現在付いている詳細カテゴリー（キーワード）を初期選択にする
     setEditTagIds(photoTags.map((tag) => tag.tagId))
     setIsEditing(true)
   }, [currentPhoto, photoTags])
 
-  // Issue#61: 編集キャンセル
+  // Spec#61: 編集キャンセル
   const handleCancelEdit = useCallback(() => {
     setIsEditing(false)
     setPlaceNameSuggestions([])
     setIsPlaceNameDropdownOpen(false)
   }, [])
 
-  // Issue#61: カテゴリ切替（最低1つ必須、スクロール取り消し対応）
-  // Issue#159 ②: 編集でもカテゴリーは単一選択（ラジオ相当）。選んだ1つに置き換える。
+  // Spec#61: カテゴリ切替（最低1つ必須、スクロール取り消し対応）
+  // Spec#159 ②: 編集でもカテゴリーは単一選択（ラジオ相当）。選んだ1つに置き換える。
   const handleEditCategoryToggle = useCallback((category: string) => {
     setEditCategories(prev => {
       lastEditToggleRef.current = () => setEditCategories(prev)
@@ -1041,7 +1048,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     })
   }, [])
 
-  // Issue#61: 場所名検索（Mapbox Search Box）
+  // Spec#61: 場所名検索（Mapbox Search Box）
   const handleEditPlaceNameSearch = useCallback((value: string) => {
     setEditPlaceName(value)
 
@@ -1076,7 +1083,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     }, 300)
   }, [placeNameSearchBox])
 
-  // Issue#61: 場所名候補選択
+  // Spec#61: 場所名候補選択
   const handleSelectPlaceNameSuggestion = useCallback((suggestion: { name: string }) => {
     setEditPlaceName(suggestion.name)
     setPlaceNameSuggestions([])
@@ -1084,7 +1091,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
     placeNameSessionTokenRef.current = new SessionToken()
   }, [])
 
-  // Issue#61: 編集保存
+  // Spec#61: 編集保存
   const handleSaveEdit = useCallback(async () => {
     if (!currentPhotoId) return
 
@@ -1100,7 +1107,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           weather: editWeather !== '' ? editWeather : null,
           placeName: editPlaceName || null,
           categories: editCategories.length > 0 ? editCategories : null,
-          // Issue#135 追補: 詳細カテゴリー（キーワード）。空配列なら全消去、要素ありは置換。
+          // Spec#135 追補: 詳細カテゴリー（キーワード）。空配列なら全消去、要素ありは置換。
           tagIds: editTagIds,
         }),
       })
@@ -1127,20 +1134,20 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
           moderationStatus: data.moderationStatus,
         } : prev)
         setIsEditing(false)
-        toast.success('保存しました')
-        // Issue#135 追補: PhotoDetailResponse にタグは含まれないため、表示用に再取得する
+        toast.success(t('photo.saveSuccess'))
+        // Spec#135 追補: PhotoDetailResponse にタグは含まれないため、表示用に再取得する
         fetchPhotoTags(currentPhotoId, i18n.language)
           .then((res) => setPhotoTags(Array.isArray(res?.tags) ? res.tags : []))
           .catch(() => { /* 表示更新の失敗は無視（保存自体は成功） */ })
       } else {
-        toast.error('更新に失敗しました')
+        toast.error(t('photo.updateFailed'))
       }
     } catch {
-      toast.error('更新に失敗しました')
+      toast.error(t('photo.updateFailed'))
     } finally {
       setIsSaving(false)
     }
-  }, [currentPhotoId, editWeather, editPlaceName, editCategories, editTagIds, i18n.language])
+  }, [currentPhotoId, editWeather, editPlaceName, editCategories, editTagIds, i18n.language, t])
 
   return (
     <Dialog open={open} onOpenChange={onClose} modal={false}>
@@ -1193,7 +1200,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
 
           {!loading && !error && photoIds.length > 0 && (
             <div className="flex flex-col min-h-0 flex-1">
-              {/* カルーセル - Issue#49: 正方形表示エリア */}
+              {/* カルーセル - Spec#49: 正方形表示エリア */}
               <div className="relative flex-shrink-0 max-h-[60vh] overflow-hidden flex items-center" style={{ maxHeight: '60dvh' }}>
                 <div className="overflow-hidden w-full" ref={emblaRef}>
                   <div className="flex items-center">
@@ -1216,19 +1223,19 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                                 }
                               }}
                             >
-                              {/* Issue#131: サムネイル自体がユーザー指定範囲で生成されるため、
+                              {/* Spec#131: サムネイル自体がユーザー指定範囲で生成されるため、
                                   以前 objectPosition / transform: scale でクロップを再現していた
                                   ロジックは撤去。サムネイルをそのまま正方形枠に表示する。 */}
-                              {/* Issue#122 Cycle2: key={photoId} で写真切り替え時に再マウントを発生させ、
+                              {/* Spec#122 Cycle2: key={photoId} で写真切り替え時に再マウントを発生させ、
                                   PHOTO_CROSS_FADE_CLASSES でフェードインさせる。 */}
-                              {/* Issue#125: LQIP を本物の下に絶対配置（LqipPlaceholder が
+                              {/* Spec#125: LQIP を本物の下に絶対配置（LqipPlaceholder が
                                   src 未設定時の null フォールバックも兼ねる） */}
                               <div className="relative w-full h-full">
                                 <LqipPlaceholder src={photo.lqip} />
                                 <ProtectedImage
                                   key={photo.photoId}
                                   src={photo.thumbnailUrl}
-                                  alt="画像"
+                                  alt={t('photo.imageAlt')}
                                   loading="eager"
                                   className={`relative w-full h-full object-cover ${PHOTO_CROSS_FADE_CLASSES}`}
                                 />
@@ -1279,7 +1286,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                 <div className="min-h-0 px-6 pt-[26px] pb-8 space-y-4 overflow-y-auto">
                   {/* 編集ボタンはアクションバーに移動 */}
 
-                  {/* Issue#61: 編集モード */}
+                  {/* Spec#61: 編集モード */}
                   {isEditing && (
                     <div className="space-y-3">
                       {/* カテゴリ選択 */}
@@ -1298,18 +1305,18 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                             >
                               <Checkbox
                                 checked={editCategories.includes(category)}
-                                aria-label={category}
+                                aria-label={t(categoryNameI18nKey(category))}
                                 tabIndex={-1}
                                 style={{ pointerEvents: 'none' }}
                               />
                               <CategoryIcon category={category} className="w-4 h-4" />
-                              <span className="flex-1">{category}</span>
+                              <span className="flex-1">{t(categoryNameI18nKey(category))}</span>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      {/* Issue#135 追補: 詳細カテゴリー（キーワード）編集 */}
+                      {/* Spec#135 追補: 詳細カテゴリー（キーワード）編集 */}
                       <div className="space-y-3">
                         <label className="text-sm text-gray-500">
                           {t('keyword.sectionLabel', { defaultValue: '詳細カテゴリー（任意）' })}
@@ -1335,9 +1342,9 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                           onChange={(e) => setEditWeather(e.target.value ? Number(e.target.value) : '')}
                           className="w-full border rounded-md px-3 py-2 text-sm"
                         >
-                          <option value="">未設定</option>
+                          <option value="">{t('photo.notSet')}</option>
                           {WEATHER_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
+                            <option key={option.value} value={option.value}>{t(WEATHER_I18N_KEYS[option.value])}</option>
                           ))}
                         </select>
                       </div>
@@ -1398,7 +1405,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     </div>
                   )}
 
-                  {/* Issue#54: モデレーションステータスバナー */}
+                  {/* Spec#54: モデレーションステータスバナー */}
                   {displayedPhoto.moderationStatus === MODERATION_STATUS_QUARANTINED && (
                     <div
                       className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700"
@@ -1454,7 +1461,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     {/* 撮影日時 */}
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar className="w-4 h-4" />
-                      <span>{formatShotAt(displayedPhoto.shotAt)}</span>
+                      <span>{formatShotAt(displayedPhoto.shotAt, i18n.language)}</span>
                     </div>
 
                     {/* 施設名・店名 */}
@@ -1468,7 +1475,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     {/* 天気情報 */}
                     {displayedPhoto.weather != null && (
                       <div className="text-sm text-gray-600">
-                        {t('photo.weatherLabel')}: {CODE_WEATHER_LABELS[displayedPhoto.weather] ?? displayedPhoto.weather}
+                        {t('photo.weatherLabel')}: {WEATHER_I18N_KEYS[displayedPhoto.weather] ? t(WEATHER_I18N_KEYS[displayedPhoto.weather]) : displayedPhoto.weather}
                       </div>
                     )}
 
@@ -1540,7 +1547,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     }) : undefined}
                   />
 
-                  {/* Issue#135: キーワードチップ（ランディングページへ遷移、SEO 内部リンク） */}
+                  {/* Spec#135: キーワードチップ（ランディングページへ遷移、SEO 内部リンク） */}
                   {photoTags.length > 0 && (
                     <div data-testid="photo-detail-tags" className="flex flex-wrap gap-2 pt-2">
                       {photoTags.map((tag) => (
@@ -1555,15 +1562,15 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     </div>
                   )}
 
-                  {/* 写真枚数インジケーター（Issue#112: total を使用） */}
+                  {/* 写真枚数インジケーター（Spec#112: total を使用） */}
                   {totalPhotoCount > 1 && (
                     <p className="text-center text-sm text-gray-500">
                       {currentIndex + 1} / {totalPhotoCount}
                     </p>
                   )}
 
-                  {/* Issue#30: お気に入りボタン / Issue#54: 通報ボタン */}
-                  {/* Issue#131: ボタンが画面横幅を超える場合は折り返す（横スクロール抑止） */}
+                  {/* Spec#30: お気に入りボタン / Spec#54: 通報ボタン */}
+                  {/* Spec#131: ボタンが画面横幅を超える場合は折り返す（横スクロール抑止） */}
                   <div className="flex flex-wrap gap-2 pt-4">
                     <Button
                       variant="outline"
@@ -1620,7 +1627,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     >
                       <Share2 className="w-5 h-5" />
                     </Button>
-                    {/* Issue#78: 撮影場所の指摘ボタン（投稿者本人は非活性） */}
+                    {/* Spec#78: 撮影場所の指摘ボタン（投稿者本人は非活性） */}
                     {isAuthenticated && !hasAlreadySuggested && (
                       <Button
                         variant="outline"
@@ -1632,7 +1639,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                         <MapPin className="w-5 h-5" />
                       </Button>
                     )}
-                    {/* Issue#78: 通報ボタン（投稿者本人は非活性） */}
+                    {/* Spec#78: 通報ボタン（投稿者本人は非活性） */}
                     {isAuthenticated && (
                       <Button
                         variant="outline"
@@ -1646,7 +1653,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     )}
                   </div>
 
-                  {/* Issue#54: 通報ダイアログ */}
+                  {/* Spec#54: 通報ダイアログ */}
                   <ReportDialog
                     open={isReportOpen}
                     onOpenChange={setIsReportOpen}
@@ -1654,7 +1661,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     isLoading={isReportLoading}
                   />
 
-                  {/* Issue#65: 撮影場所の指摘ダイアログ */}
+                  {/* Spec#65: 撮影場所の指摘ダイアログ */}
                   {currentPhoto && (
                     <LocationSuggestionDialog
                       open={isLocationSuggestionOpen}
@@ -1667,7 +1674,7 @@ export default function PhotoDetailDialog({ open, spotIds, onClose, onUserClick,
                     />
                   )}
 
-                  {/* Issue#57: 写真削除確認ダイアログ */}
+                  {/* Spec#57: 写真削除確認ダイアログ */}
                   <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                     <AlertDialogContent>
                       <AlertDialogHeader>

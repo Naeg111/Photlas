@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { sortSuggestionsByRelevance } from './sortSuggestions'
 
 /**
- * Issue#83: 場所検索の候補を入力文字列との一致度順にソート
+ * Spec#83: 場所検索の候補を入力文字列との一致度順にソート
  *
  * ソート優先順位:
  * 1. 完全一致（name === query）
@@ -11,7 +11,7 @@ import { sortSuggestionsByRelevance } from './sortSuggestions'
  * 4. その他（API返却順を維持）
  */
 
-describe('sortSuggestionsByRelevance - Issue#83', () => {
+describe('sortSuggestionsByRelevance - Spec#83', () => {
   it('完全一致の候補が最上位に表示される', () => {
     const suggestions = [
       { name: '東京都', full_address: '日本' },

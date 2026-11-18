@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Issue#72: 退会済みアカウントの90日後物理削除サービス
+ * Spec#72: 退会済みアカウントの90日後物理削除サービス
  * deleted_atから90日以上経過したユーザーを物理削除する。
  */
 @Service
@@ -39,9 +39,9 @@ public class AccountCleanupService {
 
     /**
      * 退会済みアカウントの物理削除を実行する
-     * 毎日午前4時（JST）= UTC 19:00 に実行
+     * 毎日午前4時（日本時間）に実行。Spec#169: JVM のタイムゾーン（本番は UTC）に左右されないよう zone を指定する
      */
-    @Scheduled(cron = "0 0 19 * * *")
+    @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Tokyo")
     @Transactional
     public void cleanupDeletedAccounts() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(RETENTION_DAYS);
@@ -69,7 +69,7 @@ public class AccountCleanupService {
     }
 
     /**
-     * Issue#73: 単一ユーザーの物理削除（即時削除用に公開）
+     * Spec#73: 単一ユーザーの物理削除（即時削除用に公開）
      */
     @Transactional
     public void deleteUserPermanently(User user) {

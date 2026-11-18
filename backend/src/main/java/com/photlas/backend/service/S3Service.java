@@ -33,7 +33,7 @@ public class S3Service {
     /** アバター・プロフィール画像の最大ファイルサイズ（5MB） */
     private static final long MAX_AVATAR_UPLOAD_SIZE = 5L * 1024 * 1024;
 
-    // Issue#100: S3 タグベース孤立ファイル対応
+    // Spec#100: S3 タグベース孤立ファイル対応
     /** タグキー: アップロード状態を表す */
     public static final String STATUS_TAG_KEY = "status";
     /** タグ値: アップロード完了済みだがメタデータ未登録（孤立ファイル候補） */
@@ -41,7 +41,7 @@ public class S3Service {
     /** タグ値: メタデータ登録済み（保持対象） */
     public static final String STATUS_TAG_VALUE_REGISTERED = "registered";
 
-    // Issue#124: 写真画像の Cache-Control を immutable 化
+    // Spec#124: 写真画像の Cache-Control を immutable 化
     /**
      * S3 オブジェクトに付与する Cache-Control 値。
      * フロントエンド (apiClient.ts の S3_CACHE_CONTROL_VALUE) と Lambda
@@ -50,7 +50,7 @@ public class S3Service {
      */
     public static final String S3_CACHE_CONTROL_VALUE = "public, max-age=31536000, immutable";
 
-    // Issue#131: S3 オブジェクトメタデータのキー（"x-amz-meta-" は AWS SDK が自動付与）
+    // Spec#131: S3 オブジェクトメタデータのキー（"x-amz-meta-" は AWS SDK が自動付与）
     /**
      * S3 オブジェクトメタデータのキー（フロントエンド apiClient.ts の
      * S3_META_HEADER_CROP_CENTER_X / Lambda lambda_function.py の
@@ -84,7 +84,7 @@ public class S3Service {
     }
 
     /**
-     * Issue#131: crop 情報付きの presigned URL 生成。
+     * Spec#131: crop 情報付きの presigned URL 生成。
      *
      * crop 情報（cropCenterX, cropCenterY, cropZoom）が渡された場合、S3 オブジェクトの
      * メタデータとして付与する。Lambda はこのメタデータを読んでユーザー指定範囲で
@@ -118,7 +118,7 @@ public class S3Service {
     }
 
     /**
-     * Issue#131: PutObjectRequest を組み立てる純粋関数。
+     * Spec#131: PutObjectRequest を組み立てる純粋関数。
      *
      * - 既存タグ (status=pending) と Cache-Control を付与
      * - crop 情報（cropCenterX/Y/Zoom）が全て非 null の場合、メタデータに含める
@@ -126,7 +126,7 @@ public class S3Service {
      * - 値は %.4f でフォーマットして文字列化
      *
      * 実装本体ではなく署名段階で metadata を含めることで、フロントが PUT 時に
-     * x-amz-meta-* ヘッダを送る前提が成立する（Issue#124 の Cache-Control と同じ仕組み）。
+     * x-amz-meta-* ヘッダを送る前提が成立する（Spec#124 の Cache-Control と同じ仕組み）。
      */
     PutObjectRequest buildPutObjectRequestForUpload(
             String objectKey, String contentType,
@@ -177,7 +177,7 @@ public class S3Service {
     }
 
     /**
-     * Issue#62: S3オブジェクトを削除する
+     * Spec#62: S3オブジェクトを削除する
      * オブジェクトが存在しない場合もエラーにならない（S3の仕様で冪等）。
      *
      * @param s3ObjectKey 削除するS3オブジェクトキー
@@ -198,7 +198,7 @@ public class S3Service {
     }
 
     /**
-     * Issue#108: S3 オブジェクトの内容をバイト配列でダウンロードする。
+     * Spec#108: S3 オブジェクトの内容をバイト配列でダウンロードする。
      *
      * <p>ユーザーデータエクスポートで写真本体を ZIP に同梱する際に使用する。
      * 1 枚あたり最大 50MB（{@link #MAX_PHOTO_UPLOAD_SIZE}）を想定するため、
@@ -249,7 +249,7 @@ public class S3Service {
     }
 
     /**
-     * Issue#100: S3オブジェクトのタグを更新する
+     * Spec#100: S3オブジェクトのタグを更新する
      *
      * 単一のキー/値ペアでオブジェクトタギングを上書きする。
      * メタデータ登録成功時に status=registered へ更新するなどの用途で使用する。
@@ -279,10 +279,10 @@ public class S3Service {
     }
 
     /**
-     * Issue#59: 元画像のS3キーからサムネイルのS3キーを導出する
+     * Spec#59: 元画像のS3キーからサムネイルのS3キーを導出する
      * 命名規則: uploads/1/abc.jpg → thumbnails/uploads/1/abc.webp
      *
-     * Issue#100: PhotoService 等の他サービスからもサムネイルキーが必要になったため、
+     * Spec#100: PhotoService 等の他サービスからもサムネイルキーが必要になったため、
      * 命名規則の単一情報源として本メソッドに集約。Lambda 側 (lambda_function.py の
      * generate_thumbnail_key) と同じ規則を実装する。
      *
@@ -299,7 +299,7 @@ public class S3Service {
     }
 
     /**
-     * Issue#59: S3オブジェクトキーからサムネイルのCDN URLを生成する
+     * Spec#59: S3オブジェクトキーからサムネイルのCDN URLを生成する
      *
      * @param s3ObjectKey 元画像のS3オブジェクトキー
      * @return サムネイルのCDN URL
@@ -310,7 +310,7 @@ public class S3Service {
     }
 
     /**
-     * Issue#54: S3オブジェクトを別のキーに移動する（コピー＋削除）
+     * Spec#54: S3オブジェクトを別のキーに移動する（コピー＋削除）
      *
      * @param sourceKey 移動元のS3オブジェクトキー
      * @param destinationKey 移動先のS3オブジェクトキー

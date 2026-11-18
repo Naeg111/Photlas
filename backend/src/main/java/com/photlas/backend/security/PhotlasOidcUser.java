@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Issue#99 - OIDC フロー（LINE）用の Photlas 独自 {@link OidcUser} 実装。
+ * Spec#99 - OIDC フロー（LINE）用の Photlas 独自 {@link OidcUser} 実装。
  *
  * {@link PhotlasOAuth2User} を継承することで、{@link OAuth2LoginSuccessHandler} が
  * {@code instanceof PhotlasOAuth2User} で判定すれば OIDC でも非 OIDC でも同じ経路で

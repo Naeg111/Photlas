@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 /**
- * Issue#115: 方角インジケーター用カスタムフック
+ * Spec#115: 方角インジケーター用カスタムフック
  *
  * 役割：
  * - ON/OFF 状態を sessionStorage に保存（タブクローズ / PWA タスクキルでクリア）
@@ -78,7 +78,7 @@ function writeEnabledToStorage(value: boolean): void {
 }
 
 /**
- * Issue#115 §4: 方角センサーが利用可能と推定できるかを判定する。
+ * Spec#115 §4: 方角センサーが利用可能と推定できるかを判定する。
  *
  * 厳密な「センサー有無」は Web 標準で取得できない（Permissions API も geolocation 等のみ）ため、
  * `(any-pointer: coarse)` メディアクエリで「タッチ操作可能なデバイス（モバイル/タブレット）」かを

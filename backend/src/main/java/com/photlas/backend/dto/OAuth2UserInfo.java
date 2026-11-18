@@ -5,7 +5,7 @@ import com.photlas.backend.entity.OAuthProvider;
 import java.time.LocalDateTime;
 
 /**
- * Issue#81 Phase 3b - OAuth プロバイダから取得した正規化済みユーザー情報。
+ * Spec#81 Phase 3b - OAuth プロバイダから取得した正規化済みユーザー情報。
  *
  * Spring Security の {@code OAuth2User} は Google / LINE それぞれで属性キーが異なるため、
  * {@code CustomOAuth2UserService} でこの共通 DTO に正規化してから

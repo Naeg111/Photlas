@@ -4,6 +4,8 @@ import com.photlas.backend.entity.CodeConstants;
 import com.photlas.backend.entity.PasswordResetToken;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
 import com.photlas.backend.exception.UnauthorizedException;
 import com.photlas.backend.repository.PasswordResetTokenRepository;
 import com.photlas.backend.repository.UserRepository;
@@ -66,7 +68,7 @@ public class PasswordService {
 
         User user = userOptional.get();
 
-        // Issue#92: 退会済みユーザーにはパスワードリセットを許可（アカウント復旧のため）
+        // Spec#92: 退会済みユーザーにはパスワードリセットを許可（アカウント復旧のため）
         // 停止中かつアクティブなユーザーにはリセットメールを送信しない（レスポンスは正常時と同一）
         if (user.getDeletedAt() == null && Integer.valueOf(CodeConstants.ROLE_SUSPENDED).equals(user.getRole())) {
             return;
@@ -95,19 +97,19 @@ public class PasswordService {
     public void resetPassword(String token, String newPassword) {
         Optional<PasswordResetToken> tokenOptional = passwordResetTokenRepository.findByToken(token);
         if (tokenOptional.isEmpty()) {
-            throw new IllegalArgumentException("トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "トークンが無効または期限切れです");
         }
 
         PasswordResetToken resetToken = tokenOptional.get();
 
         if (resetToken.getExpiryDate().before(new Date())) {
             passwordResetTokenRepository.delete(resetToken);
-            throw new IllegalArgumentException("トークンが無効または期限切れです");
+            throw new InvalidRequestException(ErrorCodes.INVALID_TOKEN, "トークンが無効または期限切れです");
         }
 
         Optional<User> userOptional = userRepository.findById(resetToken.getUserId());
         if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException(ERROR_USER_NOT_FOUND);
+            throw new InvalidRequestException(ErrorCodes.USER_NOT_FOUND, ERROR_USER_NOT_FOUND);
         }
 
         User user = userOptional.get();
@@ -122,7 +124,7 @@ public class PasswordService {
     }
 
     /**
-     * Issue#81 Phase 4e: OAuth のみユーザー向けの初回パスワード設定。
+     * Spec#81 Phase 4e: OAuth のみユーザー向けの初回パスワード設定。
      *
      * <p>password_hash が null のユーザーが任意でパスワードを追加するときに使う。
      * 成功時は {@code password_recommendation_dismissed_at} を NULL に明示リセット
@@ -139,7 +141,7 @@ public class PasswordService {
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
         if (user.getPasswordHash() != null) {
-            throw new ConflictException("パスワードは既に設定されています。変更するには updatePassword を使用してください。");
+            throw new ConflictException(ErrorCodes.PASSWORD_ALREADY_SET, "パスワードは既に設定されています。変更するには updatePassword を使用してください。");
         }
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
@@ -163,7 +165,7 @@ public class PasswordService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException(ERROR_USER_NOT_FOUND));
 
-        // Issue#81 Phase 4e: OAuth のみユーザー (password_hash == null) は updatePassword 不可。
+        // Spec#81 Phase 4e: OAuth のみユーザー (password_hash == null) は updatePassword 不可。
         // setInitialPassword を使うよう案内する専用エラー。
         if (user.getPasswordHash() == null) {
             throw new UnauthorizedException("パスワード未設定のアカウントです。初回パスワード設定を使用してください。");
@@ -181,7 +183,7 @@ public class PasswordService {
     }
 
     /**
-     * Issue#113 グループ C: パスワード変更完了の通知メールを送信。
+     * Spec#113 グループ C: パスワード変更完了の通知メールを送信。
      * 失敗時は WARN ログのみで業務操作は成功扱い（ユーザーは新パスワードでログインできる状態）。
      */
     private void sendPasswordChangedNotification(String email, User user) {
@@ -197,7 +199,7 @@ public class PasswordService {
     }
 
     /**
-     * Issue#113 グループ A: パスワードリセットメールを送信。
+     * Spec#113 グループ A: パスワードリセットメールを送信。
      * 失敗時は例外を呼び出し元へ伝播し HTTP 500 にマップされる。
      */
     private void sendPasswordResetEmail(User user, String token) {

@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#81 Phase 3e - {@link OAuth2LoginFailureHandler} のテスト（Red 段階）。
+ * Spec#81 Phase 3e - {@link OAuth2LoginFailureHandler} のテスト（Red 段階）。
  *
  * <p>OAuth ログインフローで {@link OAuth2AuthenticationException} が発生した場合、
  * エラーコードをフラグメント {@code #error=<code>} に含めて
@@ -106,11 +106,11 @@ class OAuth2LoginFailureHandlerTest {
     }
 
     /* ============================================================== */
-    /* Issue#99 - OAuth2LinkConfirmationException 専用ハンドリング     */
+    /* Spec#99 - OAuth2LinkConfirmationException 専用ハンドリング     */
     /* ============================================================== */
 
     @Test
-    @DisplayName("Issue#99 - OAuth2LinkConfirmationException は #link_confirmation_token=... にリダイレクト（#error= ではない）")
+    @DisplayName("Spec#99 - OAuth2LinkConfirmationException は #link_confirmation_token=... にリダイレクト（#error= ではない）")
     void redirectsWithLinkConfirmationTokenForLinkException() throws Exception {
         OAuth2LinkConfirmationException ex = new OAuth2LinkConfirmationException(
                 "link-token-xyz", OAuthProvider.GOOGLE);
@@ -127,7 +127,7 @@ class OAuth2LoginFailureHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#99 - LINE プロバイダの場合、provider=LINE がフラグメントに含まれる")
+    @DisplayName("Spec#99 - LINE プロバイダの場合、provider=LINE がフラグメントに含まれる")
     void includesLineProviderInLinkConfirmationFragment() throws Exception {
         OAuth2LinkConfirmationException ex = new OAuth2LinkConfirmationException(
                 "line-link-token-abc", OAuthProvider.LINE);
@@ -140,7 +140,7 @@ class OAuth2LoginFailureHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#99 - リンクトークン中の特殊文字は URL エンコードされる")
+    @DisplayName("Spec#99 - リンクトークン中の特殊文字は URL エンコードされる")
     void urlEncodesLinkConfirmationToken() throws Exception {
         // 通常 hex 64 文字なので発生しないが、防御的に URL エンコードを検証
         OAuth2LinkConfirmationException ex = new OAuth2LinkConfirmationException(
@@ -155,7 +155,7 @@ class OAuth2LoginFailureHandlerTest {
     }
 
     @Test
-    @DisplayName("Issue#99 - OAuth2LinkConfirmationException でもセッションの lang 属性はクリアされる")
+    @DisplayName("Spec#99 - OAuth2LinkConfirmationException でもセッションの lang 属性はクリアされる")
     void clearsSessionLangAttributeForLinkException() throws Exception {
         request.getSession().setAttribute(CustomOAuth2UserService.SESSION_ATTRIBUTE_LANG, "ja");
         OAuth2LinkConfirmationException ex = new OAuth2LinkConfirmationException(

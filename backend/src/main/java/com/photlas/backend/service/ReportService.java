@@ -7,6 +7,8 @@ import com.photlas.backend.entity.Photo;
 import com.photlas.backend.entity.Report;
 import com.photlas.backend.entity.User;
 import com.photlas.backend.exception.ConflictException;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidStateException;
 import com.photlas.backend.exception.PhotoNotFoundException;
 import com.photlas.backend.exception.SelfReportException;
 import com.photlas.backend.exception.UserNotFoundException;
@@ -19,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Issue#54: 通報サービス
+ * Spec#54: 通報サービス
  */
 @Service
 public class ReportService {
@@ -52,6 +54,7 @@ public class ReportService {
      * @throws SelfReportException 自分の投稿を通報した場合
      * @throws ConflictException すでに通報済みの場合
      * @throws PhotoNotFoundException 写真が見つからない場合
+     * @throws InvalidStateException 写真が公開中でない場合（PHOTO_NOT_PUBLIC）
      */
     @Transactional
     public ReportResponse createReport(Long photoId, ReportRequest request, Long userId) {
@@ -59,19 +62,19 @@ public class ReportService {
         Photo photo = photoRepository.findById(photoId)
                 .orElseThrow(() -> new PhotoNotFoundException("写真が見つかりません"));
 
-        // Issue#54: 公開中の写真のみ通報可能
+        // Spec#54: 公開中の写真のみ通報可能
         if (!Integer.valueOf(CodeConstants.MODERATION_STATUS_PUBLISHED).equals(photo.getModerationStatus())) {
-            throw new IllegalStateException("公開中の写真のみ通報できます");
+            throw new InvalidStateException(ErrorCodes.PHOTO_NOT_PUBLIC, "公開中の写真のみ通報できます");
         }
 
-        // Issue#54: 自分の投稿は通報できない
+        // Spec#54: 自分の投稿は通報できない
         if (photo.getUserId().equals(userId)) {
             throw new SelfReportException("自分の投稿を通報することはできません");
         }
 
         Report savedReport = saveReport(userId, CodeConstants.TARGET_TYPE_PHOTO, photoId, request);
 
-        // Issue#54: 通報件数が閾値に達したらQUARANTINEDに変更
+        // Spec#54: 通報件数が閾値に達したらQUARANTINEDに変更
         long reportCount = reportRepository.countByTargetTypeAndTargetId(
                 CodeConstants.TARGET_TYPE_PHOTO, photoId);
         if (reportCount >= QUARANTINE_THRESHOLD
@@ -89,7 +92,7 @@ public class ReportService {
     }
 
     /**
-     * Issue#54: プロフィールを通報する
+     * Spec#54: プロフィールを通報する
      *
      * @param targetUserId 通報対象ユーザーID
      * @param request 通報リクエスト
@@ -133,7 +136,7 @@ public class ReportService {
         reportRepository.findByReporterUserIdAndTargetTypeAndTargetId(
                 reporterUserId, targetType, targetId)
                 .ifPresent(report -> {
-                    throw new ConflictException("すでに通報済みです");
+                    throw new ConflictException(ErrorCodes.ALREADY_REPORTED, "すでに通報済みです");
                 });
 
         Report report = new Report();

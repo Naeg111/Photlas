@@ -5,7 +5,7 @@ import { PhotoContributionDialog } from './PhotoContributionDialog'
 import type { ExifData } from '../utils/extractExif'
 
 /**
- * Issue#146: アップロード時の GPS 1km 制限
+ * Spec#146: アップロード時の GPS 1km 制限
  *
  * - EXIF に GPS がある写真は、ピンが GPS 地点から 1km を超えると投稿ボタンが非活性＋エラー表示
  * - 1km 以内なら投稿可能、その際 locationFromExif=true で送信される
@@ -128,7 +128,7 @@ async function selectFileAndRequiredFields(user: ReturnType<typeof userEvent.set
 
 const submitButton = () => screen.getByRole('button', { name: '投稿する' })
 
-describe('PhotoContributionDialog GPS 1km 制限 (Issue#146)', () => {
+describe('PhotoContributionDialog GPS 1km 制限 (Spec#146)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockExtractExif.mockResolvedValue(null)

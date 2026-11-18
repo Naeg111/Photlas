@@ -1,11 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-# Issue#100: S3 ライフサイクルルール設定スクリプト
+# Spec#100: S3 ライフサイクルルール設定スクリプト
 #
 # このスクリプトは S3 バケットの BucketLifecycleConfiguration を
 # 「丸ごと上書き」 する API を使用するため、対象バケットに必要な
-# 全ルール（既存のコスト最適化ルール + 本 Issue で追加する孤立ファイル削除ルール）を
+# 全ルール（既存のコスト最適化ルール + 本 Spec で追加する孤立ファイル削除ルール）を
 # このスクリプト内に明示的に記述している。
 # AWS コンソール等で個別ルールだけを変更しても、このスクリプトを再実行すれば
 # ここに書かれた状態に戻る（リポジトリ = 正解状態）。
@@ -45,7 +45,7 @@ else
     exit 1
 fi
 
-# Issue#100: タグ定数（バックエンド S3Service / フロントエンド apiClient.ts /
+# Spec#100: タグ定数（バックエンド S3Service / フロントエンド apiClient.ts /
 # Lambda lambda_function.py と値を揃える）
 TAG_KEY="status"
 TAG_VALUE_PENDING="pending"
@@ -56,7 +56,7 @@ echo "S3 バケット : ${S3_BUCKET}"
 echo "タグフィルタ: ${TAG_KEY}=${TAG_VALUE_PENDING}"
 echo "孤立ファイル削除日数: ${PENDING_EXPIRATION_DAYS} 日"
 
-# Issue#100 で追加する 3 ルール（環境共通）
+# Spec#100 で追加する 3 ルール（環境共通）
 # status=pending タグが付いたオブジェクトを 1 日後に削除（孤立ファイル回収）
 PENDING_CLEANUP_RULES=$(cat <<PENDING_EOF
     {
@@ -101,7 +101,7 @@ PENDING_CLEANUP_RULES=$(cat <<PENDING_EOF
 PENDING_EOF
 )
 
-# 環境別の既存ルール（本 Issue 起票時点で存在していたものを保持）
+# 環境別の既存ルール（本 Spec 起票時点で存在していたものを保持）
 if [ "$ENV" = "test" ]; then
     EXISTING_RULES=$(cat <<TEST_EOF
     {

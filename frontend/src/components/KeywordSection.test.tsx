@@ -1,5 +1,5 @@
 /**
- * Issue#135 Phase 9: KeywordSection コンポーネントのテスト。
+ * Spec#135 Phase 9: KeywordSection コンポーネントのテスト。
  *
  * 主要機能:
  *  - AI 提案チップの常時表示（空なら非表示）
@@ -36,7 +36,7 @@ function defaultProps(overrides: Partial<KeywordSectionProps> = {}): KeywordSect
   }
 }
 
-describe('KeywordSection - Issue#135 Phase 9', () => {
+describe('KeywordSection - Spec#135 Phase 9', () => {
   // ========== AI 提案エリア廃止 (旧「AI 提案小カテゴリー」エリアは「選択中の小カテゴリー」に統合) ==========
 
   it('AI 提案エリア (keyword-section-ai-suggestions) は廃止され存在しない', () => {
@@ -317,9 +317,9 @@ describe('KeywordSection - Issue#135 Phase 9', () => {
   })
 })
 
-// ========== Issue#141 Phase 6: autoSelectByCategoryMode ==========
+// ========== Spec#141 Phase 6: autoSelectByCategoryMode ==========
 
-describe('KeywordSection - Issue#141 Phase 6: autoSelectByCategoryMode', () => {
+describe('KeywordSection - Spec#141 Phase 6: autoSelectByCategoryMode', () => {
   it('autoSelectByCategoryMode=true でカテゴリ追加時、配下キーワードが selectedTagIds に自動追加される', async () => {
     const onChange = vi.fn()
     const { rerender } = render(
@@ -572,7 +572,7 @@ describe('KeywordSection - Issue#141 Phase 6: autoSelectByCategoryMode', () => {
   })
 })
 
-describe('KeywordSection - Issue#159 複数タグ→1表示名グルーピング', () => {
+describe('KeywordSection - Spec#159 複数タグ→1表示名グルーピング', () => {
   const GROUP_TAGS = [
     { tagId: 10, slug: 'farm', displayName: '牧場', categoryCodes: [215], sortOrder: 60 },
     { tagId: 11, slug: 'ranch', displayName: '牧場', categoryCodes: [215], sortOrder: 60 },

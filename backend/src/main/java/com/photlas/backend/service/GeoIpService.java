@@ -19,7 +19,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 
 /**
- * Issue#106: IPアドレスからの国判定サービス
+ * Spec#106: IPアドレスからの国判定サービス
  *
  * MaxMind GeoLite2-Country データベースを使用してIPアドレスから国コード（ISO 3166-1 alpha-2）を判定する。
  *

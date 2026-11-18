@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * Issue#54: アカウント制裁リポジトリ
+ * Spec#54: アカウント制裁リポジトリ
  */
 @Repository
 public interface AccountSanctionRepository extends JpaRepository<AccountSanction, Long> {

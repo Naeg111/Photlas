@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 /**
  * カテゴリー一覧APIを提供するコントローラー
- * Issue#16: カテゴリー一覧API
+ * Spec#16: カテゴリー一覧API
  * フロントエンドでカテゴリー名からIDへのマッピングを行うために使用
  */
 @RestController

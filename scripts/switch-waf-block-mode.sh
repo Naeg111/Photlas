@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# WAF Count <-> Block モード切替スクリプト (Issue#94)
+# WAF Count <-> Block モード切替スクリプト (Spec#94)
 #
 # 一操作で以下をまとめて切り替える:
 #   1. WebACL の全ルール (AuthRateLimit / GeneralRateLimit / StagingLooseLimit)
@@ -262,7 +262,7 @@ create_mode_alarm \
   5 \
   "$NEW_METRIC" \
   "$TAG_ENVIRONMENT" \
-  "Issue#94: WAF AuthRateLimit rule $NEW_METRIC ($MODE mode)"
+  "Spec#94: WAF AuthRateLimit rule $NEW_METRIC ($MODE mode)"
 
 create_mode_alarm \
   "photlas-waf-GeneralRateLimit-${NEW_METRIC}" \
@@ -270,7 +270,7 @@ create_mode_alarm \
   20 \
   "$NEW_METRIC" \
   "$TAG_ENVIRONMENT" \
-  "Issue#94: WAF GeneralRateLimit rule $NEW_METRIC ($MODE mode)"
+  "Spec#94: WAF GeneralRateLimit rule $NEW_METRIC ($MODE mode)"
 
 create_mode_alarm \
   "photlas-waf-StagingLooseLimit-${NEW_METRIC}" \
@@ -278,7 +278,7 @@ create_mode_alarm \
   50 \
   "$NEW_METRIC" \
   "staging" \
-  "Issue#94: WAF StagingLooseLimit rule $NEW_METRIC ($MODE mode)"
+  "Spec#94: WAF StagingLooseLimit rule $NEW_METRIC ($MODE mode)"
 
 # 旧アラーム 3 本を削除 (delete-alarms は存在しない名前でもエラーにならない)
 log "Deleting old $OLD_METRIC alarms"

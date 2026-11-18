@@ -1,5 +1,5 @@
 """
-Issue#100 関連: SNS ファンアウト経由イベント対応のテスト
+Spec#100 関連: SNS ファンアウト経由イベント対応のテスト
 
 setup-s3-notifications.sh の修正で S3 → SNS → 複数 Lambda の構成にした際、
 moderation Lambda が SNS でラップされたイベントを受け取れるよう正規化する必要がある。

@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#54: ロールベースアクセス制御（RBAC）テスト
+ * Spec#54: ロールベースアクセス制御（RBAC）テスト
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -62,13 +62,13 @@ public class RbacTest {
         normalUser.setRole(CodeConstants.ROLE_USER);
         normalUser = userRepository.save(normalUser);
 
-        // Issue#54: ロール情報をJWTに含めてトークン生成
+        // Spec#54: ロール情報をJWTに含めてトークン生成
         adminToken = jwtService.generateTokenWithRole(adminUser.getEmail(), "ADMIN");
         userToken = jwtService.generateTokenWithRole(normalUser.getEmail(), "USER");
     }
 
     @Test
-    @DisplayName("Issue#54 - 管理者は管理者APIにアクセスできる")
+    @DisplayName("Spec#54 - 管理者は管理者APIにアクセスできる")
     void testAdminEndpoint_WithAdminRole_Returns200() throws Exception {
         mockMvc.perform(get("/api/v1/admin/moderation/queue")
                 .header("Authorization", "Bearer " + adminToken))
@@ -76,7 +76,7 @@ public class RbacTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 一般ユーザーは管理者APIにアクセスできない")
+    @DisplayName("Spec#54 - 一般ユーザーは管理者APIにアクセスできない")
     void testAdminEndpoint_WithUserRole_Returns403() throws Exception {
         mockMvc.perform(get("/api/v1/admin/moderation/queue")
                 .header("Authorization", "Bearer " + userToken))
@@ -84,7 +84,7 @@ public class RbacTest {
     }
 
     @Test
-    @DisplayName("Issue#54 - 未認証ユーザーは管理者APIにアクセスできない")
+    @DisplayName("Spec#54 - 未認証ユーザーは管理者APIにアクセスできない")
     void testAdminEndpoint_Unauthenticated_Returns401() throws Exception {
         mockMvc.perform(get("/api/v1/admin/moderation/queue"))
                 .andExpect(status().isUnauthorized());

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { validateUsername as validateUsernameLite } from '../utils/validation/username'
 import { localizeFieldError } from '../utils/validation/localizeFieldError'
+import { getErrorCode, translateErrorCode } from '../utils/apiErrorMessage'
 import { S3_TAG_HEADER_NAME, S3_TAG_HEADER_VALUE_PENDING, S3_CACHE_CONTROL_VALUE } from '../utils/apiClient'
 
 // APIエンドポイント定数
@@ -15,7 +16,6 @@ const API_ENDPOINTS = {
 
 const ERROR_MESSAGES = {
   FAILED_TO_UPDATE_USERNAME: 'Failed to update username',
-  FAILED_TO_REGISTER_PROFILE_IMAGE: 'プロフィール画像の登録に失敗しました',
 } as const
 
 const HTTP_STATUS = {
@@ -43,7 +43,7 @@ interface UseProfileEditReturn {
   handleProfileImageSelect: (event: React.ChangeEvent<HTMLInputElement>) => void
   handleDeleteProfileImage: () => Promise<void>
 
-  // Issue#35: トリミング機能
+  // Spec#35: トリミング機能
   isCropperOpen: boolean
   cropperImageSrc: string
   handleCropComplete: (croppedBlob: Blob) => Promise<void>
@@ -60,7 +60,7 @@ interface UseProfileEditReturn {
  * プロフィール編集機能を提供するカスタムフック
  *
  * 表示名編集とプロフィール画像の遅延アップロードをまとめて扱う。
- * Issue#102: SNS リンクの保存は SnsLinkEditDialog から直接 API を叩くようになり、
+ * Spec#102: SNS リンクの保存は SnsLinkEditDialog から直接 API を叩くようになり、
  * 本フックからは責務を切り離した。
  */
 export const useProfileEdit = ({
@@ -78,11 +78,11 @@ export const useProfileEdit = ({
   // プロフィール画像の状態
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Issue#35: トリミング機能の状態
+  // Spec#35: トリミング機能の状態
   const [isCropperOpen, setIsCropperOpen] = useState(false)
   const [cropperImageSrc, setCropperImageSrc] = useState('')
 
-  // Issue#82: 画像の遅延アップロード
+  // Spec#82: 画像の遅延アップロード
   const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null)
   const [pendingImageDelete, setPendingImageDelete] = useState(false)
 
@@ -107,7 +107,7 @@ export const useProfileEdit = ({
 
   /**
    * 表示名のバリデーション
-   * Issue#98: 軽量バリデーション（utils/validation/username.ts）に委譲し、
+   * Spec#98: 軽量バリデーション（utils/validation/username.ts）に委譲し、
    *          エラーキーを i18n フックで翻訳する
    */
   const validateUsername = (username: string): string | null => {
@@ -120,7 +120,7 @@ export const useProfileEdit = ({
 
   /**
    * 表示名を保存
-   * Issue#36: 成功時にonUsernameUpdatedコールバックを呼び出す
+   * Spec#36: 成功時にonUsernameUpdatedコールバックを呼び出す
    */
   const handleSaveUsername = useCallback(async () => {
     setUsernameError('')
@@ -146,12 +146,14 @@ export const useProfileEdit = ({
 
       if (!response.ok) {
         if (response.status === HTTP_STATUS.CONFLICT) {
-          const data = await response.json()
-          setUsernameError(data.message)
+          // Spec#93: 今のバックエンドは表示名の保存で 409 を返さない。将来コード（例: USERNAME_ALREADY_IN_USE）と
+          // errors.* の翻訳を足せば、ここでその文言が出る。それまでは汎用の文言になる
+          const data = await response.json().catch(() => null)
+          setUsernameError(translateErrorCode(getErrorCode(data), t, 'auth.errorOccurred'))
           return
         }
         if (response.status === HTTP_STATUS.BAD_REQUEST) {
-          // Issue#98: 400 Bad Request の field-level エラー（i18n キー）を取得
+          // Spec#98: 400 Bad Request の field-level エラー（i18n キー）を取得
           const data = await response.json().catch(() => null) as
             | { errors?: Array<{ field?: string; message?: string }> }
             | null
@@ -165,7 +167,7 @@ export const useProfileEdit = ({
       }
 
       setIsEditingUsername(false)
-      // Issue#36: 成功時にコールバックを呼び出してAuthContextを更新
+      // Spec#36: 成功時にコールバックを呼び出してAuthContextを更新
       onUsernameUpdated?.(editingUsername)
     } catch {
       // エラー時の処理
@@ -173,7 +175,7 @@ export const useProfileEdit = ({
   }, [editingUsername, getAuthToken, onUsernameUpdated, t])
 
   /**
-   * Issue#35: プロフィール画像を選択してトリミングモーダルを開く
+   * Spec#35: プロフィール画像を選択してトリミングモーダルを開く
    */
   const handleProfileImageSelect = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,7 +194,7 @@ export const useProfileEdit = ({
   )
 
   /**
-   * Issue#82: トリミング完了後 → Blobを保持してプレビューのみ（アップロードしない）
+   * Spec#82: トリミング完了後 → Blobを保持してプレビューのみ（アップロードしない）
    */
   const handleCropComplete = useCallback(
     async (croppedBlob: Blob) => {
@@ -210,7 +212,7 @@ export const useProfileEdit = ({
   )
 
   /**
-   * Issue#35: トリミングをキャンセル
+   * Spec#35: トリミングをキャンセル
    */
   const handleCropCancel = useCallback(() => {
     setIsCropperOpen(false)
@@ -218,7 +220,7 @@ export const useProfileEdit = ({
   }, [])
 
   /**
-   * Issue#82: プロフィール画像を削除（遅延 - 保存ボタンで確定）
+   * Spec#82: プロフィール画像を削除（遅延 - 保存ボタンで確定）
    */
   const handleDeleteProfileImage = useCallback(async () => {
     // プレビューをデフォルトアバターに戻す（APIは呼ばない）
@@ -229,8 +231,8 @@ export const useProfileEdit = ({
 
   /**
    * 未保存の変更があるかどうか
-   * Issue#82: 画像変更・画像削除も含める
-   * Issue#102: SNS リンク編集は SnsLinkEditDialog に切り出し済みのため除外
+   * Spec#82: 画像変更・画像削除も含める
+   * Spec#102: SNS リンク編集は SnsLinkEditDialog に切り出し済みのため除外
    */
   const hasUnsavedChanges = isEditingUsername || pendingImageBlob !== null || pendingImageDelete
 
@@ -264,13 +266,13 @@ export const useProfileEdit = ({
 
         if (!usernameResponse.ok) {
           if (usernameResponse.status === HTTP_STATUS.CONFLICT) {
-            const data = await usernameResponse.json()
-            setUsernameError(data.message)
+            const data = await usernameResponse.json().catch(() => null)
+            setUsernameError(translateErrorCode(getErrorCode(data), t, 'auth.errorOccurred'))
             setIsSaving(false)
             return
           }
           if (usernameResponse.status === HTTP_STATUS.BAD_REQUEST) {
-            // Issue#98: 400 Bad Request の field-level エラーを取得
+            // Spec#98: 400 Bad Request の field-level エラーを取得
             const data = await usernameResponse.json().catch(() => null) as
               | { errors?: Array<{ field?: string; message?: string }> }
               | null
@@ -288,7 +290,7 @@ export const useProfileEdit = ({
         onUsernameUpdated?.(editingUsername)
       }
 
-      // Issue#82: 画像アップロード（保存待ちの場合のみ）
+      // Spec#82: 画像アップロード（保存待ちの場合のみ）
       if (pendingImageBlob) {
         const blobType = pendingImageBlob.type || 'image/jpeg'
         const extension = blobType === 'image/png' ? 'png' : blobType === 'image/webp' ? 'webp' : 'jpg'
@@ -306,15 +308,15 @@ export const useProfileEdit = ({
             method: 'PUT',
             body: pendingImageBlob,
             headers: {
-              // Issue#100: presigned URL の署名と整合させるため必須
+              // Spec#100: presigned URL の署名と整合させるため必須
               [S3_TAG_HEADER_NAME]: S3_TAG_HEADER_VALUE_PENDING,
-              // Issue#124: presigned URL の SignedHeaders に cache-control が含まれるため必須
+              // Spec#124: presigned URL の SignedHeaders に cache-control が含まれるため必須
               'Cache-Control': S3_CACHE_CONTROL_VALUE,
             },
           })
 
           if (!s3Response.ok) {
-            toast.error(ERROR_MESSAGES.FAILED_TO_REGISTER_PROFILE_IMAGE)
+            toast.error(t('profile.imageRegisterFailed'))
           } else {
             const registerResponse = await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
               method: 'PUT',
@@ -323,7 +325,7 @@ export const useProfileEdit = ({
             })
 
             if (!registerResponse.ok) {
-              toast.error(ERROR_MESSAGES.FAILED_TO_REGISTER_PROFILE_IMAGE)
+              toast.error(t('profile.imageRegisterFailed'))
             } else {
               setPendingImageBlob(null)
             }
@@ -331,7 +333,7 @@ export const useProfileEdit = ({
         }
       }
 
-      // Issue#82: 画像削除（削除フラグがある場合のみ）
+      // Spec#82: 画像削除（削除フラグがある場合のみ）
       if (pendingImageDelete) {
         await fetch(API_ENDPOINTS.PROFILE_IMAGE, {
           method: 'DELETE',
@@ -340,7 +342,7 @@ export const useProfileEdit = ({
         setPendingImageDelete(false)
       }
 
-      // Issue#102: SNSリンクは SnsLinkEditDialog 内で直接保存するため、ここでは扱わない
+      // Spec#102: SNSリンクは SnsLinkEditDialog 内で直接保存するため、ここでは扱わない
     } catch {
       // エラー時の処理
     } finally {
@@ -365,7 +367,7 @@ export const useProfileEdit = ({
       setEditingUsername(initialUsername)
       setUsernameError('')
     }
-    // Issue#82: 画像変更をリバート（hook内部の状態のみリセット）
+    // Spec#82: 画像変更をリバート（hook内部の状態のみリセット）
     // ProfileDialogのクリーンアップeffectがUI状態をリセットするため
     // onImageUpdatedは呼ばない（呼ぶとisImagePendingDeleteが再設定される）
     if (pendingImageBlob || pendingImageDelete) {
@@ -388,7 +390,7 @@ export const useProfileEdit = ({
     handleProfileImageSelect,
     handleDeleteProfileImage,
 
-    // Issue#35: トリミング機能
+    // Spec#35: トリミング機能
     isCropperOpen,
     cropperImageSrc,
     handleCropComplete,

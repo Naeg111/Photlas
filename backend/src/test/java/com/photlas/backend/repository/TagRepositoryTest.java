@@ -19,7 +19,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Issue#135 Phase 2: Tag / TagCategory / PhotoTag リポジトリの永続化テスト。
+ * Spec#135 Phase 2: Tag / TagCategory / PhotoTag リポジトリの永続化テスト。
  *
  * <p>JPA エンティティが正しくマッピングされ、Spring Data JPA 経由で
  * 保存・取得・削除ができることを検証する。</p>
@@ -58,7 +58,7 @@ class TagRepositoryTest {
     // ========== Tag ==========
 
     @Test
-    @DisplayName("Issue#135 - Tag を保存して slug で取得できる")
+    @DisplayName("Spec#135 - Tag を保存して slug で取得できる")
     void canFindTagBySlug() {
         Optional<Tag> found = tagRepository.findBySlug("cherry-blossom");
 
@@ -73,7 +73,7 @@ class TagRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - Tag を rekognition_label で取得できる")
+    @DisplayName("Spec#135 - Tag を rekognition_label で取得できる")
     void canFindTagByRekognitionLabel() {
         Optional<Tag> found = tagRepository.findByRekognitionLabel("Cherry Blossom");
 
@@ -82,7 +82,7 @@ class TagRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - is_active=FALSE の Tag は findActiveBySlug では取得されない")
+    @DisplayName("Spec#135 - is_active=FALSE の Tag は findActiveBySlug では取得されない")
     void inactiveTagIsNotReturnedByFindActiveBySlug() {
         sampleTag.setIsActive(false);
         tagRepository.saveAndFlush(sampleTag);
@@ -93,7 +93,7 @@ class TagRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - is_active=TRUE の Tag は findActiveBySlug で取得される")
+    @DisplayName("Spec#135 - is_active=TRUE の Tag は findActiveBySlug で取得される")
     void activeTagIsReturnedByFindActiveBySlug() {
         Optional<Tag> found = tagRepository.findActiveBySlug("cherry-blossom");
 
@@ -103,7 +103,7 @@ class TagRepositoryTest {
     // ========== TagCategory ==========
 
     @Test
-    @DisplayName("Issue#135 - TagCategory を保存し、tag_id で取得できる（1 タグ → 複数カテゴリ）")
+    @DisplayName("Spec#135 - TagCategory を保存し、tag_id で取得できる（1 タグ → 複数カテゴリ）")
     void canLinkTagToMultipleCategories() {
         TagCategory tc1 = new TagCategory(sampleTag.getId(), CodeConstants.CATEGORY_PLANTS);
         TagCategory tc2 = new TagCategory(sampleTag.getId(), CodeConstants.CATEGORY_NATURE);
@@ -117,7 +117,7 @@ class TagRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - category_code で TagCategory を逆引きできる（文脈連動表示用）")
+    @DisplayName("Spec#135 - category_code で TagCategory を逆引きできる（文脈連動表示用）")
     void canFindTagCategoriesByCategoryCode() {
         tagCategoryRepository.saveAndFlush(
                 new TagCategory(sampleTag.getId(), CodeConstants.CATEGORY_PLANTS));
@@ -132,7 +132,7 @@ class TagRepositoryTest {
     // ========== PhotoTag ==========
 
     @Test
-    @DisplayName("Issue#135 - PhotoTag (AI 由来) を保存して取得できる")
+    @DisplayName("Spec#135 - PhotoTag (AI 由来) を保存して取得できる")
     void canSaveAiOriginatedPhotoTag() {
         Photo photo = createPhoto();
         PhotoTag pt = new PhotoTag(photo.getPhotoId(), sampleTag.getId());
@@ -149,7 +149,7 @@ class TagRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - PhotoTag (USER 由来) は ai_confidence が NULL")
+    @DisplayName("Spec#135 - PhotoTag (USER 由来) は ai_confidence が NULL")
     void canSaveUserOriginatedPhotoTagWithNullConfidence() {
         Photo photo = createPhoto();
         PhotoTag pt = new PhotoTag(photo.getPhotoId(), sampleTag.getId());
@@ -165,7 +165,7 @@ class TagRepositoryTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - 同じ (photo_id, tag_id) ペアは重複登録できない（複合主キー）")
+    @DisplayName("Spec#135 - 同じ (photo_id, tag_id) ペアは重複登録できない（複合主キー）")
     void duplicatePhotoTagPairIsRejected() {
         Photo photo = createPhoto();
 

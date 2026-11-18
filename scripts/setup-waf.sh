@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# AWS WAF セットアップスクリプト (Issue#94 + Issue#97 マスタースクリプト)
+# AWS WAF セットアップスクリプト (Spec#94 + Spec#97 マスタースクリプト)
 # 既存 ALB (photlas-alb) に Regional WAF をアタッチし、全ルールを投入する
 #
 # 実行内容:
@@ -8,9 +8,9 @@
 #   2. Firehose 用 IAM ロール作成
 #   3. Kinesis Data Firehose 配信ストリーム作成
 #   4. WAFv2 WebACL 作成（全ルール、Count モードで導入）
-#        Section 1: Rate Limit Rules (Issue#94)
+#        Section 1: Rate Limit Rules (Spec#94)
 #          - AuthRateLimit, GeneralRateLimit, StagingLooseLimit
-#        Section 2: Managed Rules (Issue#97)
+#        Section 2: Managed Rules (Spec#97)
 #          - AmazonIpReputationList, KnownBadInputsRuleSet,
 #            SQLiRuleSet, CommonRuleSet
 #   5. WAF ロギング設定（Authorization ヘッダリダクション）
@@ -35,8 +35,8 @@
 #   再実行すること。
 #
 # 関連ドキュメント:
-#   documents/04_Issues/Issue#94_フェーズ1_手順書.md
-#   documents/04_Issues/Issue#97.md
+#   documents/spec/SPEC-0094_フェーズ1_手順書.md
+#   documents/spec/SPEC-0097.md
 #
 
 set -euo pipefail
@@ -181,7 +181,7 @@ EOF
   aws iam create-role \
     --role-name "$FIREHOSE_ROLE_NAME" \
     --assume-role-policy-document "file://$TMP_DIR/firehose-trust-policy.json" \
-    --description "Firehose role for AWS WAF logs delivery to S3 - Issue#94" \
+    --description "Firehose role for AWS WAF logs delivery to S3 - Spec#94" \
     --tags \
       "Key=Project,Value=${TAG_PROJECT}" \
       "Key=Environment,Value=${TAG_ENVIRONMENT}" \
@@ -282,7 +282,7 @@ log "Firehose ARN: $FIREHOSE_ARN"
 section "Step 4: WAFv2 WebACL"
 
 # ============================================================
-# Section 1: Rate Limit Rules (Issue#94)
+# Section 1: Rate Limit Rules (Spec#94)
 # ============================================================
 #
 # ByteMatchStatement.SearchString は WAFv2 API では blob 型のため、
@@ -398,7 +398,7 @@ cat > "$TMP_DIR/rate-limit-rules.json" <<'EOF'
 EOF
 
 # ============================================================
-# Section 2: Managed Rules (Issue#97)
+# Section 2: Managed Rules (Spec#97)
 # ============================================================
 #
 # 4 AWS マネージドルール（優先度 §3.2: cheap -> heavy）:
@@ -420,7 +420,7 @@ EOF
 #     (Count モード中は待機、OverrideAction 削除時にアクティベート)
 #   - バージョンは describe-managed-rule-group で動的取得 (§3.9, §3.11)
 
-section "Section 2: Building managed rules (Issue#97)"
+section "Section 2: Building managed rules (Spec#97)"
 
 # マネージドルールグループの CurrentDefaultVersion を取得する。
 # 一部のルールグループでは CurrentDefaultVersion が null の場合があるため、
@@ -642,7 +642,7 @@ else
       "CloudWatchMetricsEnabled": true,
       "MetricName": "photlas-waf-main"
     }' \
-    --description "Photlas main WAF with rate limiting rules - Issue#94" \
+    --description "Photlas main WAF with rate limiting rules - Spec#94" \
     --tags \
       "Key=Project,Value=${TAG_PROJECT}" \
       "Key=Environment,Value=${TAG_ENVIRONMENT}" \

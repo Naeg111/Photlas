@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * Issue#65: 位置情報修正の指摘エンティティ
+ * Spec#65: 位置情報修正の指摘エンティティ
  */
 @Entity
 @Table(name = "location_suggestions", indexes = {

@@ -1,6 +1,6 @@
-// Issue#135 Phase 4: tags の 4 言語翻訳 (ja / zh / ko / es) を Claude API で行うスクリプト
+// Spec#135 Phase 4: tags の 4 言語翻訳 (ja / zh / ko / es) を Claude API で行うスクリプト
 //
-// 設計詳細は documents/04_Issues/Issue#135.md の 4.4 を参照。
+// 設計詳細は documents/spec/SPEC-0135.md の 4.4 を参照。
 //
 // 主な責務:
 //   - DB から display_name_zh/ko/es 等が NULL の tag 行を取得
@@ -105,7 +105,7 @@ export async function translateBatch(rows, callClaude) {
     try {
       translated = await translateRow(row, callClaude);
     } catch (e) {
-      // Issue#135 4.4: 1 行失敗しても次に進む（バッチ全体は止めない）
+      // Spec#135 4.4: 1 行失敗しても次に進む（バッチ全体は止めない）
       console.error(`[translate-tags] row id=${row.id} (${row.rekognition_label}) failed: ${e.message}`);
       continue;
     }

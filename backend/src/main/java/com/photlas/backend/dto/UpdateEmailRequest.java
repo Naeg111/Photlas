@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 
 /**
- * Issue#20: アカウント設定機能 - メールアドレス変更リクエスト
+ * Spec#20: アカウント設定機能 - メールアドレス変更リクエスト
  */
 public class UpdateEmailRequest {
     @JsonProperty("new_email")

@@ -33,12 +33,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Issue#135 Phase 13 + Issue#136 Phase 5: {@code GET /tags/{slug}} Thymeleaf ランディングページのテスト。
+ * Spec#135 Phase 13 + Spec#136 Phase 5: {@code GET /tags/{slug}} Thymeleaf ランディングページのテスト。
  *
  * <p>SEO ターゲットの SSR ページ。Thymeleaf テンプレートが正しくレンダリングされ、
  * 404 や言語リダイレクト、hreflang 出力等が要件通りに動くことを検証する。</p>
  *
- * <p>Issue#136 Phase 5: page / lang 正規化と 1 ホップ 301 のエッジケース検証を追加。</p>
+ * <p>Spec#136 Phase 5: page / lang 正規化と 1 ホップ 301 のエッジケース検証を追加。</p>
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -99,10 +99,10 @@ class TagPageControllerTest {
         photoTagRepository.saveAndFlush(pt);
     }
 
-    // ===== Issue#135 Phase 13: 既存テスト =====
+    // ===== Spec#135 Phase 13: 既存テスト =====
 
     @Test
-    @DisplayName("Issue#135 - GET /tags/cherry-blossom?lang=ja: 200 と日本語タイトルを含む HTML")
+    @DisplayName("Spec#135 - GET /tags/cherry-blossom?lang=ja: 200 と日本語タイトルを含む HTML")
     void getTagPage_ja_returnsHtmlWithJapaneseTitle() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -110,7 +110,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §9 - 本番では GET /tags/{slug} に X-Robots-Tag(noindex) を付けない")
+    @DisplayName("Spec#136 §9 - 本番では GET /tags/{slug} に X-Robots-Tag(noindex) を付けない")
     void getTagPage_prod_hasNoXRobotsTagNoindex() throws Exception {
         // app.frontend-url は test プロファイルでも既定 https://photlas.jp（本番扱い）
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
@@ -119,14 +119,14 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §9 - HEAD /tags/{slug} は 401 ではなく 200（GET と同様に許可）")
+    @DisplayName("Spec#136 §9 - HEAD /tags/{slug} は 401 ではなく 200（GET と同様に許可）")
     void headTagPage_isAllowed() throws Exception {
         mockMvc.perform(head("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /tags/cherry-blossom?lang=en: 英語表示名で返す")
+    @DisplayName("Spec#135 - GET /tags/cherry-blossom?lang=en: 英語表示名で返す")
     void getTagPage_en_returnsHtmlWithEnglishTitle() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
                 .andExpect(status().isOk())
@@ -134,7 +134,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /tags/{slug}: lang パラメータ未指定なら ?lang=en へ 301 リダイレクト")
+    @DisplayName("Spec#135 - GET /tags/{slug}: lang パラメータ未指定なら ?lang=en へ 301 リダイレクト")
     void getTagPage_noLang_redirectsToEnglish() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom"))
                 .andExpect(status().isMovedPermanently())
@@ -142,14 +142,14 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /tags/nonexistent-slug?lang=ja: 404")
+    @DisplayName("Spec#135 - GET /tags/nonexistent-slug?lang=ja: 404")
     void getTagPage_nonexistentSlug_returns404() throws Exception {
         mockMvc.perform(get("/tags/nonexistent-slug").param("lang", "ja"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /tags/{slug}: is_active=FALSE のキーワードは 404")
+    @DisplayName("Spec#135 - GET /tags/{slug}: is_active=FALSE のキーワードは 404")
     void getTagPage_inactiveTag_returns404() throws Exception {
         cherry.setIsActive(false);
         tagRepository.saveAndFlush(cherry);
@@ -159,7 +159,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#135 - GET /tags/{slug}?lang=ja: hreflang メタタグが 5 言語分含まれる")
+    @DisplayName("Spec#135 - GET /tags/{slug}?lang=ja: hreflang メタタグが 5 言語分含まれる")
     void getTagPage_includesHreflangMetaTags() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -171,10 +171,10 @@ class TagPageControllerTest {
                 .andExpect(content().string(containsString("hreflang=\"x-default\"")));
     }
 
-    // ===== Issue#136 Phase 5: page / lang 正規化と 1 ホップ 301 =====
+    // ===== Spec#136 Phase 5: page / lang 正規化と 1 ホップ 301 =====
 
     @Test
-    @DisplayName("Issue#136 - ?page=1 明示 → ?page 無し URL に 301")
+    @DisplayName("Spec#136 - ?page=1 明示 → ?page 無し URL に 301")
     void pageEqualsOne_redirectsToNoPageUrl() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en").param("page", "1"))
                 .andExpect(status().isMovedPermanently())
@@ -182,7 +182,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - ?page=0 → ?page 無し URL に 301")
+    @DisplayName("Spec#136 - ?page=0 → ?page 無し URL に 301")
     void pageEqualsZero_redirectsToNoPageUrl() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en").param("page", "0"))
                 .andExpect(status().isMovedPermanently())
@@ -190,7 +190,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - ?page=-1 → ?page 無し URL に 301")
+    @DisplayName("Spec#136 - ?page=-1 → ?page 無し URL に 301")
     void pageNegative_redirectsToNoPageUrl() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en").param("page", "-1"))
                 .andExpect(status().isMovedPermanently())
@@ -198,7 +198,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - ?page=abc 非数字 → 400 ではなく ?page 無し URL に 301")
+    @DisplayName("Spec#136 - ?page=abc 非数字 → 400 ではなく ?page 無し URL に 301")
     void pageNonNumeric_redirectsToNoPageUrl() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en").param("page", "abc"))
                 .andExpect(status().isMovedPermanently())
@@ -206,7 +206,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - 0 件タグで ?page=99999 → ?page 無し URL に 301")
+    @DisplayName("Spec#136 - 0 件タグで ?page=99999 → ?page 無し URL に 301")
     void pageOutOfRangeForEmptyTag_redirectsToNoPageUrl() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en").param("page", "99999"))
                 .andExpect(status().isMovedPermanently())
@@ -214,7 +214,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - ?page=99999 (totalPages=2) → 最終ページに 301")
+    @DisplayName("Spec#136 - ?page=99999 (totalPages=2) → 最終ページに 301")
     void pageOutOfRangeForMultiPageTag_redirectsToLastPage() throws Exception {
         // PAGE_SIZE=48 → 49 枚で 2 ページ
         for (int i = 0; i < 49; i++) {
@@ -227,7 +227,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - ?lang=zh-TW → ?lang=zh に 301")
+    @DisplayName("Spec#136 - ?lang=zh-TW → ?lang=zh に 301")
     void langZhTW_redirectsToZh() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "zh-TW"))
                 .andExpect(status().isMovedPermanently())
@@ -235,7 +235,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - ?lang=zh-CN → ?lang=zh に 301")
+    @DisplayName("Spec#136 - ?lang=zh-CN → ?lang=zh に 301")
     void langZhCN_redirectsToZh() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "zh-CN"))
                 .andExpect(status().isMovedPermanently())
@@ -243,7 +243,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - ?lang=en-US → ?lang=en に 301")
+    @DisplayName("Spec#136 - ?lang=en-US → ?lang=en に 301")
     void langEnUS_redirectsToEn() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en-US"))
                 .andExpect(status().isMovedPermanently())
@@ -251,7 +251,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - ?lang=fr 未サポート → ?lang=en にフォールバック 301")
+    @DisplayName("Spec#136 - ?lang=fr 未サポート → ?lang=en にフォールバック 301")
     void langUnsupported_redirectsToEnglish() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "fr"))
                 .andExpect(status().isMovedPermanently())
@@ -259,7 +259,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - ?lang=zh-TW&page=99999 (0 件タグ) → 1 ホップで ?lang=zh に")
+    @DisplayName("Spec#136 - ?lang=zh-TW&page=99999 (0 件タグ) → 1 ホップで ?lang=zh に")
     void langAndPageBothInvalid_redirectsInOneHop() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "zh-TW").param("page", "99999"))
                 .andExpect(status().isMovedPermanently())
@@ -267,7 +267,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - ?lang=en-US&page=1 → 1 ホップで ?lang=en に（page=1 も無印化）")
+    @DisplayName("Spec#136 - ?lang=en-US&page=1 → 1 ホップで ?lang=en に（page=1 も無印化）")
     void langNonCanonicalWithPageOne_redirectsInOneHop() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en-US").param("page", "1"))
                 .andExpect(status().isMovedPermanently())
@@ -275,7 +275,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - 200 path: photos と pagination が Model に追加される")
+    @DisplayName("Spec#136 - 200 path: photos と pagination が Model に追加される")
     void renders200WithPhotosAndPagination() throws Exception {
         for (int i = 0; i < 3; i++) {
             link(createPublishedPhoto(), cherry);
@@ -288,10 +288,10 @@ class TagPageControllerTest {
                 .andExpect(model().attributeExists("pagination"));
     }
 
-    // ===== Issue#136 Phase 6: title / description の MessageSource 多言語化 (Q15) =====
+    // ===== Spec#136 Phase 6: title / description の MessageSource 多言語化 (Q15) =====
 
     @Test
-    @DisplayName("Issue#136 - Phase6: ja の <title> が『桜 - 1 ページ目 - Photlas』")
+    @DisplayName("Spec#136 - Phase6: ja の <title> が『桜 - 1 ページ目 - Photlas』")
     void titleJa_pageOne() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -299,7 +299,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase6: en の <title> が『Cherry Blossom - Page 1 - Photlas』")
+    @DisplayName("Spec#136 - Phase6: en の <title> が『Cherry Blossom - Page 1 - Photlas』")
     void titleEn_pageOne() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
                 .andExpect(status().isOk())
@@ -307,7 +307,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase6: zh の <title> が『樱花 - 第 1 页 - Photlas』")
+    @DisplayName("Spec#136 - Phase6: zh の <title> が『樱花 - 第 1 页 - Photlas』")
     void titleZh_pageOne() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "zh"))
                 .andExpect(status().isOk())
@@ -315,7 +315,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase6: ko の <title> が『벚꽃 - 1 페이지 - Photlas』")
+    @DisplayName("Spec#136 - Phase6: ko の <title> が『벚꽃 - 1 페이지 - Photlas』")
     void titleKo_pageOne() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ko"))
                 .andExpect(status().isOk())
@@ -323,7 +323,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase6: es の <title> が『Flor de cerezo - Página 1 - Photlas』")
+    @DisplayName("Spec#136 - Phase6: es の <title> が『Flor de cerezo - Página 1 - Photlas』")
     void titleEs_pageOne() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "es"))
                 .andExpect(status().isOk())
@@ -331,7 +331,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase6: 2 ページ目で <title> が『桜 - 2 ページ目 - Photlas』")
+    @DisplayName("Spec#136 - Phase6: 2 ページ目で <title> が『桜 - 2 ページ目 - Photlas』")
     void titleJa_pageTwo() throws Exception {
         for (int i = 0; i < 49; i++) {
             link(createPublishedPhoto(), cherry);
@@ -342,7 +342,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase6: en の <meta description> がページ番号と件数を含む")
+    @DisplayName("Spec#136 - Phase6: en の <meta description> がページ番号と件数を含む")
     void descriptionEn_includesPageAndCount() throws Exception {
         for (int i = 0; i < 3; i++) {
             link(createPublishedPhoto(), cherry);
@@ -356,7 +356,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase6: ja の <meta description> がページ番号と件数を含む")
+    @DisplayName("Spec#136 - Phase6: ja の <meta description> がページ番号と件数を含む")
     void descriptionJa_includesPageAndCount() throws Exception {
         for (int i = 0; i < 3; i++) {
             link(createPublishedPhoto(), cherry);
@@ -369,7 +369,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase6: og:title と og:description が <title>/<meta description> と同じ Model 属性を使う")
+    @DisplayName("Spec#136 - Phase6: og:title と og:description が <title>/<meta description> と同じ Model 属性を使う")
     void ogTitleAndDescriptionMatch() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -382,10 +382,10 @@ class TagPageControllerTest {
                 .andExpect(model().attributeExists("description"));
     }
 
-    // ===== Issue#136 Phase 7: body i18n + 省略付きページネーション =====
+    // ===== Spec#136 Phase 7: body i18n + 省略付きページネーション =====
 
     @Test
-    @DisplayName("Issue#136 - Phase7: ja の本文に『3 枚』が表示される")
+    @DisplayName("Spec#136 - Phase7: ja の本文に『3 枚』が表示される")
     void bodyUnitPhotos_ja() throws Exception {
         for (int i = 0; i < 3; i++) {
             link(createPublishedPhoto(), cherry);
@@ -396,7 +396,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase7: en の本文に『3 photos』が表示される")
+    @DisplayName("Spec#136 - Phase7: en の本文に『3 photos』が表示される")
     void bodyUnitPhotos_en() throws Exception {
         for (int i = 0; i < 3; i++) {
             link(createPublishedPhoto(), cherry);
@@ -407,7 +407,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase7: ja の 0 件案内文が日本語表記")
+    @DisplayName("Spec#136 - Phase7: ja の 0 件案内文が日本語表記")
     void emptyMessage_ja() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -415,7 +415,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase7: en の 0 件案内文が英語表記")
+    @DisplayName("Spec#136 - Phase7: en の 0 件案内文が英語表記")
     void emptyMessage_en() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
                 .andExpect(status().isOk())
@@ -423,7 +423,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase7: ko の 0 件案内文が韓国語表記")
+    @DisplayName("Spec#136 - Phase7: ko の 0 件案内文が韓国語表記")
     void emptyMessage_ko() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ko"))
                 .andExpect(status().isOk())
@@ -431,7 +431,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase7: 1 ページのみのときページネーションが描画されない")
+    @DisplayName("Spec#136 - Phase7: 1 ページのみのときページネーションが描画されない")
     void noPagination_singlePage() throws Exception {
         for (int i = 0; i < 10; i++) {
             link(createPublishedPhoto(), cherry);
@@ -444,7 +444,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase7: 2 ページ目への next link href が含まれる")
+    @DisplayName("Spec#136 - Phase7: 2 ページ目への next link href が含まれる")
     void paginationNextLink_pageOne() throws Exception {
         // PAGE_SIZE=48 → 49 枚で 2 ページ
         for (int i = 0; i < 49; i++) {
@@ -459,7 +459,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase7: 2 ページ目から 1 ページ目への prev link が含まれる（page=1 は無印）")
+    @DisplayName("Spec#136 - Phase7: 2 ページ目から 1 ページ目への prev link が含まれる（page=1 は無印）")
     void paginationPrevLink_pageTwo() throws Exception {
         for (int i = 0; i < 49; i++) {
             link(createPublishedPhoto(), cherry);
@@ -471,7 +471,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase7: footer タグライン ja『Photlas - 撮影スポット共有』")
+    @DisplayName("Spec#136 - Phase7: footer タグライン ja『Photlas - 撮影スポット共有』")
     void footerTagline_ja() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -479,24 +479,24 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase7: footer タグライン en『Photlas - Photo spot sharing』")
+    @DisplayName("Spec#136 - Phase7: footer タグライン en『Photlas - Photo spot sharing』")
     void footerTagline_en() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "en"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Photlas - Photo spot sharing")));
     }
 
-    // ===== Issue#136 Phase 13 (Q18): HTTP キャッシュヘッダ =====
+    // ===== Spec#136 Phase 13 (Q18): HTTP キャッシュヘッダ =====
 
     @Test
-    @DisplayName("Issue#136 - Phase13/Q18: 200 レスポンスに Cache-Control: public, max-age=300")
+    @DisplayName("Spec#136 - Phase13/Q18: 200 レスポンスに Cache-Control: public, max-age=300")
     void cacheControlHeader_setOn200() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Cache-Control", "public, max-age=300"));
     }
 
-    // ===== Issue#136 Phase 9: 0 件時の関連キーワード描画 =====
+    // ===== Spec#136 Phase 9: 0 件時の関連キーワード描画 =====
 
     /** Phase 9 用: cherry に同カテゴリの仲間 (tulip, rose) を作る。 */
     private void seedRelatedTags() {
@@ -524,7 +524,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase9: 0 件タグで ja の関連キーワードラベルとリンクが描画される")
+    @DisplayName("Spec#136 - Phase9: 0 件タグで ja の関連キーワードラベルとリンクが描画される")
     void relatedKeywords_renderedWhenEmpty_ja() throws Exception {
         seedRelatedTags();
 
@@ -541,7 +541,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase9: 0 件タグで en の関連キーワードラベルが英語")
+    @DisplayName("Spec#136 - Phase9: 0 件タグで en の関連キーワードラベルが英語")
     void relatedKeywords_renderedWhenEmpty_en() throws Exception {
         seedRelatedTags();
 
@@ -554,7 +554,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase9: 写真ありのときは関連キーワードセクションを描画しない")
+    @DisplayName("Spec#136 - Phase9: 写真ありのときは関連キーワードセクションを描画しない")
     void relatedKeywords_notRenderedWhenNotEmpty() throws Exception {
         seedRelatedTags();
         // 写真 1 枚以上付与
@@ -568,7 +568,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase9: 関連 0 件 (孤立 tag) では関連セクションが描画されない")
+    @DisplayName("Spec#136 - Phase9: 関連 0 件 (孤立 tag) では関連セクションが描画されない")
     void relatedKeywords_notRenderedWhenNoPeers() throws Exception {
         // cherry にはカテゴリ・仲間が無い
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
@@ -581,7 +581,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 - Phase9: relatedTags が Model に常に存在する（0 件時は空リスト）")
+    @DisplayName("Spec#136 - Phase9: relatedTags が Model に常に存在する（0 件時は空リスト）")
     void relatedTags_alwaysPresentInModel() throws Exception {
         seedRelatedTags();
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
@@ -590,10 +590,10 @@ class TagPageControllerTest {
                 .andExpect(model().attribute("relatedTags", hasSize(2)));
     }
 
-    // ===== Issue#136 §9: 絶対 URL 化（hreflang/canonical）＋ OGP 補完 =====
+    // ===== Spec#136 §9: 絶対 URL 化（hreflang/canonical）＋ OGP 補完 =====
 
     @Test
-    @DisplayName("Issue#136 §9 - canonicalUrl が絶対 URL（app.frontend-url 前置）")
+    @DisplayName("Spec#136 §9 - canonicalUrl が絶対 URL（app.frontend-url 前置）")
     void canonicalUrl_isAbsolute() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -602,7 +602,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §9 - hreflang が絶対 URL（Google は hreflang に絶対 URL を要求）")
+    @DisplayName("Spec#136 §9 - hreflang が絶対 URL（Google は hreflang に絶対 URL を要求）")
     void hreflang_isAbsolute() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -613,7 +613,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §9 - og:url が絶対 canonical URL として出力される")
+    @DisplayName("Spec#136 §9 - og:url が絶対 canonical URL として出力される")
     void ogUrl_isAbsoluteCanonical() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -622,7 +622,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §9 - 写真ありタグの og:image は先頭写真のサムネ")
+    @DisplayName("Spec#136 §9 - 写真ありタグの og:image は先頭写真のサムネ")
     void ogImage_isFirstPhotoThumbnail() throws Exception {
         Photo p = createPublishedPhoto();
         link(p, cherry);
@@ -634,7 +634,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §9 - 写真0件タグの og:image はブランドロゴ og-image.png にフォールバック")
+    @DisplayName("Spec#136 §9 - 写真0件タグの og:image はブランドロゴ og-image.png にフォールバック")
     void ogImage_fallsBackToOgImagePngWhenEmpty() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -644,7 +644,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#136 §9 - twitter:card は summary_large_image（横長カード）")
+    @DisplayName("Spec#136 §9 - twitter:card は summary_large_image（横長カード）")
     void twitterCard_isSummaryLargeImage() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -652,10 +652,10 @@ class TagPageControllerTest {
                         "name=\"twitter:card\" content=\"summary_large_image\"")));
     }
 
-    // ===== Issue#150: 写真不足ページの noindex 出力 =====
+    // ===== Spec#150: 写真不足ページの noindex 出力 =====
 
     @Test
-    @DisplayName("Issue#150 - 写真 0 件タグは indexable=false かつ robots noindex メタを出力する")
+    @DisplayName("Spec#150 - 写真 0 件タグは indexable=false かつ robots noindex メタを出力する")
     void emptyTag_isNotIndexable_andRendersNoindexMeta() throws Exception {
         mockMvc.perform(get("/tags/cherry-blossom").param("lang", "ja"))
                 .andExpect(status().isOk())
@@ -665,7 +665,7 @@ class TagPageControllerTest {
     }
 
     @Test
-    @DisplayName("Issue#150 - 写真 1 枚以上のタグは indexable=true かつ noindex メタを出力しない")
+    @DisplayName("Spec#150 - 写真 1 枚以上のタグは indexable=true かつ noindex メタを出力しない")
     void tagWithPhoto_isIndexable_andHasNoNoindexMeta() throws Exception {
         link(createPublishedPhoto(), cherry);
 

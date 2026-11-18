@@ -3,7 +3,7 @@ package com.photlas.backend.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Issue#16: カテゴリー一覧API - レスポンスDTO
+ * Spec#16: カテゴリー一覧API - レスポンスDTO
  * フロントエンドでカテゴリー名からIDへのマッピングを行うために使用
  */
 public class CategoryResponse {

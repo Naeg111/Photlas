@@ -1,7 +1,6 @@
 package com.photlas.backend.controller;
 
 import com.photlas.backend.dto.CreatePhotoRequest;
-import com.photlas.backend.dto.ErrorResponse;
 import com.photlas.backend.dto.PhotoBatchRequest;
 import com.photlas.backend.dto.PhotoDetailResponse;
 import com.photlas.backend.dto.PhotoResponse;
@@ -9,7 +8,8 @@ import com.photlas.backend.dto.UpdatePhotoRequest;
 import com.photlas.backend.dto.UploadUrlRequest;
 import com.photlas.backend.dto.UploadUrlResponse;
 import com.photlas.backend.entity.User;
-import com.photlas.backend.exception.CategoryNotFoundException;
+import com.photlas.backend.exception.ErrorCodes;
+import com.photlas.backend.exception.InvalidRequestException;
 import com.photlas.backend.exception.UserNotFoundException;
 import com.photlas.backend.repository.UserRepository;
 import com.photlas.backend.service.PhotoService;
@@ -73,7 +73,7 @@ public class PhotoController {
     }
 
     /**
-     * Issue#122: 写真詳細をバッチ取得する。
+     * Spec#122: 写真詳細をバッチ取得する。
      *
      * 写真詳細ダイアログの prefetch を 1 リクエストに集約するための専用エンドポイント。
      * 認可されていない photoId は silent skip し、認可された写真だけ配列で返す。
@@ -94,7 +94,7 @@ public class PhotoController {
 
     /**
      * 写真アップロード用の署名付きURLを取得する
-     * Issue#9: 写真アップロード処理
+     * Spec#9: 写真アップロード処理
      *
      * @param request リクエストボディ（extension, contentType）
      * @param authentication 認証情報
@@ -107,14 +107,14 @@ public class PhotoController {
     ) {
         // 拡張子のバリデーション
         if (!ALLOWED_IMAGE_EXTENSIONS.contains(request.getExtension().toLowerCase())) {
-            throw new IllegalArgumentException("対応していないファイル形式です");
+            throw new InvalidRequestException(ErrorCodes.UNSUPPORTED_FILE_TYPE, "対応していないファイル形式です");
         }
 
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("ユーザーが見つかりません"));
 
-        // Issue#131: crop 情報がリクエストにあれば S3 metadata 経由で Lambda に渡す
+        // Spec#131: crop 情報がリクエストにあれば S3 metadata 経由で Lambda に渡す
         S3Service.UploadUrlResult result = s3Service.generatePresignedUploadUrl(
                 "uploads",
                 user.getId(),
@@ -130,7 +130,7 @@ public class PhotoController {
     }
 
     /**
-     * Issue#54: 写真のモデレーションステータスを取得する（ポーリング用）
+     * Spec#54: 写真のモデレーションステータスを取得する（ポーリング用）
      *
      * @param photoId 写真ID
      * @param authentication 認証情報
@@ -156,7 +156,7 @@ public class PhotoController {
     }
 
     /**
-     * Issue#61: 写真メタデータを更新する
+     * Spec#61: 写真メタデータを更新する
      *
      * @param photoId 写真ID
      * @param request 更新リクエスト
@@ -175,7 +175,7 @@ public class PhotoController {
     }
 
     /**
-     * Issue#57: ユーザーが自分の写真を削除する
+     * Spec#57: ユーザーが自分の写真を削除する
      *
      * @param photoId 写真ID
      * @param authentication 認証情報
@@ -189,23 +189,5 @@ public class PhotoController {
         String email = authentication.getName();
         photoService.deletePhoto(photoId, email);
         return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * CategoryNotFoundExceptionをハンドリング
-     */
-    @ExceptionHandler(CategoryNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCategoryNotFoundException(CategoryNotFoundException e) {
-        ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-
-    /**
-     * IllegalArgumentExceptionをハンドリング
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }

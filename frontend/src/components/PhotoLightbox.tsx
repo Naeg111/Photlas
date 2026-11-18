@@ -6,11 +6,13 @@ import { Button } from './ui/button'
 import { LIGHTBOX } from '../utils/constants'
 import { clampLightboxPan, type Point } from '../utils/lightboxPan'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
+import { useLatest } from '../hooks/useLatest'
 
 /**
  * PhotoLightbox コンポーネント
- * Issue#27: パネル・ダイアログ群の移行
- * Issue#88: オリジナル画像のfetch+ReadableStreamローディング表示
+ * Spec#27: パネル・ダイアログ群の移行
+ * Spec#88: オリジナル画像のfetch+ReadableStreamローディング表示
  */
 
 /** ローディング画面を表示するまでの遅延（ms） */
@@ -28,6 +30,9 @@ interface PhotoLightboxProps {
 }
 
 export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxProps) {
+  const { t } = useTranslation()
+  // fetchImage を t に依存させず、開いている間に言語が変わっても画像を取り直さないよう、ref 経由で今の言語の t を使う
+  const tRef = useLatest(t)
   const [scale, setScale] = useState<number>(LIGHTBOX.INITIAL_SCALE)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -56,7 +61,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
     })
   }, [scale, clampPan])
 
-  // Issue#88: ローディング状態管理
+  // Spec#88: ローディング状態管理
   const [isLoading, setIsLoading] = useState(false)
   const [showLoading, setShowLoading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -64,7 +69,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
   const [loadError, setLoadError] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Issue#88: fetch + ReadableStream でオリジナル画像を読み込む
+  // Spec#88: fetch + ReadableStream でオリジナル画像を読み込む
   const fetchImage = useCallback(async (url: string) => {
     setIsLoading(true)
     setShowLoading(false)
@@ -124,7 +129,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
       setLoadError(true)
       setIsLoading(false)
       setShowLoading(false)
-      toast.error('画像の読み込みに失敗しました。再度開き直してください')
+      toast.error(tRef.current('photo.imageLoadFailed'))
     }
   }, [])
 
@@ -254,7 +259,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
           className="fixed inset-0 bg-black/90 z-[60] pointer-events-auto"
           onClick={() => onOpenChange(false)}
         >
-          {/* Issue#88: ローディング画面 */}
+          {/* Spec#88: ローディング画面 */}
           {showLoading && isLoading && (
             <div
               data-testid="lightbox-loading"
@@ -319,7 +324,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
                 <img
                   ref={imageRef}
                   src={displayImageUrl}
-                  alt="フルサイズ写真"
+                  alt={t('photo.fullSizeAlt')}
                   loading="eager"
                   className="max-w-[90vw] max-h-[90vh] object-contain"
                 />
@@ -340,7 +345,7 @@ export function PhotoLightbox({ open, onOpenChange, imageUrl }: PhotoLightboxPro
           </Button>
 
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-2 rounded-full pointer-events-none">
-            拡大: {Math.round(scale * 100)}%
+            {t('photo.zoomLevel', { percent: Math.round(scale * 100) })}
           </div>
         </motion.div>
       )}

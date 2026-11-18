@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
- * Issue#81 Phase 4g - OAuth リンク確認トークンのリポジトリ（Q1 / V25）。
+ * Spec#81 Phase 4g - OAuth リンク確認トークンのリポジトリ（Q1 / V25）。
  */
 @Repository
 public interface OAuthLinkConfirmationRepository extends JpaRepository<OAuthLinkConfirmation, Long> {

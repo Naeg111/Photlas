@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * データエクスポート履歴リポジトリ
- * Issue#108: ユーザー向けデータエクスポート機能
+ * Spec#108: ユーザー向けデータエクスポート機能
  */
 @Repository
 public interface DataExportLogRepository extends JpaRepository<DataExportLog, Long> {

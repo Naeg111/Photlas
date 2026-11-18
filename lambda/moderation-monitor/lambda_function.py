@@ -1,5 +1,5 @@
 """
-Issue#54: コンテンツモデレーション - 監視用Lambda関数
+Spec#54: コンテンツモデレーション - 監視用Lambda関数
 
 EventBridge（5分間隔）でトリガーされ、PENDING_REVIEWのまま
 5分以上経過した投稿がないかバックエンドAPIをチェックする。

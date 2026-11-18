@@ -17,7 +17,7 @@ const FEATURES = [
 ] as const;
 
 /**
- * Issue#114: 「Photlasとは？」ダイアログ（サービス紹介に特化）
+ * Spec#114: 「Photlasとは？」ダイアログ（サービス紹介に特化）
  */
 export function AboutDialog({ open, onOpenChange }: Readonly<AboutDialogProps>) {
   const { t } = useTranslation();

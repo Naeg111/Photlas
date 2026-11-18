@@ -1,10 +1,10 @@
 #!/usr/bin/env bats
 #
-# Issue#117: scripts/setup-maintenance-function.sh の動作を検証する。
+# Spec#117: scripts/setup-maintenance-function.sh の動作を検証する。
 # このスクリプトは初回セットアップ専用で、CloudFront Function を作成し
 # distribution に関連付け、ALB に maintenance リスナールールを追加する。
 #
-# Source of truth: documents/04_Issues/Issue#117.md §4.5
+# Source of truth: documents/spec/SPEC-0117.md §4.5
 
 load helpers
 

@@ -46,7 +46,7 @@ public class AccountSettingsFixTest {
     @Autowired private RateLimitFilter rateLimitFilter;
     @Autowired private EmailVerificationTokenRepository emailVerificationTokenRepository;
 
-    // Issue#100: ProfileService.updateProfileImage が S3 タグ更新を呼ぶようになったため、
+    // Spec#100: ProfileService.updateProfileImage が S3 タグ更新を呼ぶようになったため、
     // S3 への実接続を防ぐためにモック化する
     @MockBean private S3Service s3Service;
     @Autowired private PasswordResetTokenRepository passwordResetTokenRepository;

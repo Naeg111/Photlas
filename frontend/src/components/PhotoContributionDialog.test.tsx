@@ -19,7 +19,7 @@ vi.mock('sonner', () => ({
 
 /**
  * PhotoContributionDialog コンポーネントのテスト
- * Issue#27: パネル・ダイアログ群の移行
+ * Spec#27: パネル・ダイアログ群の移行
  *
  * 写真投稿ダイアログ - design-assetsベースでS3 Presigned URL連携を統合
  */
@@ -54,14 +54,14 @@ vi.mock('../utils/extractExif', () => ({
   extractExif: (...args: unknown[]) => mockExtractExif(...args),
 }))
 
-// react-easy-crop のモック（Issue#49）
-// Issue#131 Cycle2: 渡された objectFit を data 属性に記録して
+// react-easy-crop のモック（Spec#49）
+// Spec#131 Cycle2: 渡された objectFit を data 属性に記録して
 // テストから検証できるようにする
-// Issue#131（モバイル枠表示修正）: cropSize と onMediaLoaded をテストから
+// Spec#131（モバイル枠表示修正）: cropSize と onMediaLoaded をテストから
 // 検証・発火できるように拡張
-// Issue#131（z-index 修正）: style.cropAreaStyle も捕捉し、iOS Safari の
+// Spec#131（z-index 修正）: style.cropAreaStyle も捕捉し、iOS Safari の
 // GPU compositing 順を上書きするための zIndex 指定をテストで検証
-// Issue#131（will-change 解除）: style.mediaStyle も捕捉し、画像の GPU
+// Spec#131（will-change 解除）: style.mediaStyle も捕捉し、画像の GPU
 // レイヤー昇格を抑止するための willChange='auto' 指定をテストで検証
 let lastCropperCropSize: { width: number; height: number } | undefined
 let lastCropperStyle: {
@@ -128,7 +128,7 @@ vi.mock('react-easy-crop', () => ({
 
 // InlineMapPickerのモック（EXIF GPS テスト用にpositionを追跡）
 let lastMapPickerPosition: { lat: number; lng: number } | null = null
-// Issue#158: 能動選択通知（onUserPositionChange）をテストから発火できるよう捕捉
+// Spec#158: 能動選択通知（onUserPositionChange）をテストから発火できるよう捕捉
 let capturedOnUserPositionChange: ((pos: { lat: number; lng: number }) => void) | undefined
 vi.mock('./InlineMapPicker', () => ({
   InlineMapPicker: ({ position, onUserPositionChange }: { position: { lat: number; lng: number } | null; onUserPositionChange?: (pos: { lat: number; lng: number }) => void }) => {
@@ -163,7 +163,7 @@ describe('PhotoContributionDialog', () => {
     vi.clearAllMocks()
     mockExtractExif.mockResolvedValue(null)
     _resetRateLimitNotifyDebounce()
-    // Issue#158: モジュールレベルの記憶がテスト間で漏れないよう毎回クリア
+    // Spec#158: モジュールレベルの記憶がテスト間で漏れないよう毎回クリア
     clearLastPickedLocation()
     capturedOnUserPositionChange = undefined
   })
@@ -197,11 +197,22 @@ describe('PhotoContributionDialog', () => {
     it('renders file format information', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      expect(screen.getByText(/JPEG、PNG、HEIC/)).toBeInTheDocument()
-      expect(screen.getByText(/100MB/)).toBeInTheDocument()
+      expect(screen.getByText('JPEG、PNG、HEIC（最大100MB）')).toBeInTheDocument()
     })
 
-    it('Issue#74 - タイトル入力フィールドが表示されない', () => {
+    it('Spec#93 追加対応: 英語の設定では、ファイル形式と上限サイズが英語で表示される', async () => {
+      await i18n.changeLanguage('en')
+      try {
+        render(<PhotoContributionDialog {...defaultProps} />)
+
+        expect(screen.getByText('JPEG, PNG, HEIC (max 100MB)')).toBeInTheDocument()
+        expect(screen.queryByText(/JPEG、PNG、HEIC/)).not.toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('ja')
+      }
+    })
+
+    it('Spec#74 - タイトル入力フィールドが表示されない', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
       expect(screen.queryByText('タイトル')).not.toBeInTheDocument()
@@ -244,7 +255,7 @@ describe('PhotoContributionDialog', () => {
     it('renders all 15 genre options', () => {
       render(<PhotoContributionDialog {...defaultProps} />)
 
-      // Issue#159: 星空→星に改名、レジャー・施設(215)を追加（「その他」は機材種別と重複のため getAllByText で別途確認）
+      // Spec#159: 星空→星に改名、レジャー・施設(215)を追加（「その他」は機材種別と重複のため getAllByText で別途確認）
       const categories = ['自然風景', '街並み', '建造物', '夜景', 'グルメ', '植物', '動物', '野鳥', '自動車', 'バイク', '鉄道', '飛行機', '星', 'レジャー・施設']
       categories.forEach(category => {
         expect(screen.getByText(category)).toBeInTheDocument()
@@ -333,7 +344,7 @@ describe('PhotoContributionDialog', () => {
       expect(checkbox).toBeChecked()
     })
 
-    it('Issue#159 ②: カテゴリーは単一選択（2つ目を選ぶと1つ目が外れる）', async () => {
+    it('Spec#159 ②: カテゴリーは単一選択（2つ目を選ぶと1つ目が外れる）', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
@@ -352,7 +363,7 @@ describe('PhotoContributionDialog', () => {
       })
     })
 
-    it('Issue#159 ②: 3カテゴリーを順に選ぶと最後の1つだけが選択される', async () => {
+    it('Spec#159 ②: 3カテゴリーを順に選ぶと最後の1つだけが選択される', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
 
@@ -527,7 +538,7 @@ describe('PhotoContributionDialog', () => {
     })
   })
 
-  describe('EXIF Auto-Extraction - EXIF自動抽出 (Issue#41)', () => {
+  describe('EXIF Auto-Extraction - EXIF自動抽出 (Spec#41)', () => {
     const fullExifData: ExifData = {
       takenAt: '2024-12-25T15:30:00.000Z',
       latitude: 34.6937,
@@ -784,8 +795,8 @@ describe('PhotoContributionDialog', () => {
     })
   })
 
-  // ===== Issue#49: 写真クロップ機能テスト =====
-  describe('Issue#49: 写真クロップ機能', () => {
+  // ===== Spec#49: 写真クロップ機能テスト =====
+  describe('Spec#49: 写真クロップ機能', () => {
     it('写真選択後にクロップUIが表示される', async () => {
       mockExtractExif.mockResolvedValue(null)
       const user = userEvent.setup()
@@ -883,7 +894,7 @@ describe('PhotoContributionDialog', () => {
     })
   })
 
-  // Issue#96 PR2c: 429 レート制限ハンドリング（notifyIfRateLimited 経由のトースト）
+  // Spec#96 PR2c: 429 レート制限ハンドリング（notifyIfRateLimited 経由のトースト）
   describe('Rate Limit (429) - レート制限', () => {
     it('onSubmit が ApiError(429) を throw したらレート制限トーストが表示される', async () => {
       const user = userEvent.setup()
@@ -946,13 +957,13 @@ describe('PhotoContributionDialog', () => {
   })
 
   // ============================================================
-  // Issue#131 Cycle4: Cycle2 の objectFit="cover" 方針を撤回。
+  // Spec#131 Cycle4: Cycle2 の objectFit="cover" 方針を撤回。
   // 画像全体がコンテナ内にスクロールなしで収まり、クロップ枠は
   // 画像の中に収まる形（react-easy-crop 既定の contain）に戻す。
   // 動作確認の結果「画像を動かして選択範囲を変更する仕組みは
   // 直感的でない」というフィードバックを反映。
   // ============================================================
-  describe('Issue#131 Cycle4: Cropper の objectFit 指定', () => {
+  describe('Spec#131 Cycle4: Cropper の objectFit 指定', () => {
     it('Cropper に objectFit="cover" が渡されない（既定の contain で表示）', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
@@ -971,7 +982,7 @@ describe('PhotoContributionDialog', () => {
   })
 
   // ============================================================
-  // Issue#131（モバイル枠表示バグ修正）:
+  // Spec#131（モバイル枠表示バグ修正）:
   // contain モードで auto-computed の cropSize は短辺と端数を含む
   // 浮動小数になりやすく、retina + iOS Safari でアンチエイリアスにより
   // 枠線がほぼ視認できない事象が起きる。
@@ -979,7 +990,7 @@ describe('PhotoContributionDialog', () => {
   // 切り捨てて cropSize プロパティへ明示指定する。
   // これによりサブピクセル要因が消え、PC と同じ視認性が得られる。
   // ============================================================
-  describe('Issue#131: 明示的 cropSize 設定（モバイル枠表示修正）', () => {
+  describe('Spec#131: 明示的 cropSize 設定（モバイル枠表示修正）', () => {
     it('onMediaLoaded 発火後、Cropper の cropSize は短辺の整数値（floor）で設定される', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
@@ -1021,13 +1032,13 @@ describe('PhotoContributionDialog', () => {
   })
 
   // ============================================================
-  // Issue#131（z-index 修正・iOS Safari GPU compositing 対策）:
+  // Spec#131（z-index 修正・iOS Safari GPU compositing 対策）:
   // 画像（will-change: transform）が GPU 合成レイヤーに昇格して
   // 枠を上書きする事象。枠側にも明示的な z-index を立てることで
   // ブラウザのヒューリスティック判断に依存せず、必ず枠が画像の
   // 上に来るようにする。
   // ============================================================
-  describe('Issue#131: cropAreaStyle.zIndex 指定（iOS Safari 合成順上書き）', () => {
+  describe('Spec#131: cropAreaStyle.zIndex 指定（iOS Safari 合成順上書き）', () => {
     it('Cropper の cropAreaStyle に zIndex が設定されている（画像の compositing 層より上に固定するため）', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
@@ -1051,14 +1062,14 @@ describe('PhotoContributionDialog', () => {
   })
 
   // ============================================================
-  // Issue#131（will-change 解除・iOS Safari GPU 昇格抑止）:
+  // Spec#131（will-change 解除・iOS Safari GPU 昇格抑止）:
   // z-index だけでは iOS Safari の GPU レイヤー前後関係を上書きできない
   // ことがあるため、画像側に `will-change: auto` をインラインで指定して
   // そもそも GPU レイヤーへの昇格自体を防ぐ。
   // インラインスタイルはクラスより優先されるため、react-easy-crop の
   // `.reactEasyCrop_Image { will-change: transform; }` を打ち消せる。
   // ============================================================
-  describe('Issue#131: mediaStyle.willChange="auto" 指定（画像 GPU 昇格抑止）', () => {
+  describe('Spec#131: mediaStyle.willChange="auto" 指定（画像 GPU 昇格抑止）', () => {
     it('Cropper の mediaStyle.willChange が "auto" に設定されている（画像の GPU レイヤー昇格を抑止）', async () => {
       const user = userEvent.setup()
       render(<PhotoContributionDialog {...defaultProps} />)
@@ -1076,7 +1087,7 @@ describe('PhotoContributionDialog', () => {
     })
   })
 
-  describe('Issue#158: 前回選択位置の記憶（seed / save）', () => {
+  describe('Spec#158: 前回選択位置の記憶（seed / save）', () => {
     it('記憶があれば初期ピンにその位置を seed する', () => {
       setLastPickedLocation({ lat: 34.7025, lng: 135.4959 })
 

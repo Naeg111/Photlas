@@ -16,7 +16,7 @@ const CARD_CLASS = 'max-w-md w-full mx-4 bg-white rounded-lg shadow-md p-8'
 /**
  * 写真ディープリンクページ
  *
- * Issue#58: /photo-viewer/:photoId でアクセスされたとき、
+ * Spec#58: /photo-viewer/:photoId でアクセスされたとき、
  * 該当写真をPhotoDetailDialogで単体表示する。
  */
 export default function PhotoViewerPage() {
